@@ -1,0 +1,54 @@
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+<!--                                                                        -->
+<!-- Title:         Berlioz DTD for Web Services                            -->
+<!-- System:        Berlioz                                                 -->
+<!-- Status:        Draft                                                   -->
+<!-- Description:   A schema for the defining the URL patterns and          -->
+<!--                associated content generators.                          -->
+<!-- Version:       1.0                                                     -->
+<!-- LastModified:  29 October 2009                                         -->
+<!-- Author(s):     Christophe Lauret                                       -->
+<!--                                                                        -->
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+
+<!-- A URI Pattern as defined in the URI Template specifications            -->
+<!ENTITY  % URI_PATTERN      "CDATA"                                          >
+
+<!-- The HTTP method for the associated service                             -->
+<!ENTITY  % HTTP_METHOD      "(get | put | delete | post )"                   >
+
+<!--
+  Top level element.
+-->
+<!ELEMENT service-config                                        ( services* ) >
+<!ATTLIST service-config     version            CDATA            #FIXED "1.0" >
+
+<!--
+  A container for generators from the same area.
+-->
+<!ELEMENT services                                               ( service* ) >
+<!ATTLIST services           group              ID                  #REQUIRED >
+
+<!--
+  A content generator.
+  
+  @param id     A unique identifier for this service.
+  @param method The HTTP method this service accepts.
+-->
+<!ELEMENT service                                        ( url+, generator? ) >
+<!ATTLIST service            id                 ID                  #REQUIRED
+                             method             %HTTP_METHOD;       #REQUIRED >
+
+<!--
+  The url pattern matching this service.
+
+  @attribute pattern The URI Pattern for this URL.
+-->
+<!ELEMENT url                                                           EMPTY >
+<!ATTLIST url                pattern            %URI_PATTERN;       #REQUIRED >
+
+<!--
+  The content generator class
+-->
+<!ELEMENT generator                                               ( #PCDATA ) >
+<!ATTLIST generator         class               CDATA               #REQUIRED >

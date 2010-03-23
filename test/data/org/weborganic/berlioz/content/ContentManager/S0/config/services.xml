@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!DOCTYPE service-config PUBLIC "-//Berlioz//DTD::Services 1.0//EN"
+                                "../../../Core/resource/library/services-1.0.dtd" >
+<!--
+    A test services configuration file.
+
+    @author  Christophe Lauret (Weborganic)
+    @version 26 November 2009
+-->
+<service-config version="1.0">
+
+  <services group="test">
+
+    <service id="P01" method="get">
+      <url pattern="/home"/>
+      <generator class="org.weborganic.berlioz.content.NoContent">home</generator>
+    </service>
+
+    <service id="P02" method="get">
+      <url pattern="/custom"/>
+      <generator class="org.weborganic.berlioz.content.ContentManagerTest$Custom">custom</generator>
+    </service>
+
+    <service id="P03" method="get">
+      <url pattern="/user/{userid}"/>
+      <generator class="org.weborganic.berlioz.content.NoContent">user</generator>
+    </service>
+
+  </services>
+
+</service-config>
