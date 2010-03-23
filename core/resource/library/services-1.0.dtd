@@ -50,5 +50,12 @@
 <!--
   The content generator class
 -->
-<!ELEMENT generator                                               ( #PCDATA ) >
+<!ELEMENT generator                                            ( parameter* ) >
 <!ATTLIST generator         class               CDATA               #REQUIRED >
+
+<!--
+  A parameter for the generator
+-->
+<!ELEMENT parameter                                                     EMPTY >
+<!ATTLIST parameter         name                CDATA               #REQUIRED
+                            value               CDATA               #REQUIRED >
