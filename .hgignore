@@ -1,0 +1,5 @@
+
+syntax: regexp
+^release$
+syntax: regexp
+^doc$

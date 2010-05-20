@@ -111,7 +111,7 @@ public final class GlobalServlet extends HttpServlet {
     this.contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     String stylePath = this.getInitParameter("stylesheet", "/xslt/html/global.xsl");
     this.styleSheet = new File(webinfPath, stylePath);
-    // used to dispath 
+    // used to dispatch 
     this.errorHandler = context.getNamedDispatcher("ErrorHandlerServlet");
     if (this.errorHandler == null)
       throw new ServletException("The error handler must be configured and named ErrorHandlerServlet.");
@@ -180,7 +180,7 @@ public final class GlobalServlet extends HttpServlet {
       ByteArrayOutputStream errors = new ByteArrayOutputStream();
 
       try {
-        // Creates a tranformer from the templates
+        // Creates a transformer from the templates
         setupListener(factory.getErrorListener(), errors);
         Templates templates = this.getTemplates();
         long t2 = System.currentTimeMillis();
@@ -331,11 +331,11 @@ public final class GlobalServlet extends HttpServlet {
    * @param out      The output
    */
   private static void setupListener(ErrorListener listener, ByteArrayOutputStream out) {
-    Class elClass = listener.getClass();
+    Class<? extends ErrorListener> elClass = listener.getClass();
     Method[] methods = elClass.getDeclaredMethods();
     for (int i = 0; i < methods.length; i++) {
       if (methods[i].getName().equals("setErrorOutput")) {
-        Class[] params = methods[i].getParameterTypes();
+        Class<?>[] params = methods[i].getParameterTypes();
         if (params.length == 1 && params[0].equals(PrintStream.class)) {
           try {
             PrintStream st = new PrintStream(out, true, "utf-8");

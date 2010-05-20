@@ -40,7 +40,7 @@ import org.weborganic.berlioz.xml.XMLProperties;
  * @see #setConfig(String)
  *
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ * @version 20 May 2010
  */
 public final class GlobalSettings {
 
@@ -65,7 +65,7 @@ public final class GlobalSettings {
   /**
    * Name of the default configuration to use.
    */
-  public static final String DEFAULT_CONFIG_NAME = "config";
+  public static final String DEFAULT_CONFIG_NAME = "default";
 
 // static variables ---------------------------------------------------------------------------
 
@@ -102,7 +102,7 @@ public final class GlobalSettings {
   /**
    * Maps properties to nodes that have been processed.
    */
-  private static Map nodes;
+  private static Map<String, Properties> nodes;
 
 // constructor ---------------------------------------------------------------------------------
 
@@ -131,6 +131,16 @@ public final class GlobalSettings {
    */
   public static File getRepository() {
     return repository;
+  }
+
+  /**
+   * Returns the build version of Berlioz.
+   * 
+   * @return the Berlioz version.
+   */
+  public static String getVersion() {
+    Package p = Package.getPackage("org.weborganic.berlioz");
+    return p != null ? p.getImplementationVersion() : "unknown";
   }
 
   /**
@@ -169,10 +179,10 @@ public final class GlobalSettings {
     File dir = new File(repository, CONFIG_DIRECTORY);
     if (!dir.isDirectory()) return null;
     // try as an XML file
-    File xml = new File(dir, config + ".xml");
+    File xml = new File(dir, "config-"+config+".xml");
     if (xml.canRead()) return xml;
     // otherwise try as a text properties file
-    File prp = new File(dir, config + ".prp");
+    File prp = new File(dir, "config-"+config+".prp");
     if (prp.canRead()) return prp;
     return null;
   }
@@ -348,7 +358,7 @@ public final class GlobalSettings {
     if (settings == null) load();
     // return the node if already processed.
     if (nodes.containsKey(name))
-      return (Properties)nodes.get(name);
+      return nodes.get(name);
     // other process and store
     Properties node = new Properties();
     String prefix = name+".";
@@ -449,7 +459,7 @@ public final class GlobalSettings {
       // initialise
       boolean isXML = file.getName().endsWith(".xml");
       settings = isXML? new XMLProperties() : new Properties();
-      nodes = new Hashtable();
+      nodes = new Hashtable<String, Properties>();
       // load
       try {
         InputStream in = new FileInputStream(file);
@@ -470,7 +480,7 @@ public final class GlobalSettings {
       settings = new Properties();
     System.err.println("Cannot load properties, the repository has not been setup properly:");
     System.err.println("  ~Repository:"+repository);
-    System.err.println("  ~Library:"+config);
+    System.err.println("  ~Config:"+config);
     return false;
   }
 

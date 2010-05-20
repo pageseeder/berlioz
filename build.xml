@@ -71,9 +71,13 @@
     <jar jarfile="${dir.release}/${DSTAMP}/${name.short}-${version}.jar"      basedir="${dir.bin}" index="true">
       <fileset dir="${dir.resource}" excludes="javadoc.css"/>
       <manifest>
-        <attribute name="Built-By"   value="weborganic"/>
-        <attribute name="Main-Class" value="${package.main}"/>
-        <attribute name="Sealed"     value="false"/>
+        <attribute name="Built-By"               value="weborganic"/>
+        <attribute name="Main-Class"             value="${package.main}"/>
+        <attribute name="Sealed"                 value="false"/>
+        <attribute name="Implementation-Title"   value="Berlioz"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+        <attribute name="Implementation-Vendor"  value="Weborganic Pty Ltd (Australia)"/>
+        <attribute name="Implementation-URL"     value="http://www.weborganic.org/code/berlioz/"/>
       </manifest>
     </jar>
     <zip zipfile="${dir.release}/${DSTAMP}/${name.short}-${version}-all.zip" 

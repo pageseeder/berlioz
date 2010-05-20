@@ -64,7 +64,7 @@ public final class ContentManager {
    * 
    * @return The corresponding task instance.
    */
-  public static ContentGenerator getInstance(String pathInfo) {
+  public static MatchingService getInstance(String pathInfo) {
     if (pathInfo == null) return null;
     // load the generator if not loaded yet
     if (!loaded) {

@@ -11,7 +11,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>This class should remain protected as there is no reason to expose its method to the public API. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 11 December 2009
+ * @version 20 May 2010
  */
 final class ServicesHandler10 extends DefaultHandler {
 
@@ -23,24 +23,20 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * Maps path infos to generator instances.
    */
-  private final GeneratorRegistry registry;
-
-  /**
-   * A buffer for character data.
-   */
-  private final StringBuffer ch = new StringBuffer();
+  private final ServiceRegistry registry;
 
   /**
    * The elements used recognised by this handler.
    */
   private enum Element {
-    
+
     GENERATOR,
+    PARAMETER,
     SERVICE_CONFIG,
     SERVICES,
     SERVICE,
     URL;
-    
+
     /**
      * The name of the element.
      */
@@ -75,24 +71,19 @@ final class ServicesHandler10 extends DefaultHandler {
   };
 
   /**
-   * The current group (ex area).
-   */
-  private String _group;
-
-  /**
-   * The current path info.
+   * The current URI pattern for the service.
    */
   private String _pattern;
 
   /**
-   * The current HTTP method.
+   * The current HTTP method for the service.
    */
   private String _method;
 
   /**
-   * The content generator instance. 
+   * The service builder.
    */
-  private ContentGenerator _generator;
+  private Service.Builder _builder = new Service.Builder();
 
   /**
    * Creates a new ContentAccessHandler.
@@ -101,7 +92,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * 
    * @param generators The map of generators to populate.
    */
-  public ServicesHandler10(GeneratorRegistry registry) {
+  public ServicesHandler10(ServiceRegistry registry) {
     this.registry = registry;
   }
 
@@ -109,8 +100,6 @@ final class ServicesHandler10 extends DefaultHandler {
    * {@inheritDoc}
    */
   public void startElement(String uri, String localName, String qName, Attributes atts) {
-    this.ch.setLength(0);
-
     // Identify element
     Element element = Element.get(localName);
     switch(element) {
@@ -119,24 +108,28 @@ final class ServicesHandler10 extends DefaultHandler {
         break;
 
       case SERVICES:
-        this._group = atts.getValue("group");
+        this._builder.group(atts.getValue("group"));
         break;
 
       case SERVICE:
-        atts.getValue("id");
+        this._builder.id(atts.getValue("id"));
         this._method = atts.getValue("method");
-//      id
-//      method
 
       case URL:
         this._pattern = atts.getValue("pattern");
         break;
 
+      case PARAMETER:
+        this._builder.parameter(toParameter(atts));
+        break;
+
       case GENERATOR:
         try {
-          this._generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
+          ContentGenerator generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
+          ((ContentGeneratorBase)generator).setPathInfo(this._pattern);
+          this._builder.add(generator);
         } catch (Exception ex) {
-          LOGGER.warn("(!) Failed to load "+this.ch.toString());
+          LOGGER.warn("(!) Failed to load "+atts.getValue("class"));
           ex.printStackTrace();
         }
         break;
@@ -152,30 +145,24 @@ final class ServicesHandler10 extends DefaultHandler {
     // Identify element
     Element element = Element.get(localName);
     switch(element) {
-      case GENERATOR:
-        // use no content by default
-        if (this._generator == null)
-          this._generator = new NoContent();
-        // set up the generator
-        this._generator.setArea(this._group);
-        this._generator.setService(this.ch.toString());
-        // TODO: check that the info path has not been already assigned
-//        if (this.registry.containsKey(this._pattern)) {
-//          LOGGER.warn("(!) Path info '"+this._pattern+"' has been assigned to multiple generators");
-//        }
-        this.registry.register(this._generator, this._pattern, this._method);
-        ((ContentGeneratorBase)this._generator).setPathInfo(this._pattern);
-        LOGGER.debug("Assigning "+this._pattern+" ["+this._method+"] to "+this._generator+" as "+this._generator.getService());
+      case SERVICE:
+        Service service = this._builder.build();
+        this.registry.register(service, this._pattern, this._method);
+        this._builder.reset();
+        LOGGER.debug("Assigning "+this._pattern+" ["+this._method+"] to "+service.id());
       default:
     }
-    this.ch.setLength(0);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  public void characters(char[] buf, int pos, int len) {
-    this.ch.append(buf, pos, len);
+  private static Parameter toParameter(Attributes atts) {
+    Parameter.Builder p = new Parameter.Builder(atts.getValue("name")); 
+    p.value(atts.getValue("value")).source(atts.getValue("source")).def(atts.getValue("default"));
+    try {
+      return p.build();
+    } catch (IllegalStateException ex) {
+      LOGGER.debug("Bad parameter specifications - ignoring", ex);
+      return null;
+    }
   }
 
 }

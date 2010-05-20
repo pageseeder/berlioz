@@ -18,6 +18,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentRequest;
+import org.weborganic.berlioz.content.MatchingService;
+import org.weborganic.berlioz.content.Service;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
@@ -61,17 +63,20 @@ public final class QuickContentServlet extends HttpServlet {
     xml.openElement("envelope");
 
     // get the content generator
-    ContentGenerator generator = ContentManager.getInstance(req.getPathInfo());
+    MatchingService match = ContentManager.getInstance(req.getPathInfo());
 
     // if the generator exists
-    if (generator != null) {
-      try {
-        ContentRequest wrapper = new HttpRequestWrapper(req, res);
-        generator.process(wrapper, xml);
+    if (match != null) {
+      Service service = match.service();
+      for (ContentGenerator generator : service.generators()) {
+        try {
+          ContentRequest wrapper = new HttpRequestWrapper(req, res);
+          generator.process(wrapper, xml);
 
-      // an error occurred, do not elaborate 500 is enough.
-      } catch (Exception ex) {
-        res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, ex.getMessage());
+        // an error occurred, do not elaborate 500 is enough.
+        } catch (Exception ex) {
+          res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, ex.getMessage());
+        }      
       }
 
     // the generator does not exist.

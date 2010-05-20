@@ -6,7 +6,7 @@
 <!-- Description:   A schema for the defining the URL patterns and          -->
 <!--                associated content generators.                          -->
 <!-- Version:       1.0                                                     -->
-<!-- LastModified:  29 October 2009                                         -->
+<!-- LastModified:  20 May 2010                                             -->
 <!-- Author(s):     Christophe Lauret                                       -->
 <!--                                                                        -->
 <!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
@@ -16,6 +16,9 @@
 
 <!-- The HTTP method for the associated service                             -->
 <!ENTITY  % HTTP_METHOD      "(get | put | delete | post )"                   >
+
+<!-- The HTTP method for the associated service                             -->
+<!ENTITY  % PARAMETER_SOURCE "(string | query-string | uri-variable )"        >
 
 <!--
   Top level element.
@@ -35,7 +38,7 @@
   @param id     A unique identifier for this service.
   @param method The HTTP method this service accepts.
 -->
-<!ELEMENT service                                        ( url+, generator? ) >
+<!ELEMENT service                                        ( url+, generator* ) >
 <!ATTLIST service            id                 ID                  #REQUIRED
                              method             %HTTP_METHOD;       #REQUIRED >
 
@@ -50,5 +53,14 @@
 <!--
   The content generator class
 -->
-<!ELEMENT generator                                               ( #PCDATA ) >
+<!ELEMENT generator                                            ( parameter* ) >
 <!ATTLIST generator         class               CDATA               #REQUIRED >
+
+<!--
+  A parameter to pass to the content generator
+-->
+<!ELEMENT parameter                                                    EMPTY >
+<!ATTLIST parameter         name               CDATA               #REQUIRED 
+                            value              CDATA               #REQUIRED
+                            source             %PARAMETER_SOURCE;  #REQUIRED
+                            default            CDATA                #IMPLIED >

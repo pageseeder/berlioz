@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentGenerator;
+import org.weborganic.berlioz.content.Service;
 
 import com.topologi.diffx.xml.XMLWritable;
 import com.topologi.diffx.xml.XMLWriter;
@@ -92,6 +93,8 @@ public final class XMLResponseHeader implements XMLWritable {
   /**
    * Creates a new XML response header.
    * 
+   * @deprecated
+   * 
    * @param request   The HTTP request.
    * @param generator The content generator used.
    */
@@ -99,6 +102,18 @@ public final class XMLResponseHeader implements XMLWritable {
     this._request = request;
     this._service = generator.getService();
     this._area = generator.getArea();
+  }
+
+  /**
+   * Creates a new XML response header.
+   * 
+   * @param request   The HTTP request.
+   * @param generator The content generator used.
+   */
+  public XMLResponseHeader(HttpServletRequest request, Service service) {
+    this._request = request;
+    this._service = service.id();
+    this._area = "";//service.group();
   }
 
   /**
@@ -179,6 +194,12 @@ public final class XMLResponseHeader implements XMLWritable {
       }
     }
     xml.closeElement(); // close http-parameters
+
+    // Include Berlioz version
+    xml.openElement("berlioz");
+    xml.attribute("version", GlobalSettings.getVersion());
+    xml.closeElement();
+
     xml.closeElement(); // close header
   }
 

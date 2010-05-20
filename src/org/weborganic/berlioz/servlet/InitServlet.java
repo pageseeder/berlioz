@@ -65,7 +65,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       if (name == null)
         name = System.getProperty("berlioz.config");
 
-      // configuring the logger
+      // Configuring the logger
       System.err.println("Loading log configuration...");
       File configDir = new File(webinfPath, "config");
       File logProperties = new File(configDir, "log4j-" + name + ".prp");
@@ -78,7 +78,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
         BasicConfigurator.configure();
       }
 
-      // setup the global settings
+      // Setup the global settings
       System.err.println("Initialising Global Settings...");
       GlobalSettings.setRepository(webinfPath);
       if (name != null)
