@@ -13,6 +13,7 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Hashtable;
+import java.util.Map;
 
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.logging.ZLogger;
@@ -25,19 +26,20 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * This manager provides a global tool for processing content for the website.
  * 
  * @author Christophe Lauret (Allette Systems)
- * @version 5 December 2006
+ * @version 20 May 2010
  */
 public final class XMLExtractorHelper {
 
   /**
-   * Logger for the browse by Brand Premium Section.
+   * Logger the extractor.
    */
   private static final ZLogger LOGGER = ZLoggerFactory.getLogger(XMLExtractorHelper.class);
 
   /**
-   * Logger for the browse by Brand Premium Section.
+   * Internal cache. 
    */
-  private static final Hashtable CACHE = new Hashtable();
+  private static final Map<String, String> CACHE = new Hashtable<String, String>();
+  // TODO: would be better to use a library like EH Cache
 
   /**
    * Prevent creation of instances.

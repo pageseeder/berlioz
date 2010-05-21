@@ -54,7 +54,8 @@
   The content generator class
 -->
 <!ELEMENT generator                                            ( parameter* ) >
-<!ATTLIST generator         class               CDATA               #REQUIRED >
+<!ATTLIST generator         class               CDATA               #REQUIRED
+                            target              NMTOKEN              #IMPLIED >
 
 <!--
   A parameter to pass to the content generator

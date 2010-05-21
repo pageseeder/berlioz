@@ -9,11 +9,9 @@ package org.weborganic.berlioz.servlet;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.content.ContentGenerator;
@@ -21,6 +19,8 @@ import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.berlioz.logging.ZLogger;
+import org.weborganic.berlioz.logging.ZLoggerFactory;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
@@ -32,6 +32,11 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * @version 9 October 2009
  */
 public final class XMLResponse {
+
+  /**
+   * Displays debug information.
+   */
+  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(XMLResponse.class);
 
   /**
    * Generates an XML response corresponding to the specified HTTP request.
@@ -57,17 +62,19 @@ public final class XMLResponse {
       // if the service exists
       if (match != null) {
         Service service = match.service();
+        LOGGER.debug(req.getPathInfo()+" -> "+service);
         XMLResponseHeader header = new XMLResponseHeader(req, service);
+        header.toXML(xml);
+
         for (ContentGenerator generator : service.generators()) {
-//          LOGGER.info(req.getPathInfo()+" -> "+generator.getClass().getName());
           ContentRequest wrapper = new HttpRequestWrapper(req, res);
 
           // write the XML for a normal response
           if (!generator.redirect()) {
-            header.toXML(xml);
             xml.openElement("content", true);
-
-            // process
+            xml.attribute("generator", generator.getClass().getName());
+            String target = service.target(generator);
+            if (target != null) xml.attribute("target", target);
             generator.process(wrapper, xml);
             xml.closeElement();
           }
@@ -75,7 +82,7 @@ public final class XMLResponse {
 
       // the content generator does not exist
       } else {
-//        LOGGER.warn("No content generator for "+req.getPathInfo());
+        LOGGER.info("No content generator for "+req.getPathInfo());
         XMLResponseHeader header = new XMLResponseHeader(req, "404-error");
         header.toXML(xml);
       }

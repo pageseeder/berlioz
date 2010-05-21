@@ -35,7 +35,7 @@ import com.topologi.diffx.xml.XMLWriter;
  * @author Christophe Lauret (Weborganic)
  * @version 20 May 2010
  */
-public final class HttpParameters extends ContentGeneratorBase implements ContentGenerator {
+public final class GetHttpParameters extends ContentGeneratorBase implements ContentGenerator {
 
   /**
    * {@inheritDoc}

@@ -40,6 +40,7 @@ public final class XMLExtractor extends DefaultHandler {
   /**
    * {@inheritDoc}
    */
+  @Override
   public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
     try {
       this.recipient.openElement(qName);
@@ -54,6 +55,7 @@ public final class XMLExtractor extends DefaultHandler {
   /**
    * {@inheritDoc}
    */
+  @Override
   public void characters(char[] ch, int start, int length) throws SAXException {
     try {
       this.recipient.writeText(ch, start, length);
@@ -65,9 +67,21 @@ public final class XMLExtractor extends DefaultHandler {
   /**
    * {@inheritDoc}
    */
+  @Override
   public void endElement(String uri, String localName, String qName) throws SAXException {
     try {
       this.recipient.closeElement();
+    } catch (IOException ex) {
+      throw new SAXException(ex);
+    }
+  }
+
+  @Override
+  public void startPrefixMapping(String prefix, String uri) throws SAXException {
+    try {
+      boolean x = prefix != null && prefix.length() > 0;
+      this.recipient.attribute("xmlns"+(x? ":"+ prefix : prefix), uri);
+//    this.recipient.setPrefixMapping(prefix, uri);
     } catch (IOException ex) {
       throw new SAXException(ex);
     }

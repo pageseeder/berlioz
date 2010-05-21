@@ -85,6 +85,24 @@
     	 includes="${dir.src}/**, ${dir.bin}/**, ${dir.doc}/**,${dir.resource}/**"/>
   </target>
 
+  <!-- Release the current version in a jar -->
+  <target name="quick-release" depends="compile" description="archive source and build with date stamp">
+    <!-- create all directories -->
+    <mkdir dir="${dir.release}"/>
+    <jar jarfile="${dir.release}/${name.short}-${version}.jar" basedir="${dir.bin}" index="true">
+      <fileset dir="${dir.resource}" excludes="javadoc.css"/>
+      <manifest>
+        <attribute name="Built-By"               value="weborganic"/>
+        <attribute name="Main-Class"             value="${package.main}"/>
+        <attribute name="Sealed"                 value="false"/>
+        <attribute name="Implementation-Title"   value="Berlioz"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+        <attribute name="Implementation-Vendor"  value="Weborganic Pty Ltd (Australia)"/>
+        <attribute name="Implementation-URL"     value="http://www.weborganic.org/code/berlioz/"/>
+      </manifest>
+    </jar>
+  </target>
+
   <!-- clean up -->
   <target name="clean" description="delete build directory">
     <delete dir="${dir.bin}"/>

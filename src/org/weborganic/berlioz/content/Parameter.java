@@ -3,54 +3,95 @@ package org.weborganic.berlioz.content;
 /**
  * Specifications for a parameter to send to a content generator.
  * 
- * <p>The parameters that content generators can take is fixed, this class allows
- * content generators to receives parameters from different sources.
+ * <p>The parameters that content generators can take is fixed, this class allows content 
+ * generators to receives parameters from different sources and effectively remap the parameters
+ * send to a generator.
  * 
  * @author Christophe Lauret
- * @version 20 May 2010
+ * @version 21 May 2010
  */
-public class Parameter {
+public final class Parameter {
 
   /**
    * Defines the source of the parameter.
    */
   public enum Source {
+
+    /** Use the string value as it is */
     STRING,
+
+    /** Use the corresponding parameter value from query string of the URL*/
     QUERY_STRING,
+
+    /** Use the resolved URI variable */
     URI_VARIABLE
+
   }
 
+  /**
+   * The name of this parameter.
+   */
   private final String _name;
-  
+
+  /**
+   * The value of this parameter.
+   */
   private final String _value;
-  
+
+  /**
+   * The source of the value of this parameter.
+   */
   private final Source _source;
-  
+
+  /**
+   * The default value of this parameter.
+   */
   private final String _def;
-  
+
+  /**
+   * Creates a new parameter 
+   */
   private Parameter(String name, String value, Source source, String def) {
     this._name   = name;
     this._value  = value;
     this._source = source;
     this._def    = def;
   }
-  
+
+  /**
+   * The name of this parameter.
+   */
   public String name(){
     return this._name;
   }
 
+  /**
+   * The source of the value of this parameter.
+   */
   public Source source(){
     return this._source;
   }
-  
+
+  /**
+   * The value of this parameter.
+   */
   public String value(){
     return this._value;
   }
-  
+
+  /**
+   * The default value of this parameter.
+   */
   public String def(){
     return this._def;
   }
 
+  /**
+   * A builder for parameters - this is a single use builder.
+   * 
+   * @author Christophe Lauret
+   * @version 21 May 2010
+   */
   static class Builder {
 
     private final String _name;

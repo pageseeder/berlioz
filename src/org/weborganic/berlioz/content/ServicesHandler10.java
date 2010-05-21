@@ -1,5 +1,8 @@
 package org.weborganic.berlioz.content;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.weborganic.berlioz.logging.ZLogger;
 import org.weborganic.berlioz.logging.ZLoggerFactory;
 import org.xml.sax.Attributes;
@@ -11,7 +14,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>This class should remain protected as there is no reason to expose its method to the public API. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 20 May 2010
+ * @version 21 May 2010
  */
 final class ServicesHandler10 extends DefaultHandler {
 
@@ -71,9 +74,9 @@ final class ServicesHandler10 extends DefaultHandler {
   };
 
   /**
-   * The current URI pattern for the service.
+   * The list of URI patterns for the current service.
    */
-  private String _pattern;
+  private List<String> _patterns = new ArrayList<String>();
 
   /**
    * The current HTTP method for the service.
@@ -114,9 +117,10 @@ final class ServicesHandler10 extends DefaultHandler {
       case SERVICE:
         this._builder.id(atts.getValue("id"));
         this._method = atts.getValue("method");
+        break;
 
       case URL:
-        this._pattern = atts.getValue("pattern");
+        this._patterns.add(atts.getValue("pattern"));
         break;
 
       case PARAMETER:
@@ -126,8 +130,11 @@ final class ServicesHandler10 extends DefaultHandler {
       case GENERATOR:
         try {
           ContentGenerator generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
-          ((ContentGeneratorBase)generator).setPathInfo(this._pattern);
+          // The first pattern is the default one
+          if (!this._patterns.isEmpty())
+            ((ContentGeneratorBase)generator).setPathInfo(this._patterns.get(0));
           this._builder.add(generator);
+          this._builder.target(atts.getValue("target"));
         } catch (Exception ex) {
           LOGGER.warn("(!) Failed to load "+atts.getValue("class"));
           ex.printStackTrace();
@@ -147,13 +154,22 @@ final class ServicesHandler10 extends DefaultHandler {
     switch(element) {
       case SERVICE:
         Service service = this._builder.build();
-        this.registry.register(service, this._pattern, this._method);
+        for (String pattern : this._patterns) {
+          this.registry.register(service, pattern, this._method);
+          LOGGER.debug("Assigning "+pattern+" ["+this._method+"] to "+service);
+        }
         this._builder.reset();
-        LOGGER.debug("Assigning "+this._pattern+" ["+this._method+"] to "+service.id());
+        this._patterns.clear();
       default:
     }
   }
 
+  /**
+   * Creates a parameter specifications from the given attributes.
+   *  
+   * @param atts the attributes of the parameter element.
+   * @return a new <code>Parameter</code> instance or <code>null</code>.
+   */
   private static Parameter toParameter(Attributes atts) {
     Parameter.Builder p = new Parameter.Builder(atts.getValue("name")); 
     p.value(atts.getValue("value")).source(atts.getValue("source")).def(atts.getValue("default"));

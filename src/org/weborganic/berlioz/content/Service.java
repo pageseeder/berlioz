@@ -36,18 +36,26 @@ public final class Service {
   private final Map<ContentGenerator, List<Parameter>> _parameters;
 
   /**
+   * Maps targets to a given generator instance.
+   */
+  private final Map<ContentGenerator, String> _targets;
+
+  /**
    * Creates a new service.
    * 
    * @param id         the ID of the service.
    * @param group      the group the service is part of.
    * @param generators the list of generators.
-   * @param parameters the parameters spec for each generator.
+   * @param parameters the parameters specifications for each generator.
+   * @param targets    the target of each generator (if any).
    */
-  private Service(String id, String group, List<ContentGenerator> generators, Map<ContentGenerator, List<Parameter>> parameters) {
+  private Service(String id, String group, List<ContentGenerator> generators, Map<ContentGenerator, List<Parameter>> parameters,
+      Map<ContentGenerator, String> targets) {
     this._id = id;
     this._group = group;
     this._generators = generators;
     this._parameters = parameters;
+    this._targets = targets;
   }
 
   /**
@@ -90,7 +98,24 @@ public final class Service {
   }
 
   /**
-   * A builder for services to ensure that service instances are immutable
+   * Returns the target of the given generator.
+   * 
+   * @param generator the content generator for which we need to parameters.
+   * @return the target if any (may be <code>null</code>).
+   */
+  public String target(ContentGenerator generator) {
+    return this._targets.get(generator);
+  }
+
+  @Override
+  public String toString() {
+    return "service:"+this._group+"/"+this._id;
+  }
+
+  /**
+   * A builder for services to ensure that <code>Service</code> instances are immutable.
+   * 
+   * <p>The same builder can be used for builder multiple services. 
    * 
    * @author Christophe Lauret
    * @version 20 May 2010
@@ -103,7 +128,7 @@ public final class Service {
     private String _id;
 
     /** 
-     * The ID of the service to build.
+     * The group the service to build belongs to.
      */
     private String _group;
 
@@ -118,16 +143,32 @@ public final class Service {
     private final Map<ContentGenerator, List<Parameter>> _parameters = new HashMap<ContentGenerator, List<Parameter>>();
 
     /**
-     * Creates a new builder
+     * Maps targets to a given generator instance.
      */
-    public Builder() {
-    }
+    private final Map<ContentGenerator, String> _targets = new HashMap<ContentGenerator, String>();
 
+    /**
+     * Creates a new builder.
+     */
+    public Builder() {}
+
+    /**
+     * Sets the ID of the service to build.
+     * 
+     * @param id the ID of the service to build.
+     * @return this builder for easy chaining.
+     */
     public Builder id(String id) {
       this._id = id;
       return this;
     }
 
+    /**
+     * Sets the group of the service to build.
+     * 
+     * @param id the group of the service to build.
+     * @return this builder for easy chaining.
+     */
     public Builder group(String group) {
       this._group = group;
       return this;
@@ -136,7 +177,8 @@ public final class Service {
     /**
      * Adds a parameter to the last content generator entered
      * 
-     * @return
+     * @param p The parameter to add to the latest generator added.
+     * @return this builder for easy chaining.
      */
     public Builder parameter(Parameter p) {
       if (this._generators.size() > 0) {
@@ -155,7 +197,7 @@ public final class Service {
      * Adds a content generator to this service.
      * 
      * @param g the content generator to add to this service.
-     * @return this builder
+     * @return this builder for easy chaining.
      */
     public Builder add(ContentGenerator g) {
       this._generators.add(g);
@@ -166,23 +208,41 @@ public final class Service {
     }
 
     /**
-     * Builds the service from the attributes in this builder.
+     * Sets the target of the latest content generator added.
      * 
-     * <p>Note: use <code>reset</code> method to reset.
-     * 
-     * @return a new service.
+     * @param target the target for the latest content generator.
+     * @return this builder for easy chaining.
      */
-    public Service build() {
-      return new Service(this._id, this._group, immutable(this._generators), immutable(this._parameters));
+    public Builder target(String target) {
+      if (this._generators.size() > 0 && target != null) {
+        ContentGenerator generator = this._generators.get(this._generators.size() - 1);
+        this._targets.put(generator, target);
+      }
+      return this;
     }
 
     /**
-     * Resets the class attributes.
+     * Builds the service from the attributes in this builder.
+     * 
+     * <p>Note: use the <code>reset</code> method to reset the class attributes.
+     * 
+     * @return a new service instance.
+     */
+    public Service build() {
+      return new Service(this._id, this._group, 
+          immutable(this._generators),
+          immutable(this._parameters),
+          immutable3(this._targets));
+    }
+
+    /**
+     * Resets the all the class attributes (except group).
      */
     public void reset() {
       this._id = null;
       this._generators.clear();
       this._parameters.clear();
+      this._targets.clear();
     }
 
     /**
@@ -233,6 +293,27 @@ public final class Service {
         return Collections.singletonList(original.get(0));
       } else {
         return Collections.unmodifiableList(new ArrayList<Parameter>(original));
+      }
+    }
+
+    /**
+     * Returns a new identical immutable map.
+     * 
+     * @param the map maintained by the builder.
+     * @return a new identical immutable map.
+     */
+    private static Map<ContentGenerator, String> immutable3(Map<ContentGenerator, String> original) {
+      if (original.isEmpty()) {
+        return Collections.emptyMap();
+      } else if (original.size() == 1) {
+        Entry<ContentGenerator, String> entry = original.entrySet().iterator().next();
+        return Collections.singletonMap(entry.getKey(), entry.getValue());
+      } else {
+        Map<ContentGenerator, String> map = new HashMap<ContentGenerator, String>();
+        for (Entry<ContentGenerator, String> entry : original.entrySet()) {
+          map.put(entry.getKey(), entry.getValue());
+        }
+        return Collections.unmodifiableMap(map);
       }
     }
 

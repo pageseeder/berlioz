@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.weborganic.furi.URIPattern;
-import org.weborganic.furi.URIResolveResult;
 import org.weborganic.furi.URIResolver;
 
 /**
@@ -15,7 +14,7 @@ import org.weborganic.furi.URIResolver;
  * <p>Note: this class is not synchronized and must be synchronised externally.
  * 
  * @author Christophe Lauret
- * @version 11 December 2009
+ * @version 21 May 2010
  */
 public class ServiceRegistry {
 
@@ -50,8 +49,8 @@ public class ServiceRegistry {
   public void register(Service service, String pattern, String method) {
     // preliminary checks
     if (service == null) throw new IllegalArgumentException("No service to register.");
-    if (pattern == null) throw new IllegalArgumentException("URL Pattern must be specified to register a generator.");
-    if (method == null) throw new IllegalArgumentException("HTTP Method must be specified to register a generator.");
+    if (pattern == null) throw new IllegalArgumentException("URL Pattern must be specified to register a service.");
+    if (method == null) throw new IllegalArgumentException("HTTP Method must be specified to register a service.");
     // Find and check the HTTP method
     HttpMethod m = getHttpMethod(method);
     // Register the generator with the URL pattern
@@ -67,7 +66,7 @@ public class ServiceRegistry {
   public void register(Service service, String pattern) {
     // preliminary checks
     if (service == null) throw new IllegalArgumentException("No service to register.");
-    if (pattern == null) throw new IllegalArgumentException("URL Pattern must be specified to register a generator.");
+    if (pattern == null) throw new IllegalArgumentException("URL Pattern must be specified to register a service.");
     // Find and check the HTTP method
     for (HttpMethod m : this.registry.keySet()) {
       // Register the generator with the URL pattern

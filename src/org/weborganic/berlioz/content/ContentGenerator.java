@@ -20,12 +20,14 @@ import com.topologi.diffx.xml.XMLWriter;
  * the given XML writer.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 8 October 2009
+ * @version 21 May 2010
  */
 public interface ContentGenerator {
 
   /**
    * Sets the area the content generator instance should be considered part of.
+   * 
+   * @deprecated
    * 
    * <p>The area is simply used to group content generators that are always used in the same
    * part of the system.
@@ -36,6 +38,8 @@ public interface ContentGenerator {
 
   /**
    * Return the area this content generator is part of.
+   * 
+   * @deprecated
    * 
    * @see #setArea(String)
    * 
