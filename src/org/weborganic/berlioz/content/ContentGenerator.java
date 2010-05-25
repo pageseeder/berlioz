@@ -20,7 +20,7 @@ import com.topologi.diffx.xml.XMLWriter;
  * the given XML writer.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 21 May 2010
+ * @version 25 May 2010
  */
 public interface ContentGenerator {
 
@@ -105,20 +105,5 @@ public interface ContentGenerator {
    */
   void process(ContentRequest req, XMLWriter xml)
     throws BerliozException, IOException;
-
-  /**
-   * Allows this content generator to be managed.
-   * 
-   * <p>This may involve clearing cached information, reloading files, etc... 
-   * 
-   * @param req The content request.
-   * @param xml The XML output.
-   * 
-   * @throws BerliozException If an exception is thrown, it should be wrapped into a Berlioz 
-   *                          exception in order to provide additional details.
-   *
-   * @throws IOException    If an I/O error occurs while writing to the XML writer.
-   */
-  void manage(ContentRequest req, XMLWriter xml) throws BerliozException, IOException;
 
 }
