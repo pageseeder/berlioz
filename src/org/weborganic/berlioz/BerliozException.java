@@ -77,16 +77,16 @@ public final class BerliozException extends Exception implements XMLWritable {
    * Serialises this exception as XML.
    * 
    * <p>The XML generated is as follows:
-   * <pre class="xml">
-   * &lt;berlioz-exception&gt;
-   *   &lt;message&gt;message&lt;/message&gt;
-   *   <code class="comment">&lt;!-- Only if there is additional information --&gt;</code>
-   *   &lt;extra&gt;extra info&lt;/extra&gt;
-   *   <code class="comment">&lt;!-- Only if there is a cause (exception trapped) --&gt;</code>
-   *   &lt;cause&gt;exception string value&lt;/cause&gt;
-   *   &lt;stack-trace&gt;the stack trace&lt;/stack-trace&gt;
-   * &lt;/berlioz-exception&gt;
-   * </pre>
+   * <pre class="xml">{@code
+   * <berlioz-exception>
+   *   <message>message</message>
+   *   <code class="comment"><!-- Only if there is additional information --></code>
+   *   <extra>extra info</extra>
+   *   <code class="comment"><!-- Only if there is a cause (exception trapped) --></code>
+   *   <cause>exception string value</cause>
+   *   <stack-trace>the stack trace</stack-trace>
+   * </berlioz-exception>
+   * }</pre>
    * 
    * @param xml The XML writer to use.
    * 
