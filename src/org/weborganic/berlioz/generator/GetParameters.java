@@ -33,9 +33,9 @@ import com.topologi.diffx.xml.XMLWriter;
  * }</pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 20 May 2010
+ * @version 25 May 2010
  */
-public final class GetHttpParameters extends ContentGeneratorBase implements ContentGenerator {
+public final class GetParameters extends ContentGeneratorBase implements ContentGenerator {
 
   /**
    * {@inheritDoc}
@@ -48,7 +48,7 @@ public final class GetHttpParameters extends ContentGeneratorBase implements Con
    */
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
     // write the http parameters
-    xml.openElement("http-parameters", true);
+    xml.openElement("parameters", true);
     Enumeration<?> names = req.getParameterNames();
     while (names.hasMoreElements()) {
       String paramName = (String)names.nextElement();

@@ -11,7 +11,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -21,10 +23,15 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.content.MatchingService;
+import org.weborganic.berlioz.content.Parameter;
+import org.weborganic.berlioz.content.Service;
 import org.weborganic.berlioz.logging.ZLogger;
 import org.weborganic.berlioz.logging.ZLoggerFactory;
+import org.weborganic.furi.URIResolveResult;
 
 /**
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods
@@ -72,6 +79,11 @@ public final class HttpRequestWrapper implements ContentRequest {
    */
   private List<FileItem> items;
 
+  /**
+   * Maps parameter names to their values.
+   */
+  private Map<String, String> parameters = new HashMap<String, String>();
+
 // sole constructor -------------------------------------------------------------------------------
 
   /**
@@ -106,16 +118,10 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public String getURLParameter(String name, String def) {
-    // TODO: implement using URI templates
-    return null;
-  };
-
-  /**
-   * {@inheritDoc}
-   */
   public String getParameter(String name) {
-    String value = this.req.getParameter(name);
+    String value = this.parameters.get(name);
+    if (value == null)
+      value = this.req.getParameter(name);
     return ("".equals(value))? null : value;
   }
 
@@ -123,7 +129,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * {@inheritDoc}
    */
   public String getParameter(String name, String def) {
-    String value = this.req.getParameter(name);
+    String value = getParameter(name);
     return (value == null || "".equals(value))? def : value;
   }
 
@@ -154,7 +160,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * {@inheritDoc}
    */
   public int getIntParameter(String name, int def) {
-    String value = this.req.getParameter(name);
+    String value = getParameter(name);
     if (value == null || "".equals(value)) return def;
     try {
       return Integer.parseInt(value);
@@ -281,6 +287,44 @@ public final class HttpRequestWrapper implements ContentRequest {
    */
   public HttpSession getSession() {
     return this.req.getSession();
+  }
+
+  /**
+   * Configure this request wrapper for the specified service match and generator.
+   * 
+   * @param match     the matching service info.
+   * @param generator the generator for which is request is used.
+   */
+  void configure(MatchingService match, ContentGenerator generator) {
+    this.parameters.clear();
+    URIResolveResult results = match.result();
+    // Load all URL parameters (takes precedence over HTTP parameters)
+    for (String name : results.names()) {
+      Object o = results.get(name);
+      if (o != null)
+        this.parameters.put(name, o.toString());
+    }
+    // Load the service configuration
+    Service service = match.service();
+    for (Parameter p :service.parameters(generator)) {
+      String value = getParameterValue(p, results);
+      if (value != null)
+        this.parameters.put(p.name(), value);
+      else if (p.def() != null)
+        this.parameters.put(p.name(), p.def());
+    }
+  }
+
+  private String getParameterValue(Parameter p, URIResolveResult results) {
+    switch (p.source()) {
+      case QUERY_STRING: 
+        return this.req.getParameter(p.value());
+      case URI_VARIABLE:
+        Object o = results.get(p.value());
+        return o != null? o.toString() : null;
+      case STRING: return p.value();
+      default: return null;
+    }
   }
 
 }

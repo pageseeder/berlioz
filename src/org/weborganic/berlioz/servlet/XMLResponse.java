@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentManager;
-import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Service;
@@ -59,6 +58,7 @@ public final class XMLResponse {
 
       // Get the content generator
       MatchingService match = ContentManager.getInstance(req.getPathInfo()); 
+      HttpRequestWrapper wrapper = new HttpRequestWrapper(req, res, env);
 
       // if the service exists
       if (match != null) {
@@ -68,7 +68,7 @@ public final class XMLResponse {
         header.toXML(xml);
 
         for (ContentGenerator generator : service.generators()) {
-          ContentRequest wrapper = new HttpRequestWrapper(req, res, env);
+          wrapper.configure(match, generator);
 
           // write the XML for a normal response
           if (!generator.redirect()) {

@@ -24,9 +24,16 @@ import org.apache.commons.fileupload.FileItem;
  * 
  * @author Tu Tak Tran (Allette Systems)
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ * @version 25 May 2010
  */
 public interface ContentRequest {
+
+  /**
+   * Returns the path information of this request.
+   *
+   * @return The path information of this request.
+   */
+  String getPathInfo();
 
   /**
    * Returns the specified parameter value or <code>null</code>.
@@ -38,25 +45,6 @@ public interface ContentRequest {
    * @return A <code>String</code> or <code>null</code>.
    */
   String getParameter(String name);
-
-  /**
-   * Returns the path information of this request.
-   *
-   * @return The path information of this request.
-   */
-  String getPathInfo();
-
-  /**
-   * Returns the specified parameter value or the specified default if <code>null</code>.
-   * 
-   * <p>This method guarantees that a value is returned.
-   *
-   * @param name The name of the URL requested parameter.
-   * @param def  A default value if the value is <code>null</code> or empty string.
-   *
-   * @return A value of the parameter or the default value if missing.
-   */
-  String getURLParameter(String name, String def);
 
   /**
    * Returns the specified parameter value or the specified default if <code>null</code>.
@@ -165,9 +153,7 @@ public interface ContentRequest {
    * @return The environment of the request.
    */
   Environment getEnvironment();
-  
-  
-  
+
   /**
    * Requests that the answer be interpreted as a page not found error.
    */
