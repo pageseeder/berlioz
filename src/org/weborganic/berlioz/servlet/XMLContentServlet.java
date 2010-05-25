@@ -7,14 +7,18 @@
  */
 package org.weborganic.berlioz.servlet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.logging.ZLogger;
 import org.weborganic.berlioz.logging.ZLoggerFactory;
 
@@ -36,7 +40,26 @@ public final class XMLContentServlet extends HttpServlet {
    */
   private static final ZLogger LOGGER = ZLoggerFactory.getLogger(XMLContentServlet.class);
 
+  /**
+   * The environment. 
+   */
+  private transient Environment env;
+
 // servlet methods ----------------------------------------------------------------------
+
+  /**
+   * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
+   * 
+   * @param config The servlet configuration.
+   * 
+   * @throws ServletException Should an exception occur.
+   */
+  public void init(ServletConfig config) throws ServletException {
+    ServletContext context = config.getServletContext();
+    File contextPath = new File(context.getRealPath("/"));
+    File webinfPath = new File(contextPath, "WEB-INF");
+    this.env = new HttpEnvironment(contextPath, webinfPath);
+  }
 
   /**
    * Handles a GET request.
@@ -57,7 +80,7 @@ public final class XMLContentServlet extends HttpServlet {
 
     // Generate the XML content
     long t0 = System.currentTimeMillis();
-    String content = new XMLResponse().generate(req, res);
+    String content = new XMLResponse().generate(req, res, this.env);
     long t1 = System.currentTimeMillis();
     LOGGER.debug("Content generated in "+(t1 - t0)+" ms");
 

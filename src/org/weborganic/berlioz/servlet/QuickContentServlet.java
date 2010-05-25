@@ -7,9 +7,12 @@
  */
 package org.weborganic.berlioz.servlet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -18,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentRequest;
+import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Service;
 
@@ -37,7 +41,26 @@ public final class QuickContentServlet extends HttpServlet {
    */
   private static final long serialVersionUID = 20060104256100002L;
 
+  /**
+   * The environment. 
+   */
+  private transient Environment env;
+
 // servlet methods ----------------------------------------------------------------------
+
+  /**
+   * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
+   * 
+   * @param config The servlet configuration.
+   * 
+   * @throws ServletException Should an exception occur.
+   */
+  public void init(ServletConfig config) throws ServletException {
+    ServletContext context = config.getServletContext();
+    File contextPath = new File(context.getRealPath("/"));
+    File webinfPath = new File(contextPath, "WEB-INF");
+    this.env = new HttpEnvironment(contextPath, webinfPath);
+  }
 
   /**
    * Handles a GET request.
@@ -70,7 +93,7 @@ public final class QuickContentServlet extends HttpServlet {
       Service service = match.service();
       for (ContentGenerator generator : service.generators()) {
         try {
-          ContentRequest wrapper = new HttpRequestWrapper(req, res);
+          ContentRequest wrapper = new HttpRequestWrapper(req, res, this.env);
           generator.process(wrapper, xml);
 
         // an error occurred, do not elaborate 500 is enough.

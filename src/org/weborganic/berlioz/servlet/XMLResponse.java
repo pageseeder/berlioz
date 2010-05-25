@@ -17,6 +17,7 @@ import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentRequest;
+import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.berlioz.logging.ZLogger;
@@ -48,7 +49,7 @@ public final class XMLResponse {
    * 
    * @throws IOException Should an I/O error occur.
    */
-  public String generate(HttpServletRequest req, HttpServletResponse res) throws IOException {
+  public String generate(HttpServletRequest req, HttpServletResponse res, Environment env) throws IOException {
     try {
       // Initialise the writer
       StringWriter writer = new StringWriter();
@@ -67,7 +68,7 @@ public final class XMLResponse {
         header.toXML(xml);
 
         for (ContentGenerator generator : service.generators()) {
-          ContentRequest wrapper = new HttpRequestWrapper(req, res);
+          ContentRequest wrapper = new HttpRequestWrapper(req, res, env);
 
           // write the XML for a normal response
           if (!generator.redirect()) {
@@ -82,7 +83,7 @@ public final class XMLResponse {
 
       // the content generator does not exist
       } else {
-        LOGGER.info("No content generator for "+req.getPathInfo());
+        LOGGER.info("No service for "+req.getPathInfo());
         XMLResponseHeader header = new XMLResponseHeader(req, "404-error");
         header.toXML(xml);
       }

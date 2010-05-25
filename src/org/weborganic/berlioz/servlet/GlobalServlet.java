@@ -33,6 +33,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.logging.ZLogger;
 import org.weborganic.berlioz.logging.ZLoggerFactory;
 
@@ -77,6 +78,11 @@ public final class GlobalServlet extends HttpServlet {
   private boolean enableCache;
 
   /**
+   * The environment. 
+   */
+  private transient Environment env;
+
+  /**
    * Cache for the XSL stylesheet.
    */
   private transient Templates cache;
@@ -115,6 +121,7 @@ public final class GlobalServlet extends HttpServlet {
     this.errorHandler = context.getNamedDispatcher("ErrorHandlerServlet");
     if (this.errorHandler == null)
       throw new ServletException("The error handler must be configured and named ErrorHandlerServlet.");
+    this.env = new HttpEnvironment(contextPath, webinfPath);
   }
 
   /**
@@ -160,7 +167,7 @@ public final class GlobalServlet extends HttpServlet {
 
     // Generate the XML content
     long t0 = System.currentTimeMillis();
-    String content = new XMLResponse().generate(req, res);
+    String content = new XMLResponse().generate(req, res, this.env);
     long t1 = System.currentTimeMillis();
     LOGGER.debug("Content generated in "+(t1 - t0)+" ms");
 

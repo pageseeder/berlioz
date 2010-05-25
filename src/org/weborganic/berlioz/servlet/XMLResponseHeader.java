@@ -59,9 +59,9 @@ public final class XMLResponseHeader implements XMLWritable {
   private final String _service;
 
   /**
-   * The name of the service provided.
+   * The group of the service provided.
    */
-  private final String _area;
+  private final String _group;
 
   /**
    * Creates a new XML response header using the path info to generate the service name.
@@ -75,7 +75,7 @@ public final class XMLResponseHeader implements XMLWritable {
   public XMLResponseHeader(HttpServletRequest request) {
     this._request = request;
     this._service = toServiceName(request);
-    this._area = "default";
+    this._group = "default";
   }
 
   /**
@@ -87,7 +87,7 @@ public final class XMLResponseHeader implements XMLWritable {
   public XMLResponseHeader(HttpServletRequest request, String service) {
     this._request = request;
     this._service = service;
-    this._area = "default";
+    this._group = "default";
   }
 
   /**
@@ -101,7 +101,7 @@ public final class XMLResponseHeader implements XMLWritable {
   public XMLResponseHeader(HttpServletRequest request, ContentGenerator generator) {
     this._request = request;
     this._service = generator.getService();
-    this._area = generator.getArea();
+    this._group = generator.getArea();
   }
 
   /**
@@ -113,7 +113,7 @@ public final class XMLResponseHeader implements XMLWritable {
   public XMLResponseHeader(HttpServletRequest request, Service service) {
     this._request = request;
     this._service = service.id();
-    this._area = "";//service.group();
+    this._group = service.group();
   }
 
   /**
@@ -168,7 +168,7 @@ public final class XMLResponseHeader implements XMLWritable {
   public void toXML(XMLWriter xml) throws IOException {
     // start serialising
     xml.openElement("header", true);
-    xml.element("area", this._area);
+    xml.element("area", this._group);
     xml.element("service", this._service);
     xml.element("path-info", this._request.getPathInfo());
     xml.element("context-path", this._request.getContextPath());

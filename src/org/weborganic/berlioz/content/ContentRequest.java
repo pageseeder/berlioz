@@ -160,6 +160,15 @@ public interface ContentRequest {
   HttpSession getSession();
 
   /**
+   * Returns the environment of the request.
+   * 
+   * @return The environment of the request.
+   */
+  Environment getEnvironment();
+  
+  
+  
+  /**
    * Requests that the answer be interpreted as a page not found error.
    */
   void returnNotFound();

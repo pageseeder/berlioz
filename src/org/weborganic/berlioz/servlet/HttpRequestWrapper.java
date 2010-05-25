@@ -22,6 +22,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.weborganic.berlioz.content.ContentRequest;
+import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.logging.ZLogger;
 import org.weborganic.berlioz.logging.ZLoggerFactory;
 
@@ -32,7 +33,7 @@ import org.weborganic.berlioz.logging.ZLoggerFactory;
  * @author Christophe Lauret (Weborganic)
  * @author Tu Tak Tran (Allette Systems)
  * 
- * @version 29 October 2009
+ * @version 25 May 2010
  */
 public final class HttpRequestWrapper implements ContentRequest {
 
@@ -62,6 +63,11 @@ public final class HttpRequestWrapper implements ContentRequest {
   private final HttpServletResponse res;
 
   /**
+   * The environment.
+   */
+  private Environment env;
+
+  /**
    * The list of file items if needed.
    */
   private List<FileItem> items;
@@ -76,7 +82,8 @@ public final class HttpRequestWrapper implements ContentRequest {
    * 
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
-  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res) throws IllegalArgumentException {
+  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env)
+      throws IllegalArgumentException {
     if (req == null)
       throw new IllegalArgumentException("Cannot construct wrapper around null request.");
     this.req = req;
@@ -91,6 +98,7 @@ public final class HttpRequestWrapper implements ContentRequest {
       }
     }
     this.res = res;
+    this.env = env;
   }
 
 // generic parameter methods ----------------------------------------------------------------------
@@ -131,6 +139,13 @@ public final class HttpRequestWrapper implements ContentRequest {
    */
   public Enumeration getParameterNames() {
     return this.req.getParameterNames();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public Environment getEnvironment() {
+    return this.env;
   }
 
 // specific methods ---------------------------------------------------------------------

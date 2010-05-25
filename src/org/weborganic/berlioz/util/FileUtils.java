@@ -54,6 +54,27 @@ public final class FileUtils {
     }
   }
 
+  /**
+   * Indicates whether the specified file is in the specified containing file.
+   * 
+   * @param root the container
+   * @param file the file to check.
+   * 
+   * @return <code>true</code> if the file is within the specified container;
+   *         <code>false</code> otherwise.
+   */
+  public static boolean contains(File root, File file) {
+    if (root == null || file == null) return false;
+    try {
+      String prefix = root.getCanonicalPath();
+      return file.getCanonicalPath().startsWith(prefix);
+    } catch (IOException ex) {
+      return false;
+    } catch (SecurityException ex) {
+      return false;
+    }
+  }
+
   // Private helpers ------------------------------------------------------------------------------
 
   /**
