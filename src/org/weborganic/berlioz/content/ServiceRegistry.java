@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.weborganic.furi.URIPattern;
 import org.weborganic.furi.URIResolver;
+import org.weborganic.furi.URIResolver.MatchRule;
 
 /**
  * A registry for services.
@@ -180,7 +181,7 @@ public class ServiceRegistry {
       } else {
         // Find the URI pattern matching the given path info
         URIResolver resolver = new URIResolver(url);
-        URIPattern p = resolver.find(patterns);
+        URIPattern p = resolver.find(patterns, MatchRule.BEST_MATCH);
         if (p != null) {
           service = mapping.get(p.toString());
           match = new MatchingService(service, p, resolver.resolve(p));

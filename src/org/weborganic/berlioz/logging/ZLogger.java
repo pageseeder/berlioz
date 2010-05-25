@@ -12,7 +12,8 @@ package org.weborganic.berlioz.logging;
  *
  * <p>The methods using a format and object arrays are more efficient than strings if string concatenation is required.
  *
- * <p>Note: this interface borrows heavily from <a href="http://www.slf4j.org/">http://www.slf4j.org/</a>.
+ * <p>Note: this interface borrows heavily from <a href="http://www.slf4j.org/">http://www.slf4j.org/</a> and 
+ * will be replaced to use SLF4J in the near future.
  *
  * @author Christophe Lauret (Weborganic)
  * @version 26 November 2009

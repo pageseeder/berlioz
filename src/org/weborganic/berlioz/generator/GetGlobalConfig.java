@@ -23,7 +23,7 @@ import com.topologi.diffx.xml.XMLWriter;
  * @author Christophe Lauret (Weborganic)
  * @version 21 May 2010
  */
-public final class GetConfig extends ContentGeneratorBase implements ContentGenerator {
+public final class GetGlobalConfig extends ContentGeneratorBase implements ContentGenerator {
 
   /**
    * {@inheritDoc}
