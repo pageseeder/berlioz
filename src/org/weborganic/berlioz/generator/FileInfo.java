@@ -8,9 +8,7 @@
 package org.weborganic.berlioz.generator;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
-import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
