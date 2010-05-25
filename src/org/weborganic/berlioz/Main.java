@@ -10,7 +10,6 @@ package org.weborganic.berlioz;
 import java.io.File;
 
 import org.apache.log4j.BasicConfigurator;
-import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentManager;
 
 /**
