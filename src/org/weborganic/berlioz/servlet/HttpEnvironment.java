@@ -17,7 +17,7 @@ import org.weborganic.berlioz.content.Environment;
  *
  * @author Christophe Lauret (Weborganic)
  * 
- * @version 25 May 2010
+ * @version 26 May 2010
  */
 public final class HttpEnvironment implements Environment {
 
@@ -40,6 +40,20 @@ public final class HttpEnvironment implements Environment {
   public HttpEnvironment(File publicd, File privated) {
     this._public = publicd;
     this._private = privated;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public File getPublicFolder() {
+    return this._public;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public File getPrivateFolder() {
+    return this._private;
   }
 
   /**

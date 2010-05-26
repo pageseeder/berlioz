@@ -11,6 +11,20 @@ import java.io.File;
 public interface Environment {
 
   /**
+   * Returns the directory pointing to the public area of the Web site.
+   * 
+   * @return the directory pointing to the public area of the Web site.
+   */
+  File getPublicFolder();
+
+  /**
+   * Returns the directory pointing to the private area of the Web site (generally WEB-INF).
+   * 
+   * @return the directory pointing to the private area of the Web site (generally WEB-INF).
+   */
+  File getPrivateFolder();
+
+  /**
    * Returns the file pointing to the public area of the Web site.
    * 
    * @param path The path of the requested file.
@@ -25,7 +39,6 @@ public interface Environment {
    * @return the requested file.
    */
   File getPrivateFile(String path);
-
 
   /**
    * Return the requested property.

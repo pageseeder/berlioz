@@ -75,6 +75,37 @@ public final class FileUtils {
     }
   }
 
+  /**
+   * Returns the path from the root file to the specified file.
+   * 
+   * <p>Note: implementation note, only works if the root contains the specified file.
+   * 
+   * @param root the container
+   * @param file the file to check.
+   * 
+   * @return The path to the file from the root.
+   */
+  public static String path(File root, File file) {
+    if (root == null || file == null)
+      throw new NullPointerException("Cannot determine the path between the specified files.");
+    try {
+      String from = root.getCanonicalPath();
+      String to = file.getCanonicalPath();
+      if (to.startsWith(from)) {
+        String path = to.substring(from.length()).replace("\\", "/");
+        return path.startsWith("/")? path.substring(1) : path;
+      } else {
+        throw new IllegalArgumentException("Cannot determine the path between the specified files.");
+      }
+    } catch (IOException ex) {
+      // TODO handle exception
+      return null;
+    } catch (SecurityException ex) {
+      // TODO handle exception
+      return null;
+    }
+  }
+
   // Private helpers ------------------------------------------------------------------------------
 
   /**
