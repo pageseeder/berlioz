@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   @author Christophe Lauret (Weborganic)
-  @version 15 October 2009
+  @version 26 May 2010
 -->
 <project name="berlioz" default="release">
 
@@ -40,6 +40,9 @@
   <!-- generate the documentation -->
   <target name="javadoc" depends="compile" description="generate the java documentation">
     <mkdir dir="${dir.doc}"/>
+    <path id="required.lib">
+      <fileset dir="${dir.lib}" includes="*.jar"/>
+    </path>
     <javadoc destdir="${dir.doc}" access="public" 
                                   use="true" 
                                   notree="false" 
@@ -51,12 +54,18 @@
                                   nodeprecated="false" 
                                   packagenames="${package.names}" 
                                   sourcepath="${dir.src}"
-                                  classpath="${dir.bin}" 
                                   stylesheetfile="${dir.resource}/javadoc.css"
-    	                            doctitle="${name.display} ${version} API">
-            <link href="http://java.sun.com/javase/6/docs/api/" />
-        </javadoc>
-    </target>
+                                  doctitle="${name.display} ${version} API">
+      <classpath>
+        <path refid="required.lib"/>
+      </classpath>
+      <link href="http://java.sun.com/javase/6/docs/api/" />
+      <link href="http://www.weborganic.org/apidoc/diffx/core/"/>
+      <link href="http://www.weborganic.org/apidoc/furi/core/"/>
+      <link href="http://commons.apache.org/fileupload/apidocs/"/>
+      <link href="http://www.slf4j.org/apidocs/"/>
+    </javadoc>
+  </target>
 
   <!-- release the current version in a jar -->
   <target name="release" depends="javadoc" description="archive source and build with date stamp">
@@ -81,8 +90,8 @@
       </manifest>
     </jar>
     <zip zipfile="${dir.release}/${DSTAMP}/${name.short}-${version}-all.zip" 
-    	 basedir="." 
-    	 includes="${dir.src}/**, ${dir.bin}/**, ${dir.doc}/**,${dir.resource}/**"/>
+       basedir="." 
+       includes="${dir.src}/**, ${dir.bin}/**, ${dir.doc}/**,${dir.resource}/**"/>
   </target>
 
   <!-- Release the current version in a jar -->
