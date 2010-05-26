@@ -65,7 +65,7 @@ public final class XMLExtractorHelper {
 
     // the item is cached
     if (cache && CACHE.containsKey(url.toString())) {
-      LOGGER.debug("Reading "+url.toString()+" from cache");
+//      LOGGER.debug("Reading "+url.toString()+" from cache");
       xml.writeXML(CACHE.get(url.toString()).toString());
 
     // the item isn't cached or caching is disabled
@@ -86,13 +86,14 @@ public final class XMLExtractorHelper {
           // write to XML writer
           xml.writeXML(parsed);
           if (cache) {
-            LOGGER.info("Caching "+url.toString());
+            LOGGER.info("Caching {}", url.toString());
             CACHE.put(url.toString(), parsed);
           }
 
         // an error was reported by the parser
         } catch (BerliozException ex) {
-          LOGGER.warn("An error was reported by the parser while parsing"+url, ex);
+          LOGGER.warn("An error was reported by the parser while parsing {}", url);
+          LOGGER.warn("Error details:", ex);
           xml.openElement("no-data");
           xml.attribute("error", "parsing");
           xml.attribute("details", ex.getMessage());
@@ -101,7 +102,7 @@ public final class XMLExtractorHelper {
 
       // the file does not exist
       } else {
-        LOGGER.warn("Could not find "+url);
+        LOGGER.warn("Could not find {}", url);
         xml.openElement("no-data");
         xml.attribute("error", "file-not-found");
         xml.closeElement();
@@ -150,9 +151,9 @@ public final class XMLExtractorHelper {
    */
   private static URL toURL(File file) {
     try {
-      return file.toURL();
+      return file.toURI().toURL();
     } catch (MalformedURLException ex) {
-      LOGGER.warn("The file does has a well formed URL.", ex);
+      LOGGER.warn("The file does not have a well formed URL.", ex);
       return null;
     }
   }

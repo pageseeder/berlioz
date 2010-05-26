@@ -81,13 +81,13 @@ public final class BerliozEntityResolver implements EntityResolver {
     // process only public identifiers that are valid for Berlioz 
     String dtd = toFileName(publicId);
     if (dtd != null) {
-      LOGGER.debug("resolved "+publicId+" to /library/"+dtd);
+      LOGGER.debug("resolved {} to /library/{}", publicId, dtd);
       // return a special input source
       InputStream inputStream = BerliozEntityResolver.class.getResourceAsStream("/library/"+dtd);
       source = new InputSource(inputStream);
     // use the default behaviour
     } else {
-      LOGGER.info("Tried to use the entity resolver on unknown public ID '"+publicId+"'");
+      LOGGER.info("Tried to use the entity resolver on unknown public ID '{}'", publicId);
     }
     return source;
   }
