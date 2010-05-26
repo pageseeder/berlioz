@@ -16,19 +16,13 @@ import com.topologi.diffx.xml.XMLWriter;
 /**
  * Generates no content.
  * 
- * This content generator is only useful for when the XML header already contains
+ * <p>This content generator is only useful for when the XML header already contains
  * enough information for the purpose of application. 
  * 
  * @author Christophe Lauret (Weborganic)
  * @version 9 October 2009
  */
 public final class NoContent extends ContentGeneratorBase implements ContentGenerator {
-
-  /**
-   * {@inheritDoc}
-   */
-  public void manage(ContentRequest req, XMLWriter xml) {
-  }
 
   /**
    * {@inheritDoc}

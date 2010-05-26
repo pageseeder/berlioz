@@ -18,16 +18,12 @@ import com.topologi.diffx.xml.XMLWriter;
 /**
  * Returns information about the specified file.
  * 
+ * <p>Not implemented yet
+ * 
  * @author Christophe Lauret (Weborganic)
  * @version 20 May 2010
  */
-public final class FileInfo extends ContentGeneratorBase implements ContentGenerator {
-
-  /**
-   * {@inheritDoc}
-   */
-  public void manage(ContentRequest req, XMLWriter xml) {
-  }
+final class FileInfo extends ContentGeneratorBase implements ContentGenerator {
 
   /**
    * {@inheritDoc}

@@ -18,18 +18,21 @@ import org.weborganic.berlioz.content.ContentRequest;
 import com.topologi.diffx.xml.XMLWriter;
 
 /**
- * Returns the Global properties as XML.
+ * Returns the global properties as XML.
+ * 
+ * <pre>{@code
+ * <properties>
+ *   <property name="[nameA]" value="[valueA]"/>
+ *   <property name="[nameB]" value="[valueB]"/>
+ *   <property name="[nameC]" value="[valueC]"/>
+ *   ...
+ * </properties>
+ * }</pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 21 May 2010
+ * @version 26 May 2010
  */
 public final class GetGlobalConfig extends ContentGeneratorBase implements ContentGenerator {
-
-  /**
-   * {@inheritDoc}
-   */
-  public void manage(ContentRequest req, XMLWriter xml) {
-  }
 
   /**
    * {@inheritDoc}
@@ -44,7 +47,7 @@ public final class GetGlobalConfig extends ContentGeneratorBase implements Conte
       xml.attribute("value", GlobalSettings.get(name));
       xml.closeElement();
     }
-    xml.closeElement(); // close http-parameters
+    xml.closeElement();
   }
 
 }

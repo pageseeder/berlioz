@@ -4,6 +4,7 @@ import java.util.Stack;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.generator.NoContent;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
