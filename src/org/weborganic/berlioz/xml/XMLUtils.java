@@ -18,9 +18,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -40,7 +40,7 @@ public final class XMLUtils {
   /**
    * The logger for this class.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(XMLUtils.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(XMLUtils.class);
 
   /**
    * The date format used for date values (without time)

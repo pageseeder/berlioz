@@ -18,9 +18,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.Environment;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 
 /**
  * Servlets that only returns XML.
@@ -38,7 +38,7 @@ public final class XMLContentServlet extends HttpServlet {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(XMLContentServlet.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(XMLContentServlet.class);
 
   /**
    * The environment. 

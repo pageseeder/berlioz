@@ -9,8 +9,8 @@ package org.weborganic.berlioz.xml;
 
 import java.io.InputStream;
 
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -58,7 +58,7 @@ public final class BerliozEntityResolver implements EntityResolver {
   /**
    * A logger for this class.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(BerliozEntityResolver.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(BerliozEntityResolver.class);
 
   /**
    * Creates a new Berlioz Entity resolver.

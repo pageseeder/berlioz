@@ -29,17 +29,17 @@ import org.weborganic.berlioz.GlobalSettings;
  * <p>
  * Typically this servlet should be configured in the Web Configuration (web.xml) as:
  * 
- * <pre>
- *  &lt;!-- Initialisation servlet --&gt;
- * &lt;servlet&gt;
- *   &lt;servlet-name&gt;Initialiser&lt;/servlet-name&gt;
- *   &lt;servlet-class&gt;org.weborganic.berlioz.servlet.InitServlet&lt;/servlet-class&gt;
- *   &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
- * &lt;/servlet&gt;
- * </pre>
+ * <pre>{@code
+ *  <!-- Initialisation servlet -->
+ * <servlet>
+ *   <servlet-name>Initialiser</servlet-name>
+ *   <servlet-class>org.weborganic.berlioz.servlet.InitServlet</servlet-class>
+ *   <load-on-startup>1</load-on-startup>
+ * </servlet>
+ * }</pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ * @version 25 May 2010
  */
 public final class InitServlet extends HttpServlet implements Servlet {
 

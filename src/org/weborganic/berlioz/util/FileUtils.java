@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 
 /**
  * A bunch of utility functions for files.
@@ -20,7 +20,7 @@ public final class FileUtils {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(FileUtils.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
   /**
    * The MIME properties mapping file extensions to MIME types. 

@@ -15,15 +15,15 @@ import java.net.URL;
 import java.util.Hashtable;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
- * This manager provides a global tool for processing content for the website.
+ * This manager provides a global tool for processing content for the Website.
  * 
  * @author Christophe Lauret (Allette Systems)
  * @version 20 May 2010
@@ -33,7 +33,7 @@ public final class XMLExtractorHelper {
   /**
    * Logger the extractor.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(XMLExtractorHelper.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(XMLExtractorHelper.class);
 
   /**
    * Internal cache. 

@@ -33,9 +33,9 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.Environment;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 
 /**
  * Global servlet.
@@ -53,7 +53,7 @@ public final class GlobalServlet extends HttpServlet {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(GlobalServlet.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(GlobalServlet.class);
 
 // class attributes -------------------------------------------------------------------------------
 

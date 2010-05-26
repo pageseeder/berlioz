@@ -12,10 +12,10 @@ import java.io.IOException;
 
 import javax.xml.parsers.SAXParser;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
 import org.weborganic.berlioz.xml.BerliozErrorHandler;
 import org.weborganic.berlioz.xml.XMLUtils;
@@ -37,7 +37,7 @@ public final class ContentManager {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(ContentManager.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ContentManager.class);
 
   /**
    * Maps content generators URL patterns to their content generator instance.

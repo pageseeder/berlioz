@@ -3,8 +3,8 @@ package org.weborganic.berlioz.content;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -21,7 +21,7 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(ServicesHandler10.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ServicesHandler10.class);
 
   /**
    * Maps path infos to generator instances.

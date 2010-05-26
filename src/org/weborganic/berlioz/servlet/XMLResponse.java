@@ -13,14 +13,14 @@ import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Service;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
@@ -36,7 +36,7 @@ public final class XMLResponse {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(XMLResponse.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(XMLResponse.class);
 
   /**
    * Generates an XML response corresponding to the specified HTTP request.

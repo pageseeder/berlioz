@@ -17,8 +17,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
 
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.xml.XMLProperties;
 
 /**
@@ -32,7 +32,7 @@ public final class ReleaseProperties {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(ReleaseProperties.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseProperties.class);
 
   /**
    * The ISO date format.

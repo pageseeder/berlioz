@@ -23,14 +23,14 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Parameter;
 import org.weborganic.berlioz.content.Service;
-import org.weborganic.berlioz.logging.ZLogger;
-import org.weborganic.berlioz.logging.ZLoggerFactory;
 import org.weborganic.furi.URIResolveResult;
 
 /**
@@ -47,7 +47,7 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * Displays debug information.
    */
-  private static final ZLogger LOGGER = ZLoggerFactory.getLogger(HttpRequestWrapper.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestWrapper.class);
 
   /**
    * A parser for date parameters
