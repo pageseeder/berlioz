@@ -9,7 +9,6 @@ package org.weborganic.berlioz;
 
 import java.io.File;
 
-import org.apache.log4j.BasicConfigurator;
 import org.weborganic.berlioz.content.ContentManager;
 
 /**
@@ -36,7 +35,7 @@ public final class Main {
     // Try to load the content generators
     if (args.length > 1 && "-load".equals(args[0])) {
       // Set 
-      BasicConfigurator.configure();
+//      BasicConfigurator.configure();
       GlobalSettings.setRepository(new File("."));
       ContentManager.load();
     }

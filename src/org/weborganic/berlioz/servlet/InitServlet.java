@@ -8,6 +8,7 @@
 package org.weborganic.berlioz.servlet;
 
 import java.io.File;
+import java.lang.reflect.Method;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -15,8 +16,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.PropertyConfigurator;
 import org.weborganic.berlioz.GlobalSettings;
 
 /**
@@ -68,21 +67,36 @@ public final class InitServlet extends HttpServlet implements Servlet {
       // Configuring the logger
       System.err.println("Loading log configuration...");
       File configDir = new File(webinfPath, "config");
-      File logProperties = new File(configDir, "log4j-" + name + ".prp");
-      System.err.println(logProperties.getAbsolutePath());
-      if (logProperties.exists()) {
-        System.err.println("Using log4j config file " + logProperties.getAbsolutePath());
-        PropertyConfigurator.configure(logProperties.getAbsolutePath());
-      } else if (System.getProperty("berlioz.debug") != null) {
-        System.err.println("Using basic Log4j configurator");
-        BasicConfigurator.configure();
-      }
+      configureLog4j(configDir, name);
 
       // Setup the global settings
       System.err.println("Initialising Global Settings...");
       GlobalSettings.setRepository(webinfPath);
       if (name != null)
         GlobalSettings.setConfig(name);
+    }
+  }
+
+  /**
+   * Attempts to configure Log4j through reflection.
+   * 
+   * @param config The directory containing the configuration files. 
+   * @param mode   The running mode.
+   */
+  private void configureLog4j(File config, String mode) {
+    // Configuring the logger
+    File logProperties = new File(config, "log4j-" + mode + ".prp");
+    System.err.println(logProperties.getAbsolutePath());
+    if (logProperties.exists()) {
+      System.err.println("Using log4j config file " + logProperties.getAbsolutePath());
+      try {
+        Class<?> configurator = Class.forName("org.apache.log4j.PropertyConfigurator");
+        Method m = configurator.getDeclaredMethod("configure", String.class);
+        m.invoke(null, logProperties.getAbsolutePath());
+      } catch (Exception ex) {
+        System.err.println("Attempt to load Log4j configurator failed:");
+        ex.printStackTrace();
+      }
     }
   }
 
