@@ -8,6 +8,9 @@
 package org.weborganic.berlioz.xml;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -29,6 +32,11 @@ public final class XMLExtractor extends DefaultHandler {
   private final XMLWriter recipient;
 
   /**
+   * The prefix mapping to add to the next startElement event in case the prefix mapping is reported before.
+   */
+  private Map<String, String> mapping = new HashMap<String, String>();
+
+  /**
    * Creates a new XMLExtractor wrapping the specified XML writer.
    *
    * @param xml The XML writer to use.
@@ -46,6 +54,14 @@ public final class XMLExtractor extends DefaultHandler {
       this.recipient.openElement(qName);
       for (int i = 0; i < atts.getLength(); i++) {
         this.recipient.attribute(atts.getQName(i), atts.getValue(i));
+      }
+      // in case the prefix mapping was reported BEFORE the startElement was reported...
+      if (!mapping.isEmpty()) {
+        for (Entry<String, String> e : this.mapping.entrySet()) {
+          boolean hasPrefix = e.getKey() != null && e.getKey().length() > 0;
+          this.recipient.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());          
+        }
+        this.mapping.clear();
       }
     } catch (IOException ex) {
       throw new SAXException(ex);
@@ -78,10 +94,12 @@ public final class XMLExtractor extends DefaultHandler {
 
   @Override
   public void startPrefixMapping(String prefix, String uri) throws SAXException {
+    boolean hasPrefix = prefix != null && prefix.length() > 0;
     try {
-      boolean x = prefix != null && prefix.length() > 0;
-      this.recipient.attribute("xmlns"+(x? ":"+ prefix : prefix), uri);
+      this.recipient.attribute("xmlns"+(hasPrefix? ":"+ prefix : prefix), uri);
 //    this.recipient.setPrefixMapping(prefix, uri);
+    } catch (IllegalArgumentException ex) {
+      this.mapping.put((hasPrefix? prefix : ""), uri);
     } catch (IOException ex) {
       throw new SAXException(ex);
     }
