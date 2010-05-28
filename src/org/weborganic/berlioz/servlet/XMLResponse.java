@@ -74,6 +74,8 @@ public final class XMLResponse {
           if (!generator.redirect()) {
             xml.openElement("content", true);
             xml.attribute("generator", generator.getClass().getName());
+            String name = service.name(generator);
+            xml.attribute("name", name);
             String target = service.target(generator);
             if (target != null) xml.attribute("target", target);
             generator.process(wrapper, xml);

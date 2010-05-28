@@ -11,7 +11,7 @@ import java.util.Map.Entry;
  * A list of of content generators or content instructions.
  * 
  * @author Christophe Lauret
- * @version 20 May 2010
+ * @version 28 May 2010
  */
 public final class Service {
 
@@ -41,20 +41,27 @@ public final class Service {
   private final Map<ContentGenerator, String> _targets;
 
   /**
+   * Maps names to a given generator instance.
+   */
+  private final Map<ContentGenerator, String> _names;
+
+  /**
    * Creates a new service.
    * 
    * @param id         the ID of the service.
    * @param group      the group the service is part of.
    * @param generators the list of generators.
    * @param parameters the parameters specifications for each generator.
-   * @param targets    the target of each generator (if any).
+   * @param names      the names of each generator (if any).
+   * @param targets    the targets of each generator (if any).
    */
   private Service(String id, String group, List<ContentGenerator> generators, Map<ContentGenerator, List<Parameter>> parameters,
-      Map<ContentGenerator, String> targets) {
+      Map<ContentGenerator, String> names, Map<ContentGenerator, String> targets) {
     this._id = id;
     this._group = group;
     this._generators = generators;
     this._parameters = parameters;
+    this._names = names;
     this._targets = targets;
   }
 
@@ -100,11 +107,22 @@ public final class Service {
   /**
    * Returns the target of the given generator.
    * 
-   * @param generator the content generator for which we need to parameters.
+   * @param generator the content generator for which we need the target.
    * @return the target if any (may be <code>null</code>).
    */
   public String target(ContentGenerator generator) {
     return this._targets.get(generator);
+  }
+
+  /**
+   * Returns the name of the given generator.
+   * 
+   * @param generator the content generator for which we need the name.
+   * @return the name.
+   */
+  public String name(ContentGenerator generator) {
+    String name = this._names.get(generator);
+    return name != null? name : generator.getClass().getSimpleName();
   }
 
   @Override
@@ -141,6 +159,11 @@ public final class Service {
      * Maps parameter specifications to a given generator instance.
      */
     private final Map<ContentGenerator, List<Parameter>> _parameters = new HashMap<ContentGenerator, List<Parameter>>();
+
+    /**
+     * Maps names to a given generator instance.
+     */
+    private final Map<ContentGenerator, String> _names = new HashMap<ContentGenerator, String>();
 
     /**
      * Maps targets to a given generator instance.
@@ -222,6 +245,20 @@ public final class Service {
     }
 
     /**
+     * Sets the name of the latest content generator added.
+     * 
+     * @param name the name for the latest content generator.
+     * @return this builder for easy chaining.
+     */
+    public Builder name(String name) {
+      if (this._generators.size() > 0 && name != null) {
+        ContentGenerator generator = this._generators.get(this._generators.size() - 1);
+        this._names.put(generator, name);
+      }
+      return this;
+    }
+
+    /**
      * Builds the service from the attributes in this builder.
      * 
      * <p>Note: use the <code>reset</code> method to reset the class attributes.
@@ -232,6 +269,7 @@ public final class Service {
       return new Service(this._id, this._group, 
           immutable(this._generators),
           immutable(this._parameters),
+          immutable3(this._names),
           immutable3(this._targets));
     }
 
@@ -242,6 +280,7 @@ public final class Service {
       this._id = null;
       this._generators.clear();
       this._parameters.clear();
+      this._names.clear();
       this._targets.clear();
     }
 

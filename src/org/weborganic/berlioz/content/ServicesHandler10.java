@@ -14,7 +14,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>This class should remain protected as there is no reason to expose its method to the public API. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 21 May 2010
+ * @version 28 May 2010
  */
 final class ServicesHandler10 extends DefaultHandler {
 
@@ -135,6 +135,7 @@ final class ServicesHandler10 extends DefaultHandler {
             ((ContentGeneratorBase)generator).setPathInfo(this._patterns.get(0));
           this._builder.add(generator);
           this._builder.target(atts.getValue("target"));
+          this._builder.name(atts.getValue("name"));
         } catch (Exception ex) {
           LOGGER.warn("(!) Failed to load "+atts.getValue("class"));
           ex.printStackTrace();

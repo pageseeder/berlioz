@@ -6,7 +6,7 @@
 <!-- Description:   A schema for the defining the URL patterns and          -->
 <!--                associated content generators.                          -->
 <!-- Version:       1.0                                                     -->
-<!-- LastModified:  20 May 2010                                             -->
+<!-- LastModified:  28 May 2010                                             -->
 <!-- Author(s):     Christophe Lauret                                       -->
 <!--                                                                        -->
 <!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
@@ -22,28 +22,32 @@
 
 <!--
   Top level element.
+  
+  @version The version of service configuration.
 -->
 <!ELEMENT service-config                                        ( services* ) >
 <!ATTLIST service-config     version            CDATA            #FIXED "1.0" >
 
 <!--
-  A container for generators from the same area.
+  A container for services.
+  
+  @group A name to group these services together.
 -->
 <!ELEMENT services                                               ( service* ) >
-<!ATTLIST services           group              ID                  #REQUIRED >
+<!ATTLIST services           group              NMTOKEN             #REQUIRED >
 
 <!--
-  A content generator.
-  
-  @param id     A unique identifier for this service.
-  @param method The HTTP method this service accepts.
+  A service composed of multiple generators and matching at least one URL.
+ 
+  @attribute id     A unique identifier for this service.
+  @attribute method The HTTP method this service accepts.
 -->
 <!ELEMENT service                                        ( url+, generator* ) >
 <!ATTLIST service            id                 ID                  #REQUIRED
                              method             %HTTP_METHOD;       #REQUIRED >
 
 <!--
-  The url pattern matching this service.
+  The URL pattern matching this service.
 
   @attribute pattern The URI Pattern for this URL.
 -->
@@ -51,14 +55,29 @@
 <!ATTLIST url                pattern            %URI_PATTERN;       #REQUIRED >
 
 <!--
-  The content generator class
+  The content generator.
+  
+  The class must implement the ContentGenerator interface defined in Berlioz.
+  
+  The name and target are preserved and can be used in the XSLT to determine
+  what to do with the generated content.
+  
+  @attribute class  The fully qualified Java class to load for this generator.
+  @attribute name   A name for this generator.
+  @attribute target A target for the content generated in the output.
 -->
 <!ELEMENT generator                                            ( parameter* ) >
 <!ATTLIST generator         class               CDATA               #REQUIRED
+                            name                NMTOKEN              #IMPLIED
                             target              NMTOKEN              #IMPLIED >
 
 <!--
-  A parameter to pass to the content generator
+  A parameter to pass to the content generator.
+  
+  @attribute name    The name of the parameter.
+  @attribute value   The value of this parameter.
+  @attribute source  The source of the parameter value.
+  @attribute default A default value if the value is missing.
 -->
 <!ELEMENT parameter                                                    EMPTY >
 <!ATTLIST parameter         name               CDATA               #REQUIRED 

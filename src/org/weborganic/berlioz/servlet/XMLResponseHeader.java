@@ -93,20 +93,6 @@ public final class XMLResponseHeader implements XMLWritable {
   /**
    * Creates a new XML response header.
    * 
-   * @deprecated
-   * 
-   * @param request   The HTTP request.
-   * @param generator The content generator used.
-   */
-  public XMLResponseHeader(HttpServletRequest request, ContentGenerator generator) {
-    this._request = request;
-    this._service = generator.getService();
-    this._group = generator.getArea();
-  }
-
-  /**
-   * Creates a new XML response header.
-   * 
    * @param request   The HTTP request.
    * @param generator The content generator used.
    */
@@ -169,6 +155,7 @@ public final class XMLResponseHeader implements XMLWritable {
     // start serialising
     xml.openElement("header", true);
     xml.element("area", this._group);
+    xml.element("group", this._group);
     xml.element("service", this._service);
     xml.element("path-info", this._request.getPathInfo());
     xml.element("context-path", this._request.getContextPath());
@@ -177,8 +164,6 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.element("port", Integer.toString(port));
     xml.element("url", this._request.getRequestURL().toString());
     xml.element("query-string", this._request.getQueryString());
-    // Include the configuration
-    xml.element("configuration", GlobalSettings.get("configuration", ""));
 
     // write the http parameters
     xml.openElement("http-parameters", true);
