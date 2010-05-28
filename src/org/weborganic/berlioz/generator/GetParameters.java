@@ -41,12 +41,6 @@ public final class GetParameters extends ContentGeneratorBase implements Content
   /**
    * {@inheritDoc}
    */
-  public void manage(ContentRequest req, XMLWriter xml) {
-  }
-
-  /**
-   * {@inheritDoc}
-   */
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
     // write the http parameters
     xml.openElement("parameters", true);
