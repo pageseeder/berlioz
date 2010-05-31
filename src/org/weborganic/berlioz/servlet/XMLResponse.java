@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.Environment;
@@ -26,10 +27,12 @@ import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
- * Servlets that only returns XML.
+ * An XML response produced from content generators.
+ * 
+ * <p>This class is not thread-safe.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ * @version 31 May 2010
  */
 public final class XMLResponse {
 
@@ -37,6 +40,109 @@ public final class XMLResponse {
    * Displays debug information.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(XMLResponse.class);
+
+  /**
+   * The HTTP servlet request.
+   */
+  private final HttpServletRequest _req;
+
+  /**
+   * The HTTP servlet response.
+   */
+  private final HttpServletResponse _res;
+
+  /**
+   * The current environment.
+   */
+  private final Environment _env;
+
+  /**
+   * Wraps the request and response to be supplied to the generators.  
+   */
+  private final HttpRequestWrapper wrapper;
+
+  /**
+   * Indicates whether we have attempted to match the specified service.
+   */
+  private transient boolean attemptedMatch = false;
+
+  /**
+   * The service that was matched for the given request.
+   */
+  private transient MatchingService match = null;
+
+  /**
+   * Creates a new XML response for the specified arguments.
+   * 
+   * @param req The HTTP servlet request.
+   * @param req The HTTP servlet response.
+   * @param env The current environment.
+   */
+  public XMLResponse(HttpServletRequest req, HttpServletResponse res, Environment env) {
+    this._req = req;
+    this._res = res;
+    this._env = env;
+    this.wrapper = new HttpRequestWrapper(this._req, this._res, this._env);
+  }
+
+  /**
+   * Indicates whether this response is cacheable.
+   * 
+   * <p>A response is cacheable only is the service has been found and all its generators are 
+   * cacheable.
+   * 
+   * @return <code>true</code> if this response is cacheable;
+   *         <code>false</code> otherwise.
+   */
+  public boolean isCacheable() {
+    Service service = getService();
+    if (service == null) return false;
+    for (ContentGenerator generator : service.generators()) {
+      if (!(generator instanceof Cacheable)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Returns the Etag for this response.
+   * 
+   * <p>The Etag is computed from the Etags returned by each generator.
+   * If any one of the generators is not cacheable, this response is not considered cacheable
+   * and the Etag returned will be <code>null</code>.
+   * 
+   * @return the Etag for this response if it is cacheable; <code>null</code> if it is not.
+   */
+  public String getEtag() {
+    Service service = getService();
+    boolean cacheable = service != null;
+    StringBuilder etag = new StringBuilder();
+    if (cacheable) {
+      for (ContentGenerator generator : service.generators()) {
+        // Set the request parameters (if necessary)
+        wrapper.configure(match, generator);
+        // Check if cacheable
+        if (generator instanceof Cacheable) {
+          etag.append(((Cacheable)generator).getETag(wrapper)).append("/");
+        } else {
+          cacheable = false;
+          break;
+        }
+      }
+    }
+    return cacheable? etag.toString() : null;
+  }
+
+  /**
+   * Returns the service corresponding to this response.
+   * 
+   * @return the service corresponding to this response.
+   */
+  public Service getService() {
+    match();
+    return this.match != null? this.match.service() : null;
+  }
 
   /**
    * Generates an XML response corresponding to the specified HTTP request.
@@ -48,7 +154,8 @@ public final class XMLResponse {
    * 
    * @throws IOException Should an I/O error occur.
    */
-  public String generate(HttpServletRequest req, HttpServletResponse res, Environment env) throws IOException {
+  public String generate() throws IOException {
+    match();
     try {
       // Initialise the writer
       StringWriter writer = new StringWriter();
@@ -56,18 +163,16 @@ public final class XMLResponse {
       xml.xmlDecl();
       xml.openElement("root", true);
 
-      // Get the content generator
-      MatchingService match = ContentManager.getInstance(req.getPathInfo()); 
-      HttpRequestWrapper wrapper = new HttpRequestWrapper(req, res, env);
-
       // if the service exists
       if (match != null) {
         Service service = match.service();
-        LOGGER.debug(req.getPathInfo()+" -> "+service);
-        XMLResponseHeader header = new XMLResponseHeader(req, service);
+        LOGGER.debug(this._req.getPathInfo()+" -> "+service);
+        XMLResponseHeader header = new XMLResponseHeader(this._req, service);
         header.toXML(xml);
 
         for (ContentGenerator generator : service.generators()) {
+
+          // Set the request parameters
           wrapper.configure(match, generator);
 
           // write the XML for a normal response
@@ -85,8 +190,8 @@ public final class XMLResponse {
 
       // the content generator does not exist
       } else {
-        LOGGER.info("No service for "+req.getPathInfo());
-        XMLResponseHeader header = new XMLResponseHeader(req, "404-error");
+        LOGGER.info("No service for "+this._req.getPathInfo());
+        XMLResponseHeader header = new XMLResponseHeader(this._req, "404-error");
         header.toXML(xml);
       }
 
@@ -96,8 +201,25 @@ public final class XMLResponse {
 
     // if an error occurs generate the proper content
     } catch (Exception ex) {
-      return generateError(req, res, ex);
+      return generateError(this._req, this._res, ex);
     }
+  }
+
+  /**
+   * Generates an XML response corresponding to the specified HTTP request.
+   * 
+   * @deprecated
+   * 
+   * @param req The HTTP servlet request.
+   * @param res The HTTP servlet response.
+   * 
+   * @return The XML content for the appropriate content generator.
+   * 
+   * @throws IOException Should an I/O error occur.
+   */
+  public static String generate(HttpServletRequest req, HttpServletResponse res, Environment env) throws IOException {
+    XMLResponse response = new XMLResponse(req, res, env);
+    return response.generate();
   }
 
   /**
@@ -127,6 +249,19 @@ public final class XMLResponse {
     xml.closeElement(); // close 'root'
     xml.flush();
     return writer.toString();
+  }
+
+  // Private helpers
+  // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Attempts to find the service corresponding to the request.
+   */
+  private final void match() {
+    if (!this.attemptedMatch) {
+      this.match = ContentManager.getInstance(this._req.getPathInfo());
+      this.attemptedMatch = true;
+    }
   }
 
 }

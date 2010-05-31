@@ -7,6 +7,7 @@
  */
 package org.weborganic.berlioz.generator;
 
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
@@ -22,7 +23,14 @@ import com.topologi.diffx.xml.XMLWriter;
  * @author Christophe Lauret (Weborganic)
  * @version 9 October 2009
  */
-public final class NoContent extends ContentGeneratorBase implements ContentGenerator {
+public final class NoContent extends ContentGeneratorBase implements ContentGenerator, Cacheable {
+
+  /**
+   * {@inheritDoc}
+   */
+  public String getETag(ContentRequest req) {
+    return "nocontent";
+  }
 
   /**
    * {@inheritDoc}

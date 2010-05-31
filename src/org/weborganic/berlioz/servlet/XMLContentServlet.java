@@ -80,7 +80,7 @@ public final class XMLContentServlet extends HttpServlet {
 
     // Generate the XML content
     long t0 = System.currentTimeMillis();
-    String content = new XMLResponse().generate(req, res, this.env);
+    String content = XMLResponse.generate(req, res, this.env);
     long t1 = System.currentTimeMillis();
     LOGGER.debug("Content generated in "+(t1 - t0)+" ms");
 

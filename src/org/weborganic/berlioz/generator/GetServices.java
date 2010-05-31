@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
@@ -24,9 +25,17 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>This content generator is mostly useful for developers to see how the services are configured.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 28 May 2010
+ * @version 31 May 2010
  */
-public final class GetServices extends ContentGeneratorBase implements ContentGenerator {
+public final class GetServices extends ContentGeneratorBase implements ContentGenerator, Cacheable {
+
+  /**
+   * {@inheritDoc}
+   */
+  public String getETag(ContentRequest req) {
+    File services = new File(GlobalSettings.getRepository(), "config/services.xml");
+    return services.length()+"x"+services.lastModified();
+  }
 
   /**
    * {@inheritDoc}

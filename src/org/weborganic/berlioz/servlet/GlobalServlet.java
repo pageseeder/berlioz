@@ -7,41 +7,35 @@
  */
 package org.weborganic.berlioz.servlet;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
-import java.lang.reflect.Method;
-import java.util.Enumeration;
+import java.nio.charset.Charset;
+import java.util.Calendar;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.Source;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.util.EntityInfo;
+import org.weborganic.berlioz.util.HttpHeaderUtils;
+import org.weborganic.berlioz.util.HttpHeaders;
+import org.weborganic.berlioz.util.MD5;
+import org.weborganic.berlioz.util.ResourceCompressor;
 
 /**
- * Global servlet.
+ * Default Berlioz servlet.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 9 February 2010
+ * @version 31 May 2010
  */
 public final class GlobalServlet extends HttpServlet {
 
@@ -63,29 +57,14 @@ public final class GlobalServlet extends HttpServlet {
   private ServletConfig servletConfig;
 
   /**
-   * The default stylesheet used for the transformation.
-   */
-  private File styleSheet;
-
-  /**
    * Set the content type.
    */
   private String contentType;
 
   /**
-   * Set to true to use the caching mechanism.
-   */
-  private boolean enableCache;
-
-  /**
    * The environment. 
    */
   private transient Environment env;
-
-  /**
-   * Cache for the XSL stylesheet.
-   */
-  private transient Templates cache;
 
   /**
    * The request dispatcher to forward to the error handler. 
@@ -95,7 +74,7 @@ public final class GlobalServlet extends HttpServlet {
   /**
    * The transformer factory to generate the templates
    */
-  private static TransformerFactory factory = TransformerFactory.newInstance();
+  private transient XSLTransformer transformer;
 
 // servlet methods --------------------------------------------------------------------------------
 
@@ -112,11 +91,10 @@ public final class GlobalServlet extends HttpServlet {
     ServletContext context = config.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
-    boolean defCache = !"true".equals(System.getProperty("xsltfilter.caching.disable"));
-    this.enableCache = this.getInitParameter("enable-caching", defCache);
     this.contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     String stylePath = this.getInitParameter("stylesheet", "/xslt/html/global.xsl");
-    this.styleSheet = new File(webinfPath, stylePath);
+    File styleSheet = new File(webinfPath, stylePath);
+    this.transformer = new XSLTransformer(styleSheet);
     // used to dispatch 
     this.errorHandler = context.getNamedDispatcher("ErrorHandlerServlet");
     if (this.errorHandler == null)
@@ -151,23 +129,58 @@ public final class GlobalServlet extends HttpServlet {
    */
   protected void process(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    // setup and ensure that we use UTF-8
+
+    // Setup and ensure that we use UTF-8
     req.setCharacterEncoding("utf-8");
     res.setContentType(this.contentType);
 
-    // prevents caching
-    res.setDateHeader("Expires", 0);
+    // Notify the client not to attempt a range request if it does attempt to do so
+    if (req.getHeader(HttpHeaders.RANGE) != null)
+      res.setHeader(HttpHeaders.ACCEPT_RANGES, "none");
 
-    // clear the cache is requested
+    // Clear the cache is requested
     boolean clearCache = "true".equals(req.getParameter("clear-xsl-cache"));
     if (clearCache) {
-      this.cache = null;
-      LOGGER.info("Clearing XSL cache");
+      this.transformer.clearCache();
+    }
+
+    // Start handling XML content
+    long t0 = System.currentTimeMillis();
+    XMLResponse xml = new XMLResponse(req, res, this.env);
+
+    // No matching service
+    if (xml.getService() == null) {
+      res.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
+      LOGGER.debug("No Matching service for: " + req.getRequestURI());
+      return;
+    }
+
+    // Compute the ETag for the request if cacheable and method GET
+    String etag = null;
+    if (xml.isCacheable() && "get".equalsIgnoreCase(req.getMethod())) {
+      String XMLEtag = xml.getEtag();
+      String XSLEtag = this.transformer.getEtag();
+      etag = '"'+MD5.hash(XMLEtag+"--"+XSLEtag)+'"';
+
+      // Check if the conditions specified in the optional If headers are satisfied.
+      ServiceInfo info = new ServiceInfo(etag);
+      if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) {
+        return;
+      }
+
+      // Update the headers 
+      res.setDateHeader(HttpHeaders.EXPIRES, getExpiryDate());
+      res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=60, must-revalidate");
+      res.setHeader(HttpHeaders.ETAG, etag);
+
+    // Prevents caching
+    } else {
+      res.setDateHeader(HttpHeaders.EXPIRES, 0);
+      res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
     }
 
     // Generate the XML content
-    long t0 = System.currentTimeMillis();
-    String content = new XMLResponse().generate(req, res, this.env);
+    String content = xml.generate();
     long t1 = System.currentTimeMillis();
     LOGGER.debug("Content generated in "+(t1 - t0)+" ms");
 
@@ -180,35 +193,44 @@ public final class GlobalServlet extends HttpServlet {
 
     // produce the output
     } else {
-
+      
       // setup the output
-      PrintWriter out = res.getWriter();
-      StreamResult result = new StreamResult(out);
-      ByteArrayOutputStream errors = new ByteArrayOutputStream();
+//      ByteArrayOutputStream errors = new ByteArrayOutputStream();
 
       try {
-        // Creates a transformer from the templates
-        setupListener(factory.getErrorListener(), errors);
-        Templates templates = this.getTemplates();
-        long t2 = System.currentTimeMillis();
-        LOGGER.debug("Templates loaded in "+(t2 - t1)+"ms");
-        Transformer transformer = templates.newTransformer();
-        setupListener(transformer.getErrorListener(), errors);
-        setXSLTParameters(transformer, req);
-        setOutputProperties(transformer, res);
+        XSLTransformResult result = this.transformer.transform(content, req, xml.getService());
+        LOGGER.debug("XSLT Transformation {} ms", result.time());
 
-        // get response from filter chain and do XSL transform only if there is some data
-        StreamSource source = new StreamSource();
-        source.setReader(new StringReader(content));
+        // Update content type from XSLT transform result 
+        res.setContentType(result.getContentType()+";charset="+result.getEncoding());
 
-        // process, write directly to the result
-        transformer.transform(source, result);
-        long t3 = System.currentTimeMillis();
-        LOGGER.debug("Transformation in "+(t3 - t2)+"ms");
-        LOGGER.debug("Total request in "+(t3 - t0)+"ms");
+        boolean isCompressed = HttpHeaderUtils.isCompressible(result.getContentType());
+        if (isCompressed) {
+
+          // Indicate that the representation may vary depending on the encoding
+          res.setHeader("Vary", "Accept-Encoding");
+          if (HttpHeaderUtils.acceptsGZipCompression(req)) {
+            byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
+            if (compressed.length > 0) {
+              res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
+              res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
+              if (etag != null)
+                res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
+              ServletOutputStream out = res.getOutputStream();
+              out.write(compressed);
+            } else isCompressed = false;
+          } else isCompressed = false;
+        }
+
+        // Copy the uncompressed version if needed
+        if (!isCompressed) {
+          PrintWriter out = res.getWriter();
+          out.print(result.content());        
+        }
 
       // very likely to be an error in the XML or a dynamic error
       } catch (Exception ex) {
+        /*
         if (!res.isCommitted()) {
           res.resetBuffer();
           req.setAttribute("exception", ex);
@@ -220,52 +242,17 @@ public final class GlobalServlet extends HttpServlet {
           LOGGER.error("A dynamic XSLT error was caught", ex);
 //TODO          res.sendRedirect(req.getServletPath()+"/error/500");
         }
+        */
       } finally {
+        /*
         if (errors.size() > 0)
           LOGGER.debug(errors.toString("utf-8"));
+          */
       }
     }
   }
 
 // private helpers --------------------------------------------------------------------------------
-
-  /**
-   * Returns the XSLT templates to use.
-   * 
-   * @return the XSLT templates to use.
-   * 
-   * @throws TransformerConfigurationException Should an error occur whilst loading the templates
-   */
-  private Templates getTemplates() throws TransformerConfigurationException {
-    // caching mechanism, storing templates using the style name
-    if (this.enableCache) {
-      if (this.cache == null) {
-        LOGGER.info("Loading and caching style '"+this.styleSheet+'\'');
-        this.cache = toTemplates(this.styleSheet);
-      } else LOGGER.debug("Getting style '"+this.styleSheet+"' from cache");
-      return this.cache;
-
-    // caching mechanism disabled
-    } else {
-      LOGGER.debug("Loading XSLT template '"+this.styleSheet+"' [caching disabled]");
-      return toTemplates(this.styleSheet);
-    }
-  }
-
-  /**
-   * Return the XSLT templates from the given style.
-   *
-   * @param stylepath The path to the XSLT style sheet
-   *
-   * @return the corresponding XSLT templates object
-   * 
-   * @throws TransformerConfigurationException Si the loading fails
-   */
-  private static Templates toTemplates(File stylepath) throws TransformerConfigurationException {
-    // load the templates from the source file
-    Source source = new StreamSource(stylepath);
-    return factory.newTemplates(source);
-  }
 
   /**
    * Returns the value for the specified init parameter name.
@@ -283,77 +270,40 @@ public final class GlobalServlet extends HttpServlet {
   }
 
   /**
-   * Returns the value for the specified init parameter name.
-   * 
-   * <p>If <code>null</code> returns the default value.
-   *
-   * @param name The name of the init parameter.
-   * @param def  The default value if the parameter value is <code>null</code> 
-   * 
-   * @return The values for the specified init parameter name.
+   * Expiry date is a year from now.
    */
-  private boolean getInitParameter(String name, boolean def) {
-    String value = this.servletConfig.getInitParameter(name);
-    return (value != null)? Boolean.valueOf(value).booleanValue() : def;
+  private static long getExpiryDate() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.roll(Calendar.YEAR, 1);
+    return calendar.getTimeInMillis();
   }
 
   /**
-   * Sets the XSLT parameters for the transformer from the parameter and attributes
-   * starting with 'xsl-'.
+   * Provide a simple entity information for the service.
    * 
-   * @param transformer The XSLT transformer.
-   * @param req         The servlet request.
+   * @author Christophe Lauret
+   * @version 31 May 2010
    */
-  private static void setXSLTParameters(Transformer transformer, ServletRequest req) {
-    // adding parameters from HTTP parameters
-    for (Enumeration names = req.getParameterNames(); names.hasMoreElements();) {
-      String param = (String)names.nextElement();
-      if (param.startsWith("xsl-")) {
-        transformer.setParameter(param.substring(4), req.getParameter(param));
-      }
-    }
-    // adding parameters from request attributes
-    for (Enumeration names = req.getAttributeNames(); names.hasMoreElements();) {
-      String param = (String)names.nextElement();
-      if (param.startsWith("xsl-")) {
-        transformer.setParameter(param.substring(4), (String)req.getAttribute(param));
-      }
-    }
-  }
+  private static class ServiceInfo implements EntityInfo {
 
-  /**
-   * Sets the output properties for the XSLT transformer.
-   * 
-   * @param transformer The XSLT transformer.
-   * @param res         The servlet response.
-   */
-  private static void setOutputProperties(Transformer transformer, HttpServletResponse res) {
-//    transformer.setOutputProperty("indent", logger.isDebugEnabled()? "yes" : "no");
-  }
-
-  /**
-   * Sets up the listener so that its output can be captured.
-   * 
-   * @param listener The listener to setup
-   * @param out      The output
-   */
-  private static void setupListener(ErrorListener listener, ByteArrayOutputStream out) {
-    Class<? extends ErrorListener> elClass = listener.getClass();
-    Method[] methods = elClass.getDeclaredMethods();
-    for (int i = 0; i < methods.length; i++) {
-      if (methods[i].getName().equals("setErrorOutput")) {
-        Class<?>[] params = methods[i].getParameterTypes();
-        if (params.length == 1 && params[0].equals(PrintStream.class)) {
-          try {
-            PrintStream st = new PrintStream(out, true, "utf-8");
-            methods[i].invoke(listener, new Object[]{st});
-          } catch (Exception ex) {
-            ex.printStackTrace();
-            return;
-          }
-        }
-      }
+    private final String _etag;
+    
+    public ServiceInfo(String etag) {
+      this._etag = etag;
     }
+
+    public String getETag() {
+      return this._etag;
+    }
+
+    public String getMimeType() {
+      return "text/html";
+    }
+
+    public long getLastModified() {
+      return -1;
+    }
+
   }
 
 }

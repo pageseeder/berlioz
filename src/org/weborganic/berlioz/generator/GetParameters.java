@@ -10,9 +10,11 @@ package org.weborganic.berlioz.generator;
 import java.io.IOException;
 import java.util.Enumeration;
 
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
+import org.weborganic.berlioz.util.MD5;
 
 import com.topologi.diffx.xml.XMLWriter;
 
@@ -34,9 +36,26 @@ import com.topologi.diffx.xml.XMLWriter;
  * }</pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 25 May 2010
+ * @version 31 May 2010
  */
-public final class GetParameters extends ContentGeneratorBase implements ContentGenerator {
+public final class GetParameters extends ContentGeneratorBase implements ContentGenerator, Cacheable {
+
+  /**
+   * {@inheritDoc}
+   */
+  public String getETag(ContentRequest req) {
+    StringBuilder hash = new StringBuilder("?"); 
+    Enumeration<?> names = req.getParameterNames();
+    while (names.hasMoreElements()) {
+      String name = (String)names.nextElement();
+      String[] values = req.getParameterValues(name);
+      for (int i = 0; i < values.length; i++) {
+        hash.append(name).append('=').append(values[i]).append('&');
+      }
+    }
+    // Returns a hash of the query string
+    return MD5.hash(hash.toString());
+  }
 
   /**
    * {@inheritDoc}

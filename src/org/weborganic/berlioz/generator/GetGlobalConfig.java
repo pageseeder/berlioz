@@ -7,10 +7,12 @@
  */
 package org.weborganic.berlioz.generator;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
 
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
@@ -32,7 +34,15 @@ import com.topologi.diffx.xml.XMLWriter;
  * @author Christophe Lauret (Weborganic)
  * @version 26 May 2010
  */
-public final class GetGlobalConfig extends ContentGeneratorBase implements ContentGenerator {
+public final class GetGlobalConfig extends ContentGeneratorBase implements ContentGenerator, Cacheable {
+
+  /**
+   * Returns a ETag based on the last modified date and length of the global propertied file.  
+   */
+  public String getETag(ContentRequest req) {
+    File global = GlobalSettings.getPropertiesFile();
+    return global.length()+"x"+global.lastModified();
+  }
 
   /**
    * {@inheritDoc}
