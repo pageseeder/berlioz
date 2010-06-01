@@ -31,10 +31,12 @@ import com.topologi.diffx.xml.XMLWriterImpl;
 /**
  * Servlets that only returns XML.
  * 
+ * @deprecated This class is no longer maintained, use <code>GlobalServlet</code> configuration. 
+ * 
  * @author Christophe Lauret (Weborganic)
  * @version 8 October 2009
  */
-public final class QuickContentServlet extends HttpServlet {
+@Deprecated public final class QuickContentServlet extends HttpServlet {
 
   /**
    * As per requirement for the Serializable interface.

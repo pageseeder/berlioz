@@ -37,7 +37,9 @@ import com.topologi.diffx.xml.XMLWriter;
 public final class GetGlobalConfig extends ContentGeneratorBase implements ContentGenerator, Cacheable {
 
   /**
-   * Returns a ETag based on the last modified date and length of the global propertied file.  
+   * Returns a ETag based on the last modified date and length of the global propertied file.
+   * 
+   * {@inheritDoc}
    */
   public String getETag(ContentRequest req) {
     File global = GlobalSettings.getPropertiesFile();

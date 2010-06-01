@@ -21,11 +21,13 @@ import com.topologi.diffx.xml.XMLWriter;
  * enough information for the purpose of application. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ * @version 1 June 2010
  */
 public final class NoContent extends ContentGeneratorBase implements ContentGenerator, Cacheable {
 
   /**
+   * Always returns the <code>"nocontent"</code>.
+   * 
    * {@inheritDoc}
    */
   public String getETag(ContentRequest req) {
@@ -33,6 +35,8 @@ public final class NoContent extends ContentGeneratorBase implements ContentGene
   }
 
   /**
+   * Do nothing.
+   * 
    * {@inheritDoc}
    */
   public void process(ContentRequest req, XMLWriter xml) {

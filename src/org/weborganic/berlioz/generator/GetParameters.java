@@ -36,11 +36,13 @@ import com.topologi.diffx.xml.XMLWriter;
  * }</pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 31 May 2010
+ * @version 1 June 2010
  */
 public final class GetParameters extends ContentGeneratorBase implements ContentGenerator, Cacheable {
 
   /**
+   * Returns an MD5 Value of the query string. 
+   * 
    * {@inheritDoc}
    */
   public String getETag(ContentRequest req) {

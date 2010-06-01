@@ -53,6 +53,11 @@ import com.topologi.diffx.xml.XMLUtils;
 public final class XSLTransformer {
 
   /**
+   * Name of the global property to use to enable caching of XSLT (<code>true</code> by default).
+   */
+  public static final String ENABLE_CACHE = "berlioz.cache.xslt";
+
+  /**
    * Displays debug information.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(XSLTransformer.class);
@@ -210,7 +215,7 @@ public final class XSLTransformer {
    * @throws TransformerConfigurationException If the templates could not parsed. 
    */
   private static Templates getTemplates(File f) throws TransformerConfigurationException {
-    boolean store = GlobalSettings.get("berlioz.cache.xslt", true);
+    boolean store = GlobalSettings.get(ENABLE_CACHE, true);
     String stylesheet = toWebPath(f.getAbsolutePath());
     Templates templates = CACHE.get(f);
     if (templates == null) {

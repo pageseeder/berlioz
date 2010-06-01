@@ -25,7 +25,7 @@ public final class HttpEnvironment implements Environment {
    * The location of the public directory.
    */
   private final File _public; 
-  
+
   /**
    * The location of the public directory.
    */

@@ -14,7 +14,6 @@ import java.util.StringTokenizer;
 import javax.servlet.http.HttpServletRequest;
 
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.Service;
 
 import com.topologi.diffx.xml.XMLWritable;

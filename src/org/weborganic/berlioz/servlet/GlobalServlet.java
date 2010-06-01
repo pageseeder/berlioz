@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.util.EntityInfo;
 import org.weborganic.berlioz.util.HttpHeaderUtils;
@@ -35,9 +36,25 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * Default Berlioz servlet.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 31 May 2010
+ * @version 1 June 2010
  */
 public final class GlobalServlet extends HttpServlet {
+
+  /**
+   * Name of the global property to use to enable HTTP compression using the 
+   * <code>Content-Encoding</code> of compressible content.
+   * 
+   * <p>The property value is <code>true</code> by default.
+   */
+  public static final String ENABLE_HTTP_COMPRESSION = "berlioz.http.compression";
+
+  /**
+   * Name of the global property to use to specify the max age of the <code>Cache-Control</code>
+   * HTTP header of cacheable content.
+   * 
+   * <p>The property value is <code>60</code> (seconds) by default.
+   */
+  public static final String HTTP_MAX_AGE = "berlioz.http.max-age";
 
   /**
    * As per requirement for the Serializable interface.
@@ -170,7 +187,7 @@ public final class GlobalServlet extends HttpServlet {
 
       // Update the headers 
       res.setDateHeader(HttpHeaders.EXPIRES, getExpiryDate());
-      res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=60, must-revalidate");
+      res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age="+GlobalSettings.get(HTTP_MAX_AGE, 60)+", must-revalidate");
       res.setHeader(HttpHeaders.ETAG, etag);
 
     // Prevents caching
@@ -182,7 +199,7 @@ public final class GlobalServlet extends HttpServlet {
     // Generate the XML content
     String content = xml.generate();
     long t1 = System.currentTimeMillis();
-    LOGGER.debug("Content generated in "+(t1 - t0)+" ms");
+    LOGGER.debug("Content generated in {} ms", (t1 - t0));
 
     // Redirect if required
     String url = req.getParameter("redirect-url");
@@ -204,7 +221,8 @@ public final class GlobalServlet extends HttpServlet {
         // Update content type from XSLT transform result 
         res.setContentType(result.getContentType()+";charset="+result.getEncoding());
 
-        boolean isCompressed = HttpHeaderUtils.isCompressible(result.getContentType());
+        boolean isCompressed = HttpHeaderUtils.isCompressible(result.getContentType())
+                            && GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
         if (isCompressed) {
 
           // Indicate that the representation may vary depending on the encoding

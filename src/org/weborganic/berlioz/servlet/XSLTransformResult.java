@@ -7,7 +7,6 @@
  */
 package org.weborganic.berlioz.servlet;
 
-import java.util.List;
 import java.util.Properties;
 
 import javax.xml.transform.Templates;

@@ -30,10 +30,15 @@ import com.topologi.diffx.xml.XMLWriter;
 public final class GetServices extends ContentGeneratorBase implements ContentGenerator, Cacheable {
 
   /**
+   * Default location of the services.
+   */
+  private static String SERVICES = "config/services.xml";
+
+  /**
    * {@inheritDoc}
    */
   public String getETag(ContentRequest req) {
-    File services = new File(GlobalSettings.getRepository(), "config/services.xml");
+    File services = new File(GlobalSettings.getRepository(),SERVICES );
     return services.length()+"x"+services.lastModified();
   }
 
@@ -41,7 +46,7 @@ public final class GetServices extends ContentGeneratorBase implements ContentGe
    * {@inheritDoc}
    */
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
-    File services = new File(GlobalSettings.getRepository(), "config/services.xml");
+    File services = new File(GlobalSettings.getRepository(), SERVICES);
 
     // All good, print to the XML stream
     if (services.exists()) {
