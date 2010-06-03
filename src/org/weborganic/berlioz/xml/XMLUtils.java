@@ -107,13 +107,15 @@ public final class XMLUtils {
    * 
    * @see SimpleDateFormat
    * 
+   * @deprecated Dates should be serialised as ISO 8601
+   * 
    * @param xml  The XML writer to use.
    * @param date The date to format.
    * 
    * @throws IOException If thrown by the XML writer.
    * @throws NullPointerException If the XML writer is <code>null</code>
    */
-  public static void dateAsXML(XMLWriter xml, Date date)
+  @Deprecated public static void dateAsXML(XMLWriter xml, Date date)
       throws IOException, NullPointerException {
     if (date == null) return;
     xml.attribute("day", DD.format(date));
@@ -141,13 +143,15 @@ public final class XMLUtils {
    * 
    * @see SimpleDateFormat
    * 
+   * @deprecated Dates should be serialised as ISO 8601
+   * 
    * @param xml  The XML writer to use.
    * @param date The date to format.
    * 
    * @throws IOException If thrown by the XML writer.
    * @throws NullPointerException If the XML writer is <code>null</code>
    */
-  public static void datetimeAsXML(XMLWriter xml, Date date)
+  @Deprecated public static void datetimeAsXML(XMLWriter xml, Date date)
       throws IOException, NullPointerException {
     if (date == null) return;
     xml.attribute("day", DD.format(date));
