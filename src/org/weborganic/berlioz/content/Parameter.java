@@ -126,7 +126,7 @@ public final class Parameter {
       if (this._value == null) throw new IllegalStateException("Cannot build a valueless parameter");
       Source source = Source.QUERY_STRING;
       try {
-        source = this._source != null? Source.valueOf(this._source) : Source.QUERY_STRING;
+        source = this._source != null? Source.valueOf(this._source.toUpperCase().replace('-', '_')) : Source.QUERY_STRING;
       } catch (Exception ex) {
         throw new IllegalStateException(this._source+" is not valid source", ex);
       }
