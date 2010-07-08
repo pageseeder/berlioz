@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.LoggerFactory;
+
 /**
  * A list of of content generators or content instructions.
  * 
@@ -100,6 +102,18 @@ public final class Service {
   }
 
   /**
+   * Indicates whether this service is cacheable.
+   * 
+   * <p>A service is cacheable only if all its generators are cacheable.
+   * 
+   * @return <code>true</code> if this response is cacheable;
+   *         <code>false</code> otherwise.
+   */
+  public boolean isCacheable() {
+    return isCacheable(this._generators);
+  }
+
+  /**
    * Returns the list of generators for this service.
    * 
    * @return the list of generators for this service.
@@ -147,11 +161,27 @@ public final class Service {
   }
 
   /**
+   * Indicates whether the list of generators are all cacheable.
+   * 
+   * @param generators the list of generators to evaluate.
+   * @return <code>true</code> if all generators implement the {@link Cacheable} interface;
+   *         <code>false</code> otherwise.
+   */
+  static boolean isCacheable(List<ContentGenerator> generators) {
+    for (ContentGenerator g : generators) {
+      if (!(g instanceof Cacheable)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * A builder for services to ensure that <code>Service</code> instances are immutable.
    * 
    * <p>The same builder can be used for builder multiple services. 
    * 
-   * @author Christophe Lauret
+   * @author Christophe Lauret (Weborganic)
    * @version 8 July 2010
    */
   static final class Builder {
@@ -305,6 +335,10 @@ public final class Service {
      * @return a new service instance.
      */
     public Service build() {
+      // warn when attempting to use cache control with uncacheable service
+      if (this._cache != null && !isCacheable(this._generators)) {
+        LoggerFactory.getLogger(Builder.class).warn("Building non-cacheable service {} - cache control ignored.", this._id);
+      }
       return new Service(this._id, this._group, this._cache,
           immutable(this._generators),
           immutable(this._parameters),
