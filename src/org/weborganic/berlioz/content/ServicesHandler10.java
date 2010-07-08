@@ -138,7 +138,7 @@ final class ServicesHandler10 extends DefaultHandler {
           this._builder.target(atts.getValue("target"));
           this._builder.name(atts.getValue("name"));
         } catch (Exception ex) {
-          LOGGER.warn("(!) Failed to load "+atts.getValue("class"));
+          LOGGER.warn("Failed to load generator {} for service {}", atts.getValue("class"), this._builder.id());
           ex.printStackTrace();
         }
         break;

@@ -197,6 +197,16 @@ public final class Service {
     public Builder() {}
 
     /**
+     * Returns the ID of the service to build.
+     * 
+     * @return the ID of the service to build.
+     */
+    public String id() {
+      return this._id;
+    }
+
+    
+    /**
      * Sets the ID of the service to build.
      * 
      * @param id the ID of the service to build.
