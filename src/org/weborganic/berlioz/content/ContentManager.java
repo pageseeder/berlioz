@@ -42,7 +42,7 @@ public final class ContentManager {
   /**
    * Maps content generators URL patterns to their content generator instance.
    */
-  private static final GeneratorRegistry REGISTRY = new GeneratorRegistry();
+  private static final ServiceRegistry REGISTRY = new ServiceRegistry();
 
   /**
    * Indicates whether the boolean value was loaded. 
@@ -142,7 +142,7 @@ public final class ContentManager {
     /**
      * Maps path infos to generator instances.
      */
-    private final GeneratorRegistry _registry;
+    private final ServiceRegistry _registry;
 
     /**
      * The reader in use.
@@ -155,7 +155,7 @@ public final class ContentManager {
      * @param reader     The XML Reader in use.
      * @param generators The generators to produce.
      */
-    public HandlingDispatcher(XMLReader reader, GeneratorRegistry registry) {
+    public HandlingDispatcher(XMLReader reader, ServiceRegistry registry) {
       this._reader = reader;
       this._registry = registry;
     }
@@ -200,14 +200,9 @@ public final class ContentManager {
 
         // Unknown version (assume 1.0)
         } else {
-          LOGGER.info("Service confguration version unavailable, assuming 1.0");
+          LOGGER.info("Service configuration version unavailable, assuming 1.0");
           return new ServicesHandler10(this._registry);
         }
-
-      // Old configuration
-      } else if ("web-access".equals(name)) {
-        LOGGER.warn("Using legacy configuration (web-access)");
-        return new ContentAccessHandler10(this._registry);
 
       // Definitely not supported 
       } else {

@@ -247,6 +247,7 @@ public final class XMLResponse {
    * 
    * @param generator The generator to invoke.
    * @param service   The service it is part of.
+   * @param xml       The XML Writer to use.
    * 
    * @return The corresponding content.
    * 
@@ -254,38 +255,36 @@ public final class XMLResponse {
    * @throws BerliozException Any exception occurring during processing will be wrapped in a BerliozException.
    */
   private void toXML(ContentGenerator generator, Service service, XMLWriter xml) throws IOException, BerliozException {
-    if (!generator.redirect()) {
-      // Generate the main element
-      xml.openElement("content", true);
-      xml.attribute("generator", generator.getClass().getName());
-      String name = service.name(generator);
-      xml.attribute("name", name);
-      String target = service.target(generator);
-      if (target != null) xml.attribute("target", target);
+    // Generate the main element
+    xml.openElement("content", true);
+    xml.attribute("generator", generator.getClass().getName());
+    String name = service.name(generator);
+    xml.attribute("name", name);
+    String target = service.target(generator);
+    if (target != null) xml.attribute("target", target);
 
-      // Let's invoke the generator
-      String result = null;
-      BerliozException error = null;
-      try {
-        // Normal response
-        StringWriter writer = new StringWriter();
-        XMLWriter ok = new XMLWriterImpl(writer);
-        generator.process(wrapper, ok);
-        result = writer.toString();
-      } catch (BerliozException ex) {
-        error = ex;
-      } catch (Exception ex) {
-        // We wrapping any exception in a Berlioz Exception
-        error = new BerliozException("Unexpected exception caught", ex);
-      }
-
-      // Write the XML
-      xml.attribute("status", error != null? "error" : "ok");
-      if (error != null) error.toXML(xml);
-      else xml.writeXML(result);
-
-      xml.closeElement();
+    // Let's invoke the generator
+    String result = null;
+    BerliozException error = null;
+    try {
+      // Normal response
+      StringWriter writer = new StringWriter();
+      XMLWriter ok = new XMLWriterImpl(writer);
+      generator.process(wrapper, ok);
+      result = writer.toString();
+    } catch (BerliozException ex) {
+      error = ex;
+    } catch (Exception ex) {
+      // We wrapping any exception in a Berlioz Exception
+      error = new BerliozException("Unexpected exception caught", ex);
     }
+
+    // Write the XML
+    xml.attribute("status", error != null? "error" : "ok");
+    if (error != null) error.toXML(xml);
+    else xml.writeXML(result);
+
+    xml.closeElement();
   }
 
   /**

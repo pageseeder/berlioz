@@ -14,7 +14,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>This class should remain protected as there is no reason to expose its method to the public API. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 28 May 2010
+ * @version 8 July 2010
  */
 final class ServicesHandler10 extends DefaultHandler {
 
@@ -116,6 +116,7 @@ final class ServicesHandler10 extends DefaultHandler {
 
       case SERVICE:
         this._builder.id(atts.getValue("id"));
+        this._builder.cache(atts.getValue("cache-control"));
         this._method = atts.getValue("method");
         break;
 
@@ -131,7 +132,7 @@ final class ServicesHandler10 extends DefaultHandler {
         try {
           ContentGenerator generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
           // The first pattern is the default one
-          if (!this._patterns.isEmpty())
+          if (!this._patterns.isEmpty() && generator instanceof ContentGeneratorBase)
             ((ContentGeneratorBase)generator).setPathInfo(this._patterns.get(0));
           this._builder.add(generator);
           this._builder.target(atts.getValue("target"));

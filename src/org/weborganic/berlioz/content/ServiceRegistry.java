@@ -45,7 +45,7 @@ public class ServiceRegistry {
    * 
    * @param generator the content generator to register.
    * @param pattern   the URL pattern to associate to this content generator.
-   * @param method    the method for this url pattern.
+   * @param method    the method for this URL pattern.
    */
   public void register(Service service, String pattern, String method) {
     // preliminary checks

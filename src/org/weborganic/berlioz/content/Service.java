@@ -26,6 +26,11 @@ public final class Service {
   private final String _group;
 
   /**
+   * The 'Cache-Control' header for this service.
+   */
+  private final String _cache;
+
+  /**
    * The list of generators associated with this service.
    */
   private final List<ContentGenerator> _generators;
@@ -50,15 +55,17 @@ public final class Service {
    * 
    * @param id         the ID of the service.
    * @param group      the group the service is part of.
+   * @param cache      the cache control for this service.
    * @param generators the list of generators.
    * @param parameters the parameters specifications for each generator.
    * @param names      the names of each generator (if any).
    * @param targets    the targets of each generator (if any).
    */
-  private Service(String id, String group, List<ContentGenerator> generators, Map<ContentGenerator, List<Parameter>> parameters,
+  private Service(String id, String group, String cache, List<ContentGenerator> generators, Map<ContentGenerator, List<Parameter>> parameters,
       Map<ContentGenerator, String> names, Map<ContentGenerator, String> targets) {
     this._id = id;
     this._group = group;
+    this._cache = cache;
     this._generators = generators;
     this._parameters = parameters;
     this._names = names;
@@ -81,6 +88,15 @@ public final class Service {
    */
   public String group() {
     return this._group;
+  }
+
+  /**
+   * Returns the value of the 'Cache-Control' for this service.
+   * 
+   * @return the value of the 'Cache-Control' for this service.
+   */
+  public String cache() {
+    return this._cache;
   }
 
   /**
@@ -136,7 +152,7 @@ public final class Service {
    * <p>The same builder can be used for builder multiple services. 
    * 
    * @author Christophe Lauret
-   * @version 20 May 2010
+   * @version 8 July 2010
    */
   static final class Builder {
 
@@ -149,6 +165,11 @@ public final class Service {
      * The group the service to build belongs to.
      */
     private String _group;
+
+    /** 
+     * The value of the 'Cache-Control' header for this service.
+     */
+    private String _cache;
 
     /**
      * The list of generators associated with this service.
@@ -189,11 +210,22 @@ public final class Service {
     /**
      * Sets the group of the service to build.
      * 
-     * @param id the group of the service to build.
+     * @param group the group of the service to build.
      * @return this builder for easy chaining.
      */
     public Builder group(String group) {
       this._group = group;
+      return this;
+    }
+
+    /**
+     * Sets the cache control for this service.
+     * 
+     * @param cache the 'Cache-Control' value of the service to build.
+     * @return this builder for easy chaining.
+     */
+    public Builder cache(String cache) {
+      this._cache = cache;
       return this;
     }
 
@@ -224,9 +256,6 @@ public final class Service {
      */
     public Builder add(ContentGenerator g) {
       this._generators.add(g);
-      // Backward compatibility
-      g.setArea(this._group);
-      g.setService(this._id);
       return this;
     }
 
@@ -266,7 +295,7 @@ public final class Service {
      * @return a new service instance.
      */
     public Service build() {
-      return new Service(this._id, this._group, 
+      return new Service(this._id, this._group, this._cache,
           immutable(this._generators),
           immutable(this._parameters),
           immutable3(this._names),
@@ -278,6 +307,7 @@ public final class Service {
      */
     public void reset() {
       this._id = null;
+      this._cache = null;
       this._generators.clear();
       this._parameters.clear();
       this._names.clear();

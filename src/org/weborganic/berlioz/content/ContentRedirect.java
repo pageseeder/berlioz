@@ -11,12 +11,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Used to generated a redirect instruction. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 8 October 2009
+ * @version 8 July 2010s
  */
 final class ContentRedirect {
 
@@ -64,9 +65,10 @@ final class ContentRedirect {
    * @return An iterator over the parameter names.
    */
   public Iterator<String> getParameterNames() {
-    if (this.parameters == null)
-      return Collections.EMPTY_LIST.iterator();
-    else
+    if (this.parameters == null) {
+      List<String> empty = Collections.emptyList();
+      return empty.iterator();
+    } else
       return this.parameters.iterator();
   }
 

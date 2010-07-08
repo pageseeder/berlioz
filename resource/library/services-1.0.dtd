@@ -44,7 +44,8 @@
 -->
 <!ELEMENT service                                        ( url+, generator* ) >
 <!ATTLIST service            id                 ID                  #REQUIRED
-                             method             %HTTP_METHOD;       #REQUIRED >
+                             method             %HTTP_METHOD;       #REQUIRED 
+                             cache-control      CDATA                #IMPLIED >
 
 <!--
   The URL pattern matching this service.
