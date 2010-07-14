@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+  Ivy configuration for Berlioz Extensions.
+-->
+<ivy-module version="2.0">
+  <info organisation="weborganic" module="wo-berlioz">
+    <license name="Artistic Licence" url="http://www.opensource.org/licenses/artistic-license-2.0.php"/>
+    <description homepage="http://www.weborganic.org/code/berlioz/"/>
+  </info>
+  <configurations defaultconfmapping="core->default;runtime->runtime(default)">
+     <conf name="core" transitive="false" visibility="private" description="Always required"/>
+     <conf name="default" extends="core" transitive="false" description="Needed for compilation only"/>
+     <conf name="runtime" extends="core" transitive="true" description="Everything needed to run this module" />
+  </configurations>
+  <dependencies>
+    <dependency org="weborganic" name="wo-diffx"             rev="latest.milestone" conf="core"/>
+    <dependency org="weborganic" name="wo-furi"              rev="latest.milestone" conf="core"/>
+    <dependency org="javax"      name="servlet-api"          rev="2.4"              conf="default"/>
+    <dependency org="slf4j"      name="slf4j-api"            rev="latest.milestone" conf="core"/>
+    <dependency org="apache"     name="commons-fileupload"   rev="1.2+"             conf="core"/>
+  </dependencies>
+</ivy-module>
