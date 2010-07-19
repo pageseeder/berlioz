@@ -25,10 +25,12 @@ import com.topologi.diffx.xml.XMLWriterImpl;
 /**
  * This manager provides a global tool for processing content for the Website.
  * 
+ * @deprecated Use {@link XMLCopy} instead.
+ * 
  * @author Christophe Lauret (Allette Systems)
  * @version 20 May 2010
  */
-public final class XMLExtractorHelper {
+@Deprecated public final class XMLExtractorHelper {
 
   /**
    * Logger the extractor.

@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Cacheable;
+import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.util.EntityInfo;
 import org.weborganic.berlioz.util.HttpHeaderUtils;
@@ -84,8 +85,12 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  *   Cache-Control: no-cache
  * </pre>
  * 
+ * <p>For security, the Berlioz administration parameters can be secures using a Berlioz control key.
+ * The control key is a string that must be supplied as a parameter whenever one of the admin 
+ * parameters is used. Use the initialisation parameters to define a control key.
+ * 
  * @author Christophe Lauret (Weborganic)
- * @version 8 July 2010
+ * @version 19 July 2010
  */
 public class BerliozServlet extends HttpServlet {
 
@@ -108,7 +113,7 @@ public class BerliozServlet extends HttpServlet {
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = 2010070826180001L;
+  private static final long serialVersionUID = 2010071926180001L;
 
   /**
    * Displays debug information.
@@ -126,6 +131,11 @@ public class BerliozServlet extends HttpServlet {
    * Set the content type.
    */
   private String contentType;
+
+  /**
+   * Set the Berlioz control key.
+   */
+  private String controlKey;
 
   /**
    * The environment. 
@@ -151,6 +161,7 @@ public class BerliozServlet extends HttpServlet {
    * <ul>
    *   <li><code>content-type</code> to specify the content type used by this Berlioz instance.
    *   <li><code>stylesheet</code> to specify the XSLT stylesheet to use for this Berlioz instance.
+   *   <li><code>berlioz-control</code> to specify the Berlioz control key to enable admin parameters.
    * </ul>
    * 
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
@@ -167,10 +178,12 @@ public class BerliozServlet extends HttpServlet {
     File webinfPath = new File(contextPath, "WEB-INF");
     this.contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     String stylePath = this.getInitParameter("stylesheet", "/xslt/html/global.xsl");
+    this.controlKey  = this.getInitParameter("berlioz-control", null);
     File styleSheet = new File(webinfPath, stylePath);
     this.transformer = new XSLTransformer(styleSheet);
     // used to dispatch
     this.errorHandler = context.getNamedDispatcher("ErrorHandlerServlet");
+    // TODO Allow error handler not to be defined
     if (this.errorHandler == null)
       throw new ServletException("The error handler must be configured and named ErrorHandlerServlet.");
     this.env = new HttpEnvironment(contextPath, webinfPath);
@@ -212,10 +225,19 @@ public class BerliozServlet extends HttpServlet {
     if (req.getHeader(HttpHeaders.RANGE) != null)
       res.setHeader(HttpHeaders.ACCEPT_RANGES, "none");
 
-    // Clear the cache if requested
-    boolean clearCache = "true".equals(req.getParameter("clear-xsl-cache"));
-    if (clearCache) {
-      this.transformer.clearCache();
+    // Berlioz Control
+    if (this.controlKey != null && this.controlKey.equals(req.getParameter("berlioz-control"))) {
+
+      // Clear the cache and reload the services
+      boolean reload = "true".equals(req.getParameter("berlioz-reload"));
+      
+      // Clear the cache if requested
+      boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
+      if (clearCache) { this.transformer.clearCache(); }
+
+      // Clear the service configuration
+      boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
+      if (clearServices) { ContentManager.clear(); }
     }
 
     // Start handling XML content
@@ -258,16 +280,16 @@ public class BerliozServlet extends HttpServlet {
     long t1 = System.currentTimeMillis();
     LOGGER.debug("Content generated in {} ms", (t1 - t0));
 
-    // Redirect if required
+    // Redirect if required - Phase this feature out
     String url = req.getParameter("redirect-url");
     if (url == null)
       url = (String)req.getAttribute("redirect-url");
     if (url != null && !"".equals(url)) {
       res.sendRedirect(url);
 
-    // produce the output
+    // Produce the output
     } else {
-      
+
       // setup the output
 //      ByteArrayOutputStream errors = new ByteArrayOutputStream();
 
@@ -275,8 +297,14 @@ public class BerliozServlet extends HttpServlet {
         XSLTransformResult result = this.transformer.transform(content, req, xml.getService());
         LOGGER.debug("XSLT Transformation {} ms", result.time());
 
-        // Update content type from XSLT transform result 
-        res.setContentType(result.getContentType()+";charset="+result.getEncoding());
+        // Update content type from XSLT transform result
+        String ctype = result.getContentType()+";charset="+result.getEncoding();
+        res.setContentType(ctype);
+        res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
+        if (!this.contentType.equals(ctype)) {
+          LOGGER.info("Updating content type to {}", ctype);
+          this.contentType = ctype;
+        }
 
         boolean isCompressed = HttpHeaderUtils.isCompressible(result.getContentType())
                             && GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
@@ -353,16 +381,26 @@ public class BerliozServlet extends HttpServlet {
     return calendar.getTimeInMillis();
   }
 
+  // Private internal class =======================================================================
+  
   /**
    * Provide a simple entity information for the service.
    * 
    * @author Christophe Lauret
-   * @version 31 May 2010
+   * @version 19 July 2010
    */
   private static class ServiceInfo implements EntityInfo {
 
+    /**
+     * The wrapped ETag
+     */
     private final String _etag;
-    
+
+    /**
+     * Creates a new service info instance.
+     * 
+     * @param etag The etag.
+     */
     public ServiceInfo(String etag) {
       this._etag = etag;
     }

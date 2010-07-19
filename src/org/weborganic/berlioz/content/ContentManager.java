@@ -124,6 +124,7 @@ public final class ContentManager {
    * Update the patterns based on the current generators.
    */
   public synchronized static void clear() {
+    LOGGER.info("Clearing content manager");
     REGISTRY.clear();
     loaded = false;
   }

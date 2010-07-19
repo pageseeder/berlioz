@@ -15,7 +15,7 @@ package org.weborganic.berlioz.servlet;
  * @author Christophe Lauret (Weborganic)
  * @version 1 June 2010
  */
-public final class GlobalServlet extends BerliozServlet {
+@Deprecated public final class GlobalServlet extends BerliozServlet {
 
   /**
    * Name of the global property to use to enable HTTP compression using the 

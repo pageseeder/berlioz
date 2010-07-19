@@ -262,6 +262,10 @@ public final class XMLResponse {
     xml.attribute("name", name);
     String target = service.target(generator);
     if (target != null) xml.attribute("target", target);
+    
+    // Detect if deprecated
+    if (generator.getClass().isAnnotationPresent(Deprecated.class))
+      xml.attribute("deprecated", "true");
 
     // Let's invoke the generator
     String result = null;

@@ -21,6 +21,8 @@ import com.topologi.diffx.xml.XMLWriter;
 /**
  * Extract XML data from the file and write directly onto the specified XML writer.
  * 
+ * @deprecated Use {@link XMLCopy} instead.
+ * 
  * @author Christophe Lauret (Weborganic)
  * @version 9 October 2009
  */

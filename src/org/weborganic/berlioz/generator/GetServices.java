@@ -15,7 +15,7 @@ import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
-import org.weborganic.berlioz.xml.XMLExtractorHelper;
+import org.weborganic.berlioz.xml.XMLCopy;
 
 import com.topologi.diffx.xml.XMLWriter;
 
@@ -25,7 +25,7 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>This content generator is mostly useful for developers to see how the services are configured.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 31 May 2010
+ * @version 19 July 2010
  */
 public final class GetServices extends ContentGeneratorBase implements ContentGenerator, Cacheable {
 
@@ -50,7 +50,7 @@ public final class GetServices extends ContentGeneratorBase implements ContentGe
 
     // All good, print to the XML stream
     if (services.exists()) {
-      XMLExtractorHelper.extract(services, xml, true);
+      XMLCopy.copyTo(services, xml, true);
     }
   }
 
