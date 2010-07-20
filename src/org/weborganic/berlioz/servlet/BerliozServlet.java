@@ -90,7 +90,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * parameters is used. Use the initialisation parameters to define a control key.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 19 July 2010
+ * @version 20 July 2010
  */
 public class BerliozServlet extends HttpServlet {
 
@@ -226,11 +226,11 @@ public class BerliozServlet extends HttpServlet {
       res.setHeader(HttpHeaders.ACCEPT_RANGES, "none");
 
     // Berlioz Control
-    if (this.controlKey != null && this.controlKey.equals(req.getParameter("berlioz-control"))) {
+    if (this.controlKey == null || (this.controlKey != null && this.controlKey.equals(req.getParameter("berlioz-control")))) {
 
       // Clear the cache and reload the services
       boolean reload = "true".equals(req.getParameter("berlioz-reload"));
-      
+
       // Clear the cache if requested
       boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
       if (clearCache) { this.transformer.clearCache(); }
