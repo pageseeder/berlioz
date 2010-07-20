@@ -85,9 +85,7 @@ public final class ContentManager {
    */
   public static void load() throws BerliozException {
     File repository = GlobalSettings.getRepository();
-    File xml = new File(new File(repository, "config"), "access.xml");
-    if (!xml.exists())
-      xml = new File(new File(repository, "config"), "services.xml");
+    File xml = new File(new File(repository, "config"), "services.xml");
     if (!xml.exists())
       return;
     load (xml);
