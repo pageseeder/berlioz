@@ -53,7 +53,7 @@ public final class Main {
     System.err.println("Berlioz");
     System.err.println("Usage: java "+Main.class.getName()+" ");
     System.err.println("Options");
-    System.err.println("  -load [access_file]");
+    System.err.println("  -load [services_file]");
   }
 
 }
