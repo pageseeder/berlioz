@@ -125,7 +125,7 @@ public final class XMLResponseHeader implements XMLWritable {
    * 
    * <pre class="xml">
    *   &lt;header&gt;
-   *     &lt;area&gt;[area name]&lt;/area&gt;
+   *     &lt;group&gt;[service group name]&lt;/group&gt;
    *     &lt;service&gt;[service name]&lt;/service&gt;
    *     &lt;path-info&gt;[servlet path info]&lt;/path-info&gt;
    *     &lt;context-path&gt;[servlet context path]&lt;/context-path&gt;
@@ -153,7 +153,6 @@ public final class XMLResponseHeader implements XMLWritable {
   public void toXML(XMLWriter xml) throws IOException {
     // start serialising
     xml.openElement("header", true);
-    xml.element("area", this._group);
     xml.element("group", this._group);
     xml.element("service", this._service);
     xml.element("path-info", this._request.getPathInfo());
