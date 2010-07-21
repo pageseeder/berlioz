@@ -150,7 +150,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
    * 
    * @throws IOException should an error occur when writing the XML.
    */
-  public static void copyTo(File file, XMLWriter xml, boolean cache) throws IOException {
+  public static void copyTo(File file, XMLWriter xml) throws IOException {
     // load
     if (file.exists()) {
       try {
@@ -184,4 +184,21 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
     }
   }
 
+  /**
+   * This method is kept for backward compatibility - the cache parameter has no effect. 
+   * 
+   * <p>Identical to {@link #copyTo(File, XMLWriter)}.
+   * 
+   * @deprecated Use {@link #copyTo(File, XMLWriter)} instead.
+   * 
+   * @param file  The file.
+   * @param xml   The XML writer.
+   * @param cache Ignored.
+   * 
+   * @throws IOException should an error occur when writing the XML.
+   */
+  @Deprecated public static void copyTo(File file, XMLWriter xml, boolean cache) throws IOException {
+    LOGGER.warn("Called deprecated method copyTo(File, XMLWriter, boolean) - use copyTo(File, XMLWriter) instead");
+    copyTo(file, xml);
+  }
 }
