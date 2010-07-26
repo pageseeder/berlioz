@@ -47,8 +47,7 @@ import com.topologi.diffx.xml.XMLUtils;
  * to change this behaviour.
  * 
  * @author Christophe Lauret
- * 
- * @version 31 May 2010
+ * @version 26 July 2010
  */
 public final class XSLTransformer {
 
@@ -89,6 +88,7 @@ public final class XSLTransformer {
    * 
    * @param content The XML content to transform.
    * @param req     The HTTP Servlet request.
+   * @param service Required only to provide more information in the logs in case of errors. 
    * 
    * @return the results of the transformation.
    */
@@ -120,7 +120,7 @@ public final class XSLTransformer {
     } catch (TransformerException ex) {
       StringWriter error = new StringWriter();
       handle(ex, error);
-      return new XSLTransformResult(error.toString(), ex, templates);      
+      return new XSLTransformResult(error.toString(), ex, templates);
 
       // Catch the error details and try to process them with the error template
 //      String xml = handle(ex, component, xmlsource, parameters);
@@ -339,7 +339,6 @@ public final class XSLTransformer {
    * Returns a new XML source that can be used by an error handler.
    * 
    * @param error      The transformation error.
-   * @param component  The component affected.
    * @param xml        The source XML.
    * @param parameters The parameters sent to the transformer.
    * 

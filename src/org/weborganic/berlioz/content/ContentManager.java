@@ -88,7 +88,7 @@ public final class ContentManager {
     File xml = new File(new File(repository, "config"), "services.xml");
     if (!xml.exists())
       return;
-    load (xml);
+    load(xml);
   }
 
   /**
