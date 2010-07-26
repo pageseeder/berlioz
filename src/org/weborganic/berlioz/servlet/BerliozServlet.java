@@ -170,7 +170,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * @throws ServletException Should an exception occur.
    */
-  public void init(ServletConfig config) throws ServletException {
+  public final void init(ServletConfig config) throws ServletException {
     this.servletConfig = config;
     // get the WEB-INF directory
     ServletContext context = config.getServletContext();
@@ -194,7 +194,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  public void doGet(HttpServletRequest req, HttpServletResponse res)
+  public final void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res);
   }
@@ -204,7 +204,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  public void doPost(HttpServletRequest req, HttpServletResponse res)
+  public final void doPost(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res);
   }
@@ -214,7 +214,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  protected void process(HttpServletRequest req, HttpServletResponse res)
+  protected final void process(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
 
     // Setup and ensure that we use UTF-8
@@ -254,9 +254,9 @@ public class BerliozServlet extends HttpServlet {
     // Compute the ETag for the request if cacheable and method GET
     String etag = null;
     if (xml.isCacheable() && "get".equalsIgnoreCase(req.getMethod())) {
-      String XMLEtag = xml.getEtag();
-      String XSLEtag = this.transformer.getEtag();
-      etag = '"'+MD5.hash(XMLEtag+"--"+XSLEtag)+'"';
+      String etagXML = xml.getEtag();
+      String etagXSL = this.transformer.getEtag();
+      etag = '"'+MD5.hash(etagXML+"--"+etagXSL)+'"';
 
       // Check if the conditions specified in the optional If headers are satisfied.
       ServiceInfo info = new ServiceInfo(etag);
@@ -328,7 +328,7 @@ public class BerliozServlet extends HttpServlet {
         // Copy the uncompressed version if needed
         if (!isCompressed) {
           PrintWriter out = res.getWriter();
-          out.print(result.content());        
+          out.print(result.content());
         }
 
       // very likely to be an error in the XML or a dynamic error
