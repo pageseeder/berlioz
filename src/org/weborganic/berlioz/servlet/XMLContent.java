@@ -7,10 +7,6 @@
  */
 package org.weborganic.berlioz.servlet;
 
-import java.util.Properties;
-
-import javax.xml.transform.Templates;
-
 /**
  * Holds the results of a transformation process.
  * 
@@ -30,7 +26,7 @@ public final class XMLContent implements BerliozOutput {
   /**
    * The content type produced by this transformer.
    */
-  private final String contentType = "text/xml";
+  private final String mediaType = "application/xml";
 
   /**
    * The encoding. 
@@ -57,7 +53,7 @@ public final class XMLContent implements BerliozOutput {
    * {@inheritDoc}
    */
   public String getMediaType() {
-    return this.contentType;
+    return this.mediaType;
   }
 
   /**

@@ -127,9 +127,14 @@ public class BerliozServlet extends HttpServlet {
   private ServletConfig servletConfig;
 
   /**
-   * Set the content type.
+   * Set the default content type for this Berlioz instance.
    */
   private String contentType;
+
+  /**
+   * Set the default cache control for this Berlioz instance.
+   */
+  private String cacheControl;
 
   /**
    * Set the Berlioz control key.
@@ -186,6 +191,8 @@ public class BerliozServlet extends HttpServlet {
     if (this.transformer == null && !this.contentType.contains("xml")) {
       LOGGER.warn("Servlet {} specified content type {} but output is XML", config.getServletName(), this.contentType);
     }
+    // The expected content type
+    this.cacheControl = this.getInitParameter("cache-control", "max-age="+GlobalSettings.get(HTTP_MAX_AGE, 60)+", must-revalidate");
     // The control key
     this.controlKey  = this.getInitParameter("berlioz-control", null);
     // used to dispatch
@@ -273,7 +280,9 @@ public class BerliozServlet extends HttpServlet {
 
       // Update the headers 
       res.setDateHeader(HttpHeaders.EXPIRES, getExpiryDate());
-      res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age="+GlobalSettings.get(HTTP_MAX_AGE, 60)+", must-revalidate");
+      String cc = xml.getService().cache();
+      if (cc == null) cc = this.cacheControl;
+      res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
       res.setHeader(HttpHeaders.ETAG, etag);
 
     // Prevents caching
@@ -305,6 +314,7 @@ public class BerliozServlet extends HttpServlet {
         if (this.transformer != null) {
           XSLTransformResult xslresult = this.transformer.transform(content, req, xml.getService());
           LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
+          result = xslresult;
         } else {
           result = new XMLContent(content);
         }
