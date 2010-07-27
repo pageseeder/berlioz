@@ -26,7 +26,7 @@ import com.topologi.diffx.xml.XMLWriter;
  * @author Christophe Lauret (Weborganic)
  * @version 9 October 2009
  */
-public final class XMLExtractor extends DefaultHandler {
+@Deprecated public final class XMLExtractor extends DefaultHandler {
 
   /**
    * The XML produced by the extractor. 
