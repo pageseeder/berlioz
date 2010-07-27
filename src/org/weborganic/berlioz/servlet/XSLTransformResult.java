@@ -18,9 +18,9 @@ import javax.xml.transform.Templates;
  * status and exception.
  * 
  * @author Christophe Lauret
- * @version 31 May 2010
+ * @version 27 July 2010
  */
-public final class XSLTransformResult {
+public final class XSLTransformResult implements BerliozOutput {
 
   /**
    * The status of a process result.
@@ -74,14 +74,14 @@ public final class XSLTransformResult {
   /**
    * The encoding. 
    */
-  private String encoding = "utf-8";  
+  private String encoding = "utf-8";
 
   /**
    * Creates a successful transformation result.
    * 
-   * @param content The content.
-   * @param time    The processing time.
-   * @param status  The status of the process.
+   * @param content   The content.
+   * @param time      The processing time.
+   * @param templates The templates used for the transformation.
    */
   public XSLTransformResult(CharSequence content, long time, Templates templates) {
     this._content = content;
@@ -95,8 +95,9 @@ public final class XSLTransformResult {
   /**
    * Creates an unsuccessful process result.
    * 
-   * @param content The content.
-   * @param ex  An exception.
+   * @param content   The content.
+   * @param ex        An exception.
+   * @param templates The templates used for the transformation.
    */
   public XSLTransformResult(CharSequence content, Exception ex, Templates templates) {
     this._content = content;
@@ -110,8 +111,8 @@ public final class XSLTransformResult {
   // ==============================================================================================
   // Immutable fields
 
-  /**
-   * @return The content of the transformation result.
+  /* (non-Javadoc)
+   * @see org.weborganic.berlioz.servlet.BerliozContent#content()
    */
   public CharSequence content() {
     return this._content;
@@ -151,18 +152,22 @@ public final class XSLTransformResult {
   }
 
   /**
-   * The content type of the transformation results.  
-   * 
-   * @return The content type of the transformation results.
+   * @return The content type (MIME) as defined in the XSLT templates.
    */
-  public String getContentType() {
+  public String getMediaType() {
     return this.contentType;
   }
 
   /**
-   * The encoding of the transformation results.  
-   * 
-   * @return The encoding of the transformation results.  
+   * @deprecated use {@link #getMediaType()} instead
+   * @return The content type (MIME) as defined in the XSLT templates.
+   */
+  @Deprecated public String getContentType() {
+    return this.contentType;
+  }
+
+  /**
+   * @return The character encoding as defined in the XSLT templates. 
    */
   public String getEncoding() {
     return this.encoding;
