@@ -35,7 +35,8 @@ public final class FileUtils {
   private static final Properties MIME = new Properties(); 
 
   /** Utility classes need no constructor. */
-  private FileUtils() {}
+  private FileUtils() {
+  }
 
   /**
    * Returns the MIME type for the given file.
@@ -117,8 +118,6 @@ public final class FileUtils {
 
   /**
    * Loads the properties.
-   * 
-   * @return Properties. Always.
    */
   private static synchronized void loadMIMEProperties() {
     File file = new File(GlobalSettings.getRepository(), "config/mime.properties");

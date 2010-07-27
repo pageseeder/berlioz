@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -63,8 +64,11 @@ public final class Service {
    * @param names      the names of each generator (if any).
    * @param targets    the targets of each generator (if any).
    */
-  private Service(String id, String group, String cache, List<ContentGenerator> generators, Map<ContentGenerator, List<Parameter>> parameters,
-      Map<ContentGenerator, String> names, Map<ContentGenerator, String> targets) {
+  private Service(String id, String group, String cache, 
+      List<ContentGenerator> generators, 
+      Map<ContentGenerator, List<Parameter>> parameters,
+      Map<ContentGenerator, String> names, 
+      Map<ContentGenerator, String> targets) {
     this._id = id;
     this._group = group;
     this._cache = cache;
@@ -224,7 +228,8 @@ public final class Service {
     /**
      * Creates a new builder.
      */
-    public Builder() {}
+    public Builder() {
+    }
 
     /**
      * Returns the ID of the service to build.
@@ -235,7 +240,6 @@ public final class Service {
       return this._id;
     }
 
-    
     /**
      * Sets the ID of the service to build.
      * 
@@ -270,7 +274,7 @@ public final class Service {
     }
 
     /**
-     * Adds a parameter to the last content generator entered
+     * Adds a parameter to the last content generator entered.
      * 
      * @param p The parameter to add to the latest generator added.
      * @return this builder for easy chaining.
@@ -337,7 +341,8 @@ public final class Service {
     public Service build() {
       // warn when attempting to use cache control with uncacheable service
       if (this._cache != null && !isCacheable(this._generators)) {
-        LoggerFactory.getLogger(Builder.class).warn("Building non-cacheable service {} - cache control ignored.", this._id);
+        Logger logger = LoggerFactory.getLogger(Builder.class);
+        logger.warn("Building non-cacheable service {} - cache control ignored.", this._id);
       }
       return new Service(this._id, this._group, this._cache,
           immutable(this._generators),
@@ -361,6 +366,7 @@ public final class Service {
     /**
      * Returns a new identical immutable list.
      * 
+     * @param original the list maintained by the builder.
      * @return a new identical immutable list.
      */
     private static List<ContentGenerator> immutable(List<ContentGenerator> original) {
@@ -376,7 +382,7 @@ public final class Service {
     /**
      * Returns a new identical immutable map.
      * 
-     * @param the map maintained by the builder.
+     * @param original the map maintained by the builder.
      * @return a new identical immutable map.
      */
     private static Map<ContentGenerator, List<Parameter>> immutable(Map<ContentGenerator, List<Parameter>> original) {
@@ -397,6 +403,7 @@ public final class Service {
     /**
      * Returns a new identical immutable list.
      * 
+     * @param original the list maintained by the builder.
      * @return a new identical immutable list.
      */
     private static List<Parameter> immutable2(List<Parameter> original) {
@@ -412,7 +419,7 @@ public final class Service {
     /**
      * Returns a new identical immutable map.
      * 
-     * @param the map maintained by the builder.
+     * @param original the map maintained by the builder.
      * @return a new identical immutable map.
      */
     private static Map<ContentGenerator, String> immutable3(Map<ContentGenerator, String> original) {

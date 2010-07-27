@@ -57,7 +57,7 @@ public final class XMLResponse {
   private final Environment _env;
 
   /**
-   * Wraps the request and response to be supplied to the generators.  
+   * Wraps the request and response to be supplied to the generators.
    */
   private final HttpRequestWrapper wrapper;
 
@@ -75,7 +75,7 @@ public final class XMLResponse {
    * Creates a new XML response for the specified arguments.
    * 
    * @param req The HTTP servlet request.
-   * @param req The HTTP servlet response.
+   * @param res The HTTP servlet response.
    * @param env The current environment.
    */
   public XMLResponse(HttpServletRequest req, HttpServletResponse res, Environment env) {
@@ -145,10 +145,7 @@ public final class XMLResponse {
   }
 
   /**
-   * Generates an XML response corresponding to the specified HTTP request.
-   * 
-   * @param req The HTTP servlet request.
-   * @param res The HTTP servlet response.
+   * Generates an XML response for the wrapped HTTP request and response objects.
    * 
    * @return The XML content for the appropriate content generator.
    * 
@@ -249,8 +246,6 @@ public final class XMLResponse {
    * @param service   The service it is part of.
    * @param xml       The XML Writer to use.
    * 
-   * @return The corresponding content.
-   * 
    * @throws IOException      Should an I/O error occur while writing XML.
    * @throws BerliozException Any exception occurring during processing will be wrapped in a BerliozException.
    */
@@ -262,7 +257,7 @@ public final class XMLResponse {
     xml.attribute("name", name);
     String target = service.target(generator);
     if (target != null) xml.attribute("target", target);
-    
+
     // Detect if deprecated
     if (generator.getClass().isAnnotationPresent(Deprecated.class))
       xml.attribute("deprecated", "true");
@@ -294,7 +289,7 @@ public final class XMLResponse {
   /**
    * Attempts to find the service corresponding to the request.
    */
-  private final void match() {
+  private void match() {
     if (!this.attemptedMatch) {
       this.match = ContentManager.getInstance(this._req.getPathInfo());
       this.attemptedMatch = true;
