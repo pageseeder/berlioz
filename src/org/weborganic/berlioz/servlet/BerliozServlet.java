@@ -25,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.util.EntityInfo;
@@ -176,11 +175,19 @@ public class BerliozServlet extends HttpServlet {
     ServletContext context = config.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
-    this.contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
+    // XSLT stylesheet to use
     String stylePath = this.getInitParameter("stylesheet", "/xslt/html/global.xsl");
+    if (!"IDENTITY".equals(stylePath)) {
+      File styleSheet = new File(webinfPath, stylePath);
+      this.transformer = new XSLTransformer(styleSheet);
+    }
+    // The expected content type
+    this.contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
+    if (this.transformer == null && !this.contentType.contains("xml")) {
+      LOGGER.warn("Servlet {} specified content type {} but output is XML", config.getServletName(), this.contentType);
+    }
+    // The control key
     this.controlKey  = this.getInitParameter("berlioz-control", null);
-    File styleSheet = new File(webinfPath, stylePath);
-    this.transformer = new XSLTransformer(styleSheet);
     // used to dispatch
     this.errorHandler = context.getNamedDispatcher("ErrorHandlerServlet");
     // TODO Allow error handler not to be defined
@@ -233,7 +240,7 @@ public class BerliozServlet extends HttpServlet {
 
       // Clear the cache if requested
       boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
-      if (clearCache) { this.transformer.clearCache(); }
+      if (clearCache && this.transformer != null) { this.transformer.clearCache(); }
 
       // Clear the service configuration
       boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
@@ -255,7 +262,7 @@ public class BerliozServlet extends HttpServlet {
     String etag = null;
     if (xml.isCacheable() && "get".equalsIgnoreCase(req.getMethod())) {
       String etagXML = xml.getEtag();
-      String etagXSL = this.transformer.getEtag();
+      String etagXSL = this.transformer != null? this.transformer.getEtag() : null;
       etag = '"'+MD5.hash(etagXML+"--"+etagXSL)+'"';
 
       // Check if the conditions specified in the optional If headers are satisfied.
@@ -294,11 +301,16 @@ public class BerliozServlet extends HttpServlet {
 //      ByteArrayOutputStream errors = new ByteArrayOutputStream();
 
       try {
-        XSLTransformResult result = this.transformer.transform(content, req, xml.getService());
-        LOGGER.debug("XSLT Transformation {} ms", result.time());
+        BerliozOutput result = null;
+        if (this.transformer != null) {
+          XSLTransformResult xslresult = this.transformer.transform(content, req, xml.getService());
+          LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
+        } else {
+          result = new XMLContent(content);
+        }
 
         // Update content type from XSLT transform result
-        String ctype = result.getContentType()+";charset="+result.getEncoding();
+        String ctype = result.getMediaType()+";charset="+result.getEncoding();
         res.setContentType(ctype);
         res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
         if (!this.contentType.equals(ctype)) {
@@ -306,7 +318,7 @@ public class BerliozServlet extends HttpServlet {
           this.contentType = ctype;
         }
 
-        boolean isCompressed = HttpHeaderUtils.isCompressible(result.getContentType())
+        boolean isCompressed = HttpHeaderUtils.isCompressible(result.getMediaType())
                             && GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
         if (isCompressed) {
 
@@ -374,6 +386,7 @@ public class BerliozServlet extends HttpServlet {
 
   /**
    * Expiry date is a year from now.
+   * @return One year into the future.
    */
   private static long getExpiryDate() {
     Calendar calendar = Calendar.getInstance();
@@ -382,14 +395,14 @@ public class BerliozServlet extends HttpServlet {
   }
 
   // Private internal class =======================================================================
-  
+
   /**
    * Provide a simple entity information for the service.
    * 
    * @author Christophe Lauret
    * @version 19 July 2010
    */
-  private static class ServiceInfo implements EntityInfo {
+  private static final class ServiceInfo implements EntityInfo {
 
     /**
      * The wrapped ETag
@@ -405,14 +418,25 @@ public class BerliozServlet extends HttpServlet {
       this._etag = etag;
     }
 
+    /**
+     * @return the etag for this service.
+     */
     public String getETag() {
       return this._etag;
     }
 
+    /**
+     * {@inheritDoc}
+     * @return Always "text/html".
+     */
     public String getMimeType() {
       return "text/html";
     }
 
+    /**
+     * {@inheritDoc}
+     * @return Always -1 as we use the etag for caching.
+     */
     public long getLastModified() {
       return -1;
     }
