@@ -10,9 +10,6 @@ package org.weborganic.berlioz.xml;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -25,8 +22,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-
-import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * A utility class to help with some simple XML operations.
@@ -43,41 +38,6 @@ public final class XMLUtils {
   private static final Logger LOGGER = LoggerFactory.getLogger(XMLUtils.class);
 
   /**
-   * The date format used for date values (without time)
-   */
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("d MMMM yyyy");
-
-  /**
-   * The date format used for date values (including time)
-   */
-  private static final DateFormat DATETIME_FORMAT = new SimpleDateFormat("d MMMM yyyy hh:mm:ss a");
-
-  /**
-   * The date format used for years.
-   */
-  private static final DateFormat YYYY = new SimpleDateFormat("yyyy");
-
-  /**
-   * The date format used for the hours in 24h format.
-   */
-  private static final DateFormat HH = new SimpleDateFormat("HH");
-
-  /**
-   * The date format used for the minute.
-   */
-  private static final DateFormat MM = new SimpleDateFormat("mm");
-
-  /**
-   * The date format used for the day.
-   */
-  private static final DateFormat DD = new SimpleDateFormat("dd");
-
-  /**
-   * The date format used for the month.
-   */
-  private static final DateFormat MO = new SimpleDateFormat("MM");
-
-  /**
    * The SAX parser factory to generate non-validating XML readers.
    */
   private static transient SAXParserFactory nfactory;
@@ -91,75 +51,6 @@ public final class XMLUtils {
    * Prevents creation of instances.
    */
   private XMLUtils() {
-  }
-
-  /**
-   * Writes the content model of a date as XML.
-   * 
-   * <p>The XML is as follows:
-   * <pre class="xml">
-   *   &lt;[date_element_name]
-   *      day="[day]" month="[month]" year="[year]"
-   *   &gt;[dd MMM YYYY]&lt;/[date_element_name]&gt;
-   * </pre>
-   * 
-   * <p>Does nothing if the date is <code>null</code>.
-   * 
-   * @see SimpleDateFormat
-   * 
-   * @deprecated Dates should be serialised as ISO 8601
-   * 
-   * @param xml  The XML writer to use.
-   * @param date The date to format.
-   * 
-   * @throws IOException If thrown by the XML writer.
-   * @throws NullPointerException If the XML writer is <code>null</code>
-   */
-  @Deprecated public static void dateAsXML(XMLWriter xml, Date date)
-      throws IOException, NullPointerException {
-    if (date == null) return;
-    xml.attribute("day", DD.format(date));
-    xml.attribute("month", MO.format(date));
-    xml.attribute("year", YYYY.format(date));
-    xml.writeText(DATE_FORMAT.format(date));
-  }
-
-  /**
-   * Writes the content model of a date and time as XML.
-   *
-   * <pre class="xml">
-   *   &lt;[date_element_name] day="[day-value]"
-   *                      month="[month-value]"
-   *                      year="[year-value]"
-   *                      hour="[hour-value]"
-   *                      minute="[minute-value]"
-   *   &gt;[dd MMM YYYY hh:mm aa]
-   *   &lt;/[date_element_name]&gt;
-   * </pre>
-   * 
-   * <p>Hour attribute is written using 24hrs format.
-   * 
-   * <p>Does nothing if the date is <code>null</code>.
-   * 
-   * @see SimpleDateFormat
-   * 
-   * @deprecated Dates should be serialised as ISO 8601
-   * 
-   * @param xml  The XML writer to use.
-   * @param date The date to format.
-   * 
-   * @throws IOException If thrown by the XML writer.
-   * @throws NullPointerException If the XML writer is <code>null</code>
-   */
-  @Deprecated public static void datetimeAsXML(XMLWriter xml, Date date)
-      throws IOException, NullPointerException {
-    if (date == null) return;
-    xml.attribute("day", DD.format(date));
-    xml.attribute("month", MO.format(date));
-    xml.attribute("year", YYYY.format(date));
-    xml.attribute("hour", HH.format(date));
-    xml.attribute("minute", MM.format(date));
-    xml.writeText(DATETIME_FORMAT.format(date));
   }
 
   /**
