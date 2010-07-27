@@ -208,7 +208,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  public final void doGet(HttpServletRequest req, HttpServletResponse res)
+  @Override public final void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res);
   }
@@ -218,7 +218,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  public final void doPost(HttpServletRequest req, HttpServletResponse res)
+  @Override public final void doPost(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res);
   }
