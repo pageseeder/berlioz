@@ -15,6 +15,8 @@ import java.util.Date;
 /**
  * This class provides methods for date formatting and parsing according to ISO 8601.
  * 
+ * <p>It is useful for generators as XSLT uses ISO 8601 for dates.
+ * 
  * <p>
  * Notation:
  * <ul>
@@ -103,6 +105,8 @@ public enum ISO8601 {
    * 
    * @param date The date the format
    * @return the corresponding date as the specified ISO 8601 format.
+   * 
+   * @throws ParseException Should an error be thrown by the {@link SimpleDateFormat#parse(String)} method.
    */
   public Date parse(String date) throws ParseException {
     DateFormat iso = new SimpleDateFormat(this._format);
@@ -119,7 +123,8 @@ public enum ISO8601 {
   /**
    * Returns the specified date as ISO 8601 format.
    * 
-   * @param date the specified date.
+   * @param date   the specified date.
+   * @param format the ISO 8601 format to use.
    * @return the date formatted using ISO 8601.
    */
   public static String format(long date, ISO8601 format) {
@@ -131,6 +136,8 @@ public enum ISO8601 {
    * 
    * @param date the specified date.
    * @return the date formatted using ISO 8601.
+   * 
+   * @throws ParseException Should an error be thrown by the {@link SimpleDateFormat#parse(String)} method.
    */
   public static Date parseAuto(String date) throws ParseException {
     if (date.length() == 4 && date.matches("\\d{4}"))
