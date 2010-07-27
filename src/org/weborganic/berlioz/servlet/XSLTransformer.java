@@ -8,15 +8,18 @@
 package org.weborganic.berlioz.servlet;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -37,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.berlioz.util.MD5;
 
 import com.topologi.diffx.xml.XMLUtils;
 
@@ -74,6 +78,11 @@ public final class XSLTransformer {
   private final File _templates;
 
   /**
+   * An etag for these templates.
+   */
+  private transient String _etag = null;
+
+  /**
    * Creates a new XSLT Transformer.
    * 
    * @param templates The location of the templates.
@@ -81,6 +90,7 @@ public final class XSLTransformer {
   public XSLTransformer(File templates) {
     if (templates == null) throw new NullPointerException("No Templates file specified");
     this._templates = templates;
+    this._etag = computeEtag(templates);
   }
 
   /**
@@ -104,7 +114,7 @@ public final class XSLTransformer {
       // Setup the transformer
       Map<String, String> parameters = toParameters(req);
 
-      // Setup the source 
+      // Setup the source
       StreamSource source = new StreamSource(new StringReader(content));
       source.setPublicId("-//Berlioz//Service/XML/"+service.group()+"/"+service.id());
       // TODO: provide better info (identify the service)
@@ -135,7 +145,7 @@ public final class XSLTransformer {
 
   /**
    * Returns the file used by this transformer to produce the templates.
-   *  
+   *
    * @return  the file used by this transformer to produce the templates.
    */
   public File templates() {
@@ -148,7 +158,7 @@ public final class XSLTransformer {
    * @return an ETag corresponding to the templates.
    */
   public String getEtag() {
-    return this._templates.lastModified()+"$"+this._templates.length();
+    return this._etag;
   }
 
   /**
@@ -160,6 +170,44 @@ public final class XSLTransformer {
   }
 
 // private helpers --------------------------------------------------------------------------------
+
+  /**
+   * Computes the etag for the templates.
+   * @param templates The main file for the templates.
+   * @return The corresponding etag.
+   */
+  private static String computeEtag(File templates) {
+    List<File> files = new ArrayList<File>(); 
+    listTemplateFiles(templates.getParentFile(), files);
+    StringBuilder b = new StringBuilder();
+    try {
+      for (File f : files) { b.append(MD5.hash(f)); }
+    } catch (IOException ex) {
+      return null;
+    }
+    return MD5.hash(b.toString());
+  }
+
+  /**
+   * Lists all the files in the specified directory and its descendants. 
+   * 
+   * @param dir      the root directory to scan.
+   * @param collected files collected so far.
+   */
+  private static void listTemplateFiles(File dir, List<File> collected) {
+    // get all the files in the current directory
+    File[] files = dir.listFiles();
+    // iterate over the files, collect
+    for (File f : files) {
+      // scan directories
+      if (f.isDirectory()) {
+        listTemplateFiles(f, collected);
+      } else {
+        // collect files only
+        collected.add(f);
+      }
+    }
+  }
 
   /**
    * Utility function to transforms the specified XML source and returns the results as XML.
@@ -214,7 +262,7 @@ public final class XSLTransformer {
    * 
    * @throws TransformerConfigurationException If the templates could not parsed. 
    */
-  private static Templates getTemplates(File f) throws TransformerConfigurationException {
+  private Templates getTemplates(File f) throws TransformerConfigurationException {
     boolean store = GlobalSettings.get(ENABLE_CACHE, true);
     String stylesheet = toWebPath(f.getAbsolutePath());
     Templates templates = CACHE.get(f);
@@ -225,6 +273,8 @@ public final class XSLTransformer {
       templates = toTemplates(f);
       long t1 = System.currentTimeMillis();
       LOGGER.debug("Templates loaded in {}ms", (t1 - t0));
+      // Recalculate the Etag
+      this._etag = computeEtag(f);
       if (store) {
         CACHE.put(f, templates);
         LOGGER.info("Caching XSLT stylesheet '{}'", stylesheet);
@@ -259,6 +309,7 @@ public final class XSLTransformer {
    * Returns the XSLT parameters for the transformer from the HTTP parameters starting with 'xsl-'.
    * 
    * @param req The servlet request.
+   * @return the map of parameters to pass to the XSLT as parameters.
    */
   private static Map<String, String> toParameters(ServletRequest req) {
     // Adding parameters from HTTP parameters
