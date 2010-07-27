@@ -25,10 +25,12 @@ import org.weborganic.berlioz.content.Environment;
 /**
  * Servlets that only returns XML.
  * 
+ * @deprecated Use {@link BerliozServlet} specifying stylesheet as IDENTITY.
+ * 
  * @author Christophe Lauret (Weborganic)
  * @version 9 October 2009
  */
-public final class XMLContentServlet extends HttpServlet {
+@Deprecated public final class XMLContentServlet extends HttpServlet {
 
   /**
    * As per requirement for the Serializable interface.
