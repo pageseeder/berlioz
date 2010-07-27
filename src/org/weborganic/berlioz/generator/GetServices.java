@@ -32,13 +32,13 @@ public final class GetServices extends ContentGeneratorBase implements ContentGe
   /**
    * Default location of the services.
    */
-  private static String SERVICES = "config/services.xml";
+  private static final String SERVICES = "config/services.xml";
 
   /**
    * {@inheritDoc}
    */
   public String getETag(ContentRequest req) {
-    File services = new File(GlobalSettings.getRepository(),SERVICES );
+    File services = new File(GlobalSettings.getRepository(), SERVICES);
     return services.length()+"x"+services.lastModified();
   }
 
@@ -50,7 +50,7 @@ public final class GetServices extends ContentGeneratorBase implements ContentGe
 
     // All good, print to the XML stream
     if (services.exists()) {
-      XMLCopy.copyTo(services, xml, true);
+      XMLCopy.copyTo(services, xml);
     }
   }
 

@@ -17,7 +17,7 @@ import org.weborganic.furi.URIResolver.MatchRule;
  * @author Christophe Lauret
  * @version 21 May 2010
  */
-public class ServiceRegistry {
+public final class ServiceRegistry {
 
   /**
    * Maps content generators to the appropriate HTTP method.
@@ -27,7 +27,7 @@ public class ServiceRegistry {
   /**
    * The HTTP methods supported.
    */
-  private enum HttpMethod {GET, POST, PUT, DELETE};
+  private enum HttpMethod { GET, POST, PUT, DELETE };
 
   /**
    * Creates a new registry.
@@ -43,9 +43,9 @@ public class ServiceRegistry {
   /**
    * Register the content generator.
    * 
-   * @param generator the content generator to register.
-   * @param pattern   the URL pattern to associate to this content generator.
-   * @param method    the method for this URL pattern.
+   * @param service the service to register.
+   * @param pattern the URL pattern to associate to this content generator.
+   * @param method  the method for this URL pattern.
    */
   public void register(Service service, String pattern, String method) {
     // preliminary checks
@@ -61,8 +61,8 @@ public class ServiceRegistry {
   /**
    * Register the content generator for the HTTP methods in use this registry only.
    * 
-   * @param generator the content generator to register.
-   * @param pattern   the URL pattern to associate to this content generator.
+   * @param service The service to register.
+   * @param pattern The URL pattern to associate to this content generator.
    */
   public void register(Service service, String pattern) {
     // preliminary checks
@@ -126,7 +126,7 @@ public class ServiceRegistry {
    * 
    * @throws IllegalArgumentException if the HTTP method is not valid
    */
-  private HttpMethod getHttpMethod(String method) {
+  private HttpMethod getHttpMethod(String method) throws IllegalArgumentException {
     for (HttpMethod m : HttpMethod.values()) {
       if (m.name().equals(method.toUpperCase())) return m;
     }
@@ -154,8 +154,10 @@ public class ServiceRegistry {
     /**
      * Puts the given content generator in this map.
      * 
-     * @param pattern   The URL pattern for this generator.
-     * @param generator The content generator.
+     * @param pattern The URL pattern for this generator.
+     * @param service The service to add.
+     * 
+     * @return Always <code>true</code> ???
      */
     public boolean put(String pattern, Service service) {
       mapping.put(pattern, service);
@@ -166,7 +168,7 @@ public class ServiceRegistry {
     /**
      * Returns the content generator for the specified URL.
      * 
-     * @param url The URL   
+     * @param url The URL
      * @return the content generator for the specified URL.
      */
     public MatchingService match(String url) {
@@ -176,7 +178,7 @@ public class ServiceRegistry {
       if (service != null) {
         URIPattern p = new URIPattern(url);
         match = new MatchingService(service, p, new URIResolver(url).resolve(p));
-        
+
       // Check if matching URI pattern
       } else {
         // Find the URI pattern matching the given path info

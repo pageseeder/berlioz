@@ -306,7 +306,7 @@ public final class HttpRequestWrapper implements ContentRequest {
     }
     // Load the service configuration
     Service service = match.service();
-    for (Parameter p :service.parameters(generator)) {
+    for (Parameter p : service.parameters(generator)) {
       String value = getParameterValue(p, results);
       if (value != null)
         this.parameters.put(p.name(), value);

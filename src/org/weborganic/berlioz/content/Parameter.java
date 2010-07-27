@@ -17,13 +17,13 @@ public final class Parameter {
    */
   public enum Source {
 
-    /** Use the string value as it is */
+    /** Use the string value as it is. */
     STRING,
 
-    /** Use the corresponding parameter value from query string of the URL*/
+    /** Use the corresponding parameter value from query string of the URL. */
     QUERY_STRING,
 
-    /** Use the resolved URI variable */
+    /** Use the resolved URI variable. */
     URI_VARIABLE
 
   }
@@ -59,30 +59,30 @@ public final class Parameter {
   }
 
   /**
-   * The name of this parameter.
+   * @return The name of this parameter.
    */
-  public String name(){
+  public String name() {
     return this._name;
   }
 
   /**
-   * The source of the value of this parameter.
+   * @return The source of the value of this parameter.
    */
-  public Source source(){
+  public Source source() {
     return this._source;
   }
 
   /**
-   * The value of this parameter.
+   * @return The value of this parameter.
    */
-  public String value(){
+  public String value() {
     return this._value;
   }
 
   /**
-   * The default value of this parameter.
+   * @return The default value of this parameter.
    */
-  public String def(){
+  public String def() {
     return this._def;
   }
 

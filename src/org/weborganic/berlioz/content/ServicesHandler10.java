@@ -93,7 +93,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * 
    * <p>Note: it is more efficient to pass the generators rather than access the outer class.
    * 
-   * @param generators The map of generators to populate.
+   * @param registry The service registry to use.
    */
   public ServicesHandler10(ServiceRegistry registry) {
     this.registry = registry;
@@ -162,13 +162,14 @@ final class ServicesHandler10 extends DefaultHandler {
         }
         this._builder.reset();
         this._patterns.clear();
+        break;
       default:
     }
   }
 
   /**
    * Creates a parameter specifications from the given attributes.
-   *  
+   *
    * @param atts the attributes of the parameter element.
    * @return a new <code>Parameter</code> instance or <code>null</code>.
    */

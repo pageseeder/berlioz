@@ -70,7 +70,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
       if (!mapping.isEmpty()) {
         for (Entry<String, String> e : this.mapping.entrySet()) {
           boolean hasPrefix = e.getKey() != null && e.getKey().length() > 0;
-          this.to.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());          
+          this.to.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());
         }
         this.mapping.clear();
       }
@@ -116,10 +116,16 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public void endPrefixMapping(String prefix) throws SAXException {
     // TODO ???
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
     // TODO ???
   }

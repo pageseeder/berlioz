@@ -94,6 +94,8 @@ public final class ContentManager {
   /**
    * Loads the content access file.
    * 
+   * @param xml The XML file to load.
+   * 
    * @throws BerliozException Should something unexpected happen.
    */
   public static void load(File xml) throws BerliozException {
@@ -121,7 +123,7 @@ public final class ContentManager {
   /**
    * Update the patterns based on the current generators.
    */
-  public synchronized static void clear() {
+  public static synchronized void clear() {
     LOGGER.info("Clearing content manager");
     REGISTRY.clear();
     loaded = false;
@@ -151,8 +153,8 @@ public final class ContentManager {
     /**
      * Create a new version sniffer for the specified XML reader.
      * 
-     * @param reader     The XML Reader in use.
-     * @param generators The generators to produce.
+     * @param reader   The XML Reader in use.
+     * @param registry The service registry.
      */
     public HandlingDispatcher(XMLReader reader, ServiceRegistry registry) {
       this._reader = reader;
