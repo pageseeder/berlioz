@@ -46,10 +46,39 @@ public final class FileUtils {
    * <p>This method uses the the 'mime.properties' resource file from the classpath which maps
    * file extensions to MIME type. This file is loaded once. 
    * 
+   * @deprecated Use {@link #getMediaType(File)} instead.
+   * 
    * @param f The file.
    * @return the corresponding MIME type or <code>null</code> if not found.
    */
   public static String getMIMEType(File f) {
+    // Load if empty
+    if (MIME.isEmpty()) loadMIMEProperties();
+    // Lookup extension in properties file
+    String name = f.getName();
+    int dot = name.lastIndexOf(".");
+    if (dot >= 0) {
+      return MIME.getProperty(name.substring(dot+1));
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Returns the Media Type for the given file.
+   * 
+   * <p>The media type is only based on the file extension.
+   * 
+   * <p>This method uses the the 'mime.properties' resource file from the classpath which maps
+   * file extensions to the corresponding Media Type. This file is loaded once. 
+   * 
+   * @see <a href="http://tools.ietf.org/html/rfc2046">MIME Part Two: Media Types</a>
+   * @see <a href="http://tools.ietf.org/html/rfc3023">XML Media Types</a>
+   * 
+   * @param f The file.
+   * @return the corresponding Media Type or <code>null</code> if not found.
+   */
+  public static String getMediaType(File f) {
     // Load if empty
     if (MIME.isEmpty()) loadMIMEProperties();
     // Lookup extension in properties file
