@@ -33,6 +33,7 @@
   <target name="init">
     <tstamp/>
     <mkdir dir="${dir.bin}"/>
+    <ivy:settings url="${ivy.settings.url}"/>
   </target>
 
   <!-- compile the java code from ${src} into ${classes} -->
@@ -119,6 +120,7 @@
     - publish.revision  (eg. '1.3.2', '1.3.2.6', etc..)
   -->
   <target name="-publish" depends="init" description="Publishes the build on Ivy">
+    <ivy:settings url="${ivy.settings.url}"/>
     <!-- create all directories -->
     <mkdir dir="${dir.release}"/>
     <mkdir dir="${dir.release}/${DSTAMP}"/>
