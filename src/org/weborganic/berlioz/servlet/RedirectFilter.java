@@ -36,6 +36,21 @@ import org.weborganic.furi.URIResolver;
 /**
  * A basic filter to redirect URI patterns to other URI patterns.
  * 
+ * <p>The redirect mapping can be specified as below:
+ * 
+ * <pre>{@code
+ * <?xml version="1.0" encoding="utf-8"?>
+ * <redirect-mapping>
+ *   <redirect from="/"             to="/html/home"/>
+ *   <redirect from="/index.html"   to="/html/home"/>
+ *   <redirect from="/html"         to="/html/home"/>
+ *   <redirect from="/xml"          to="/xml/home"/>
+ *   <redirect from="/{+path}.psml" to="/html/{+path}"/>
+ * </redirect-mapping>
+ * }</pre>
+ * 
+ * <p>Note: All redirects are currently temporary (302).
+ * 
  * <p>See {@link #init(ServletConfig)} for details for configuration options.
  * 
  * @author Christophe Lauret (Weborganic)
@@ -77,7 +92,7 @@ import org.weborganic.furi.URIResolver;
    * 
    * <p>This servlet accepts the following init parameters:
    * <ul>
-   *   <li><code>target</code> Where this servlet should redirect all requests.
+   *   <li><code>config</code> path to the URI redirect mapping XML file (eg. '/config/redirect.xml')
    * </ul>
    * 
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
