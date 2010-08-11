@@ -197,9 +197,9 @@ public class BerliozServlet extends HttpServlet {
     this.controlKey  = this.getInitParameter("berlioz-control", null);
     // used to dispatch
     this.errorHandler = context.getNamedDispatcher("ErrorHandlerServlet");
-    // TODO Allow error handler not to be defined
-    if (this.errorHandler == null)
-      throw new ServletException("The error handler must be configured and named ErrorHandlerServlet.");
+    if (this.errorHandler == null) {
+      LOGGER.warn("Error is not defined, using default error handler for the Web Application");
+    }
     this.env = new HttpEnvironment(contextPath, webinfPath);
   }
 
