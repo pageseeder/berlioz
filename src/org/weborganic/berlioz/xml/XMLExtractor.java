@@ -61,7 +61,7 @@ import com.topologi.diffx.xml.XMLWriter;
       if (!mapping.isEmpty()) {
         for (Entry<String, String> e : this.mapping.entrySet()) {
           boolean hasPrefix = e.getKey() != null && e.getKey().length() > 0;
-          this.recipient.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());          
+          this.recipient.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());
         }
         this.mapping.clear();
       }

@@ -119,15 +119,14 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
   /**
    * {@inheritDoc}
    */
-  public void endPrefixMapping(String prefix) throws SAXException {
+  @Override public void endPrefixMapping(String prefix) throws SAXException {
     // TODO ???
   }
 
   /**
    * {@inheritDoc}
    */
-  public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
-    // TODO ???
+  @Override public void ignorableWhitespace(char[] ch, int start, int length) {
   }
 
   /**

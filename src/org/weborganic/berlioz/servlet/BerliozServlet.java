@@ -226,7 +226,11 @@ public class BerliozServlet extends HttpServlet {
   /**
    * Handles requests.
    * 
-   * {@inheritDoc}
+   * @param req The HTTP servlet request.
+   * @param res The HTTP servlet response.
+   * 
+   * @throws ServletException To wrap any non IO exception.
+   * @throws IOException For any IO exception.
    */
   protected final void process(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {

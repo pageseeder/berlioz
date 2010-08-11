@@ -32,7 +32,7 @@ public final class HttpEnvironment implements Environment {
   private final File _private;
 
   /**
-   * Creates a new HTTP environment
+   * Creates a new HTTP environment.
    * 
    * @param publicd  The public directory
    * @param privated The private directory
