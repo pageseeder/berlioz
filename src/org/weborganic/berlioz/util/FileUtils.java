@@ -8,6 +8,7 @@
 package org.weborganic.berlioz.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -151,9 +152,14 @@ public final class FileUtils {
   private static synchronized void loadMIMEProperties() {
     File file = new File(GlobalSettings.getRepository(), "config/mime.properties");
     try {
-      LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
-      Class<FileUtils> c = FileUtils.class;
-      InputStream in = c.getResourceAsStream("/mime.properties");
+      InputStream in;
+      if (file.exists()) {
+        LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
+        in = new FileInputStream(file);
+      } else {
+        LOGGER.info("Loading MIME properties from Berlioz JAR", file.getAbsolutePath());
+        in = FileUtils.class.getResourceAsStream("/mime.properties");
+      }
       MIME.load(in);
       in.close();
     } catch (IOException ex) {
