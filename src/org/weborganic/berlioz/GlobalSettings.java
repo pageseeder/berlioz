@@ -146,7 +146,7 @@ public final class GlobalSettings {
   /**
    * Returns the configuration to use.
    * 
-   * @return The name of the configuration to use.  
+   * @return The name of the configuration to use.
    */
   public static String getConfig() {
     return config;
@@ -159,7 +159,7 @@ public final class GlobalSettings {
    * <p>This method will return a file only if the repository has been properly set,
    * and will be the directory defined by {@link #LIBRARY_DIRECTORY} in the repository.
    * 
-   * @return The directory containing the DTDs and schemas for the XML.  
+   * @return The directory containing the DTDs and schemas for the XML.
    */
   public static File getLibrary() {
     // set if not set
@@ -172,7 +172,7 @@ public final class GlobalSettings {
   /**
    * Returns the properties file to use externally.
    * 
-   * @return The properties file to load or <code>null</code>.  
+   * @return The properties file to load or <code>null</code>.
    */
   public static File getPropertiesFile() {
     if (repository == null) return null;
