@@ -159,14 +159,6 @@ public final class XSLTransformResult implements BerliozOutput {
   }
 
   /**
-   * @deprecated use {@link #getMediaType()} instead
-   * @return The content type (MIME) as defined in the XSLT templates.
-   */
-  @Deprecated public String getContentType() {
-    return this.contentType;
-  }
-
-  /**
    * @return The character encoding as defined in the XSLT templates. 
    */
   public String getEncoding() {
