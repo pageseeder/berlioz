@@ -1,3 +1,10 @@
+/*
+ * This file is part of the Berlioz library.
+ *
+ * For licensing information please see the file license.txt included in the release.
+ * A copy of this licence can also be found at 
+ *   http://www.opensource.org/licenses/artistic-license-2.0.php
+ */
 package org.weborganic.berlioz.util;
 
 import java.io.ByteArrayOutputStream;
@@ -24,7 +31,8 @@ public final class ResourceCompressor {
   /**
    * Compresses the specified content.
    * 
-   * @param content the content to compress.
+   * @param content The content to compress.
+   * @param charset The Character set to use to encode the char sequence.
    * 
    * @return The compressed content or <code>null</code> if an error occurred.
    */
