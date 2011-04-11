@@ -315,6 +315,14 @@ public final class HttpRequestWrapper implements ContentRequest {
     }
   }
 
+  /**
+   * Retrieve the parameters value based on the source. 
+   * 
+   * @param p       The parameter
+   * @param results The URI resolutions results
+   *
+   * @return The parameter value 
+   */
   private String getParameterValue(Parameter p, URIResolveResult results) {
     switch (p.source()) {
       case QUERY_STRING: 

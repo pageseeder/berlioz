@@ -1,3 +1,10 @@
+/*
+ * This file is part of the Berlioz library.
+ *
+ * For licensing information please see the file license.txt included in the release.
+ * A copy of this licence can also be found at 
+ *   http://www.opensource.org/licenses/artistic-license-2.0.php
+ */
 package org.weborganic.berlioz.content;
 
 /**
@@ -8,7 +15,7 @@ package org.weborganic.berlioz.content;
  * send to a generator.
  * 
  * @author Christophe Lauret
- * @version 21 May 2010
+ * @version 12 April 2011
  */
 public final class Parameter {
 
@@ -49,7 +56,12 @@ public final class Parameter {
   private final String _def;
 
   /**
-   * Creates a new parameter 
+   * Creates a new parameter.
+   * 
+   * @param name   The name of the parameter.
+   * @param value  How the value of the parameter.
+   * @param source Where the value of the parameter comes from.
+   * @param def    The default value for this parameter.
    */
   private Parameter(String name, String value, Source source, String def) {
     this._name   = name;
@@ -87,48 +99,82 @@ public final class Parameter {
   }
 
   /**
-   * A builder for parameters - this is a single use builder.
+   * A builder for parameters.
+   * 
+   * <p>this is a single use builder: this builder should not be used after the {@link #build()}
+   * method has been invoked.
    * 
    * @author Christophe Lauret
    * @version 21 May 2010
    */
   static class Builder {
 
+    /** Name of the parameter (required) */
     private final String _name;
-    
+
+    /** Value of the parameter */
     private String _value;
-    
+
+    /** Source of the parameter */
     private String _source;
-    
+
+    /** Default value for the parameter */
     private String _def;
 
+    /**
+     * Creates a new builder.
+     * @param name the name of the parameter to build.
+     */
     public Builder(String name) {
       this._name = name;
     }
 
+    /**
+     * Set the value for this parameter.
+     * @param value The value (depends on the source)
+     * @return this builder
+     */
     public Builder value(String value) {
       this._value = value;
       return this;
     }
-    
+
+    /**
+     * Set the source for this parameter.
+     * @param source The source of the value.
+     * @return this builder
+     */
     public Builder source(String source) {
       this._source = source;
       return this;
     }
-    
+
+    /**
+     * Set the default value for this parameter.
+     * @param def The default value (may be <code>null</code>)
+     * @return this builder
+     */
     public Builder def(String def) {
       this._def = def;
       return this;
     }
 
+    /**
+     * Creates an immutable parameter.
+     * @return The corresponding parameter.
+     * @throws IllegalStateException If either of the name or value is <code>null</code>;
+     *                               or the source is not parsable.
+     */
     Parameter build() throws IllegalStateException {
       if (this._name == null) throw new IllegalStateException("Cannot build a nameless parameter");
       if (this._value == null) throw new IllegalStateException("Cannot build a valueless parameter");
       Source source = Source.QUERY_STRING;
-      try {
-        source = this._source != null? Source.valueOf(this._source.toUpperCase().replace('-', '_')) : Source.QUERY_STRING;
-      } catch (Exception ex) {
-        throw new IllegalStateException(this._source+" is not valid source", ex);
+      if (this._source != null) {
+        try {
+          source = Source.valueOf(this._source.toUpperCase().replace('-', '_'));
+        } catch (IllegalArgumentException ex) {
+          throw new IllegalStateException(this._source+" is not valid source", ex);
+        }
       }
       return new Parameter(this._name, this._value, source, this._def);
     }

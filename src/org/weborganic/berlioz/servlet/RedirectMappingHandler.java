@@ -55,9 +55,10 @@ import org.xml.sax.helpers.DefaultHandler;
   }
 
   /**
+   * Parse the specified URI Pattern.
    * 
-   * @param pattern
-   * @return
+   * @param pattern The URI pattern as a string.
+   * @return the <code>URIPattern</code> instance or <code>null</code>.
    */
   private static URIPattern toPattern(String pattern) {
     try {
@@ -67,11 +68,19 @@ import org.xml.sax.helpers.DefaultHandler;
       return null;
     }
   }
-  
+
+  /**
+   * 
+   * @return
+   */
   public Map<URIPattern, URIPattern> getMapping() {
     return this.mapping;
-  }  
-  
+  }
+
+  /**
+   * 
+   * @return
+   */
   public List<URIPattern> getPermanent() {
     return this.permanent;
   }
