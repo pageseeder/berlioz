@@ -8,7 +8,10 @@
 package org.weborganic.berlioz.servlet;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -51,7 +54,7 @@ import com.topologi.diffx.xml.XMLUtils;
  * to change this behaviour.
  * 
  * @author Christophe Lauret
- * @version 26 July 2010
+ * @version 12 April 2011
  */
 public final class XSLTransformer {
 
@@ -183,6 +186,7 @@ public final class XSLTransformer {
     try {
       for (File f : files) { b.append(MD5.hash(f)); }
     } catch (IOException ex) {
+      LOGGER.warn("Error thrown while trying to calculate template etag", ex);
       return null;
     }
     return MD5.hash(b.toString());
@@ -265,7 +269,7 @@ public final class XSLTransformer {
   private Templates getTemplates(File f) throws TransformerConfigurationException {
     boolean store = GlobalSettings.get(ENABLE_CACHE, true);
     String stylesheet = toWebPath(f.getAbsolutePath());
-    Templates templates = CACHE.get(f);
+    Templates templates = store? CACHE.get(f) : null;
     if (templates == null) {
       LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", stylesheet, store? "enabled" : "disabled");
       // Generate the templates if necessary
@@ -294,15 +298,26 @@ public final class XSLTransformer {
    */
   private static Templates toTemplates(File stylepath) throws TransformerConfigurationException {
     // load the templates from the source file
-    Source source = new StreamSource(stylepath);
-    TransformerFactory factory = TransformerFactory.newInstance();
-    UIErrorListener listener = new UIErrorListener();
-    factory.setErrorListener(listener);
+    InputStream in = null;
+    Templates templates = null;
     try {
-      return factory.newTemplates(source);
-    } catch (TransformerConfigurationException ex) {
-      throw new UITransformerConfigurationException(ex, listener.xml.toString());
+      in = new FileInputStream(stylepath);
+      Source source = new StreamSource(in);
+      TransformerFactory factory = TransformerFactory.newInstance();
+      UIErrorListener listener = new UIErrorListener();
+      factory.setErrorListener(listener);
+      try {
+        templates = factory.newTemplates(source);
+      } catch (TransformerConfigurationException ex) {
+        throw new UITransformerConfigurationException(ex, listener.xml.toString());
+      }
+    } catch (FileNotFoundException ex) {
+      // Should not happen because we check before that the file exists, so we can safely ignore
+      LOGGER.warn("Unable to find template file: {}", stylepath);
+    } finally {
+      closeQuietly(in);
     }
+    return templates;
   }
 
   /**
@@ -384,6 +399,20 @@ public final class XSLTransformer {
     String from = "WEB-INF";
     int x = s.indexOf(from);
     return x != -1? s.substring(x+from.length()) : s;
+  }
+
+  /**
+   * Close an input stream ignoring any exception.
+   * @param in the input stream
+   */
+  private static void closeQuietly(InputStream in) {
+    if (in != null) {
+      try {
+        in.close();
+      } catch (IOException ex) {
+        LOGGER.debug("Error thrown while trying to quietly close stream - ignored", ex);
+      }
+    }
   }
 
   /**

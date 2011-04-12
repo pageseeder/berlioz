@@ -111,8 +111,8 @@ public final class XSLTransformResult implements BerliozOutput {
   // ==============================================================================================
   // Immutable fields
 
-  /* (non-Javadoc)
-   * @see org.weborganic.berlioz.servlet.BerliozContent#content()
+  /**
+   * {@inheritDoc}
    */
   public CharSequence content() {
     return this._content;
