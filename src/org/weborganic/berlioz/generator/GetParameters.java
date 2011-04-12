@@ -47,9 +47,9 @@ public final class GetParameters extends ContentGeneratorBase implements Content
    */
   public String getETag(ContentRequest req) {
     StringBuilder hash = new StringBuilder("?"); 
-    Enumeration<?> names = req.getParameterNames();
+    Enumeration<String> names = req.getParameterNames();
     while (names.hasMoreElements()) {
-      String name = (String)names.nextElement();
+      String name = names.nextElement();
       String[] values = req.getParameterValues(name);
       for (int i = 0; i < values.length; i++) {
         hash.append(name).append('=').append(values[i]).append('&');
@@ -65,9 +65,9 @@ public final class GetParameters extends ContentGeneratorBase implements Content
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
     // write the http parameters
     xml.openElement("parameters", true);
-    Enumeration<?> names = req.getParameterNames();
+    Enumeration<String> names = req.getParameterNames();
     while (names.hasMoreElements()) {
-      String paramName = (String)names.nextElement();
+      String paramName = names.nextElement();
       String[] values = req.getParameterValues(paramName);
       for (int i = 0; i < values.length; i++) {
         xml.openElement("parameter", false);
