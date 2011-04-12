@@ -9,12 +9,14 @@ package org.weborganic.berlioz.servlet;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.furi.URIResolveResult;
 
 import com.topologi.diffx.xml.XMLWritable;
 import com.topologi.diffx.xml.XMLWriter;
@@ -63,6 +65,11 @@ public final class XMLResponseHeader implements XMLWritable {
   private final String _group;
 
   /**
+   * The results of URI resolution.
+   */
+  private URIResolveResult _results;
+
+  /**
    * Creates a new XML response header using the path info to generate the service name.
    * 
    * <p>For example, if the servlet is configured for URL pattern <code>/df/*</code>,
@@ -92,13 +99,27 @@ public final class XMLResponseHeader implements XMLWritable {
   /**
    * Creates a new XML response header.
    * 
-   * @param request   The HTTP request.
-   * @param generator The content generator used.
+   * @param request  The HTTP request.
+   * @param service  The service object.
    */
   public XMLResponseHeader(HttpServletRequest request, Service service) {
     this._request = request;
     this._service = service.id();
     this._group = service.group();
+  }
+
+  /**
+   * Creates a new XML response header.
+   * 
+   * @param request  The HTTP request.
+   * @param service  The service object.
+   * @param results  The result of URI resolution.
+   */
+  public XMLResponseHeader(HttpServletRequest request, Service service, URIResolveResult results) {
+    this._request = request;
+    this._service = service.id();
+    this._group = service.group();
+    this._results = results;
   }
 
   /**
@@ -123,26 +144,31 @@ public final class XMLResponseHeader implements XMLWritable {
   /**
    * Writes the XML response for this header.
    * 
-   * <pre class="xml">
-   *   &lt;header&gt;
-   *     &lt;group&gt;[service group name]&lt;/group&gt;
-   *     &lt;service&gt;[service name]&lt;/service&gt;
-   *     &lt;path-info&gt;[servlet path info]&lt;/path-info&gt;
-   *     &lt;context-path&gt;[servlet context path]&lt;/context-path&gt;
-   *     &lt;host&gt;[remote host]&lt;/host&gt;
-   *     &lt;port&gt;[remote port]&lt;/port&gt;
-   *     &lt;url&gt;[remote port]&lt;/url&gt;
-   *     &lt;query-string&gt;[remote port]&lt;/query-string&gt;
-   *     &lt;http-parameters&gt;
-   *       &lt;parameter name="[name-A]"&gt;[value-A]&lt;/parameter&gt;
-   *       &lt;parameter name="[name-B]"&gt;[value-B1]&lt;/parameter&gt;
-   *       &lt;parameter name="[name-B]"&gt;[value-B2]&lt;/parameter&gt;
-   *       &lt;parameter name="[name-C]"&gt;[value-C]&lt;/parameter&gt;
-   *       &lt;parameter name="[name-D]"&gt;[value-D]&lt;/parameter&gt;
-   *       <code class="comment">&lt;!-- ... --&gt;</code>
-   *     &lt;/http-parameters&gt;
-   *   &lt;/header&gt;
-   * </pre>
+   * <pre class="xml">{@code
+   *   <header>
+   *     <group>[service group name]</group>
+   *     <service>[service name]</service>
+   *     <path-info>[servlet path info]</path-info>
+   *     <context-path>[servlet context path]</context-path>
+   *     <host>[remote host]</host>
+   *     <port>[remote port]</port>
+   *     <url>[remote url]</url>
+   *     <query-string>[remote port]</query-string>
+   *     <http-parameters>
+   *       <parameter name="[name-A]">[value-A]</parameter>
+   *       <parameter name="[name-B]">[value-B1]</parameter>
+   *       <parameter name="[name-B]">[value-B2]</parameter>
+   *       <parameter name="[name-C]">[value-C]</parameter>
+   *       <parameter name="[name-D]">[value-D]</parameter>
+   *       <!-- ... -->
+   *     </http-parameters>
+   *     <uri-parameters>
+   *       <parameter name="[name-X]">[value-X]</parameter>
+   *       <parameter name="[name-Y]">[value-Y]</parameter>
+   *       <!-- ... -->
+   *     </uri-parameters>
+   *   </header>
+   * }</pre>
    * 
    * @see XMLWritable#toXML(com.topologi.diffx.xml.XMLWriter)
    * 
@@ -163,7 +189,7 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.element("url", this._request.getRequestURL().toString());
     xml.element("query-string", this._request.getQueryString());
 
-    // write the http parameters
+    // Write the http parameters
     xml.openElement("http-parameters", true);
     Enumeration<?> names = this._request.getParameterNames();
     while (names.hasMoreElements()) {
@@ -177,6 +203,20 @@ public final class XMLResponseHeader implements XMLWritable {
       }
     }
     xml.closeElement(); // close http-parameters
+
+    // Write the URI parameters
+    if (this._results != null) {
+      Set<String> unames = this._results.names();
+      xml.openElement("uri-parameters", !unames.isEmpty());
+      for (String name : unames) {
+        Object value = this._results.get(name);
+        xml.openElement("parameter", false);
+        xml.attribute("name", name);
+        xml.writeText(value != null? value.toString() : "");
+        xml.closeElement();
+      }
+      xml.closeElement();
+    }
 
     // Include Berlioz version
     xml.openElement("berlioz");

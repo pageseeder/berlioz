@@ -121,7 +121,7 @@ public final class XMLResponse {
     if (cacheable) {
       for (ContentGenerator generator : service.generators()) {
         // Set the request parameters (if necessary)
-        wrapper.configure(match, generator);
+        wrapper.configure(this.match, generator);
         // Check if cacheable
         if (generator instanceof Cacheable) {
           etag.append(((Cacheable)generator).getETag(wrapper)).append("/");
@@ -161,10 +161,10 @@ public final class XMLResponse {
       xml.openElement("root", true);
 
       // if the service exists
-      if (match != null) {
-        Service service = match.service();
+      if (this.match != null) {
+        Service service = this.match.service();
         LOGGER.debug(this._req.getPathInfo()+" -> "+service);
-        XMLResponseHeader header = new XMLResponseHeader(this._req, service);
+        XMLResponseHeader header = new XMLResponseHeader(this._req, service, this.match.result());
         header.toXML(xml);
 
         for (ContentGenerator generator : service.generators()) {
