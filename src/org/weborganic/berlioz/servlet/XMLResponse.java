@@ -191,23 +191,6 @@ public final class XMLResponse {
   }
 
   /**
-   * Generates an XML response corresponding to the specified HTTP request.
-   * 
-   * @deprecated
-   * 
-   * @param req The HTTP servlet request.
-   * @param res The HTTP servlet response.
-   * 
-   * @return The XML content for the appropriate content generator.
-   * 
-   * @throws IOException Should an I/O error occur.
-   */
-  public static String generate(HttpServletRequest req, HttpServletResponse res, Environment env) throws IOException {
-    XMLResponse response = new XMLResponse(req, res, env);
-    return response.generate();
-  }
-
-  /**
    * Generates the XML content for when an error occurs while generating the content.
    * 
    * @param req The HTTP servlet request.
