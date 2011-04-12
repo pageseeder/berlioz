@@ -24,16 +24,6 @@ public final class XMLContent implements BerliozOutput {
   private final CharSequence _content;
 
   /**
-   * The content type produced by this transformer.
-   */
-  private final String mediaType = "application/xml";
-
-  /**
-   * The encoding. 
-   */
-  private final String encoding = "utf-8";
-
-  /**
    * Creates some new XML content.
    * 
    * @param content The content.
@@ -50,17 +40,21 @@ public final class XMLContent implements BerliozOutput {
   }
 
   /**
+   * Always <code>application/xml</code>.
+   * 
    * {@inheritDoc}
    */
   public String getMediaType() {
-    return this.mediaType;
+    return "application/xml";
   }
 
   /**
+   * Always <code>utf-8</code>.
+   * 
    * {@inheritDoc}
    */
   public String getEncoding() {
-    return this.encoding;
+    return "utf-8";
   }
 
 }

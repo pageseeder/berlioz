@@ -17,6 +17,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -130,10 +131,10 @@ public final class XMLProperties extends Properties implements XMLWritable {
    * @throws IOException Should an error occur with the XML writer.
    */
   private void nodeToXML(String prefix, XMLWriter xml) throws IOException {
-    final HashSet nodes = new HashSet();
+    final Set<String> nodes = new HashSet<String>();
     // get all the entries
     xml.openElement("map", true);
-    for (Enumeration e = keys(); e.hasMoreElements();) {
+    for (Enumeration<?> e = keys(); e.hasMoreElements();) {
       String key = (String)e.nextElement();
       if (key.startsWith(prefix) && key.length() > prefix.length()) {
         String suffix = (prefix.length() > 0)? key.substring(prefix.length()) : key;
@@ -153,8 +154,8 @@ public final class XMLProperties extends Properties implements XMLWritable {
     }
     xml.closeElement();
     // process each node
-    for (Iterator i = nodes.iterator(); i.hasNext();) {
-      String name = (String)i.next();
+    for (Iterator<String> i = nodes.iterator(); i.hasNext();) {
+      String name = i.next();
       xml.openElement("node", true);
       xml.attribute("name", name);
       String nodePrefix = ((prefix.length() > 0)? prefix : "") + name+".";

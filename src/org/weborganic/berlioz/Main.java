@@ -29,6 +29,8 @@ public final class Main {
    * Invokes this tool on the command-line.
    * 
    * @param args The command-line parameters.
+   * 
+   * @throws BerliozException Should an error occur while loading the services.
    */
   public static void main(String[] args) throws BerliozException {
     usage(null);

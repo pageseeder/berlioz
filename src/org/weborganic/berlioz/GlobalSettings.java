@@ -362,7 +362,7 @@ public final class GlobalSettings {
     // other process and store
     Properties node = new Properties();
     String prefix = name+".";
-    for (Enumeration e = settings.keys(); e.hasMoreElements();) {
+    for (Enumeration<?> e = settings.keys(); e.hasMoreElements();) {
       String key = (String)e.nextElement();
       if (key.startsWith(prefix) && key.substring(prefix.length()).indexOf('.') < 0)
         node.setProperty(key.substring(prefix.length()), settings.getProperty(key));
