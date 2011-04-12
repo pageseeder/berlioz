@@ -13,8 +13,6 @@ import java.util.Enumeration;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.fileupload.FileItem;
-
 /**
  * Provides a generic and uniform mechanism for the content generator to access parameters 
  * and attributes from a request. 
@@ -103,15 +101,6 @@ public interface ContentRequest {
   Object getAttribute(String name);
 
   /**
-   * Returns the specified file item object or <code>null</code>.
-   * 
-   * @param name The name of the file item.
-   * 
-   * @return the specified file item object or <code>null</code>.
-   */
-  FileItem getFileItem(String name);
-
-  /**
    * Sets the specified attribute object or <code>null</code>.
    * 
    * @param name The name of the attribute.
@@ -122,7 +111,7 @@ public interface ContentRequest {
   /**
    * Returns a <code>Date</code> instance from the specified parameter.
    * 
-   * <p>Parses dates as 'dd MMM yyyy'.
+   * <p><b>Important note</b>: incompatible change, since Berlioz 0.8, dates are parsed as ISO 8601.
    * 
    * @param name The name of the parameter.
    * 

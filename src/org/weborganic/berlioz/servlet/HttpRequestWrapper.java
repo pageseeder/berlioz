@@ -7,8 +7,8 @@
  */
 package org.weborganic.berlioz.servlet;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -20,9 +20,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.ContentGenerator;
@@ -31,6 +28,7 @@ import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Parameter;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.berlioz.util.ISO8601;
 import org.weborganic.furi.URIResolveResult;
 
 /**
@@ -40,7 +38,7 @@ import org.weborganic.furi.URIResolveResult;
  * @author Christophe Lauret (Weborganic)
  * @author Tu Tak Tran (Allette Systems)
  * 
- * @version 25 May 2010
+ * @version 12 April 2011
  */
 public final class HttpRequestWrapper implements ContentRequest {
 
@@ -50,34 +48,19 @@ public final class HttpRequestWrapper implements ContentRequest {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestWrapper.class);
 
   /**
-   * A parser for date parameters
-   */
-  private static final DateFormat DATE_PARSER = new SimpleDateFormat("dd MMM yyyy");
-
-  /**
-   * A file servlet upload handler for uploaded files.
-   */
-  private static final ServletFileUpload UPLOAD = new ServletFileUpload(new DiskFileItemFactory());
-
-  /**
    * The wrapped {@link javax.servlet.ServletRequest}.
    */
-  private final HttpServletRequest req;
+  private final HttpServletRequest _req;
 
   /**
    * The wrapped {@link javax.servlet.ServletResponse}.
    */
-  private final HttpServletResponse res;
+  private final HttpServletResponse _res;
 
   /**
    * The environment.
    */
-  private Environment env;
-
-  /**
-   * The list of file items if needed.
-   */
-  private List<FileItem> items;
+  private Environment _env;
 
   /**
    * Maps parameter names to their values.
@@ -91,6 +74,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * 
    * @param req The request to wrap.
    * @param res The response to wrap.
+   * @param env The environment for this request.
    * 
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
@@ -98,19 +82,9 @@ public final class HttpRequestWrapper implements ContentRequest {
       throws IllegalArgumentException {
     if (req == null)
       throw new IllegalArgumentException("Cannot construct wrapper around null request.");
-    this.req = req;
-    // Handling multipart requests
-    boolean isMultipart = this.isMultipartContent();
-    if (isMultipart) {
-      LOGGER.info("Parsing multipart content...");
-      try {
-        this.items = UPLOAD.parseRequest(req);
-      } catch (Exception ex) {
-        LOGGER.warn("Error whilst parsing the multiplart request.", ex);
-      }
-    }
-    this.res = res;
-    this.env = env;
+    this._req = req;
+    this._res = res;
+    this._env = env;
   }
 
 // generic parameter methods ----------------------------------------------------------------------
@@ -121,7 +95,7 @@ public final class HttpRequestWrapper implements ContentRequest {
   public String getParameter(String name) {
     String value = this.parameters.get(name);
     if (value == null)
-      value = this.req.getParameter(name);
+      value = this._req.getParameter(name);
     return ("".equals(value))? null : value;
   }
 
@@ -137,21 +111,25 @@ public final class HttpRequestWrapper implements ContentRequest {
    * {@inheritDoc}
    */
   public String[] getParameterValues(String name) {
-    return this.req.getParameterValues(name);
+    String value = this.parameters.get(name);
+    if (value != null)
+      return new String[]{value};
+    else
+      return this._req.getParameterValues(name);
   }
 
   /**
    * {@inheritDoc}
    */
-  public Enumeration getParameterNames() {
-    return this.req.getParameterNames();
+  public Enumeration<String> getParameterNames() {
+    return Collections.enumeration(this.parameters.keySet()); 
   }
 
   /**
    * {@inheritDoc}
    */
   public Environment getEnvironment() {
-    return this.env;
+    return this._env;
   }
 
 // specific methods ---------------------------------------------------------------------
@@ -175,9 +153,9 @@ public final class HttpRequestWrapper implements ContentRequest {
    */
   public Date getDateParameter(String name) {
     try {
-      return DATE_PARSER.parse(this.getParameter(name));
-    } catch (Exception ex) {
-      LOGGER.warn("The date parameter cannot be parsed :"+this.req.getParameter(name), ex);
+      return ISO8601.parseAuto(this.getParameter(name));
+    } catch (ParseException ex) {
+      LOGGER.warn("The date parameter cannot be parsed :"+this._req.getParameter(name), ex);
       return null;
     }
   }
@@ -188,36 +166,21 @@ public final class HttpRequestWrapper implements ContentRequest {
    * @return The path information (what comes after servlet path).
    */
   public String getPathInfo() {
-    return this.req.getPathInfo();
-  }
-
-  /**
-   * Returns the specified file item if it matches the given field name and its size is greater
-   * than zero.
-   * 
-   * {@inheritDoc}
-   */
-  public FileItem getFileItem(String name) {
-    if (this.items == null) return null;
-    for (FileItem item : this.items) {
-      if (name.equals(item.getFieldName()) && item.getSize() > 0)
-        return item;
-    }
-    return null;
+    return this._req.getPathInfo();
   }
 
   /**
    * {@inheritDoc} 
    */
   public Cookie[] getCookies() {
-    return this.req.getCookies();
+    return this._req.getCookies();
   }
 
   /**
    * {@inheritDoc}
    */
   public void returnNotFound() {
-    this.res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    this._res.setStatus(HttpServletResponse.SC_NOT_FOUND);
   }
 
 // attributes -------------------------------------------------------------------------------------
@@ -226,14 +189,14 @@ public final class HttpRequestWrapper implements ContentRequest {
    * {@inheritDoc}
    */
   public Object getAttribute(String name) {
-    return this.req.getAttribute(name);
+    return this._req.getAttribute(name);
   }
 
   /**
    * {@inheritDoc}
    */
   public void setAttribute(String name, Object o) {
-    this.req.setAttribute(name, o);
+    this._req.setAttribute(name, o);
   }
 
   /**
@@ -245,7 +208,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * @return The wrapped HTTP servlet request.
    */
   public HttpServletRequest getHttpRequest() {
-    return this.req;
+    return this._req;
   }
 
   /**
@@ -257,7 +220,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * @return The attached HTTP servlet response.
    */
   public HttpServletResponse getHttpResponse() {
-    return this.res;
+    return this._res;
   }
 
   /**
@@ -267,10 +230,10 @@ public final class HttpRequestWrapper implements ContentRequest {
    *         <code>false</code> otherwise.
    */
   public boolean isMultipartContent() {
-    if (!"post".equals(this.req.getMethod().toLowerCase())) {
+    if (!"post".equals(this._req.getMethod().toLowerCase())) {
       return false;
     }
-    String contentType = this.req.getContentType();
+    String contentType = this._req.getContentType();
     if (contentType == null) {
       return false;
     }
@@ -286,7 +249,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * @return The session of the HTTP servlet request.
    */
   public HttpSession getSession() {
-    return this.req.getSession();
+    return this._req.getSession();
   }
 
   /**
@@ -326,7 +289,7 @@ public final class HttpRequestWrapper implements ContentRequest {
   private String getParameterValue(Parameter p, URIResolveResult results) {
     switch (p.source()) {
       case QUERY_STRING: 
-        return this.req.getParameter(p.value());
+        return this._req.getParameter(p.value());
       case URI_VARIABLE:
         Object o = results.get(p.value());
         return o != null? o.toString() : null;
