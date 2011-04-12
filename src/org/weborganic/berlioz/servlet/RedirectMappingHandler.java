@@ -70,16 +70,18 @@ import org.xml.sax.helpers.DefaultHandler;
   }
 
   /**
+   * Return the complete mapping of URI patterns that need be redirected.
    * 
-   * @return
+   * @return The mapping of URI patterns that need be redirected.
    */
   public Map<URIPattern, URIPattern> getMapping() {
     return this.mapping;
   }
 
   /**
+   * The list of redirected URI patterns which will return a permanent redirect.
    * 
-   * @return
+   * @return The list of redirected URI patterns which will return a permanent redirect.
    */
   public List<URIPattern> getPermanent() {
     return this.permanent;

@@ -146,6 +146,9 @@ import org.weborganic.furi.URIResolver;
    * @param req   The HTTP servlet request.
    * @param res   The HTTP servlet response.
    * @param chain The filter chain.
+   * 
+   * @throws IOException      Should an error occurs while writing the response.
+   * @throws ServletException If thrown by the filter chain.
    */
   public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain) 
       throws ServletException, IOException {
@@ -180,21 +183,30 @@ import org.weborganic.furi.URIResolver;
   private void redirect(HttpServletRequest req, HttpServletResponse res, URIPattern match) throws IOException {
     URIPattern target = this._mapping.get(match);
     HttpServletRequest hreq = (HttpServletRequest)req;
+
+    // Resolve URI variables
     String from = hreq.getRequestURI();
     URIResolver resolver = new URIResolver(from);
     URIResolveResult result = resolver.resolve(match);
 
+    // Expand the target URI with URI variables 
     Set<String> names = result.names();
     URIParameters parameters = new URIParameters();
     for (String name : names) {
       parameters.set(name, (String)result.get(name));
     }
-
     String to = target.expand(parameters);
+
+    // Encode URL
     res.setCharacterEncoding("utf-8");
     LOGGER.debug("Redirecting from {} to {}", from, to);
     String encoded = res.encodeRedirectURL(to);
+
+    // And redirect
     res.sendRedirect(to);
+    if (this._permanent != null && this._permanent.contains(target)) {
+      res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+    }
     res.getWriter().print(getMessage(to, encoded));
   }
 
