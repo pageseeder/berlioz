@@ -303,6 +303,7 @@ public final class XSLTransformer {
     try {
       in = new FileInputStream(stylepath);
       Source source = new StreamSource(in);
+      source.setSystemId(stylepath.toURI().toString());
       TransformerFactory factory = TransformerFactory.newInstance();
       UIErrorListener listener = new UIErrorListener();
       factory.setErrorListener(listener);
