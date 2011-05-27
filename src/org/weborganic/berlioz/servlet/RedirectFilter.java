@@ -204,7 +204,7 @@ import org.weborganic.furi.URIResolver;
 
     // And redirect
     res.sendRedirect(to);
-    if (this._permanent != null && this._permanent.contains(target)) {
+    if (this._permanent != null && this._permanent.contains(match)) {
       res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
     }
     res.getWriter().print(getMessage(to, encoded));
