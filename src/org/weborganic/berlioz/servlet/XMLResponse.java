@@ -274,7 +274,9 @@ public final class XMLResponse {
    */
   private void match() {
     if (!this.attemptedMatch) {
-      this.match = ContentManager.getInstance(this._req.getPathInfo());
+      String path = this._req.getPathInfo();
+      if (path == null) { path = this._req.getServletPath(); }
+      this.match = ContentManager.getInstance(path);
       this.attemptedMatch = true;
     }
   }
