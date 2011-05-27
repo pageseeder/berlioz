@@ -91,6 +91,13 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  public String getBerliozPath() {
+    return this._req.getPathInfo() != null? this._req.getPathInfo() : this._req.getServletPath();
+  };
+
+  /**
+   * {@inheritDoc}
+   */
   public String getParameter(String name) {
     String value = this.parameters.get(name);
     if (value == null)

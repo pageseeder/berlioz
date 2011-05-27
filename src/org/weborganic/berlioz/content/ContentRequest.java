@@ -34,6 +34,23 @@ public interface ContentRequest {
   String getPathInfo();
 
   /**
+   * Returns the dynamic path of the Berlioz request.
+   * 
+   * <p>The Berlioz path corresponds to:
+   * <ul>
+   *   <li>the <code>pathInfo</code> when the Berlioz Servlet is mapped using a prefix servlet 
+   *   (for example <code>/html/*</code>);</li>
+   *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet 
+   *   (for example <code>*.html</code>);</li>
+   * 
+   * <p>Use this method in preference to the {@link #getPathInfo()} which only works if Berlioz is
+   * mapped to prefixes.
+   * 
+   * @return The path information of this request.
+   */
+  String getBerliozPath();
+
+  /**
    * Returns the specified parameter value or <code>null</code>.
    * 
    * <p>This method guarantees that the returned value is not equal to an empty string.
