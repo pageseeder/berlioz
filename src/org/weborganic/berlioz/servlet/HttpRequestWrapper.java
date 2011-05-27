@@ -92,7 +92,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * {@inheritDoc}
    */
   public String getBerliozPath() {
-    return this._req.getPathInfo() != null? this._req.getPathInfo() : this._req.getServletPath();
+    return getBerliozPath(this._req);
   };
 
   /**
@@ -257,6 +257,38 @@ public final class HttpRequestWrapper implements ContentRequest {
   public HttpSession getSession() {
     return this._req.getSession();
   }
+
+  // utility methods
+  // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Returns the Berlioz path from an HTTP Servlet request.
+   * 
+   * <p>The Berlioz path corresponds to:
+   * <ul>
+   *   <li>the <code>pathInfo</code> when the Berlioz Servlet is mapped using a prefix servlet 
+   *   (for example <code>/html/*</code>);</li>
+   *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet 
+   *   (for example <code>*.html</code>);</li>
+   * </ul>
+   * 
+   * <p>Use this method in preference to the {@link #getPathInfo()} which only works if Berlioz is
+   * mapped to prefixes.
+   * 
+   * @param req The HTTP servlet request.
+   * @return the corresponding Berlioz Path.
+   */
+  public static String getBerliozPath(HttpServletRequest req) {
+    // Try to get the path info (when mapped to '/prefix/*')
+    if (req.getPathInfo() != null) { return req.getPathInfo(); }
+    // Otherwise assume that it is mapped to '*.suffix'
+    String path = req.getServletPath();
+    int dot = path.lastIndexOf('.');
+    return (dot != -1)? path.substring(0, dot) : path;
+  }
+
+  // protected and private methods
+  // ----------------------------------------------------------------------------------------------
 
   /**
    * Configure this request wrapper for the specified service match and generator.

@@ -274,8 +274,7 @@ public final class XMLResponse {
    */
   private void match() {
     if (!this.attemptedMatch) {
-      String path = this._req.getPathInfo();
-      if (path == null) { path = this._req.getServletPath(); }
+      String path = HttpRequestWrapper.getBerliozPath(this._req);
       this.match = ContentManager.getInstance(path);
       this.attemptedMatch = true;
     }

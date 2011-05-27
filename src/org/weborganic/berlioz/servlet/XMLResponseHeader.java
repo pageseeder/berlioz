@@ -148,7 +148,7 @@ public final class XMLResponseHeader implements XMLWritable {
    *   <header>
    *     <group>[service group name]</group>
    *     <service>[service name]</service>
-   *     <path-info>[servlet path info]</path-info>
+   *     <path-info>[berlioz path]</path-info>
    *     <context-path>[servlet context path]</context-path>
    *     <host>[remote host]</host>
    *     <port>[remote port]</port>
@@ -181,7 +181,7 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.openElement("header", true);
     xml.element("group", this._group);
     xml.element("service", this._service);
-    xml.element("path-info", this._request.getPathInfo());
+    xml.element("path-info", HttpRequestWrapper.getBerliozPath(this._request));
     xml.element("context-path", this._request.getContextPath());
     xml.element("host", this._request.getServerName());
     int port = GlobalSettings.get("xmlport", this._request.getServerPort());

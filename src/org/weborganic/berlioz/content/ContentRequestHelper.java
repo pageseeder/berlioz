@@ -23,19 +23,4 @@ public final class ContentRequestHelper {
     // empty constructor
   }
 
-  /**
-   * Returns the parameter called 'first-letter' from the request.
-   * 
-   * If param is not specified, returns "A"
-   * 
-   * @param req The content request
-   * 
-   * @return The value of the parameter, will never be <code>null</code>.
-   */
-  public static char getFirstLetterParameter(ContentRequest req) {
-    String p = req.getParameter("first-letter");
-    if (p == null) p = "A";
-    return p.charAt(0);
-  }
-
 }

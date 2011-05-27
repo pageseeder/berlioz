@@ -22,7 +22,7 @@ import javax.servlet.http.HttpSession;
  * 
  * @author Tu Tak Tran (Allette Systems)
  * @author Christophe Lauret (Weborganic)
- * @version 25 May 2010
+ * @version 27 May 2011
  */
 public interface ContentRequest {
 
