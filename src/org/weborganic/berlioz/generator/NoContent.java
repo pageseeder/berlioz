@@ -17,8 +17,34 @@ import com.topologi.diffx.xml.XMLWriter;
 /**
  * Generates no content.
  * 
- * <p>This content generator is only useful for when the XML header already contains
- * enough information for the purpose of application. 
+ * <p>This content generator is useful for when the XML header already contains
+ * enough information for the purpose of application.
+ * 
+ * <p>This generator can also be useful to be picked up by the XSLT even if no content is required.
+ * 
+ * <h3>Configuration</h3>
+ * <p>There is no configuration associated with this generator.</p>
+ * 
+ * <h3>Parameters</h3>
+ * <p>There is no parameters.
+ * 
+ * <h3>Returned XML</h3>
+ * <p>This generator does not have any content, so the XML is generally empty.
+ * <p>Since Berlioz always wraps generators' content, the final XML will be: 
+ * <pre>{@code
+ * <content generator="org.weborganic.berlioz.generator.NoContent"
+ *               name="[name]" target="[target]" status="ok"/>}</pre>
+ * 
+ * <p><i>Note: since this generator does produce any data, the return status is always 
+ * <code>ok</code>.</i></p>
+ * 
+ * <h3>Usage</h3>
+ * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
+ * <pre>{@code <generator class="org.weborganic.berlioz.generator.NoContent" 
+ *                         name="[name]" target="[target]"/>}</pre>
+ *
+ * <h3>Etag</h3>
+ * <p>This Etag for this generator is always <code>"nocontent"</code>.
  * 
  * @author Christophe Lauret (Weborganic)
  * @version 1 June 2010
