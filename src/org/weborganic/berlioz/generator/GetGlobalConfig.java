@@ -16,14 +16,23 @@ import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
+import org.weborganic.berlioz.util.MD5;
 
 import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * Returns the global properties as XML.
  * 
+ * <h3>Configuration</h3>
+ * <p>There is no configuration associated with this generator.</p>
+ * 
+ * <h3>Parameters</h3>
+ * <p>This generator does not use and require any parameter.
+ * 
+ * <h3>Returned XML</h3>
+ * <p>This generator returns a flat list of the global properties as XML as below: 
  * <pre>{@code
- * <properties>
+ * <properties source="[source]">
  *   <property name="[nameA]" value="[valueA]"/>
  *   <property name="[nameB]" value="[valueB]"/>
  *   <property name="[nameC]" value="[valueC]"/>
@@ -31,8 +40,12 @@ import com.topologi.diffx.xml.XMLWriter;
  * </properties>
  * }</pre>
  * 
+ * <h3>Etag</h3>
+ * <p>This generator uses a weak etag based on the name, length and last modified date of the
+ * properties file being loaded.
+ * 
  * @author Christophe Lauret (Weborganic)
- * @version 26 May 2010
+ * @version 4 June 2011
  */
 public final class GetGlobalConfig extends ContentGeneratorBase implements ContentGenerator, Cacheable {
 
@@ -43,7 +56,7 @@ public final class GetGlobalConfig extends ContentGeneratorBase implements Conte
    */
   public String getETag(ContentRequest req) {
     File global = GlobalSettings.getPropertiesFile();
-    return global.length()+"x"+global.lastModified();
+    return MD5.hash(global.length()+"x"+global.lastModified());
   }
 
   /**
@@ -52,6 +65,7 @@ public final class GetGlobalConfig extends ContentGeneratorBase implements Conte
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
     Enumeration<?> names = GlobalSettings.propertyNames();
     xml.openElement("properties", true);
+    xml.attribute("source", GlobalSettings.getPropertiesFile().getName());
     while (names.hasMoreElements()) {
       String name = (String)names.nextElement();
       xml.openElement("property", false);

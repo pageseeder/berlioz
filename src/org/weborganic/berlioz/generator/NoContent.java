@@ -26,11 +26,11 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>There is no configuration associated with this generator.</p>
  * 
  * <h3>Parameters</h3>
- * <p>There is no parameters.
+ * <p>This generator does not use and require any parameter.
  * 
  * <h3>Returned XML</h3>
- * <p>This generator does not have any content, so the XML is generally empty.
- * <p>Since Berlioz always wraps generators' content, the final XML will be: 
+ * <p>This generator does not have any content, so the XML content is always empty.
+ * <p>Since Berlioz always wraps generators' content, the final XML is always: 
  * <pre>{@code
  * <content generator="org.weborganic.berlioz.generator.NoContent"
  *               name="[name]" target="[target]" status="ok"/>}</pre>

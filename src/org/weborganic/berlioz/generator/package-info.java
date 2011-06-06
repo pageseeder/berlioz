@@ -1,4 +1,4 @@
 /**
- * A collection of common content generator implementations.
+ * A collection of basic content generator implementations.
  */
 package org.weborganic.berlioz.generator;
