@@ -128,7 +128,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * {@inheritDoc}
    */
   public Enumeration<String> getParameterNames() {
-    return Collections.enumeration(this._req.getParameterMap().keySet());
+    return Collections.enumeration(this.parameters.keySet()); 
   }
 
   /**
