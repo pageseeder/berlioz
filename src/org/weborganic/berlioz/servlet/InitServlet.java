@@ -67,27 +67,44 @@ public final class InitServlet extends HttpServlet implements Servlet {
       File configDir = new File(webinfPath, "config");
 
       // Init message
+      System.out.println("[BERLIOZ_INIT] ===============================================================");
       System.out.println("[BERLIOZ_INIT] Initialing Berlioz "+GlobalSettings.getVersion()+"...");
 
       // Determine the mode (dev, production, etc...)
       String mode = getMode(config);
 
       // Checking that the 'config/services.xml' is there
-      File services = new File(configDir, "services.xml");
-      if (services.exists()) {
-        System.out.println("[BERLIOZ_INIT] Berlioz Services: found config/services.xml");        
-      } else {
-        System.err.println("[BERLIOZ_INIT] Berlioz Services: could not find config/services.xml");
-      }
+      checkServices(configDir);
 
       // Configuring the logger
       configureLog4j(configDir, mode);
 
       // Setup the global settings
-      System.out.println("[BERLIOZ_INIT] Berlioz Global Settings...");
+      System.out.println("[BERLIOZ_INIT] Config: Setting repository to: "+webinfPath.getAbsolutePath());
       GlobalSettings.setRepository(webinfPath);
       if (mode != null)
         GlobalSettings.setConfig(mode);
+      System.out.println("[BERLIOZ_INIT] Config: OK ---------------------------------------------------");
+
+      // All done
+      System.out.println("[BERLIOZ_INIT] Done!");
+      System.out.println("[BERLIOZ_INIT] ====================================================");
+    }
+  }
+
+  /**
+   * Checking that the 'config/services.xml' is there
+   * 
+   * @param configDir The directory containing the configuration files. 
+   */
+  private void checkServices(File configDir) {
+    File services = new File(configDir, "services.xml");
+    if (services.exists()) {
+      System.out.println("[BERLIOZ_INIT] Services: found config/services.xml");
+      System.out.println("[BERLIOZ_INIT] Services: OK ------------------------------------------------");
+    } else {
+      System.out.println("[BERLIOZ_INIT] (!) Could not find config/services.xml");
+      System.out.println("[BERLIOZ_INIT] Services: FAIL ----------------------------------------------");
     }
   }
 
@@ -106,13 +123,16 @@ public final class InitServlet extends HttpServlet implements Servlet {
         Class<?> configurator = Class.forName("org.apache.log4j.PropertyConfigurator");
         Method m = configurator.getDeclaredMethod("configure", String.class);
         m.invoke(null, logProperties.getAbsolutePath());
-        System.out.println("[BERLIOZ_INIT] Berlioz logging: log4j config file OK");
+        System.out.println("[BERLIOZ_INIT] Logging: log4j config file OK");
+        System.out.println("[BERLIOZ_INIT] Logging: OK ---------------------------------------------------");
       } catch (Exception ex) {
         System.out.println("[BERLIOZ_INIT] (!) Attempt to load Log4j configurator failed!");
         ex.printStackTrace();
+        System.out.println("[BERLIOZ_INIT] Logging: FAIL -------------------------------------------------");
       }
     } else {
       System.out.println("[BERLIOZ_INIT] (!) Logging: config/"+logProperties.getName()+" not found - no logging configured.");
+      System.out.println("[BERLIOZ_INIT] Logging: OK ---------------------------------------------------");
     }
   }
 
@@ -126,34 +146,33 @@ public final class InitServlet extends HttpServlet implements Servlet {
     // Determine the mode (dev, production, etc...)
     String mode = config.getInitParameter("mode");
     if (mode != null) {
-      System.out.println("[BERLIOZ_INIT] Found mode defined with init-parameter 'mode'");
+      System.out.println("[BERLIOZ_INIT] Mode: defined with init-parameter 'mode'");
     } else {
       // Try the system property
       mode = System.getProperty("berlioz.mode");
       if (mode != null) {
-        System.out.println("[BERLIOZ_INIT] Found mode defined with system property 'berlioz.mode'");
+        System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.mode'");
       } else {
         // Try the legacy init-parameter
         mode = config.getInitParameter("config-name");
         if (mode != null) {
-          System.out.println("[BERLIOZ_INIT] Found mode defined with init-parameter 'config-name'");
+          System.out.println("[BERLIOZ_INIT] Mode: defined with init-parameter 'config-name'");
           System.out.println("[BERLIOZ_INIT] (!) Please change your web.xml to use 'mode' instead");
         } else {
           // Try the legacy system property
           mode = System.getProperty("berlioz.config");
           if (mode != null) {
-            System.out.println("[BERLIOZ_INIT] Found mode defined with system property 'berlioz.config'");
+            System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.config'");
             System.out.println("[BERLIOZ_INIT] (!) Please change your config file to use 'berlioz.mode' instead");
           } else {
-            mode = "default";
-            System.out.println("[BERLIOZ_INIT] mode Mode not found - defaulting to 'default'");
+            System.out.println("[BERLIOZ_INIT] Mode: undefined");
           }
         }
       }
     }
-
-    // OK done!
-    System.out.println("Berlioz Mode: '"+mode+"'");
+    // Report
+    System.out.println("[BERLIOZ_INIT] Mode: '"+mode+"'");
+    System.out.println("[BERLIOZ_INIT] Mode: OK ------------------------------------------------------");
     return mode;
   }
 

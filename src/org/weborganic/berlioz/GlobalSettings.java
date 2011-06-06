@@ -407,7 +407,6 @@ public final class GlobalSettings {
     } else if (!dir.isDirectory()) {
       throw new IllegalArgumentException("The specified repository "+dir+" is not a directory.");
     } else {
-      System.err.println("Setting repository to: "+dir.getAbsolutePath());
       repository = dir;
       // reset the library, it will be properly set during the next call.
       library = null;
