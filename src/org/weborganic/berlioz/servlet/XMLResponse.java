@@ -32,7 +32,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * <p>This class is not thread-safe.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 31 May 2010
+ * @version 4 June 2011
  */
 public final class XMLResponse {
 
@@ -240,6 +240,12 @@ public final class XMLResponse {
     xml.attribute("name", name);
     String target = service.target(generator);
     if (target != null) xml.attribute("target", target);
+
+    // If cacheable, include etag
+    if (generator instanceof Cacheable) {
+      String etag = ((Cacheable)generator).getETag(wrapper);
+      xml.attribute("etag", etag);
+    }
 
     // Detect if deprecated
     if (generator.getClass().isAnnotationPresent(Deprecated.class))
