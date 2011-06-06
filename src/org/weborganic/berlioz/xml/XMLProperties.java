@@ -46,6 +46,11 @@ public final class XMLProperties extends Properties implements XMLWritable {
   private static final long serialVersionUID = 20060123256100001L;
 
   /**
+   * The separator between properties.
+   */
+  private static final String DOT = "."; 
+  
+  /**
    * Creates an empty property list with no default values.
    */
   public XMLProperties() {
@@ -139,7 +144,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
       if (key.startsWith(prefix) && key.length() > prefix.length()) {
         String suffix = (prefix.length() > 0)? key.substring(prefix.length()) : key;
         // identify and serialise entries now
-        boolean isEntry = suffix.indexOf(".") < 0;
+        boolean isEntry = suffix.indexOf(DOT) < 0;
         if (isEntry) {
           xml.openElement("entry", false);
           xml.attribute("key", suffix);
@@ -147,7 +152,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
           xml.closeElement();
         // identify the nodes to process recursively later
         } else {
-          String name = suffix.substring(0, suffix.indexOf("."));
+          String name = suffix.substring(0, suffix.indexOf(DOT));
           nodes.add(name);
         }
       }
@@ -158,7 +163,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
       String name = i.next();
       xml.openElement("node", true);
       xml.attribute("name", name);
-      String nodePrefix = ((prefix.length() > 0)? prefix : "") + name+".";
+      String nodePrefix = ((prefix.length() > 0)? prefix : "") + name+DOT;
       nodeToXML(nodePrefix, xml);
       xml.closeElement();
     }
@@ -201,7 +206,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
      */
     public void startElement(String uri, String localName, String qName, Attributes atts) {
       if ("node".equals(localName)) {
-        this.prefix.append(atts.getValue("name")).append(".");
+        this.prefix.append(atts.getValue("name")).append(DOT);
       } else if ("entry".equals(localName)) {
         String key = this.prefix.toString()+atts.getValue("key");
         this._properties.setProperty(key, atts.getValue("value"));
@@ -214,7 +219,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
     public void endElement(String uri, String localName, String qName) {
       if ("node".equals(localName)) {
         this.prefix.setLength(this.prefix.length() - 1);
-        this.prefix.setLength(this.prefix.lastIndexOf(".")+1);
+        this.prefix.setLength(this.prefix.lastIndexOf(DOT)+1);
       }
     }
   }

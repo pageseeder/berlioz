@@ -29,5 +29,5 @@ public interface Cacheable {
    * @return The corresponding ETag.
    */
   String getETag(ContentRequest req);
-  
+
 }
