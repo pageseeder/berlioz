@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.Random;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -156,6 +157,11 @@ public class BerliozServlet extends HttpServlet {
    */
   private transient XSLTransformer transformer;
 
+  /**
+   * A seed to use for the calculation of etags (allows them to be reset)
+   */
+  private transient long etagSeed = 0L;
+
 // servlet methods --------------------------------------------------------------------------------
 
   /**
@@ -201,6 +207,7 @@ public class BerliozServlet extends HttpServlet {
       LOGGER.warn("Error is not defined, using default error handler for the Web Application");
     }
     this.env = new HttpEnvironment(contextPath, webinfPath);
+    this.etagSeed = newEtagSeed();
   }
 
   /**
@@ -235,7 +242,7 @@ public class BerliozServlet extends HttpServlet {
   protected final void process(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
 
-    // Setup and ensure that we use UTF-8
+    // Setup and ensure that we use UTF-8 to read data
     req.setCharacterEncoding("utf-8");
     res.setContentType(this.contentType);
 
@@ -252,6 +259,10 @@ public class BerliozServlet extends HttpServlet {
       // Clear the cache if requested
       boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
       if (clearCache && this.transformer != null) { this.transformer.clearCache(); }
+
+      // Allow ETags to be reset
+      boolean resetEtags = reload || "true".equals(req.getParameter("reset-etags"));
+      if (resetEtags) { this.etagSeed = newEtagSeed();}
 
       // Clear the service configuration
       boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
@@ -274,7 +285,7 @@ public class BerliozServlet extends HttpServlet {
     if (xml.isCacheable() && "get".equalsIgnoreCase(req.getMethod())) {
       String etagXML = xml.getEtag();
       String etagXSL = this.transformer != null? this.transformer.getEtag() : null;
-      etag = '"'+MD5.hash(etagXML+"--"+etagXSL)+'"';
+      etag = '"'+MD5.hash(this.etagSeed+"~"+etagXML+"--"+etagXSL)+'"';
 
       // Check if the conditions specified in the optional If headers are satisfied.
       ServiceInfo info = new ServiceInfo(etag);
@@ -406,6 +417,16 @@ public class BerliozServlet extends HttpServlet {
     Calendar calendar = Calendar.getInstance();
     calendar.roll(Calendar.YEAR, 1);
     return calendar.getTimeInMillis();
+  }
+
+  /**
+   * Expiry date is a year from now.
+   * @return One year into the future.
+   */
+  private static long newEtagSeed() {
+    Long seed = new Random().nextLong();
+    LOGGER.info("Generating new ETag Seed: {}", seed);
+    return seed;
   }
 
   // Private internal class =======================================================================
