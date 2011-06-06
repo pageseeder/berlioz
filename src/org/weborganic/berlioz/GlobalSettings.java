@@ -378,9 +378,10 @@ public final class GlobalSettings {
    * 
    * @throws IllegalStateException If this class has not been setup properly.
    */
-  public static Enumeration propertyNames() throws IllegalStateException {
+  @SuppressWarnings("unchecked")
+  public static Enumeration<String> propertyNames() throws IllegalStateException {
     if (settings == null) load();
-    return settings.propertyNames();
+    return (Enumeration<String>)settings.propertyNames();
   }
 
 // setup methods -------------------------------------------------------------------------------
@@ -454,8 +455,8 @@ public final class GlobalSettings {
     // make sure we have a repository
     File file = getPropertiesFile();
     if (file != null) {
-      System.err.println("Loading Berlioz global properties file from:");
-      System.err.println(file.getAbsolutePath());
+      System.err.println("[BERLIOZ_CONFIG] Loading Berlioz global properties file from:");
+      System.err.println("[BERLIOZ_CONFIG] "+file.getAbsolutePath());
       // initialise
       boolean isXML = file.getName().endsWith(".xml");
       settings = isXML? new XMLProperties() : new Properties();
@@ -466,11 +467,11 @@ public final class GlobalSettings {
         settings.load(in);
         in.close();
         if (debug) {
-          System.err.println("Berlioz global properties loaded, see details below");
+          System.err.println("[BERLIOZ_CONFIG] Berlioz global properties loaded, see details below");
           settings.list(System.err);
         }
       } catch (Exception ex) {
-        System.err.println("An error occurred whilst trying to read the properties file.");
+        System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
         ex.printStackTrace();
         return false;
       }
@@ -478,9 +479,9 @@ public final class GlobalSettings {
     }
     if (settings == null)
       settings = new Properties();
-    System.err.println("Cannot load properties, the repository has not been setup properly:");
-    System.err.println("  ~Repository:"+repository);
-    System.err.println("  ~Config:"+config);
+    System.err.println("[BERLIOZ_CONFIG] Cannot load properties, the repository has not been setup properly:");
+    System.err.println("[BERLIOZ_CONFIG]   ~Repository:"+repository);
+    System.err.println("[BERLIOZ_CONFIG]   ~Mode:"+config);
     return false;
   }
 
