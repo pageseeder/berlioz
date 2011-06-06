@@ -63,8 +63,11 @@ public final class MD5 {
   /**
    * Returns a hash value for the specified file.
    * 
+   * <p>Implementation note: this method loads the entire file using NIO.
+   * 
    * @param file The file to read
    * @return The MD5 checksum value as a string.
+   * 
    * @throws IOException If the file does not exist or an error occurred while reading the file.
    * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
    */
@@ -78,6 +81,24 @@ public final class MD5 {
       return toHex(bytes);
     } finally {
       in.close();
+    }
+  }
+
+  /**
+   * Returns a hash value for the specified file.
+   * 
+   * @param file The file to read
+   * @param strong <code>true</code> to calculate a strong etag based on the file content;
+   *               <code>false</code> to compute it from the canonical path, date and length.
+   * @return The MD5 checksum value as a string.
+   * @throws IOException If the file does not exist or an error occurred while reading the file.
+   * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
+   */
+  public static String hash(File file, boolean strong) throws IOException, UnsupportedOperationException {
+    if (strong) {
+      return hash(file);
+    } else {
+      return hash(file.getCanonicalPath()+'$'+file.length()+'%'+file.lastModified());
     }
   }
 
