@@ -84,11 +84,14 @@ public final class InitServlet extends HttpServlet implements Servlet {
       GlobalSettings.setRepository(webinfPath);
       if (mode != null)
         GlobalSettings.setConfig(mode);
-      System.out.println("[BERLIOZ_INIT] Config: OK ---------------------------------------------------");
+      System.out.println("[BERLIOZ_INIT] Config: Defaults");
+      System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozServlet.ENABLE_HTTP_COMPRESSION));
+      System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozServlet.HTTP_MAX_AGE, 60));
+      System.out.println("[BERLIOZ_INIT] Config: OK ----------------------------------------------------");
 
       // All done
       System.out.println("[BERLIOZ_INIT] Done!");
-      System.out.println("[BERLIOZ_INIT] ====================================================");
+      System.out.println("[BERLIOZ_INIT] ===============================================================");
     }
   }
 
@@ -101,10 +104,10 @@ public final class InitServlet extends HttpServlet implements Servlet {
     File services = new File(configDir, "services.xml");
     if (services.exists()) {
       System.out.println("[BERLIOZ_INIT] Services: found config/services.xml");
-      System.out.println("[BERLIOZ_INIT] Services: OK ------------------------------------------------");
+      System.out.println("[BERLIOZ_INIT] Services: OK --------------------------------------------------");
     } else {
       System.out.println("[BERLIOZ_INIT] (!) Could not find config/services.xml");
-      System.out.println("[BERLIOZ_INIT] Services: FAIL ----------------------------------------------");
+      System.out.println("[BERLIOZ_INIT] Services: FAIL ------------------------------------------------");
     }
   }
 
