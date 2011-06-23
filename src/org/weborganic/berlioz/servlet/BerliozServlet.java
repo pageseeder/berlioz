@@ -327,8 +327,8 @@ public class BerliozServlet extends HttpServlet {
       if (!("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
         List<String> methods = this.services.allows(path);
         if (methods.size() > 0) {
-          res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
+          res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
           return;
         }
       }

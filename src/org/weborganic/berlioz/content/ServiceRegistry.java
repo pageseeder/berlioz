@@ -61,6 +61,7 @@ public final class ServiceRegistry {
     if (method == null) throw new IllegalArgumentException("HTTP Method must be specified to register a service.");
     // Find and check the HTTP method
     HttpMethod m = getHttpMethod(method);
+    if (m == null) throw new IllegalArgumentException("Unknown HTTP method:"+method);
     // Register the generator with the URL pattern
     this.registry.get(m).put(pattern, service);
   }
@@ -127,13 +128,16 @@ public final class ServiceRegistry {
   /**
    * Returns the content generator for this URL and HTTP method.
    * 
+   * <p>If the HTTP method specified is HEAD, this method will return the service for a GET request.
+   * 
    * @param url    The URL.
    * @param method The HTTP method.
    * 
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
   public MatchingService get(String url, String method) {
-    HttpMethod m = getHttpMethod(method);
+    HttpMethod m = "HEAD".equalsIgnoreCase(method)? HttpMethod.GET : getHttpMethod(method);
+    if (m == null) return null;
     ServiceMap mapping = this.registry.get(m);
     MatchingService service = mapping.match(url);
     return service;
@@ -160,7 +164,7 @@ public final class ServiceRegistry {
     for (HttpMethod m : HttpMethod.values()) {
       if (m.name().equals(method.toUpperCase())) return m;
     }
-    throw new IllegalArgumentException("Unknown HTTP method:"+method);
+    return null;
   }
 
   /**
