@@ -7,17 +7,13 @@
  */
 package org.weborganic.berlioz.servlet;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Random;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -26,9 +22,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentManager;
-import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.ServiceRegistry;
 import org.weborganic.berlioz.util.CharsetUtils;
@@ -103,16 +98,20 @@ public class BerliozServlet extends HttpServlet {
    * <code>Content-Encoding</code> of compressible content.
    * 
    * <p>The property value is <code>true</code> by default.
+   * 
+   * @deprecated Use BerliozConfig#ENABLE_HTTP_COMPRESSION
    */
-  public static final String ENABLE_HTTP_COMPRESSION = "berlioz.http.compression";
+  @Deprecated public static final String ENABLE_HTTP_COMPRESSION = BerliozConfig.ENABLE_HTTP_COMPRESSION;
 
   /**
    * Name of the global property to use to specify the max age of the <code>Cache-Control</code>
    * HTTP header of cacheable content.
    * 
    * <p>The property value is <code>60</code> (seconds) by default.
+   * 
+   * @deprecated Use BerliozConfig#HTTP_MAX_AGE
    */
-  public static final String HTTP_MAX_AGE = "berlioz.http.max-age";
+  @Deprecated public static final String HTTP_MAX_AGE = BerliozConfig.HTTP_MAX_AGE;
 
   /**
    * As per requirement for the Serializable interface.
@@ -127,34 +126,9 @@ public class BerliozServlet extends HttpServlet {
 // class attributes -------------------------------------------------------------------------------
 
   /**
-   * The Servlet configuration.
+   * The transformer factory to generate the templates
    */
-  private ServletConfig servletConfig;
-
-  /**
-   * Set the default content type for this Berlioz instance.
-   */
-  private String contentType;
-
-  /**
-   * Set the default cache control for this Berlioz instance.
-   */
-  private String cacheControl;
-
-  /**
-   * Set the Berlioz control key.
-   */
-  private String controlKey;
-
-  /**
-   * The environment. 
-   */
-  private transient Environment env;
-
-  /**
-   * The request dispatcher to forward to the error handler. 
-   */
-  private transient RequestDispatcher errorHandler;
+  private transient BerliozConfig config;
 
   /**
    * The transformer factory to generate the templates
@@ -167,9 +141,9 @@ public class BerliozServlet extends HttpServlet {
   private transient ServiceRegistry services;
 
   /**
-   * A seed to use for the calculation of etags (allows them to be reset)
+   * The request dispatcher to forward to the error handler. 
    */
-  private transient long etagSeed = 0L;
+  private transient RequestDispatcher errorHandler;
 
 // servlet methods --------------------------------------------------------------------------------
 
@@ -190,41 +164,21 @@ public class BerliozServlet extends HttpServlet {
    * @throws ServletException Should an exception occur.
    */
   public final void init(ServletConfig config) throws ServletException {
-    this.servletConfig = config;
-    // get the WEB-INF directory
-    ServletContext context = config.getServletContext();
-    File contextPath = new File(context.getRealPath("/"));
-    File webinfPath = new File(contextPath, "WEB-INF");
-    // XSLT stylesheet to use
-    String stylePath = this.getInitParameter("stylesheet", "/xslt/html/global.xsl");
-    if (!"IDENTITY".equals(stylePath)) {
-      File styleSheet = new File(webinfPath, stylePath);
-      this.transformer = new XSLTransformer(styleSheet);
-    }
-    // The expected content type
-    this.contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
-    if (this.transformer == null && !this.contentType.contains("xml")) {
-      LOGGER.warn("Servlet {} specified content type {} but output is XML", config.getServletName(), this.contentType);
-    }
-    // The expected content type
-    this.cacheControl = this.getInitParameter("cache-control", "max-age="+GlobalSettings.get(HTTP_MAX_AGE, 60)+", must-revalidate");
-    // The control key
-    this.controlKey  = this.getInitParameter("berlioz-control", null);
-    // used to dispatch
-    this.errorHandler = context.getNamedDispatcher("ErrorHandlerServlet");
+    BerliozConfig c = new BerliozConfig(config);
+    this.config = c;
+    this.transformer = c.newTransformer();
+    this.services = ContentManager.getDefaultRegistry();
+    this.errorHandler = config.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
     if (this.errorHandler == null) {
       LOGGER.warn("Error is not defined, using default error handler for the Web Application");
     }
-    this.services = ContentManager.getDefaultRegistry();
-    this.env = new HttpEnvironment(contextPath, webinfPath);
-    this.etagSeed = newEtagSeed();
   }
 
   // Standard HTTP Methods
   // ----------------------------------------------------------------------------------------------
   
   /**
-   * Handles a GET request.
+   * Handles a HEAD request.
    * 
    * {@inheritDoc}
    */
@@ -289,27 +243,29 @@ public class BerliozServlet extends HttpServlet {
   protected final void process(HttpServletRequest req, HttpServletResponse res, boolean includeContent)
       throws ServletException, IOException {
 
+    BerliozConfig config = this.config;
+    
     // Setup and ensure that we use UTF-8 to read data
     req.setCharacterEncoding("utf-8");
-    res.setContentType(this.contentType);
+    res.setContentType(config.getContentType());
 
     // Notify the client not to attempt a range request if it does attempt to do so
     if (req.getHeader(HttpHeaders.RANGE) != null)
       res.setHeader(HttpHeaders.ACCEPT_RANGES, "none");
 
     // Berlioz Control
-    if (this.controlKey == null || (this.controlKey != null && this.controlKey.equals(req.getParameter("berlioz-control")))) {
+    if (config.hasControl(req)) {
 
       // Clear the cache and reload the services
       boolean reload = "true".equals(req.getParameter("berlioz-reload"));
 
-      // Clear the cache if requested
+      // Clear the XSLT cache if requested
       boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
       if (clearCache && this.transformer != null) { this.transformer.clearCache(); }
 
       // Allow ETags to be reset
       boolean resetEtags = reload || "true".equals(req.getParameter("reset-etags"));
-      if (resetEtags) { this.etagSeed = newEtagSeed();}
+      if (resetEtags) { config.resetETagSeed();}
 
       // Clear the service configuration
       boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
@@ -338,14 +294,14 @@ public class BerliozServlet extends HttpServlet {
     }
 
     // Prepare the XML Response
-    XMLResponse xml = new XMLResponse(req, res, this.env, match);
+    XMLResponse xml = new XMLResponse(req, res, config.getEnvironment(), match);
 
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
     if (match.isCacheable() && ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
       String etagXML = xml.getEtag();
       String etagXSL = this.transformer != null? this.transformer.getEtag() : null;
-      etag = '"'+MD5.hash(this.etagSeed+"~"+etagXML+"--"+etagXSL)+'"';
+      etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
 
       // Check if the conditions specified in the optional If headers are satisfied.
       ServiceInfo info = new ServiceInfo(etag);
@@ -354,9 +310,9 @@ public class BerliozServlet extends HttpServlet {
       }
 
       // Update the headers 
-      res.setDateHeader(HttpHeaders.EXPIRES, getExpiryDate());
+      res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
       String cc = xml.getService().cache();
-      if (cc == null) cc = this.cacheControl;
+      if (cc == null) cc = config.getCacheControl();
       res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
       res.setHeader(HttpHeaders.ETAG, etag);
 
@@ -376,6 +332,7 @@ public class BerliozServlet extends HttpServlet {
     if (url == null)
       url = (String)req.getAttribute("redirect-url");
     if (url != null && !"".equals(url)) {
+      LOGGER.warn("Redirecting URL using deprecated 'redirect-url' - will be removed in future releases.");
       res.sendRedirect(url);
 
     // Produce the output
@@ -395,14 +352,13 @@ public class BerliozServlet extends HttpServlet {
       String ctype = result.getMediaType()+";charset="+result.getEncoding();
       res.setContentType(ctype);
       res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
-      if (!this.contentType.equals(ctype)) {
+      if (!config.getContentType().equals(ctype)) {
         LOGGER.info("Updating content type to {}", ctype);
-        this.contentType = ctype;
+        config.setContentType(ctype);
       }
 
       // Apply Compression if necessary
-      boolean isCompressed = HttpHeaderUtils.isCompressible(result.getMediaType())
-                            && GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
+      boolean isCompressed = HttpHeaderUtils.isCompressible(result.getMediaType()) && config.enableCompression();
       if (isCompressed) {
 
         // Indicate that the representation may vary depending on the encoding
@@ -438,43 +394,6 @@ public class BerliozServlet extends HttpServlet {
     }
   }
 
-// private helpers --------------------------------------------------------------------------------
-
-  /**
-   * Returns the value for the specified init parameter name.
-   * 
-   * <p>If <code>null</code> returns the default value.
-   * 
-   * @param name The name of the init parameter.
-   * @param def  The default value if the parameter value is <code>null</code> 
-   * 
-   * @return The values for the specified init parameter name.
-   */
-  private String getInitParameter(String name, String def) {
-    String value = this.servletConfig.getInitParameter(name);
-    return (value != null)? value : def;
-  }
-
-  /**
-   * Expiry date is a year from now.
-   * @return One year into the future.
-   */
-  private static long getExpiryDate() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.roll(Calendar.YEAR, 1);
-    return calendar.getTimeInMillis();
-  }
-
-  /**
-   * Expiry date is a year from now.
-   * @return One year into the future.
-   */
-  private static long newEtagSeed() {
-    Long seed = new Random().nextLong();
-    LOGGER.info("Generating new ETag Seed: {}", seed);
-    return seed;
-  }
-  
   // Private internal class =======================================================================
 
   /**
