@@ -69,6 +69,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       // Init message
       System.out.println("[BERLIOZ_INIT] ===============================================================");
       System.out.println("[BERLIOZ_INIT] Initialing Berlioz "+GlobalSettings.getVersion()+"...");
+      System.out.println("[BERLIOZ_INIT] Application Base: "+webinfPath.getAbsolutePath());
 
       // Determine the mode (dev, production, etc...)
       String mode = getMode(config);
@@ -80,14 +81,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       configureLog4j(configDir, mode);
 
       // Setup the global settings
-      System.out.println("[BERLIOZ_INIT] Config: Setting repository to: "+webinfPath.getAbsolutePath());
-      GlobalSettings.setRepository(webinfPath);
-      if (mode != null)
-        GlobalSettings.setConfig(mode);
-      System.out.println("[BERLIOZ_INIT] Config: Defaults");
-      System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozServlet.ENABLE_HTTP_COMPRESSION));
-      System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozServlet.HTTP_MAX_AGE, 60));
-      System.out.println("[BERLIOZ_INIT] Config: OK ----------------------------------------------------");
+      checkSettings(webinfPath, mode);
 
       // All done
       System.out.println("[BERLIOZ_INIT] Done!");
@@ -112,6 +106,37 @@ public final class InitServlet extends HttpServlet implements Servlet {
   }
 
   /**
+   * Checking that the global setting are loaded properly.
+   * 
+   * @param webinfPath The directory containing the configuration files.
+   * @param mode       The mode
+   */
+  private void checkSettings(File webinfPath, String mode) {
+    System.out.println("[BERLIOZ_INIT] Config: Setting repository to Application Base");
+    GlobalSettings.setRepository(webinfPath);
+    if (mode != null)
+      GlobalSettings.setConfig(mode);
+    File f = GlobalSettings.getPropertiesFile();
+    if (f.exists()) {
+      System.out.println("[BERLIOZ_INIT] Config: found "+toRelPath(f, webinfPath));
+      boolean loaded = GlobalSettings.load();
+      if (loaded) {
+        System.out.println("[BERLIOZ_INIT] Config: loaded OK");
+        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozServlet.ENABLE_HTTP_COMPRESSION));
+        System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozServlet.HTTP_MAX_AGE, 60));
+        System.out.println("[BERLIOZ_INIT] Config: OK ----------------------------------------------------");
+      } else {
+        System.out.println("[BERLIOZ_INIT] (!) Unable to load global settings ");
+        System.out.println("[BERLIOZ_INIT] Config: FAIL --------------------------------------------------");
+      }
+    } else {
+      System.out.println("[BERLIOZ_INIT] (!) Could not find config/config-"+mode+".xml  or config/config-"+mode+".prp");
+      System.out.println("[BERLIOZ_INIT] Config: FAIL --------------------------------------------------");
+    }
+
+  }
+
+  /**
    * Attempts to configure Log4j through reflection.
    * 
    * @param config The directory containing the configuration files. 
@@ -121,7 +146,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
     // Configuring the logger
     File logProperties = new File(config, "log4j-" + mode + ".prp");
     if (logProperties.exists()) {
-      System.out.println("[BERLIOZ_INIT] Logging: Found log4j config file "+logProperties.getAbsolutePath());
+      System.out.println("[BERLIOZ_INIT] Logging: found config/"+logProperties.getName()+" [log4j config file]");
       try {
         Class<?> configurator = Class.forName("org.apache.log4j.PropertyConfigurator");
         Method m = configurator.getDeclaredMethod("configure", String.class);
@@ -168,7 +193,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
             System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.config'");
             System.out.println("[BERLIOZ_INIT] (!) Please change your config file to use 'berlioz.mode' instead");
           } else {
-            System.out.println("[BERLIOZ_INIT] Mode: undefined");
+            System.out.println("[BERLIOZ_INIT] Mode: undefined, using "+GlobalSettings.DEFAULT_MODE);
           }
         }
       }
@@ -179,4 +204,13 @@ public final class InitServlet extends HttpServlet implements Servlet {
     return mode;
   }
 
+  private static String toRelPath(File file, File base){
+    String p = file.getPath();
+    String b = base.getPath();
+    if (p.startsWith(b) && p.length() > b.length()) {
+      return p.substring(b.length()+1);
+    } else {
+      return p;
+    }
+  }
 }

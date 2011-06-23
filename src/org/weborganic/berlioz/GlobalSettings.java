@@ -65,7 +65,14 @@ public final class GlobalSettings {
   /**
    * Name of the default configuration to use.
    */
-  public static final String DEFAULT_CONFIG_NAME = "default";
+  public static final String DEFAULT_MODE = "default";
+
+  /**
+   * Name of the default configuration to use.
+   * 
+   * @deprecated Use {@link #DEFAULT_MODE} instead, this constant will be removed in future releases.
+   */
+  @Deprecated public static final String DEFAULT_CONFIG_NAME = DEFAULT_MODE;
 
 // static variables ---------------------------------------------------------------------------
 
@@ -88,10 +95,11 @@ public final class GlobalSettings {
   /**
    * The name of the configuration file to use.
    */
-  private static String config;
+  private static String mode;
   static {
-    config = System.getProperty("berlioz.config");
-    if (config == null) config = DEFAULT_CONFIG_NAME;
+    mode = System.getProperty("berlioz.mode");
+    if (mode == null) mode = System.getProperty("berlioz.config");
+    if (mode == null) mode = DEFAULT_MODE;
   }
 
   /**
@@ -146,10 +154,21 @@ public final class GlobalSettings {
   /**
    * Returns the configuration to use.
    * 
+   * @deprecated Use {@link #getMode()} instead
+   * 
    * @return The name of the configuration to use.
    */
-  public static String getConfig() {
-    return config;
+  @Deprecated public static String getConfig() {
+    return mode;
+  }
+
+  /**
+   * Returns the configuration to use.
+   * 
+   * @return The name of the configuration to use.
+   */
+  public static String getMode() {
+    return mode;
   }
 
   /**
@@ -179,10 +198,10 @@ public final class GlobalSettings {
     File dir = new File(repository, CONFIG_DIRECTORY);
     if (!dir.isDirectory()) return null;
     // try as an XML file
-    File xml = new File(dir, "config-"+config+".xml");
+    File xml = new File(dir, "config-"+mode+".xml");
     if (xml.canRead()) return xml;
     // otherwise try as a text properties file
-    File prp = new File(dir, "config-"+config+".prp");
+    File prp = new File(dir, "config-"+mode+".prp");
     if (prp.canRead()) return prp;
     return null;
   }
@@ -423,7 +442,7 @@ public final class GlobalSettings {
   public static void setConfig(String name) throws IllegalArgumentException {
     if (name == null)
       throw new IllegalArgumentException("The configuration must be specified.");
-    config = name;
+    mode = name;
   }
 
   /**
@@ -454,8 +473,6 @@ public final class GlobalSettings {
     // make sure we have a repository
     File file = getPropertiesFile();
     if (file != null) {
-      System.err.println("[BERLIOZ_CONFIG] Loading Berlioz global properties file from:");
-      System.err.println("[BERLIOZ_CONFIG] "+file.getAbsolutePath());
       // initialise
       boolean isXML = file.getName().endsWith(".xml");
       settings = isXML? new XMLProperties() : new Properties();
@@ -478,9 +495,6 @@ public final class GlobalSettings {
     }
     if (settings == null)
       settings = new Properties();
-    System.err.println("[BERLIOZ_CONFIG] Cannot load properties, the repository has not been setup properly:");
-    System.err.println("[BERLIOZ_CONFIG]   ~Repository:"+repository);
-    System.err.println("[BERLIOZ_CONFIG]   ~Mode:"+config);
     return false;
   }
 

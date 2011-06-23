@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.util.CharsetUtils;
 import org.weborganic.berlioz.util.EntityInfo;
 import org.weborganic.berlioz.util.HttpHeaderUtils;
 import org.weborganic.berlioz.util.HttpHeaders;
@@ -210,6 +211,17 @@ public class BerliozServlet extends HttpServlet {
     this.etagSeed = newEtagSeed();
   }
 
+
+  /**
+   * Handles a GET request.
+   * 
+   * {@inheritDoc}
+   */
+  @Override public final void doHead(HttpServletRequest req, HttpServletResponse res)
+      throws ServletException, IOException {
+    process(req, res, false);
+  }
+
   /**
    * Handles a GET request.
    * 
@@ -217,7 +229,7 @@ public class BerliozServlet extends HttpServlet {
    */
   @Override public final void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    process(req, res);
+    process(req, res, true);
   }
 
   /**
@@ -227,19 +239,20 @@ public class BerliozServlet extends HttpServlet {
    */
   @Override public final void doPost(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    process(req, res);
+    process(req, res, true);
   }
 
   /**
    * Handles requests.
    * 
-   * @param req The HTTP servlet request.
-   * @param res The HTTP servlet response.
+   * @param req            The HTTP servlet request.
+   * @param res            The HTTP servlet response.
+   * @param includeContent Whether to include the content in the response.
    * 
    * @throws ServletException To wrap any non IO exception.
    * @throws IOException For any IO exception.
    */
-  protected final void process(HttpServletRequest req, HttpServletResponse res)
+  protected final void process(HttpServletRequest req, HttpServletResponse res, boolean includeContent)
       throws ServletException, IOException {
 
     // Setup and ensure that we use UTF-8 to read data
@@ -282,7 +295,7 @@ public class BerliozServlet extends HttpServlet {
 
     // Compute the ETag for the request if cacheable and method GET
     String etag = null;
-    if (xml.isCacheable() && "get".equalsIgnoreCase(req.getMethod())) {
+    if (xml.isCacheable() && ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
       String etagXML = xml.getEtag();
       String etagXSL = this.transformer != null? this.transformer.getEtag() : null;
       etag = '"'+MD5.hash(this.etagSeed+"~"+etagXML+"--"+etagXSL)+'"';
@@ -334,7 +347,7 @@ public class BerliozServlet extends HttpServlet {
           result = new XMLContent(content);
         }
 
-        // Update content type from XSLT transform result
+        // Update content type from XSLT transform result (MUST be specified before the output is requested)
         String ctype = result.getMediaType()+";charset="+result.getEncoding();
         res.setContentType(ctype);
         res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
@@ -343,6 +356,7 @@ public class BerliozServlet extends HttpServlet {
           this.contentType = ctype;
         }
 
+        // Apply Compression if necessary
         boolean isCompressed = HttpHeaderUtils.isCompressible(result.getMediaType())
                             && GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
         if (isCompressed) {
@@ -356,16 +370,25 @@ public class BerliozServlet extends HttpServlet {
               res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
               if (etag != null)
                 res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
-              ServletOutputStream out = res.getOutputStream();
-              out.write(compressed);
+              if (includeContent) {
+                ServletOutputStream out = res.getOutputStream();
+                out.write(compressed);
+                out.flush();
+              }
             } else isCompressed = false;
           } else isCompressed = false;
         }
 
         // Copy the uncompressed version if needed
         if (!isCompressed) {
-          PrintWriter out = res.getWriter();
-          out.print(result.content());
+          if (includeContent) {
+            PrintWriter out = res.getWriter();
+            out.print(result.content());
+            out.flush();
+          } else {
+            // We need to calculate when we don't include the content
+            res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), Charset.forName(result.getEncoding())));
+          }
         }
 
       // very likely to be an error in the XML or a dynamic error
@@ -428,7 +451,7 @@ public class BerliozServlet extends HttpServlet {
     LOGGER.info("Generating new ETag Seed: {}", seed);
     return seed;
   }
-
+  
   // Private internal class =======================================================================
 
   /**
