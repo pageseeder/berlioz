@@ -62,6 +62,14 @@ public final class HttpHeaderUtils {
    * 
    * <p>If any of the conditions are met, the HTTP response headers will be updated.
    * 
+   * <p>The following conditional headers are checked:
+   * <ul>
+   *   <li><code>If-Match</code></li>
+   *   <li><code>If-Modified-Since</code></li>
+   *   <li><code>If-None-Match</code></li>
+   *   <li><code>If-Unmodified-Since</code></li>
+   * </ul>
+   * 
    * <p>When an entity info is available, this method should be used in the servlet as follows:
    * <pre>
    *   if (!HttpHeaderUtils.checkIfHeaders(request, response, info)) {
@@ -89,6 +97,8 @@ public final class HttpHeaderUtils {
   /**
    * Check if the <code>If-Match</code> condition is satisfied.
    * 
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.24">HTTP/1.1 - 14.24 If-Match</a>
+   * 
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
    * @param info Resource metadata
@@ -102,7 +112,7 @@ public final class HttpHeaderUtils {
      throws IOException {
 
     String eTag = info.getETag();
-    String headerValue = req.getHeader("If-Match");
+    String headerValue = req.getHeader(HttpHeaders.IF_MATCH);
     if (headerValue != null) {
       if (headerValue.indexOf('*') == -1) {
 
@@ -130,6 +140,8 @@ public final class HttpHeaderUtils {
   /**
    * Check if the <code>If-Modified-Since</code> condition is satisfied.
    * 
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.25">HTTP/1.1 - 14.25 If-Modified-Since</a>
+   * 
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
    * @param info Resource metadata
@@ -142,11 +154,11 @@ public final class HttpHeaderUtils {
   protected static boolean checkIfModifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
       throws IOException {
     try {
-      long headerValue = req.getDateHeader("If-Modified-Since");
+      long headerValue = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
       long lastModified = info.getLastModified();
       if (headerValue != -1) {
         // If an If-None-Match header has been specified, if modified since is ignored.
-        if ((req.getHeader("If-None-Match") == null) && (lastModified < headerValue + 1000)) {
+        if ((req.getHeader(HttpHeaders.IF_NONE_MATCH) == null) && (lastModified < headerValue + 1000)) {
           // The entity has not been modified since the date specified by the client. This is not an error case.
           res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
           String etag = info.getETag();
@@ -160,6 +172,7 @@ public final class HttpHeaderUtils {
         }
       }
     } catch (IllegalArgumentException ex) {
+      // If the header value can't be converted to a date
       return true;
     }
     return true;
@@ -167,6 +180,8 @@ public final class HttpHeaderUtils {
 
   /**
    * Check if the <code>If-None-Match</code> condition is satisfied.
+   *
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.26">HTTP/1.1 - 14.26 If-None-Match</a>
    * 
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
@@ -181,7 +196,7 @@ public final class HttpHeaderUtils {
       throws IOException {
 
     String eTag = info.getETag();
-    String headerValue = req.getHeader("If-None-Match");
+    String headerValue = req.getHeader(HttpHeaders.IF_NONE_MATCH);
     if (headerValue != null) {
 
       boolean conditionSatisfied = false;
@@ -228,6 +243,8 @@ public final class HttpHeaderUtils {
   /**
    * Check if the <code>If-Unmodified-Since</code> condition is satisfied.
    * 
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.28">HTTP/1.1 - 14.28 If-Unmodified-Since</a>
+   * 
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
    * @param info Resource metadata
@@ -241,12 +258,12 @@ public final class HttpHeaderUtils {
       throws IOException {
     try {
       long lastModified = info.getLastModified();
-      long headerValue = req.getDateHeader("If-Unmodified-Since");
+      long headerValue = req.getDateHeader(HttpHeaders.IF_UNMODIFIED_SINCE);
       if (headerValue != -1) {
         if (lastModified >= (headerValue + 1000)) {
           // The entity has not been modified since the date specified by the client. This is not an error case.
           res.sendError(HttpServletResponse.SC_PRECONDITION_FAILED);
-          LOGGER.debug("If-None-Match check: PRECONDITION FAILED, last modified: {} >= {}", lastModified, headerValue);
+          LOGGER.debug("If-Unmodified-Since check: PRECONDITION FAILED, last modified: {} >= {}", lastModified, headerValue);
           return false;
         }
       }
