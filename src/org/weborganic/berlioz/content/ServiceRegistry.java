@@ -102,6 +102,29 @@ public final class ServiceRegistry {
   }
 
   /**
+   * Returns the list of HTTP methods allowed for this URL.
+   * 
+   * <p>If the GET method is supported, then the HEAD method is also supported and
+   * added to this list.
+   * 
+   * @param url The URL.
+   *
+   * @return the list of HTTP methods allowed for this URL or an empty list.
+   */
+  public List<String> allows(String url) {
+    List<String> methods = new ArrayList<String>();
+    for (HttpMethod m : this.registry.keySet()) {
+      ServiceMap mapping = this.registry.get(m);
+      MatchingService service = mapping.match(url);
+      if (service != null) {
+        methods.add(m.toString());
+        if (m == HttpMethod.GET) methods.add("HEAD");
+      }
+    }
+    return methods;
+  }
+
+  /**
    * Returns the content generator for this URL and HTTP method.
    * 
    * @param url    The URL.

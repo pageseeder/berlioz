@@ -10,6 +10,7 @@ package org.weborganic.berlioz.util;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -350,4 +351,23 @@ public final class HttpHeaderUtils {
     }
   }
 
+  /**
+   * Returns a correctly formatted HTTP last modified header value.
+   * 
+   * @param modified the last modified date. 
+   * @return Last modified value as specified by HTTP. 
+   */
+  public static String allow(List<String> methods) {
+    StringBuilder allow = new StringBuilder();
+    boolean first = true;
+    for (String m : methods) {
+      if (first) {
+        first = false;
+      } else {
+        allow.append(',');
+      }
+      allow.append(m);
+    }
+    return allow.toString();
+  }
 }

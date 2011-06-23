@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Random;
 
 import javax.servlet.RequestDispatcher;
@@ -28,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.content.MatchingService;
+import org.weborganic.berlioz.content.ServiceRegistry;
 import org.weborganic.berlioz.util.CharsetUtils;
 import org.weborganic.berlioz.util.EntityInfo;
 import org.weborganic.berlioz.util.HttpHeaderUtils;
@@ -159,6 +162,11 @@ public class BerliozServlet extends HttpServlet {
   private transient XSLTransformer transformer;
 
   /**
+   * The services managed by this servlet.
+   */
+  private transient ServiceRegistry services;
+
+  /**
    * A seed to use for the calculation of etags (allows them to be reset)
    */
   private transient long etagSeed = 0L;
@@ -207,11 +215,14 @@ public class BerliozServlet extends HttpServlet {
     if (this.errorHandler == null) {
       LOGGER.warn("Error is not defined, using default error handler for the Web Application");
     }
+    this.services = ContentManager.getDefaultRegistry();
     this.env = new HttpEnvironment(contextPath, webinfPath);
     this.etagSeed = newEtagSeed();
   }
 
-
+  // Standard HTTP Methods
+  // ----------------------------------------------------------------------------------------------
+  
   /**
    * Handles a GET request.
    * 
@@ -241,6 +252,29 @@ public class BerliozServlet extends HttpServlet {
       throws ServletException, IOException {
     process(req, res, true);
   }
+
+  /**
+   * Handles a PUT request.
+   * 
+   * {@inheritDoc}
+   */
+  @Override public final void doPut(HttpServletRequest req, HttpServletResponse res)
+      throws ServletException, IOException {
+    process(req, res, true);
+  }
+
+  /**
+   * Handles a DELETE request.
+   * 
+   * {@inheritDoc}
+   */
+  @Override public final void doDelete(HttpServletRequest req, HttpServletResponse res)
+      throws ServletException, IOException {
+    process(req, res, true);
+  }
+
+  // Standard HTTP Methods
+  // ----------------------------------------------------------------------------------------------
 
   /**
    * Handles requests.
@@ -284,18 +318,31 @@ public class BerliozServlet extends HttpServlet {
 
     // Start handling XML content
     long t0 = System.currentTimeMillis();
-    XMLResponse xml = new XMLResponse(req, res, this.env);
+    String path = HttpRequestWrapper.getBerliozPath(req);
+    MatchingService match = ContentManager.getService(path, req.getMethod());
 
     // No matching service
-    if (xml.getService() == null) {
+    if (match == null) {
+      // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
+      if (!("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
+        List<String> methods = this.services.allows(path);
+        if (methods.size() > 0) {
+          res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
+          res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
+          return;
+        }
+      }
       res.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
-      LOGGER.debug("No Matching service for: " + req.getRequestURI());
+      LOGGER.debug("No matching service for: " + req.getRequestURI());
       return;
     }
 
-    // Compute the ETag for the request if cacheable and method GET
+    // Prepare the XML Response
+    XMLResponse xml = new XMLResponse(req, res, this.env, match);
+
+    // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
-    if (xml.isCacheable() && ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
+    if (match.isCacheable() && ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
       String etagXML = xml.getEtag();
       String etagXSL = this.transformer != null? this.transformer.getEtag() : null;
       etag = '"'+MD5.hash(this.etagSeed+"~"+etagXML+"--"+etagXSL)+'"';
@@ -335,83 +382,59 @@ public class BerliozServlet extends HttpServlet {
     } else {
 
       // setup the output
-//      ByteArrayOutputStream errors = new ByteArrayOutputStream();
-
-      try {
-        BerliozOutput result = null;
-        if (this.transformer != null) {
-          XSLTransformResult xslresult = this.transformer.transform(content, req, xml.getService());
-          LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
-          result = xslresult;
-        } else {
-          result = new XMLContent(content);
-        }
-
-        // Update content type from XSLT transform result (MUST be specified before the output is requested)
-        String ctype = result.getMediaType()+";charset="+result.getEncoding();
-        res.setContentType(ctype);
-        res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
-        if (!this.contentType.equals(ctype)) {
-          LOGGER.info("Updating content type to {}", ctype);
-          this.contentType = ctype;
-        }
-
-        // Apply Compression if necessary
-        boolean isCompressed = HttpHeaderUtils.isCompressible(result.getMediaType())
-                            && GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
-        if (isCompressed) {
-
-          // Indicate that the representation may vary depending on the encoding
-          res.setHeader("Vary", "Accept-Encoding");
-          if (HttpHeaderUtils.acceptsGZipCompression(req)) {
-            byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
-            if (compressed.length > 0) {
-              res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
-              res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
-              if (etag != null)
-                res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
-              if (includeContent) {
-                ServletOutputStream out = res.getOutputStream();
-                out.write(compressed);
-                out.flush();
-              }
-            } else isCompressed = false;
-          } else isCompressed = false;
-        }
-
-        // Copy the uncompressed version if needed
-        if (!isCompressed) {
-          if (includeContent) {
-            PrintWriter out = res.getWriter();
-            out.print(result.content());
-            out.flush();
-          } else {
-            // We need to calculate when we don't include the content
-            res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), Charset.forName(result.getEncoding())));
-          }
-        }
-
-      // very likely to be an error in the XML or a dynamic error
-      } catch (Exception ex) {
-        /*
-        if (!res.isCommitted()) {
-          res.resetBuffer();
-          req.setAttribute("exception", ex);
-          if (errors.size() > 0)
-            req.setAttribute("extra", errors.toString("utf-8"));
-          req.setAttribute("xml", content);
-          this.errorHandler.forward(req, res);
-        } else {
-          LOGGER.error("A dynamic XSLT error was caught", ex);
-//TODO          res.sendRedirect(req.getServletPath()+"/error/500");
-        }
-        */
-      } finally {
-        /*
-        if (errors.size() > 0)
-          LOGGER.debug(errors.toString("utf-8"));
-          */
+      BerliozOutput result = null;
+      if (this.transformer != null) {
+        XSLTransformResult xslresult = this.transformer.transform(content, req, xml.getService());
+        LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
+        result = xslresult;
+      } else {
+        result = new XMLContent(content);
       }
+
+      // Update content type from XSLT transform result (MUST be specified before the output is requested)
+      String ctype = result.getMediaType()+";charset="+result.getEncoding();
+      res.setContentType(ctype);
+      res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
+      if (!this.contentType.equals(ctype)) {
+        LOGGER.info("Updating content type to {}", ctype);
+        this.contentType = ctype;
+      }
+
+      // Apply Compression if necessary
+      boolean isCompressed = HttpHeaderUtils.isCompressible(result.getMediaType())
+                            && GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
+      if (isCompressed) {
+
+        // Indicate that the representation may vary depending on the encoding
+        res.setHeader("Vary", "Accept-Encoding");
+        if (HttpHeaderUtils.acceptsGZipCompression(req)) {
+          byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
+          if (compressed.length > 0) {
+            res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
+            res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
+            if (etag != null)
+              res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
+            if (includeContent) {
+              ServletOutputStream out = res.getOutputStream();
+              out.write(compressed);
+              out.flush();
+            }
+          } else isCompressed = false; // Compression failed
+        } else isCompressed = false; // Client does not accept Compression
+      }
+
+      // Copy the uncompressed version if needed
+      if (!isCompressed) {
+        if (includeContent) {
+          PrintWriter out = res.getWriter();
+          out.print(result.content());
+          out.flush();
+        } else {
+          // We need to calculate when we don't include the content
+          res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), Charset.forName(result.getEncoding())));
+        }
+      }
+
     }
   }
 

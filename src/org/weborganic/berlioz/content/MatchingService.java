@@ -49,6 +49,20 @@ public final class MatchingService {
   }
 
   /**
+   * Indicates whether this response is cacheable.
+   * 
+   * <p>A response is cacheable only is the service has been found and all its generators are 
+   * cacheable.
+   * 
+   * @return <code>true</code> if this response is cacheable;
+   *         <code>false</code> otherwise.
+   */
+  public boolean isCacheable() {
+    if (this._service == null) return false;
+    return this._service.isCacheable();
+  }
+
+  /**
    * @return The matched service.
    */
   public Service service() {

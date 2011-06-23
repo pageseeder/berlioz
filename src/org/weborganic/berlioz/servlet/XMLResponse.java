@@ -62,26 +62,23 @@ public final class XMLResponse {
   private final HttpRequestWrapper wrapper;
 
   /**
-   * Indicates whether we have attempted to match the specified service.
-   */
-  private transient boolean attemptedMatch = false;
-
-  /**
    * The service that was matched for the given request.
    */
-  private transient MatchingService match = null;
+  private final MatchingService _match;
 
   /**
    * Creates a new XML response for the specified arguments.
    * 
-   * @param req The HTTP servlet request.
-   * @param res The HTTP servlet response.
-   * @param env The current environment.
+   * @param req   The HTTP servlet request.
+   * @param res   The HTTP servlet response.
+   * @param env   The current environment.
+   * @param match The matching service
    */
-  public XMLResponse(HttpServletRequest req, HttpServletResponse res, Environment env) {
+  public XMLResponse(HttpServletRequest req, HttpServletResponse res, Environment env, MatchingService match) {
     this._req = req;
     this._res = res;
     this._env = env;
+    this._match = match;
     this.wrapper = new HttpRequestWrapper(this._req, this._res, this._env);
   }
 
@@ -121,7 +118,7 @@ public final class XMLResponse {
     if (cacheable) {
       for (ContentGenerator generator : service.generators()) {
         // Set the request parameters (if necessary)
-        wrapper.configure(this.match, generator);
+        wrapper.configure(this._match, generator);
         // Check if cacheable
         if (generator instanceof Cacheable) {
           etag.append(((Cacheable)generator).getETag(wrapper)).append("/");
@@ -140,8 +137,7 @@ public final class XMLResponse {
    * @return the service corresponding to this response.
    */
   public Service getService() {
-    match();
-    return this.match != null? this.match.service() : null;
+    return this._match != null? this._match.service() : null;
   }
 
   /**
@@ -152,7 +148,6 @@ public final class XMLResponse {
    * @throws IOException Should an I/O error occur.
    */
   public String generate() throws IOException {
-    match();
     try {
       // Initialise the writer
       StringWriter writer = new StringWriter();
@@ -161,15 +156,15 @@ public final class XMLResponse {
       xml.openElement("root", true);
 
       // if the service exists
-      if (this.match != null) {
-        Service service = this.match.service();
+      if (this._match != null) {
+        Service service = this._match.service();
         LOGGER.debug(this._req.getPathInfo()+" -> "+service);
-        XMLResponseHeader header = new XMLResponseHeader(this._req, service, this.match.result());
+        XMLResponseHeader header = new XMLResponseHeader(this._req, service, this._match.result());
         header.toXML(xml);
 
         for (ContentGenerator generator : service.generators()) {
           // Set the request parameters
-          this.wrapper.configure(this.match, generator);
+          this.wrapper.configure(this._match, generator);
           toXML(generator, service, xml);
         }
 
@@ -232,7 +227,7 @@ public final class XMLResponse {
    * @throws IOException      Should an I/O error occur while writing XML.
    * @throws BerliozException Any exception occurring during processing will be wrapped in a BerliozException.
    */
-  private void toXML(ContentGenerator generator, Service service, XMLWriter xml) throws IOException, BerliozException {
+  private void toXML(ContentGenerator generator, Service service, XMLWriter xml) throws IOException {
     // Generate the main element
     xml.openElement("content", true);
     xml.attribute("generator", generator.getClass().getName());
@@ -273,17 +268,6 @@ public final class XMLResponse {
     else xml.writeXML(result);
 
     xml.closeElement();
-  }
-
-  /**
-   * Attempts to find the service corresponding to the request.
-   */
-  private void match() {
-    if (!this.attemptedMatch) {
-      String path = HttpRequestWrapper.getBerliozPath(this._req);
-      this.match = ContentManager.getInstance(path);
-      this.attemptedMatch = true;
-    }
   }
 
 }

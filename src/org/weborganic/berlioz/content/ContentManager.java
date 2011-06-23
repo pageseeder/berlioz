@@ -9,12 +9,15 @@ package org.weborganic.berlioz.content;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 import javax.xml.parsers.SAXParser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
 import org.weborganic.berlioz.xml.BerliozErrorHandler;
@@ -30,7 +33,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * A utility class to provide access to the content of generators.
  *
  * @author Christophe Lauret (Weborganic)
- * @version 11 December 2009
+ * @version 23 June 2011
  */
 public final class ContentManager {
 
@@ -42,7 +45,7 @@ public final class ContentManager {
   /**
    * Maps content generators URL patterns to their content generator instance.
    */
-  private static final ServiceRegistry REGISTRY = new ServiceRegistry();
+  private static final ServiceRegistry SERVICES = new ServiceRegistry();
 
   /**
    * Indicates whether the boolean value was loaded. 
@@ -57,16 +60,62 @@ public final class ContentManager {
   }
 
   /**
+   * Returns the default service registry (mapped to "services.xml").
+   * @return the default service registry (mapped to "services.xml").
+   */
+  public static ServiceRegistry getDefaultRegistry() {
+    return SERVICES;
+  }
+
+  /**
    * Returns the content generator instance corresponding to the specified
    * path information.
+   * 
+   * @param path   The path information to access this generator.
+   * @param method The HTTP method for this service.
+   * 
+   * @return The corresponding task instance.
+   */
+  @Beta public static MatchingService getService(String path, String method) {
+    if (path == null || method == null) return null;
+    loadIfRequired();
+    return SERVICES.get(path, method);
+  }
+
+  /**
+   * Returns the list of methods allowed for this URL.
+   * 
+   * @param path   The path information to access this generator.
+   * @param method The HTTP method for this service.
+   * 
+   * @return The corresponding task instance.
+   */
+  @Beta public static List<String> allows(String path) {
+    if (path == null) return Collections.emptyList();
+    loadIfRequired();
+    return SERVICES.allows(path);
+  }
+
+  /**
+   * Returns the content generator instance corresponding to the specified
+   * path information.
+   * 
+   * @deprecated this method ignores methods
    * 
    * @param pathInfo The path information to access this generator.
    * 
    * @return The corresponding task instance.
    */
-  public static MatchingService getInstance(String pathInfo) {
+  @Deprecated public static MatchingService getInstance(String pathInfo) {
     if (pathInfo == null) return null;
-    // load the generator if not loaded yet
+    loadIfRequired();
+    return SERVICES.get(pathInfo);
+  }
+
+  /**
+   * Update the patterns based on the current generators.
+   */
+  private static synchronized void loadIfRequired() {
     if (!loaded) {
       try {
         load();
@@ -75,7 +124,6 @@ public final class ContentManager {
         ex.printStackTrace();
       }
     }
-    return REGISTRY.get(pathInfo);
   }
 
   /**
@@ -105,7 +153,7 @@ public final class ContentManager {
     // Load the generators
     try {
       XMLReader reader = parser.getXMLReader();
-      HandlingDispatcher dispatcher = new HandlingDispatcher(reader, REGISTRY);
+      HandlingDispatcher dispatcher = new HandlingDispatcher(reader, SERVICES);
       reader.setContentHandler(dispatcher);
       reader.setEntityResolver(BerliozEntityResolver.getInstance());
       reader.setErrorHandler(BerliozErrorHandler.getInstance());
@@ -125,7 +173,7 @@ public final class ContentManager {
    */
   public static synchronized void clear() {
     LOGGER.info("Clearing content manager");
-    REGISTRY.clear();
+    SERVICES.clear();
     loaded = false;
   }
 
