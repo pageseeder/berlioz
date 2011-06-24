@@ -15,10 +15,9 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.Writer;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -29,6 +28,7 @@ import java.util.Map.Entry;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.transform.ErrorListener;
+import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Templates;
@@ -43,9 +43,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.berlioz.util.ISO8601;
 import org.weborganic.berlioz.util.MD5;
 
 import com.topologi.diffx.xml.XMLUtils;
+import com.topologi.diffx.xml.XMLWriter;
+import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * Performs the XSLT transformation from the generated XML content. 
@@ -109,13 +112,14 @@ public final class XSLTransformer {
     StringWriter buffer = new StringWriter();
     long time = 0;
     Templates templates = null;
+    Map<String, String> parameters = null;
 
     try {
       // Creates a transformer from the templates
       templates = getTemplates(this._templates);
 
       // Setup the transformer
-      Map<String, String> parameters = toParameters(req);
+      parameters = toParameters(req);
 
       // Setup the source
       StreamSource source = new StreamSource(new StringReader(content));
@@ -131,15 +135,13 @@ public final class XSLTransformer {
 
     // very likely to be an error in the XML or a dynamic error
     } catch (TransformerException ex) {
-      StringWriter error = new StringWriter();
-      handle(ex, error);
-      return new XSLTransformResult(error.toString(), ex, templates);
-
-      // Catch the error details and try to process them with the error template
-//      String xml = handle(ex, component, xmlsource, parameters);
-//      Map<String, String> noparameters = Collections.emptyMap();
-//      String xhtml = transformCommon(layout, "error", xml, noparameters);
-//      return new XSLTProcessResult(xhtml, 0, Status.ERROR);
+      String error = toXML(ex, content, parameters);
+      ClassLoader loader = XSLTransformer.class.getClassLoader();
+      URL url = loader.getResource("org/weborganic/berlioz/xslt/failsafe-transformerror-html.xsl");
+      Templates failsafe = toFailSafeTemplates(url);
+      // Try to use the fail-safe template to present the error
+      error = transformFailSafe(error, failsafe);
+      return new XSLTransformResult(error, ex, failsafe);
     }
 
     // All good!
@@ -180,6 +182,12 @@ public final class XSLTransformer {
    * @return The corresponding etag.
    */
   private static String computeEtag(File templates) {
+    if (!templates.exists()) {
+      LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getName());
+      LOGGER.error("Create a stylesheet at the path below:");
+      LOGGER.error(templates.getPath());
+      return null;
+    }
     List<File> files = new ArrayList<File>(); 
     listTemplateFiles(templates.getParentFile(), files);
     StringBuilder b = new StringBuilder();
@@ -242,12 +250,12 @@ public final class XSLTransformer {
 
     // Process, write directly to the result
     long before = System.currentTimeMillis();
-    UIErrorListener listener = new UIErrorListener();
+    XSLTErrorListener listener = new XSLTErrorListener();
     transformer.setErrorListener(listener);
     try {
       transformer.transform(source, result);
     } catch (TransformerException ex) {
-      throw new UITransformerException(ex, listener.xml.toString());
+      throw new TransformerExceptionWrapper(ex, listener);
     }
     return System.currentTimeMillis() - before;
   }
@@ -264,9 +272,9 @@ public final class XSLTransformer {
    * 
    * @return The corresponding templates
    * 
-   * @throws TransformerConfigurationException If the templates could not parsed. 
+   * @throws TransformerException If the templates could not parsed. 
    */
-  private Templates getTemplates(File f) throws TransformerConfigurationException {
+  private Templates getTemplates(File f) throws TransformerException {
     boolean store = GlobalSettings.get(ENABLE_CACHE, true);
     String stylesheet = toWebPath(f.getAbsolutePath());
     Templates templates = store? CACHE.get(f) : null;
@@ -294,9 +302,9 @@ public final class XSLTransformer {
    *
    * @return the corresponding XSLT templates object
    * 
-   * @throws TransformerConfigurationException If the loading fails.
+   * @throws TransformerException If the loading fails.
    */
-  private static Templates toTemplates(File stylepath) throws TransformerConfigurationException {
+  private static Templates toTemplates(File stylepath) throws TransformerException {
     // load the templates from the source file
     InputStream in = null;
     Templates templates = null;
@@ -305,16 +313,17 @@ public final class XSLTransformer {
       Source source = new StreamSource(in);
       source.setSystemId(stylepath.toURI().toString());
       TransformerFactory factory = TransformerFactory.newInstance();
-      UIErrorListener listener = new UIErrorListener();
+      XSLTErrorListener listener = new XSLTErrorListener();
       factory.setErrorListener(listener);
       try {
         templates = factory.newTemplates(source);
       } catch (TransformerConfigurationException ex) {
-        throw new UITransformerConfigurationException(ex, listener.xml.toString());
+        throw new TransformerExceptionWrapper(ex, listener);
       }
     } catch (FileNotFoundException ex) {
       // Should not happen because we check before that the file exists, so we can safely ignore
       LOGGER.warn("Unable to find template file: {}", stylepath);
+      throw new TransformerConfigurationException("Unable to find stylesheet: "+toWebPath(stylepath.getPath()), ex);
     } finally {
       closeQuietly(in);
     }
@@ -340,6 +349,94 @@ public final class XSLTransformer {
     // Return parameters
     if (p != null) return p;
     else return Collections.emptyMap();
+  }
+
+  // Error Handling
+  // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Handles transformation errors - to be used in catch blocks.
+   * 
+   * @param ex         An error occurring during an XSLT transformation.
+   * @param source     The XML source being transformed
+   * @param parameters The XSLT parameters passed to the transformer
+   * @return the error details as XML
+   */
+  private static String toXML(TransformerException ex, String source, Map<String, String> parameters) {
+    // Remove all double dash so that it may be inserted in the XML comment
+    StringWriter out = new StringWriter();
+    try {
+      XMLWriter xml = new XMLWriterImpl(out);
+      xml.openElement("transform-error");
+      xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
+
+      // Grab any info we can
+      if (ex instanceof TransformerExceptionWrapper) {
+        TransformerExceptionWrapper wrapper = (TransformerExceptionWrapper)ex;
+        Throwable wrapped = wrapper.getException();
+        if (wrapped instanceof TransformerConfigurationException) {
+          xml.attribute("type", "config");
+        } else if (wrapped instanceof TransformerException) {
+          xml.attribute("type", "transform");
+        }
+        // Copy the errors collected here
+        XSLTErrorListener collector = wrapper.collector();
+        xml.writeXML(collector.xml.toString());
+      }
+
+      // Transform Exception
+      xml.openElement("exception");
+      // TODO unwrap exception for better messages
+      xml.attribute("class", ex.getClass().getName());
+      xml.element("message", ex.getMessage());
+      xml.element("stack-trace", getStackTrace(ex, true));
+
+      // If there is a Locator...
+      SourceLocator locator = ex.getLocator();
+      if (locator != null) {
+        xml.openElement("locator");
+        if (locator.getPublicId() != null)
+          xml.element("publicid", locator.getPublicId());
+        if (locator.getSystemId() != null)
+          xml.element("systemid", locator.getSystemId());
+        xml.element("line", Integer.toString(locator.getLineNumber()));
+        xml.element("column", Integer.toString(locator.getColumnNumber()));
+        xml.closeElement();
+      }
+
+      xml.closeElement();
+
+      // Any cause ?
+      Throwable cause = ex.getCause();
+      if (cause != null) {
+        // Transform Exception
+        xml.openElement("cause");
+        xml.attribute("class", cause.getClass().getName());
+        xml.element("message", cause.getMessage());
+        xml.element("stack-trace", getStackTrace(cause, true));
+        xml.closeElement();
+      }
+
+      // XSLT parameters
+      if (parameters != null) {
+        xml.openElement("parameters");
+        for (Entry<String, String> p : parameters.entrySet()) {
+          xml.openElement("parameter");
+          xml.attribute("name", p.getKey());
+          xml.attribute("value", p.getValue());
+          xml.closeElement();
+        }
+        xml.closeElement();
+      }
+
+      xml.closeElement();
+      xml.flush();
+    } catch (IOException io) {
+      LOGGER.warn("Unable to produce transform error details for error below:");
+      LOGGER.error("An error occurred while transforming content", ex);
+    }
+
+    return out.toString();
   }
 
   /**
@@ -368,26 +465,51 @@ public final class XSLTransformer {
     return stacktrace.toString();
   }
 
+
   /**
-   * Handles transformation errors - to be used in catch blocks.
-   * 
-   * @param ex  An error occurring during an XSLT transformation.
-   * @param out Where the output goes.
+   * Loads the fail safe templates.
+   * @param url The URL to load (within Berlioz Package)
+   * @return templates or <code>null</code>.
    */
-  private static void handle(TransformerException ex, Writer out) {
-    LOGGER.error("As error occurred while transforming content", ex);
-    // Capture the error
-    StringWriter w = new StringWriter();
-    PrintWriter error = new PrintWriter(w);
-    ex.printStackTrace(error);
-    error.flush();
-    // Remove all double dash so that it may be inserted in the XML comment
-    PrintWriter pout = new PrintWriter(out);
-    pout.println("<!-- ");
-    pout.println(ex.getMessageAndLocation());
-    pout.println(w.toString().replaceAll("-+", "-"));
-    pout.println(" -->");
-    pout.flush();
+  private static Templates toFailSafeTemplates(URL url) {
+    // load the templates from the source file
+    InputStream in = null;
+    Templates templates = null;
+    try {
+      in = url.openStream();
+      Source source = new StreamSource(in); 
+      source.setSystemId(url.toString());
+      TransformerFactory factory = TransformerFactory.newInstance();
+      templates = factory.newTemplates(source);
+      // Any error we need to give up...
+    } catch (IOException ex) {
+      LOGGER.warn("Unable to load fail safe templates!", ex);
+      return null;
+    } catch (TransformerException ex) {
+      LOGGER.warn("Unable to load fail safe templates!", ex);
+      return null;
+    } finally {
+      closeQuietly(in);
+    }
+    return templates;
+  }
+
+
+  private static String transformFailSafe(String xml, Templates templates) {
+    // Let's try to format it
+    String out = null;
+    try {
+      Source source = new StreamSource(new StringReader(xml));
+      StringWriter html = new StringWriter();
+      Result result = new StreamResult(html);
+      templates.newTransformer().transform(source, result);
+      out = html.toString();
+    } catch (Exception terrible) {
+      LOGGER.warn("Fail-safe stylesheet failed! - returning error details as XML", terrible);
+      // Fail-safe failed!
+      out = xml;
+    }
+    return out;
   }
 
   /**
@@ -399,7 +521,7 @@ public final class XSLTransformer {
   private static String toWebPath(String s) {
     String from = "WEB-INF";
     int x = s.indexOf(from);
-    return x != -1? s.substring(x+from.length()) : s;
+    return x != -1? s.substring(x+from.length()).replace('\\', '/') : s.replace('\\', '/');
   }
 
   /**
@@ -416,49 +538,6 @@ public final class XSLTransformer {
     }
   }
 
-  /**
-   * Returns a new XML source that can be used by an error handler.
-   * 
-   * @param error      The transformation error.
-   * @param xml        The source XML.
-   * @param parameters The parameters sent to the transformer.
-   * 
-   * @return the new source
-   */
-  private String handle(TransformerException error, String xml, Map<String, String> parameters) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("<content>\n");
-    sb.append("<transform>\n");
-    sb.append("<root>\n");
-    sb.append("  <status>error</status>\n");
-    sb.append("  <message>").append(XMLUtils.escape(error.getMessage())).append("</message>\n");
-    sb.append("  <date>").append(String.format("%1s", new Date())).append("</date>\n");
-    sb.append("  <errors>\n");
-    if (error instanceof UITransformerException) {
-      sb.append(((UITransformerException)error).getErrorsAsXML());
-    } else if (error instanceof UITransformerConfigurationException) {
-      sb.append(((UITransformerConfigurationException)error).getErrorsAsXML());
-    }
-    sb.append("  </errors>\n");
-    sb.append("  <stacktrace>");
-    String stacktrace = getStackTrace(error, true);
-    sb.append(XMLUtils.escape(stacktrace));
-    sb.append("  </stacktrace>");
-    sb.append("  <parameters>");
-    for (Entry<String, String> p : parameters.entrySet()) {
-      sb.append("  <parameter name=\"").append(XMLUtils.escapeAttr(p.getKey())).append("\"");
-      sb.append("    value=\"").append(XMLUtils.escapeAttr(p.getValue())).append("\"/>");
-    }
-    sb.append("  </parameters>");
-    sb.append("  <source>");
-    sb.append(XMLUtils.escape(xml));
-    sb.append("  </source>\n");
-    sb.append("</root>\n");
-    sb.append("</transform>\n");
-    sb.append("</content>");
-    return sb.toString();
-  }
-
   // Listeners and exceptions for better reporting of errors
   // ----------------------------------------------------------------------------------------------
 
@@ -469,7 +548,10 @@ public final class XSLTransformer {
    * @author Christophe Lauret
    * @version 8 February 2010
    */
-  private static class UIErrorListener implements ErrorListener {
+  private static class XSLTErrorListener implements ErrorListener {
+
+    /** XML errors are recorded here */
+    private List<TransformerException> _errors = null;
 
     /** XML errors are recorded here */
     private StringBuilder xml = new StringBuilder();
@@ -478,39 +560,42 @@ public final class XSLTransformer {
      * {@inheritDoc}
      */
     public void fatalError(TransformerException exception) throws TransformerException {
+      if (this._errors == null) this._errors = new ArrayList<TransformerException>();
+      this._errors.add(exception);
       this.xml.append(toXML(exception, "fatal"));
-      LOGGER.error("Fatal error captured by transformer: {}", exception.getMessageAndLocation());
-      LOGGER.error("Fatal error - additional details: {}", exception);
+      LOGGER.error(exception.getMessageAndLocation());
     }
 
     /**
      * {@inheritDoc}
      */
     public void warning(TransformerException exception) throws TransformerException {
+      if (this._errors == null) this._errors = new ArrayList<TransformerException>();
+      this._errors.add(exception);
       this.xml.append(toXML(exception, "warning"));
-      LOGGER.warn("Warning captured by transformer: {}", exception.getMessageAndLocation());
-      LOGGER.warn("Warning - additional details: {}", exception);
+      LOGGER.warn(exception.getMessageAndLocation());
     }
 
     /**
      * {@inheritDoc}
      */
     public void error(TransformerException exception) throws TransformerException {
+      if (this._errors == null) this._errors = new ArrayList<TransformerException>();
+      this._errors.add(exception);
       this.xml.append(toXML(exception, "error"));
-      LOGGER.error("Error captured by transformer: {}", exception.getMessageAndLocation());
-      LOGGER.error("Error - additional details: {}", exception);
+      LOGGER.error(exception.getMessageAndLocation());
     }
 
     /**
      * Returns the transform exception as XML
      * 
      * @param ex   the source locator.
-     * @param type the type of error.
+     * @param level the level of error.
      * @return the corresponding XML.
      */
-    private static String toXML(TransformerException ex, String type) {
+    private static String toXML(TransformerException ex, String level) {
       StringBuilder xml = new StringBuilder();
-      xml.append("<error type=\"").append(type).append("\">");
+      xml.append("<error level=\"").append(level).append("\">");
       xml.append(toXML(ex.getLocator()));
       String message = ex.getMessage();
       xml.append("<message>").append(XMLUtils.escape(message)).append("</message>");
@@ -555,61 +640,30 @@ public final class XSLTransformer {
    * @author Christophe Lauret
    * @version 8 February 2010
    */
-  private static class UITransformerException extends TransformerException {
+  private static class TransformerExceptionWrapper extends TransformerException {
 
     /** Holds the error details as XML. */
-    private final String _xml;
+    private final XSLTErrorListener _collector;
 
     /**
      * Creates a new UI transformation exception wrapping an existing one.
      * 
-     * @param ex  the wrapped transformer exception.
-     * @param xml the error details as XML.
+     * @param ex        the wrapped transformer exception.
+     * @param collector the error details as XML.
      */
-    public UITransformerException(TransformerException ex, String xml) {
+    public TransformerExceptionWrapper(TransformerException ex, XSLTErrorListener collector) {
       super(ex);
-      this._xml = xml;
+      this._collector = collector;
     }
 
     /**
      * Returns the errors as XML.
      * @return the errors as XML.
      */
-    public String getErrorsAsXML() {
-      return this._xml;
+    public XSLTErrorListener collector() {
+      return this._collector;
     }
 
-  }
-
-  /**
-   * Extends the transformer exception to preserve API and include additional details.
-   * 
-   * @author Christophe Lauret
-   * @version 8 February 2010
-   */
-  private static class UITransformerConfigurationException extends TransformerConfigurationException {
-
-    /** Holds the error details as XML. */
-    private final String _xml;
-
-    /**
-     * Creates a new UI transformation exception wrapping an existing one.
-     * 
-     * @param ex  the wrapped transformer exception.
-     * @param xml the error details as XML.
-     */
-    public UITransformerConfigurationException(TransformerConfigurationException ex, String xml) {
-      super(ex.getMessage(), ex.getLocator(), ex.getException());
-      this._xml = xml;
-    }
-
-    /**
-     * Returns the errors as XML.
-     * @return the errors as XML.
-     */
-    public String getErrorsAsXML() {
-      return this._xml;
-    }
   }
 
 }

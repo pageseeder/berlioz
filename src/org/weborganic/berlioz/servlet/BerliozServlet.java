@@ -22,10 +22,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.ServiceRegistry;
+import org.weborganic.berlioz.servlet.XSLTransformResult.Status;
 import org.weborganic.berlioz.util.CharsetUtils;
 import org.weborganic.berlioz.util.EntityInfo;
 import org.weborganic.berlioz.util.HttpHeaderUtils;
@@ -128,22 +128,22 @@ public class BerliozServlet extends HttpServlet {
   /**
    * The transformer factory to generate the templates
    */
-  private transient BerliozConfig config;
+  private transient BerliozConfig _config;
 
   /**
    * The transformer factory to generate the templates
    */
-  private transient XSLTransformer transformer;
+  private transient XSLTransformer _transformer;
 
   /**
    * The services managed by this servlet.
    */
-  private transient ServiceRegistry services;
+  private transient ServiceRegistry _services;
 
   /**
    * The request dispatcher to forward to the error handler. 
    */
-  private transient RequestDispatcher errorHandler;
+  private transient RequestDispatcher _errorHandler;
 
 // servlet methods --------------------------------------------------------------------------------
 
@@ -159,24 +159,24 @@ public class BerliozServlet extends HttpServlet {
    * 
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
    * 
-   * @param config The servlet configuration.
+   * @param servletConfig The servlet configuration.
    * 
    * @throws ServletException Should an exception occur.
    */
-  public final void init(ServletConfig config) throws ServletException {
-    BerliozConfig c = new BerliozConfig(config);
-    this.config = c;
-    this.transformer = c.newTransformer();
-    this.services = ContentManager.getDefaultRegistry();
-    this.errorHandler = config.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
-    if (this.errorHandler == null) {
+  public final void init(ServletConfig servletConfig) throws ServletException {
+    BerliozConfig config = new BerliozConfig(servletConfig);
+    this._config = config;
+    this._transformer = config.newTransformer();
+    this._services = ContentManager.getDefaultRegistry();
+    this._errorHandler = servletConfig.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
+    if (this._errorHandler == null) {
       LOGGER.warn("Error is not defined, using default error handler for the Web Application");
     }
   }
 
   // Standard HTTP Methods
   // ----------------------------------------------------------------------------------------------
-  
+
   /**
    * Handles a HEAD request.
    * 
@@ -243,8 +243,9 @@ public class BerliozServlet extends HttpServlet {
   protected final void process(HttpServletRequest req, HttpServletResponse res, boolean includeContent)
       throws ServletException, IOException {
 
-    BerliozConfig config = this.config;
-    
+    // Use Berlioz config locally
+    BerliozConfig config = this._config;
+
     // Setup and ensure that we use UTF-8 to read data
     req.setCharacterEncoding("utf-8");
     res.setContentType(config.getContentType());
@@ -261,11 +262,11 @@ public class BerliozServlet extends HttpServlet {
 
       // Clear the XSLT cache if requested
       boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
-      if (clearCache && this.transformer != null) { this.transformer.clearCache(); }
+      if (clearCache && this._transformer != null) { this._transformer.clearCache(); }
 
       // Allow ETags to be reset
       boolean resetEtags = reload || "true".equals(req.getParameter("reset-etags"));
-      if (resetEtags) { config.resetETagSeed();}
+      if (resetEtags) { config.resetETagSeed(); }
 
       // Clear the service configuration
       boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
@@ -281,7 +282,7 @@ public class BerliozServlet extends HttpServlet {
     if (match == null) {
       // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
       if (!("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
-        List<String> methods = this.services.allows(path);
+        List<String> methods = this._services.allows(path);
         if (methods.size() > 0) {
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
           res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
@@ -300,7 +301,7 @@ public class BerliozServlet extends HttpServlet {
     String etag = null;
     if (match.isCacheable() && ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
       String etagXML = xml.getEtag();
-      String etagXSL = this.transformer != null? this.transformer.getEtag() : null;
+      String etagXSL = this._transformer != null? this._transformer.getEtag() : null;
       etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
 
       // Check if the conditions specified in the optional If headers are satisfied.
@@ -340,10 +341,14 @@ public class BerliozServlet extends HttpServlet {
 
       // setup the output
       BerliozOutput result = null;
-      if (this.transformer != null) {
-        XSLTransformResult xslresult = this.transformer.transform(content, req, xml.getService());
+      if (this._transformer != null) {
+        XSLTransformResult xslresult = this._transformer.transform(content, req, xml.getService());
         LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
         result = xslresult;
+        if (xslresult.status() == Status.ERROR) {
+          res.reset();
+          res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
       } else {
         result = new XMLContent(content);
       }
