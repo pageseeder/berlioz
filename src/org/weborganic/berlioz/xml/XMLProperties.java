@@ -49,7 +49,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    * The separator between properties.
    */
   private static final String DOT = "."; 
-  
+
   /**
    * Creates an empty property list with no default values.
    */

@@ -21,7 +21,7 @@ import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Environment;
 
 /**
- * Defines the configuration use by a a Berlioz Servlet.
+ * Defines the configuration uses by a a Berlioz Servlet.
  * 
  * @author Christophe Lauret
  * @version 24 June 2011
@@ -46,6 +46,11 @@ public final class BerliozConfig {
    * <p>The property value is <code>60</code> (seconds) by default.
    */
   public static final String HTTP_MAX_AGE = "berlioz.http.max-age";
+
+  /**
+   * Used to generate ETag Seeds.
+   */
+  private static final Random RANDOM = new Random();
 
   // Class attributes -----------------------------------------------------------------------------
 
@@ -114,16 +119,15 @@ public final class BerliozConfig {
   }
 
   /**
-   * Return the ETag Seed
-   * @return the ETag Seed
+   * Return the ETag Seed.
+   * @return the ETag Seed.
    */
   public long getETagSeed() {
     return this._etagSeed;
   }
 
   /**
-   * Return the ETag Seed
-   * @return the ETag Seed
+   * Resets the ETag Seed.
    */
   public void resetETagSeed() {
     this._etagSeed = newEtagSeed();
@@ -147,7 +151,7 @@ public final class BerliozConfig {
   public String getCacheControl() {
     return this._cacheControl;
   }
-  
+
   /**
    * Returns the content type.
    * 
@@ -168,7 +172,7 @@ public final class BerliozConfig {
 
   /**
    * Sets the content type.
-   * @return contentType the content type.
+   * param contentType the content type.
    */
   public void setContentType(String contentType) {
     this._contentType = contentType;
@@ -177,7 +181,7 @@ public final class BerliozConfig {
   /**
    * Indicates whether this configuration can be controlled by the user.
    * 
-   * @param the control key is specified as a request parameter 
+   * @param req the request including the control key is specified as a request parameter 
    * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
    *         the control key; false otherwise.
    */
@@ -187,9 +191,9 @@ public final class BerliozConfig {
   }
 
   /**
-   * Returns a new XSLT transformer from the stylepath configuration.
+   * Returns a new XSLT transformer from the style path configuration.
    * 
-   * @return a new XSLT transformer from the stylepath configuration.
+   * @return a new XSLT transformer from the style path configuration.
    */
   protected XSLTransformer newTransformer() {
     if ("IDENTITY".equals(this._stylePath) || this._stylePath == null) return null;
@@ -219,7 +223,7 @@ public final class BerliozConfig {
    * @return One year into the future.
    */
   private static long newEtagSeed() {
-    Long seed = new Random().nextLong();
+    Long seed = RANDOM.nextLong();
     LOGGER.info("Generating new ETag Seed: {}", seed);
     return seed;
   }

@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.Beta;
 
 /**
  * A utility class for HTTP headers.
@@ -83,7 +84,8 @@ public final class HttpHeaderUtils {
    * @param info     The entity information.
    * 
    * @return <code>true</code> if the entity info fail to meet all the specified conditions, continue processing;
-   *         <code>false</code> if the any entity info meets any the specified conditions, further processing is unnecessary.
+   *         <code>false</code> if the any entity info meets any the specified conditions, 
+   *         further processing is unnecessary.
    *
    * @throws IOException If thrown during checking.
    */
@@ -354,10 +356,10 @@ public final class HttpHeaderUtils {
   /**
    * Returns a correctly formatted HTTP last modified header value.
    * 
-   * @param modified the last modified date. 
+   * @param methods the list of allowed methods 
    * @return Last modified value as specified by HTTP. 
    */
-  public static String allow(List<String> methods) {
+  @Beta public static String allow(List<String> methods) {
     StringBuilder allow = new StringBuilder();
     boolean first = true;
     for (String m : methods) {

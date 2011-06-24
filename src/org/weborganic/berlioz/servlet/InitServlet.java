@@ -32,14 +32,14 @@ import org.weborganic.berlioz.GlobalSettings;
  * <p>
  * Typically this servlet should be configured in the Web Configuration (web.xml) as:
  * 
- * <pre>{@code
- *  <!-- Initialisation servlet -->
+ * <pre>
+ * {@code <!-- Initialisation servlet -->
  * <servlet>
  *   <servlet-name>Initialiser</servlet-name>
  *   <servlet-class>org.weborganic.berlioz.servlet.InitServlet</servlet-class>
  *   <load-on-startup>1</load-on-startup>
- * </servlet>
- * }</pre>
+ * </servlet> }
+ * </pre>
  * 
  * @author Christophe Lauret (Weborganic)
  * @version 25 May 2010
@@ -122,8 +122,8 @@ public final class InitServlet extends HttpServlet implements Servlet {
       boolean loaded = GlobalSettings.load();
       if (loaded) {
         System.out.println("[BERLIOZ_INIT] Config: loaded OK");
-        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozServlet.ENABLE_HTTP_COMPRESSION));
-        System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozServlet.HTTP_MAX_AGE, 60));
+        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozConfig.ENABLE_HTTP_COMPRESSION));
+        System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozConfig.HTTP_MAX_AGE, 60));
         System.out.println("[BERLIOZ_INIT] Config: OK ----------------------------------------------------");
       } else {
         System.out.println("[BERLIOZ_INIT] (!) Unable to load global settings ");
@@ -204,7 +204,14 @@ public final class InitServlet extends HttpServlet implements Servlet {
     return mode;
   }
 
-  private static String toRelPath(File file, File base){
+  /**
+   * Returns the relative path to the given file if possible.
+   *
+   * @param file The file.
+   * @param base The base file (ancestor folder).
+   * @return the relative path if the file path starts with the path; the full path otherwise.
+   */
+  private static String toRelPath(File file, File base) {
     String p = file.getPath();
     String b = base.getPath();
     if (p.startsWith(b) && p.length() > b.length()) {

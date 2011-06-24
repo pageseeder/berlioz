@@ -23,7 +23,7 @@ public final class CharsetUtils {
   private static final Logger LOGGER = LoggerFactory.getLogger(CharsetUtils.class);
 
   /** Utility class */
-  public CharsetUtils() {
+  private CharsetUtils() {
   }
 
   /**
@@ -33,7 +33,7 @@ public final class CharsetUtils {
    * @return the byte length of the content based on a specified charset; or -1 if unable to calculate it
    * @throws NullPointerException if either parameter is <code>null</code>.
    */
-  public static int length(CharSequence content, Charset charset) {
+  public static int length(CharSequence content, Charset charset) throws NullPointerException {
     if (content == null) throw new NullPointerException("No length for null content");
     if (charset == null) throw new NullPointerException("Charset is null");
     int length = -1;

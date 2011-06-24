@@ -9,6 +9,7 @@ package org.weborganic.berlioz;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -57,8 +58,8 @@ public final class GlobalSettings {
   public static final String CONFIG_DIRECTORY = "config";
 
   /**
-   * Name of the directory in the repository that contains all the schemas / DTD for 
-   * the XML files used by Berlioz.
+   * Name of the directory in the repository that contains all the schemas / DTD for the XML files 
+   * used by Berlioz.
    */
   public static final String LIBRARY_DIRECTORY = "library";
 
@@ -292,7 +293,8 @@ public final class GlobalSettings {
    * <ul>
    *   <li>the property is not found;</li>
    *   <li>the file corresponding to the property does not exist;</li>
-   *   <li>there is an error 
+   *   <li>there is an error.</li>
+   * </ul>
    * 
    * <p>If the properties file has not been loaded, this method will invoke the {@link #load()}.
    *
@@ -315,7 +317,8 @@ public final class GlobalSettings {
    * <ul>
    *   <li>the property is not found;</li>
    *   <li>the file corresponding to the property does not exist;</li>
-   *   <li>there is an error 
+   *   <li>there is an error</li>
+   * </ul>
    * 
    * <p>If the properties file has not been loaded, this method will invoke the {@link #load()}.
    *
@@ -356,7 +359,7 @@ public final class GlobalSettings {
       File file = new File(repository, filepath);
       try {
         if (file.exists()) return file.getCanonicalFile();
-      } catch (Exception ex) {
+      } catch (IOException ex) {
         ex.printStackTrace();
         // TODO: report any error
       }

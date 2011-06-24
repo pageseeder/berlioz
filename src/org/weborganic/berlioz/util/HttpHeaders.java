@@ -124,10 +124,6 @@ public final class HttpHeaders {
    *   Age       = "Age" ":" age-value
    *   age-value = delta-seconds
    * </pre>
-   * <p>Example:</p>
-   * <pre>
-   *   
-   * </pre>
    * 
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.6">HTTP/1.1 - 14.6 Age</a>
    */
@@ -158,7 +154,7 @@ public final class HttpHeaders {
    * </pre>
    * <p>Example:</p>
    * <pre>
-   *   
+   * 
    * </pre>
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.8">HTTP/1.1 - 14.8 Authorization</a>
    */
@@ -171,7 +167,7 @@ public final class HttpHeaders {
    * <pre>
    *   Cache-Control   = "Cache-Control" ":" 1#cache-directive
    *   cache-directive = cache-request-directive | cache-response-directive
-   *   
+   * 
    *   cache-request-directive = "no-cache"
    *                           | "no-store"
    *                           | "max-age" "=" delta-seconds
@@ -283,11 +279,7 @@ public final class HttpHeaders {
    * <p>Augmented BNF:</p>
    * <pre>
    *   Content-MD5   = "Content-MD5" ":" md5-digest
-        md5-digest   = <base64 of 128 bit MD5 digest as per RFC 1864>
-   * </pre>
-   * <p>Example:</p>
-   * <pre>
-   *   
+   *    md5-digest   = <base64 of 128 bit MD5 digest as per RFC 1864>
    * </pre>
    * 
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.15">HTTP/1.1 - 14.15 Content-MD5</a>
@@ -633,7 +625,7 @@ public final class HttpHeaders {
    *   Range: bytes=-500        // The final 500 bytes
    *   Range: bytes=500-        // All bytes after the first 500 bytes
    *   Range: bytes=0-0,-1      // The first and last bytes only
-   *   
+   * 
    *   Range: bytes=500-600,601-999      // legal but non canonical specifications of the...
    *   Range: bytes=500-700,601-999      // ...second 500 bytes (byte offsets 500-999, inclusive):
    * </pre>
@@ -818,10 +810,12 @@ public final class HttpHeaders {
    *   Warning    = "Warning" ":" 1#warning-value
    *   warning-value = warn-code SP warn-agent SP warn-text [SP warn-date]
    *   warn-code  = 3DIGIT
-   *   warn-agent = ( host [ ":" port ] ) | pseudonym  ; the name or pseudonym of the server adding the Warning header, for use in debugging
+   *   warn-agent = ( host [ ":" port ] ) | pseudonym
    *   warn-text  = quoted-string
    *   warn-date  = <"> HTTP-date <">
    * </pre>
+   * <p><i>Note: the <code>warn-agent</code> is the name or pseudonym of the server adding the 
+   * <code>Warning</code> header, for use in debugging</i></p>
    * 
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.46">HTTP/1.1 - 14.46 Warning</a>
    */
