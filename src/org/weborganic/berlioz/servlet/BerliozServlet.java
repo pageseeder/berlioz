@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.ServiceRegistry;
@@ -278,7 +279,12 @@ public class BerliozServlet extends HttpServlet {
     String path = HttpRequestWrapper.getBerliozPath(req);
     MatchingService match = ContentManager.getService(path, req.getMethod());
 
-    // No matching service
+    // No matching service (backward compatibility)
+    if (match == null && "POST".equals(req.getMethod()) && GlobalSettings.get("berlioz.http.getviapost", true)) {
+      match = ContentManager.getService(path, "GET");
+    }
+
+    // Still no matching service
     if (match == null) {
       // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
       if (!("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
