@@ -36,6 +36,11 @@ public final class Service {
   private final String _group;
 
   /**
+   * Indicates whether this service can be cached.
+   */
+  private final boolean _cacheable;
+
+  /**
    * The 'Cache-Control' header for this service.
    */
   private final String _cache;
@@ -81,6 +86,7 @@ public final class Service {
     this._cache = cache;
     this._generators = generators;
     this._parameters = parameters;
+    this._cacheable = isCacheable(generators);
     this._names = names;
     this._targets = targets;
   }
@@ -121,7 +127,7 @@ public final class Service {
    *         <code>false</code> otherwise.
    */
   public boolean isCacheable() {
-    return isCacheable(this._generators);
+    return this._cacheable;
   }
 
   /**
