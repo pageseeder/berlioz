@@ -33,7 +33,7 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * Maps path infos to generator instances.
    */
-  private final ServiceRegistry registry;
+  private final ServiceRegistry _registry;
 
   /**
    * The elements used recognised by this handler.
@@ -114,7 +114,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * @param registry The service registry to use.
    */
   public ServicesHandler10(ServiceRegistry registry) {
-    this.registry = registry;
+    this._registry = registry;
   }
 
   /**
@@ -125,7 +125,7 @@ final class ServicesHandler10 extends DefaultHandler {
     Element element = Element.get(localName);
     switch(element) {
       case SERVICE_CONFIG:
-        this.registry.clear();
+        this._registry.clear();
         break;
 
       case SERVICES:
@@ -175,7 +175,7 @@ final class ServicesHandler10 extends DefaultHandler {
       case SERVICE:
         Service service = this._builder.build();
         for (String pattern : this._patterns) {
-          this.registry.register(service, pattern, this._method);
+          this._registry.register(service, pattern, this._method);
           LOGGER.debug("Assigning "+pattern+" ["+this._method+"] to "+service);
         }
         this._builder.reset();
