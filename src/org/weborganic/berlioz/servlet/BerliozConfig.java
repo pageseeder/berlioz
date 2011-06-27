@@ -172,7 +172,7 @@ public final class BerliozConfig {
 
   /**
    * Sets the content type.
-   * param contentType the content type.
+   * @param contentType the content type.
    */
   public void setContentType(String contentType) {
     this._contentType = contentType;

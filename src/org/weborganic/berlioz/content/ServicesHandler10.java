@@ -40,11 +40,22 @@ final class ServicesHandler10 extends DefaultHandler {
    */
   private enum Element {
 
+    /** 'generator' element name */
     GENERATOR,
+
+    /** 'parameter' element name */
     PARAMETER,
+
+    /** 'service-config' element name */
     SERVICE_CONFIG,
+
+    /** 'services' element name */
     SERVICES,
+
+    /** 'service' element name */
     SERVICE,
+
+    /** 'url' element name */
     URL;
 
     /**

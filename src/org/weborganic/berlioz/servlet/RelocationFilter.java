@@ -10,7 +10,6 @@ import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -162,13 +161,17 @@ import org.xml.sax.helpers.DefaultHandler;
    * @param res   The HTTP servlet response.
    * @param match The URI matched pattern.
    * 
-   * @throws IOException If thrown by the HTTP the response.
+   * @throws ServletException If thrown by the HTTP servlet it was forwarded to.
+   * @throws IOException      If thrown while writing  the HTTP the response.
+   * 
+   * @return <code>true</code> to relocate; <code>false</code> otherwise.
    */
-  private boolean relocate(HttpServletRequest hreq, HttpServletResponse res, URIPattern match) throws ServletException, IOException {
+  private boolean relocate(HttpServletRequest req, HttpServletResponse res, URIPattern match) 
+      throws ServletException, IOException {
     URIPattern target = this._mapping.get(match);
 
     // Resolve URI variables
-    String from = hreq.getRequestURI();
+    String from = req.getRequestURI();
     URIResolver resolver = new URIResolver(from);
     URIResolveResult result = resolver.resolve(match);
 
@@ -182,14 +185,14 @@ import org.xml.sax.helpers.DefaultHandler;
     LOGGER.debug("Relocating from {} to {}", from, to);
 
     // And relocate
-    RequestDispatcher dispatcher = hreq.getRequestDispatcher(to);
+    RequestDispatcher dispatcher = req.getRequestDispatcher(to);
     if (dispatcher == null) {
       LOGGER.debug("Invalid URL, no dispatcher found");
       return false;
     }
     // set Content-Location header
     res.setHeader("Content-Location", to);
-    dispatcher.forward(hreq, res);
+    dispatcher.forward(req, res);
     return true;
   }
 
@@ -232,7 +235,7 @@ import org.xml.sax.helpers.DefaultHandler;
     public RelocationMappingHandler(Map<URIPattern, URIPattern> mapping) {
       this._mapping = mapping;
     }
-    
+
     /**
      * {@inheritDoc}
      */
