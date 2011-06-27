@@ -281,7 +281,7 @@ public class BerliozServlet extends HttpServlet {
     // Start handling XML content
     long t0 = System.currentTimeMillis();
     String path = HttpRequestWrapper.getBerliozPath(req);
-    MatchingService match = ContentManager.getService(path, req.getMethod());
+    MatchingService match = this._services.get(path, method);
 
     // No matching service (backward compatibility)
     if (match == null && method == HttpMethod.POST && GlobalSettings.get("berlioz.http.getviapost", true)) {

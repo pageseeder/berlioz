@@ -1,5 +1,7 @@
 package org.weborganic.berlioz.http;
 
+import java.util.EnumSet;
+
 /**
  * An enumeration of HTTP methods supported by Berlioz.
  * 
@@ -7,13 +9,6 @@ package org.weborganic.berlioz.http;
  * @since Berlioz 0.8.2
  */
 public enum HttpMethod {
-
-  /**
-   * HEAD HTTP Method.
-   * 
-   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.3">HTTP/1.1 - 9.3 GET</a>
-   */
-  HEAD(false),
 
   /**
    * GET HTTP Method.
@@ -25,23 +20,35 @@ public enum HttpMethod {
   /**
    * POST HTTP Method.
    * 
-   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.3">HTTP/1.1 - 9.3 POST</a>
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.5">HTTP/1.1 - 9.5 POST</a>
    */
   POST(true),
 
   /**
    * PUT HTTP Method.
    * 
-   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.3">HTTP/1.1 - 9.3 PUT</a>
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.6">HTTP/1.1 - 9.6 PUT</a>
    */
   PUT(true),
 
   /**
    * DELETE HTTP Method.
    * 
-   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.3">HTTP/1.1 - 9.3 DELETE</a>
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.7">HTTP/1.1 - 9.7 DELETE</a>
    */
-  DELETE(true);
+  DELETE(true),
+
+  /**
+   * HEAD HTTP Method.
+   * 
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.4">HTTP/1.1 - 9.4 HEAD</a>
+   */
+  HEAD(false);
+
+  /**
+   * Set of HTTP methods mappable to a service.
+   */
+  private static final EnumSet<HttpMethod> MAPPABLE = EnumSet.of(GET, POST, PUT, DELETE);
 
   /**
    * Indicates whether it can be mapped to a content generator.
@@ -66,4 +73,12 @@ public enum HttpMethod {
     return this.mappable;
   }
 
+  /**
+   * Returns the HTTP methods mappable to a service.
+   *
+   * @return Set of HTTP methods mappable to a service.
+   */
+  public static EnumSet<HttpMethod> mappable() {
+    return MAPPABLE;
+  }
 }

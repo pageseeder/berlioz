@@ -8,6 +8,7 @@
 package org.weborganic.berlioz.content;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ import org.weborganic.furi.URIResolver.MatchRule;
  * <p>Note: this class is not synchronized and must be synchronised externally.
  * 
  * @author Christophe Lauret
- * @version 21 May 2010
+ * @version 28 June 2011
  */
 public final class ServiceRegistry {
 
@@ -36,9 +37,9 @@ public final class ServiceRegistry {
    * Creates a new registry.
    */
   public ServiceRegistry() {
-    this.registry = new Hashtable<HttpMethod, ServiceMap>();
-    // Create a map for each method
-    for (HttpMethod m : HttpMethod.values()) {
+    this.registry = new EnumMap<HttpMethod, ServiceMap>(HttpMethod.class);
+    // Create a map for each mappable HTTP method
+    for (HttpMethod m : HttpMethod.mappable()) {
       this.registry.put(m, new ServiceMap());
     }
   }
@@ -67,8 +68,10 @@ public final class ServiceRegistry {
    * 
    * @param service The service to register.
    * @param pattern The URL pattern to associate to this content generator.
+   * 
+   * @deprecated Services should always be mapped to a specific method.
    */
-  public void register(Service service, String pattern) {
+  @Deprecated public void register(Service service, String pattern) {
     // preliminary checks
     if (service == null) throw new IllegalArgumentException("No service to register.");
     if (pattern == null) throw new IllegalArgumentException("URL Pattern must be specified to register a service.");
@@ -132,8 +135,24 @@ public final class ServiceRegistry {
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
   public MatchingService get(String url, String method) {
-    HttpMethod m = "HEAD".equalsIgnoreCase(method)? HttpMethod.GET : getHttpMethod(method);
-    if (m == null) return null;
+    if (method == null) return null;
+    return get(url, getHttpMethod(method));
+  }
+
+  /**
+   * Returns the content generator for this URL and HTTP method.
+   * 
+   * <p>If the HTTP method specified is HEAD, this method will return the service for a GET request.
+   * 
+   * @param url    The URL.
+   * @param method The HTTP method.
+   * 
+   * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
+   */
+  public MatchingService get(String url, HttpMethod method) {
+    if (method == null) return null;
+    HttpMethod m = method;
+    if (method == HttpMethod.HEAD) m = HttpMethod.GET;
     ServiceMap mapping = this.registry.get(m);
     MatchingService service = mapping.match(url);
     return service;
