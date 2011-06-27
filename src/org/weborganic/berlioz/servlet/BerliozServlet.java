@@ -303,6 +303,9 @@ public class BerliozServlet extends HttpServlet {
     // Prepare the XML Response
     XMLResponse xml = new XMLResponse(req, res, config.getEnvironment(), match);
 
+    // Include the service as a header for information
+    res.setHeader("X-Berlioz-Service", match.service().id());
+
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
     if (match.isCacheable() && ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
