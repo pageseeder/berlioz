@@ -494,7 +494,17 @@ public final class XSLTransformer {
     return templates;
   }
 
-
+  /**
+   * Perform a fail safe transformation using the built-in stylesheet.
+   * 
+   * <p>Note: If the transformation fails the source XML is returned verbatim as there is nothing
+   * more we can do. 
+   * 
+   * @param xml       The XML to transform
+   * @param templates The fail-safe templates to use.
+   * 
+   * @return The results of the transformation.
+   */
   private static String transformFailSafe(String xml, Templates templates) {
     // Let's try to format it
     String out = null;
@@ -504,8 +514,8 @@ public final class XSLTransformer {
       Result result = new StreamResult(html);
       templates.newTransformer().transform(source, result);
       out = html.toString();
-    } catch (Exception terrible) {
-      LOGGER.warn("Fail-safe stylesheet failed! - returning error details as XML", terrible);
+    } catch (Exception catastrophe) {
+      LOGGER.error("Fail-safe stylesheet failed! - returning error details as XML", catastrophe);
       // Fail-safe failed!
       out = xml;
     }
