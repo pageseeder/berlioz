@@ -86,7 +86,6 @@ public final class ContentManager {
    * Returns the list of methods allowed for this URL.
    * 
    * @param path   The path information to access this generator.
-   * @param method The HTTP method for this service.
    * 
    * @return The corresponding task instance.
    */

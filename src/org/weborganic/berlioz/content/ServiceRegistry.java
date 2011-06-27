@@ -12,6 +12,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.furi.URIPattern;
 import org.weborganic.furi.URIResolver;
 import org.weborganic.furi.URIResolver.MatchRule;
@@ -30,11 +31,6 @@ public final class ServiceRegistry {
    * Maps content generators to the appropriate HTTP method.
    */
   private final Map<HttpMethod, ServiceMap> registry;
-
-  /**
-   * The HTTP methods supported.
-   */
-  private enum HttpMethod { GET, POST, PUT, DELETE };
 
   /**
    * Creates a new registry.

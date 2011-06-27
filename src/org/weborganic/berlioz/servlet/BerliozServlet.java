@@ -26,11 +26,12 @@ import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.ServiceRegistry;
+import org.weborganic.berlioz.http.HttpHeaderUtils;
+import org.weborganic.berlioz.http.HttpHeaders;
+import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.berlioz.servlet.XSLTransformResult.Status;
 import org.weborganic.berlioz.util.CharsetUtils;
 import org.weborganic.berlioz.util.EntityInfo;
-import org.weborganic.berlioz.util.HttpHeaderUtils;
-import org.weborganic.berlioz.util.HttpHeaders;
 import org.weborganic.berlioz.util.MD5;
 import org.weborganic.berlioz.util.ResourceCompressor;
 
@@ -255,6 +256,9 @@ public class BerliozServlet extends HttpServlet {
     if (req.getHeader(HttpHeaders.RANGE) != null)
       res.setHeader(HttpHeaders.ACCEPT_RANGES, "none");
 
+    // Determine the method in use.
+    HttpMethod method = HttpMethod.valueOf(req.getMethod());
+    
     // Berlioz Control
     if (config.hasControl(req)) {
 
@@ -280,14 +284,14 @@ public class BerliozServlet extends HttpServlet {
     MatchingService match = ContentManager.getService(path, req.getMethod());
 
     // No matching service (backward compatibility)
-    if (match == null && "POST".equals(req.getMethod()) && GlobalSettings.get("berlioz.http.getviapost", true)) {
+    if (match == null && method == HttpMethod.POST && GlobalSettings.get("berlioz.http.getviapost", true)) {
       match = ContentManager.getService(path, "GET");
     }
 
     // Still no matching service
     if (match == null) {
       // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
-      if (!("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
+      if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
         List<String> methods = this._services.allows(path);
         if (methods.size() > 0) {
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
@@ -308,7 +312,7 @@ public class BerliozServlet extends HttpServlet {
 
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
-    if (match.isCacheable() && ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod()))) {
+    if (match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
       String etagXML = xml.getEtag();
       String etagXSL = this._transformer != null? this._transformer.getEtag() : null;
       etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
@@ -376,7 +380,7 @@ public class BerliozServlet extends HttpServlet {
       if (isCompressed) {
 
         // Indicate that the representation may vary depending on the encoding
-        res.setHeader("Vary", "Accept-Encoding");
+        res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
         if (HttpHeaderUtils.acceptsGZipCompression(req)) {
           byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
           if (compressed.length > 0) {

@@ -5,7 +5,7 @@
  * A copy of this licence can also be found at 
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
-package org.weborganic.berlioz.util;
+package org.weborganic.berlioz.http;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.Beta;
+import org.weborganic.berlioz.util.EntityInfo;
 
 /**
  * A utility class for HTTP headers.

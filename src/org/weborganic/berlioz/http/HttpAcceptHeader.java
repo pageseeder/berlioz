@@ -5,7 +5,7 @@
  * A copy of this licence can also be found at 
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
-package org.weborganic.berlioz.util;
+package org.weborganic.berlioz.http;
 
 import java.util.Collections;
 import java.util.HashMap;
