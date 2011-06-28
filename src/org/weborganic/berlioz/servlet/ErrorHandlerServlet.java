@@ -71,7 +71,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // set the headers of the response
     res.setCharacterEncoding("utf-8");
     res.setContentType("text/html;charset=UTF-8");
-    res.setStatus(INTERNAL_SERVER_ERROR_CODE);
+//    res.setStatus(INTERNAL_SERVER_ERROR_CODE);
 
     // write the response
     PrintWriter out = res.getWriter();

@@ -158,22 +158,13 @@ public final class XMLResponse {
       xml.openElement("root", true);
 
       // If the service exists
-      if (this._match != null) {
-        Service service = this._match.service();
-        LOGGER.debug(this._req.getPathInfo()+" -> "+service);
-        XMLResponseHeader header = new XMLResponseHeader(this._req, service, this._match.result());
-        header.toXML(xml);
+      Service service = this._match.service();
+      XMLResponseHeader header = new XMLResponseHeader(this._req, service, this._match.result());
+      header.toXML(xml);
 
-        // Call each generator in turn
-        for (HttpContentRequest request : this._requests) {
-          toXML(request, service, xml);
-        }
-
-      // the content generator does not exist
-      } else {
-        LOGGER.info("No service for "+this._req.getPathInfo());
-        XMLResponseHeader header = new XMLResponseHeader(this._req, "404-error");
-        header.toXML(xml);
+      // Call each generator in turn
+      for (HttpContentRequest request : this._requests) {
+        toXML(request, service, xml);
       }
 
       xml.closeElement(); // close 'root'
@@ -182,6 +173,7 @@ public final class XMLResponse {
 
     // if an error occurs generate the proper content
     } catch (Exception ex) {
+      LOGGER.error("Error while processing service:", ex);
       return generateError(this._req, this._res, ex);
     }
   }

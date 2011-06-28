@@ -43,6 +43,9 @@ public final class MatchingService {
    * @param result  The resolved URI variables.
    */
   public MatchingService(Service service, URIPattern pattern, URIResolveResult result) {
+    if (service == null) throw new NullPointerException("Cannot match null service");
+    if (pattern == null) throw new NullPointerException("Pattern must be specified");
+    if (result == null) throw new NullPointerException("Resolution results must be specified");
     this._service = service;
     this._pattern = pattern;
     this._result = result;
@@ -63,21 +66,27 @@ public final class MatchingService {
   }
 
   /**
-   * @return The matched service.
+   * Always returns the matched service (always a value).
+   * 
+   * @return The matched service (never <code>null</code>).
    */
   public Service service() {
     return this._service;
   }
 
   /**
-   * @return The URI pattern it matched.
+   * Always returns the matching URI pattern.
+   * 
+   * @return The URI pattern it matched (never <code>null</code>).
    */
   public URIPattern pattern() {
     return this._pattern;
   }
 
   /**
-   * @return The resolved URI variables.
+   * Always returns the resolved URI variables.
+   * 
+   * @return The resolved URI variables (never <code>null</code>).
    */
   public URIResolveResult result() {
     return this._result;

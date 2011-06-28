@@ -258,7 +258,7 @@ public class BerliozServlet extends HttpServlet {
 
     // Determine the method in use.
     HttpMethod method = HttpMethod.valueOf(req.getMethod());
-    
+
     // Berlioz Control
     if (config.hasControl(req)) {
 
@@ -281,18 +281,18 @@ public class BerliozServlet extends HttpServlet {
     // Start handling XML content
     long t0 = System.currentTimeMillis();
     String path = HttpRequestWrapper.getBerliozPath(req);
-    MatchingService match = this._services.get(path, method);
+    MatchingService match = ContentManager.getService(path, method);
 
     // No matching service (backward compatibility)
     if (match == null && method == HttpMethod.POST && GlobalSettings.get("berlioz.http.getviapost", true)) {
-      match = ContentManager.getService(path, "GET");
+      match = ContentManager.getService(path, HttpMethod.GET);
     }
 
     // Still no matching service
     if (match == null) {
       // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
       if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
-        List<String> methods = this._services.allows(path);
+        List<String> methods = ContentManager.allows(path);
         if (methods.size() > 0) {
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
           res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
@@ -309,6 +309,7 @@ public class BerliozServlet extends HttpServlet {
 
     // Include the service as a header for information
     res.setHeader("X-Berlioz-Service", match.service().id());
+    LOGGER.debug(path+" -> "+match.service());
 
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;

@@ -64,25 +64,6 @@ public final class ServiceRegistry {
   }
 
   /**
-   * Register the content generator for the HTTP methods in use this registry only.
-   * 
-   * @param service The service to register.
-   * @param pattern The URL pattern to associate to this content generator.
-   * 
-   * @deprecated Services should always be mapped to a specific method.
-   */
-  @Deprecated public void register(Service service, String pattern) {
-    // preliminary checks
-    if (service == null) throw new IllegalArgumentException("No service to register.");
-    if (pattern == null) throw new IllegalArgumentException("URL Pattern must be specified to register a service.");
-    // Find and check the HTTP method
-    for (HttpMethod m : this.registry.keySet()) {
-      // Register the generator with the URL pattern
-      this.registry.get(m).put(pattern, service);
-    }
-  }
-
-  /**
    * Returns the list of content generators for this URL.
    * 
    * <p>This method iterates over each HTTP method in the following order: GET, POST, PUT, DELETE.

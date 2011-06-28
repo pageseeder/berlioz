@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
 import org.weborganic.berlioz.xml.BerliozErrorHandler;
 import org.weborganic.berlioz.xml.XMLUtils;
@@ -76,7 +77,7 @@ public final class ContentManager {
    * 
    * @return The corresponding task instance.
    */
-  @Beta public static MatchingService getService(String path, String method) {
+  public static MatchingService getService(String path, HttpMethod method) {
     if (path == null || method == null) return null;
     loadIfRequired();
     return SERVICES.get(path, method);
@@ -93,22 +94,6 @@ public final class ContentManager {
     if (path == null) return Collections.emptyList();
     loadIfRequired();
     return SERVICES.allows(path);
-  }
-
-  /**
-   * Returns the content generator instance corresponding to the specified
-   * path information.
-   * 
-   * @deprecated this method ignores methods
-   * 
-   * @param pathInfo The path information to access this generator.
-   * 
-   * @return The corresponding task instance.
-   */
-  @Deprecated public static MatchingService getInstance(String pathInfo) {
-    if (pathInfo == null) return null;
-    loadIfRequired();
-    return SERVICES.get(pathInfo);
   }
 
   /**
