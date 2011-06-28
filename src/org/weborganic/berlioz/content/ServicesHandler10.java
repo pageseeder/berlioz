@@ -13,6 +13,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -36,6 +40,11 @@ final class ServicesHandler10 extends DefaultHandler {
   private final ServiceRegistry _registry;
 
   /**
+   * The error handler to use.
+   */
+  private final ErrorHandler _errorHandler;
+
+  /**
    * The elements used recognised by this handler.
    */
   private enum Element {
@@ -54,6 +63,9 @@ final class ServicesHandler10 extends DefaultHandler {
 
     /** 'service' element name */
     SERVICE,
+
+    /** 'response-code' element name */
+    RESPONSE_CODE,
 
     /** 'url' element name */
     URL;
@@ -102,25 +114,46 @@ final class ServicesHandler10 extends DefaultHandler {
   private String _method;
 
   /**
+   * The document locator for use when reporting errors and warnings.
+   */
+  private Locator _locator;
+
+  /**
    * The service builder.
    */
   private Service.Builder _builder = new Service.Builder();
+
+  /**
+   * The rules for the services.
+   */
+  private List<ServiceStatusRule> rules = new ArrayList<ServiceStatusRule>();
 
   /**
    * Creates a new ContentAccessHandler.
    * 
    * <p>Note: it is more efficient to pass the generators rather than access the outer class.
    * 
-   * @param registry The service registry to use.
+   * @param registry     The service registry to use.
+   * @param errorHandler The error handler to use.
    */
-  public ServicesHandler10(ServiceRegistry registry) {
+  public ServicesHandler10(ServiceRegistry registry, ErrorHandler errorHandler) {
     this._registry = registry;
+    this._errorHandler = errorHandler;
   }
 
   /**
    * {@inheritDoc}
    */
-  public void startElement(String uri, String localName, String qName, Attributes atts) {
+  @Override
+  public void setDocumentLocator(Locator locator) {
+    this._locator = locator;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
     // Identify element
     Element element = Element.get(localName);
     switch(element) {
@@ -130,9 +163,11 @@ final class ServicesHandler10 extends DefaultHandler {
 
       case SERVICES:
         this._builder.group(atts.getValue("group"));
+        if (rules.size() == 0) this.rules.add(ServiceStatusRule.DEFAULT_RULE);
         break;
 
       case SERVICE:
+        if (rules.size() == 1) this.rules.add(ServiceStatusRule.DEFAULT_RULE);
         this._builder.id(atts.getValue("id"));
         this._builder.cache(atts.getValue("cache-control"));
         this._method = atts.getValue("method");
@@ -146,18 +181,20 @@ final class ServicesHandler10 extends DefaultHandler {
         this._builder.parameter(toParameter(atts));
         break;
 
+      case RESPONSE_CODE:
+        this.rules.add(ServiceStatusRule.newInstance(atts.getValue("use"), atts.getValue("rule")));
+        break;
+
       case GENERATOR:
         try {
           ContentGenerator generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
-          // The first pattern is the default one
-          if (!this._patterns.isEmpty() && generator instanceof ContentGeneratorBase)
-            ((ContentGeneratorBase)generator).setPathInfo(this._patterns.get(0));
           this._builder.add(generator);
           this._builder.target(atts.getValue("target"));
           this._builder.name(atts.getValue("name"));
         } catch (Exception ex) {
-          LOGGER.warn("Failed to load generator {} for service {}", atts.getValue("class"), this._builder.id());
-          ex.printStackTrace();
+          String message = "Failed to load generator "+ atts.getValue("class")+" for service "+this._builder.id();
+          SAXParseException warning = new SAXParseException(message, this._locator, ex);
+          warning(warning);
         }
         break;
       default:
@@ -168,11 +205,13 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * {@inheritDoc}
    */
+  @Override
   public void endElement(String uri, String localName, String qName) {
     // Identify element
     Element element = Element.get(localName);
     switch(element) {
       case SERVICE:
+        this._builder.rule(this.rules.get(rules.size() - 1));
         Service service = this._builder.build();
         for (String pattern : this._patterns) {
           this._registry.register(service, pattern, this._method);
@@ -180,10 +219,44 @@ final class ServicesHandler10 extends DefaultHandler {
         }
         this._builder.reset();
         this._patterns.clear();
+        if (rules.size() == 3) this.rules.remove(2);
+        break;
+      case SERVICES:
+        if (rules.size() == 2) this.rules.remove(1);
+        break;
+      case SERVICE_CONFIG:
+        if (rules.size() == 1) this.rules.remove(0);
         break;
       default:
     }
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void warning(SAXParseException ex) throws SAXException {
+    this._errorHandler.warning(ex);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void error(SAXParseException ex) throws SAXException {
+    this._errorHandler.error(ex);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void fatalError(SAXParseException ex) throws SAXException {
+    this._errorHandler.fatalError(ex);
+  }
+
+  // non-SAX methods
+  // ----------------------------------------------------------------------------------------------
 
   /**
    * Creates a parameter specifications from the given attributes.

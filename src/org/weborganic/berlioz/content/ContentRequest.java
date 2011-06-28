@@ -168,11 +168,4 @@ public interface ContentRequest {
    */
   void setStatus(ContentStatus code);
 
-  /**
-   * Requests that the answer be interpreted as a page not found error.
-   * 
-   * @deprecated Use {@link #setStatus(ContentStatus)}
-   */
-  @Deprecated void returnNotFound();
-
 }

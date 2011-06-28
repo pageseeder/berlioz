@@ -46,6 +46,11 @@ public final class Service {
   private final String _cache;
 
   /**
+   * How the status code this service is calculated.
+   */
+  private final ServiceStatusRule _rule;
+
+  /**
    * The list of generators associated with this service.
    */
   private final List<ContentGenerator> _generators;
@@ -71,12 +76,13 @@ public final class Service {
    * @param id         the ID of the service.
    * @param group      the group the service is part of.
    * @param cache      the cache control for this service.
+   * @param rule       the status rule for the service status.
    * @param generators the list of generators.
    * @param parameters the parameters specifications for each generator.
    * @param names      the names of each generator (if any).
    * @param targets    the targets of each generator (if any).
    */
-  private Service(String id, String group, String cache, 
+  private Service(String id, String group, String cache, ServiceStatusRule rule,
       List<ContentGenerator> generators, 
       Map<ContentGenerator, List<Parameter>> parameters,
       Map<ContentGenerator, String> names, 
@@ -84,6 +90,7 @@ public final class Service {
     this._id = id;
     this._group = group;
     this._cache = cache;
+    this._rule = rule;
     this._generators = generators;
     this._parameters = parameters;
     this._cacheable = isCacheable(generators);
@@ -116,6 +123,15 @@ public final class Service {
    */
   public String cache() {
     return this._cache;
+  }
+
+  /**
+   * Returns the status rule for this service.
+   * 
+   * @return the status rule for this service.
+   */
+  public ServiceStatusRule rule() {
+    return this._rule;
   }
 
   /**
@@ -219,6 +235,11 @@ public final class Service {
     private String _cache;
 
     /**
+     * Maps targets to a given generator instance.
+     */
+    private ServiceStatusRule _rule;
+
+    /**
      * The list of generators associated with this service.
      */
     private final List<ContentGenerator> _generators = new ArrayList<ContentGenerator>();
@@ -283,6 +304,17 @@ public final class Service {
      */
     public Builder cache(String cache) {
       this._cache = cache;
+      return this;
+    }
+
+    /**
+     * Sets the status rule of the service to build.
+     * 
+     * @param rule the status rule of the service to build.
+     * @return this builder for easy chaining.
+     */
+    public Builder rule(ServiceStatusRule rule) {
+      this._rule = rule;
       return this;
     }
 
@@ -357,7 +389,7 @@ public final class Service {
         Logger logger = LoggerFactory.getLogger(Builder.class);
         logger.warn("Building non-cacheable service {} - cache control ignored.", this._id);
       }
-      return new Service(this._id, this._group, this._cache,
+      return new Service(this._id, this._group, this._cache, this._rule,
           immutable(this._generators),
           immutable(this._parameters),
           immutable3(this._names),

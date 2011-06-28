@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Environment;
-import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.util.ISO8601;
 import org.weborganic.furi.URIResolveResult;
 
@@ -217,13 +216,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     return this._req.getCookies();
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Deprecated public void returnNotFound() {
-    this._res.setStatus(HttpServletResponse.SC_NOT_FOUND);
-  }
-
 // attributes -------------------------------------------------------------------------------------
 
   /**
@@ -328,32 +320,13 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * Configure this request wrapper for the specified service match.
    * 
-   * @param match     the matching service info.
-   */
-  @SuppressWarnings("unchecked")
-  void configure(MatchingService match) {
-    URIResolveResult results = match.result();
-    // Load all HTTP parameters from the Query String
-    Enumeration<String> names = this._req.getParameterNames();
-    while (names.hasMoreElements()) {
-      String name = names.nextElement();
-      this._parameters.put(name, this._req.getParameter(name));
-    }
-    // Load all URL parameters (takes precedence over HTTP parameters)
-    for (String name : results.names()) {
-      Object o = results.get(name);
-      if (o != null)
-        this._parameters.put(name, o.toString());
-    }
-  }
-
-  /**
-   * Configure this request wrapper for the specified service match.
+   * @param req     The HTTP servlet request.
+   * @param results The results of the URI resolution.
    * 
-   * @param match     the matching service info.
+   * @return A map of the parameters for the specified request and results
    */
   @SuppressWarnings("unchecked")
-  protected static Map<String,String> toParameters(HttpServletRequest req, URIResolveResult results) {
+  protected static Map<String, String> toParameters(HttpServletRequest req, URIResolveResult results) {
     Map<String, String> parameters = new HashMap<String, String>(); 
     // Load all HTTP parameters from the Query String first
     Map<String, String[]> map = req.getParameterMap();

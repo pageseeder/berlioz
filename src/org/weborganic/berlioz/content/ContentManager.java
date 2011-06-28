@@ -9,6 +9,7 @@ package org.weborganic.berlioz.content;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,13 +21,17 @@ import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.http.HttpMethod;
+import org.weborganic.berlioz.util.CollectedError;
+import org.weborganic.berlioz.util.CollectedError.Level;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
-import org.weborganic.berlioz.xml.BerliozErrorHandler;
 import org.weborganic.berlioz.xml.XMLUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -134,20 +139,21 @@ public final class ContentManager {
     if (xml == null || !xml.exists())
       throw new IllegalArgumentException("The generators configuration could not be found in "+xml);
     SAXParser parser = XMLUtils.getParser(true);
+    ErrorCollector collector = new ErrorCollector();
     // Load the generators
     try {
       XMLReader reader = parser.getXMLReader();
       HandlingDispatcher dispatcher = new HandlingDispatcher(reader, SERVICES);
       reader.setContentHandler(dispatcher);
       reader.setEntityResolver(BerliozEntityResolver.getInstance());
-      reader.setErrorHandler(BerliozErrorHandler.getInstance());
+      reader.setErrorHandler(collector);
       LOGGER.info("parsing "+xml.toURI().toString());
       reader.parse(new InputSource(xml.toURI().toString()));
     } catch (SAXException ex) {
-      LOGGER.error("An SAX error occurred while reading XML configuration of generatores", ex);
+      LOGGER.error("An SAX error occurred while reading XML configuration of generators");
       throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
     } catch (IOException ex) {
-      LOGGER.error("An I/O error occurred while reading XML configuration of generatores", ex);
+      LOGGER.error("An I/O error occurred while reading XML configuration of generators");
       throw new BerliozException("Could not read file.", ex);
     }
   }
@@ -183,6 +189,11 @@ public final class ContentManager {
     private final XMLReader _reader;
 
     /**
+     * The document locator for use when reporting errors and warnings.
+     */
+    private Locator _locator;
+
+    /**
      * Create a new version sniffer for the specified XML reader.
      * 
      * @param reader   The XML Reader in use.
@@ -191,6 +202,14 @@ public final class ContentManager {
     public HandlingDispatcher(XMLReader reader, ServiceRegistry registry) {
       this._reader = reader;
       this._registry = registry;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDocumentLocator(Locator locator) {
+      this._locator = locator;
     }
 
     /**
@@ -205,6 +224,8 @@ public final class ContentManager {
       if (handler != null) {
         try {
           // re-trigger start element event to ensure proper initialisation
+          handler.setDocumentLocator(this._locator);
+          handler.startDocument();
           handler.startElement(uri, localName, qName, atts);
           this._reader.setContentHandler(handler);
         } catch (SAXException ex) {
@@ -229,12 +250,12 @@ public final class ContentManager {
         // Version 1.0
         if ("1.0".equals(version)) {
           LOGGER.info("Service configuration 1.0 detected");
-          return new ServicesHandler10(this._registry);
+          return new ServicesHandler10(this._registry, this._reader.getErrorHandler());
 
         // Unknown version (assume 1.0)
         } else {
           LOGGER.info("Service configuration version unavailable, assuming 1.0");
-          return new ServicesHandler10(this._registry);
+          return new ServicesHandler10(this._registry, this._reader.getErrorHandler());
         }
 
       // Definitely not supported 
@@ -242,6 +263,62 @@ public final class ContentManager {
         LOGGER.error("Unable to determine Berlioz configuration");
         return null;
       }
+    }
+
+  }
+
+  /**
+   * 
+   * @author Christophe Lauret (Weborganic)
+   * @version 28 June 2011
+   */
+  private static final class ErrorCollector implements ErrorHandler {
+
+    /**
+     * The collected errors.
+     */
+    private List<CollectedError<SAXParseException>> errors = new ArrayList<CollectedError<SAXParseException>>(); 
+
+    /**
+     * Creates a new Berlioz error handler.
+     */
+    private ErrorCollector() {
+    }
+
+    /**
+     * @see org.xml.sax.ErrorHandler#fatalError(org.xml.sax.SAXParseException)
+     * 
+     * @param exception A SAX parse fatal reported by the SAX parser.
+     * 
+     * @throws SAXParseException Identical to the parameter.
+     */
+    public void fatalError(SAXParseException exception) throws SAXParseException {
+      this.errors.add(new CollectedError<SAXParseException>(Level.FATAL, exception));
+      LOGGER.error("{} (line: {})", exception.getMessage(), exception.getLineNumber());
+      throw exception;
+    }
+
+    /**
+     * @see org.xml.sax.ErrorHandler#error(org.xml.sax.SAXParseException)
+     * 
+     * @param exception A SAX parse error reported by the SAX parser.
+     * 
+     * @throws SAXParseException Identical to the parameter.
+     */
+    public void error(SAXParseException exception) throws SAXParseException {
+      this.errors.add(new CollectedError<SAXParseException>(Level.ERROR, exception));
+      LOGGER.error("{} (line: {})", exception.getMessage(), exception.getLineNumber());
+      throw exception;
+    }
+
+    /**
+     * @see org.xml.sax.ErrorHandler#warning(org.xml.sax.SAXParseException)
+     * 
+     * @param exception A SAX parse warning reported by the SAX parser.
+     */
+    public void warning(SAXParseException exception) {
+      this.errors.add(new CollectedError<SAXParseException>(Level.WARNING, exception));
+      LOGGER.warn("{} (line: {})", exception.getMessage(), exception.getLineNumber());
     }
 
   }
