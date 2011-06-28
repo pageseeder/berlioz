@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -21,12 +22,9 @@ import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
-import org.weborganic.berlioz.content.Parameter;
-import org.weborganic.berlioz.content.Service;
 import org.weborganic.berlioz.util.ISO8601;
 import org.weborganic.furi.URIResolveResult;
 
@@ -39,7 +37,7 @@ import org.weborganic.furi.URIResolveResult;
  * 
  * @version 12 April 2011
  */
-public final class HttpRequestWrapper implements ContentRequest {
+public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Displays debug information.
@@ -59,14 +57,30 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * The environment.
    */
-  private Environment _env;
+  private final Environment _env;
 
   /**
    * Maps parameter names to their values.
    */
-  private Map<String, String> parameters = new HashMap<String, String>();
+  private final Map<String, String> _parameters;
 
-// sole constructor -------------------------------------------------------------------------------
+  // Constructors
+  // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Creates a new wrapper around the specified HTTP servlet request.
+   * 
+   * @param wrapper The request to wrap.
+   * 
+   * @throws NullPointerException If the wrapper is <code>null</code>.
+   */
+  HttpRequestWrapper(HttpRequestWrapper wrapper) throws NullPointerException {
+    if (wrapper == null) throw new NullPointerException("Cannot construct wrapper from null wrapper.");
+    this._req = wrapper._req;
+    this._res = wrapper._res;
+    this._env = wrapper._env;
+    this._parameters = new HashMap<String, String>();
+  }
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
@@ -84,6 +98,27 @@ public final class HttpRequestWrapper implements ContentRequest {
     this._req = req;
     this._res = res;
     this._env = env;
+    this._parameters = new HashMap<String, String>();
+  }
+
+  /**
+   * Creates a new wrapper around the specified HTTP servlet request.
+   * 
+   * @param req        The request to wrap.
+   * @param res        The response to wrap.
+   * @param env        The environment for this request.
+   * @param parameters The list of parameters.
+   * 
+   * @throws IllegalArgumentException If the request is <code>null</code>.
+   */
+  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env, Map<String,String> parameters)
+      throws IllegalArgumentException {
+    if (req == null)
+      throw new IllegalArgumentException("Cannot construct wrapper around null request.");
+    this._req = req;
+    this._res = res;
+    this._env = env;
+    this._parameters = parameters;
   }
 
 // generic parameter methods ----------------------------------------------------------------------
@@ -91,15 +126,15 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public String getBerliozPath() {
+  public final String getBerliozPath() {
     return getBerliozPath(this._req);
   };
 
   /**
    * {@inheritDoc}
    */
-  public String getParameter(String name) {
-    String value = this.parameters.get(name);
+  public final String getParameter(String name) {
+    String value = this._parameters.get(name);
     if (value == null)
       value = this._req.getParameter(name);
     return ("".equals(value))? null : value;
@@ -108,7 +143,7 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public String getParameter(String name, String def) {
+  public final String getParameter(String name, String def) {
     String value = getParameter(name);
     return (value == null || "".equals(value))? def : value;
   }
@@ -116,8 +151,8 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public String[] getParameterValues(String name) {
-    String value = this.parameters.get(name);
+  public final String[] getParameterValues(String name) {
+    String value = this._parameters.get(name);
     if (value != null)
       return new String[]{value};
     else
@@ -127,14 +162,14 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public Enumeration<String> getParameterNames() {
-    return Collections.enumeration(this.parameters.keySet()); 
+  public final Enumeration<String> getParameterNames() {
+    return Collections.enumeration(this._parameters.keySet()); 
   }
 
   /**
    * {@inheritDoc}
    */
-  public Environment getEnvironment() {
+  public final Environment getEnvironment() {
     return this._env;
   }
 
@@ -143,7 +178,7 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public int getIntParameter(String name, int def) {
+  public final int getIntParameter(String name, int def) {
     String value = getParameter(name);
     if (value == null || "".equals(value)) return def;
     try {
@@ -157,7 +192,7 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public Date getDateParameter(String name) {
+  public final Date getDateParameter(String name) {
     try {
       return ISO8601.parseAuto(this.getParameter(name));
     } catch (ParseException ex) {
@@ -171,21 +206,21 @@ public final class HttpRequestWrapper implements ContentRequest {
    * 
    * @return The path information (what comes after servlet path).
    */
-  public String getPathInfo() {
+  public final String getPathInfo() {
     return this._req.getPathInfo();
   }
 
   /**
    * {@inheritDoc} 
    */
-  public Cookie[] getCookies() {
+  public final Cookie[] getCookies() {
     return this._req.getCookies();
   }
 
   /**
    * {@inheritDoc}
    */
-  public void returnNotFound() {
+  @Deprecated public void returnNotFound() {
     this._res.setStatus(HttpServletResponse.SC_NOT_FOUND);
   }
 
@@ -194,14 +229,14 @@ public final class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
-  public Object getAttribute(String name) {
+  public final Object getAttribute(String name) {
     return this._req.getAttribute(name);
   }
 
   /**
    * {@inheritDoc}
    */
-  public void setAttribute(String name, Object o) {
+  public final void setAttribute(String name, Object o) {
     this._req.setAttribute(name, o);
   }
 
@@ -213,7 +248,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * 
    * @return The wrapped HTTP servlet request.
    */
-  public HttpServletRequest getHttpRequest() {
+  public final HttpServletRequest getHttpRequest() {
     return this._req;
   }
 
@@ -225,7 +260,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * 
    * @return The attached HTTP servlet response.
    */
-  public HttpServletResponse getHttpResponse() {
+  public final HttpServletResponse getHttpResponse() {
     return this._res;
   }
 
@@ -254,7 +289,7 @@ public final class HttpRequestWrapper implements ContentRequest {
    * 
    * @return The session of the HTTP servlet request.
    */
-  public HttpSession getSession() {
+  public final HttpSession getSession() {
     return this._req.getSession();
   }
 
@@ -291,49 +326,47 @@ public final class HttpRequestWrapper implements ContentRequest {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Configure this request wrapper for the specified service match and generator.
+   * Configure this request wrapper for the specified service match.
    * 
    * @param match     the matching service info.
-   * @param generator the generator for which is request is used.
    */
-  void configure(MatchingService match, ContentGenerator generator) {
-    this.parameters.clear();
+  @SuppressWarnings("unchecked")
+  void configure(MatchingService match) {
     URIResolveResult results = match.result();
+    // Load all HTTP parameters from the Query String
+    Enumeration<String> names = this._req.getParameterNames();
+    while (names.hasMoreElements()) {
+      String name = names.nextElement();
+      this._parameters.put(name, this._req.getParameter(name));
+    }
     // Load all URL parameters (takes precedence over HTTP parameters)
     for (String name : results.names()) {
       Object o = results.get(name);
       if (o != null)
-        this.parameters.put(name, o.toString());
-    }
-    // Load the service configuration
-    Service service = match.service();
-    for (Parameter p : service.parameters(generator)) {
-      String value = getParameterValue(p, results);
-      if (value != null)
-        this.parameters.put(p.name(), value);
-      else if (p.def() != null)
-        this.parameters.put(p.name(), p.def());
+        this._parameters.put(name, o.toString());
     }
   }
 
   /**
-   * Retrieve the parameters value based on the source. 
+   * Configure this request wrapper for the specified service match.
    * 
-   * @param p       The parameter
-   * @param results The URI resolutions results
-   *
-   * @return The parameter value 
+   * @param match     the matching service info.
    */
-  private String getParameterValue(Parameter p, URIResolveResult results) {
-    switch (p.source()) {
-      case QUERY_STRING: 
-        return this._req.getParameter(p.value());
-      case URI_VARIABLE:
-        Object o = results.get(p.value());
-        return o != null? o.toString() : null;
-      case STRING: return p.value();
-      default: return null;
+  @SuppressWarnings("unchecked")
+  protected static Map<String,String> toParameters(HttpServletRequest req, URIResolveResult results) {
+    Map<String, String> parameters = new HashMap<String, String>(); 
+    // Load all HTTP parameters from the Query String first
+    Map<String, String[]> map = req.getParameterMap();
+    for (Entry<String, String[]> entry : map.entrySet()) {
+      parameters.put(entry.getKey(), entry.getValue()[0]);
     }
+    // Load all URL parameters (takes precedence over HTTP parameters)
+    for (String name : results.names()) {
+      Object o = results.get(name);
+      if (o != null)
+        parameters.put(name, o.toString());
+    }
+    return parameters;
   }
 
 }

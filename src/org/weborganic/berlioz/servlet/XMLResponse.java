@@ -9,6 +9,10 @@ package org.weborganic.berlioz.servlet;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,8 +22,10 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
+import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
+import org.weborganic.berlioz.content.Parameter;
 import org.weborganic.berlioz.content.Service;
 
 import com.topologi.diffx.xml.XMLWriter;
@@ -31,7 +37,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * <p>This class is not thread-safe.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 4 June 2011
+ * @version 28 June 2011
  */
 public final class XMLResponse {
 
@@ -56,14 +62,14 @@ public final class XMLResponse {
   private final Environment _env;
 
   /**
-   * Wraps the request and response to be supplied to the generators.
-   */
-  private final HttpRequestWrapper wrapper;
-
-  /**
    * The service that was matched for the given request.
    */
   private final MatchingService _match;
+
+  /**
+   * The request to send to the generators.
+   */
+  private final List<HttpContentRequest> _requests;
 
   /**
    * Creates a new XML response for the specified arguments.
@@ -78,56 +84,7 @@ public final class XMLResponse {
     this._res = res;
     this._env = env;
     this._match = match;
-    this.wrapper = new HttpRequestWrapper(this._req, this._res, this._env);
-  }
-
-  /**
-   * Indicates whether this response is cacheable.
-   * 
-   * <p>A response is cacheable only is the service has been found and all its generators are 
-   * cacheable.
-   * 
-   * @return <code>true</code> if this response is cacheable;
-   *         <code>false</code> otherwise.
-   */
-  public boolean isCacheable() {
-    Service service = getService();
-    if (service == null) return false;
-    for (ContentGenerator generator : service.generators()) {
-      if (!(generator instanceof Cacheable)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Returns the Etag for this response.
-   * 
-   * <p>The Etag is computed from the Etags returned by each generator.
-   * If any one of the generators is not cacheable, this response is not considered cacheable
-   * and the Etag returned will be <code>null</code>.
-   * 
-   * @return the Etag for this response if it is cacheable; <code>null</code> if it is not.
-   */
-  public String getEtag() {
-    Service service = getService();
-    boolean cacheable = service != null;
-    StringBuilder etag = new StringBuilder();
-    if (cacheable) {
-      for (ContentGenerator generator : service.generators()) {
-        // Set the request parameters (if necessary)
-        wrapper.configure(this._match, generator);
-        // Check if cacheable
-        if (generator instanceof Cacheable) {
-          etag.append(((Cacheable)generator).getETag(wrapper)).append("/");
-        } else {
-          cacheable = false;
-          break;
-        }
-      }
-    }
-    return cacheable? etag.toString() : null;
+    this._requests = configure(req, res, env, match);
   }
 
   /**
@@ -137,6 +94,52 @@ public final class XMLResponse {
    */
   public Service getService() {
     return this._match != null? this._match.service() : null;
+  }
+
+  /**
+   * Indicates whether this response is cacheable.
+   * 
+   * <p>A response is cacheable only is the service has been found and all its generators are 
+   * cacheable.
+   * 
+   * @deprecated Use {@link Service#isCacheable()} instead.
+   * 
+   * @return <code>true</code> if this response is cacheable;
+   *         <code>false</code> otherwise.
+   */
+  @Deprecated public boolean isCacheable() {
+    Service service = getService();
+    if (service == null) return false;
+    return service.isCacheable();
+  }
+
+  /**
+   * Returns the Etag for this response.
+   * 
+   * <p>The Etag is computed from the Etags returned by each generator.
+   * 
+   * <p>If any one of the generators is not cacheable, this response is not considered cacheable
+   * and the Etag returned will be <code>null</code>.
+   * 
+   * @return the Etag for this response if it is cacheable; <code>null</code> if it is not.
+   */
+  public String getEtag() {
+    Service service = getService();
+    boolean cacheable = service != null;
+    StringBuilder etag = new StringBuilder();
+    if (cacheable) {
+      for (HttpContentRequest request : this._requests) {
+        ContentGenerator generator = request.generator();
+        // Check if cacheable
+        if (generator instanceof Cacheable) {
+          etag.append(((Cacheable)generator).getETag(request)).append("/");
+        } else {
+          cacheable = false;
+          break;
+        }
+      }
+    }
+    return cacheable? etag.toString() : null;
   }
 
   /**
@@ -154,17 +157,16 @@ public final class XMLResponse {
       xml.xmlDecl();
       xml.openElement("root", true);
 
-      // if the service exists
+      // If the service exists
       if (this._match != null) {
         Service service = this._match.service();
         LOGGER.debug(this._req.getPathInfo()+" -> "+service);
         XMLResponseHeader header = new XMLResponseHeader(this._req, service, this._match.result());
         header.toXML(xml);
 
-        for (ContentGenerator generator : service.generators()) {
-          // Set the request parameters
-          this.wrapper.configure(this._match, generator);
-          toXML(generator, service, xml);
+        // Call each generator in turn
+        for (HttpContentRequest request : this._requests) {
+          toXML(request, service, xml);
         }
 
       // the content generator does not exist
@@ -219,14 +221,15 @@ public final class XMLResponse {
   /**
    * Generates the XML content for one generator.
    * 
-   * @param generator The generator to invoke.
+   * @param request   The generator request to process.
    * @param service   The service it is part of.
    * @param xml       The XML Writer to use.
    * 
    * @throws IOException      Should an I/O error occur while writing XML.
    * @throws BerliozException Any exception occurring during processing will be wrapped in a BerliozException.
    */
-  private void toXML(ContentGenerator generator, Service service, XMLWriter xml) throws IOException {
+  private void toXML(HttpContentRequest request, Service service, XMLWriter xml) throws IOException {
+    ContentGenerator generator = request.generator();
     // Generate the main element
     xml.openElement("content", true);
     xml.attribute("generator", generator.getClass().getName());
@@ -237,7 +240,7 @@ public final class XMLResponse {
 
     // If cacheable, include etag
     if (generator instanceof Cacheable) {
-      String etag = ((Cacheable)generator).getETag(wrapper);
+      String etag = ((Cacheable)generator).getETag(request);
       xml.attribute("etag", etag);
     }
 
@@ -252,7 +255,7 @@ public final class XMLResponse {
       // Normal response
       StringWriter writer = new StringWriter();
       XMLWriter ok = new XMLWriterImpl(writer);
-      generator.process(wrapper, ok);
+      generator.process(request, ok);
       result = writer.toString();
     } catch (BerliozException ex) {
       error = ex;
@@ -262,11 +265,46 @@ public final class XMLResponse {
     }
 
     // Write the XML
-    xml.attribute("status", error != null? "error" : "ok");
+    ContentStatus status = request.getStatus();
+    xml.attribute("status", error != null? "error" : status.toString());
     if (error != null) error.toXML(xml);
     else xml.writeXML(result);
 
     xml.closeElement();
+  }
+
+  /**
+   * Returns the list of content generator requests to process. 
+   * 
+   * @param req   The HTTP servlet request.
+   * @param res   The HTTP servlet response.
+   * @param env   The current environment.
+   * @param match The matching service
+   * @return the list of content generator requests to process.
+   */
+  private static List<HttpContentRequest> configure(HttpServletRequest req, HttpServletResponse res, Environment env,
+      MatchingService match) {
+    // Get the list of parameters
+    Map<String, String> common = HttpRequestWrapper.toParameters(req, match.result());
+    // Create a request for each generator
+    Service service = match.service();
+    List<HttpContentRequest> requests = new ArrayList<HttpContentRequest>();
+    for (ContentGenerator generator : service.generators()) {
+      List<Parameter> pconfig = service.parameters(generator);
+      if (pconfig.isEmpty()) {
+        // No specific parameters, return a request using the common parameters
+        requests.add(new HttpContentRequest(req, res, env, common, generator));
+
+      } else {
+        // Some specific parameters, recompute the parameters
+        Map<String, String> specific = new HashMap<String, String>(common);
+        for (Parameter p : pconfig) {
+          specific.put(p.name(), p.value(common));
+        }
+        requests.add(new HttpContentRequest(req, res, env, specific, generator));
+      }
+    }
+    return requests;
   }
 
 }
