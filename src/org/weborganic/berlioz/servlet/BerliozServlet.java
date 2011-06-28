@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentManager;
+import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.ServiceRegistry;
 import org.weborganic.berlioz.http.HttpHeaderUtils;
@@ -342,7 +343,12 @@ public class BerliozServlet extends HttpServlet {
     long t1 = System.currentTimeMillis();
     LOGGER.debug("Content generated in {} ms", (t1 - t0));
 
+    // Examine the status
+    ContentStatus status = xml.getStatus();
+    res.setStatus(status.code());
+
     // Redirect if required - Phase this feature out
+    // TODO handle
     String url = req.getParameter("redirect-url");
     if (url == null)
       url = (String)req.getAttribute("redirect-url");
