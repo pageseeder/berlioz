@@ -1,15 +1,18 @@
-package org.weborganic.berlioz.http;
+package org.weborganic.berlioz.content;
 
 import org.weborganic.berlioz.Beta;
 
 /**
- * An enumeration of HTTP response codes supported by Berlioz services.
+ * An enumeration of status codes supported by Berlioz generators.
+ * 
+ * <p>These are based on HTTP response code, and are used to determine the HTTP code that will be
+ * returned by the service.
  * 
  * @author Christophe Lauret
  * @version 27 June 2011
  * @since Berlioz 0.8.2
  */
-@Beta public enum HttpResponseCode {
+@Beta public enum ContentStatus {
 
   // Successful 2xx
   // ----------------------------------------------------------------------------------------------
@@ -178,11 +181,17 @@ import org.weborganic.berlioz.Beta;
   private final int _code;
 
   /**
+   * The corresponding string value.
+   */
+  private final String _string;
+
+  /**
    * Creates a new code.
    * @param code the corresponding HTTP response code.
    */
-  private HttpResponseCode(int code) {
+  private ContentStatus(int code) {
    this._code = code;
+   this._string = this.name().toLowerCase().replace('_', '-');
   }
 
   /**
@@ -193,4 +202,15 @@ import org.weborganic.berlioz.Beta;
     return _code;
   }
 
+  /**
+   * Returns the status as a string for use in the XML.
+   * 
+   * <p>The string representation is always XML safe (does not need to be escaped) and corresponds
+   * to the name of the enum value as lower case and using '-' instead of '_' between words. 
+   * 
+   * @return the status as a string.
+   */
+  public String toString() {
+    return this._string;
+  }
 }
