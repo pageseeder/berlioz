@@ -25,9 +25,14 @@ public abstract class ContentGeneratorBase implements ContentGenerator {
 // methods  ------------------------------------------------------------------------------------
 
   /**
-   * {@inheritDoc}
+   * Returns the sub path info of this generator.
+   * 
+   * @param req The content request
+   * @return pathInfo The path info
+   * 
+   * @deprecated Not useful now that we use URI Patterns.
    */
-  public final String getSubPath(ContentRequest req) {
+  @Deprecated public final String getSubPath(ContentRequest req) {
     String pathInfo = req.getPathInfo();
     int wildcard = this._pathInfo.indexOf('*');
     if (wildcard >= 0 && pathInfo.startsWith(this._pathInfo.substring(0, wildcard))) {
@@ -36,18 +41,21 @@ public abstract class ContentGeneratorBase implements ContentGenerator {
   }
 
   /**
-   * {@inheritDoc}
+   * Sets the path info of this generator.
+   * 
+   * @param pathInfo The path info
    */
   public final void setPathInfo(String pathInfo) {
     this._pathInfo = pathInfo;
   }
 
   /**
-   * {@inheritDoc}
+   * Returns the path info of this generator.
+   * 
+   * @return pathInfo The path info
    */
   public final String getPathInfo() {
     return this._pathInfo;
   }
-
 
 }
