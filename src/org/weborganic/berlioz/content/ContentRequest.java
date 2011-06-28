@@ -42,6 +42,7 @@ public interface ContentRequest {
    *   (for example <code>/html/*</code>);</li>
    *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet 
    *   (for example <code>*.html</code>);</li>
+   * </ul>
    * 
    * <p>Use this method in preference to the {@link #getPathInfo()} which only works if Berlioz is
    * mapped to prefixes.
@@ -161,8 +162,17 @@ public interface ContentRequest {
   Environment getEnvironment();
 
   /**
-   * Requests that the answer be interpreted as a page not found error.
+   * Sets the status of this request.
+   * 
+   * @param code The status code to use.
    */
-  void returnNotFound();
+  void setStatus(ContentStatus code);
+
+  /**
+   * Requests that the answer be interpreted as a page not found error.
+   * 
+   * @deprecated Use {@link #setStatus(ContentStatus)}
+   */
+  @Deprecated void returnNotFound();
 
 }
