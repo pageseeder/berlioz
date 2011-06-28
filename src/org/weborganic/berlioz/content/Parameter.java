@@ -7,6 +7,8 @@
  */
 package org.weborganic.berlioz.content;
 
+import java.util.Map;
+
 /**
  * Specifications for a parameter to send to a content generator.
  * 
@@ -15,14 +17,16 @@ package org.weborganic.berlioz.content;
  * send to a generator.
  * 
  * @author Christophe Lauret
- * @version 12 April 2011
+ * @version 28 June 2011
  */
 public final class Parameter {
 
   /**
    * Defines the source of the parameter.
+   * 
+   * @deprecated Use the parameter template notation instead.
    */
-  public enum Source {
+  @Deprecated public enum Source {
 
     /** Use the string value as it is. */
     STRING,
@@ -43,31 +47,17 @@ public final class Parameter {
   /**
    * The value of this parameter.
    */
-  private final String _value;
-
-  /**
-   * The source of the value of this parameter.
-   */
-  private final Source _source;
-
-  /**
-   * The default value of this parameter.
-   */
-  private final String _def;
+  private final ParameterTemplate _template;
 
   /**
    * Creates a new parameter.
    * 
-   * @param name   The name of the parameter.
-   * @param value  How the value of the parameter.
-   * @param source Where the value of the parameter comes from.
-   * @param def    The default value for this parameter.
+   * @param name     The name of the parameter.
+   * @param template The template to use to generate the value of the parameter.
    */
-  private Parameter(String name, String value, Source source, String def) {
-    this._name   = name;
-    this._value  = value;
-    this._source = source;
-    this._def    = def;
+  private Parameter(String name, ParameterTemplate template) {
+    this._name = name;
+    this._template = template;
   }
 
   /**
@@ -78,24 +68,37 @@ public final class Parameter {
   }
 
   /**
-   * @return The source of the value of this parameter.
-   */
-  public Source source() {
-    return this._source;
-  }
-
-  /**
-   * @return The value of this parameter.
+   * @return The unresolved value of this parameter.
    */
   public String value() {
-    return this._value;
+    return this._template.toString();
   }
 
   /**
-   * @return The default value of this parameter.
+   * Resolves the value of this parameter using the specified map of parameters.
+   * 
+   * @param parameters The map of parameters to use.
+   * @return The resolved value of this parameter.
    */
-  public String def() {
-    return this._def;
+  public String value(Map<String, String> parameters) {
+    return this._template.toString(parameters);
+  }
+
+  /**
+   * @return Always STRING.
+   * 
+   * @deprecated The source is no longer used.
+   */
+  @Deprecated public Source source() {
+    return Source.STRING;
+  }
+
+  /**
+   * @return The <code>null</code>.
+   * @deprecated This class now uses templates. 
+   */
+  @Deprecated public String def() {
+    return null;
   }
 
   /**
@@ -105,7 +108,7 @@ public final class Parameter {
    * method has been invoked.
    * 
    * @author Christophe Lauret
-   * @version 21 May 2010
+   * @version 28 June 2011
    */
   static class Builder {
 
@@ -113,7 +116,7 @@ public final class Parameter {
     private final String _name;
 
     /** Value of the parameter */
-    private String _value;
+    private String _template;
 
     /** Source of the parameter */
     private String _source;
@@ -131,11 +134,11 @@ public final class Parameter {
 
     /**
      * Set the value for this parameter.
-     * @param value The value (depends on the source)
+     * @param template The value template.
      * @return this builder
      */
-    public Builder value(String value) {
-      this._value = value;
+    public Builder value(String template) {
+      this._template = template;
       return this;
     }
 
@@ -167,16 +170,15 @@ public final class Parameter {
      */
     Parameter build() throws IllegalStateException {
       if (this._name == null) throw new IllegalStateException("Cannot build a nameless parameter");
-      if (this._value == null) throw new IllegalStateException("Cannot build a valueless parameter");
-      Source source = Source.QUERY_STRING;
-      if (this._source != null) {
-        try {
-          source = Source.valueOf(this._source.toUpperCase().replace('-', '_'));
-        } catch (IllegalArgumentException ex) {
-          throw new IllegalStateException(this._source+" is not valid source", ex);
-        }
+      if (this._template == null) throw new IllegalStateException("Cannot build a valueless parameter");
+      ParameterTemplate template = null;
+      // Backward compatibility
+      if (this._source != null && !"string".endsWith(this._source)) {
+        template = ParameterTemplate.parameter(this._template, this._def);
+      } else {
+        template = ParameterTemplate.parse(this._template);
       }
-      return new Parameter(this._name, this._value, source, this._def);
+      return new Parameter(this._name, template);
     }
   }
 
