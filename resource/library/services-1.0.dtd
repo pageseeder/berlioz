@@ -2,11 +2,11 @@
 <!--                                                                        -->
 <!-- Title:         Berlioz DTD for Web Services                            -->
 <!-- System:        Berlioz                                                 -->
-<!-- Status:        Draft                                                   -->
+<!-- Status:        Beta                                                    -->
 <!-- Description:   A schema for the defining the URL patterns and          -->
 <!--                associated content generators.                          -->
 <!-- Version:       1.0                                                     -->
-<!-- LastModified:  28 May 2010                                             -->
+<!-- LastModified:  28 June 2011                                            -->
 <!-- Author(s):     Christophe Lauret                                       -->
 <!--                                                                        -->
 <!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
@@ -16,9 +16,6 @@
 
 <!-- The HTTP method for the associated service                             -->
 <!ENTITY  % HTTP_METHOD      "(get | put | delete | post )"                   >
-
-<!-- The HTTP method for the associated service                             -->
-<!ENTITY  % PARAMETER_SOURCE "(string | query-string | uri-variable )"        >
 
 <!--
   Top level element.
@@ -81,7 +78,7 @@
   @attribute default A default value if the value is missing.
 -->
 <!ELEMENT parameter                                                    EMPTY >
-<!ATTLIST parameter         name               CDATA               #REQUIRED 
+<!ATTLIST parameter         name               CDATA               #REQUIRED
                             value              CDATA               #REQUIRED
-                            source             %PARAMETER_SOURCE;  #REQUIRED
+                            source             CDATA                #IMPLIED
                             default            CDATA                #IMPLIED >
