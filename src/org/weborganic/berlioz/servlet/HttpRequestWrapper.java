@@ -73,7 +73,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * 
    * @throws NullPointerException If the wrapper is <code>null</code>.
    */
-  HttpRequestWrapper(HttpRequestWrapper wrapper) throws NullPointerException {
+  HttpRequestWrapper(HttpRequestWrapper wrapper) {
     if (wrapper == null) throw new NullPointerException("Cannot construct wrapper from null wrapper.");
     this._req = wrapper._req;
     this._res = wrapper._res;
