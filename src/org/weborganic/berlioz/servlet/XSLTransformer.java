@@ -149,6 +149,18 @@ public final class XSLTransformer {
   }
 
   /**
+   * Performs a fail safe transformation using the internal templates.
+   * 
+   * @param content
+   * 
+   * @return the content transformed safely.
+   */
+  public static String transformFailSafe(String content, URL url) {
+    Templates failsafe = toFailSafeTemplates(url);
+    return transformFailSafe(content, failsafe);
+  }
+
+  /**
    * Returns the file used by this transformer to produce the templates.
    *
    * @return  the file used by this transformer to produce the templates.
@@ -369,6 +381,7 @@ public final class XSLTransformer {
       XMLWriter xml = new XMLWriterImpl(out);
       xml.openElement("transform-error");
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
+      xml.attribute("berlioz-version", GlobalSettings.getVersion());
 
       // Grab any info we can
       if (ex instanceof TransformerExceptionWrapper) {

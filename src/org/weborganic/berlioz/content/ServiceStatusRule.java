@@ -6,15 +6,31 @@
  */
 package org.weborganic.berlioz.content;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.weborganic.berlioz.Beta;
 
 /**
  * Defines the business logic to calculating the status code of a service.
  * 
+ * <p>All class attributes are immutable and have a value (they are never <code>null</code>).
+ * 
  * @author Christophe Lauret
- * @version 28 June 2011
+ * @version 29 June 2011
  */
 @Beta public final class ServiceStatusRule {
+
+  /**
+   * The "name:" selector prefix 
+   */
+  private static final String NAME_SELECTOR_PREFIX = "name:"; 
+
+  /**
+   * The "target:" selector prefix 
+   */
+  private static final String TARGET_SELECTOR_PREFIX = "target:";
 
   /**
    * How is the status code for the determined.
@@ -38,9 +54,6 @@ import org.weborganic.berlioz.Beta;
   @Beta
   protected enum SelectType {
 
-    /** Any generator. */
-    ANY,
-
     /** By target. */
     TARGET,
 
@@ -51,18 +64,22 @@ import org.weborganic.berlioz.Beta;
   /**
    * The default rule to use when none is specified.
    */
-  protected static final ServiceStatusRule DEFAULT_RULE = 
-    new ServiceStatusRule(SelectType.ANY, new String[]{}, CodeRule.HIGHEST);
+  protected static final ServiceStatusRule DEFAULT_RULE;
+  static {
+    // Required for type safety
+    List<String> empty = Collections.emptyList(); 
+    DEFAULT_RULE = new ServiceStatusRule(SelectType.NAME, empty, CodeRule.HIGHEST);
+  }
 
   /**
-   * 
+   * How the generator should be selected.
    */
   private final SelectType _use;
 
   /**
-   * The list of generator names or targets.
+   * The list of generator names or targets (depending on type)
    */
-  private final String[] _select;
+  private final List<String> _items;
 
   /**
    * The code rule.
@@ -72,13 +89,16 @@ import org.weborganic.berlioz.Beta;
   /**
    * Create a new rule.
    * 
-   * @param use    How the generator should be selected.
-   * @param select The names or targets of the generators to select.
-   * @param rule   How is the status code for the determined.
+   * @param use   How the generator should be selected.
+   * @param items The names or targets of the generators to select.
+   * @param rule  How is the status code for the determined.
    */
-  public ServiceStatusRule(SelectType use, String[] select, CodeRule rule) {
+  protected ServiceStatusRule(SelectType use, List<String> items, CodeRule rule) {
+    if (use == null)   throw new NullPointerException("Argument use is null.");
+    if (items == null) throw new NullPointerException("Argument items is null.");
+    if (rule == null)  throw new NullPointerException("Argument rule is null.");
     this._use = use;
-    this._select = select;
+    this._items = items;
     this._rule = rule;
   }
 
@@ -92,8 +112,8 @@ import org.weborganic.berlioz.Beta;
   /**
    * @return The names or targets of the generators to select.
    */
-  public String[] select() {
-    return this._select;
+  public List<String> items() {
+    return this._items;
   }
 
   /**
@@ -105,7 +125,7 @@ import org.weborganic.berlioz.Beta;
 
   @Override
   public String toString() {
-    return this._use+" "+this._select+" "+_rule;
+    return this._use+":"+(this._items.isEmpty()? "*" : this._items)+" "+_rule;
   }
 
   /**
@@ -113,20 +133,54 @@ import org.weborganic.berlioz.Beta;
    * 
    * @param use  the use definition
    * @param rule the code rule.
+   * 
    * @return the corresponding rule.
+   * 
+   * @throws NullPointerException     If the use parameter is <code>null</code>. 
+   * @throws IllegalArgumentException If either argument is invalid.
    */
   public static ServiceStatusRule newInstance(String use, String rule) {
+    if (use == null) throw new NullPointerException("Argument use is null.");
+    // Default rule to HIGHEST (if unspecified) 
     CodeRule r = rule != null? CodeRule.valueOf(rule.toUpperCase()) : CodeRule.HIGHEST;
-    if ("*".equals(use)) {
-      return new ServiceStatusRule(SelectType.ANY, new String[]{}, r);
-    } else if (use.startsWith("name:")) {
-      String[] select = use.substring(5).split(",");
-      return new ServiceStatusRule(SelectType.NAME, select, r);
-    } else if (use.startsWith("target:")) {
-      String[] select = use.substring(7).split(",");
-      return new ServiceStatusRule(SelectType.TARGET, select, r);
+    // Select type default to NAME
+    SelectType t = use.startsWith(TARGET_SELECTOR_PREFIX)? SelectType.TARGET : SelectType.NAME;
+    // Now get the list of items if any
+    String items = use;
+    if (items.startsWith(NAME_SELECTOR_PREFIX)) {
+      items = items.substring(NAME_SELECTOR_PREFIX.length()); 
+    } else if (items.startsWith(TARGET_SELECTOR_PREFIX)) {
+      items = items.substring(TARGET_SELECTOR_PREFIX.length());
+    }
+    List<String> list = null;
+    if ("*".equals(items)) {
+      list = Collections.emptyList();
     } else {
-      return new ServiceStatusRule(SelectType.ANY, new String[]{}, r);
+      list = Arrays.asList(items.split(","));
+      for (String i : list) { validate(i); }
+    }
+    return new ServiceStatusRule(t, Collections.unmodifiableList(list), r);
+  }
+
+  /**
+   * Validates the item (throws an exception if invalid)
+   * 
+   * @param item the use definition
+   * 
+   * @throws IllegalArgumentException If either argument is invalid.
+   */
+  private static void validate(String item) {
+    if (item.isEmpty()) throw new IllegalArgumentException("Named item is empty");
+    char c;
+    for (int i = 0; i < item.length(); i++) {
+      c = item.charAt(i);
+      if (Character.isLetter(c)) continue;
+      if (Character.isDigit(c)) continue;
+      if (c == '-') continue;
+      if (c == '_') continue;
+      if (c == '.') continue;
+      if (c == ':') continue;
+      throw new IllegalArgumentException("Item \""+item+"\" contains an illegal character '"+c+"'");
     }
   }
 

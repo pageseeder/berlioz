@@ -50,17 +50,16 @@ public final class ServiceRegistry {
    * @param service the service to register.
    * @param pattern the URL pattern to associate to this content generator.
    * @param method  the method for this URL pattern.
+   * 
+   * @throws NullPointerException If any argument is <code>null</code>
    */
-  public void register(Service service, String pattern, String method) {
+  public void register(Service service, URIPattern pattern, HttpMethod method) {
     // preliminary checks
-    if (service == null) throw new IllegalArgumentException("No service to register.");
-    if (pattern == null) throw new IllegalArgumentException("URL Pattern must be specified to register a service.");
-    if (method == null) throw new IllegalArgumentException("HTTP Method must be specified to register a service.");
-    // Find and check the HTTP method
-    HttpMethod m = getHttpMethod(method);
-    if (m == null) throw new IllegalArgumentException("Unknown HTTP method:"+method);
+    if (service == null) throw new NullPointerException("No service to register.");
+    if (pattern == null) throw new NullPointerException("URL Pattern must be specified to register a service.");
+    if (method == null) throw new NullPointerException("HTTP Method must be specified to register a service.");
     // Register the generator with the URL pattern
-    this.registry.get(m).put(pattern, service);
+    this.registry.get(method).put(pattern, service);
   }
 
   /**
@@ -167,17 +166,17 @@ public final class ServiceRegistry {
    * Simply Maps generators to URI patterns.
    * 
    * @author Christophe Lauret
-   * @version 11 December 2009
+   * @version 29 June 2011
    */
   private static class ServiceMap {
 
     /**
-     * Maps content generators to the appropriate HTTP method.
+     * Maps services to the URI Pattern.
      */
     private final Map<String, Service> mapping = new Hashtable<String, Service>();
 
     /**
-     * Maps content generators to the appropriate HTTP method.
+     * List of URI Patterns that match a service.
      */
     private final List<URIPattern> patterns = new ArrayList<URIPattern>();
 
@@ -189,9 +188,9 @@ public final class ServiceRegistry {
      * 
      * @return Always <code>true</code> ???
      */
-    public boolean put(String pattern, Service service) {
-      mapping.put(pattern, service);
-      this.patterns.add(new URIPattern(pattern));
+    public boolean put(URIPattern pattern, Service service) {
+      mapping.put(pattern.toString(), service);
+      this.patterns.add(pattern);
       return true;
     }
 

@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentStatus;
@@ -279,28 +280,36 @@ public class BerliozServlet extends HttpServlet {
       if (clearServices) { ContentManager.clear(); }
     }
 
+    // Load the services if required
+    try {
+      ContentManager.loadIfRequired();
+    } catch (BerliozException ex) {
+      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Service configuration Error", ex);
+      return;
+    }
+
     // Start handling XML content
     long t0 = System.currentTimeMillis();
     String path = HttpRequestWrapper.getBerliozPath(req);
-    MatchingService match = ContentManager.getService(path, method);
+    MatchingService match = this._services.get(path, method);
 
     // No matching service (backward compatibility)
     if (match == null && method == HttpMethod.POST && GlobalSettings.get("berlioz.http.getviapost", true)) {
-      match = ContentManager.getService(path, HttpMethod.GET);
+      match = this._services.get(path, HttpMethod.GET);
     }
 
     // Still no matching service
     if (match == null) {
       // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
       if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
-        List<String> methods = ContentManager.allows(path);
+        List<String> methods = this._services.allows(path);
         if (methods.size() > 0) {
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
-          res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
+          sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method not allowed", null);
           return;
         }
       }
-      res.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
+      sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Not found!", null);
       LOGGER.debug("No matching service for: " + req.getRequestURI());
       return;
     }
@@ -419,7 +428,36 @@ public class BerliozServlet extends HttpServlet {
     }
   }
 
-  // Private internal class =======================================================================
+  /**
+   * 
+   * @param req
+   * @param res
+   * @param code
+   * @param message
+   * @param ex
+   * @throws IOException
+   */
+  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, Exception ex) throws IOException, ServletException {
+    req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, code);
+    req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
+    req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
+    // TODO: req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, req.getServerName());
+    // TODO: also add Berlioz specific data
+    // If an exception has occurred
+    if (ex != null) {
+      req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION, ex);
+      req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION_TYPE, ex.getClass());
+    }
+
+    // Handle internally
+    this._errorHandler.forward(req, res);
+
+    // TODO
+    // or  res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
+  }
+
+  // Private internal class 
+  // ==============================================================================================
 
   /**
    * Provide a simple entity information for the service.

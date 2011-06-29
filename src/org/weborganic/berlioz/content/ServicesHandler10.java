@@ -8,12 +8,17 @@
 package org.weborganic.berlioz.content;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.http.HttpMethod;
+import org.weborganic.berlioz.util.Pair;
+import org.weborganic.berlioz.xml.ErrorCollector;
+import org.weborganic.furi.URIPattern;
 import org.xml.sax.Attributes;
-import org.xml.sax.ErrorHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -25,7 +30,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>This class should remain protected as there is no reason to expose its method to the public API. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 8 July 2010
+ * @version 29 June 2011
  */
 final class ServicesHandler10 extends DefaultHandler {
 
@@ -35,14 +40,14 @@ final class ServicesHandler10 extends DefaultHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesHandler10.class);
 
   /**
-   * Maps path infos to generator instances.
+   * Where all the information about services is collected and registered.
    */
   private final ServiceRegistry _registry;
 
   /**
    * The error handler to use.
    */
-  private final ErrorHandler _errorHandler;
+  private final ErrorCollector _collector;
 
   /**
    * The elements used recognised by this handler.
@@ -106,12 +111,12 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The list of URI patterns for the current service.
    */
-  private List<String> _patterns = new ArrayList<String>();
+  private List<URIPattern> _patterns = new ArrayList<URIPattern>();
 
   /**
    * The current HTTP method for the service.
    */
-  private String _method;
+  private HttpMethod _method;
 
   /**
    * The document locator for use when reporting errors and warnings.
@@ -124,21 +129,34 @@ final class ServicesHandler10 extends DefaultHandler {
   private Service.Builder _builder = new Service.Builder();
 
   /**
-   * The rules for the services.
+   * The rules for the services, this list is used like a stack. 
    */
-  private List<ServiceStatusRule> rules = new ArrayList<ServiceStatusRule>();
+  private List<ServiceStatusRule> _rules = new ArrayList<ServiceStatusRule>();
 
   /**
-   * Creates a new ContentAccessHandler.
+   * Used to detect duplicate URI Patterns.
+   */
+  private final Set<Pair<HttpMethod, URIPattern>> _patternsToMethod = new HashSet<Pair<HttpMethod, URIPattern>>();
+
+  /**
+   * Used to detect duplicate service groups.
+   */
+  private final Set<String> _groups = new HashSet<String>();
+
+  /**
+   * Creates a new handler that will update the specified registry and use the given error handler.
    * 
    * <p>Note: it is more efficient to pass the generators rather than access the outer class.
    * 
-   * @param registry     The service registry to use.
-   * @param errorHandler The error handler to use.
+   * @param registry  The service registry to use.
+   * @param collector The error handler to collect errors.
+   * 
+   * @throws NullPointerException If any of the method arguments is <code>null</code>.
    */
-  public ServicesHandler10(ServiceRegistry registry, ErrorHandler errorHandler) {
+  public ServicesHandler10(ServiceRegistry registry, ErrorCollector collector) {
+    if (registry == null || collector == null) throw new NullPointerException("Missing argument");
     this._registry = registry;
-    this._errorHandler = errorHandler;
+    this._collector = collector;
   }
 
   /**
@@ -154,6 +172,8 @@ final class ServicesHandler10 extends DefaultHandler {
    */
   @Override
   public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+    // Do not continue if there is an error
+    if (this._collector.hasError()) return;
     // Identify element
     Element element = Element.get(localName);
     switch(element) {
@@ -162,19 +182,25 @@ final class ServicesHandler10 extends DefaultHandler {
         break;
 
       case SERVICES:
-        this._builder.group(atts.getValue("group"));
-        if (rules.size() == 0) this.rules.add(ServiceStatusRule.DEFAULT_RULE);
+        String group = atts.getValue("group");
+        this._builder.group(group);
+        if (!this._groups.add(group)) {
+          warning("Duplicate group of services '"+group+"' - services will belong to the same group");
+        }
+        // If no rule where defined at the 'service-config' level, we assume the default rule
+        if (_rules.size() == 0) this._rules.add(ServiceStatusRule.DEFAULT_RULE);
         break;
 
       case SERVICE:
-        if (rules.size() == 1) this.rules.add(ServiceStatusRule.DEFAULT_RULE);
+        // If no rule where defined at the 'services' level, we assume the default rule
+        if (_rules.size() == 1) this._rules.add(ServiceStatusRule.DEFAULT_RULE);
         this._builder.id(atts.getValue("id"));
         this._builder.cache(atts.getValue("cache-control"));
-        this._method = atts.getValue("method");
+        handleMethod(atts.getValue("method"));
         break;
 
       case URL:
-        this._patterns.add(atts.getValue("pattern"));
+        handlePattern(atts.getValue("pattern"));
         break;
 
       case PARAMETER:
@@ -182,20 +208,11 @@ final class ServicesHandler10 extends DefaultHandler {
         break;
 
       case RESPONSE_CODE:
-        this.rules.add(ServiceStatusRule.newInstance(atts.getValue("use"), atts.getValue("rule")));
+        handleResponseCode(atts.getValue("use"), atts.getValue("rule"));
         break;
 
       case GENERATOR:
-        try {
-          ContentGenerator generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
-          this._builder.add(generator);
-          this._builder.target(atts.getValue("target"));
-          this._builder.name(atts.getValue("name"));
-        } catch (Exception ex) {
-          String message = "Failed to load generator "+ atts.getValue("class")+" for service "+this._builder.id();
-          SAXParseException warning = new SAXParseException(message, this._locator, ex);
-          warning(warning);
-        }
+        handleGenerator(atts);
         break;
       default:
 
@@ -206,53 +223,71 @@ final class ServicesHandler10 extends DefaultHandler {
    * {@inheritDoc}
    */
   @Override
-  public void endElement(String uri, String localName, String qName) {
+  public void endElement(String uri, String localName, String qName) throws SAXException {
+    // Do not continue if there is an error
+    if (this._collector.hasError()) return;
     // Identify element
     Element element = Element.get(localName);
     switch(element) {
       case SERVICE:
-        this._builder.rule(this.rules.get(rules.size() - 1));
+        // Assign the latest rule
+        this._builder.rule(this._rules.get(this._rules.size() - 1));
         Service service = this._builder.build();
-        for (String pattern : this._patterns) {
-          this._registry.register(service, pattern, this._method);
-          LOGGER.debug("Assigning "+pattern+" ["+this._method+"] to "+service);
+        if (this._method == null) {
+          warning("No HTTP method for "+service.id()+" - service will be ignored");
+        } else if (this._patterns.isEmpty()) {
+          warning("No URI pattern match service "+service.id()+" - service will be ignored");
+        } else {
+          for (URIPattern pattern : this._patterns) {
+            this._registry.register(service, pattern, this._method);
+            LOGGER.debug("Assigning "+pattern+" ["+this._method+"] to "+service);
+          }
         }
         this._builder.reset();
         this._patterns.clear();
-        if (rules.size() == 3) this.rules.remove(2);
+        // Any rule specific to the 'service'? remove it
+        if (_rules.size() == 3) this._rules.remove(2);
         break;
       case SERVICES:
-        if (rules.size() == 2) this.rules.remove(1);
+        // Any rule specific to the 'services'? remove it
+        if (_rules.size() == 2) this._rules.remove(1);
         break;
       case SERVICE_CONFIG:
-        if (rules.size() == 1) this.rules.remove(0);
+        // Any rule specific to the 'service-config'? remove it
+        if (_rules.size() == 1) this._rules.remove(0);
         break;
       default:
     }
   }
 
   /**
+   * Ensure that we use the correct error handler so that warnings and errors can be collected.
+   *
    * {@inheritDoc}
    */
   @Override
   public void warning(SAXParseException ex) throws SAXException {
-    this._errorHandler.warning(ex);
+    this._collector.warning(ex);
   }
 
   /**
+   * Ensure that we use the correct error handler so that warnings and errors can be collected.
+   * 
    * {@inheritDoc}
    */
   @Override
   public void error(SAXParseException ex) throws SAXException {
-    this._errorHandler.error(ex);
+    this._collector.error(ex);
   }
 
   /**
+   * Ensure that we use the correct error handler so that warnings and errors can be collected.
+   * 
    * {@inheritDoc}
    */
   @Override
   public void fatalError(SAXParseException ex) throws SAXException {
-    this._errorHandler.fatalError(ex);
+    this._collector.fatalError(ex);
   }
 
   // non-SAX methods
@@ -263,16 +298,134 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @param atts the attributes of the parameter element.
    * @return a new <code>Parameter</code> instance or <code>null</code>.
+   * 
+   * @throws SAXException Only if thrown by error handler
    */
-  private static Parameter toParameter(Attributes atts) {
+  private Parameter toParameter(Attributes atts) throws SAXException {
     Parameter.Builder p = new Parameter.Builder(atts.getValue("name")); 
-    p.value(atts.getValue("value")).source(atts.getValue("source")).def(atts.getValue("default"));
+    p.value(atts.getValue("value"));
+    // Warn about deprecated attributes
+    String source = atts.getValue("source");
+    String def = atts.getValue("default");
+    if (source != null) {
+      p.source(source);
+      warning("Attribute 'source' on element 'parameter' is deprecated.");
+    }
+    if (def != null) {
+      p.def(def);
+      warning("Attribute 'default' on element 'parameter' is deprecated.");
+    }
     try {
       return p.build();
     } catch (IllegalStateException ex) {
-      LOGGER.debug("Bad parameter specifications - ignoring", ex);
+      warning("Bad parameter specifications - ignoring");
       return null;
     }
+  }
+
+  /**
+   * Handle the pattern attribute reporting duplicates and invalid patterns as warnings.
+   * 
+   * @param pattern The URI pattern string to parse.
+   * 
+   * @throws SAXException Only if thrown by underlying error handler.
+   */
+  private void handlePattern(String pattern) throws SAXException {
+    try {
+      URIPattern p = new URIPattern(pattern);
+      Pair<HttpMethod, URIPattern> k = new Pair<HttpMethod, URIPattern>(this._method, p);
+      if (this._patternsToMethod.add(k)) {
+        this._patterns.add(p);
+      } else {
+        warning("Ignoring duplicate pattern '"+p+"'", null);
+      }
+    } catch (IllegalArgumentException ex) {
+      warning("Ignoring invalid pattern '"+pattern+"'", ex);
+    }
+  }
+
+  /**
+   * Handle the response rule element.
+   * 
+   * @param use  The 'use' attribute
+   * @param rule The 'rule' attribute
+   * 
+   * @throws SAXException Only if thrown by underlying error handler.
+   */
+  private void handleResponseCode(String use, String rule) throws SAXException {
+    try {
+      this._rules.add(ServiceStatusRule.newInstance(use, rule));
+    } catch (IllegalArgumentException ex) {
+      warning("Ignoring bad response code definition: "+ex.getMessage(), ex);
+    }
+  }
+
+  /**
+   * Handle the response rule element.
+   * 
+   * @param method  The 'method' attribute
+   * 
+   * @throws SAXException Only if thrown by underlying error handler.
+   */
+  private void handleMethod(String method) throws SAXException {
+    try {
+      this._method = HttpMethod.valueOf(method.toUpperCase());
+    } catch (NullPointerException ex) {
+      warning("Ignoring null method for service id "+this._builder.id(), ex);
+    } catch (IllegalArgumentException ex) {
+      warning("Ignoring illegal method '"+method+"' for service id "+this._builder.id(), ex);
+    }
+  }
+
+  /**
+   * Handles the loading of the content generator.
+   * 
+   * @param atts The attributes of the 'content-generator' element.
+   * 
+   * @throws SAXException Only if thrown by underlying error handler.
+   */
+  private void handleGenerator(Attributes atts) throws SAXException {
+    try {
+      ContentGenerator generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
+      this._builder.add(generator);
+      this._builder.target(atts.getValue("target"));
+      this._builder.name(atts.getValue("name"));
+    } catch (ClassNotFoundException ex) {
+      warning("Failed to find generator "+ atts.getValue("class")+" for service "+this._builder.id(), ex);
+    } catch (IllegalAccessException ex) {
+      warning("Failed to access generator "+ atts.getValue("class")+" for service "+this._builder.id(), ex);
+    } catch (InstantiationException ex) {
+      warning("Failed to instantiate generator "+ atts.getValue("class")+" for service "+this._builder.id(), ex);
+    }
+  }
+
+  /**
+   * Convenience method to report a warning to the underlying error handler.
+   * 
+   * <p>This method creates the SAXParseException and provides the locator. 
+   * 
+   * @param message The message for the warning.
+   * 
+   * @throws SAXException Only if thrown by underlying error handler.
+   */
+  public void warning(String message) throws SAXException {
+    SAXParseException warning = new SAXParseException(message, this._locator);
+    warning(warning);
+  }
+
+  /**
+   * Convenience method to report a warning to the underlying error handler.
+   * 
+   * <p>This method creates the SAXParseException and provides the locator. 
+   * 
+   * @param message The message for the warning.
+   * @param ex      Any associated exception.
+   * 
+   * @throws SAXException Only if thrown by underlying error handler.
+   */
+  public void warning(String message, Exception ex) throws SAXException {
+    SAXParseException warning = new SAXParseException(message, this._locator, ex);
+    warning(warning);
   }
 
 }
