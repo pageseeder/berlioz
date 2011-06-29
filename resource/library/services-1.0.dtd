@@ -94,4 +94,4 @@
 -->
 <!ELEMENT response-code                                                EMPTY >
 <!ATTLIST response-code     use                CDATA               #REQUIRED
-                            rule               %CODE_RULE;         #REQUIRED >
+                            rule               %CODE_RULE;          #IMPLIED >
