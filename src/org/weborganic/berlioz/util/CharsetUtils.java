@@ -28,12 +28,15 @@ public final class CharsetUtils {
 
   /**
    * Calculates the byte length of the specified content using the given charset.
+   * 
    * @param content The content to measure
    * @param charset The character set
+   * 
    * @return the byte length of the content based on a specified charset; or -1 if unable to calculate it
-   * @throws NullPointerException if either parameter is <code>null</code>.
+   * 
+   * @throws NullPointerException if either argument is <code>null</code>.
    */
-  public static int length(CharSequence content, Charset charset) throws NullPointerException {
+  public static int length(CharSequence content, Charset charset) {
     if (content == null) throw new NullPointerException("No length for null content");
     if (charset == null) throw new NullPointerException("Charset is null");
     int length = -1;

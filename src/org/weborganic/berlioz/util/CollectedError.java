@@ -3,12 +3,15 @@ package org.weborganic.berlioz.util;
 import org.weborganic.berlioz.Beta;
 
 /**
- * A simple class to associate an error collected by a parser to a level or seriousness. 
+ * A simple class to associate an error collected by a parser to a level or seriousness.
+ * 
+ * <p>This class is designed to be used with an {@link org.xml.sax.ErrorHandler.ErrorHandler} 
+ * or an {@link javax.xml.transform.ErrorListener} so that errors can be collected in a simple list.
  * 
  * @param <T> The type of error collected.
  * 
  * @author Christophe Lauret
- * @version 28 June 2011
+ * @version 29 June 2011
  */
 @Beta public final class CollectedError<T> {
 
@@ -17,13 +20,13 @@ import org.weborganic.berlioz.Beta;
    */
   public enum Level {
 
-    /** Error was considered fatal by the process. */
+    /** Error was considered fatal by the underlying process. */
     FATAL,
 
-    /** Error was considered fatal by the process. */
+    /** For normal non-fatal errors reported by the underlying process. */
     ERROR, 
 
-    /** Error was considered fatal by the process. */
+    /** Warning reported by the underlying process. */
     WARNING
   };
 
