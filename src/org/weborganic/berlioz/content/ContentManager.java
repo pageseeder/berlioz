@@ -14,10 +14,13 @@ import javax.xml.parsers.SAXParser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.ErrorID;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.util.BerliozInternal;
+import org.weborganic.berlioz.util.CompoundBerliozException;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
-import org.weborganic.berlioz.xml.ErrorCollector;
+import org.weborganic.berlioz.xml.SAXErrorCollector;
 import org.weborganic.berlioz.xml.XMLUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -101,7 +104,8 @@ public final class ContentManager {
       throw new NullPointerException("The service configuration file is null! That's it I give up.");
     // OK Let's start
     SAXParser parser = XMLUtils.getParser(true);
-    ErrorCollector collector = new ErrorCollector(LOGGER);
+    SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
+    BerliozInternal id = null;
     // Load the services
     try {
       XMLReader reader = parser.getXMLReader();
@@ -111,12 +115,18 @@ public final class ContentManager {
       reader.setErrorHandler(collector);
       LOGGER.info("Parsing "+xml.toURI().toString());
       reader.parse(new InputSource(xml.toURI().toString()));
+      // if the error threshold was reached, throw an error!
+      if (collector.hasError()) {
+        id = BerliozInternal.SERVICES_INVALID;
+        throw new SAXException(collector.getErrors().size()+" error(s) reported by the XML parser.");
+      }
     } catch (SAXException ex) {
+      if (id == null) id = BerliozInternal.SERVICES_MALFORMED;
       LOGGER.error("An SAX error occurred while reading XML service configuration: {}", ex.getMessage());
-      throw new BerliozException("Could not parse file: " + ex.getMessage(), ex);
+      throw new CompoundBerliozException("Unable to parse services configuration file.", ex, id, collector);
     } catch (IOException ex) {
       LOGGER.error("An I/O error occurred while reading XML service configuration: {}", ex.getMessage());
-      throw new BerliozException("Could not read file.", ex);
+      throw new BerliozException("Unable to read services configuration file.", ex, BerliozInternal.SERVICES_NOT_FOUND);
     }
   }
 
@@ -203,7 +213,7 @@ public final class ContentManager {
      * @throws SAXException if the the file being parsed is not a service configuration.
      */
     private ContentHandler getHandler(String name, Attributes atts) throws SAXException {
-      ErrorCollector collector = (ErrorCollector)this._reader.getErrorHandler();
+      SAXErrorCollector collector = (SAXErrorCollector)this._reader.getErrorHandler();
       // Service configuration
       if ("service-config".equals(name)) {
         String version = atts.getValue("version");

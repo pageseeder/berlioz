@@ -11,6 +11,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -21,9 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.util.BerliozInternal;
+import org.weborganic.berlioz.util.CollectedError;
+import org.weborganic.berlioz.util.CompoundBerliozException;
+import org.weborganic.berlioz.util.ErrorCollector;
+import org.weborganic.berlioz.util.Errors;
 import org.weborganic.berlioz.util.ISO8601;
 
-import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
@@ -45,7 +52,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * </pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ * @version 30 June 2011
  */
 public final class ErrorHandlerServlet extends HttpServlet {
 
@@ -63,22 +70,25 @@ public final class ErrorHandlerServlet extends HttpServlet {
   // ---------------------------------------------------------------------------------------------
 
   /** Exception thrown (Exception) */
-  public static final String  ERROR_EXCEPTION      = "javax.servlet.error.exception";
+  public static final String ERROR_EXCEPTION      = "javax.servlet.error.exception";
 
   /** Class of exception thrown (Class). */
-  public static final String  ERROR_EXCEPTION_TYPE = "javax.servlet.error.exception_type";
+  public static final String ERROR_EXCEPTION_TYPE = "javax.servlet.error.exception_type";
 
   /** Any attached message (String). */
-  public static final String  ERROR_MESSAGE        = "javax.servlet.error.message";
+  public static final String ERROR_MESSAGE        = "javax.servlet.error.message";
 
   /** The offending request URI (String) .*/
-  public static final String  ERROR_REQUEST_URI    = "javax.servlet.error.request_uri";
+  public static final String ERROR_REQUEST_URI    = "javax.servlet.error.request_uri";
 
   /** The name of offending servlet (String). */
-  public static final String  ERROR_SERVLET_NAME   = "javax.servlet.error.servlet_name";
+  public static final String ERROR_SERVLET_NAME   = "javax.servlet.error.servlet_name";
 
   /** The HTTP Status code (Integer). */
-  public static final String  ERROR_STATUS_CODE    = "javax.servlet.error.status_code";
+  public static final String ERROR_STATUS_CODE    = "javax.servlet.error.status_code";
+
+  /** The Berlioz error ID (String). */
+  public static final String BERLIOZ_ERROR_ID     = "org.weborganic.berlioz.error_id";
 
   // servlet methods ----------------------------------------------------------------------
 
@@ -99,7 +109,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     // set the headers of the response
     res.setCharacterEncoding("utf-8");
-    res.setContentType("text/html;charset=UTF-8");
 
     // Grab the data
     Integer codeAttr  = (Integer)req.getAttribute(ERROR_STATUS_CODE);
@@ -123,6 +132,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     URL url = loader.getResource("org/weborganic/berlioz/xslt/failsafe-error-html.xsl");
     if (url != null) {
       String html = XSLTransformer.transformFailSafe(xml, url);
+      // FIXME if it fails uses the incorrect content type
       res.setContentType("text/html;charset=UTF-8");
       out.print(html);
       out.flush();
@@ -135,7 +145,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
-   * Handles error send via requests attributes.
+   * Handles HTTP error using the error requests attributes.
    * 
    * @param req The HTTP servlet request will cause the error.
    * 
@@ -148,32 +158,86 @@ public final class ErrorHandlerServlet extends HttpServlet {
     Integer code   = (Integer)req.getAttribute(ERROR_STATUS_CODE);
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
     Exception exception = (Exception)req.getAttribute(ERROR_EXCEPTION);
-    Object type = (Object)req.getAttribute(ERROR_EXCEPTION_TYPE);
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
+    String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
 
     // Write the XML 
     StringWriter out = new StringWriter();
     try {
-      XMLWriterImpl xml = new XMLWriterImpl(out);
+      XMLWriterImpl xml = new XMLWriterImpl(out, true);
       xml.xmlDecl();
       xml.openElement("error");
-      xml.attribute("code", code != null? code.intValue() : 200);
-      xml.attribute("request-uri", requestURI != null? requestURI : "");
+      xml.attribute("http-code", code != null? code.intValue() : 200);
+      xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
+
+      // If it has a Berlioz ID
+      if (exception instanceof BerliozException && ((BerliozException)exception).id() != null) {
+        xml.attribute("id", ((BerliozException)exception).id().toString());
+      } else {
+        xml.attribute("id", errorId != null? errorId : BerliozInternal.UNEXPECTED.toString());
+      }
+
+      // Berlioz info
+      xml.openElement("berlioz");
+      xml.attribute("version", GlobalSettings.getVersion());
+      xml.closeElement();
+
+      // Other informational elements
+      xml.element("title", "Server Error"); // TODO Correct message based on HTTP Code
       xml.element("message", message);
+      xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
       xml.element("servlet", servlet != null? servlet : "null");
 
       if (exception != null) {
-        xml.openElement("exception");
-        if (type != null) {
-          xml.attribute("type", type.toString());
+        Errors.toXML(exception, xml);
+
+        // If some errors were collected, let's include them
+        if (exception instanceof CompoundBerliozException) {
+          xml.openElement("collected-errors");
+          ErrorCollector<? extends Exception> collector = ((CompoundBerliozException)exception).getCollector();
+          for (CollectedError<? extends Exception> collected : collector.getErrors()) {
+            collected.toXML(xml);
+          }
+          xml.closeElement();
         }
-        toXML(exception, xml);
+        
       }
-      // TODO Add headers and parameters
+
+      // HTTP Headers
+      xml.openElement("http-headers");
+      Enumeration<?> names = req.getHeaderNames();
+      while (names.hasMoreElements()) {
+        String name = names.nextElement().toString();
+        Enumeration<?> values = req.getHeaders(name);
+        while (values.hasMoreElements()) {
+          String value = values.nextElement().toString();
+          xml.openElement("header");
+          xml.attribute("name", name);
+          xml.attribute("value", value);
+          xml.closeElement();
+        }
+      }
+      xml.closeElement();
+
+      // HTTP parameters
+      xml.openElement("http-parameters");
+      Map<?,?> parameters = req.getParameterMap();
+      for (Entry<?,?> entry : parameters.entrySet()) {
+        String name = entry.getKey().toString();
+        // Must be an array according to Servlet Specifications
+        String[] values = (String[])entry.getValue();
+        for (String value : values) {
+          xml.openElement("parameters");
+          xml.attribute("name", name);
+          xml.attribute("value", value);
+          xml.closeElement();
+        }
+      }
+      xml.closeElement();
 
       xml.closeElement();
       xml.flush();
-      xml.flush();
+
     } catch (IOException io) {
       LOGGER.warn("Unable to produce error details for error below:");
       LOGGER.error("An error occurred while transforming content", exception);
@@ -182,67 +246,5 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return out.toString();
   }
 
-  /**
-   * Handles transformation errors - to be used in catch blocks.
-   * 
-   * @param ex         An error occurring during an XSLT transformation.
-   * @param source     The XML source being transformed
-   * @param parameters The XSLT parameters passed to the transformer
-   * @return the error details as XML
-   */
-  private static String toXML(BerliozException ex) {
-    // Remove all double dash so that it may be inserted in the XML comment
-    StringWriter out = new StringWriter();
-    try {
-      XMLWriter xml = new XMLWriterImpl(out);
-      toXML(ex, xml);
-      xml.flush();
-    } catch (IOException io) {
-      LOGGER.warn("Unable to produce error details for error below:");
-      LOGGER.error("An error occurred while transforming content", ex);
-    }
-
-    return out.toString();
-  }
-
-  /**
-   * Handles transformation errors - to be used in catch blocks.
-   * 
-   * @param ex  A Berlioz exception
-   * @param xml The XML writer.
-   * 
-   * @return the error details as XML
-   */
-  private static void toXML(Exception ex, XMLWriter xml) throws IOException {
-    xml.openElement("berlioz-exception");
-    xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
-    xml.attribute("berlioz-version", GlobalSettings.getVersion());
-
-      // Copy the errors collected here
-      // TODO get info from collectors
-//      XSLTErrorListener collector = wrapper.collector();
-//      xml.writeXML(collector.xml.toString());
-
-    // Exception
-    xml.openElement("exception");
-    // TODO unwrap exception for better messages
-    xml.attribute("class", ex.getClass().getName());
-    xml.element("message", ex.getMessage());
-    xml.element("stack-trace", XSLTransformer.getStackTrace(ex, true));
-    xml.closeElement();
-
-    // Any cause ?
-    Throwable cause = ex.getCause();
-    if (cause != null) {
-      // Transform Exception
-      xml.openElement("cause");
-      xml.attribute("class", cause.getClass().getName());
-      xml.element("message", cause.getMessage());
-      xml.element("stack-trace", XSLTransformer.getStackTrace(cause, true));
-      xml.closeElement();
-    }
-
-    xml.closeElement();
-  }
 
 }

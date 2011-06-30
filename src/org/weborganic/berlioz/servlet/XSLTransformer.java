@@ -12,7 +12,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
@@ -27,10 +26,8 @@ import java.util.Map.Entry;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
-import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -43,10 +40,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.berlioz.util.BerliozInternal;
+import org.weborganic.berlioz.util.CollectedError;
+import org.weborganic.berlioz.util.Errors;
 import org.weborganic.berlioz.util.ISO8601;
 import org.weborganic.berlioz.util.MD5;
+import org.weborganic.berlioz.xslt.XSLTErrorCollector;
 
-import com.topologi.diffx.xml.XMLUtils;
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
 
@@ -137,7 +137,7 @@ public final class XSLTransformer {
     } catch (TransformerException ex) {
       String error = toXML(ex, content, parameters);
       ClassLoader loader = XSLTransformer.class.getClassLoader();
-      URL url = loader.getResource("org/weborganic/berlioz/xslt/failsafe-transformerror-html.xsl");
+      URL url = loader.getResource("org/weborganic/berlioz/xslt/failsafe-error-html.xsl");
       Templates failsafe = toFailSafeTemplates(url);
       // Try to use the fail-safe template to present the error
       error = transformFailSafe(error, failsafe);
@@ -204,7 +204,7 @@ public final class XSLTransformer {
     listTemplateFiles(templates.getParentFile(), files);
     StringBuilder b = new StringBuilder();
     try {
-      for (File f : files) { b.append(MD5.hash(f)); }
+      for (File f : files) { b.append(MD5.hash(f, false)); }
     } catch (IOException ex) {
       LOGGER.warn("Error thrown while trying to calculate template etag", ex);
       return null;
@@ -262,7 +262,7 @@ public final class XSLTransformer {
 
     // Process, write directly to the result
     long before = System.currentTimeMillis();
-    XSLTErrorListener listener = new XSLTErrorListener();
+    XSLTErrorCollector listener = new XSLTErrorCollector(LOGGER);
     transformer.setErrorListener(listener);
     try {
       transformer.transform(source, result);
@@ -325,7 +325,7 @@ public final class XSLTransformer {
       Source source = new StreamSource(in);
       source.setSystemId(stylepath.toURI().toString());
       TransformerFactory factory = TransformerFactory.newInstance();
-      XSLTErrorListener listener = new XSLTErrorListener();
+      XSLTErrorCollector listener = new XSLTErrorCollector(LOGGER);
       factory.setErrorListener(listener);
       try {
         templates = factory.newTemplates(source);
@@ -379,54 +379,41 @@ public final class XSLTransformer {
     StringWriter out = new StringWriter();
     try {
       XMLWriter xml = new XMLWriterImpl(out);
-      xml.openElement("transform-error");
+      xml.openElement("error");
+      xml.attribute("http-code", 500);
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
-      xml.attribute("berlioz-version", GlobalSettings.getVersion());
 
-      // Grab any info we can
+      // Here are the objects we'll deal with...
+      TransformerException actual = ex;
+      XSLTErrorCollector collector = null;
+
+      // Unwrap if needed
       if (ex instanceof TransformerExceptionWrapper) {
         TransformerExceptionWrapper wrapper = (TransformerExceptionWrapper)ex;
-        Throwable wrapped = wrapper.getException();
-        if (wrapped instanceof TransformerConfigurationException) {
-          xml.attribute("type", "config");
-        } else if (wrapped instanceof TransformerException) {
-          xml.attribute("type", "transform");
-        }
-        // Copy the errors collected here
-        XSLTErrorListener collector = wrapper.collector();
-        xml.writeXML(collector.xml.toString());
+        actual = (TransformerException)wrapper.getException();
+        collector = wrapper.collector();
       }
 
-      // Transform Exception
-      xml.openElement("exception");
-      // TODO unwrap exception for better messages
-      xml.attribute("class", ex.getClass().getName());
-      xml.element("message", ex.getMessage());
-      xml.element("stack-trace", getStackTrace(ex, true));
+      // Let's guess the Berlioz internal code
+      BerliozInternal id = toErrorID(actual);
+      xml.attribute("id", toErrorID(actual).toString());
 
-      // If there is a Locator...
-      SourceLocator locator = ex.getLocator();
-      if (locator != null) {
-        xml.openElement("locator");
-        if (locator.getPublicId() != null)
-          xml.element("publicid", locator.getPublicId());
-        if (locator.getSystemId() != null)
-          xml.element("systemid", locator.getSystemId());
-        xml.element("line", Integer.toString(locator.getLineNumber()));
-        xml.element("column", Integer.toString(locator.getColumnNumber()));
-        xml.closeElement();
-      }
-
+      // Berlioz info
+      xml.openElement("berlioz");
+      xml.attribute("version", GlobalSettings.getVersion());
       xml.closeElement();
+      xml.element("title", toTitle(id));
+      xml.element("message", ex.getMessage());
 
-      // Any cause ?
-      Throwable cause = ex.getCause();
-      if (cause != null) {
-        // Transform Exception
-        xml.openElement("cause");
-        xml.attribute("class", cause.getClass().getName());
-        xml.element("message", cause.getMessage());
-        xml.element("stack-trace", getStackTrace(cause, true));
+      // Generate the XML for the exception
+      Errors.toXML(actual, xml);
+
+      // Also copy the errors collected here
+      if (collector != null) {
+        xml.openElement("collected-errors");
+        for (CollectedError<TransformerException> item : collector.getErrors()) {
+          item.toXML(xml);
+        }
         xml.closeElement();
       }
 
@@ -451,33 +438,6 @@ public final class XSLTransformer {
 
     return out.toString();
   }
-
-  /**
-   * Returns the stack trace of the specified error as a string.
-   * 
-   * <p>For security, this method will remove the part of the stacktrace which are specific 
-   * to the servlet container. 
-   * 
-   * @param error The throwable.
-   * @param safe  <code>true</code> to only include the StackTrace up to the servlet API.
-   * 
-   * @return The stacktrace.
-   */
-  public static String getStackTrace(Throwable error, boolean safe) {
-    StringWriter sw = new StringWriter();
-    error.printStackTrace(new PrintWriter(sw));
-    StringBuffer stacktrace = sw.getBuffer();
-    // Remove anything after the servlet API exception
-    if (safe) {
-      int x = stacktrace.indexOf("javax.servlet.http.HttpServlet.service");
-      if (x >= 0) {
-        stacktrace.setLength(x);
-        stacktrace.append("...");
-      }
-    }
-    return stacktrace.toString();
-  }
-
 
   /**
    * Loads the fail safe templates.
@@ -527,6 +487,10 @@ public final class XSLTransformer {
       Result result = new StreamResult(html);
       templates.newTransformer().transform(source, result);
       out = html.toString();
+    } catch (TransformerException disaster) {
+      LOGGER.error("Fail-safe stylesheet failed! - returning error details as XML", disaster.getMessageAndLocation());
+      // Fail-safe failed!
+      out = xml;
     } catch (Exception catastrophe) {
       LOGGER.error("Fail-safe stylesheet failed! - returning error details as XML", catastrophe);
       // Fail-safe failed!
@@ -561,101 +525,42 @@ public final class XSLTransformer {
     }
   }
 
-  // Listeners and exceptions for better reporting of errors
-  // ----------------------------------------------------------------------------------------------
+  /**
+   * Guess the Berlioz Error ID from the exception thrown.
+   * 
+   * @param ex
+   * @return
+   */
+  private static BerliozInternal toErrorID(TransformerException ex) {
+    // Let's guess the Berlioz internal code
+    if (ex instanceof TransformerConfigurationException) {
+      if (ex.getCause() instanceof FileNotFoundException) {
+        return BerliozInternal.TRANSFORM_NOT_FOUND;
+      } else {
+        return BerliozInternal.TRANSFORM_INVALID;
+      }
+    }
+    return BerliozInternal.TRANSFORM_DYNAMIC_ERROR;
+  }
 
   /**
-   * An error listener wrapping the XSLT engines default listener and recording occurring errors 
-   * as XML so that they can be used. 
+   * Return the title ID based on the ID.
    * 
-   * @author Christophe Lauret
-   * @version 8 February 2010
+   * @param id the ID
+   * @return the corresponding message
    */
-  private static class XSLTErrorListener implements ErrorListener {
-
-    /** XML errors are recorded here */
-    private List<TransformerException> _errors = null;
-
-    /** XML errors are recorded here */
-    private StringBuilder xml = new StringBuilder();
-
-    /**
-     * {@inheritDoc}
-     */
-    public void fatalError(TransformerException exception) throws TransformerException {
-      if (this._errors == null) this._errors = new ArrayList<TransformerException>();
-      this._errors.add(exception);
-      this.xml.append(toXML(exception, "fatal"));
-      LOGGER.error(exception.getMessageAndLocation());
+  private static String toTitle(BerliozInternal id) {
+    switch (id) {
+      case TRANSFORM_NOT_FOUND:            return "XSLT Not Found"; 
+      case TRANSFORM_INVALID:              return "XSLT Static Error";
+      case TRANSFORM_DYNAMIC_ERROR:        return "XSLT Dynamic Error";
+      case TRANSFORM_MALFORMED_SOURCE_XML: return "XSLT: Malformed XML";
+      default: return "Unindentified XSLT error!";
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void warning(TransformerException exception) throws TransformerException {
-      if (this._errors == null) this._errors = new ArrayList<TransformerException>();
-      this._errors.add(exception);
-      this.xml.append(toXML(exception, "warning"));
-      LOGGER.warn(exception.getMessageAndLocation());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void error(TransformerException exception) throws TransformerException {
-      if (this._errors == null) this._errors = new ArrayList<TransformerException>();
-      this._errors.add(exception);
-      this.xml.append(toXML(exception, "error"));
-      LOGGER.error(exception.getMessageAndLocation());
-    }
-
-    /**
-     * Returns the transform exception as XML
-     * 
-     * @param ex   the source locator.
-     * @param level the level of error.
-     * @return the corresponding XML.
-     */
-    private static String toXML(TransformerException ex, String level) {
-      StringBuilder xml = new StringBuilder();
-      xml.append("<error level=\"").append(level).append("\">");
-      xml.append(toXML(ex.getLocator()));
-      String message = ex.getMessage();
-      xml.append("<message>").append(XMLUtils.escape(message)).append("</message>");
-      Throwable cause = ex.getCause();
-      if (cause != null) {
-        xml.append("<cause>").append(XMLUtils.escape(cause.getMessage())).append("</cause>");
-      }
-      xml.append("</error>");
-      return xml.toString();
-    }
-
-    /**
-     * Returns the source locator as XML
-     * 
-     * @param locator the source locator.
-     * @return the corresponding XML.
-     */
-    private static String toXML(SourceLocator locator) {
-      if (locator == null) return "";
-      StringBuilder xml = new StringBuilder();
-      int line = locator.getLineNumber();
-      int column = locator.getColumnNumber();
-      String publicId = locator.getPublicId();
-      String systemId = locator.getSystemId();
-      xml.append("<location");
-      if (line != -1) xml.append(" line=\"").append(line).append('"');
-      if (column != -1) xml.append(" column=\"").append(column).append('"');
-      if (publicId != null) xml.append(" public-id=\"").append(publicId).append('"');
-      if (systemId != null) {
-        if (systemId.indexOf("WEB-INF") != -1) systemId = systemId.substring(systemId.indexOf("WEB-INF"));
-        xml.append(" system-id=\"").append(toWebPath(systemId)).append('"');
-      }
-      xml.append("/>");
-      return xml.toString();
-    }
-
   }
+
+  // Listeners and exceptions for better reporting of errors
+  // ----------------------------------------------------------------------------------------------
 
   /**
    * Extends the transformer exception to preserve API and include additional details.
@@ -665,8 +570,11 @@ public final class XSLTransformer {
    */
   private static class TransformerExceptionWrapper extends TransformerException {
 
+    /** As required by the Serializable interface. */
+    private static final long serialVersionUID = -7816677212503520650L;
+
     /** Holds the error details as XML. */
-    private final XSLTErrorListener _collector;
+    private final XSLTErrorCollector _collector;
 
     /**
      * Creates a new UI transformation exception wrapping an existing one.
@@ -674,7 +582,7 @@ public final class XSLTransformer {
      * @param ex        the wrapped transformer exception.
      * @param collector the error details as XML.
      */
-    public TransformerExceptionWrapper(TransformerException ex, XSLTErrorListener collector) {
+    public TransformerExceptionWrapper(TransformerException ex, XSLTErrorCollector collector) {
       super(ex);
       this._collector = collector;
     }
@@ -683,7 +591,7 @@ public final class XSLTransformer {
      * Returns the errors as XML.
      * @return the errors as XML.
      */
-    public XSLTErrorListener collector() {
+    public XSLTErrorCollector collector() {
       return this._collector;
     }
 

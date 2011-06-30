@@ -26,19 +26,24 @@ import com.topologi.diffx.xml.XMLWriter;
  * @see XMLWritable
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ * @version 30 June 2011
  */
-public final class BerliozException extends Exception implements XMLWritable {
+public class BerliozException extends Exception implements XMLWritable {
 
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = 20060131256100001L;
+  private static final long serialVersionUID = 2528728071585695520L;
+
+  /**
+   * An Berlioz Error ID
+   */
+  private ErrorID _id = null;
 
   /**
    * Additional information, for instance an SQL statement.
    */
-  private final String _extra;
+  @Deprecated private final String _extra;
 
   /**
    * Creates a new Berlioz exception.
@@ -67,12 +72,49 @@ public final class BerliozException extends Exception implements XMLWritable {
    * @param message The message.
    * @param extra   Additional information.
    * @param cause   The wrapped exception.
+   * 
+   * @deprecated The extra parameter will be removed in subsequent releases.
    */
-  public BerliozException(String message, String extra, Exception cause) {
+  @Deprecated public BerliozException(String message, String extra, Exception cause) {
     super(message, cause);
     this._extra = extra;
   }
 
+  /**
+   * Creates a new Berlioz exception wrapping an existing exception.
+   * 
+   * @param message The message.
+   * @param id      An error ID to help with error handling and diagnostic (may be <code>null</code>)
+   */
+  public BerliozException(String message, ErrorID id) {
+    super(message);
+    this._extra = null;
+    this._id = id;
+  }
+
+  /**
+   * Creates a new Berlioz exception wrapping an existing exception.
+   * 
+   * @param message The message.
+   * @param cause   The wrapped exception.
+   * @param id      An error ID to help with error handling and diagnostic (may be <code>null</code>)
+   */
+  public BerliozException(String message, Exception cause, ErrorID id) {
+    super(message, cause);
+    this._extra = null;
+    this._id = id;
+  }
+
+  /**
+   * Returns the ID for this Berlioz Exception.
+   * 
+   * @return the ID for this Berlioz Exception or <code>null</code>.
+   */
+  @Beta
+  public final ErrorID id() {
+    return this._id;
+  }
+  
   /**
    * Serialises this exception as XML.
    * 
@@ -88,11 +130,13 @@ public final class BerliozException extends Exception implements XMLWritable {
    * </berlioz-exception>
    * }</pre>
    * 
+   * @deprecated Will be removed in new releases
+   * 
    * @param xml The XML writer to use.
    * 
    * @throws IOException Should an error be thrown while writing
    */
-  public void toXML(XMLWriter xml) throws IOException {
+  @Deprecated public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("berlioz-exception", true);
     xml.element("message", super.getMessage());
     if (this._extra != null)

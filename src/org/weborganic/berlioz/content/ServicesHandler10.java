@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.berlioz.util.Pair;
-import org.weborganic.berlioz.xml.ErrorCollector;
+import org.weborganic.berlioz.xml.SAXErrorCollector;
 import org.weborganic.furi.URIPattern;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -47,7 +47,7 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The error handler to use.
    */
-  private final ErrorCollector _collector;
+  private final SAXErrorCollector _collector;
 
   /**
    * The elements used recognised by this handler.
@@ -153,7 +153,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * 
    * @throws NullPointerException If any of the method arguments is <code>null</code>.
    */
-  public ServicesHandler10(ServiceRegistry registry, ErrorCollector collector) {
+  public ServicesHandler10(ServiceRegistry registry, SAXErrorCollector collector) {
     if (registry == null || collector == null) throw new NullPointerException("Missing argument");
     this._registry = registry;
     this._collector = collector;

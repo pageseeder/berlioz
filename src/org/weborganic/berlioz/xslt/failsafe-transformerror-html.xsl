@@ -39,7 +39,7 @@ li {list-style-type: none; clear: both;}
 </xsl:template>
 
 <!-- No Stylesheet -->
-<xsl:template match="transform-error[cause/@class='java.io.FileNotFoundException']">
+<xsl:template match="error[cause/@class='java.io.FileNotFoundException']">
   <div class="transform-error config">
     <h1>Berlioz: Missing StyleSheet!</h1>
     <p class="message"><xsl:value-of select="exception/message"/></p>
@@ -48,7 +48,7 @@ li {list-style-type: none; clear: both;}
 </xsl:template>
 
 <!-- Other errors -->
-<xsl:template match="transform-error">
+<xsl:template match="error">
   <div class="transform-error template">
     <h1>Berlioz: XSLT Transform Error</h1>
     <p class="message"><xsl:value-of select="exception/message"/></p>
