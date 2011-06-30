@@ -46,6 +46,7 @@ import org.weborganic.berlioz.util.Errors;
 import org.weborganic.berlioz.util.ISO8601;
 import org.weborganic.berlioz.util.MD5;
 import org.weborganic.berlioz.xslt.XSLTErrorCollector;
+import org.xml.sax.SAXParseException;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
@@ -396,7 +397,7 @@ public final class XSLTransformer {
 
       // Let's guess the Berlioz internal code
       BerliozInternal id = toErrorID(actual);
-      xml.attribute("id", toErrorID(actual).toString());
+      xml.attribute("id", id.toString());
 
       // Berlioz info
       xml.openElement("berlioz");
@@ -540,7 +541,11 @@ public final class XSLTransformer {
         return BerliozInternal.TRANSFORM_INVALID;
       }
     }
-    return BerliozInternal.TRANSFORM_DYNAMIC_ERROR;
+    if (ex.getCause() instanceof SAXParseException) {
+      return BerliozInternal.TRANSFORM_MALFORMED_SOURCE_XML;
+    } else {
+      return BerliozInternal.TRANSFORM_DYNAMIC_ERROR;
+    }
   }
 
   /**
@@ -554,7 +559,7 @@ public final class XSLTransformer {
       case TRANSFORM_NOT_FOUND:            return "XSLT Not Found"; 
       case TRANSFORM_INVALID:              return "XSLT Static Error";
       case TRANSFORM_DYNAMIC_ERROR:        return "XSLT Dynamic Error";
-      case TRANSFORM_MALFORMED_SOURCE_XML: return "XSLT: Malformed XML";
+      case TRANSFORM_MALFORMED_SOURCE_XML: return "XML is not well formed";
       default: return "Unindentified XSLT error!";
     }
   }
