@@ -207,7 +207,7 @@ public final class Errors {
   private static void asExceptionXML(Exception ex, XMLWriter xml, boolean wrap) throws IOException {
     if (wrap) xml.openElement("exception");
     xml.attribute("class", ex.getClass().getName());
-    xml.element("message", ex.getMessage());
+    xml.element("message", toMessage(ex));
     xml.element("stack-trace", Errors.getStackTrace(ex, true));
     Throwable cause = ex.getCause();
     if (cause != null) {
@@ -251,4 +251,10 @@ public final class Errors {
     if (wrap)xml.closeElement();
   }
 
+  private static String toMessage(Throwable ex) {
+    if (ex.getCause() == null) return ex.getMessage();
+    Throwable t = ex.getCause();
+    if (!ex.getMessage().equals(t.getClass().getName()+": "+t.getMessage())) return ex.getMessage();
+    else return toMessage(t);
+  }
 }
