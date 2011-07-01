@@ -3,7 +3,7 @@
   Fail-safe stylesheet to display transform errors 
 
   @author Christophe Lauret
-  @version 15 June 2011
+  @version 1 July 2011
 -->
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
@@ -12,6 +12,9 @@
   (Ensure that the doctype does not triggers Quirks Mode)
 -->
 <xsl:output method="html" encoding="utf-8" indent="yes" undeclare-prefixes="no" media-type="text/html" />
+
+<!-- Indicates whether the error is unexpected -->
+<xsl:variable name="unexpected" select="/*/@id = 'berlioz-unexpected'"/>
 
 <!-- Main template called in all cases. -->
 <xsl:template match="/">
@@ -27,7 +30,7 @@ h1   {margin-top: 0; border-bottom: 3px solid;}
 .informational h1 {border-color: #ccc; color: #999;}
 .server-error  h1 {border-color: #f60; color: #c01;}
 .client-error  h1 {border-color: #fc0; color: #e60;}
-.redirect      h1 {border-color: #9c3; color: #6a0;}
+.redirection   h1 {border-color: #9c3; color: #6a0;}
 .successful    h1 {border-color: #09f; color: #06a;}
 
 h2   {border-bottom: 2px solid #09f; color: #09f; font-size: 3ex}
@@ -43,8 +46,6 @@ pre  {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courie
 #datetime        {float: left;}
 #berlioz-version {float: right;}
 
-.known .stacktrace {display: none}
-
 li     {list-style-type: none; display: block; clear: both; font-size: 12px; font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; margin-bottom: 2px}
 .line  {float:left; margin-right: 4px; color: #999;width: 60px}
 .col   {float:left; margin-right: 4px; color: #999;width: 80px}
@@ -53,7 +54,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 .error   > .level  {color: red;}
 .fatal   > .level  {color: white; background: #C01;}
 
-.help {border: 1px solid #9df; -moz-border-radius: 5px; border-radius: 5px; -moz-box-shadow: 0 0 8px #3cf; box-shadow: 0 0 4px #3cf; font-style: italic;}
+.help {border: 1px solid #ffe; background: #ffe; -moz-border-radius: 3px; border-radius: 3px; -moz-box-shadow: 0 0 8px #ec9; box-shadow: 0 0 4px #ec9; font-style: italic;}
 .help p {margin: 4px}
 
   </style>
@@ -66,10 +67,10 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 
 
 <!-- Default template for errors -->
-<xsl:template match="continue|successful|redirect|client-error|server-error">
-  <div class="container {name()} {if (not(@id = 'bzi-unexpected')) then 'known' else 'unknown'}">
+<xsl:template match="continue|successful|redirection|client-error|server-error">
+  <div class="container {name()}">
     <h1><xsl:value-of select="@http-code"/> - <xsl:value-of select="title"/></h1>
-    <xsl:if test="message != exception/message">
+    <xsl:if test="not(message = exception/message)">
       <p class="message"><xsl:value-of select="message"/></p>
     </xsl:if>
     <xsl:apply-templates select="." mode="help"/>
@@ -100,21 +101,34 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 <xsl:template match="exception">
   <div class="exception">
     <h2><xsl:value-of select="message"/></h2>
-    <xsl:apply-templates select="location|stack-trace|cause"/>
+    <xsl:if test="not(following-sibling::collected-errors)">
+      <xsl:apply-templates select="location"/>
+    </xsl:if>
+    <xsl:apply-templates select="stack-trace"/>
+    <xsl:apply-templates select="cause[not(message = current()/message)]"/>
   </div>
 </xsl:template>
 
 <!-- Cause of an exception -->
 <xsl:template match="cause">
   <div class="cause">
-    <h3>Caused by: <xsl:value-of select="message"/></h3>
-    <xsl:apply-templates select="location|stack-trace|cause"/>
+    <h3><i>Caused by: </i> <xsl:value-of select="message"/></h3>
+    <xsl:if test="not(parent::exception/following-sibling::collected-errors)">
+      <xsl:apply-templates select="location"/>
+    </xsl:if>
+    <xsl:apply-templates select="stack-trace|cause"/>
   </div>
 </xsl:template>
 
 <!-- Stack Trace -->
 <xsl:template match="stack-trace">
-  <pre class="stacktrace"><xsl:value-of select="text()"/></pre>
+  <pre class="stacktrace">
+  <!-- No need to display the stack trace if we know the error -->
+  <xsl:if test="not($unexpected)">
+    <xsl:attribute name="hidden">hidden</xsl:attribute>
+    <xsl:attribute name="style">display:none</xsl:attribute>
+  </xsl:if>
+  <xsl:value-of select="text()"/></pre>
 </xsl:template>
 
 <!-- Location -->
@@ -132,7 +146,10 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
         <span class="level">[<xsl:value-of select="@level"/>]</span>
         <span class="line">Line: <xsl:value-of select="location/@line"/></span>
         <span class="col">Column: <xsl:value-of select="location/@column"/></span>
-        <span class="info"><xsl:value-of select="message"/></span>
+        <span class="info">
+          <xsl:value-of select="message"/>
+          <xsl:if test="cause and not(message = cause/message)">: <xsl:value-of select="cause/message"/></xsl:if>
+        </span>
       </li>
     </xsl:for-each>
   </ul>
@@ -145,7 +162,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 <xsl:template match="*" mode="help" />
 
 <!-- Help: Services configuration could not be found  -->
-<xsl:template match="server-error[@id='bzi-services-not-found']" mode="help">
+<xsl:template match="server-error[@id='berlioz-services-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>service configuration</b>.</p>
   <p>To fix this problem, creates a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
@@ -153,7 +170,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 </xsl:template>
 
 <!-- Help: Services configuration is not well formed  -->
-<xsl:template match="server-error[@id='bzi-services-malformed']" mode="help">
+<xsl:template match="server-error[@id='berlioz-services-malformed']" mode="help">
 <div class="help">
   <p>Berlioz was unable to parse the <b>service configuration</b>.</p>
   <p>To fix this problem, you need to fix the XML errors in the '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>' file.</p>
@@ -161,7 +178,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 </xsl:template>
 
 <!-- Help: Services configuration is invalid  -->
-<xsl:template match="server-error[@id='bzi-services-invalid']" mode="help">
+<xsl:template match="server-error[@id='berlioz-services-invalid']" mode="help">
 <div class="help">
   <p>Berlioz was unable to load the service configuration because of the errors listed below.</p>
   <p>To fix this problem, you need to modify the '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>' file.</p>
@@ -169,10 +186,18 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 </xsl:template>
 
 <!-- Help: Transform file could not be found -->
-<xsl:template match="server-error[@id='bzi-transform-not-found']" mode="help">
+<xsl:template match="server-error[@id='berlioz-transform-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>XSLT style sheet</b>.</p>
   <p>To fix this problem, simply create the style file describe below in your <code>/WEB-INF/</code> folder.</p>
+</div>
+</xsl:template>
+
+<!-- Help: Transform file could not be found -->
+<xsl:template match="server-error[@id='berlioz-transform-malformed-source-xml']" mode="help">
+<div class="help">
+  <p>Berlioz could not transform the <b>source XML</b> because it is not well-formed.</p>
+  <p>To fix this problem, simply ensure that the XML returned by your generator is well formed.</p>
 </div>
 </xsl:template>
 

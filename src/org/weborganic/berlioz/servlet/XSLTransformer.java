@@ -39,9 +39,10 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.BerliozErrorID;
+import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Service;
-import org.weborganic.berlioz.util.BerliozInternal;
 import org.weborganic.berlioz.util.CollectedError;
 import org.weborganic.berlioz.util.Errors;
 import org.weborganic.berlioz.util.ISO8601;
@@ -62,11 +63,6 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * @version 1 July 2011
  */
 public final class XSLTransformer {
-
-  /**
-   * Name of the global property to use to enable caching of XSLT (<code>true</code> by default).
-   */
-  public static final String ENABLE_CACHE = "berlioz.cache.xslt";
 
   /**
    * Displays debug information.
@@ -290,7 +286,7 @@ public final class XSLTransformer {
    * @throws TransformerException If the templates could not parsed. 
    */
   private Templates getTemplates(File f) throws TransformerException {
-    boolean store = GlobalSettings.get(ENABLE_CACHE, true);
+    boolean store = GlobalSettings.get(BerliozOption.XSLT_ENABLE_CACHE.property(), true);
     String stylesheet = toWebPath(f.getAbsolutePath());
     Templates templates = store? CACHE.get(f) : null;
     if (templates == null) {
@@ -398,7 +394,7 @@ public final class XSLTransformer {
       }
 
       // Let's guess the Berlioz internal code
-      BerliozInternal id = toErrorID(actual);
+      BerliozErrorID id = toErrorID(actual);
       xml.attribute("id", id.id());
 
       // Berlioz info
@@ -406,7 +402,7 @@ public final class XSLTransformer {
       xml.attribute("version", GlobalSettings.getVersion());
       xml.closeElement();
       xml.element("title", toTitle(id));
-      xml.element("message", ex.getMessage());
+      xml.element("message", Errors.cleanMessage(ex));
 
       // Generate the XML for the exception
       Errors.toXML(actual, xml);
@@ -535,19 +531,19 @@ public final class XSLTransformer {
    * 
    * @return the Berlioz internal error ID corresponding to the specified exception.
    */
-  private static BerliozInternal toErrorID(TransformerException ex) {
+  private static BerliozErrorID toErrorID(TransformerException ex) {
     // Let's guess the Berlioz internal code
     if (ex instanceof TransformerConfigurationException) {
       if (ex.getCause() instanceof FileNotFoundException) {
-        return BerliozInternal.TRANSFORM_NOT_FOUND;
+        return BerliozErrorID.TRANSFORM_NOT_FOUND;
       } else {
-        return BerliozInternal.TRANSFORM_INVALID;
+        return BerliozErrorID.TRANSFORM_INVALID;
       }
     }
     if (ex.getCause() instanceof SAXParseException) {
-      return BerliozInternal.TRANSFORM_MALFORMED_SOURCE_XML;
+      return BerliozErrorID.TRANSFORM_MALFORMED_SOURCE_XML;
     } else {
-      return BerliozInternal.TRANSFORM_DYNAMIC_ERROR;
+      return BerliozErrorID.TRANSFORM_DYNAMIC_ERROR;
     }
   }
 
@@ -557,7 +553,7 @@ public final class XSLTransformer {
    * @param id the ID
    * @return the corresponding message
    */
-  private static String toTitle(BerliozInternal id) {
+  private static String toTitle(BerliozErrorID id) {
     switch (id) {
       case TRANSFORM_NOT_FOUND:            return "XSLT Not Found"; 
       case TRANSFORM_INVALID:              return "XSLT Static Error";

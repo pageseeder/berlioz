@@ -9,6 +9,8 @@ package org.weborganic.berlioz.servlet;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Random;
 
 import javax.servlet.ServletConfig;
@@ -17,6 +19,7 @@ import javax.servlet.ServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Environment;
 
@@ -32,20 +35,9 @@ public final class BerliozConfig {
   private static final Logger LOGGER = LoggerFactory.getLogger(BerliozConfig.class);
 
   /**
-   * Name of the global property to use to enable HTTP compression using the 
-   * <code>Content-Encoding</code> of compressible content.
-   * 
-   * <p>The property value is <code>true</code> by default.
+   * Stores all the berlioz config here.
    */
-  public static final String ENABLE_HTTP_COMPRESSION = "berlioz.http.compression";
-
-  /**
-   * Name of the global property to use to specify the max age of the <code>Cache-Control</code>
-   * HTTP header of cacheable content.
-   * 
-   * <p>The property value is <code>60</code> (seconds) by default.
-   */
-  public static final String HTTP_MAX_AGE = "berlioz.http.max-age";
+  private static final Map<String, BerliozConfig> CONFIGS = new Hashtable<String, BerliozConfig>();
 
   /**
    * Used to generate ETag Seeds.
@@ -93,7 +85,7 @@ public final class BerliozConfig {
    * Create a new Berlioz configuration.
    * @param servletConfig The servlet configuration.
    */
-  protected BerliozConfig(ServletConfig servletConfig) {
+  private BerliozConfig(ServletConfig servletConfig) {
     this._servletConfig = servletConfig;
     // get the WEB-INF directory
     ServletContext context = servletConfig.getServletContext();
@@ -104,10 +96,19 @@ public final class BerliozConfig {
     if ("IDENTITY".equals(this._stylePath) && !this._contentType.contains("xml")) {
       LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this._contentType);
     }
-    this._cacheControl = this.getInitParameter("cache-control", "max-age="+GlobalSettings.get(HTTP_MAX_AGE, 60)+", must-revalidate");
+    String maxAge = GlobalSettings.get(BerliozOption.HTTP_MAX_AGE);
+    this._cacheControl = this.getInitParameter("cache-control", "max-age="+maxAge+", must-revalidate");
     this._controlKey  = this.getInitParameter("berlioz-control", null);
     this._env = new HttpEnvironment(contextPath, webinfPath);
     this._etagSeed = newEtagSeed();
+  }
+
+  /**
+   * Returns the name of this config, usually the servlet name.
+   * @return the name of this config, usually the servlet name.
+   */
+  public String getName() {
+    return this._servletConfig.getServletName();
   }
 
   /**
@@ -167,7 +168,7 @@ public final class BerliozConfig {
    * @return the content type.
    */
   public boolean enableCompression() {
-    return GlobalSettings.get(ENABLE_HTTP_COMPRESSION, true);
+    return "true".equals(GlobalSettings.get(BerliozOption.HTTP_ENABLE_COMPRESSION));
   }
 
   /**
@@ -201,7 +202,33 @@ public final class BerliozConfig {
     return new XSLTransformer(styleSheet);
   }
 
-//private helpers --------------------------------------------------------------------------------
+  /**
+   * Creates a new config for a given Servlet config.
+   * 
+   * @param servletConfig The servlet configuration.
+   * @return A new Berlioz config.
+   */
+  public static synchronized BerliozConfig newConfig(ServletConfig servletConfig) {
+    BerliozConfig config = new BerliozConfig(servletConfig);
+    String name = servletConfig.getServletName();
+    CONFIGS.put(name, config);
+    return config;
+  }
+
+  /**
+   * Creates a new config for a given Servlet config.
+   * 
+   * @param config The Berlioz configuration to unregister.
+   * @return <code>true</code> if the config was unregistered;
+   *         <code>false</code> otherwise.
+   */
+  public static synchronized boolean unregister(BerliozConfig config) {
+    String name = config._servletConfig.getServletName();
+    return CONFIGS.remove(name) != null;
+  }
+
+  // private helpers
+  // ----------------------------------------------------------------------------------------------
 
   /**
    * Returns the value for the specified init parameter name.

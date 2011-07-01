@@ -1,7 +1,5 @@
-package org.weborganic.berlioz.util;
+package org.weborganic.berlioz;
 
-import org.weborganic.berlioz.ErrorID;
-import org.weborganic.berlioz.Beta;
 
 /**
  * A enumeration of errors known by Berlioz, so that it is easier to identify the type of error which occurred.
@@ -11,7 +9,7 @@ import org.weborganic.berlioz.Beta;
  * @author Christophe Lauret
  * @version 30 June 2011
  */
-@Beta public enum BerliozInternal implements ErrorID {
+@Beta public enum BerliozErrorID implements ErrorID {
 
   /**
    * A completely unexpected error.
@@ -65,7 +63,7 @@ import org.weborganic.berlioz.Beta;
    * <ul>
    *   <li>In lower case;</li>
    *   <li>Using '-' instead of '_';</li>
-   *   <li>Prefixed by "bzi"</li>
+   *   <li>Prefixed by "berlioz-"</li>
    * </ul>
    * 
    * <p>For example, the ID of <code>SERVICES_NOT_FOUND</code> is <code>bzi-services-not-found</code>.
@@ -73,7 +71,7 @@ import org.weborganic.berlioz.Beta;
    * @return The ID of this error code.
    */
   public final String id() {
-    return "bzi-"+name().toLowerCase().replace('_', '-');
+    return "berlioz-"+name().toLowerCase().replace('_', '-');
   };
 
   /**

@@ -15,8 +15,8 @@ import javax.xml.parsers.SAXParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.BerliozErrorID;
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.util.BerliozInternal;
 import org.weborganic.berlioz.util.CompoundBerliozException;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
 import org.weborganic.berlioz.xml.SAXErrorCollector;
@@ -51,7 +51,7 @@ public final class ContentManager {
   /**
    * Indicates whether the boolean value was loaded. 
    */
-  private static transient boolean loaded = false;
+  private static volatile boolean loaded = false;
 
   /**
    * Prevents creation of instances. 
@@ -85,7 +85,7 @@ public final class ContentManager {
    * 
    * @throws BerliozException Should something unexpected happen.
    */
-  public static void load() throws BerliozException {
+  public static synchronized void load() throws BerliozException {
     File repository = GlobalSettings.getRepository();
     File xml = new File(new File(repository, "config"), "services.xml");
     load(xml);
@@ -98,13 +98,13 @@ public final class ContentManager {
    * 
    * @throws BerliozException Should something unexpected happen.
    */
-  public static void load(File xml) throws BerliozException {
+  public static synchronized void load(File xml) throws BerliozException {
     if (xml == null) 
       throw new NullPointerException("The service configuration file is null! That's it I give up.");
     // OK Let's start
     SAXParser parser = XMLUtils.getParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
-    BerliozInternal id = null;
+    BerliozErrorID id = null;
     // Load the services
     try {
       XMLReader reader = parser.getXMLReader();
@@ -116,16 +116,16 @@ public final class ContentManager {
       reader.parse(new InputSource(xml.toURI().toString()));
       // if the error threshold was reached, throw an error!
       if (collector.hasError()) {
-        id = BerliozInternal.SERVICES_INVALID;
+        id = BerliozErrorID.SERVICES_INVALID;
         throw new SAXException(collector.getErrors().size()+" error(s) reported by the XML parser.");
       }
     } catch (SAXException ex) {
-      if (id == null) id = BerliozInternal.SERVICES_MALFORMED;
+      if (id == null) id = BerliozErrorID.SERVICES_MALFORMED;
       LOGGER.error("An SAX error occurred while reading XML service configuration: {}", ex.getMessage());
       throw new CompoundBerliozException("Unable to parse services configuration file.", ex, id, collector);
     } catch (IOException ex) {
       LOGGER.error("An I/O error occurred while reading XML service configuration: {}", ex.getMessage());
-      throw new BerliozException("Unable to read services configuration file.", ex, BerliozInternal.SERVICES_NOT_FOUND);
+      throw new BerliozException("Unable to read services configuration file.", ex, BerliozErrorID.SERVICES_NOT_FOUND);
     }
   }
 

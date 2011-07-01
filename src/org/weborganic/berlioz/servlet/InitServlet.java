@@ -16,6 +16,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
+import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 
 /**
@@ -122,8 +123,10 @@ public final class InitServlet extends HttpServlet implements Servlet {
       boolean loaded = GlobalSettings.load();
       if (loaded) {
         System.out.println("[BERLIOZ_INIT] Config: loaded OK");
-        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozConfig.ENABLE_HTTP_COMPRESSION));
-        System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozConfig.HTTP_MAX_AGE, 60));
+        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_ENABLE_COMPRESSION));
+        System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozOption.HTTP_MAX_AGE));
+        System.out.println("[BERLIOZ_INIT] Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_ENABLE_CACHE));
+        System.out.println("[BERLIOZ_INIT] Config: XML Error Threshold = "+GlobalSettings.get(BerliozOption.XML_ERROR_THRESHOLD));
         System.out.println("[BERLIOZ_INIT] Config: OK ----------------------------------------------------");
       } else {
         System.out.println("[BERLIOZ_INIT] (!) Unable to load global settings ");

@@ -47,8 +47,8 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * 
  * <h3>Compression</h3>
  * 
- * <p>The global property {@value ENABLE_HTTP_COMPRESSION} can be used to enable or disable HTTP compression using
- * the <code>Content-Encoding</code> HTTP Header.
+ * <p>The global property {@value BerliozConfig.HTTP_ENABLE_COMPRESSION} can be used to enable or 
+ * disable HTTP compression using the <code>Content-Encoding</code> HTTP Header.
  * 
  * <p>When HTTP compression is enabled and the HTTP client supports it, the headers are modified as:
  * <pre>
@@ -95,27 +95,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * @author Christophe Lauret (Weborganic)
  * @version 20 July 2010
  */
-public class BerliozServlet extends HttpServlet {
-
-  /**
-   * Name of the global property to use to enable HTTP compression using the 
-   * <code>Content-Encoding</code> of compressible content.
-   * 
-   * <p>The property value is <code>true</code> by default.
-   * 
-   * @deprecated Use BerliozConfig#ENABLE_HTTP_COMPRESSION
-   */
-  @Deprecated public static final String ENABLE_HTTP_COMPRESSION = BerliozConfig.ENABLE_HTTP_COMPRESSION;
-
-  /**
-   * Name of the global property to use to specify the max age of the <code>Cache-Control</code>
-   * HTTP header of cacheable content.
-   * 
-   * <p>The property value is <code>60</code> (seconds) by default.
-   * 
-   * @deprecated Use BerliozConfig#HTTP_MAX_AGE
-   */
-  @Deprecated public static final String HTTP_MAX_AGE = BerliozConfig.HTTP_MAX_AGE;
+public final class BerliozServlet extends HttpServlet {
 
   /**
    * As per requirement for the Serializable interface.
@@ -167,8 +147,9 @@ public class BerliozServlet extends HttpServlet {
    * 
    * @throws ServletException Should an exception occur.
    */
-  public final void init(ServletConfig servletConfig) throws ServletException {
-    BerliozConfig config = new BerliozConfig(servletConfig);
+  public void init(ServletConfig servletConfig) throws ServletException {
+    super.init(servletConfig);
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
     this._config = config;
     this._transformer = config.newTransformer();
     this._services = ContentManager.getDefaultRegistry();
@@ -176,6 +157,20 @@ public class BerliozServlet extends HttpServlet {
     if (this._errorHandler == null) {
       LOGGER.warn("Error is not defined, using default error handler for the Web Application");
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void destroy() {
+    super.destroy();
+    LOGGER.info("Destroying Berlioz Servlet");
+    BerliozConfig.unregister(this._config);
+    this._config = null;
+    this._transformer = null;
+    this._services = null;
+    this._errorHandler = null;
   }
 
   // Standard HTTP Methods
@@ -186,7 +181,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public final void doHead(HttpServletRequest req, HttpServletResponse res)
+  @Override public void doHead(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, false);
   }
@@ -196,7 +191,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public final void doGet(HttpServletRequest req, HttpServletResponse res)
+  @Override public void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -206,7 +201,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public final void doPost(HttpServletRequest req, HttpServletResponse res)
+  @Override public void doPost(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -216,7 +211,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public final void doPut(HttpServletRequest req, HttpServletResponse res)
+  @Override public void doPut(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -226,7 +221,7 @@ public class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public final void doDelete(HttpServletRequest req, HttpServletResponse res)
+  @Override public void doDelete(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -244,7 +239,7 @@ public class BerliozServlet extends HttpServlet {
    * @throws ServletException To wrap any non IO exception.
    * @throws IOException For any IO exception.
    */
-  protected final void process(HttpServletRequest req, HttpServletResponse res, boolean includeContent)
+  protected void process(HttpServletRequest req, HttpServletResponse res, boolean includeContent)
       throws ServletException, IOException {
 
     // Use Berlioz config locally
@@ -445,7 +440,7 @@ public class BerliozServlet extends HttpServlet {
     req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, code);
     req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
     req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
-    // TODO: req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, req.getServerName());
+    req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, this._config.getName());
     // TODO: also add Berlioz specific data
     // If an exception has occurred
     if (ex != null) {

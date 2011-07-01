@@ -229,6 +229,25 @@ public final class GlobalSettings {
   }
 
   /**
+   * Return the property value for the specified Berlioz option.
+   *
+   * <p>Returns the <code>default</code> value if the property is not found or defined.
+   *
+   * <p>If the properties file has not been loaded, this method will invoke the {@link #load()}
+   * method before returning an <code>Enumeration</code>.
+   *
+   * @param option  the name of the property
+   *
+   * @return  the property value.
+   * 
+   * @throws IllegalStateException If this class has not been setup properly.
+   */
+  public static String get(BerliozOption option) throws IllegalStateException {
+    if (settings == null) load();
+    return settings.getProperty(option.property(), option.defaultTo().toString());
+  }
+
+  /**
    * Returns the requested property or it default value.
    *
    * <p>The given default value is returned only if the property is not found.

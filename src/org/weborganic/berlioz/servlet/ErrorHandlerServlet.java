@@ -23,9 +23,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.BerliozErrorID;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.http.HttpStatusCodes;
-import org.weborganic.berlioz.util.BerliozInternal;
 import org.weborganic.berlioz.util.CollectedError;
 import org.weborganic.berlioz.util.CompoundBerliozException;
 import org.weborganic.berlioz.util.ErrorCollector;
@@ -178,7 +178,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       if (exception instanceof BerliozException && ((BerliozException)exception).id() != null) {
         xml.attribute("id", ((BerliozException)exception).id().id());
       } else {
-        xml.attribute("id", errorId != null? errorId : BerliozInternal.UNEXPECTED.toString());
+        xml.attribute("id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString());
       }
 
       // Berlioz info
