@@ -11,9 +11,9 @@ import org.weborganic.berlioz.util.CollectedError.Level;
  * An XSLT error listener will collect all the exceptions reported by the transformer.
  * 
  * @author Christophe Lauret
- * @version 30 June 2011
+ * @version 1 July 2011
  */
-public class XSLTErrorCollector extends ErrorCollector<TransformerException> implements ErrorListener {
+public final class XSLTErrorCollector extends ErrorCollector<TransformerException> implements ErrorListener {
 
   /**
    * The logger to use to report errors
@@ -30,7 +30,11 @@ public class XSLTErrorCollector extends ErrorCollector<TransformerException> imp
   }
 
   /**
-   * {@inheritDoc}
+   * @see ErrorListener#fatalError(TransformerException)
+   * 
+   * @param exception An fatal error reported by the transformer.
+   * 
+   * @throws TransformerException If thrown by the underlying {@link ErrorCollector}.
    */
   public void fatalError(TransformerException exception) throws TransformerException {
     this._logger.error(exception.getMessageAndLocation());
@@ -38,7 +42,11 @@ public class XSLTErrorCollector extends ErrorCollector<TransformerException> imp
   }
 
   /**
-   * {@inheritDoc}
+   * @see ErrorListener#error(TransformerException)
+   *
+   * @param exception An error reported by the transformer.
+   * 
+   * @throws TransformerException If thrown by the underlying {@link ErrorCollector}.
    */
   public void error(TransformerException exception) throws TransformerException {
     this._logger.error(exception.getMessageAndLocation());
@@ -46,7 +54,11 @@ public class XSLTErrorCollector extends ErrorCollector<TransformerException> imp
   }
 
   /**
-   * {@inheritDoc}
+   * @see ErrorListener#warning(TransformerException)
+   * 
+   * @param exception An warning reported by the transformer.
+   * 
+   * @throws TransformerException If thrown by the underlying {@link ErrorCollector}.
    */
   public void warning(TransformerException exception) throws TransformerException {
     this._logger.warn(exception.getMessageAndLocation());

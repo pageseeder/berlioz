@@ -35,7 +35,7 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    * 
    * @param exception A SAX parse fatal reported by the SAX parser.
    * 
-   * @throws SAXParseException Identical to the parameter.
+   * @throws SAXParseException If thrown by the underlying {@link ErrorCollector}.
    */
   public void fatalError(SAXParseException exception) throws SAXParseException {
     this._logger.error("{} (line: {})", exception.getMessage(), exception.getLineNumber());
@@ -46,6 +46,8 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    * @see org.xml.sax.ErrorHandler#error(org.xml.sax.SAXParseException)
    * 
    * @param exception A SAX parse error reported by the SAX parser.
+   * 
+   * @throws SAXParseException If thrown by the underlying {@link ErrorCollector}.
    */
   public void error(SAXParseException exception) throws SAXParseException{
     this._logger.error("{} (line: {})", exception.getMessage(), exception.getLineNumber());
@@ -56,6 +58,8 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    * @see org.xml.sax.ErrorHandler#warning(org.xml.sax.SAXParseException)
    * 
    * @param exception A SAX parse warning reported by the SAX parser.
+   * 
+   * @throws SAXParseException If thrown by the underlying {@link ErrorCollector}.
    */
   public void warning(SAXParseException exception) throws SAXParseException{
     this._logger.warn("{} (line: {})", exception.getMessage(), exception.getLineNumber());

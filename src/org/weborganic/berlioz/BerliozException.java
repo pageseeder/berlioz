@@ -42,6 +42,7 @@ public class BerliozException extends Exception implements XMLWritable {
 
   /**
    * Additional information, for instance an SQL statement.
+   * @deprecated Will be removed in future releases.
    */
   @Deprecated private final String _extra;
 

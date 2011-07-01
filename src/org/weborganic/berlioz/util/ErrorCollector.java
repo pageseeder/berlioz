@@ -41,8 +41,6 @@ public abstract class ErrorCollector<T extends Exception>  {
 
   /**
    * Creates a new error collector.
-   * 
-   * @param logger A logger to report errors when the listener's methods are called.
    */
   public ErrorCollector() {
   }
@@ -51,8 +49,10 @@ public abstract class ErrorCollector<T extends Exception>  {
    * Set the threshold to throw an exception during the next collect operation.
    * 
    * @param threshold the level at which the next collect call will throw an exception.
+   * @throws NullPointerException If the threshold argument is <code>null</code>.
    */
   public final void setException(Level threshold) {
+    if (threshold == null) throw new NullPointerException("Specified threshold is null");
     this._exception = threshold;
   }
 
@@ -60,8 +60,10 @@ public abstract class ErrorCollector<T extends Exception>  {
    * Set the threshold to set to rise the error flag.
    * 
    * @param threshold the level at which the next collect call set the error flag to <code>true</code>.
+   * @throws NullPointerException If the threshold argument is <code>null</code>.
    */
   public final void setErrorFlag(Level threshold) {
+    if (threshold == null) throw new NullPointerException("Specified threshold is null");
     this._flag = threshold;
   }
 
