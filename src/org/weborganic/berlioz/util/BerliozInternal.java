@@ -4,9 +4,9 @@ import org.weborganic.berlioz.ErrorID;
 import org.weborganic.berlioz.Beta;
 
 /**
- * A enumeration of error known by Berlioz, so that it is easier to identify the type of error which occurred.
+ * A enumeration of errors known by Berlioz, so that it is easier to identify the type of error which occurred.
  * 
- * <p>Note: these are different and somewhat complementary to HTTP response code.
+ * <p>These are included in error responses whenever Berlioz is able to identify the error.
  * 
  * @author Christophe Lauret
  * @version 30 June 2011
@@ -60,8 +60,28 @@ import org.weborganic.berlioz.Beta;
 
   /**
    * Returns a string representation of this error code.
+   * 
+   * <p>The ID is the same as the name, but
+   * <ul>
+   *   <li>In lower case;</li>
+   *   <li>Using '-' instead of '_';</li>
+   *   <li>Prefixed by "bzi"</li>
+   * </ul>
+   * 
+   * <p>For example, the ID of <code>SERVICES_NOT_FOUND</code> is <code>bzi-services-not-found</code>.
+   * 
+   * @return The ID of this error code.
    */
-  public String toString() {
+  public final String id() {
     return "bzi-"+name().toLowerCase().replace('_', '-');
+  };
+
+  /**
+   * Returns the same as the <code>id()</code> method.
+   *
+   * {@inheritDoc}
+   */
+  public final String toString() {
+    return this.id();
   };
 }

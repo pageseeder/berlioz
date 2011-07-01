@@ -3,15 +3,22 @@ package org.weborganic.berlioz;
 /**
  * An ID for errors to help with error handling and diagnostic.
  * 
- * <p>Error IDs atsrting with "bz" are reserved by Berlioz.
+ * <p>Error IDs starting with "bz" are reserved by Berlioz.
  * 
- * <p>Note: these are different and complementary to HTTP response code.
+ * <p>Note: these are different and complementary to HTTP response codes.
  * 
  * @author Christophe Lauret
  * @version 30 June 2011
  */
 @Beta public interface ErrorID {
 
-  String toString();
+  /**
+   * Returns the error identifier as a string.
+   * 
+   * <p>Implementations should also ensure that the <code>toString()</code> returns the same value.
+   * 
+   * @return the error ID as a string.
+   */
+  String id();
 
 }
