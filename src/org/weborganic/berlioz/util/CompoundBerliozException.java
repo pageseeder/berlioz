@@ -4,7 +4,7 @@ import org.weborganic.berlioz.ErrorID;
 import org.weborganic.berlioz.BerliozException;
 
 /**
- * A Berlioz exception to includes a list of collected errors
+ * A Berlioz exception to includes a list of collected errors.
  * 
  * @author Christophe Lauret
  * @version 30 June 2011
@@ -36,7 +36,7 @@ public final class CompoundBerliozException extends BerliozException {
    * Creates a new compound exception. 
    *
    * @param message   An explanatory message.
-   * @param exception The exception causing this exception.
+   * @param ex        The original exception causing this exception to be raised.
    * @param collector The error collector.
    */
   public CompoundBerliozException(String message, Exception ex, ErrorCollector<? extends Exception> collector) {
@@ -60,7 +60,7 @@ public final class CompoundBerliozException extends BerliozException {
    * Creates a new compound exception. 
    *
    * @param message   An explanatory message.
-   * @param exception The exception causing this exception.
+   * @param ex        The original exception causing this exception to be raised.
    * @param id        An error ID to help with error handling and diagnostic.
    * @param collector The error collector.
    */

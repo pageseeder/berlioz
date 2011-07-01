@@ -64,6 +64,23 @@ public final class Errors {
     return stacktrace.toString();
   }
 
+  /**
+   * Returns a clean message for the specified throwable.
+   * 
+   * <p>This method can be used to provide more user-friendly messages by removing the exception 
+   * class prefix to the message if the message is identical to that of the exception causing it.
+   * 
+   * @param ex the throwable.
+   * 
+   * @return a clean message.
+   */
+  public static String cleanMessage(Throwable ex) {
+    if (ex.getCause() == null) return ex.getMessage();
+    Throwable t = ex.getCause();
+    if (!ex.getMessage().equals(t.getClass().getName()+": "+t.getMessage())) return ex.getMessage();
+    else return cleanMessage(t);
+  }
+
   // XML Formatters
   // ---------------------------------------------------------------------------------------------
 
@@ -73,48 +90,95 @@ public final class Errors {
    * <p>If there is a more specialised method for this exception defined in this class, this 
    * method will automatically use the more specific method.
    * 
-   * @param ex   the source locator.
-   * @param xml     the XML writer.
+   * <p>The default XML for a generic exception is:
+   * <p>The XML return will be: 
+   * <pre>{@code <exception class="[class]">
+   *   <message>[message]</message>
+   *   <stack-trace>[exception]</stack-trace>
+   *   <cause>[cause exception as XML (if any)]</cause>
+   * </exception>
+   * }</pre>
    * 
-   * @throws IOException If thrown by the XML writer.
+   * @param ex  The exception to turn to XML.
+   * @param xml The XML writer.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(Exception ex, XMLWriter xml) throws IOException {
     toXML(ex, xml, true);
   }
 
   /**
-   * Returns the transform exception as XML
+   * Returns the specified exception as XML.
    * 
-   * @param ex   the source locator.
-   * @param xml     the XML writer.
+   * @param ex   The exception to turn to XML.
+   * @param xml  The XML writer.
+   * @param wrap Whether to wrap the XML into an element.
    * 
-   * @throws IOException If thrown by the XML writer.
+   * @throws IOException Only if thrown by the XML writer.
+   */
+  public static void toXML(Throwable ex, XMLWriter xml, boolean wrap) throws IOException {
+    if (ex instanceof SAXParseException)    { asSAXParseExceptionXML((SAXParseException)ex, xml, wrap); return;}
+    if (ex instanceof TransformerException) { asTransformerExceptionXML((TransformerException)ex, xml, wrap); return;}
+    if (ex instanceof Exception)            { asExceptionXML((Exception)ex, xml, wrap); return;}
+  }
+
+  /**
+   * Returns the specified exception as XML.
+   * 
+   * <p>The XML for a {@link SAXParseException} is:
+   * <pre>{@code <exception class="[class]" type="SAXParseException">
+   *   <message>[message]</message>
+   *   <stack-trace>[exception]</stack-trace>
+   *   <cause>[cause exception as XML (if any)]</cause>
+   *   <location line="[line]" column="[column]" public-id=[public-id]" system-id="[system-id]"/>
+   * </exception>
+   * }</pre>
+   *
+   * @param ex  The exception to turn to XML.
+   * @param xml The XML writer.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(SAXParseException ex, XMLWriter xml) throws IOException {
     asSAXParseExceptionXML(ex, xml, true);
   }
 
   /**
-   * Returns the transform exception as XML
+   * Returns the specified exception as XML.
    * 
-   * @param ex   the source locator.
-   * @param xml     the XML writer.
+   * <p>The XML for a {@link TransformerException} is:
+   * <pre>{@code <exception class="[class]" type="[TransformerException|TransformerConfigException]">
+   *   <message>[message]</message>
+   *   <stack-trace>[exception]</stack-trace>
+   *   <cause>[cause exception as XML (if any)]</cause>
+   *   <location line="[line]" column="[column]" public-id=[public-id]" system-id="[system-id]"/>
+   * </exception>
+   * }</pre>
    * 
-   * @throws IOException If thrown by the XML writer.
+   * @param ex  The exception to turn to XML.
+   * @param xml The XML writer.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(TransformerException ex, XMLWriter xml) throws IOException {
     asTransformerExceptionXML(ex, xml, true);
   }
 
   /**
-   * Returns the source locator as XML.
+   * Returns the specified source locator as XML.
    * 
    * <p>Does nothing if the locator is <code>null</code>.
    * 
-   * @param locator the source locator.
-   * @param xml     the XML writer.
+   * <p>The XML return will be:
+   * <pre>
+   * {@code <location line="[line]" column="[column]" public-id=[public-id]" system-id="[system-id]"/>}
+   * </pre> 
    * 
-   * @throws IOException If thrown by the XML writer.
+   * @param locator The source locator.
+   * @param xml     The XML writer.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(SourceLocator locator, XMLWriter xml) throws IOException {
     if (locator == null) return;
@@ -131,14 +195,19 @@ public final class Errors {
   }
 
   /**
-   * Returns the source locator as XML.
+   * Returns the specified locator as XML.
    * 
    * <p>Does nothing if the locator is <code>null</code>.
    * 
-   * @param locator the source locator.
-   * @param xml     the XML writer.
+   * <p>The XML return will be:
+   * <pre>
+   * {@code <location line="[line]" column="[column]" public-id=[public-id]" system-id="[system-id]"/>}
+   * </pre>
    * 
-   * @throws IOException If thrown by the XML writer.
+   * @param locator The source locator.
+   * @param xml     The XML writer.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(Locator locator, XMLWriter xml) throws IOException {
     if (locator == null) return;
@@ -149,7 +218,7 @@ public final class Errors {
     xml.openElement("location");
     if (line != -1)       xml.attribute("line", line);
     if (column != -1)     xml.attribute("column", column);
-    if (publicId != null) xml.attribute("public-id" ,publicId);
+    if (publicId != null) xml.attribute("public-id" , publicId);
     if (systemId != null) xml.attribute("system-id", toWebPath(systemId));
     xml.closeElement();
   }
@@ -174,7 +243,7 @@ public final class Errors {
    * @param ex The SAX Parse exception
    * @return the corresponding locator.
    */
-  private static final Locator toLocator(SAXParseException ex) {
+  private static Locator toLocator(SAXParseException ex) {
     LocatorImpl locator = new LocatorImpl();
     locator.setLineNumber(ex.getLineNumber());
     locator.setColumnNumber(ex.getColumnNumber());
@@ -183,31 +252,19 @@ public final class Errors {
     return locator;
   }
 
-
-  /**
-   * Returns the transform exception as XML
-   * 
-   * @param ex   the source locator.
-   * @param level the level of error.
-   * @return the corresponding XML.
-   */
-  private static void toXML(Throwable ex, XMLWriter xml, boolean wrap) throws IOException {
-    if (ex instanceof SAXParseException)    { asSAXParseExceptionXML((SAXParseException)ex, xml, wrap); return;}
-    if (ex instanceof TransformerException) { asTransformerExceptionXML((TransformerException)ex, xml, wrap); return;}
-    if (ex instanceof Exception)            { asExceptionXML((Exception)ex, xml, wrap); return;}
-  }
-
   /**
    * Returns the XML for a generic exception.
    * 
-   * @param ex   the source locator.
-   * @param level the level of error.
-   * @return the corresponding XML.
+   * @param ex   The exception to turn to XML.
+   * @param xml  The XML writer.
+   * @param wrap Whether to wrap the XML into an element.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
   private static void asExceptionXML(Exception ex, XMLWriter xml, boolean wrap) throws IOException {
     if (wrap) xml.openElement("exception");
     xml.attribute("class", ex.getClass().getName());
-    xml.element("message", toMessage(ex));
+    xml.element("message", cleanMessage(ex));
     xml.element("stack-trace", Errors.getStackTrace(ex, true));
     Throwable cause = ex.getCause();
     if (cause != null) {
@@ -219,15 +276,17 @@ public final class Errors {
   }
 
   /**
-   * Returns the transform exception as XML
+   * Returns the specified exception as XML
    * 
-   * @param ex   the source locator.
-   * @param level the level of error.
-   * @return the corresponding XML.
+   * @param ex   The exception to turn to XML.
+   * @param xml  The XML writer.
+   * @param wrap Whether to wrap the XML into an element.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
   private static void asSAXParseExceptionXML(SAXParseException ex, XMLWriter xml, boolean wrap) throws IOException {
     if (wrap) xml.openElement("exception");
-    xml.attribute("type", "sax-parse");
+    xml.attribute("type", "SAXParseException");
     asExceptionXML(ex, xml, false);
     // Add the locator
     toXML(toLocator(ex), xml);
@@ -235,26 +294,23 @@ public final class Errors {
   }
 
   /**
-   * Returns the transform exception as XML
+   * Returns the specified exception as XML
    * 
-   * @param ex   the source locator.
-   * @param level the level of error.
-   * @return the corresponding XML.
+   * @param ex   The exception to turn to XML.
+   * @param xml  The XML writer.
+   * @param wrap Whether to wrap the XML into an element.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
    */
-  private static void asTransformerExceptionXML(TransformerException ex, XMLWriter xml, boolean wrap) throws IOException {
+  private static void asTransformerExceptionXML(TransformerException ex, XMLWriter xml, boolean wrap) 
+      throws IOException {
     if (wrap) xml.openElement("exception");
     boolean isConfig = ex instanceof TransformerConfigurationException;
-    xml.attribute("type", isConfig? "transformer-config" : "transformer");
+    xml.attribute("type", isConfig? "TransformerConfigurationException" : "TransformerException");
     asExceptionXML(ex, xml, false);
     // Add the Source locator
     toXML(ex.getLocator(), xml);
     if (wrap)xml.closeElement();
   }
 
-  private static String toMessage(Throwable ex) {
-    if (ex.getCause() == null) return ex.getMessage();
-    Throwable t = ex.getCause();
-    if (!ex.getMessage().equals(t.getClass().getName()+": "+t.getMessage())) return ex.getMessage();
-    else return toMessage(t);
-  }
 }

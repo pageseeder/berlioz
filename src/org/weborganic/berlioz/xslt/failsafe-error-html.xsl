@@ -39,11 +39,13 @@ pre  {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courie
 
 .known .stacktrace {display: none}
 
-li          {list-style-type: none; clear: both;}
-.line, .col {float:left;margin-right: 10px; color: #999;}
-.warning:before  {content: "[Warning] "; color: orange; display: inline-block; width: 70px}
-.error:before    {content: "[Error] "; color: red; display: inline-block; width: 70px}
-.fatal:before    {content: "[Fatal] "; color: red; display: inline-block; width: 70px}
+li     {list-style-type: none; display: block; clear: both; font-size: 12px; font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; margin-bottom: 2px}
+.line  {float:left; margin-right: 4px; color: #999;width: 60px}
+.col   {float:left; margin-right: 4px; color: #999;width: 80px}
+.level {float:left; margin-right: 4px; color: #999;width: 70px; text-align: center; font-weight: bold; -moz-border-radius: 5px;border-radius: 5px; padding: 2px}
+.warning > .level  {color: orange;}
+.error   > .level  {color: red;}
+.fatal   > .level  {color: white; background: #C01;}
   </style>
 </head>
 <body>
@@ -110,24 +112,29 @@ li          {list-style-type: none; clear: both;}
   <p class="location">File: <xsl:value-of select="@system-id"/>, Line: <xsl:value-of select="@line"/>, Column: <xsl:value-of select="@column"/></p>
 </xsl:template>
 
-<!-- Exception -->
+<!-- Collected errors -->
 <xsl:template match="collected-errors">
-<ul class="collected">
-  <xsl:for-each select="collected">
-  <li class="{@level}">
-    <span class="line">Line: <xsl:value-of select="exception/location/@line"/></span>
-    <span class="col">Column: <xsl:value-of select="exception/location/@column"/></span>
-    <span class="info"><xsl:value-of select="exception/message"/></span>
-  </li>
-  </xsl:for-each>
-</ul>
+<xsl:for-each-group select="collected" group-by="location/@system-id">
+  <h4><xsl:value-of select="location/@system-id"/></h4>
+  <ul class="collected">
+    <xsl:for-each select="current-group()">
+      <li class="{@level}">
+        <span class="level">[<xsl:value-of select="@level"/>]</span>
+        <span class="line">Line: <xsl:value-of select="location/@line"/></span>
+        <span class="col">Column: <xsl:value-of select="location/@column"/></span>
+        <span class="info"><xsl:value-of select="message"/></span>
+      </li>
+    </xsl:for-each>
+  </ul>
+</xsl:for-each-group>
 </xsl:template>
 
 <!-- Help for Specifid Error IDs ============================================================== -->
 
-<!-- No help ignore -->
+<!-- No help: ignore -->
 <xsl:template match="error" mode="help" />
 
+<!-- Help: Services configuration could not be found  -->
 <xsl:template match="error[@id='bzi-services-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>service configuration</b>.</p>
@@ -135,6 +142,7 @@ li          {list-style-type: none; clear: both;}
 </div>
 </xsl:template>
 
+<!-- Help: Services configuration is not well formed  -->
 <xsl:template match="error[@id='bzi-services-malformed']" mode="help">
 <div class="help">
   <p>Berlioz was unable to parse the <b>service configuration</b>.</p>
@@ -142,6 +150,7 @@ li          {list-style-type: none; clear: both;}
 </div>
 </xsl:template>
 
+<!-- Help: Services configuration is invalid  -->
 <xsl:template match="error[@id='bzi-services-invalid']" mode="help">
 <div class="help">
   <p>Berlioz was unable to load the service configuration because of the errors listed below.</p>
@@ -149,6 +158,7 @@ li          {list-style-type: none; clear: both;}
 </div>
 </xsl:template>
 
+<!-- Help: Transform file could not be found -->
 <xsl:template match="error[@id='bzi-transform-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>XSLT style sheet</b>.</p>

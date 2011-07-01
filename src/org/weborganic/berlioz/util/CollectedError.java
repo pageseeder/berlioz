@@ -57,6 +57,8 @@ import com.topologi.diffx.xml.XMLWriter;
    * 
    * @param level The seriousness of the error.
    * @param error The error itself.
+   * 
+   * @throws NullPointerException If either argument is <code>null</code>.
    */
   public CollectedError(Level level, T error) {
     if (level == null) throw new NullPointerException("level was not specified");
@@ -88,7 +90,6 @@ import com.topologi.diffx.xml.XMLWriter;
    * 
    * <p>Does nothing if the locator is <code>null</code>.
    * 
-   * @param locator the source locator.
    * @param xml     the XML writer.
    * 
    * @throws IOException If thrown by the XML writer.
@@ -96,12 +97,8 @@ import com.topologi.diffx.xml.XMLWriter;
   public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("collected");
     xml.attribute("level", this._level.toString());
-    Errors.toXML(this._error, xml);
+    Errors.toXML(this._error, xml, false);
     xml.closeElement();
   }
-  
-  public static void main(String[] args) {
-    System.out.print(Level.ERROR.compareTo(Level.WARNING));
-  }
-  
+
 }
