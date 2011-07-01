@@ -54,7 +54,17 @@ package org.weborganic.berlioz;
   /**
    * An unchecked exception was thrown by a generator.
    */
-  GENERATOR_UNCHECKED;
+  GENERATOR_ERROR_UNCHECKED,
+
+  /**
+   * An exception was thrown deliberately by a generator.
+   */
+  GENERATOR_ERROR_UNFORCED,
+
+  /**
+   * Multiple errors were thrown by a generator.
+   */
+  GENERATOR_ERROR_MULTIPLE;
 
   /**
    * Returns a string representation of this error code.

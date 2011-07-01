@@ -13,8 +13,8 @@
 -->
 <xsl:output method="html" encoding="utf-8" indent="yes" undeclare-prefixes="no" media-type="text/html" />
 
-<!-- Indicates whether the error is unexpected -->
-<xsl:variable name="unexpected" select="/*/@id = 'berlioz-unexpected'"/>
+<!-- The ID of the error -->
+<xsl:variable name="id" select="/*/@id"/>
 
 <!-- Main template called in all cases. -->
 <xsl:template match="/">
@@ -34,7 +34,8 @@ h1   {margin-top: 0; border-bottom: 3px solid;}
 .successful    h1 {border-color: #09f; color: #06a;}
 
 h2   {border-bottom: 2px solid #09f; color: #09f; font-size: 3ex}
-h3   {font-size: 2ex}
+h3   {border-bottom: 1px solid #06a; color: #06a; font-size: 2.5ex}
+h4   {font-size: 2ex}
 
 code {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; line-height: 150%}
 pre  {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 70%; line-height: 150%; color: #666; }
@@ -112,7 +113,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 <!-- Cause of an exception -->
 <xsl:template match="cause">
   <div class="cause">
-    <h3><i>Caused by: </i> <xsl:value-of select="message"/></h3>
+    <h4><i>Caused by: </i> <xsl:value-of select="message"/></h4>
     <xsl:if test="not(parent::exception/following-sibling::collected-errors)">
       <xsl:apply-templates select="location"/>
     </xsl:if>
@@ -124,7 +125,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 <xsl:template match="stack-trace">
   <pre class="stacktrace">
   <!-- No need to display the stack trace if we know the error -->
-  <xsl:if test="not($unexpected)">
+  <xsl:if test="not($id = 'berlioz-unexpected' or starts-with($id, 'berlioz-generator'))">
     <xsl:attribute name="hidden">hidden</xsl:attribute>
     <xsl:attribute name="style">display:none</xsl:attribute>
   </xsl:if>
@@ -154,6 +155,16 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
     </xsl:for-each>
   </ul>
 </xsl:for-each-group>
+<!-- If there are error without a location -->
+<xsl:apply-templates select="collected[not(location)]"/>
+</xsl:template>
+
+<xsl:template match="collected[not(location)]">
+  <div class="exception">
+    <h3><xsl:value-of select="message"/></h3>
+    <xsl:apply-templates select="stack-trace" />
+    <xsl:apply-templates select="cause[not(message = current()/message)]"/>
+  </div>
 </xsl:template>
 
 <!-- Help for Specifid Error IDs ============================================================== -->

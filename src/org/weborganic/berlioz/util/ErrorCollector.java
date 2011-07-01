@@ -14,7 +14,7 @@ import org.weborganic.berlioz.util.CollectedError.Level;
  * @author Christophe Lauret
  * @version 30 June 2011
  */
-public abstract class ErrorCollector<T extends Exception>  {
+public class ErrorCollector<T extends Exception>  {
 
   /**
    * Errors are collected here.
@@ -83,6 +83,20 @@ public abstract class ErrorCollector<T extends Exception>  {
     this._collected.add(new CollectedError<T>(level, exception));
     if (_flag.compareTo(level) <= 0) this._hasError = true;
     if (_exception.compareTo(level) <= 0) throw exception;
+  }
+
+  /**
+   * Collect an error reported by an underlying process such as a parser or a transformer without
+   * throwing any exception.
+   * 
+   * @param level     The level of the exception.
+   * @param exception The exception thrown by the underlying process.
+   * 
+   * @throws NullPointerException If either argument is <code>null</code>.
+   */
+  public final void collectQuietly(Level level, T exception) {
+    this._collected.add(new CollectedError<T>(level, exception));
+    if (_flag.compareTo(level) <= 0) this._hasError = true;
   }
 
   /**

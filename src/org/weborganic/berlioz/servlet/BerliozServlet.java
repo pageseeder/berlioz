@@ -354,6 +354,12 @@ public final class BerliozServlet extends HttpServlet {
     ContentStatus status = xml.getStatus();
     res.setStatus(status.code());
 
+    // If errors occurred and should percolate
+    if (xml.getError() != null && !"true".equals(GlobalSettings.get(BerliozOption.HTTP_ERROR_GENERATOR_CATCH))) {
+      sendError(req, res, status.code(), "The service failed because of errors thrown by generators", xml.getError());
+      return;
+    }
+
     // Redirect if required - Phase this feature out
     // TODO handle
     String url = req.getParameter("redirect-url");

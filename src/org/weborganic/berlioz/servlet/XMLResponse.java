@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.BerliozErrorID;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
@@ -27,6 +28,12 @@ import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Parameter;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.berlioz.content.ServiceStatusRule;
+import org.weborganic.berlioz.content.ServiceStatusRule.CodeRule;
+import org.weborganic.berlioz.util.CompoundBerliozException;
+import org.weborganic.berlioz.util.ErrorCollector;
+import org.weborganic.berlioz.util.Errors;
+import org.weborganic.berlioz.util.CollectedError.Level;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
@@ -52,16 +59,6 @@ public final class XMLResponse {
   private final HttpServletRequest _req;
 
   /**
-   * The HTTP servlet response.
-   */
-  private final HttpServletResponse _res;
-
-  /**
-   * The current environment.
-   */
-  private final Environment _env;
-
-  /**
    * The service that was matched for the given request.
    */
   private final MatchingService _match;
@@ -74,7 +71,12 @@ public final class XMLResponse {
   /**
    * The request to send to the generators.
    */
-  private ContentStatus _status = ContentStatus.OK;
+  private ContentStatus _status = null;
+
+  /**
+   * Any exception caught while invoking the generators.
+   */
+  private BerliozException _ex = null;
 
   /**
    * Creates a new XML response for the specified arguments.
@@ -86,8 +88,6 @@ public final class XMLResponse {
    */
   public XMLResponse(HttpServletRequest req, HttpServletResponse res, Environment env, MatchingService match) {
     this._req = req;
-    this._res = res;
-    this._env = env;
     this._match = match;
     this._requests = configure(req, res, env, match);
   }
@@ -139,7 +139,16 @@ public final class XMLResponse {
    * @since 0.8.2
    */
   public ContentStatus getStatus() {
-    return this._status;
+    return this._status == null? ContentStatus.OK : this._status;
+  }
+
+  /**
+   * Returns a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
+   * 
+   * @return a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
+   */
+  public BerliozException getError() {
+    return this._ex;
   }
 
   /**
@@ -216,23 +225,26 @@ public final class XMLResponse {
       result = writer.toString();
       status = request.getStatus();
     } catch (BerliozException ex) {
-      error = ex;
+      error = handleError(ex, generator);
       status = ContentStatus.INTERNAL_SERVER_ERROR;
     } catch (Exception ex) {
       // We wrapping any exception in a Berlioz Exception
-      error = new BerliozException("Unexpected exception caught", ex);
+      error = handleError(ex, generator);
       status = ContentStatus.INTERNAL_SERVER_ERROR;
     }
 
     // Update Status
-    if (status.code() > this._status.code()) {
-      this._status = status;
-    }
+    handleStatus(status, generator, service);
     xml.attribute("status", status.toString());
 
-     // Write the XML
-    if (error != null) error.toXML(xml);
-    else xml.writeXML(result);
+    // Write the XML
+    if (error != null) {
+      xml.openElement("berlioz-exception");
+      Errors.toXML(error, xml, false);
+      xml.closeElement();
+    } else {
+      xml.writeXML(result);
+    }
 
     xml.closeElement();
   }
@@ -269,6 +281,71 @@ public final class XMLResponse {
       }
     }
     return requests;
+  }
+
+  /**
+   * Handles an exception thrown by a generator.
+   * 
+   * @param exception The exception to handle.
+   * @param generator The generator which caused the exception.
+   * 
+   * @return a Berlioz exception for immediate use.
+   */
+  @SuppressWarnings("unchecked")
+  private BerliozException handleError(Exception exception, ContentGenerator generator) {
+    LOGGER.warn("Handling "+exception.getClass().getName()+" thrown by "+generator.getClass().getName());
+    // Ensure we have a berlioz exception we can deal with
+    BerliozException bex;
+    if (exception instanceof BerliozException) {
+      bex = (BerliozException)exception;
+      if (bex.id() == null) bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
+    } else {
+      bex = new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
+    }
+    // Maintain the state of this Response
+    if (this._ex == null) {
+      this._ex = bex;
+
+    // In less frequent case when multiple errors are thrown...
+    } else {
+      CompoundBerliozException compound;
+      ErrorCollector<Exception> collector;
+      if (this._ex instanceof CompoundBerliozException) {
+        compound = (CompoundBerliozException)this._ex;
+        collector = (ErrorCollector<Exception>)compound.getCollector();
+      } else {
+        collector = new ErrorCollector<Exception>();
+        compound = new CompoundBerliozException("Multiple errors thrown by generators", BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
+        collector.collectQuietly(Level.ERROR, (Exception)this._ex.getCause());
+        this._ex = compound;
+      }
+      collector.collectQuietly(Level.ERROR, exception);
+    }
+
+    return bex;
+  }
+
+  /**
+   * Handles the status of this generator.
+   * 
+   * @param status    The status of the generator after it has been invoked.
+   * @param generator The generator.
+   * @param service   The service that the generator is part of.
+   */
+  private void handleStatus(ContentStatus status, ContentGenerator generator, Service service) {
+    boolean relevant = service.affectStatus(generator);
+    if (relevant) {
+      ServiceStatusRule r = service.rule();
+      CodeRule rule = r.rule();
+      // If null set it (works for all rules) 
+      if (this._status == null) {
+        this._status = status;
+      } else if (rule == CodeRule.HIGHEST && status.code() > this._status.code()) {
+        this._status = status;
+      } else if (rule == CodeRule.LOWEST && status.code() < this._status.code()) {
+        this._status = status;
+      }
+    }
   }
 
 }

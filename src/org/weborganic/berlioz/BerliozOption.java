@@ -46,6 +46,17 @@ public enum BerliozOption {
   HTTP_ERROR_HANDLER("berlioz.errors.handler", "berlioz"),
 
   /**
+   * A boolean global property to indicate whether errors thrown by generators should be caught
+   * or thrown.
+   * 
+   * <p>The property value is <code>true</code> by default.
+   * 
+   * @since Berlioz 0.8.3
+   */
+  @Beta
+  HTTP_ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", "true"),
+
+  /**
    * A boolean global property to indicate whether to enable caching of XSLT.
    * 
    * <p>The property value is <code>true</code> by default.
@@ -63,7 +74,7 @@ public enum BerliozOption {
    * @since Berlioz 0.8.3
    */
   @Beta
-  XML_ERROR_PARSE_STRICT("berlioz.xml.parse.strict", Boolean.FALSE);
+  XML_ERROR_PARSE_STRICT("berlioz.xml.strict-parsing", Boolean.FALSE);
 
   /**
    * The name of the property in the global settings.

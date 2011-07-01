@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.content.ServiceStatusRule.SelectType;
 
 /**
  * A list of of content generators or content instructions.
@@ -186,6 +187,22 @@ public final class Service {
   public String name(ContentGenerator generator) {
     String name = this._names.get(generator);
     return name != null? name : generator.getClass().getSimpleName();
+  }
+
+  /**
+   * Indicates whether the specified generator affects the status of the service.
+   * @param generator The generator.
+   * @return <code>true</code> if the generator affects the status of the service;
+   *         <code>false</code> otherwise.
+   */
+  public boolean affectStatus(ContentGenerator generator) {
+    if (this._rule.appliesToAll()) return true;
+    SelectType use = this._rule.use();
+    switch (use) {
+      case NAME:   return this._rule.appliesTo(this.name(generator));
+      case TARGET: return this._rule.appliesTo(this.target(generator));
+      default:     return false;
+    }
   }
 
   @Override

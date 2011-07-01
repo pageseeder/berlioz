@@ -115,7 +115,16 @@ public class BerliozException extends Exception implements XMLWritable {
   public final ErrorID id() {
     return this._id;
   }
-  
+
+  /**
+   * To set the error ID of this Berlioz exception. 
+   * 
+   * @param id The error ID of the berlioz exception.
+   */
+  public final void setId(ErrorID id) {
+    this._id = id;
+  }
+
   /**
    * Serialises this exception as XML.
    * 

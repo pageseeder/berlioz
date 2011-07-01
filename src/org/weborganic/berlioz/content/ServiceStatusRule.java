@@ -18,7 +18,7 @@ import org.weborganic.berlioz.Beta;
  * <p>All class attributes are immutable and have a value (they are never <code>null</code>).
  * 
  * @author Christophe Lauret
- * @version 29 June 2011
+ * @version 1 July 2011
  */
 @Beta public final class ServiceStatusRule {
 
@@ -36,7 +36,7 @@ import org.weborganic.berlioz.Beta;
    * How is the status code for the determined.
    */
   @Beta
-  protected enum CodeRule {
+  public enum CodeRule {
 
     /** The first selected generator. */
     FIRST,
@@ -52,7 +52,7 @@ import org.weborganic.berlioz.Beta;
    * How the generator should be selected.
    */
   @Beta
-  protected enum SelectType {
+  public enum SelectType {
 
     /** By target. */
     TARGET,
@@ -114,6 +114,27 @@ import org.weborganic.berlioz.Beta;
    */
   public List<String> items() {
     return this._items;
+  }
+
+  /**
+   * Indicates whether this rule applies to the generator name or target.
+   * @param  nameOrTarget The name or target of the generator.
+   * @return <code>true</code> if this rule applies to all the generators;
+   *         <code>false</code> otherwise.
+   */
+  public boolean appliesTo(String nameOrTarget) {
+    if (this._items.isEmpty()) return true;
+    if (nameOrTarget == null) return false;
+    return this._items.contains(nameOrTarget);
+  }
+
+  /**
+   * Indicates whether this rule applies to all the generators. 
+   * @return <code>true</code> if this rule applies to all the generators;
+   *         <code>false</code> otherwise.
+   */
+  public boolean appliesToAll() {
+    return this._items.isEmpty();
   }
 
   /**
