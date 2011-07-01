@@ -16,8 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozErrorID;
+import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.util.CompoundBerliozException;
+import org.weborganic.berlioz.util.CollectedError.Level;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
 import org.weborganic.berlioz.xml.SAXErrorCollector;
 import org.weborganic.berlioz.xml.XMLUtils;
@@ -104,6 +106,9 @@ public final class ContentManager {
     // OK Let's start
     SAXParser parser = XMLUtils.getParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
+    if ("true".equals(GlobalSettings.get(BerliozOption.XML_ERROR_PARSE_STRICT))) {
+      collector.setErrorFlag(Level.WARNING);
+    }
     BerliozErrorID id = null;
     // Load the services
     try {

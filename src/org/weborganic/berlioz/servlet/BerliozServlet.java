@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentStatus;
@@ -155,7 +156,8 @@ public final class BerliozServlet extends HttpServlet {
     this._services = ContentManager.getDefaultRegistry();
     this._errorHandler = servletConfig.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
     if (this._errorHandler == null) {
-      LOGGER.warn("Error is not defined, using default error handler for the Web Application");
+      LOGGER.info("No ErrorHandlerServlet is defined in the Web descriptor");
+      LOGGER.info("Berlioz will use the fail safe error handler instead");
     }
   }
 
@@ -300,11 +302,12 @@ public final class BerliozServlet extends HttpServlet {
         List<String> methods = this._services.allows(path);
         if (methods.size() > 0) {
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
-          sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method not allowed", null);
+          String message = "Only the following are allowed: "+HttpHeaderUtils.allow(methods);
+          sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, message, null);
           return;
         }
       }
-      sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Not found!", null);
+      sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Unable to find "+req.getRequestURI(), null);
       LOGGER.debug("No matching service for: " + req.getRequestURI());
       return;
     }
@@ -437,22 +440,29 @@ public final class BerliozServlet extends HttpServlet {
    */
   private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, Exception ex)
       throws IOException, ServletException {
-    req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, code);
-    req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
-    req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
-    req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, this._config.getName());
-    // TODO: also add Berlioz specific data
-    // If an exception has occurred
-    if (ex != null) {
-      req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION, ex);
-      req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION_TYPE, ex.getClass());
-    }
 
     // Handle internally
-    this._errorHandler.forward(req, res);
+    if ("berlioz".equals(GlobalSettings.get(BerliozOption.HTTP_ERROR_HANDLER))) {
+      req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, code);
+      req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
+      req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
+      req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, this._config.getName());
+      // TODO: also add Berlioz specific data
 
-    // TODO
-    // or  res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, req.getRequestURI());
+      // If an exception has occurred
+      if (ex != null) {
+        req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION, ex);
+        req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION_TYPE, ex.getClass());
+      }
+      // Use the error handler if defined, otherwise use the default error handling options
+      if (_errorHandler != null) {
+        this._errorHandler.forward(req, res);
+      } else {
+        ErrorHandlerServlet.handle(req, res);
+      }
+    } else {
+      res.sendError(code, req.getRequestURI());
+    }
   }
 
   // Private internal class 

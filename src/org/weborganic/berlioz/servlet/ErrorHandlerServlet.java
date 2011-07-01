@@ -53,7 +53,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * </pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 30 June 2011
+ * @version 1 July 2011
  */
 public final class ErrorHandlerServlet extends HttpServlet {
 
@@ -105,17 +105,25 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException Should an I/O error occur.
    */
-  public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException,
-      IOException {
+  public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    // Handle the request
+    handle(req, res);
+  }
 
-    // set the headers of the response
-    res.setCharacterEncoding("utf-8");
+  /**
+   * Handle the errors using the fail safe options and templates.
+   * 
+   * @param req The servlet request.
+   * @param res The servlet response.
+   * 
+   * @throws ServletException Should a servlet exception occur.
+   * @throws IOException Should an I/O error occur.
+   */
+  public static void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
-    // Grab the data
-    Integer codeAttr  = (Integer)req.getAttribute(ERROR_STATUS_CODE);
-
-    // Default to 200 OK
-    int code = codeAttr != null? codeAttr.intValue() : HttpServletResponse.SC_OK;
+    // Grab the status code (Default to 200 OK)
+    Integer code  = (Integer)req.getAttribute(ERROR_STATUS_CODE);
+    if (code == null) code = Integer.valueOf(HttpServletResponse.SC_OK);
 
     // Generate error details as XML
     String xml = toXML(req);
