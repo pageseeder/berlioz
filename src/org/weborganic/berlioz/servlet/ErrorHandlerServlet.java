@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.http.HttpStatusCodes;
 import org.weborganic.berlioz.util.BerliozInternal;
 import org.weborganic.berlioz.util.CollectedError;
 import org.weborganic.berlioz.util.CompoundBerliozException;
@@ -69,7 +70,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   // Attributes set for error handlers.
   // ---------------------------------------------------------------------------------------------
 
-  /** Exception thrown (Exception) */
+  /** Exception thrown (Exception). */
   public static final String ERROR_EXCEPTION      = "javax.servlet.error.exception";
 
   /** Class of exception thrown (Class). */
@@ -161,18 +162,21 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
     String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
 
+    // Ensure we have a status code
+    if (code == null) code = Integer.valueOf(HttpServletResponse.SC_OK);
+
     // Write the XML 
     StringWriter out = new StringWriter();
     try {
       XMLWriterImpl xml = new XMLWriterImpl(out, true);
       xml.xmlDecl();
-      xml.openElement("error");
-      xml.attribute("http-code", code != null? code.intValue() : 200);
+      xml.openElement(getRootElementName(code));
+      xml.attribute("http-code", code);
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
       // If it has a Berlioz ID
       if (exception instanceof BerliozException && ((BerliozException)exception).id() != null) {
-        xml.attribute("id", ((BerliozException)exception).id().toString());
+        xml.attribute("id", ((BerliozException)exception).id().id());
       } else {
         xml.attribute("id", errorId != null? errorId : BerliozInternal.UNEXPECTED.toString());
       }
@@ -183,7 +187,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.closeElement();
 
       // Other informational elements
-      xml.element("title", "Server Error"); // TODO Correct message based on HTTP Code
+      String title = HttpStatusCodes.getTitle(code);
+      xml.element("title", title != null? title : "Berlioz Status");
       xml.element("message", message);
       xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
       xml.element("servlet", servlet != null? servlet : "null");
@@ -200,7 +205,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
           }
           xml.closeElement();
         }
-        
+
       }
 
       // HTTP Headers
@@ -221,8 +226,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
       // HTTP parameters
       xml.openElement("http-parameters");
-      Map<?,?> parameters = req.getParameterMap();
-      for (Entry<?,?> entry : parameters.entrySet()) {
+      Map<?, ?> parameters = req.getParameterMap();
+      for (Entry<?, ?> entry : parameters.entrySet()) {
         String name = entry.getKey().toString();
         // Must be an array according to Servlet Specifications
         String[] values = (String[])entry.getValue();
@@ -246,5 +251,15 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return out.toString();
   }
 
+  /**
+   * Return the root element name based on the status code.
+   * 
+   * @param code the HTTP status code.
+   * @return the root element name based on the HTTP status code or "unknown-status";
+   */
+  private static String getRootElementName(Integer code) {
+    String element = HttpStatusCodes.getClassOfStatus(code);
+    return (element != null)? element.toLowerCase().replace(' ', '-') : "unknown-status";
+  }
 
 }

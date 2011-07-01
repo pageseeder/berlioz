@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
@@ -58,7 +59,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * to change this behaviour.
  * 
  * @author Christophe Lauret
- * @version 12 April 2011
+ * @version 1 July 2011
  */
 public final class XSLTransformer {
 
@@ -152,7 +153,8 @@ public final class XSLTransformer {
   /**
    * Performs a fail safe transformation using the internal templates.
    * 
-   * @param content
+   * @param content The XML to transform.
+   * @param url     The URL to use.
    * 
    * @return the content transformed safely.
    */
@@ -380,8 +382,8 @@ public final class XSLTransformer {
     StringWriter out = new StringWriter();
     try {
       XMLWriter xml = new XMLWriterImpl(out);
-      xml.openElement("error");
-      xml.attribute("http-code", 500);
+      xml.openElement("server-error");
+      xml.attribute("http-code", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
       // Here are the objects we'll deal with...
@@ -397,7 +399,7 @@ public final class XSLTransformer {
 
       // Let's guess the Berlioz internal code
       BerliozInternal id = toErrorID(actual);
-      xml.attribute("id", id.toString());
+      xml.attribute("id", id.id());
 
       // Berlioz info
       xml.openElement("berlioz");
@@ -529,8 +531,9 @@ public final class XSLTransformer {
   /**
    * Guess the Berlioz Error ID from the exception thrown.
    * 
-   * @param ex
-   * @return
+   * @param ex The captured Transformer exception.
+   * 
+   * @return the Berlioz internal error ID corresponding to the specified exception.
    */
   private static BerliozInternal toErrorID(TransformerException ex) {
     // Let's guess the Berlioz internal code

@@ -20,10 +20,16 @@
 ]]></xsl:text>
 <html>
 <head>
-  <title><xsl:value-of select="error/title"/></title>
+  <title><xsl:value-of select="*/title"/></title>
   <style type="text/css">
 body {font-family: Frutiger, "Frutiger Linotype", Univers, Calibri, "Gill Sans", "Gill Sans MT", "Myriad Pro", Myriad, "Liberation Sans",  Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif; background: #ddd;}
-h1   {margin-top: 0; border-bottom: 3px solid #fc0; color: #e60;}
+h1   {margin-top: 0; border-bottom: 3px solid;}
+.informational h1 {border-color: #ccc; color: #999;}
+.server-error  h1 {border-color: #f60; color: #c01;}
+.client-error  h1 {border-color: #fc0; color: #e60;}
+.redirect      h1 {border-color: #9c3; color: #6a0;}
+.successful    h1 {border-color: #09f; color: #06a;}
+
 h2   {border-bottom: 2px solid #09f; color: #09f; font-size: 3ex}
 h3   {font-size: 2ex}
 
@@ -46,6 +52,10 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 .warning > .level  {color: orange;}
 .error   > .level  {color: red;}
 .fatal   > .level  {color: white; background: #C01;}
+
+.help {border: 1px solid #9df; -moz-border-radius: 5px; border-radius: 5px; -moz-box-shadow: 0 0 8px #3cf; box-shadow: 0 0 4px #3cf; font-style: italic;}
+.help p {margin: 4px}
+
   </style>
 </head>
 <body>
@@ -56,8 +66,8 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 
 
 <!-- Default template for errors -->
-<xsl:template match="error">
-  <div class="container {if (not(@id = 'bzi-unexpected')) then 'known' else 'unknown'}">
+<xsl:template match="continue|successful|redirect|client-error|server-error">
+  <div class="container {name()} {if (not(@id = 'bzi-unexpected')) then 'known' else 'unknown'}">
     <h1><xsl:value-of select="@http-code"/> - <xsl:value-of select="title"/></h1>
     <xsl:if test="message != exception/message">
       <p class="message"><xsl:value-of select="message"/></p>
@@ -76,8 +86,8 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 </xsl:template>
 
 <!-- Other errors -->
-<xsl:template match="error[@code=404]">
-  <div class="container">
+<xsl:template match="error[@http-code=404]">
+  <div class="container client-error">
     <h1><xsl:value-of select="message"/></h1>
     <p class="message">Sorry but I could not find anything at <code><xsl:value-of select="@request-uri"/></code></p>
     <xsl:copy-of select="."/>
@@ -132,10 +142,10 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 <!-- Help for Specifid Error IDs ============================================================== -->
 
 <!-- No help: ignore -->
-<xsl:template match="error" mode="help" />
+<xsl:template match="*" mode="help" />
 
 <!-- Help: Services configuration could not be found  -->
-<xsl:template match="error[@id='bzi-services-not-found']" mode="help">
+<xsl:template match="server-error[@id='bzi-services-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>service configuration</b>.</p>
   <p>To fix this problem, creates a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
@@ -143,7 +153,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 </xsl:template>
 
 <!-- Help: Services configuration is not well formed  -->
-<xsl:template match="error[@id='bzi-services-malformed']" mode="help">
+<xsl:template match="server-error[@id='bzi-services-malformed']" mode="help">
 <div class="help">
   <p>Berlioz was unable to parse the <b>service configuration</b>.</p>
   <p>To fix this problem, you need to fix the XML errors in the '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>' file.</p>
@@ -151,7 +161,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 </xsl:template>
 
 <!-- Help: Services configuration is invalid  -->
-<xsl:template match="error[@id='bzi-services-invalid']" mode="help">
+<xsl:template match="server-error[@id='bzi-services-invalid']" mode="help">
 <div class="help">
   <p>Berlioz was unable to load the service configuration because of the errors listed below.</p>
   <p>To fix this problem, you need to modify the '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>' file.</p>
@@ -159,7 +169,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 </xsl:template>
 
 <!-- Help: Transform file could not be found -->
-<xsl:template match="error[@id='bzi-transform-not-found']" mode="help">
+<xsl:template match="server-error[@id='bzi-transform-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>XSLT style sheet</b>.</p>
   <p>To fix this problem, simply create the style file describe below in your <code>/WEB-INF/</code> folder.</p>

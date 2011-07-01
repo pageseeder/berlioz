@@ -284,7 +284,7 @@ public class BerliozServlet extends HttpServlet {
     try {
       ContentManager.loadIfRequired();
     } catch (BerliozException ex) {
-      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Service configuration Error", ex);
+      sendError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
       return;
     }
 
@@ -376,7 +376,7 @@ public class BerliozServlet extends HttpServlet {
         result = xslresult;
         if (xslresult.status() == Status.ERROR) {
           res.reset();
-          res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+          res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
       } else {
         result = new XMLContent(content);
@@ -429,15 +429,19 @@ public class BerliozServlet extends HttpServlet {
   }
 
   /**
+   * Handles the specified error.
    * 
-   * @param req
-   * @param res
-   * @param code
-   * @param message
-   * @param ex
-   * @throws IOException
+   * @param req     The HTTP Servlet request.
+   * @param res     The HTTP Servlet response.
+   * @param code    The HTTP status response code.
+   * @param message The message for the message.
+   * @param ex      Any caught exception (may be <code>null</code>).
+   * 
+   * @throws IOException      The HTTP Servlet Request.
+   * @throws ServletException Should any error occur at this point.
    */
-  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, Exception ex) throws IOException, ServletException {
+  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, Exception ex)
+      throws IOException, ServletException {
     req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, code);
     req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
     req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
