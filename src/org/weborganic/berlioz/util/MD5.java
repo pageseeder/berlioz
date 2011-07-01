@@ -39,6 +39,16 @@ public final class MD5 {
   private static final char[] HEX = "0123456789abcdef".toCharArray();
 
   /**
+   * Mask for the high bits of a byte.
+   */
+  private static final int BYTE_MASK_HIGH = 0xF0; 
+
+  /**
+   * Mask for the low bits of a byte.
+   */
+  private static final int BYTE_MASK_LOW = 0x0F;
+
+  /**
    * Prevents creation of instance.
    */
   private MD5() {
@@ -143,7 +153,7 @@ public final class MD5 {
     if (data == null) return null;
     final StringBuilder hex = new StringBuilder(2 * data.length);
     for (final byte b : data) {
-      hex.append(HEX[(b & 0xF0) >> 4]).append(HEX[(b & 0x0F)]);
+      hex.append(HEX[(b & BYTE_MASK_HIGH) >> 4]).append(HEX[(b & BYTE_MASK_LOW)]);
     }
     return hex.toString();
   }

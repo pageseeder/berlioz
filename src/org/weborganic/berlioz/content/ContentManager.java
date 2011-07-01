@@ -14,7 +14,6 @@ import javax.xml.parsers.SAXParser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.weborganic.berlioz.ErrorID;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.util.BerliozInternal;
@@ -35,7 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * A utility class to provide access to the content of generators.
  *
  * @author Christophe Lauret (Weborganic)
- * @version 23 June 2011
+ * @version 1 July 2011
  */
 public final class ContentManager {
 
