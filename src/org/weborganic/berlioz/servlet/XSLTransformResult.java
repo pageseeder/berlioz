@@ -112,7 +112,7 @@ public final class XSLTransformResult implements BerliozOutput {
   // Immutable fields
 
   /**
-   * {@inheritDoc}
+   * @return the transformed content.
    */
   public CharSequence content() {
     return this._content;

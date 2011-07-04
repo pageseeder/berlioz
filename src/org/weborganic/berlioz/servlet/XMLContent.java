@@ -33,25 +33,21 @@ public final class XMLContent implements BerliozOutput {
   }
 
   /**
-   * {@inheritDoc}
+   * @return The actual XML content. 
    */
   public CharSequence content() {
     return this._content;
   }
 
   /**
-   * Always <code>application/xml</code>.
-   * 
-   * {@inheritDoc}
+   * @return Always <code>application/xml</code>.
    */
   public String getMediaType() {
     return "application/xml";
   }
 
   /**
-   * Always <code>utf-8</code>.
-   * 
-   * {@inheritDoc}
+   * @return Always <code>utf-8</code>.
    */
   public String getEncoding() {
     return "utf-8";

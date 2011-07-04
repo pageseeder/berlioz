@@ -504,7 +504,6 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     /**
-     * {@inheritDoc}
      * @return Always "text/html".
      */
     public String getMimeType() {
@@ -512,7 +511,6 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     /**
-     * {@inheritDoc}
      * @return Always -1 as we use the etag for caching.
      */
     public long getLastModified() {

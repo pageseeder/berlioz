@@ -100,8 +100,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    *
    * @throws NullPointerException If <code>out</code> is null.
    */
-  public synchronized void store(OutputStream out, String header)
-      throws IOException, NullPointerException, ClassCastException {
+  public synchronized void store(OutputStream out, String header) throws IOException, ClassCastException {
     // create the writer
     BufferedWriter awriter = new BufferedWriter(new OutputStreamWriter(out, "utf-8"));
     XMLWriterImpl xml = new XMLWriterImpl(awriter, true);
@@ -204,6 +203,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) {
       if ("node".equals(localName)) {
         this.prefix.append(atts.getValue("name")).append(DOT);
@@ -216,6 +216,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void endElement(String uri, String localName, String qName) {
       if ("node".equals(localName)) {
         this.prefix.setLength(this.prefix.length() - 1);

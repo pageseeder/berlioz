@@ -70,7 +70,10 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   }
 
   /**
-   * {@inheritDoc}
+   * Sets the status of this request.
+   * 
+   * @param status the status of this request.
+   * @throws NullPointerException if the status is <code>null</code>.
    */
   public void setStatus(ContentStatus status) {
     if (status == null) throw new NullPointerException("Cannot set status to null");
