@@ -98,7 +98,7 @@ public final class BerliozConfig {
     }
     String maxAge = GlobalSettings.get(BerliozOption.HTTP_MAX_AGE);
     this._cacheControl = this.getInitParameter("cache-control", "max-age="+maxAge+", must-revalidate");
-    this._controlKey  = this.getInitParameter("berlioz-control", null);
+    this._controlKey  = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));
     this._env = new HttpEnvironment(contextPath, webinfPath);
     this._etagSeed = newEtagSeed();
   }
@@ -187,7 +187,7 @@ public final class BerliozConfig {
    *         the control key; false otherwise.
    */
   public boolean hasControl(ServletRequest req) {
-    if (this._controlKey == null) return true;
+    if (this._controlKey == null || "".equals(this._controlKey)) return true;
     return this._controlKey.equals(req.getParameter("berlioz-control"));
   }
 

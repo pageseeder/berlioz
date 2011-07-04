@@ -27,6 +27,14 @@ public enum BerliozOption {
    * <p>Berlioz will not compress the response content if it is not considered compressible or if
    * the client does not accept response compressed with GZip.
    * 
+   * <p>When HTTP compression is enabled and possible, the headers are modified as:
+   * <pre>
+   *   Vary: Accept-Encoding
+   *   Content-Length: <i>[Length of compressed content]</i>
+   *   Content-Encoding: gzip
+   *   Etag: "<i>[Uncompressed etag]</i>-gzip"
+   * </pre>
+   * 
    * <p>Berlioz considers that the content is compressible if its content type indicates that it
    * is textual.<br>For examples, scripts, CSS stylesheets, XML and HTML are considered 
    * compressible; most images and other media files are not.
@@ -54,11 +62,11 @@ public enum BerliozOption {
   HTTP_COMPRESSION("berlioz.http.compression", Boolean.TRUE),
 
   /**
-   * A boolean global property to indicate whether HTTP POST requests for which there is no specific
+   * A boolean global option to indicate whether HTTP POST requests for which there is no specific
    * service should be processed as a GET request.
    * 
-   * <p>When this property is set to <code>true</code>, Berlioz will try to match a service using 
-   * GET if there is no matching service using POST.<br>This property is useful when a service needs
+   * <p>When this option is set to <code>true</code>, Berlioz will try to match a service using 
+   * GET if there is no matching service using POST.<br>This option is useful when a service needs
    * to accept both GET and POST requests such as searches. 
    *
    * <h3>Property</h3>
@@ -69,7 +77,7 @@ public enum BerliozOption {
    *     <td><code>true</code><super>*</super></td>
    *   </tr>
    * </table>
-   * <p><super>*</super>The default property is set to <code>true</code> for legacy applications,
+   * <p><super>*</super>The default value is set to <code>true</code> for legacy applications,
    * this may change in subsequent versions of Berlioz.</p>
    * 
    * <h3>Recommended values</h3>
@@ -77,7 +85,7 @@ public enum BerliozOption {
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>false</code></td><td><code>false</code></td></tr></tbody>
    * </table>
-   * <p>Since this property goes against REST principles, it is recommended that it is set to 
+   * <p>Since this option goes against REST principles, it is recommended that it is set to 
    * <code>false</code> for most applications. It should not be enabled for a Web API. 
    * 
    * @since Berlioz 0.8.3
@@ -85,13 +93,20 @@ public enum BerliozOption {
   HTTP_GET_VIA_POST("berlioz.http.get-via-post", Boolean.TRUE),
 
   /**
-   * An integer global property to specify the default maximum age in seconds of cacheable content.
+   * An integer global option to specify the default maximum age in seconds of cacheable content.
    * 
-   * <p>This property is used to define a default value for the <code>max-age</code> directive of 
+   * <p>This option is used to define a default value for the <code>max-age</code> directive of 
    * the <code>Cache-Control</code> HTTP header of cacheable responses when it has not been defined 
    * for a service.
+   *
+   * <p>For cacheable responses, Berlioz will return the following Headers:
+   * <pre>
+   *   Expires: <i>[Expiry date 1 year from now]</i>
+   *   Cache-Control: max-age=<i>[max age in seconds]</i>, must-revalidate
+   *   Etag: <i>[Etag for generator]</i>
+   * </pre>
    * 
-   * <p>Note: this property has no effect when the response is not cacheable or when a 
+   * <p>Note: this option has no effect when the response is not cacheable or when a 
    * <code>Cache-Control</code> HTTP header has been defined for the service.
    *
    * <h3>Property</h3>
@@ -119,7 +134,7 @@ public enum BerliozOption {
   HTTP_MAX_AGE("berlioz.http.max-age", Integer.valueOf(60)),
 
   /**
-   * A boolean global property to indicate whether Berlioz should use its own error handler when 
+   * A boolean global option to indicate whether Berlioz should use its own error handler when 
    * an error occurs.
    * 
    * <p>If set to <code>true</code>, Berlioz will use fail safe templates to display the error 
@@ -153,7 +168,7 @@ public enum BerliozOption {
   ERROR_HANDLER("berlioz.errors.handle", Boolean.TRUE),
 
   /**
-   * A boolean global property to indicate whether errors thrown by generators should be caught
+   * A boolean global option to indicate whether errors thrown by generators should be caught
    * or thrown.
    * 
    * <h3>Property</h3>
@@ -181,9 +196,9 @@ public enum BerliozOption {
   ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", Boolean.TRUE),
 
   /**
-   * A boolean global property to indicate whether to enable the caching of XSLT templates.
+   * A boolean global option to indicate whether to enable the caching of XSLT templates.
    * 
-   * <p><i>Note: this property replaces the now deprecated <code>"berlioz.cache.xslt"</code></i></p>
+   * <p><i>Note: this option replaces the now deprecated <code>"berlioz.cache.xslt"</code></i></p>
    * 
    * <h3>Property</h3>
    * <table>
@@ -207,7 +222,7 @@ public enum BerliozOption {
   XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
 
   /**
-   * A boolean global property to indicate whether to enable caching of XSLT.
+   * A boolean global option to indicate whether to enable caching of XSLT.
    * 
    * <h3>Property</h3>
    * <table>
@@ -228,12 +243,12 @@ public enum BerliozOption {
    * 
    * @since Berlioz 0.7.0
    * 
-   * @deprecated The name of this property has been changed for consistency, use {@link #XSLT_CACHE} instead.
+   * @deprecated The name of this option has been changed for consistency, use {@link #XSLT_CACHE} instead.
    */
   @Deprecated CACHE_XSLT("berlioz.cache.xslt", Boolean.TRUE),
 
   /**
-   * A boolean global property to indicate whether to tolerate warnings or throw an error when they
+   * A boolean global option to indicate whether to tolerate warnings or throw an error when they
    * are found in Berlioz XML files.
    * 
    * <h3>Property</h3>
@@ -257,7 +272,36 @@ public enum BerliozOption {
    * @since Berlioz 0.8.3
    */
   @Beta
-  XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE);
+  XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE),
+
+  /**
+   * A string global option to specify a key to use enable the control parameters to reload the
+   * configuration and XSLT or reset the Etag seed.
+   * 
+   * <p>If the control key is empty, then the control parameters can be used directly.
+   * 
+   * <h3>Property</h3>
+   * <table>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.control-key</code></td>
+   *     <td><code>""</code><i>(Empty string)</i></td>
+   *   </tr>
+   * </table>
+   * 
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr><td><code>""</code><i>(Empty string)</i></td><td><code>[a complex string]</code></td></tr></tbody>
+   * </table>
+   * <p>No control key is required for development, however in production the a string such as 
+   * an MD5 hash value should be specified to secure the application 
+   * (for example: 'd131dd02c5e6eec4693d96dacd436c91').</p>
+   * 
+   * @since Berlioz 0.8.3
+   */
+  @Beta
+  XML_CONTROL_KEY("berlioz.control-key", "");
 
   /**
    * The name of the property in the global settings.

@@ -46,22 +46,9 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * 
  * <p>This servlet will pass on HTTP parameters to the underlying generators for the service it matches.
  * 
- * <h3>Compression</h3>
- * 
- * <p>The global property {@value BerliozConfig.HTTP_ENABLE_COMPRESSION} can be used to enable or 
- * disable HTTP compression using the <code>Content-Encoding</code> HTTP Header.
- * 
- * <p>When HTTP compression is enabled and the HTTP client supports it, the headers are modified as:
- * <pre>
- *   Vary: Accept-Encoding
- *   Content-Length: <i>[Length of compressed content]</i>
- *   Content-Encoding: gzip
- *   Etag: "<i>[Uncompressed etag]</i>-gzip"
- * </pre>
- * 
  * <h3>XSLT Caching</h3>
  * 
- * <p>The XSLT templates are cached by default unless the {@value XSLTransformer#ENABLE_CACHE} property was set to 
+ * <p>The XSLT templates are cached by default unless the XSLT Cache global option property was set to 
  * <code>false</code>; in other words XSLT templates are parsed once and reused for each call. The special parameter
  * <code>clear-xsl-cache</code> can be used to clear the XSLT cache.
  *
@@ -77,7 +64,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  *   Etag: <i>[Etag for generator]</i>
  * </pre>
  * 
- * <p>The global property {@value HTTP_MAX_AGE} can be used to define the maximum age used in the
+ * <p>The global option HTTP_MAX_AGE can be used to define the maximum age used in the
  * <code>Cache-Control</code> HTTP Header of cacheable response.
  * 
  * <p>The <code>Etag</code> is computed from the list of Etags of each generator and an Etag generated for the 
