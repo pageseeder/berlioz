@@ -123,7 +123,7 @@ public final class XSLTransformer {
       StreamSource source = new StreamSource(new StringReader(content));
       source.setPublicId("-//Berlioz//Service/XML/"+service.group()+"/"+service.id());
       // TODO: provide better info (identify the service)
-      source.setSystemId(req.getRequestURI().replaceAll("/html/", "/xml/"));
+//      source.setSystemId(req.getRequestURI().replaceAll("/html/", "/xml/"));
 
       // Setup the result
       StreamResult result = new StreamResult(buffer);
@@ -286,7 +286,7 @@ public final class XSLTransformer {
    * @throws TransformerException If the templates could not parsed. 
    */
   private Templates getTemplates(File f) throws TransformerException {
-    boolean store = GlobalSettings.get(BerliozOption.XSLT_ENABLE_CACHE.property(), true);
+    boolean store = GlobalSettings.has(BerliozOption.XSLT_CACHE);
     String stylesheet = toWebPath(f.getAbsolutePath());
     Templates templates = store? CACHE.get(f) : null;
     if (templates == null) {

@@ -168,7 +168,7 @@ public final class BerliozConfig {
    * @return the content type.
    */
   public boolean enableCompression() {
-    return "true".equals(GlobalSettings.get(BerliozOption.HTTP_ENABLE_COMPRESSION));
+    return GlobalSettings.has(BerliozOption.HTTP_COMPRESSION);
   }
 
   /**

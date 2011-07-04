@@ -291,7 +291,7 @@ public final class BerliozServlet extends HttpServlet {
     MatchingService match = this._services.get(path, method);
 
     // No matching service (backward compatibility)
-    if (match == null && method == HttpMethod.POST && GlobalSettings.get("berlioz.http.getviapost", true)) {
+    if (match == null && method == HttpMethod.POST && GlobalSettings.has(BerliozOption.HTTP_GET_VIA_POST)) {
       match = this._services.get(path, HttpMethod.GET);
     }
 
@@ -355,7 +355,7 @@ public final class BerliozServlet extends HttpServlet {
     res.setStatus(status.code());
 
     // If errors occurred and should percolate
-    if (xml.getError() != null && !"true".equals(GlobalSettings.get(BerliozOption.HTTP_ERROR_GENERATOR_CATCH))) {
+    if (xml.getError() != null && !GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) {
       sendError(req, res, status.code(), "The service failed because of errors thrown by generators", xml.getError());
       return;
     }
@@ -448,7 +448,7 @@ public final class BerliozServlet extends HttpServlet {
       throws IOException, ServletException {
 
     // Handle internally
-    if ("berlioz".equals(GlobalSettings.get(BerliozOption.HTTP_ERROR_HANDLER))) {
+    if (GlobalSettings.has(BerliozOption.ERROR_HANDLER)) {
       req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, code);
       req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
       req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());

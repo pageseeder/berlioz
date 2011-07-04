@@ -123,10 +123,10 @@ public final class InitServlet extends HttpServlet implements Servlet {
       boolean loaded = GlobalSettings.load();
       if (loaded) {
         System.out.println("[BERLIOZ_INIT] Config: loaded OK");
-        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_ENABLE_COMPRESSION));
+        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_COMPRESSION));
         System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozOption.HTTP_MAX_AGE));
-        System.out.println("[BERLIOZ_INIT] Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_ENABLE_CACHE));
-        System.out.println("[BERLIOZ_INIT] Config: XML Strict Parse = "+GlobalSettings.get(BerliozOption.XML_ERROR_PARSE_STRICT));
+        System.out.println("[BERLIOZ_INIT] Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_CACHE));
+        System.out.println("[BERLIOZ_INIT] Config: XML Strict Parse = "+GlobalSettings.get(BerliozOption.XML_PARSE_STRICT));
         System.out.println("[BERLIOZ_INIT] Config: OK ----------------------------------------------------");
       } else {
         System.out.println("[BERLIOZ_INIT] (!) Unable to load global settings ");

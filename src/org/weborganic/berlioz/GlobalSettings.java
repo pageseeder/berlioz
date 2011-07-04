@@ -248,6 +248,34 @@ public final class GlobalSettings {
   }
 
   /**
+   * Indicates whether the property value for the specified Berlioz option is enabled.
+   *
+   * <p>Returns the <code>default</code> value if the property is not found or defined.
+   *
+   * <p>If the properties file has not been loaded, this method will invoke the {@link #load()}
+   * method.
+   *
+   * @param option the name of the property
+   *
+   * @return whether the specified option is set to <code>true</code> or not.
+   * 
+   * @throws IllegalStateException    If this class has not been setup properly.
+   * @throws IllegalArgumentException If this class has not been setup properly.
+   * @throws NullPointerException     If the specified option is <code>null</code>. 
+   */
+  public static boolean has(BerliozOption option) {
+    if (settings == null) load();
+    if (option == null) throw new NullPointerException("No Berlioz option specified");
+    String value = settings.getProperty(option.property());
+    Object def = option.defaultTo();
+    if (option.isBoolean()) {
+      return value != null? Boolean.parseBoolean(value) : ((Boolean)def).booleanValue();
+    } else {
+      throw new IllegalArgumentException("Trying to get non-boolean option '"+option.property()+"' as boolean.");
+    }
+  }
+
+  /**
    * Returns the requested property or it default value.
    *
    * <p>The given default value is returned only if the property is not found.

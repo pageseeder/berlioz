@@ -106,7 +106,7 @@ public final class ContentManager {
     // OK Let's start
     SAXParser parser = XMLUtils.getParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
-    if ("true".equals(GlobalSettings.get(BerliozOption.XML_ERROR_PARSE_STRICT))) {
+    if (GlobalSettings.has(BerliozOption.XML_PARSE_STRICT)) {
       collector.setErrorFlag(Level.WARNING);
     }
     BerliozErrorID id = null;
