@@ -79,7 +79,7 @@ import org.xml.sax.helpers.DefaultHandler;
    * 
    * <p>This servlet accepts the following init parameters:
    * <ul>
-   *   <li><code>config</code> path to the URI relocation mapping XML file (eg. '/config/relocation.xml')
+   *   <li><code>config</code> path to the URI relocation mapping XML file (eg. '/config/relocation.xml')</li>
    * </ul>
    * 
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
@@ -119,7 +119,8 @@ import org.xml.sax.helpers.DefaultHandler;
   /**
    * {@inheritDoc}
    */
-  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws ServletException, IOException {
+  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) 
+      throws ServletException, IOException {
     if (req instanceof HttpServletRequest && res instanceof HttpServletResponse) {
       doHTTPFilter((HttpServletRequest)req, (HttpServletResponse)res, chain);
     }
@@ -135,7 +136,8 @@ import org.xml.sax.helpers.DefaultHandler;
    * @throws IOException      Should an error occurs while writing the response.
    * @throws ServletException If thrown by the filter chain.
    */
-  public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
+  public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain) 
+     throws ServletException, IOException {
 
     // Load the config if needed
     if (this._mapping == null) {

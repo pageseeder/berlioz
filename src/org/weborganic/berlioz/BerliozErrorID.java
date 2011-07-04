@@ -89,6 +89,7 @@ package org.weborganic.berlioz;
    *
    * {@inheritDoc}
    */
+  @Override
   public final String toString() {
     return this.id();
   };
