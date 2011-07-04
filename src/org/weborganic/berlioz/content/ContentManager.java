@@ -74,8 +74,10 @@ public final class ContentManager {
    * Update the patterns based on the current generators.
    * 
    * @throws BerliozException Should something unexpected happen.
+   * 
+   * @since Berlioz 0.8.2
    */
-  public static synchronized void loadIfRequired() throws BerliozException{
+  public static synchronized void loadIfRequired() throws BerliozException {
     if (!loaded) {
       load();
       loaded = true;

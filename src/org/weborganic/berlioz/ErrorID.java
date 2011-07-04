@@ -16,6 +16,8 @@ package org.weborganic.berlioz;
  * 
  * @author Christophe Lauret
  * @version 30 June 2011
+ * 
+ * @since Berlioz 0.8.3
  */
 @Beta public interface ErrorID {
 

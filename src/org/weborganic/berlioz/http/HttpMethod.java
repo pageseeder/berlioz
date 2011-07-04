@@ -1,3 +1,10 @@
+/*
+ * This file is part of the Berlioz library.
+ *
+ * For licensing information please see the file license.txt included in the release.
+ * A copy of this licence can also be found at 
+ *   http://www.opensource.org/licenses/artistic-license-2.0.php
+ */
 package org.weborganic.berlioz.http;
 
 import java.util.EnumSet;
@@ -6,6 +13,8 @@ import java.util.EnumSet;
  * An enumeration of HTTP methods supported by Berlioz.
  * 
  * @author Christophe Lauret
+ * @version 1 July 2011
+ * 
  * @since Berlioz 0.8.2
  */
 public enum HttpMethod {

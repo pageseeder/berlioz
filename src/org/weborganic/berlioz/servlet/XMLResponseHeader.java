@@ -46,7 +46,8 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret (Weborganic)
  * @version 19 November 2009
- * @since 0.6.0
+ * 
+ * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
 

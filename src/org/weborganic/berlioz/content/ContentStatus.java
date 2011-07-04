@@ -1,3 +1,10 @@
+/*
+ * This file is part of the Berlioz library.
+ *
+ * For licensing information please see the file license.txt included in the release.
+ * A copy of this licence can also be found at 
+ *   http://www.opensource.org/licenses/artistic-license-2.0.php
+ */
 package org.weborganic.berlioz.content;
 
 import org.weborganic.berlioz.Beta;
@@ -10,6 +17,7 @@ import org.weborganic.berlioz.Beta;
  * 
  * @author Christophe Lauret
  * @version 27 June 2011
+ * 
  * @since Berlioz 0.8.2
  */
 @Beta public enum ContentStatus {
@@ -200,6 +208,23 @@ import org.weborganic.berlioz.Beta;
    */
   public int code() {
     return _code;
+  }
+
+  /**
+   * Returns the the content status corresponding to the specified HTTP status code.
+   * 
+   * @param code The HTTP code.
+   * @return the corresponding enum constant or <code>null</code>.
+   *
+   * @since Berlioz 0.8.3
+   */
+  public static ContentStatus forCode(int code) {
+    for (ContentStatus status : values()) {
+      // First match (all content status have a different HTTP code)
+      if (status.code() == code) return status;
+    }
+    // Could not be found.
+    return null;
   }
 
   /**

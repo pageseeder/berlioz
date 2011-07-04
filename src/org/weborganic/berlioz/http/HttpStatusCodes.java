@@ -3,8 +3,6 @@ package org.weborganic.berlioz.http;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * A utility class for HTTP Status codes.
  * 
@@ -12,6 +10,8 @@ import javax.servlet.http.HttpServletResponse;
  * 
  * @author Christophe Lauret
  * @version 1 July 2011
+ * 
+ * @since Berlioz 0.8.3
  */
 public final class HttpStatusCodes {
 
@@ -21,50 +21,50 @@ public final class HttpStatusCodes {
   private static final Map<Integer, String> HTTP_CODE_TITLE = new HashMap<Integer, String>();
   static {
     // Informational 1xx
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_CONTINUE, "Continue");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_SWITCHING_PROTOCOLS, "Switching Protocols");
+    HTTP_CODE_TITLE.put(100, "Continue");
+    HTTP_CODE_TITLE.put(101, "Switching Protocols");
     // Successful 2xx
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_OK, "OK");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_CREATED, "Created");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_ACCEPTED, "Accepted");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION, "Non-Authoritative Information");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_NO_CONTENT, "No Content");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_RESET_CONTENT, "Reset Content");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_PARTIAL_CONTENT, "Partial Content");
+    HTTP_CODE_TITLE.put(200, "OK");
+    HTTP_CODE_TITLE.put(201, "Created");
+    HTTP_CODE_TITLE.put(202, "Accepted");
+    HTTP_CODE_TITLE.put(203, "Non-Authoritative Information");
+    HTTP_CODE_TITLE.put(204, "No Content");
+    HTTP_CODE_TITLE.put(205, "Reset Content");
+    HTTP_CODE_TITLE.put(206, "Partial Content");
     // Redirection 3xx
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_MULTIPLE_CHOICES, "Multiple Choices");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_MOVED_PERMANENTLY, "Moved Permanently");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_FOUND, "Found");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_SEE_OTHER, "See Other");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_NOT_MODIFIED, "Not Modified");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_USE_PROXY, "Use Proxy");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_TEMPORARY_REDIRECT, "Temporary Redirect");
+    HTTP_CODE_TITLE.put(300, "Multiple Choices");
+    HTTP_CODE_TITLE.put(301, "Moved Permanently");
+    HTTP_CODE_TITLE.put(302, "Found");
+    HTTP_CODE_TITLE.put(303, "See Other");
+    HTTP_CODE_TITLE.put(304, "Not Modified");
+    HTTP_CODE_TITLE.put(305, "Use Proxy");
+    HTTP_CODE_TITLE.put(307, "Temporary Redirect");
     // Client Error 4xx
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_PAYMENT_REQUIRED, "Payment Required");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_NOT_FOUND, "Not Found");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_NOT_ACCEPTABLE, "Not Acceptable");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED, "Proxy Authentication Required");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_REQUEST_TIMEOUT, "Request Timeout");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_CONFLICT, "Conflict");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_GONE, "Gone");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_LENGTH_REQUIRED, "Length Required");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_PRECONDITION_FAILED, "Precondition Failed");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_REQUEST_URI_TOO_LONG, "Request-URI Too Long");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_EXPECTATION_FAILED, "Expectation Failed");
+    HTTP_CODE_TITLE.put(400, "Bad Request");
+    HTTP_CODE_TITLE.put(401, "Unauthorized");
+    HTTP_CODE_TITLE.put(402, "Payment Required");
+    HTTP_CODE_TITLE.put(403, "Forbidden");
+    HTTP_CODE_TITLE.put(404, "Not Found");
+    HTTP_CODE_TITLE.put(405, "Method Not Allowed");
+    HTTP_CODE_TITLE.put(406, "Not Acceptable");
+    HTTP_CODE_TITLE.put(407, "Proxy Authentication Required");
+    HTTP_CODE_TITLE.put(408, "Request Timeout");
+    HTTP_CODE_TITLE.put(409, "Conflict");
+    HTTP_CODE_TITLE.put(410, "Gone");
+    HTTP_CODE_TITLE.put(411, "Length Required");
+    HTTP_CODE_TITLE.put(412, "Precondition Failed");
+    HTTP_CODE_TITLE.put(413, "Request Entity Too Large");
+    HTTP_CODE_TITLE.put(414, "Request-URI Too Long");
+    HTTP_CODE_TITLE.put(415, "Unsupported Media Type");
+    HTTP_CODE_TITLE.put(416, "Requested Range Not Satisfiable");
+    HTTP_CODE_TITLE.put(417, "Expectation Failed");
     // Server Error 5xx
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal Server Error");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_NOT_IMPLEMENTED, "Not Implemented");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_BAD_GATEWAY, "Bad Gateway");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service Unavailable");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_GATEWAY_TIMEOUT, "Gateway Timeout");
-    HTTP_CODE_TITLE.put(HttpServletResponse.SC_HTTP_VERSION_NOT_SUPPORTED, "HTTP Version Not Supported");
+    HTTP_CODE_TITLE.put(500, "Internal Server Error");
+    HTTP_CODE_TITLE.put(501, "Not Implemented");
+    HTTP_CODE_TITLE.put(502, "Bad Gateway");
+    HTTP_CODE_TITLE.put(503, "Service Unavailable");
+    HTTP_CODE_TITLE.put(504, "Gateway Timeout");
+    HTTP_CODE_TITLE.put(505, "HTTP Version Not Supported");
   }
 
   /**
