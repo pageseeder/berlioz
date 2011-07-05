@@ -60,7 +60,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * to change this behaviour.
  * 
  * @author Christophe Lauret
- * @version 1 July 2011
+ * @version 5 July 2011
  */
 public final class XSLTransformer {
 
@@ -285,8 +285,13 @@ public final class XSLTransformer {
    * 
    * @throws TransformerException If the templates could not parsed. 
    */
+  @SuppressWarnings("deprecation")
   private Templates getTemplates(File f) throws TransformerException {
     boolean store = GlobalSettings.has(BerliozOption.XSLT_CACHE);
+    // XXX: Remove for 0.9 - deprecated option
+    if (store && "false".equals(GlobalSettings.get(BerliozOption.CACHE_XSLT))) {
+      store = false;
+    }
     String stylesheet = toWebPath(f.getAbsolutePath());
     Templates templates = store? CACHE.get(f) : null;
     if (templates == null) {
