@@ -126,8 +126,8 @@ import com.topologi.diffx.xml.XMLWriterImpl;
     // if this a directory
     if (file.isDirectory()) {
       File[] files = file.listFiles();
-      for (int i = 0; i < files.length; i++) {
-        XMLExtractorHelper.unload(files[i]);
+      for (File f : files) {
+        XMLExtractorHelper.unload(f);
       }
     // this is a file
     } else {

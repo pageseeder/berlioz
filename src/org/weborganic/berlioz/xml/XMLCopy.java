@@ -9,6 +9,7 @@ package org.weborganic.berlioz.xml;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,9 +45,9 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
   private final XMLWriter to;
 
   /**
-   * The prefix mapping to add to the next startElement event in case the prefix mapping is reported before.
+   * The prefix mapping to add to the next <i>startElement</i> event.
    */
-  private Map<String, String> mapping = new HashMap<String, String>();
+  private final Map<String, String> mapping = new HashMap<String, String>();
 
   /**
    * Creates a new XMLExtractor wrapping the specified XML writer.
@@ -66,8 +67,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
       for (int i = 0; i < atts.getLength(); i++) {
         this.to.attribute(atts.getQName(i), atts.getValue(i));
       }
-      // in case the prefix mapping was reported BEFORE the startElement was reported...
-      if (!mapping.isEmpty()) {
+      // Put the prefix mapping was reported BEFORE the startElement was reported...
+      if (!this.mapping.isEmpty()) {
         for (Entry<String, String> e : this.mapping.entrySet()) {
           boolean hasPrefix = e.getKey() != null && e.getKey().length() > 0;
           this.to.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());
@@ -106,27 +107,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
    */
   @Override public void startPrefixMapping(String prefix, String uri) throws SAXException {
     boolean hasPrefix = prefix != null && prefix.length() > 0;
-    try {
-      this.to.attribute("xmlns"+(hasPrefix? ":"+ prefix : prefix), uri);
-//    this.recipient.setPrefixMapping(prefix, uri);
-    } catch (IllegalArgumentException ex) {
-      this.mapping.put((hasPrefix? prefix : ""), uri);
-    } catch (IOException ex) {
-      throw new SAXException(ex);
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override public void endPrefixMapping(String prefix) throws SAXException {
-    // TODO ???
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override public void ignorableWhitespace(char[] ch, int start, int length) {
+    this.mapping.put((hasPrefix? prefix : ""), uri);
   }
 
   /**
@@ -185,6 +166,43 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
       LOGGER.warn("Could not find {}", file.toURI());
       xml.openElement("no-data");
       xml.attribute("error", "file-not-found");
+      xml.closeElement();
+    }
+  }
+
+  /**
+   * Copy the specified File to the given XML Writer.
+   * 
+   * <p>Any error is reported as XML on the XML writer. This method does not perform any caching 
+   * or validation.
+   * 
+   * @param reader The reader over the XML to read.
+   * @param xml    The XML writer.
+   * 
+   * @throws IOException should an error occur when writing the XML.
+   */
+  public static void copyTo(Reader reader, XMLWriter xml) throws IOException {
+    // load
+    try {
+      // writers to use
+      StringWriter writer = new StringWriter();
+      XMLWriter internal = new XMLWriterImpl(writer);
+
+      // copy the data
+      XMLUtils.parse(new XMLCopy(internal), reader, false);
+      internal.flush();
+      String parsed = writer.toString();
+
+      // write to XML writer
+      xml.writeXML(parsed);
+
+    // an error was reported by the parser
+    } catch (BerliozException ex) {
+      LOGGER.warn("An error was reported by the parser while parsing reader");
+      LOGGER.warn("Error details:", ex);
+      xml.openElement("no-data");
+      xml.attribute("error", "parsing");
+      xml.attribute("details", ex.getMessage());
       xml.closeElement();
     }
   }

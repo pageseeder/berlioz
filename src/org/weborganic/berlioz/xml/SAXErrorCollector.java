@@ -9,8 +9,8 @@ package org.weborganic.berlioz.xml;
 
 import org.slf4j.Logger;
 import org.weborganic.berlioz.Beta;
-import org.weborganic.berlioz.util.CollectedError.Level;
 import org.weborganic.berlioz.util.ErrorCollector;
+import org.weborganic.berlioz.util.CollectedError.Level;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
@@ -56,7 +56,7 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    * 
    * @throws SAXParseException If thrown by the underlying {@link ErrorCollector}.
    */
-  public void error(SAXParseException exception) throws SAXParseException{
+  public void error(SAXParseException exception) throws SAXParseException {
     this._logger.error("{} (line: {})", exception.getMessage(), exception.getLineNumber());
     collect(Level.ERROR, exception);
   }
@@ -68,7 +68,7 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    * 
    * @throws SAXParseException If thrown by the underlying {@link ErrorCollector}.
    */
-  public void warning(SAXParseException exception) throws SAXParseException{
+  public void warning(SAXParseException exception) throws SAXParseException {
     this._logger.warn("{} (line: {})", exception.getMessage(), exception.getLineNumber());
     collect(Level.WARNING, exception);
   }

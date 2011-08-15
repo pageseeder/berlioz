@@ -36,7 +36,7 @@ import com.topologi.diffx.xml.XMLWriter;
   /**
    * The prefix mapping to add to the next startElement event in case the prefix mapping is reported before.
    */
-  private Map<String, String> mapping = new HashMap<String, String>();
+  private final Map<String, String> mapping = new HashMap<String, String>();
 
   /**
    * Creates a new XMLExtractor wrapping the specified XML writer.
@@ -58,7 +58,7 @@ import com.topologi.diffx.xml.XMLWriter;
         this.recipient.attribute(atts.getQName(i), atts.getValue(i));
       }
       // in case the prefix mapping was reported BEFORE the startElement was reported...
-      if (!mapping.isEmpty()) {
+      if (!this.mapping.isEmpty()) {
         for (Entry<String, String> e : this.mapping.entrySet()) {
           boolean hasPrefix = e.getKey() != null && e.getKey().length() > 0;
           this.recipient.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());

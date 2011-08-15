@@ -10,6 +10,7 @@ package org.weborganic.berlioz.xml;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Reader;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -69,6 +70,33 @@ public final class XMLUtils {
    * Parses the specified file using the given handler.
    * 
    * @param handler  The content handler to use.
+   * @param reader   The reader over the XML to parse.
+   * @param validate whether to validate or not.
+   * 
+   * @throws BerliozException Should something unexpected happen.
+   */
+  public static void parse(ContentHandler handler, Reader reader, boolean validate) throws BerliozException {
+    SAXParser parser = getParser(validate);
+    try {
+      // get the reader
+      XMLReader xmlreader = parser.getXMLReader();
+      // configure the reader
+      xmlreader.setContentHandler(handler);
+      xmlreader.setEntityResolver(BerliozEntityResolver.getInstance());
+      xmlreader.setErrorHandler(BerliozErrorHandler.getInstance());
+      xmlreader.parse(new InputSource(reader));
+    } catch (SAXException ex) {
+      throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
+    } catch (IOException ex) {
+      ex.printStackTrace();
+      throw new BerliozException("Could not read file.", ex);
+    }
+  }
+
+  /**
+   * Parses the specified file using the given handler.
+   * 
+   * @param handler  The content handler to use.
    * @param xml      The XML file to parse.
    * @param validate whether to validate or not.
    * 
@@ -86,8 +114,8 @@ public final class XMLUtils {
       // parse
       if (xml.isDirectory()) {
         File[] xmls = xml.listFiles(new XMLFilenameFilter());
-        for (int i = 0; i < xmls.length; i++) {
-          reader.parse(new InputSource(xmls[i].toURI().toString()));
+        for (File f : xmls) {
+          reader.parse(new InputSource(f.toURI().toString()));
         }
         // TODO: and if there is no XML files in the directory?
       } else {

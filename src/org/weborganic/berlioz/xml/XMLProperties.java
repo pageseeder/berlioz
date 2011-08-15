@@ -15,7 +15,6 @@ import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
@@ -64,6 +63,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    *
    * @throws IOException If an error occurred when reading from the input stream.
    */
+  @Override
   public synchronized void load(InputStream inStream) throws IOException {
     try {
       // use the SAX parser factory to ensure validation
@@ -100,6 +100,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    *
    * @throws NullPointerException If <code>out</code> is null.
    */
+  @Override
   public synchronized void store(OutputStream out, String header) throws IOException, ClassCastException {
     // create the writer
     BufferedWriter awriter = new BufferedWriter(new OutputStreamWriter(out, "utf-8"));
@@ -158,8 +159,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
     }
     xml.closeElement();
     // process each node
-    for (Iterator<String> i = nodes.iterator(); i.hasNext();) {
-      String name = i.next();
+    for (String name : nodes) {
       xml.openElement("node", true);
       xml.attribute("name", name);
       String nodePrefix = ((prefix.length() > 0)? prefix : "") + name+DOT;
@@ -186,7 +186,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
     /**
      * The prefix used for the entries.
      */
-    private StringBuffer prefix = new StringBuffer();
+    private final StringBuffer prefix = new StringBuffer();
 
     /**
      * Creates a new handler.
