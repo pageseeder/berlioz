@@ -81,7 +81,8 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * parameters is used. Use the initialisation parameters to define a control key.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 20 July 2010
+ * @version Berlioz 0.8.6 - 1 September 2011
+ * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
 
@@ -383,7 +384,7 @@ public final class BerliozServlet extends HttpServlet {
       }
 
       // Apply Compression if necessary
-      boolean isCompressed = HttpHeaderUtils.isCompressible(result.getMediaType()) && config.enableCompression();
+      boolean isCompressed = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType());
       if (isCompressed) {
 
         // Indicate that the representation may vary depending on the encoding

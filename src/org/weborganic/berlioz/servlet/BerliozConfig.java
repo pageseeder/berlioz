@@ -27,7 +27,8 @@ import org.weborganic.berlioz.content.Environment;
  * Defines the configuration uses by a a Berlioz Servlet.
  * 
  * @author Christophe Lauret
- * @version 24 June 2011
+ * @version Berlioz 0.8.6 - 1 September 2011
+ * @since Berlioz 0.8.1
  */
 public final class BerliozConfig {
 
@@ -72,6 +73,11 @@ public final class BerliozConfig {
   private String _stylePath;
 
   /**
+   * Indicates whether the Berlioz instance should use HTTP compression (when possible)
+   */
+  private boolean _compression;
+
+  /**
    * The environment. 
    */
   private final Environment _env;
@@ -98,7 +104,8 @@ public final class BerliozConfig {
     }
     String maxAge = GlobalSettings.get(BerliozOption.HTTP_MAX_AGE);
     this._cacheControl = this.getInitParameter("cache-control", "max-age="+maxAge+", must-revalidate");
-    this._controlKey  = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));
+    this._controlKey = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));
+    this._compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
     this._env = new HttpEnvironment(contextPath, webinfPath);
     this._etagSeed = newEtagSeed();
   }
@@ -163,12 +170,13 @@ public final class BerliozConfig {
   }
 
   /**
-   * Returns the content type.
+   * Indicates whether HTTP compression is enabled for the Berlioz config.
    * 
-   * @return the content type.
+   * @return <code>true</code> to enable HTTP compression;
+   *         <code>false</code> otherwise.
    */
   public boolean enableCompression() {
-    return GlobalSettings.has(BerliozOption.HTTP_COMPRESSION);
+    return this._compression;
   }
 
   /**
@@ -243,6 +251,21 @@ public final class BerliozConfig {
   private String getInitParameter(String name, String def) {
     String value = this._servletConfig.getInitParameter(name);
     return (value != null)? value : def;
+  }
+
+  /**
+   * Returns the value for the specified init parameter name.
+   * 
+   * <p>If <code>null</code> returns the default value.
+   * 
+   * @param name The name of the init parameter.
+   * @param def  The default value if the parameter value is <code>null</code>
+   * 
+   * @return The values for the specified init parameter name.
+   */
+  private boolean getInitParameter(String name, boolean def) {
+    String value = this._servletConfig.getInitParameter(name);
+    return (value != null)? "true".equals(value) : def;
   }
 
   /**
