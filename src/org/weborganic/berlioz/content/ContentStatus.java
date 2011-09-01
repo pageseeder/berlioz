@@ -207,7 +207,7 @@ import org.weborganic.berlioz.Beta;
    * @return The HTTP response code for this enum value.
    */
   public int code() {
-    return _code;
+    return this._code;
   }
 
   /**
@@ -235,6 +235,7 @@ import org.weborganic.berlioz.Beta;
    * 
    * @return the status as a string.
    */
+  @Override
   public String toString() {
     return this._string;
   }

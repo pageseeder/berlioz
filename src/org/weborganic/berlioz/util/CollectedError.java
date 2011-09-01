@@ -82,7 +82,7 @@ import com.topologi.diffx.xml.XMLWriter;
    * @return The captured error.
    */
   public T error() {
-    return _error;
+    return this._error;
   }
 
   /**

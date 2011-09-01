@@ -80,7 +80,7 @@ public class FileEntityInfo implements EntityInfo {
    */
   public final String getETag() {
     if ((this.length >= 0) || (this.modified >= 0)) {
-      return "W/\"" + length + "-" + modified + "\"";
+      return "W/\"" + this.length + "-" + this.modified + "\"";
     }
     return null;
   }

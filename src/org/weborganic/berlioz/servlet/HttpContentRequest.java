@@ -95,7 +95,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @return the generator for which this request is used for.
    */
   public ContentGenerator generator() {
-    return _generator;
+    return this._generator;
   }
 
 }

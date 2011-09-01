@@ -96,7 +96,8 @@ public final class BerliozServlet extends HttpServlet {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(BerliozServlet.class);
 
-// class attributes -------------------------------------------------------------------------------
+  // Class attributes
+  // ----------------------------------------------------------------------------------------------
 
   /**
    * The transformer factory to generate the templates

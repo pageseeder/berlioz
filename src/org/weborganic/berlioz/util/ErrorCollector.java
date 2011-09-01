@@ -81,8 +81,8 @@ public class ErrorCollector<T extends Exception>  {
    */
   public final void collect(Level level, T exception) throws T {
     this._collected.add(new CollectedError<T>(level, exception));
-    if (_flag.compareTo(level) <= 0) this._hasError = true;
-    if (_exception.compareTo(level) <= 0) throw exception;
+    if (this._flag.compareTo(level) <= 0) this._hasError = true;
+    if (this._exception.compareTo(level) <= 0) throw exception;
   }
 
   /**
@@ -96,7 +96,7 @@ public class ErrorCollector<T extends Exception>  {
    */
   public final void collectQuietly(Level level, T exception) {
     this._collected.add(new CollectedError<T>(level, exception));
-    if (_flag.compareTo(level) <= 0) this._hasError = true;
+    if (this._flag.compareTo(level) <= 0) this._hasError = true;
   }
 
   /**

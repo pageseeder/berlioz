@@ -189,7 +189,7 @@ public final class ServiceRegistry {
      * @return Always <code>true</code> ???
      */
     public boolean put(URIPattern pattern, Service service) {
-      mapping.put(pattern.toString(), service);
+      this.mapping.put(pattern.toString(), service);
       this.patterns.add(pattern);
       return true;
     }
@@ -203,7 +203,7 @@ public final class ServiceRegistry {
     public MatchingService match(String url) {
       // Attempt to the find service directly
       MatchingService match = null;
-      Service service = mapping.get(url);
+      Service service = this.mapping.get(url);
       if (service != null) {
         URIPattern p = new URIPattern(url);
         match = new MatchingService(service, p, new URIResolver(url).resolve(p));
@@ -212,9 +212,9 @@ public final class ServiceRegistry {
       } else {
         // Find the URI pattern matching the given path info
         URIResolver resolver = new URIResolver(url);
-        URIPattern p = resolver.find(patterns, MatchRule.BEST_MATCH);
+        URIPattern p = resolver.find(this.patterns, MatchRule.BEST_MATCH);
         if (p != null) {
-          service = mapping.get(p.toString());
+          service = this.mapping.get(p.toString());
           match = new MatchingService(service, p, resolver.resolve(p));
         }
       }

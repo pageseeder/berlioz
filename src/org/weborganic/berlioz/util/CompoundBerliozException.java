@@ -75,6 +75,6 @@ public final class CompoundBerliozException extends BerliozException {
    * @return The error collector included in this exception.
    */
   public ErrorCollector<? extends Exception> getCollector() {
-    return _collector;
+    return this._collector;
   }
 }

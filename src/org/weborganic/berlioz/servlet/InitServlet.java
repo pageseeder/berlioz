@@ -59,6 +59,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
    * 
    * @throws ServletException Should an exception occur.
    */
+  @Override
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
     if (config != null) {

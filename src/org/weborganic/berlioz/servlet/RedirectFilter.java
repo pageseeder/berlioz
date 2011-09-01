@@ -182,7 +182,7 @@ import org.weborganic.furi.URIResolver;
    */
   private void redirect(HttpServletRequest req, HttpServletResponse res, URIPattern match) throws IOException {
     URIPattern target = this._mapping.get(match);
-    HttpServletRequest hreq = (HttpServletRequest)req;
+    HttpServletRequest hreq = req;
 
     // Resolve URI variables
     String from = hreq.getRequestURI();

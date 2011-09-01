@@ -122,7 +122,7 @@ public final class XSLTransformResult implements BerliozOutput {
    * @return The processing time in ms.
    */
   public long time() {
-    return _time;
+    return this._time;
   }
 
   /**

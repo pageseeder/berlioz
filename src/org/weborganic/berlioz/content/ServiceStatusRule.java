@@ -146,7 +146,7 @@ import org.weborganic.berlioz.Beta;
 
   @Override
   public String toString() {
-    return this._use+":"+(this._items.isEmpty()? "*" : this._items)+" "+_rule;
+    return this._use+":"+(this._items.isEmpty()? "*" : this._items)+" "+this._rule;
   }
 
   /**

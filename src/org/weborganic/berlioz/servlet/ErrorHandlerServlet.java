@@ -105,6 +105,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException Should an I/O error occur.
    */
+  @Override
   public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
     // Handle the request
     handle(req, res);
@@ -122,6 +123,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException Should an I/O error occur.
    */
+  @Override
   public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
     // Handle the request
     handle(req, res);
