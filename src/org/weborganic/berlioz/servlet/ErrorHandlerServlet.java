@@ -111,6 +111,23 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
+   * Handles a POST request.
+   * 
+   * <p>
+   * No parameter required.
+   * 
+   * @param req The servlet request.
+   * @param res The servlet response.
+   * 
+   * @throws ServletException Should a servlet exception occur.
+   * @throws IOException Should an I/O error occur.
+   */
+  public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    // Handle the request
+    handle(req, res);
+  }
+
+  /**
    * Handle the errors using the fail safe options and templates.
    * 
    * @param req The servlet request.
