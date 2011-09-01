@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.MatchingService;
@@ -137,6 +138,7 @@ public final class BerliozServlet extends HttpServlet {
    * 
    * @throws ServletException Should an exception occur.
    */
+  @Override
   public void init(ServletConfig servletConfig) throws ServletException {
     super.init(servletConfig);
     BerliozConfig config = BerliozConfig.newConfig(servletConfig);
@@ -172,7 +174,8 @@ public final class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public void doHead(HttpServletRequest req, HttpServletResponse res)
+  @Override
+  public void doHead(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, false);
   }
@@ -182,7 +185,8 @@ public final class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public void doGet(HttpServletRequest req, HttpServletResponse res)
+  @Override
+  public void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -192,7 +196,8 @@ public final class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public void doPost(HttpServletRequest req, HttpServletResponse res)
+  @Override
+  public void doPost(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -202,7 +207,8 @@ public final class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public void doPut(HttpServletRequest req, HttpServletResponse res)
+  @Override
+  public void doPut(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -212,7 +218,8 @@ public final class BerliozServlet extends HttpServlet {
    * 
    * {@inheritDoc}
    */
-  @Override public void doDelete(HttpServletRequest req, HttpServletResponse res)
+  @Override
+  public void doDelete(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
@@ -241,8 +248,9 @@ public final class BerliozServlet extends HttpServlet {
     res.setContentType(config.getContentType());
 
     // Notify the client not to attempt a range request if it does attempt to do so
-    if (req.getHeader(HttpHeaders.RANGE) != null)
+    if (req.getHeader(HttpHeaders.RANGE) != null) {
       res.setHeader(HttpHeaders.ACCEPT_RANGES, "none");
+    }
 
     // Determine the method in use.
     HttpMethod method = HttpMethod.valueOf(req.getMethod());
@@ -317,14 +325,14 @@ public final class BerliozServlet extends HttpServlet {
 
       // Check if the conditions specified in the optional If headers are satisfied.
       ServiceInfo info = new ServiceInfo(etag);
-      if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) {
-        return;
-      }
+      if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
 
       // Update the headers 
       res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
       String cc = xml.getService().cache();
-      if (cc == null) cc = config.getCacheControl();
+      if (cc == null) {
+        cc = config.getCacheControl();
+      }
       res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
       res.setHeader(HttpHeaders.ETAG, etag);
 
@@ -352,8 +360,9 @@ public final class BerliozServlet extends HttpServlet {
     // Redirect if required - Phase this feature out
     // TODO handle
     String url = req.getParameter("redirect-url");
-    if (url == null)
+    if (url == null) {
       url = (String)req.getAttribute("redirect-url");
+    }
     if (url != null && !"".equals(url)) {
       LOGGER.warn("Redirecting URL using deprecated 'redirect-url' - will be removed in future releases.");
       res.sendRedirect(url);
@@ -395,15 +404,22 @@ public final class BerliozServlet extends HttpServlet {
           if (compressed.length > 0) {
             res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
             res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
-            if (etag != null)
+            if (etag != null) {
               res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
+            }
             if (includeContent) {
               ServletOutputStream out = res.getOutputStream();
               out.write(compressed);
               out.flush();
             }
-          } else isCompressed = false; // Compression failed
-        } else isCompressed = false; // Client does not accept Compression
+          }
+          else {
+            isCompressed = false; // Compression failed
+          }
+        }
+        else {
+          isCompressed = false; // Client does not accept Compression
+        }
       }
 
       // Copy the uncompressed version if needed
@@ -450,7 +466,7 @@ public final class BerliozServlet extends HttpServlet {
         req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION_TYPE, ex.getClass());
       }
       // Use the error handler if defined, otherwise use the default error handling options
-      if (_errorHandler != null) {
+      if (this._errorHandler != null) {
         this._errorHandler.forward(req, res);
       } else {
         ErrorHandlerServlet.handle(req, res);
