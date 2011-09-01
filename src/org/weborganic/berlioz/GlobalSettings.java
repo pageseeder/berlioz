@@ -84,7 +84,9 @@ public final class GlobalSettings {
   static {
     if (System.getProperty("berlioz.repository") != null) {
       File r = new File(System.getProperty("berlioz.repository"));
-      if (r.isDirectory()) repository = r;
+      if (r.isDirectory()) {
+        repository = r;
+      }
     }
   }
 
@@ -99,8 +101,12 @@ public final class GlobalSettings {
   private static String mode;
   static {
     mode = System.getProperty("berlioz.mode");
-    if (mode == null) mode = System.getProperty("berlioz.config");
-    if (mode == null) mode = DEFAULT_MODE;
+    if (mode == null) {
+      mode = System.getProperty("berlioz.config");
+    }
+    if (mode == null) {
+      mode = DEFAULT_MODE;
+    }
   }
 
   /**
@@ -183,8 +189,9 @@ public final class GlobalSettings {
    */
   public static File getLibrary() {
     // set if not set
-    if (library == null && repository != null)
+    if (library == null && repository != null) {
       library = new File(repository, LIBRARY_DIRECTORY);
+    }
     // return if already defined.
     return library;
   }
@@ -224,7 +231,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static String get(String name) throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     return settings.getProperty(name);
   }
 
@@ -243,7 +252,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static String get(BerliozOption option) throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     return settings.getProperty(option.property(), option.defaultTo().toString());
   }
 
@@ -264,15 +275,15 @@ public final class GlobalSettings {
    * @throws NullPointerException     If the specified option is <code>null</code>. 
    */
   public static boolean has(BerliozOption option) {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     if (option == null) throw new NullPointerException("No Berlioz option specified");
     String value = settings.getProperty(option.property());
     Object def = option.defaultTo();
-    if (option.isBoolean()) {
-      return value != null? Boolean.parseBoolean(value) : ((Boolean)def).booleanValue();
-    } else {
+    if (option.isBoolean()) return value != null? Boolean.parseBoolean(value) : ((Boolean)def).booleanValue();
+    else
       throw new IllegalArgumentException("Trying to get non-boolean option '"+option.property()+"' as boolean.");
-    }
   }
 
   /**
@@ -291,7 +302,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static String get(String name, String def) throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     return settings.getProperty(name, def);
   }
 
@@ -305,7 +318,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static int get(String name, int def) throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     try {
       String v = settings.getProperty(name, Integer.toString(def));
       return Integer.parseInt(v);
@@ -329,7 +344,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static boolean get(String name, boolean def) throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     return "true".equals(settings.getProperty(name, Boolean.toString(def)));
   }
 
@@ -400,7 +417,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static File getFileProperty(String name) throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     String filepath = settings.getProperty(name);
     if (filepath != null) {
       File file = new File(repository, filepath);
@@ -424,7 +443,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static Properties getNode(String name) throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     // return the node if already processed.
     if (nodes.containsKey(name))
       return nodes.get(name);
@@ -433,8 +454,9 @@ public final class GlobalSettings {
     String prefix = name+".";
     for (Enumeration<?> e = settings.keys(); e.hasMoreElements();) {
       String key = (String)e.nextElement();
-      if (key.startsWith(prefix) && key.substring(prefix.length()).indexOf('.') < 0)
+      if (key.startsWith(prefix) && key.substring(prefix.length()).indexOf('.') < 0) {
         node.setProperty(key.substring(prefix.length()), settings.getProperty(key));
+      }
     }
     nodes.put(name, node);
     return node;
@@ -449,7 +471,9 @@ public final class GlobalSettings {
    */
   @SuppressWarnings("unchecked")
   public static Enumeration<String> propertyNames() throws IllegalStateException {
-    if (settings == null) load();
+    if (settings == null) {
+      load();
+    }
     return (Enumeration<String>)settings.propertyNames();
   }
 
@@ -471,11 +495,11 @@ public final class GlobalSettings {
     // ignore the case when this is null
     if (dir == null) return;
     // check directory
-    if (!dir.exists()) {
+    if (!dir.exists())
       throw new IllegalArgumentException("The specified repository "+dir+" does not exist.");
-    } else if (!dir.isDirectory()) {
+    else if (!dir.isDirectory())
       throw new IllegalArgumentException("The specified repository "+dir+" is not a directory.");
-    } else {
+    else {
       repository = dir;
       // reset the library, it will be properly set during the next call.
       library = null;
@@ -543,8 +567,9 @@ public final class GlobalSettings {
       }
       return true;
     }
-    if (settings == null)
+    if (settings == null) {
       settings = new Properties();
+    }
     return false;
   }
 

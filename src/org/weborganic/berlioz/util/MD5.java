@@ -15,6 +15,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 
 import org.slf4j.LoggerFactory;
 
@@ -105,11 +106,9 @@ public final class MD5 {
    * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
    */
   public static String hash(File file, boolean strong) throws IOException, UnsupportedOperationException {
-    if (strong) {
-      return hash(file);
-    } else {
+    if (strong) return hash(file);
+    else
       return hash(file.getCanonicalPath()+'$'+file.length()+'%'+file.lastModified());
-    }
   }
 
   /**

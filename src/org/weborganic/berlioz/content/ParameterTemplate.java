@@ -66,9 +66,7 @@ import org.weborganic.berlioz.Beta;
    */
   public static ParameterTemplate parse(String template) {
     // Does not contain any dynamic tokens
-    if (template.indexOf('{') < 0) {
-      return ParameterTemplate.value(template);
-    }
+    if (template.indexOf('{') < 0) return ParameterTemplate.value(template);
     // Parse
     Matcher m = VARIABLE.matcher(template);
     List<Token> tokens = new ArrayList<Token>();

@@ -79,9 +79,7 @@ public class FileEntityInfo implements EntityInfo {
    * Always a weak ETag.
    */
   public final String getETag() {
-    if ((this.length >= 0) || (this.modified >= 0)) {
-      return "W/\"" + this.length + "-" + this.modified + "\"";
-    }
+    if ((this.length >= 0) || (this.modified >= 0)) return "W/\"" + this.length + "-" + this.modified + "\"";
     return null;
   }
 

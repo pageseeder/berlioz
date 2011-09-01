@@ -14,8 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentRequest;
-import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.ContentStatus;
+import org.weborganic.berlioz.content.Environment;
 
 /**
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods to access the parameters and attributes in

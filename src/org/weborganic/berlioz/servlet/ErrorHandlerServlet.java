@@ -22,8 +22,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozErrorID;
+import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.http.HttpStatusCodes;
 import org.weborganic.berlioz.util.CollectedError;
@@ -142,7 +142,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     // Grab the status code (Default to 200 OK)
     Integer code  = (Integer)req.getAttribute(ERROR_STATUS_CODE);
-    if (code == null) code = Integer.valueOf(HttpServletResponse.SC_OK);
+    if (code == null) {
+      code = Integer.valueOf(HttpServletResponse.SC_OK);
+    }
 
     // Generate error details as XML
     String xml = toXML(req);
@@ -190,7 +192,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
 
     // Ensure we have a status code
-    if (code == null) code = Integer.valueOf(HttpServletResponse.SC_OK);
+    if (code == null) {
+      code = Integer.valueOf(HttpServletResponse.SC_OK);
+    }
 
     // Write the XML 
     StringWriter out = new StringWriter();

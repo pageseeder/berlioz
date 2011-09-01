@@ -35,9 +35,9 @@ public abstract class ContentGeneratorBase implements ContentGenerator {
   @Deprecated public final String getSubPath(ContentRequest req) {
     String pathInfo = req.getPathInfo();
     int wildcard = this._pathInfo.indexOf('*');
-    if (wildcard >= 0 && pathInfo.startsWith(this._pathInfo.substring(0, wildcard))) {
+    if (wildcard >= 0 && pathInfo.startsWith(this._pathInfo.substring(0, wildcard)))
       return pathInfo.substring(wildcard);
-    } else return "";
+    else return "";
   }
 
   /**

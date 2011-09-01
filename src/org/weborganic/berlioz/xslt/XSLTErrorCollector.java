@@ -11,8 +11,8 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 
 import org.slf4j.Logger;
-import org.weborganic.berlioz.util.ErrorCollector;
 import org.weborganic.berlioz.util.CollectedError.Level;
+import org.weborganic.berlioz.util.ErrorCollector;
 
 /**
  * An XSLT error listener will collect all the exceptions reported by the transformer.

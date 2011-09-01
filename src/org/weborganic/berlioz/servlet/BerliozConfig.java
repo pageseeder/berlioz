@@ -50,7 +50,7 @@ public final class BerliozConfig {
   /**
    * The Servlet configuration.
    */
-  private ServletConfig _servletConfig;
+  private final ServletConfig _servletConfig;
 
   /**
    * Set the default content type for this Berlioz instance.
@@ -60,22 +60,22 @@ public final class BerliozConfig {
   /**
    * Set the default cache control for this Berlioz instance.
    */
-  private String _cacheControl;
+  private final String _cacheControl;
 
   /**
    * Set the Berlioz control key.
    */
-  private String _controlKey;
+  private final String _controlKey;
 
   /**
    * The relative path to the XSLT stylesheet to use.
    */
-  private String _stylePath;
+  private final String _stylePath;
 
   /**
    * Indicates whether the Berlioz instance should use HTTP compression (when possible)
    */
-  private boolean _compression;
+  private final boolean _compression;
 
   /**
    * The environment. 

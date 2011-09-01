@@ -126,8 +126,12 @@ public final class HttpHeaderUtils {
         while (!conditionSatisfied && commaTokenizer.hasMoreTokens()) {
           String currentToken = commaTokenizer.nextToken().trim();
           // Handle ETags of GZipped resources
-          if (currentToken.endsWith("-gzip\"")) currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
-          if (currentToken.equals(eTag)) conditionSatisfied = true;
+          if (currentToken.endsWith("-gzip\"")) {
+            currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
+          }
+          if (currentToken.equals(eTag)) {
+            conditionSatisfied = true;
+          }
         }
 
         // If none of the given ETags match, 412 Precondition failed is sent back
@@ -218,7 +222,9 @@ public final class HttpHeaderUtils {
             currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
             isGZIP = true;
           }
-          if (currentToken.equals(eTag)) conditionSatisfied = true;
+          if (currentToken.equals(eTag)) {
+            conditionSatisfied = true;
+          }
         }
 
       } else {

@@ -64,7 +64,7 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * Any error message.
    */
-  private String _error;
+  private final String _error;
 
   /**
    * The content type produced by this transformer.
@@ -89,7 +89,9 @@ public final class XSLTransformResult implements BerliozOutput {
     this._status = Status.OK;
     this._error = null;
     this._ex = null;
-    if (templates != null) setOutputProperties(templates);
+    if (templates != null) {
+      setOutputProperties(templates);
+    }
   }
 
   /**
@@ -105,7 +107,9 @@ public final class XSLTransformResult implements BerliozOutput {
     this._status = Status.ERROR;
     this._error = null;
     this._ex = ex;
-    if (templates != null) setOutputProperties(templates);
+    if (templates != null) {
+      setOutputProperties(templates);
+    }
   }
 
   // ==============================================================================================

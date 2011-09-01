@@ -19,7 +19,7 @@ public class ErrorCollector<T extends Exception>  {
   /**
    * Errors are collected here.
    */
-  private List<CollectedError<T>> _collected = new ArrayList<CollectedError<T>>();
+  private final List<CollectedError<T>> _collected = new ArrayList<CollectedError<T>>();
 
   /**
    * The threshold level for the collect method to throw an exception.
@@ -81,7 +81,9 @@ public class ErrorCollector<T extends Exception>  {
    */
   public final void collect(Level level, T exception) throws T {
     this._collected.add(new CollectedError<T>(level, exception));
-    if (this._flag.compareTo(level) <= 0) this._hasError = true;
+    if (this._flag.compareTo(level) <= 0) {
+      this._hasError = true;
+    }
     if (this._exception.compareTo(level) <= 0) throw exception;
   }
 
@@ -96,7 +98,9 @@ public class ErrorCollector<T extends Exception>  {
    */
   public final void collectQuietly(Level level, T exception) {
     this._collected.add(new CollectedError<T>(level, exception));
-    if (this._flag.compareTo(level) <= 0) this._hasError = true;
+    if (this._flag.compareTo(level) <= 0) {
+      this._hasError = true;
+    }
   }
 
   /**

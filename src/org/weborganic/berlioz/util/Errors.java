@@ -187,10 +187,18 @@ public final class Errors {
     String publicId = locator.getPublicId();
     String systemId = locator.getSystemId();
     xml.openElement("location");
-    if (line != -1)       xml.attribute("line", line);
-    if (column != -1)     xml.attribute("column", column);
-    if (publicId != null) xml.attribute("public-id" ,publicId);
-    if (systemId != null) xml.attribute("system-id", toWebPath(systemId));
+    if (line != -1) {
+      xml.attribute("line", line);
+    }
+    if (column != -1) {
+      xml.attribute("column", column);
+    }
+    if (publicId != null) {
+      xml.attribute("public-id" ,publicId);
+    }
+    if (systemId != null) {
+      xml.attribute("system-id", toWebPath(systemId));
+    }
     xml.closeElement();
   }
 
@@ -216,10 +224,18 @@ public final class Errors {
     String publicId = locator.getPublicId();
     String systemId = locator.getSystemId();
     xml.openElement("location");
-    if (line != -1)       xml.attribute("line", line);
-    if (column != -1)     xml.attribute("column", column);
-    if (publicId != null) xml.attribute("public-id" , publicId);
-    if (systemId != null) xml.attribute("system-id", toWebPath(systemId));
+    if (line != -1) {
+      xml.attribute("line", line);
+    }
+    if (column != -1) {
+      xml.attribute("column", column);
+    }
+    if (publicId != null) {
+      xml.attribute("public-id" , publicId);
+    }
+    if (systemId != null) {
+      xml.attribute("system-id", toWebPath(systemId));
+    }
     xml.closeElement();
   }
 
@@ -262,7 +278,9 @@ public final class Errors {
    * @throws IOException Only if thrown by the XML writer.
    */
   private static void asExceptionXML(Exception ex, XMLWriter xml, boolean wrap) throws IOException {
-    if (wrap) xml.openElement("exception");
+    if (wrap) {
+      xml.openElement("exception");
+    }
     xml.attribute("class", ex.getClass().getName());
     xml.element("message", cleanMessage(ex));
     xml.element("stack-trace", Errors.getStackTrace(ex, true));
@@ -272,7 +290,9 @@ public final class Errors {
       toXML(cause, xml, false);
       xml.closeElement();
     }
-    if (wrap) xml.closeElement();
+    if (wrap) {
+      xml.closeElement();
+    }
   }
 
   /**
@@ -285,12 +305,16 @@ public final class Errors {
    * @throws IOException Only if thrown by the XML writer.
    */
   private static void asSAXParseExceptionXML(SAXParseException ex, XMLWriter xml, boolean wrap) throws IOException {
-    if (wrap) xml.openElement("exception");
+    if (wrap) {
+      xml.openElement("exception");
+    }
     xml.attribute("type", "SAXParseException");
     asExceptionXML(ex, xml, false);
     // Add the locator
     toXML(toLocator(ex), xml);
-    if (wrap) xml.closeElement();
+    if (wrap) {
+      xml.closeElement();
+    }
   }
 
   /**
@@ -304,13 +328,17 @@ public final class Errors {
    */
   private static void asTransformerExceptionXML(TransformerException ex, XMLWriter xml, boolean wrap) 
       throws IOException {
-    if (wrap) xml.openElement("exception");
+    if (wrap) {
+      xml.openElement("exception");
+    }
     boolean isConfig = ex instanceof TransformerConfigurationException;
     xml.attribute("type", isConfig? "TransformerConfigurationException" : "TransformerException");
     asExceptionXML(ex, xml, false);
     // Add the Source locator
     toXML(ex.getLocator(), xml);
-    if (wrap)xml.closeElement();
+    if (wrap) {
+      xml.closeElement();
+    }
   }
 
 }

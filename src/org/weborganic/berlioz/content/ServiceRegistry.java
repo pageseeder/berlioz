@@ -98,7 +98,9 @@ public final class ServiceRegistry {
       MatchingService service = mapping.match(url);
       if (service != null) {
         methods.add(m.toString());
-        if (m == HttpMethod.GET) methods.add("HEAD");
+        if (m == HttpMethod.GET) {
+          methods.add("HEAD");
+        }
       }
     }
     return methods;
@@ -132,7 +134,9 @@ public final class ServiceRegistry {
   public MatchingService get(String url, HttpMethod method) {
     if (method == null) return null;
     HttpMethod m = method;
-    if (method == HttpMethod.HEAD) m = HttpMethod.GET;
+    if (method == HttpMethod.HEAD) {
+      m = HttpMethod.GET;
+    }
     ServiceMap mapping = this.registry.get(m);
     MatchingService service = mapping.match(url);
     return service;

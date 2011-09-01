@@ -14,12 +14,12 @@ import javax.xml.parsers.SAXParser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozErrorID;
+import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.util.CompoundBerliozException;
 import org.weborganic.berlioz.util.CollectedError.Level;
+import org.weborganic.berlioz.util.CompoundBerliozException;
 import org.weborganic.berlioz.xml.BerliozEntityResolver;
 import org.weborganic.berlioz.xml.SAXErrorCollector;
 import org.weborganic.berlioz.xml.XMLUtils;
@@ -127,7 +127,9 @@ public final class ContentManager {
         throw new SAXException(collector.getErrors().size()+" error(s) reported by the XML parser.");
       }
     } catch (SAXException ex) {
-      if (id == null) id = BerliozErrorID.SERVICES_MALFORMED;
+      if (id == null) {
+        id = BerliozErrorID.SERVICES_MALFORMED;
+      }
       LOGGER.error("An SAX error occurred while reading XML service configuration: {}", ex.getMessage());
       throw new CompoundBerliozException("Unable to parse services configuration file.", ex, id, collector);
     } catch (IOException ex) {

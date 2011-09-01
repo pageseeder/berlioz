@@ -95,9 +95,8 @@ public enum ISO8601 {
       String formatted = iso.format(date);
       return formatted.substring(0, formatted.length() - 2) + ":"
           + formatted.substring(formatted.length() - 2);
-    } else {
+    } else
       return iso.format(date);
-    }
   }
 
   /**

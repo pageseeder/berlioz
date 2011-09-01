@@ -149,10 +149,12 @@ public class BerliozException extends Exception implements XMLWritable {
   @Deprecated public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("berlioz-exception", true);
     xml.element("message", super.getMessage());
-    if (this._extra != null)
+    if (this._extra != null) {
       xml.element("extra", this._extra);
-    if (super.getCause() != null)
+    }
+    if (super.getCause() != null) {
       xml.element("cause", super.getCause().toString());
+    }
     // print the stack trace as a string.
     StringWriter writer = new StringWriter();
     PrintWriter printer = new PrintWriter(writer);

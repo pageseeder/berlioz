@@ -1,7 +1,7 @@
 package org.weborganic.berlioz.util;
 
-import org.weborganic.berlioz.ErrorID;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.ErrorID;
 
 /**
  * A Berlioz exception to includes a list of collected errors.

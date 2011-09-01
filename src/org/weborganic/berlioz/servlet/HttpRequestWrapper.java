@@ -134,8 +134,9 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    */
   public final String getParameter(String name) {
     String value = this._parameters.get(name);
-    if (value == null)
+    if (value == null) {
       value = this._req.getParameter(name);
+    }
     return ("".equals(value))? null : value;
   }
 
@@ -263,16 +264,10 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    *         <code>false</code> otherwise.
    */
   public boolean isMultipartContent() {
-    if (!"post".equals(this._req.getMethod().toLowerCase())) {
-      return false;
-    }
+    if (!"post".equals(this._req.getMethod().toLowerCase())) return false;
     String contentType = this._req.getContentType();
-    if (contentType == null) {
-      return false;
-    }
-    if (contentType.toLowerCase().startsWith("multipart/")) {
-      return true;
-    }
+    if (contentType == null) return false;
+    if (contentType.toLowerCase().startsWith("multipart/")) return true;
     return false;
   }
 
@@ -307,7 +302,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    */
   public static String getBerliozPath(HttpServletRequest req) {
     // Try to get the path info (when mapped to '/prefix/*')
-    if (req.getPathInfo() != null) { return req.getPathInfo(); }
+    if (req.getPathInfo() != null) return req.getPathInfo();
     // Otherwise assume that it is mapped to '*.suffix'
     String path = req.getServletPath();
     int dot = path.lastIndexOf('.');
@@ -336,8 +331,9 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     // Load all URL parameters (takes precedence over HTTP parameters)
     for (String name : results.names()) {
       Object o = results.get(name);
-      if (o != null)
+      if (o != null) {
         parameters.put(name, o.toString());
+      }
     }
     return parameters;
   }

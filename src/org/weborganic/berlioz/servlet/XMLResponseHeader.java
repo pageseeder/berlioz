@@ -137,7 +137,9 @@ public final class XMLResponseHeader implements XMLWritable {
     StringBuffer name = new StringBuffer();
     StringTokenizer st = new StringTokenizer(pathInfo, "/");
     while (st.hasMoreTokens()) {
-      if (name.length() > 0) name.insert(0, '-');
+      if (name.length() > 0) {
+        name.insert(0, '-');
+      }
       name.insert(0, st.nextToken());
     }
     return name.toString();

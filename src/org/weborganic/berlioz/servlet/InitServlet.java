@@ -116,8 +116,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
   private void checkSettings(File webinfPath, String mode) {
     System.out.println("[BERLIOZ_INIT] Config: Setting repository to Application Base");
     GlobalSettings.setRepository(webinfPath);
-    if (mode != null)
+    if (mode != null) {
       GlobalSettings.setConfig(mode);
+    }
     File f = GlobalSettings.getPropertiesFile();
     if (f.exists()) {
       System.out.println("[BERLIOZ_INIT] Config: found "+toRelPath(f, webinfPath));
@@ -218,10 +219,8 @@ public final class InitServlet extends HttpServlet implements Servlet {
   private static String toRelPath(File file, File base) {
     String p = file.getPath();
     String b = base.getPath();
-    if (p.startsWith(b) && p.length() > b.length()) {
-      return p.substring(b.length()+1);
-    } else {
+    if (p.startsWith(b) && p.length() > b.length()) return p.substring(b.length()+1);
+    else
       return p;
-    }
   }
 }

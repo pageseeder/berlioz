@@ -219,9 +219,7 @@ public final class Service {
    */
   static boolean isCacheable(List<ContentGenerator> generators) {
     for (ContentGenerator g : generators) {
-      if (!(g instanceof Cacheable)) {
-        return false;
-      }
+      if (!(g instanceof Cacheable)) return false;
     }
     return true;
   }
@@ -432,13 +430,11 @@ public final class Service {
      * @return a new identical immutable list.
      */
     private static List<ContentGenerator> immutable(List<ContentGenerator> original) {
-      if (original.isEmpty()) {
+      if (original.isEmpty())
         return Collections.emptyList();
-      } else if (original.size() == 1) {
-        return Collections.singletonList(original.get(0));
-      } else {
+      else if (original.size() == 1) return Collections.singletonList(original.get(0));
+      else
         return Collections.unmodifiableList(new ArrayList<ContentGenerator>(original));
-      }
     }
 
     /**
@@ -448,9 +444,9 @@ public final class Service {
      * @return a new identical immutable map.
      */
     private static Map<ContentGenerator, List<Parameter>> immutable(Map<ContentGenerator, List<Parameter>> original) {
-      if (original.isEmpty()) {
+      if (original.isEmpty())
         return Collections.emptyMap();
-      } else if (original.size() == 1) {
+      else if (original.size() == 1) {
         Entry<ContentGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
         return Collections.singletonMap(entry.getKey(), immutable2(entry.getValue()));
       } else {
@@ -469,13 +465,11 @@ public final class Service {
      * @return a new identical immutable list.
      */
     private static List<Parameter> immutable2(List<Parameter> original) {
-      if (original.isEmpty()) {
+      if (original.isEmpty())
         return Collections.emptyList();
-      } else if (original.size() == 1) {
-        return Collections.singletonList(original.get(0));
-      } else {
+      else if (original.size() == 1) return Collections.singletonList(original.get(0));
+      else
         return Collections.unmodifiableList(new ArrayList<Parameter>(original));
-      }
     }
 
     /**
@@ -485,9 +479,9 @@ public final class Service {
      * @return a new identical immutable map.
      */
     private static Map<ContentGenerator, String> immutable3(Map<ContentGenerator, String> original) {
-      if (original.isEmpty()) {
+      if (original.isEmpty())
         return Collections.emptyMap();
-      } else if (original.size() == 1) {
+      else if (original.size() == 1) {
         Entry<ContentGenerator, String> entry = original.entrySet().iterator().next();
         return Collections.singletonMap(entry.getKey(), entry.getValue());
       } else {

@@ -30,10 +30,10 @@ import org.weborganic.berlioz.content.Parameter;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.berlioz.content.ServiceStatusRule;
 import org.weborganic.berlioz.content.ServiceStatusRule.CodeRule;
+import org.weborganic.berlioz.util.CollectedError.Level;
 import org.weborganic.berlioz.util.CompoundBerliozException;
 import org.weborganic.berlioz.util.ErrorCollector;
 import org.weborganic.berlioz.util.Errors;
-import org.weborganic.berlioz.util.CollectedError.Level;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
@@ -201,7 +201,9 @@ public final class XMLResponse {
     String name = service.name(generator);
     xml.attribute("name", name);
     String target = service.target(generator);
-    if (target != null) xml.attribute("target", target);
+    if (target != null) {
+      xml.attribute("target", target);
+    }
 
     // If cacheable, include etag
     if (generator instanceof Cacheable) {
@@ -210,8 +212,9 @@ public final class XMLResponse {
     }
 
     // Detect if deprecated
-    if (generator.getClass().isAnnotationPresent(Deprecated.class))
+    if (generator.getClass().isAnnotationPresent(Deprecated.class)) {
       xml.attribute("deprecated", "true");
+    }
 
     // Let's invoke the generator
     String result = null;
@@ -298,7 +301,9 @@ public final class XMLResponse {
     BerliozException bex;
     if (exception instanceof BerliozException) {
       bex = (BerliozException)exception;
-      if (bex.id() == null) bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
+      if (bex.id() == null) {
+        bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
+      }
     } else {
       bex = new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
     }

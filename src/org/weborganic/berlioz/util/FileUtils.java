@@ -55,15 +55,15 @@ public final class FileUtils {
    */
   public static String getMediaType(File f) {
     // Load if empty
-    if (MIME.isEmpty()) loadMIMEProperties();
+    if (MIME.isEmpty()) {
+      loadMIMEProperties();
+    }
     // Lookup extension in properties file
     String name = f.getName();
     int dot = name.lastIndexOf(".");
-    if (dot >= 0) {
-      return MIME.getProperty(name.substring(dot+1));
-    } else {
+    if (dot >= 0) return MIME.getProperty(name.substring(dot+1));
+    else
       return null;
-    }
   }
 
   /**
@@ -106,9 +106,8 @@ public final class FileUtils {
       if (to.startsWith(from)) {
         String path = to.substring(from.length()).replace("\\", "/");
         return path.startsWith("/")? path.substring(1) : path;
-      } else {
+      } else
         throw new IllegalArgumentException("Cannot determine the path between the specified files.");
-      }
     } catch (IOException ex) {
       // TODO handle exception
       return null;

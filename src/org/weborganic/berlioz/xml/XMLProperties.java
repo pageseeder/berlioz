@@ -106,8 +106,9 @@ public final class XMLProperties extends Properties implements XMLWritable {
     BufferedWriter awriter = new BufferedWriter(new OutputStreamWriter(out, "utf-8"));
     XMLWriterImpl xml = new XMLWriterImpl(awriter, true);
     // write the header if one is required
-    if (header != null)
+    if (header != null) {
       xml.writeComment(header);
+    }
     xml.writeComment(new Date().toString());
     toXML(xml);
     xml.close();

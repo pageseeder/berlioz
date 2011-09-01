@@ -111,11 +111,11 @@ public final class BerliozEntityResolver implements EntityResolver {
     if (publicId == null) return null;
     if (!publicId.endsWith(PUBLIC_ID_SUFFIX)) return null;
     int length = publicId.length() - PUBLIC_ID_SUFFIX.length();
-    if (publicId.startsWith(PUBLIC_ID_PREFIX)) {
+    if (publicId.startsWith(PUBLIC_ID_PREFIX))
       return publicId.substring(PUBLIC_ID_PREFIX.length(), length).toLowerCase().replace(' ', '-') + ".dtd";
-    } else if (publicId.startsWith(ALIAS_ID_PREFIX)) {
+    else if (publicId.startsWith(ALIAS_ID_PREFIX))
       return publicId.substring(ALIAS_ID_PREFIX.length(), length).toLowerCase().replace(' ', '-') + ".dtd";
-    } else return null;
+    else return null;
   }
 
 }

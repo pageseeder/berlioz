@@ -9,8 +9,8 @@ package org.weborganic.berlioz.xml;
 
 import org.slf4j.Logger;
 import org.weborganic.berlioz.Beta;
-import org.weborganic.berlioz.util.ErrorCollector;
 import org.weborganic.berlioz.util.CollectedError.Level;
+import org.weborganic.berlioz.util.ErrorCollector;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 

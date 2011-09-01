@@ -111,7 +111,7 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The list of URI patterns for the current service.
    */
-  private List<URIPattern> _patterns = new ArrayList<URIPattern>();
+  private final List<URIPattern> _patterns = new ArrayList<URIPattern>();
 
   /**
    * The current HTTP method for the service.
@@ -126,12 +126,12 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The service builder.
    */
-  private Service.Builder _builder = new Service.Builder();
+  private final Service.Builder _builder = new Service.Builder();
 
   /**
    * The rules for the services, this list is used like a stack. 
    */
-  private List<ServiceStatusRule> _rules = new ArrayList<ServiceStatusRule>();
+  private final List<ServiceStatusRule> _rules = new ArrayList<ServiceStatusRule>();
 
   /**
    * Used to detect duplicate URI Patterns.
@@ -188,12 +188,16 @@ final class ServicesHandler10 extends DefaultHandler {
           warning("Duplicate group of services '"+group+"' - services will belong to the same group");
         }
         // If no rule where defined at the 'service-config' level, we assume the default rule
-        if (this._rules.size() == 0) this._rules.add(ServiceStatusRule.DEFAULT_RULE);
+        if (this._rules.size() == 0) {
+          this._rules.add(ServiceStatusRule.DEFAULT_RULE);
+        }
         break;
 
       case SERVICE:
         // If no rule where defined at the 'services' level, we assume the default rule
-        if (this._rules.size() == 1) this._rules.add(ServiceStatusRule.DEFAULT_RULE);
+        if (this._rules.size() == 1) {
+          this._rules.add(ServiceStatusRule.DEFAULT_RULE);
+        }
         this._builder.id(atts.getValue("id"));
         this._builder.cache(atts.getValue("cache-control"));
         handleMethod(atts.getValue("method"));
@@ -246,15 +250,21 @@ final class ServicesHandler10 extends DefaultHandler {
         this._builder.reset();
         this._patterns.clear();
         // Any rule specific to the 'service'? remove it
-        if (this._rules.size() == 3) this._rules.remove(2);
+        if (this._rules.size() == 3) {
+          this._rules.remove(2);
+        }
         break;
       case SERVICES:
         // Any rule specific to the 'services'? remove it
-        if (this._rules.size() == 2) this._rules.remove(1);
+        if (this._rules.size() == 2) {
+          this._rules.remove(1);
+        }
         break;
       case SERVICE_CONFIG:
         // Any rule specific to the 'service-config'? remove it
-        if (this._rules.size() == 1) this._rules.remove(0);
+        if (this._rules.size() == 1) {
+          this._rules.remove(0);
+        }
         break;
       default:
     }

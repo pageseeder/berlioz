@@ -358,7 +358,9 @@ public final class XSLTransformer {
     for (Enumeration<?> names = req.getParameterNames(); names.hasMoreElements();) {
       String param = (String)names.nextElement();
       if (param.startsWith("xsl-")) {
-        if (p == null) p = new HashMap<String, String>();
+        if (p == null) {
+          p = new HashMap<String, String>();
+        }
         p.put(param.substring(4), req.getParameter(param));
       }
     }
@@ -539,17 +541,13 @@ public final class XSLTransformer {
   private static BerliozErrorID toErrorID(TransformerException ex) {
     // Let's guess the Berlioz internal code
     if (ex instanceof TransformerConfigurationException) {
-      if (ex.getCause() instanceof FileNotFoundException) {
-        return BerliozErrorID.TRANSFORM_NOT_FOUND;
-      } else {
+      if (ex.getCause() instanceof FileNotFoundException) return BerliozErrorID.TRANSFORM_NOT_FOUND;
+      else
         return BerliozErrorID.TRANSFORM_INVALID;
-      }
     }
-    if (ex.getCause() instanceof SAXParseException) {
-      return BerliozErrorID.TRANSFORM_MALFORMED_SOURCE_XML;
-    } else {
+    if (ex.getCause() instanceof SAXParseException) return BerliozErrorID.TRANSFORM_MALFORMED_SOURCE_XML;
+    else
       return BerliozErrorID.TRANSFORM_DYNAMIC_ERROR;
-    }
   }
 
   /**

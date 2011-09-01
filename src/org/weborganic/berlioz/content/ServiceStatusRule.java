@@ -195,12 +195,24 @@ import org.weborganic.berlioz.Beta;
     char c;
     for (int i = 0; i < item.length(); i++) {
       c = item.charAt(i);
-      if (Character.isLetter(c)) continue;
-      if (Character.isDigit(c)) continue;
-      if (c == '-') continue;
-      if (c == '_') continue;
-      if (c == '.') continue;
-      if (c == ':') continue;
+      if (Character.isLetter(c)) {
+        continue;
+      }
+      if (Character.isDigit(c)) {
+        continue;
+      }
+      if (c == '-') {
+        continue;
+      }
+      if (c == '_') {
+        continue;
+      }
+      if (c == '.') {
+        continue;
+      }
+      if (c == ':') {
+        continue;
+      }
       throw new IllegalArgumentException("Item \""+item+"\" contains an illegal character '"+c+"'");
     }
   }
