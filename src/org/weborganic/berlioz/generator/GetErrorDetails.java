@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.weborganic.berlioz.BerliozErrorID;
 import org.weborganic.berlioz.BerliozException;
-import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
@@ -59,8 +58,12 @@ import com.topologi.diffx.xml.XMLWriter;
  * <pre>{@code
  * <content generator="org.weborganic.berlioz.generator.GetErrorDetails"
  *               name="[name]" target="[target]" status="ok">
- * 
- * 
+ *   <error http-class="[http-class]" http-code="[http-code]" datetime="[iso8601-datetime]" id="[berlioz-id]">
+ *     <title>Not Found</title>
+ *     <message>Not Found</message>
+ *     <request-uri>/fdhvjfdls</request-uri>
+ *     <!-- Any exception will be serialised a XML here -->
+ *   </error>
  * </content>              
  * }</pre>
  * 
@@ -110,11 +113,6 @@ public final class GetErrorDetails extends ContentGeneratorBase implements Conte
     } else {
       xml.attribute("id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString());
     }
-
-    // Berlioz info
-    xml.openElement("berlioz");
-    xml.attribute("version", GlobalSettings.getVersion());
-    xml.closeElement();
 
     // Other informational elements
     String title = HttpStatusCodes.getTitle(code);
