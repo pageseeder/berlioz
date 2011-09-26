@@ -316,9 +316,12 @@ public final class BerliozServlet extends HttpServlet {
     res.setHeader("X-Berlioz-Service", match.service().id());
     LOGGER.debug(path+" -> "+match.service());
 
+    // Is Berlioz used to handle an error?
+    Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
+
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
-    if (match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
+    if (code == null && match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
       String etagXML = xml.getEtag();
       String etagXSL = this._transformer != null? this._transformer.getEtag() : null;
       etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
@@ -349,7 +352,11 @@ public final class BerliozServlet extends HttpServlet {
 
     // Examine the status
     ContentStatus status = xml.getStatus();
-    res.setStatus(status.code());
+    if (code != null) {
+      res.setStatus(code.intValue());
+    } else {
+      res.setStatus(status.code());
+    }
 
     // If errors occurred and should percolate
     if (xml.getError() != null && !GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) {
@@ -452,9 +459,12 @@ public final class BerliozServlet extends HttpServlet {
   private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, Exception ex)
       throws IOException, ServletException {
 
+    // Is Berlioz already handling an error?
+    Integer error = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
+
     // Handle internally
-    if (GlobalSettings.has(BerliozOption.ERROR_HANDLER)) {
-      req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, code);
+    if (error != null || GlobalSettings.has(BerliozOption.ERROR_HANDLER)) {
+      req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, error != null? error.intValue() : code);
       req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
       req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
       req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, this._config.getName());
