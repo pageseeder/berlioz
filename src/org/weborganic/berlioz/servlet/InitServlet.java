@@ -43,7 +43,8 @@ import org.weborganic.berlioz.GlobalSettings;
  * </pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 25 May 2010
+ * @version Berlioz 0.8.9 - 13 October 2011
+ * @since Berlioz 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
 
@@ -74,7 +75,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       System.out.println("[BERLIOZ_INIT] Application Base: "+webinfPath.getAbsolutePath());
 
       // Determine the mode (dev, production, etc...)
-      String mode = getMode(config);
+      String mode = getMode(config, configDir);
 
       // Checking that the 'config/services.xml' is there
       checkServices(configDir);
@@ -175,7 +176,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
    * @param config The directory containing the configuration files. 
    * @return The running mode.
    */
-  private String getMode(ServletConfig config) {
+  private String getMode(ServletConfig config, File configDir) {
     // Determine the mode (dev, production, etc...)
     String mode = config.getInitParameter("mode");
     if (mode != null) {
@@ -187,18 +188,26 @@ public final class InitServlet extends HttpServlet implements Servlet {
         System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.mode'");
       } else {
         // Try the legacy init-parameter
+        // XXX: Will be removed in Berlioz 0.9.x
         mode = config.getInitParameter("config-name");
         if (mode != null) {
           System.out.println("[BERLIOZ_INIT] Mode: defined with init-parameter 'config-name'");
           System.out.println("[BERLIOZ_INIT] (!) Please change your web.xml to use 'mode' instead");
         } else {
           // Try the legacy system property
+          // XXX: Will be removed in Berlioz 0.9.x
           mode = System.getProperty("berlioz.config");
           if (mode != null) {
             System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.config'");
             System.out.println("[BERLIOZ_INIT] (!) Please change your config file to use 'berlioz.mode' instead");
           } else {
-            System.out.println("[BERLIOZ_INIT] Mode: undefined, using "+GlobalSettings.DEFAULT_MODE);
+            mode = guessMode(configDir);
+            if (mode != null) {
+              System.out.println("[BERLIOZ_INIT] Mode: derived from XML configuration file.");
+            } else {
+              System.out.println("[BERLIOZ_INIT] Mode: undefined, using "+GlobalSettings.DEFAULT_MODE);
+              mode = GlobalSettings.DEFAULT_MODE;
+            }
           }
         }
       }
@@ -223,4 +232,32 @@ public final class InitServlet extends HttpServlet implements Servlet {
     else
       return p;
   }
+
+  /**
+   * Tries to guess the mode based on the configuration files in the config directory.
+   *
+   * <p>This method look for a configuration file matching <code>"config-<i>[mode]</i>.xml"</code>.
+   * <p>If there is only one such file, this method will use this mode, otherwise, this method will 
+   * return <code>null</code>. 
+   * 
+   * @param config The configuration directory (<code>/WEB-INF/config</code>).
+   * @return the mode if only one file.
+   */
+  private static String guessMode(File config) {
+    if (config == null) return null;
+    String mode = null;
+    for (String name : config.list()) {
+      if (name.startsWith("config-") && name.endsWith(".xml")) {
+        if (mode == null) {
+          // Found a config file
+          mode = name.substring(7, name.length() - 4);
+        } else {
+          // multiple config files: unable to choose.
+          mode = null;
+        }
+      }
+    }
+    return mode;
+  }
+
 }
