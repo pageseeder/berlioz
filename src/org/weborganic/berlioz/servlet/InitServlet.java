@@ -43,7 +43,7 @@ import org.weborganic.berlioz.GlobalSettings;
  * </pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version Berlioz 0.8.9 - 13 October 2011
+ * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
@@ -187,28 +187,12 @@ public final class InitServlet extends HttpServlet implements Servlet {
       if (mode != null) {
         System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.mode'");
       } else {
-        // Try the legacy init-parameter
-        // XXX: Will be removed in Berlioz 0.9.x
-        mode = config.getInitParameter("config-name");
+        mode = guessMode(configDir);
         if (mode != null) {
-          System.out.println("[BERLIOZ_INIT] Mode: defined with init-parameter 'config-name'");
-          System.out.println("[BERLIOZ_INIT] (!) Please change your web.xml to use 'mode' instead");
+          System.out.println("[BERLIOZ_INIT] Mode: derived from XML configuration file.");
         } else {
-          // Try the legacy system property
-          // XXX: Will be removed in Berlioz 0.9.x
-          mode = System.getProperty("berlioz.config");
-          if (mode != null) {
-            System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.config'");
-            System.out.println("[BERLIOZ_INIT] (!) Please change your config file to use 'berlioz.mode' instead");
-          } else {
-            mode = guessMode(configDir);
-            if (mode != null) {
-              System.out.println("[BERLIOZ_INIT] Mode: derived from XML configuration file.");
-            } else {
-              System.out.println("[BERLIOZ_INIT] Mode: undefined, using "+GlobalSettings.DEFAULT_MODE);
-              mode = GlobalSettings.DEFAULT_MODE;
-            }
-          }
+          System.out.println("[BERLIOZ_INIT] Mode: undefined, using "+GlobalSettings.DEFAULT_MODE);
+          mode = GlobalSettings.DEFAULT_MODE;
         }
       }
     }
