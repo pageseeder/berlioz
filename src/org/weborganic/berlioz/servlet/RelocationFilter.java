@@ -223,7 +223,7 @@ import org.xml.sax.helpers.DefaultHandler;
    * @author Jean-Baptiste Reure (Weborganic)
    * @version 15 June 2011
    */
-  @Beta class RelocationMappingHandler extends DefaultHandler implements ContentHandler {
+  @Beta static class RelocationMappingHandler extends DefaultHandler implements ContentHandler {
 
     /**
      * Maps URI patterns to URI patterns.
