@@ -68,13 +68,6 @@ public final class GlobalSettings {
    */
   public static final String DEFAULT_MODE = "default";
 
-  /**
-   * Name of the default configuration to use.
-   * 
-   * @deprecated Use {@link #DEFAULT_MODE} instead, this constant will be removed in future releases.
-   */
-  @Deprecated public static final String DEFAULT_CONFIG_NAME = DEFAULT_MODE;
-
 // static variables ---------------------------------------------------------------------------
 
   /**
@@ -156,17 +149,6 @@ public final class GlobalSettings {
   public static String getVersion() {
     Package p = Package.getPackage("org.weborganic.berlioz");
     return p != null ? p.getImplementationVersion() : "unknown";
-  }
-
-  /**
-   * Returns the configuration to use.
-   * 
-   * @deprecated Use {@link #getMode()} instead
-   * 
-   * @return The name of the configuration to use.
-   */
-  @Deprecated public static String getConfig() {
-    return mode;
   }
 
   /**
