@@ -13,7 +13,6 @@ import java.io.IOException;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
-import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.util.MD5;
 import org.weborganic.berlioz.xml.XMLCopy;
@@ -52,9 +51,10 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>This generator uses a weak etag based on the name, length and last modified date of the file.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 19 July 2010
+ * @version Berlioz 0.9.0 - 13 October 2011
+ * @since Berlioz 0.8
  */
-public final class GetServices extends ContentGeneratorBase implements ContentGenerator, Cacheable {
+public final class GetServices implements ContentGenerator, Cacheable {
 
   /**
    * Default location of the services.

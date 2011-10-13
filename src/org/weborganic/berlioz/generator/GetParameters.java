@@ -12,7 +12,6 @@ import java.util.Enumeration;
 
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
-import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.util.MD5;
 
@@ -36,9 +35,10 @@ import com.topologi.diffx.xml.XMLWriter;
  * }</pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 1 June 2010
+ * @version Berlioz 0.9.0 - 13 October 2011
+ * @since Berlioz 0.7
  */
-public final class GetParameters extends ContentGeneratorBase implements ContentGenerator, Cacheable {
+public final class GetParameters implements ContentGenerator, Cacheable {
 
   /**
    * Returns an MD5 Value of the query string. 

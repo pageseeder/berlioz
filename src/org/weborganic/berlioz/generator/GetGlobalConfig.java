@@ -14,7 +14,6 @@ import java.util.Enumeration;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
-import org.weborganic.berlioz.content.ContentGeneratorBase;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.util.MD5;
 
@@ -45,9 +44,10 @@ import com.topologi.diffx.xml.XMLWriter;
  * properties file being loaded.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 4 June 2011
+ * @version Berlioz 0.9.0 - 13 October 2011
+ * @since Berlioz 0.8
  */
-public final class GetGlobalConfig extends ContentGeneratorBase implements ContentGenerator, Cacheable {
+public final class GetGlobalConfig implements ContentGenerator, Cacheable {
 
   /**
    * Returns a ETag based on the last modified date and length of the global propertied file.
