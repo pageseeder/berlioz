@@ -49,7 +49,19 @@ public final class BerliozConfig {
   /**
    * At what level is the XML transformer allocated.
    */
-  private enum TransformAllocation {NIL, GLOBAL, GROUP, SERVICE};
+  private enum TransformAllocation {
+    /** No transformation */
+    NIL,
+
+    /** One global transformer */
+    GLOBAL,
+
+    /** One transformer per group of services */
+    GROUP,
+
+    /** One transformer per service */
+    SERVICE
+  };
 
   // Class attributes -----------------------------------------------------------------------------
 
@@ -117,7 +129,7 @@ public final class BerliozConfig {
     File webinfPath = new File(contextPath, "WEB-INF");
     this._stylePath = this.getInitParameter("stylesheet", "IDENTITY");
     this._allocation = toAllocation(this._stylePath);
-    this._transformers = this._allocation != TransformAllocation.NIL? new ConcurrentHashMap<String, XSLTransformer>() : null;      
+    this._transformers = this._allocation != TransformAllocation.NIL? new ConcurrentHashMap<String, XSLTransformer>() : null;
     this._contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     if ("IDENTITY".equals(this._stylePath) && !this._contentType.contains("xml")) {
       LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this._contentType);
@@ -222,7 +234,7 @@ public final class BerliozConfig {
   /**
    * Returns the XSLT transformer for the specified service.
    * 
-   * @param the service which requires a transformer.
+   * @param service the service which requires a transformer.
    * @return the corresponding XSLT transformer.
    */
   public XSLTransformer getTransformer(Service service) {
@@ -309,7 +321,7 @@ public final class BerliozConfig {
    * 
    * <p>This method will create and cache the transformer if necessary.
    * 
-   * @param the service which requires a transformer.
+   * @param service the service which requires a transformer.
    * @param key the key to use to store the transformer.
    * @return the corresponding XSLT transformer.
    */
@@ -328,7 +340,10 @@ public final class BerliozConfig {
    * <p>This method creates a new transform from the style path configuration and replaces the
    * <code>{GROUP}</code> and <code>{SERVICE}</code> tokens by the corresponding service attributes.
    * 
+   * @param service The service
    * @return a new XSLT transformer from the style path configuration for the service.
+   * 
+   * @throws NullPointerException if the service is <code>null</code>.
    */
   private XSLTransformer newTransformer(Service service) {
     String path = this._stylePath;
@@ -343,8 +358,7 @@ public final class BerliozConfig {
    * 
    * <p>If <code>null</code> returns the default value.
    * 
-   * @param name The name of the init parameter.
-   * @param def  The default value if the parameter value is <code>null</code> 
+   * @param stylePath The path to the stylesheet to use.
    * 
    * @return The values for the specified init parameter name.
    */

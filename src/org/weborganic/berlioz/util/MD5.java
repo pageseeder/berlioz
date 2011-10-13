@@ -15,7 +15,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 
 import org.slf4j.LoggerFactory;
 
@@ -151,8 +150,9 @@ public final class MD5 {
   private static String toHex(byte[] data) {
     if (data == null) return null;
     final StringBuilder hex = new StringBuilder(2 * data.length);
+    final int shift = 4;
     for (final byte b : data) {
-      hex.append(HEX[(b & BYTE_MASK_HIGH) >> 4]).append(HEX[(b & BYTE_MASK_LOW)]);
+      hex.append(HEX[(b & BYTE_MASK_HIGH) >> shift]).append(HEX[(b & BYTE_MASK_LOW)]);
     }
     return hex.toString();
   }

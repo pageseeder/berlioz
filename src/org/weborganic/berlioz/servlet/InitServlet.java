@@ -173,7 +173,8 @@ public final class InitServlet extends HttpServlet implements Servlet {
   /**
    * Attempts to configure Log4j through reflection.
    * 
-   * @param config The directory containing the configuration files. 
+   * @param config The servlet config.
+   * @param configDir The directory containing the configuration files. 
    * @return The running mode.
    */
   private String getMode(ServletConfig config, File configDir) {
@@ -234,7 +235,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
       if (name.startsWith("config-") && name.endsWith(".xml")) {
         if (mode == null) {
           // Found a config file
-          mode = name.substring(7, name.length() - 4);
+          final int prefix = 7;
+          final int suffix = 4;
+          mode = name.substring(prefix, name.length() - suffix);
         } else {
           // multiple config files: unable to choose.
           mode = null;

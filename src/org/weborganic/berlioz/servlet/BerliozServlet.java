@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.MatchingService;

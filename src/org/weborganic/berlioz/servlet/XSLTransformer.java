@@ -359,13 +359,14 @@ public final class XSLTransformer {
   private static Map<String, String> toParameters(ServletRequest req) {
     // Adding parameters from HTTP parameters
     Map<String, String> p = null;
+    final int xsl_prefix = 4;
     for (Enumeration<?> names = req.getParameterNames(); names.hasMoreElements();) {
       String param = (String)names.nextElement();
       if (param.startsWith("xsl-")) {
         if (p == null) {
           p = new HashMap<String, String>();
         }
-        p.put(param.substring(4), req.getParameter(param));
+        p.put(param.substring(xsl_prefix), req.getParameter(param));
       }
     }
     // Return parameters
