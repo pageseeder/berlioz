@@ -60,7 +60,8 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * to change this behaviour.
  * 
  * @author Christophe Lauret
- * @version 5 July 2011
+ * @version Berlioz 0.8.9 - 13 October 2011
+ * @since Berlioz 0.7
  */
 public final class XSLTransformer {
 
@@ -181,6 +182,14 @@ public final class XSLTransformer {
    * Clears the internal XSLT cache.
    */
   public void clearCache() {
+    LOGGER.debug("Clearing XSLT cache.");
+    CACHE.remove(this._templates);
+  }
+
+  /**
+   * Clears the internal XSLT cache.
+   */
+  public static void clearAllCache() {
     LOGGER.debug("Clearing XSLT cache.");
     CACHE.clear();
   }

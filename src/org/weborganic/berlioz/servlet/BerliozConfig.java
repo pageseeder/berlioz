@@ -9,9 +9,9 @@ package org.weborganic.berlioz.servlet;
 
 import java.io.File;
 import java.util.Calendar;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -22,12 +22,13 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.content.Service;
 
 /**
  * Defines the configuration uses by a a Berlioz Servlet.
  * 
  * @author Christophe Lauret
- * @version Berlioz 0.8.6 - 1 September 2011
+ * @version Berlioz 0.8.9 - 13 October 2011
  * @since Berlioz 0.8.1
  */
 public final class BerliozConfig {
@@ -38,12 +39,17 @@ public final class BerliozConfig {
   /**
    * Stores all the berlioz config here.
    */
-  private static final Map<String, BerliozConfig> CONFIGS = new Hashtable<String, BerliozConfig>();
+  private static final Map<String, BerliozConfig> CONFIGS = new ConcurrentHashMap<String, BerliozConfig>();
 
   /**
    * Used to generate ETag Seeds.
    */
   private static final Random RANDOM = new Random();
+
+  /**
+   * At what level is the XML transformer allocated.
+   */
+  private enum TransformAllocation {NIL, GLOBAL, GROUP, SERVICE};
 
   // Class attributes -----------------------------------------------------------------------------
 
@@ -83,6 +89,18 @@ public final class BerliozConfig {
   private final Environment _env;
 
   /**
+   * How is the XSLT allocated for this configuration.
+   */
+  private final TransformAllocation _allocation;
+
+  /**
+   * The XSLT Transformers to user.
+   * 
+   * <p>The key depends on how the transformers are allocated.
+   */
+  private final Map<String, XSLTransformer> _transformers;
+
+  /**
    * A seed to use for the calculation of etags (allows them to be reset)
    */
   private volatile long _etagSeed = 0L;
@@ -97,7 +115,10 @@ public final class BerliozConfig {
     ServletContext context = servletConfig.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
+    // XXX: from 0.9 will default to identity
     this._stylePath = this.getInitParameter("stylesheet", "/xslt/html/global.xsl");
+    this._allocation = toAllocation(this._stylePath);
+    this._transformers = this._allocation != TransformAllocation.NIL? new ConcurrentHashMap<String, XSLTransformer>() : null;      
     this._contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     if ("IDENTITY".equals(this._stylePath) && !this._contentType.contains("xml")) {
       LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this._contentType);
@@ -111,8 +132,8 @@ public final class BerliozConfig {
   }
 
   /**
-   * Returns the name of this config, usually the servlet name.
-   * @return the name of this config, usually the servlet name.
+   * Returns the name of this configuration, usually the servlet name.
+   * @return the name of this configuration, usually the servlet name.
    */
   public String getName() {
     return this._servletConfig.getServletName();
@@ -170,7 +191,7 @@ public final class BerliozConfig {
   }
 
   /**
-   * Indicates whether HTTP compression is enabled for the Berlioz config.
+   * Indicates whether HTTP compression is enabled for the Berlioz configuration.
    * 
    * @return <code>true</code> to enable HTTP compression;
    *         <code>false</code> otherwise.
@@ -200,14 +221,20 @@ public final class BerliozConfig {
   }
 
   /**
-   * Returns a new XSLT transformer from the style path configuration.
+   * Returns the XSLT transformer for the specified service.
    * 
-   * @return a new XSLT transformer from the style path configuration.
+   * @param the service which requires a transformer.
+   * @return the corresponding XSLT transformer.
    */
-  protected XSLTransformer newTransformer() {
-    if ("IDENTITY".equals(this._stylePath) || this._stylePath == null) return null;
-    File styleSheet = this._env.getPrivateFile(this._stylePath);
-    return new XSLTransformer(styleSheet);
+  public XSLTransformer getTransformer(Service service) {
+    switch (this._allocation) {
+      case NIL:     return null;
+      case GLOBAL:  return getTransformer(service, "global");
+      case GROUP:   return getTransformer(service, service.group());
+      case SERVICE: return getTransformer(service, service.id());
+      // Should never happen, but...
+      default: return null;
+    }
   }
 
   /**
@@ -277,4 +304,61 @@ public final class BerliozConfig {
     LOGGER.info("Generating new ETag Seed: {}", seed);
     return seed;
   }
+
+  /**
+   * Returns the XSLT transformer for the specified service.
+   * 
+   * <p>This method will create and cache the transformer if necessary.
+   * 
+   * @param the service which requires a transformer.
+   * @param key the key to use to store the transformer.
+   * @return the corresponding XSLT transformer.
+   */
+  private XSLTransformer getTransformer(Service service, String key) {
+    XSLTransformer transformer = this._transformers.get(key);
+    if (transformer == null) {
+      transformer = newTransformer(service);
+      this._transformers.put(key, transformer);
+    }
+    return transformer;
+  }
+
+  /**
+   * Returns a new XSLT transformer for the specified service.
+   * 
+   * <p>This method creates a new transform from the style path configuration and replaces the
+   * <code>{GROUP}</code> and <code>{SERVICE}</code> tokens by the corresponding service attributes.
+   * 
+   * @return a new XSLT transformer from the style path configuration for the service.
+   */
+  private XSLTransformer newTransformer(Service service) {
+    String path = this._stylePath;
+    path = path.replaceAll("\\{GROUP\\}", service.group());
+    path = path.replaceAll("\\{SERVICE\\}", service.id());
+    File styleSheet = this._env.getPrivateFile(path);
+    return new XSLTransformer(styleSheet);
+  }
+
+  /**
+   * Returns the value for the specified init parameter name.
+   * 
+   * <p>If <code>null</code> returns the default value.
+   * 
+   * @param name The name of the init parameter.
+   * @param def  The default value if the parameter value is <code>null</code> 
+   * 
+   * @return The values for the specified init parameter name.
+   */
+  private static TransformAllocation toAllocation(String stylePath) {
+    if ("IDENTITY".equals(stylePath) || stylePath == null) {
+      return TransformAllocation.NIL;
+    } else if (stylePath.contains("{SERVICE}")) {
+      return TransformAllocation.SERVICE;
+    } else if (stylePath.contains("{GROUP}")) {
+      return TransformAllocation.GROUP;
+    } else {
+      return TransformAllocation.GLOBAL;
+    }
+  }
+
 }

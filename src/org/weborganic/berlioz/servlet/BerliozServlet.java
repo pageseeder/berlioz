@@ -82,7 +82,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * parameters is used. Use the initialisation parameters to define a control key.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version Berlioz 0.8.6 - 1 September 2011
+ * @version Berlioz 0.8.9 - 13 October 2011
  * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -104,11 +104,6 @@ public final class BerliozServlet extends HttpServlet {
    * The transformer factory to generate the templates
    */
   private transient BerliozConfig _config;
-
-  /**
-   * The transformer factory to generate the templates
-   */
-  private transient XSLTransformer _transformer;
 
   /**
    * The services managed by this servlet.
@@ -143,7 +138,6 @@ public final class BerliozServlet extends HttpServlet {
     super.init(servletConfig);
     BerliozConfig config = BerliozConfig.newConfig(servletConfig);
     this._config = config;
-    this._transformer = config.newTransformer();
     this._services = ContentManager.getDefaultRegistry();
     this._errorHandler = servletConfig.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
     if (this._errorHandler == null) {
@@ -161,7 +155,6 @@ public final class BerliozServlet extends HttpServlet {
     LOGGER.info("Destroying Berlioz Servlet");
     BerliozConfig.unregister(this._config);
     this._config = null;
-    this._transformer = null;
     this._services = null;
     this._errorHandler = null;
   }
@@ -263,7 +256,7 @@ public final class BerliozServlet extends HttpServlet {
 
       // Clear the XSLT cache if requested
       boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
-      if (clearCache && this._transformer != null) { this._transformer.clearCache(); }
+      if (clearCache) { XSLTransformer.clearAllCache(); }
 
       // Allow ETags to be reset
       boolean resetEtags = reload || "true".equals(req.getParameter("reset-etags"));
@@ -319,11 +312,14 @@ public final class BerliozServlet extends HttpServlet {
     // Is Berlioz used to handle an error?
     Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
 
+    // Identify the transformer
+    XSLTransformer transformer = this._config.getTransformer(match.service());
+
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
     if (code == null && match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
       String etagXML = xml.getEtag();
-      String etagXSL = this._transformer != null? this._transformer.getEtag() : null;
+      String etagXSL = transformer != null? transformer.getEtag() : null;
       etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
 
       // Check if the conditions specified in the optional If headers are satisfied.
@@ -379,8 +375,8 @@ public final class BerliozServlet extends HttpServlet {
 
       // setup the output
       BerliozOutput result = null;
-      if (this._transformer != null) {
-        XSLTransformResult xslresult = this._transformer.transform(content, req, xml.getService());
+      if (transformer != null) {
+        XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
         LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
         result = xslresult;
         if (xslresult.status() == Status.ERROR) {
