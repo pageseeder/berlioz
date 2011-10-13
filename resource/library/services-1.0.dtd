@@ -2,11 +2,11 @@
 <!--                                                                        -->
 <!-- Title:         Berlioz DTD for Web Services                            -->
 <!-- System:        Berlioz                                                 -->
-<!-- Status:        Beta 2                                                  -->
+<!-- Status:        Beta 3                                                  -->
 <!-- Description:   A schema for the defining the URL patterns and          -->
 <!--                associated content generators.                          -->
 <!-- Version:       1.0                                                     -->
-<!-- LastModified:  28 June 2011                                            -->
+<!-- LastModified:  13 October 2011                                         -->
 <!-- Author(s):     Christophe Lauret                                       -->
 <!--                                                                        -->
 <!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
@@ -77,14 +77,10 @@
   
   @attribute name    The name of the parameter.
   @attribute value   The value of this parameter.
-  @attribute source  The source of the parameter value.
-  @attribute default A default value if the value is missing.
 -->
 <!ELEMENT parameter                                                    EMPTY >
 <!ATTLIST parameter         name               CDATA               #REQUIRED
-                            value              CDATA               #REQUIRED
-                            source             CDATA                #IMPLIED
-                            default            CDATA                #IMPLIED >
+                            value              CDATA               #REQUIRED >
 
 <!--
   Top level element.

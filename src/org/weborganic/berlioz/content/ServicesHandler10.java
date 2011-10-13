@@ -30,7 +30,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>This class should remain protected as there is no reason to expose its method to the public API. 
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 29 June 2011
+ * @version Berlioz 0.9.0 - 13 October 2011
+ * @since Berlioz 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
 
@@ -314,17 +315,6 @@ final class ServicesHandler10 extends DefaultHandler {
   private Parameter toParameter(Attributes atts) throws SAXException {
     Parameter.Builder p = new Parameter.Builder(atts.getValue("name")); 
     p.value(atts.getValue("value"));
-    // Warn about deprecated attributes
-    String source = atts.getValue("source");
-    String def = atts.getValue("default");
-    if (source != null) {
-      p.source(source);
-      warning("Attribute 'source' on element 'parameter' is deprecated.");
-    }
-    if (def != null) {
-      p.def(def);
-      warning("Attribute 'default' on element 'parameter' is deprecated.");
-    }
     try {
       return p.build();
     } catch (IllegalStateException ex) {

@@ -17,27 +17,10 @@ import java.util.Map;
  * send to a generator.
  * 
  * @author Christophe Lauret
- * @version 28 June 2011
+ * @version Berlioz 0.9.0 - 13 October 2011
+ * @since Berlioz 0.8
  */
 public final class Parameter {
-
-  /**
-   * Defines the source of the parameter.
-   * 
-   * @deprecated Use the parameter template notation instead.
-   */
-  @Deprecated public enum Source {
-
-    /** Use the string value as it is. */
-    STRING,
-
-    /** Use the corresponding parameter value from query string of the URL. */
-    QUERY_STRING,
-
-    /** Use the resolved URI variable. */
-    URI_VARIABLE
-
-  }
 
   /**
    * The name of this parameter.
@@ -82,23 +65,6 @@ public final class Parameter {
    */
   public String value(Map<String, String> parameters) {
     return this._template.toString(parameters);
-  }
-
-  /**
-   * @return Always STRING.
-   * 
-   * @deprecated The source is no longer used.
-   */
-  @Deprecated public Source source() {
-    return Source.STRING;
-  }
-
-  /**
-   * @return The <code>null</code>.
-   * @deprecated This class now uses templates. 
-   */
-  @Deprecated public String def() {
-    return null;
   }
 
   /**
