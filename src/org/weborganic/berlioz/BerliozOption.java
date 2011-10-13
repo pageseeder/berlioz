@@ -199,8 +199,6 @@ public enum BerliozOption {
   /**
    * A boolean global option to indicate whether to enable the caching of XSLT templates.
    * 
-   * <p><i>Note: this option replaces the now deprecated <code>"berlioz.cache.xslt"</code></i></p>
-   * 
    * <h3>Property</h3>
    * <table>
    *   <tr><th>Name</th><th>Value</th></tr>
