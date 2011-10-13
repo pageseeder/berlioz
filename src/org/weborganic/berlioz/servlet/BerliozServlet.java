@@ -82,7 +82,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * parameters is used. Use the initialisation parameters to define a control key.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version Berlioz 0.8.9 - 13 October 2011
+ * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -360,84 +360,70 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
-    // Redirect if required - Phase this feature out
-    // TODO handle
-    String url = req.getParameter("redirect-url");
-    if (url == null) {
-      url = (String)req.getAttribute("redirect-url");
-    }
-    if (url != null && !"".equals(url)) {
-      LOGGER.warn("Redirecting URL using deprecated 'redirect-url' - will be removed in future releases.");
-      res.sendRedirect(url);
+    // TODO handle redirect
 
     // Produce the output
+    BerliozOutput result = null;
+    if (transformer != null) {
+      XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
+      LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
+      result = xslresult;
+      if (xslresult.status() == Status.ERROR) {
+        res.reset();
+        res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+      }
     } else {
+      result = new XMLContent(content);
+    }
 
-      // setup the output
-      BerliozOutput result = null;
-      if (transformer != null) {
-        XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
-        LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
-        result = xslresult;
-        if (xslresult.status() == Status.ERROR) {
-          res.reset();
-          res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    // Update content type from XSLT transform result (MUST be specified before the output is requested)
+    String ctype = result.getMediaType()+";charset="+result.getEncoding();
+    res.setContentType(ctype);
+    res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
+    if (!config.getContentType().equals(ctype)) {
+      LOGGER.info("Updating content type to {}", ctype);
+      config.setContentType(ctype);
+    }
+
+    // Apply Compression if necessary
+    boolean isCompressed = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType());
+    if (isCompressed) {
+
+      // Indicate that the representation may vary depending on the encoding
+      res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
+      if (HttpHeaderUtils.acceptsGZipCompression(req)) {
+        byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
+        if (compressed.length > 0) {
+          res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
+          res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
+          if (etag != null) {
+            res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
+          }
+          if (includeContent) {
+            ServletOutputStream out = res.getOutputStream();
+            out.write(compressed);
+            out.flush();
+          }
+        } else {
+          isCompressed = false; // Compression failed
         }
       } else {
-        result = new XMLContent(content);
+        isCompressed = false; // Client does not accept Compression
       }
-
-      // Update content type from XSLT transform result (MUST be specified before the output is requested)
-      String ctype = result.getMediaType()+";charset="+result.getEncoding();
-      res.setContentType(ctype);
-      res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
-      if (!config.getContentType().equals(ctype)) {
-        LOGGER.info("Updating content type to {}", ctype);
-        config.setContentType(ctype);
-      }
-
-      // Apply Compression if necessary
-      boolean isCompressed = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType());
-      if (isCompressed) {
-
-        // Indicate that the representation may vary depending on the encoding
-        res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
-        if (HttpHeaderUtils.acceptsGZipCompression(req)) {
-          byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
-          if (compressed.length > 0) {
-            res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
-            res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
-            if (etag != null) {
-              res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
-            }
-            if (includeContent) {
-              ServletOutputStream out = res.getOutputStream();
-              out.write(compressed);
-              out.flush();
-            }
-          }
-          else {
-            isCompressed = false; // Compression failed
-          }
-        }
-        else {
-          isCompressed = false; // Client does not accept Compression
-        }
-      }
-
-      // Copy the uncompressed version if needed
-      if (!isCompressed) {
-        if (includeContent) {
-          PrintWriter out = res.getWriter();
-          out.print(result.content());
-          out.flush();
-        } else {
-          // We need to calculate when we don't include the content
-          res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), Charset.forName(result.getEncoding())));
-        }
-      }
-
     }
+
+    // Copy the uncompressed version if needed
+    if (!isCompressed) {
+      if (includeContent) {
+        PrintWriter out = res.getWriter();
+        out.print(result.content());
+        out.flush();
+      } else {
+        // We need to calculate when we don't include the content
+        res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), Charset.forName(result.getEncoding())));
+      }
+    }
+
   }
 
   /**
