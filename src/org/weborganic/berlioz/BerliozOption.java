@@ -13,7 +13,8 @@ package org.weborganic.berlioz;
  * <p>Use this class to know which global setting can be used with Berlioz.
  * 
  * @author Christophe Lauret
- * @version 4 July 2011
+ * @version Berlioz 0.9.0 - 13 October 2011
+ * @since Berlioz 0.8.4
  */
 public enum BerliozOption {
 
@@ -220,32 +221,6 @@ public enum BerliozOption {
    * @since Berlioz 0.8.3
    */
   XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
-
-  /**
-   * A boolean global option to indicate whether to enable caching of XSLT.
-   * 
-   * <h3>Property</h3>
-   * <table>
-   *   <tr><th>Name</th><th>Value</th></tr>
-   *   <tr>
-   *     <td><code>berlioz.cache.xslt</code></td>
-   *     <td><code>true</code></td>
-   *   </tr>
-   * </table>
-   * 
-   * <h3>Recommended values</h3>
-   * <table>
-   *   <tr><th>Development</th><th>Production</th></tr>
-   *   <tbody><tr><td><code>false</code></td><td><code>true</code></td></tr></tbody>
-   * </table>
-   * <p>It is easier to test the XSLT files during development when caching is disabled; caching
-   * should be enabled in production mode.</p>
-   * 
-   * @since Berlioz 0.7.0
-   * 
-   * @deprecated The name of this option has been changed for consistency, use {@link #XSLT_CACHE} instead.
-   */
-  @Deprecated CACHE_XSLT("berlioz.cache.xslt", Boolean.TRUE),
 
   /**
    * A boolean global option to indicate whether to tolerate warnings or throw an error when they
