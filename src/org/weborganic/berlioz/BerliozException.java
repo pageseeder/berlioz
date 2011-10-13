@@ -41,19 +41,12 @@ public class BerliozException extends Exception implements XMLWritable {
   private ErrorID _id = null;
 
   /**
-   * Additional information, for instance an SQL statement.
-   * @deprecated Will be removed in future releases.
-   */
-  @Deprecated private final String _extra;
-
-  /**
    * Creates a new Berlioz exception.
    * 
    * @param message The message.
    */
   public BerliozException(String message) {
     super(message);
-    this._extra = null;
   }
 
   /**
@@ -64,21 +57,6 @@ public class BerliozException extends Exception implements XMLWritable {
    */
   public BerliozException(String message, Exception cause) {
     super(message, cause);
-    this._extra = null;
-  }
-
-  /**
-   * Creates a new Berlioz exception wrapping an existing exception.
-   * 
-   * @param message The message.
-   * @param extra   Additional information.
-   * @param cause   The wrapped exception.
-   * 
-   * @deprecated The extra parameter will be removed in subsequent releases.
-   */
-  @Deprecated public BerliozException(String message, String extra, Exception cause) {
-    super(message, cause);
-    this._extra = extra;
   }
 
   /**
@@ -89,7 +67,6 @@ public class BerliozException extends Exception implements XMLWritable {
    */
   public BerliozException(String message, ErrorID id) {
     super(message);
-    this._extra = null;
     this._id = id;
   }
 
@@ -102,7 +79,6 @@ public class BerliozException extends Exception implements XMLWritable {
    */
   public BerliozException(String message, Exception cause, ErrorID id) {
     super(message, cause);
-    this._extra = null;
     this._id = id;
   }
 
@@ -133,8 +109,6 @@ public class BerliozException extends Exception implements XMLWritable {
    * <berlioz-exception>
    *   <message>message</message>
    *   <code class="comment"><!-- Only if there is additional information --></code>
-   *   <extra>extra info</extra>
-   *   <code class="comment"><!-- Only if there is a cause (exception trapped) --></code>
    *   <cause>exception string value</cause>
    *   <stack-trace>the stack trace</stack-trace>
    * </berlioz-exception>
@@ -149,9 +123,6 @@ public class BerliozException extends Exception implements XMLWritable {
   @Deprecated public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("berlioz-exception", true);
     xml.element("message", super.getMessage());
-    if (this._extra != null) {
-      xml.element("extra", this._extra);
-    }
     if (super.getCause() != null) {
       xml.element("cause", super.getCause().toString());
     }
