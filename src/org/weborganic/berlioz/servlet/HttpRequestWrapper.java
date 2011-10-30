@@ -110,8 +110,8 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * 
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
-  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env, Map<String,String> parameters)
-      throws IllegalArgumentException {
+  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env, 
+      Map<String, String> parameters) throws IllegalArgumentException {
     if (req == null)
       throw new IllegalArgumentException("Cannot construct wrapper around null request.");
     this._req = req;
