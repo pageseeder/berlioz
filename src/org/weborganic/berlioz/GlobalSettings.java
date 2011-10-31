@@ -95,9 +95,6 @@ public final class GlobalSettings {
   static {
     mode = System.getProperty("berlioz.mode");
     if (mode == null) {
-      mode = System.getProperty("berlioz.config");
-    }
-    if (mode == null) {
       mode = DEFAULT_MODE;
     }
   }
@@ -389,6 +386,7 @@ public final class GlobalSettings {
    *   <li>the property is not found;</li>
    *   <li>the file corresponding to the property does not exist;</li>
    *   <li>there is an error 
+   * </ul>
    * 
    * <p>If the properties file has not been loaded, this method will invoke the {@link #load()}.
    *

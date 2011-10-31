@@ -23,6 +23,11 @@ package org.weborganic.berlioz;
   UNEXPECTED,
 
   /**
+   * An error occurred while trying to start or stop Berlioz.
+   */
+  LIFECYCLE_ERROR,
+
+  /**
    * An error occurred because the XSLT file could not be found.
    */
   SERVICES_NOT_FOUND,
