@@ -267,7 +267,6 @@ public final class InitServlet extends HttpServlet implements Servlet {
 
   }
 
-
   /**
    * Checking that the global setting are loaded properly.
    * 
@@ -301,9 +300,6 @@ public final class InitServlet extends HttpServlet implements Servlet {
           ok = listener.start();
         } catch (Exception ex) {
           ex.printStackTrace();
-        }
-        if (ok != listener.isAlive()) {
-          System.out.println("[BERLIOZ_INIT] (!) listener state is incorrect, isAlive returns"+listener.isAlive());
         }
         if (ok) {
           System.out.println("[BERLIOZ_INIT] Lifecycle: OK -------------------------------------------------");
