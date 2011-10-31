@@ -7,8 +7,6 @@
  */
 package org.weborganic.berlioz.content;
 
-import org.weborganic.berlioz.Beta;
-
 /**
  * An enumeration of status codes supported by Berlioz generators.
  * 
@@ -20,7 +18,7 @@ import org.weborganic.berlioz.Beta;
  * 
  * @since Berlioz 0.8.2
  */
-@Beta public enum ContentStatus {
+public enum ContentStatus {
 
   // Successful 2xx
   // ----------------------------------------------------------------------------------------------

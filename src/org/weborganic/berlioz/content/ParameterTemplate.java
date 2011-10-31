@@ -13,8 +13,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.weborganic.berlioz.Beta;
-
 /**
  * Defines a simple template for parameter values. 
  * 
@@ -23,7 +21,7 @@ import org.weborganic.berlioz.Beta;
  * 
  * @since Berlioz 0.8.2
  */
-@Beta public final class ParameterTemplate {
+public final class ParameterTemplate {
 
   /**
    * A variable in a template.
