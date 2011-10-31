@@ -80,6 +80,7 @@
 
   <!-- generate the documentation -->
   <target name="javadoc" depends="init" description="generate the java documentation">
+    <ivy:buildnumber organisation="weborganic" module="${name.short}" resolver="shared" />
     <mkdir dir="${dir.doc}"/>
     <path id="required.lib">
       <fileset dir="${dir.lib}" includes="*.jar"/>
@@ -96,7 +97,7 @@
                                   packagenames="${package.names}" 
                                   sourcepath="${dir.src}"
                                   stylesheetfile="${dir.resource}/javadoc.css"
-                                  doctitle="${name.display} ${version} API">
+                                  doctitle="${name.display} ${ivy.revision} API">
       <classpath>
         <path refid="required.lib"/>
       </classpath>
