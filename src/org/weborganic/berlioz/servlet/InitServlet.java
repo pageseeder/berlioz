@@ -298,16 +298,18 @@ public final class InitServlet extends HttpServlet implements Servlet {
         this._listener = listener;
         boolean ok = false;
         try {
-          listener.start();
-          ok = listener.isAlive();
+          ok = listener.start();
         } catch (Exception ex) {
+          ex.printStackTrace();
+        }
+        if (ok != listener.isAlive()) {
+          System.out.println("[BERLIOZ_INIT] (!) listener state is incorrect, isAlive returns"+listener.isAlive());
+        }
+        if (ok) {
+          System.out.println("[BERLIOZ_INIT] Lifecycle: OK -------------------------------------------------");
+        } else {
           System.out.println("[BERLIOZ_INIT] (!) Unable to start Lifecycle listener");
-        } finally {
-          if (ok) {
-            System.out.println("[BERLIOZ_INIT] Lifecycle: OK -------------------------------------------------");
-          } else {
-            System.out.println("[BERLIOZ_INIT] Lifecycle: FAIL -----------------------------------------------");
-          }
+          System.out.println("[BERLIOZ_INIT] Lifecycle: FAIL -----------------------------------------------");
         }
       }
 

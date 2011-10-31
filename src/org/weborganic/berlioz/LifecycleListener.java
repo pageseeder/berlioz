@@ -31,8 +31,10 @@ public interface LifecycleListener {
    * 
    * After this method has been called, the method {@link #isAlive()} should return <code>true</code>
    * unless some fatal errors occurred.
+   * 
+   * @return <code>true</code> if the start was successful.
    */
-  void start();
+  boolean start();
 
   /**
    * This method is called when Berlioz stops by the BerliozInit servlet's destroy method.
@@ -47,8 +49,10 @@ public interface LifecycleListener {
    *   [BERLIOZ_STOP] Releasing all index resources OK
    *   [BERLIOZ_STOP] Closing database connections OK
    * </pre>
+   * 
+   * @return <code>true</code> if the stop was successful.
    */
-  void stop();
+  boolean stop();
 
   /**
    * This method should be used by implementations to indicate whether they started normally. 
