@@ -220,6 +220,32 @@ public enum BerliozOption {
    */
   XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
 
+
+  /**
+   * A boolean global option to indicate whether the header should use the header format used prior 
+   * to version 1.0.
+   * 
+   * <h3>Property</h3>
+   * <table>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.xml.header.compatibility</code></td>
+   *     <td><code>true</code></td>
+   *   </tr>
+   * </table>
+   * 
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr><td><code>false</code></td><td><code>false</code></td></tr></tbody>
+   * </table>
+   * <p>This option will be default to <code>false</code> for Berlioz 1.0</p>
+   * 
+   * @since Berlioz 0.9.2
+   */
+  @Beta
+  XML_HEADER_COMPATIBILITY("berlioz.xml.header.compatibility", Boolean.TRUE),
+
   /**
    * A boolean global option to indicate whether to tolerate warnings or throw an error when they
    * are found in Berlioz XML files.

@@ -14,6 +14,7 @@ import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.furi.URIResolveResult;
@@ -193,12 +194,14 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.element("path-info", HttpRequestWrapper.getBerliozPath(this._request));
     xml.element("context-path", this._request.getContextPath());
 
-    // Deprecated: will be removed in 1.0
-    xml.element("scheme", this._request.getScheme());
-    xml.element("host", this._request.getServerName());
-    xml.element("port", Integer.toString(this._request.getServerPort()));
-    xml.element("url", this._request.getRequestURL().toString());
-    xml.element("query-string", this._request.getQueryString());
+    // Deprecated from 1.0
+    if (GlobalSettings.has(BerliozOption.XML_HEADER_COMPATIBILITY)) {
+      xml.element("scheme", this._request.getScheme());
+      xml.element("host", this._request.getServerName());
+      xml.element("port", Integer.toString(this._request.getServerPort()));
+      xml.element("url", this._request.getRequestURL().toString());
+      xml.element("query-string", this._request.getQueryString());
+    }
 
     // New location info
     xml.openElement("location");
