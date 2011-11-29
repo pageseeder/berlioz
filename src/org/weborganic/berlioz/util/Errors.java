@@ -121,6 +121,7 @@ public final class Errors {
     if (ex instanceof SAXParseException)    { asSAXParseExceptionXML((SAXParseException)ex, xml, wrap); return; }
     if (ex instanceof TransformerException) { asTransformerExceptionXML((TransformerException)ex, xml, wrap); return; }
     if (ex instanceof Exception)            { asExceptionXML((Exception)ex, xml, wrap); return; }
+    if (ex instanceof Error)                { asErrorXML((Error)ex, xml, wrap); return; }
   }
 
   /**
@@ -280,6 +281,33 @@ public final class Errors {
   private static void asExceptionXML(Exception ex, XMLWriter xml, boolean wrap) throws IOException {
     if (wrap) {
       xml.openElement("exception");
+    }
+    xml.attribute("class", ex.getClass().getName());
+    xml.element("message", cleanMessage(ex));
+    xml.element("stack-trace", Errors.getStackTrace(ex, true));
+    Throwable cause = ex.getCause();
+    if (cause != null) {
+      xml.openElement("cause");
+      toXML(cause, xml, false);
+      xml.closeElement();
+    }
+    if (wrap) {
+      xml.closeElement();
+    }
+  }
+
+  /**
+   * Returns the XML for a generic error.
+   * 
+   * @param ex   The error to turn to XML.
+   * @param xml  The XML writer.
+   * @param wrap Whether to wrap the XML into an element.
+   * 
+   * @throws IOException Only if thrown by the XML writer.
+   */
+  private static void asErrorXML(Error ex, XMLWriter xml, boolean wrap) throws IOException {
+    if (wrap) {
+      xml.openElement("error");
     }
     xml.attribute("class", ex.getClass().getName());
     xml.element("message", cleanMessage(ex));

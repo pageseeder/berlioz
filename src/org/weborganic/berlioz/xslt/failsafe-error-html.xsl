@@ -25,7 +25,10 @@
 <head>
   <title><xsl:value-of select="*/title"/></title>
   <style type="text/css">
-body {font-family: Frutiger, "Frutiger Linotype", Univers, Calibri, "Gill Sans", "Gill Sans MT", "Myriad Pro", Myriad, "Liberation Sans",  Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif; background: #ddd;}
+
+body {font-family: Frutiger, "Frutiger Linotype", Univers, Calibri, "Gill Sans", "Gill Sans MT", "Myriad Pro", Myriad, "Liberation Sans",  Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;}
+body {background: #f7f7f7; background-repeat: no-repeat; background-image: -moz-linear-gradient(top, #ddd 0%, #f7f7f7 200px); background-image: -webkit-linear-gradient(top, #bbb 0%, #eee 200px); background-image: -o-linear-gradient(top, #bbb 0%, #eee 200px); background-image: -ms-linear-gradient(top, #bbb 0%, #eee 200px); background-image: linear-gradient(top, #bbb 0%, #eee 200px);}
+
 h1   {margin-top: 0; border-bottom: 3px solid;}
 .informational h1 {border-color: #ccc; color: #999;}
 .server-error  h1 {border-color: #f60; color: #c01;}
@@ -40,7 +43,7 @@ h4   {font-size: 2ex}
 code {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; line-height: 150%}
 pre  {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 70%; line-height: 150%; color: #666; }
 
-.container       {width: 1000px; margin: 30px auto; background: white; padding: 10px; border: 3px solid #999; -moz-border-radius: 12px; border-radius: 12px; -moz-box-shadow: 0 0 20px #aaa; box-shadow: 0 0 20px #aaa}
+.container       {width: 1000px; margin: 30px auto; background: white; padding: 10px; border: 4px solid #e7e7e7; -moz-box-shadow: 0 0 24px rgba(0,0,0,.3); box-shadow: 0 0 24px rgba(0,0,0,.3);}
 .message         {font-weight: bold}
 .footer          {border-top: 2px solid #999; height: 20px; color: #666; font-size: 80%;}
 .location        {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; line-height: 150%}
@@ -75,7 +78,7 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
       <p class="message"><xsl:value-of select="message"/></p>
     </xsl:if>
     <xsl:apply-templates select="." mode="help"/>
-    <xsl:apply-templates select="exception"/>
+    <xsl:apply-templates select="exception|error"/>
     <xsl:apply-templates select="collected-errors"/>
     <div class="footer">
       <div id="datetime"><xsl:value-of select="format-dateTime(@datetime, '[MNn] [D], [Y] at [H01]:[m01]:[s01] [z]')"/></div>
@@ -101,6 +104,18 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 <!-- Exception -->
 <xsl:template match="exception">
   <div class="exception">
+    <h2><xsl:value-of select="message"/></h2>
+    <xsl:if test="not(following-sibling::collected-errors)">
+      <xsl:apply-templates select="location"/>
+    </xsl:if>
+    <xsl:apply-templates select="stack-trace"/>
+    <xsl:apply-templates select="cause[not(message = current()/message)]"/>
+  </div>
+</xsl:template>
+
+<!-- Java Error -->
+<xsl:template match="error[@class]">
+  <div class="error">
     <h2><xsl:value-of select="message"/></h2>
     <xsl:if test="not(following-sibling::collected-errors)">
       <xsl:apply-templates select="location"/>

@@ -187,7 +187,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String message = (String)req.getAttribute(ERROR_MESSAGE);
     Integer code   = (Integer)req.getAttribute(ERROR_STATUS_CODE);
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
-    Exception exception = (Exception)req.getAttribute(ERROR_EXCEPTION);
+    Throwable throwable = (Throwable)req.getAttribute(ERROR_EXCEPTION);
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
     String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
 
@@ -206,8 +206,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
       // If it has a Berlioz ID
-      if (exception instanceof BerliozException && ((BerliozException)exception).id() != null) {
-        xml.attribute("id", ((BerliozException)exception).id().id());
+      if (throwable instanceof BerliozException && ((BerliozException)throwable).id() != null) {
+        xml.attribute("id", ((BerliozException)throwable).id().id());
       } else {
         xml.attribute("id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString());
       }
@@ -224,13 +224,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
       xml.element("servlet", servlet != null? servlet : "null");
 
-      if (exception != null) {
-        Errors.toXML(exception, xml);
+      if (throwable != null) {
+        Errors.toXML(throwable, xml, true);
 
         // If some errors were collected, let's include them
-        if (exception instanceof CompoundBerliozException) {
+        if (throwable instanceof CompoundBerliozException) {
           xml.openElement("collected-errors");
-          ErrorCollector<? extends Exception> collector = ((CompoundBerliozException)exception).getCollector();
+          ErrorCollector<? extends Exception> collector = ((CompoundBerliozException)throwable).getCollector();
           for (CollectedError<? extends Exception> collected : collector.getErrors()) {
             collected.toXML(xml);
           }
@@ -276,7 +276,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     } catch (IOException io) {
       LOGGER.warn("Unable to produce error details for error below:");
-      LOGGER.error("An error occurred while transforming content", exception);
+      LOGGER.error("An error occurred while transforming content", throwable);
     }
 
     return out.toString();
