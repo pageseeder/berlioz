@@ -122,7 +122,9 @@ public final class XMLResponse {
         ContentGenerator generator = request.generator();
         // Check if cacheable
         if (generator instanceof Cacheable) {
-          etag.append(((Cacheable)generator).getETag(request)).append("/");
+          String localtag = ((Cacheable)generator).getETag(request);
+          if (localtag == null) return null;
+          etag.append(localtag).append("/");
         } else {
           cacheable = false;
           break;

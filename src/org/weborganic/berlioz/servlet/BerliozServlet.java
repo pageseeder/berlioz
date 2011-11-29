@@ -316,26 +316,32 @@ public final class BerliozServlet extends HttpServlet {
 
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
-    if (code == null && match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
+    boolean cacheable = code == null && match.isCacheable();
+    if (cacheable && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
       String etagXML = xml.getEtag();
-      String etagXSL = transformer != null? transformer.getEtag() : null;
-      etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
+      if (etagXML != null) {
+        String etagXSL = transformer != null? transformer.getEtag() : null;
+        etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
 
-      // Check if the conditions specified in the optional If headers are satisfied.
-      ServiceInfo info = new ServiceInfo(etag);
-      if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
+        // Check if the conditions specified in the optional If headers are satisfied.
+        ServiceInfo info = new ServiceInfo(etag);
+        if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
 
-      // Update the headers 
-      res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
-      String cc = xml.getService().cache();
-      if (cc == null) {
-        cc = config.getCacheControl();
+        // Update the headers 
+        res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
+        String cc = xml.getService().cache();
+        if (cc == null) {
+          cc = config.getCacheControl();
+        }
+        res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
+        res.setHeader(HttpHeaders.ETAG, etag);
+      } else {
+        cacheable = false;
       }
-      res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
-      res.setHeader(HttpHeaders.ETAG, etag);
+    }
 
     // Prevents caching
-    } else {
+    if (!cacheable) {
       res.setDateHeader(HttpHeaders.EXPIRES, 0);
       res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
     }
