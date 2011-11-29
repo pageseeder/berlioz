@@ -154,10 +154,15 @@ public final class XMLResponseHeader implements XMLWritable {
    *     <service>[service name]</service>
    *     <path-info>[berlioz path]</path-info>
    *     <context-path>[servlet context path]</context-path>
-   *     <host>[remote host]</host>
-   *     <port>[remote port]</port>
-   *     <url>[remote url]</url>
-   *     <query-string>[remote port]</query-string>
+   *     <host>[server host]</host>
+   *     <port>[server port]</port>
+   *     <url>[url (up to query)]</url>
+   *     <query-string>[query string]</query-string>
+   *     <location scheme="[http|https]"
+   *                 host="[hostname]"
+   *                 port="[post]"
+   *                 path="[path]"
+   *                query="[query]">[full url]</location>
    *     <http-parameters>
    *       <parameter name="[name-A]">[value-A]</parameter>
    *       <parameter name="[name-B]">[value-B1]</parameter>
@@ -187,11 +192,27 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.element("service", this._service);
     xml.element("path-info", HttpRequestWrapper.getBerliozPath(this._request));
     xml.element("context-path", this._request.getContextPath());
+
+    // Deprecated: will be removed in 1.0
+    xml.element("scheme", this._request.getScheme());
     xml.element("host", this._request.getServerName());
-    int port = GlobalSettings.get("xmlport", this._request.getServerPort());
-    xml.element("port", Integer.toString(port));
+    xml.element("port", Integer.toString(this._request.getServerPort()));
     xml.element("url", this._request.getRequestURL().toString());
     xml.element("query-string", this._request.getQueryString());
+
+    // New location info
+    xml.openElement("location");
+    xml.attribute("scheme", this._request.getScheme());
+    xml.attribute("host", this._request.getServerName());
+    xml.attribute("port", Integer.toString(this._request.getServerPort()));
+    xml.attribute("path", this._request.getRequestURI());
+    xml.attribute("query", this._request.getQueryString());
+    StringBuffer url = this._request.getRequestURL();
+    if (this._request.getQueryString() != null) {
+      url.append('?').append(this._request.getQueryString());
+    }
+    xml.writeText(url.toString());
+    xml.closeElement();
 
     // Write the http parameters
     xml.openElement("http-parameters", true);
