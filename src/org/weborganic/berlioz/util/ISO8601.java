@@ -38,7 +38,7 @@ import java.util.Date;
  *      and Time</a>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 3 June 2010
+ * @version 9 December 2011
  */
 public enum ISO8601 {
 
@@ -114,7 +114,7 @@ public enum ISO8601 {
     boolean hasTimeZone = (this._format.charAt(this._format.length() - 1) == 'Z');
     String parsable = date;
     if (hasTimeZone) {
-      parsable = date.substring(0, date.length() - 2) + ":" + date.substring(date.length() - 2);
+      parsable = date.substring(0, date.length() - 3) + date.substring(date.length() - 2);
     }
     return iso.parse(parsable);
   }
