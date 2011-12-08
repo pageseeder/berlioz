@@ -7,6 +7,7 @@
  */
 package org.weborganic.berlioz.content;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,13 +17,18 @@ import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.content.ServiceStatusRule.SelectType;
+import org.weborganic.berlioz.http.HttpMethod;
+
+import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * A list of of content generators or content instructions.
  * 
- * @author Christophe Lauret
- * @version 28 May 2010
+ * @author Christophe Lauret (Weborganic)
+ * @version Berlioz 0.9.3 - 9 December 2011
+ * @since Berlioz 0.7
  */
 public final class Service {
 
@@ -208,6 +214,66 @@ public final class Service {
   @Override
   public String toString() {
     return "service:"+this._group+"/"+this._id;
+  }
+
+  /**
+   * Serialises the specified service as XML.
+   * 
+   * @param xml     the XML writer
+   * @param method  the HTTP method the service is mapped to.
+   * @param urls    the URI patterns this service matches
+   * 
+   * @throws IOException if thrown by the XML writer.
+   */
+  @Beta
+  public void toXML(XMLWriter xml, HttpMethod method, List<String> urls) throws IOException {
+    xml.openElement("service", true);
+    xml.attribute("id", this._id);
+    if (this._group != null)
+      xml.attribute("group", this._group);
+    if (method != null)
+      xml.attribute("method", method.toString());
+
+    // Caching information
+    xml.attribute("cacheable", Boolean.toString(this._cacheable));
+    if (this._cache != null) {
+      xml.attribute("cache-control", this._cache);
+    }
+
+    // How the response code is calculated
+    xml.openElement("response-code", true);
+    xml.attribute("use", this._rule.use().toString());
+    xml.attribute("rule", this._rule.rule().toString());
+    xml.closeElement();
+    
+    // URI patterns
+    if (urls != null) {
+      for (String url : urls) {
+        xml.openElement("url", true);
+        xml.attribute("pattern", url);
+        xml.closeElement();
+      }
+    }
+
+    // Generators
+    for (ContentGenerator generator : this._generators) {
+      List<Parameter> parameters = this.parameters(generator);
+      xml.openElement("generator", !parameters.isEmpty());
+      xml.attribute("class", generator.getClass().getName());
+      xml.attribute("name", this.name(generator));
+      xml.attribute("target", this.target(generator));
+      xml.attribute("cacheable", Boolean.toString(generator instanceof Cacheable));
+      xml.attribute("affect-status", Boolean.toString(this.affectStatus(generator)));
+      for (Parameter p : parameters) {
+        xml.openElement("parameter", false);
+        xml.attribute("name", p.name());
+        xml.attribute("value", p.value());
+        xml.closeElement();
+      }
+      xml.closeElement();
+    }
+
+    xml.closeElement();
   }
 
   /**

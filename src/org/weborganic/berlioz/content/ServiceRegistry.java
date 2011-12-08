@@ -8,10 +8,12 @@
 package org.weborganic.berlioz.content;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.furi.URIPattern;
@@ -24,7 +26,8 @@ import org.weborganic.furi.URIResolver.MatchRule;
  * <p>Note: this class is not synchronized and must be synchronised externally.
  * 
  * @author Christophe Lauret
- * @version 28 June 2011
+ * @version Berlioz 0.9.3 - 9 December 2011
+ * @since Berlioz 0.8
  */
 public final class ServiceRegistry {
 
@@ -32,6 +35,11 @@ public final class ServiceRegistry {
    * Maps content generators to the appropriate HTTP method.
    */
   private final Map<HttpMethod, ServiceMap> registry;
+
+  /**
+   * When the service registry was last loaded.
+   */
+  private long version;
 
   /**
    * Creates a new registry.
@@ -42,6 +50,7 @@ public final class ServiceRegistry {
     for (HttpMethod m : HttpMethod.mappable()) {
       this.registry.put(m, new ServiceMap());
     }
+    this.version = System.currentTimeMillis();
   }
 
   /**
@@ -99,11 +108,48 @@ public final class ServiceRegistry {
       if (service != null) {
         methods.add(m.toString());
         if (m == HttpMethod.GET) {
-          methods.add("HEAD");
+          methods.add(HttpMethod.HEAD.name());
         }
       }
     }
     return methods;
+  }
+
+  /**
+   * Returns the HTTP method this service is mapped to.
+   *
+   * @param service The Berlioz service.
+   *
+   * @return the list of HTTP methods this Berlioz service is mapped to or <code>null</code>.
+   */
+  public HttpMethod getMethod(Service service) {
+    if (service == null) return null;
+    for (HttpMethod m : this.registry.keySet()) {
+      ServiceMap mapping = this.registry.get(m);
+      if (mapping.isMapped(service)) {
+        return m;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Returns the list of URI Patterns that this service matches.
+   * 
+   * @param service The Berlioz service.
+   *
+   * @return the list of URI Patterns that this service matches or an empty list.
+   */
+  public List<String> matches(Service service) {
+    if (service == null) return Collections.emptyList();
+    for (HttpMethod m : this.registry.keySet()) {
+      ServiceMap mapping = this.registry.get(m);
+      boolean mapped = mapping.isMapped(service);
+      if (mapped) {
+        return mapping.matches(service);
+      }
+    }
+    return Collections.emptyList();
   }
 
   /**
@@ -143,14 +189,63 @@ public final class ServiceRegistry {
   }
 
   /**
+   * Returns an unmodifiable map of services by URI Pattern for the specified HTTP method.
+   * 
+   * @param method the HTTP method.
+   * @return an unmodifiable map of services by URI Pattern
+   */
+  public Map<String, Service> getServiceMap(HttpMethod method) {
+    ServiceMap map = this.registry.get(method);
+    return Collections.unmodifiableMap(map.mapping);
+  }
+
+  /**
+   * Returns the set of registered services.
+   * 
+   * @return the set of registered services.
+   */
+  public List<Service> getServices() {
+    List<Service> services = new ArrayList<Service>();
+    for (ServiceMap map : this.registry.values()) {
+     services.addAll(map.mapping.values());
+    }
+    return services;
+  }
+
+  /**
+   * Returns the list of services for the specified HTTP method.
+   * 
+   * @param method the HTTP method.
+   * @return the list of services.
+   */
+  public List<Service> getServices(HttpMethod method) {
+    ServiceMap map = this.registry.get(method);
+    return new ArrayList<Service>(map.mapping.values());
+  }
+
+  /**
    * Clears each generator mapping.
    */
   public void clear() {
-    for (HttpMethod m : this.registry.keySet()) {
-      this.registry.get(m).clear();
+    for (ServiceMap map : this.registry.values()) {
+      map.clear();
     }
   }
 
+  /**
+   * @return The version of this registry.
+   */
+  public long version() {
+    return version;
+  }
+
+  /**
+   * Changed the version of this registry.
+   */
+  protected void touch() {
+    this.version = System.currentTimeMillis();
+  }
+  
   /**
    * Returns the HTTP method for the specified value (case insensitive)
    * 
@@ -170,7 +265,7 @@ public final class ServiceRegistry {
    * Simply Maps generators to URI patterns.
    * 
    * @author Christophe Lauret
-   * @version 29 June 2011
+   * @version 9 December 2011
    */
   private static class ServiceMap {
 
@@ -223,6 +318,32 @@ public final class ServiceRegistry {
         }
       }
       return match;
+    }
+
+    /**
+     * Indicates whether the specified service is mapped to any URL.
+     * 
+     * @param service The Berlioz service to check.
+     * @return <code>true</code> if mapped to any URL; <code>false</code> otherwise.
+     */
+    public boolean isMapped(Service service) {
+      return this.mapping.containsValue(service);
+    }
+
+    /**
+     * Returns the list of URI patterns that this service matches.
+     * 
+     * @param service the Berlioz Service.
+     * @return the list URI pattern is matches
+     */
+    public List<String> matches(Service service) {
+      List<String> urls = new ArrayList<String>();
+      for (Entry<String, Service> e : this.mapping.entrySet()) {
+        if (e.getValue() == service) {
+          urls.add(e.getKey());
+        }
+      }
+      return urls;
     }
 
     /**

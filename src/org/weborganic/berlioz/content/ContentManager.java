@@ -36,7 +36,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * A utility class to provide access to the content of generators.
  *
  * @author Christophe Lauret (Weborganic)
- * @version 1 July 2011
+ * @version Berlioz 0.9.3 - 9 December 2011
+ * @since Berlioz 0.6
  */
 public final class ContentManager {
 
@@ -136,6 +137,7 @@ public final class ContentManager {
       LOGGER.error("An I/O error occurred while reading XML service configuration: {}", ex.getMessage());
       throw new BerliozException("Unable to read services configuration file.", ex, BerliozErrorID.SERVICES_NOT_FOUND);
     }
+    SERVICES.touch();
   }
 
   /**
