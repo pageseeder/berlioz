@@ -10,9 +10,11 @@ package org.weborganic.berlioz.content;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import org.weborganic.berlioz.http.HttpMethod;
@@ -220,7 +222,8 @@ public final class ServiceRegistry {
    */
   public List<Service> getServices(HttpMethod method) {
     ServiceMap map = this.registry.get(method);
-    return new ArrayList<Service>(map.mapping.values());
+    Set<Service> services = new HashSet<Service>(map.mapping.values());
+    return new ArrayList<Service>(services);
   }
 
   /**
