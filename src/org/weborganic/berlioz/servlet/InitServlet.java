@@ -44,7 +44,7 @@ import org.weborganic.berlioz.LifecycleListener;
  * </pre>
  * 
  * @author Christophe Lauret (Weborganic)
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
@@ -134,7 +134,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       try {
         this._listener.stop();
       } catch (Exception ex) {
-        System.out.println("[BERLIOZ_INIT] (!) Unable to stop Lifecycle listener");
+        System.out.println("[BERLIOZ_STOP] (!) Unable to stop Lifecycle listener");
       }
       this._listener = null;
     } else {
@@ -246,7 +246,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       GlobalSettings.setConfig(mode);
     }
     File f = GlobalSettings.getPropertiesFile();
-    if (f.exists()) {
+    if (f != null && f.exists()) {
       System.out.println("[BERLIOZ_INIT] Config: found "+toRelPath(f, webinfPath));
       boolean loaded = GlobalSettings.load();
       if (loaded) {
@@ -350,6 +350,8 @@ public final class InitServlet extends HttpServlet implements Servlet {
           final int suffix = 4;
           mode = name.substring(prefix, name.length() - suffix);
         } else {
+          System.out.println("[BERLIOZ_INIT] Mode: multiple modes to choose from!");
+          System.out.println("[BERLIOZ_INIT] Mode: use 'berlioz.mode' or specify only 1 'config-[mode].xml'");
           // multiple config files: unable to choose.
           mode = null;
         }
