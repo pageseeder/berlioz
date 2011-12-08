@@ -422,10 +422,11 @@ public final class GlobalSettings {
    *
    * @throws IllegalStateException If this class has not been setup properly.
    */
-  public static Properties getNode(String name) throws IllegalStateException {
+  public static Properties getNode(String name) {
     if (settings == null) {
       load();
     }
+    if (nodes == null) return null;
     // return the node if already processed.
     if (nodes.containsKey(name))
       return nodes.get(name);
