@@ -16,8 +16,9 @@ import org.weborganic.berlioz.content.Environment;
  * Provides the environment common to all services. 
  *
  * @author Christophe Lauret (Weborganic)
- * 
- * @version 26 May 2010
+ * @author Christophe Lauret (Weborganic)
+ * @version Berlioz 0.9.3 - 9 December 2011
+ * @since Berlioz 0.9
  */
 public final class HttpEnvironment implements Environment {
 
@@ -32,14 +33,21 @@ public final class HttpEnvironment implements Environment {
   private final File _private;
 
   /**
+   * The cache control directives for the environment (may be overridden by individual services)
+   */
+  private final String _cacheControl;
+
+  /**
    * Creates a new HTTP environment.
    * 
-   * @param publicd  The public directory
-   * @param privated The private directory
+   * @param publicDir    The public directory.
+   * @param privateDir   The private directory.
+   * @param cacheControl The default cache control directive.
    */
-  public HttpEnvironment(File publicd, File privated) {
-    this._public = publicd;
-    this._private = privated;
+  public HttpEnvironment(File publicDir, File privateDir, String cacheControl) {
+    this._public = publicDir;
+    this._private = privateDir;
+    this._cacheControl = cacheControl;
   }
 
   /**
@@ -100,4 +108,10 @@ public final class HttpEnvironment implements Environment {
     return GlobalSettings.get(name, def);
   }
 
+  /**
+   * 
+   */
+  public String getCacheControl() {
+    return this._cacheControl;
+  }
 }

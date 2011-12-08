@@ -16,21 +16,27 @@ import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.content.Service;
 
 /**
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods to access the parameters and attributes in
  * a consistent manner.
  * 
  * @author Christophe Lauret (Weborganic)
- * 
- * @version 28 June 2011
+ * @version Berlioz 0.9.3 - 9 December 2011
+ * @since Berlioz 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
 
   /**
-   * Maps parameter names to their values.
+   * Generator for which the request is designed for.
    */
   private final ContentGenerator _generator;
+
+  /**
+   * Service the generator is part of.
+   */
+  private final Service _service;
 
   /**
    * The status for this request.
@@ -45,10 +51,11 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @param wrapper The HTTP reque3st wrapper.
    * @param generator The generator for which this request is used.
    */
-  protected HttpContentRequest(HttpRequestWrapper wrapper, ContentGenerator generator) {
+  protected HttpContentRequest(HttpRequestWrapper wrapper, ContentGenerator generator, Service service) {
     super(wrapper);
     if (generator == null) throw new NullPointerException("No generator specified");
     this._generator = generator;
+    this._service = service;
   }
 
   /**
@@ -59,14 +66,17 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @param env        The environment for this request.
    * @param parameters The parameters to use.
    * @param generator  The generator for which this request is for.
+   * @param service    The service this request is part of.
    * 
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
   protected HttpContentRequest(HttpServletRequest req, HttpServletResponse res, Environment env,
-      Map<String, String> parameters, ContentGenerator generator) throws IllegalArgumentException {
+      Map<String, String> parameters, ContentGenerator generator, Service service) {
     super(req, res, env, parameters);
     if (generator == null) throw new NullPointerException("No generator specified");
+    if (service == null) throw new NullPointerException("No generator specified");
     this._generator = generator;
+    this._service = service;
   }
 
   /**
@@ -98,4 +108,12 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
     return this._generator;
   }
 
+  /**
+   * Service the generator is part of.
+   * 
+   * @return the service the generator is part of.
+   */
+  public Service getService() {
+    return this._service;
+  }
 }

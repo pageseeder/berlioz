@@ -227,25 +227,40 @@ public final class Service {
    */
   @Beta
   public void toXML(XMLWriter xml, HttpMethod method, List<String> urls) throws IOException {
+    toXML(xml, method, urls, null);
+  }
+
+  /**
+   * Serialises the specified service as XML.
+   * 
+   * @param xml          the XML writer
+   * @param method       the HTTP method the service is mapped to.
+   * @param urls         the URI patterns this service matches
+   * @param cacheControl the cache control directives.
+   * 
+   * @throws IOException if thrown by the XML writer.
+   */
+  @Beta
+  public void toXML(XMLWriter xml, HttpMethod method, List<String> urls, String cacheControl) throws IOException {
     xml.openElement("service", true);
     xml.attribute("id", this._id);
     if (this._group != null)
       xml.attribute("group", this._group);
     if (method != null)
-      xml.attribute("method", method.toString());
+      xml.attribute("method", method.toString().toLowerCase());
 
     // Caching information
     xml.attribute("cacheable", Boolean.toString(this._cacheable));
-    if (this._cache != null) {
-      xml.attribute("cache-control", this._cache);
+    if (this._cacheable && (cacheControl != null || this._cache != null)) {
+      xml.attribute("cache-control", this._cache != null? this._cache : cacheControl);
     }
 
     // How the response code is calculated
     xml.openElement("response-code", true);
-    xml.attribute("use", this._rule.use().toString());
-    xml.attribute("rule", this._rule.rule().toString());
+    xml.attribute("use", this._rule.use().toString().toLowerCase());
+    xml.attribute("rule", this._rule.rule().toString().toLowerCase());
     xml.closeElement();
-    
+
     // URI patterns
     if (urls != null) {
       for (String url : urls) {

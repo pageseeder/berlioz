@@ -18,6 +18,7 @@ import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.berlioz.content.ServiceRegistry;
 import org.weborganic.berlioz.http.HttpMethod;
+import org.weborganic.berlioz.servlet.HttpEnvironment;
 
 import com.topologi.diffx.xml.XMLWriter;
 
@@ -74,6 +75,9 @@ public final class GetLiveServices implements ContentGenerator, Cacheable {
     ServiceRegistry registry = ContentManager.getDefaultRegistry();
     xml.openElement("live-services", true);
 
+    // Get the cache control
+    HttpEnvironment httpEnv = (HttpEnvironment)req.getEnvironment();
+    
     // For each HTTP method
     for (HttpMethod method : HttpMethod.mappable()) {
       List<Service> services = registry.getServices(method);
@@ -81,7 +85,7 @@ public final class GetLiveServices implements ContentGenerator, Cacheable {
       // Iterate over the services
       for (Service service : services) {
         List<String> urls = registry.matches(service);
-        service.toXML(xml, method, urls);
+        service.toXML(xml, method, urls, httpEnv.getCacheControl());
       }
 
     }

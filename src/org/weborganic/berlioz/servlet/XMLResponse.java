@@ -44,7 +44,9 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * <p>This class is not thread-safe.
  * 
  * @author Christophe Lauret (Weborganic)
- * @version 28 June 2011
+ * @author Christophe Lauret (Weborganic)
+ * @version Berlioz 0.9.3 - 9 December 2011
+ * @since Berlioz 0.7
  */
 public final class XMLResponse {
 
@@ -81,15 +83,15 @@ public final class XMLResponse {
   /**
    * Creates a new XML response for the specified arguments.
    * 
-   * @param req   The HTTP servlet request.
-   * @param res   The HTTP servlet response.
-   * @param env   The current environment.
-   * @param match The matching service
+   * @param req    The HTTP servlet request.
+   * @param res    The HTTP servlet response.
+   * @param config The Berlioz configuration environment.
+   * @param match  The matching service
    */
-  public XMLResponse(HttpServletRequest req, HttpServletResponse res, Environment env, MatchingService match) {
+  public XMLResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, MatchingService match) {
     this._req = req;
     this._match = match;
-    this._requests = configure(req, res, env, match);
+    this._requests = configure(req, res, config.getEnvironment(), match);
   }
 
   /**
@@ -274,7 +276,7 @@ public final class XMLResponse {
       List<Parameter> pconfig = service.parameters(generator);
       if (pconfig.isEmpty()) {
         // No specific parameters, return a request using the common parameters
-        requests.add(new HttpContentRequest(req, res, env, common, generator));
+        requests.add(new HttpContentRequest(req, res, env, common, generator, match.service()));
 
       } else {
         // Some specific parameters, recompute the parameters
@@ -282,7 +284,7 @@ public final class XMLResponse {
         for (Parameter p : pconfig) {
           specific.put(p.name(), p.value(common));
         }
-        requests.add(new HttpContentRequest(req, res, env, specific, generator));
+        requests.add(new HttpContentRequest(req, res, env, specific, generator, match.service()));
       }
     }
     return requests;

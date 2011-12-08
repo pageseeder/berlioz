@@ -20,6 +20,7 @@ import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.berlioz.content.ServiceRegistry;
 import org.weborganic.berlioz.http.HttpMethod;
+import org.weborganic.berlioz.servlet.HttpEnvironment;
 import org.weborganic.furi.URIPattern;
 import org.weborganic.furi.URIResolveResult;
 
@@ -110,7 +111,8 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
       // The service
       Service service = match.service();
       List<String> urls = registry.matches(service);
-      service.toXML(xml, method, urls);
+      HttpEnvironment httpEnv = (HttpEnvironment)req.getEnvironment();
+      service.toXML(xml, method, urls, httpEnv.getCacheControl());
 
       // close 'matching-service'
       xml.closeElement();

@@ -60,7 +60,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * <p>For cacheable responses, Berlioz will return the following Headers:
  * <pre>
  *   Expires: <i>[Expiry date 1 year from now]</i>
- *   Cache-Control: max-age=<i>[max age in seconds]</i>, must-revalidate
+ *   Cache-Control: [Cache control] or "max-age=<i>[max age in seconds]</i>, must-revalidate"
  *   Etag: <i>[Etag for generator]</i>
  * </pre>
  * 
@@ -302,7 +302,7 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Prepare the XML Response
-    XMLResponse xml = new XMLResponse(req, res, config.getEnvironment(), match);
+    XMLResponse xml = new XMLResponse(req, res, config, match);
 
     // Include the service as a header for information
     res.setHeader("X-Berlioz-Service", match.service().id());

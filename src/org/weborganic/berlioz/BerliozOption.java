@@ -94,6 +94,47 @@ public enum BerliozOption {
   HTTP_GET_VIA_POST("berlioz.http.get-via-post", Boolean.TRUE),
 
   /**
+   * A global option to specify the default cache control to use for cacheable content.
+   * 
+   * <p>This option is used to define a default value the <code>Cache-Control</code> HTTP header 
+   * of cacheable responses when it has not been defined for a service.
+   *
+   * <p>For cacheable responses, Berlioz will return the following Headers:
+   * <pre>
+   *   Expires: <i>[Expiry date 1 year from now]</i>
+   *   Cache-Control: [Cache control]
+   *   Etag: <i>[Etag for generator]</i>
+   * </pre>
+   * 
+   * <p>Note: this option has no effect when the response is not cacheable or when a 
+   * <code>Cache-Control</code> HTTP header has been defined for the service.
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.http.cache-control</code></td>
+   *     <td><code>private, max-age=0, must-revalidate</code></td>
+   *   </tr>
+   * </table>
+   * 
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr><td><code>no-cache, no-store</code></td><td><code>N/A*</code></td></tr></tbody>
+   * </table>
+   * <p>* The value recommended for development or production depends on the nature of the data.
+   * 
+   * <p><b>Use this value in preference to the <code>berlioz.http.max-age</code> option. If 
+   * specified, this option will automatically override the max age option.
+   * 
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.9">HTTP/1.1 - 14.9 Cache-Control</a>
+   * 
+   * @since Berlioz 0.9.3
+   */
+  HTTP_CACHE_CONTROL("berlioz.http.cache-control", ""),
+
+  /**
    * An integer global option to specify the default maximum age in seconds of cacheable content.
    * 
    * <p>This option is used to define a default value for the <code>max-age</code> directive of 
