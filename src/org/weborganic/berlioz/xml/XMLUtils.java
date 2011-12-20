@@ -125,10 +125,10 @@ public final class XMLUtils {
     } catch (SAXException ex) {
       throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
     } catch (FileNotFoundException ex) {
-      ex.printStackTrace();
+      LOGGER.warn("Attempted to parse file which cannot be found", ex);
       throw new BerliozException("Could not find file.", ex);
     } catch (IOException ex) {
-      ex.printStackTrace();
+      LOGGER.warn("Unable to parse file", ex);
       throw new BerliozException("Could not read file.", ex);
     }
   }

@@ -21,6 +21,7 @@ import org.weborganic.berlioz.BerliozException;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.topologi.diffx.xml.XMLWriter;
@@ -33,7 +34,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
  */
-public final class XMLCopy extends DefaultHandler implements ContentHandler {
+public final class XMLCopy extends DefaultHandler implements ContentHandler, LexicalHandler {
 
   /**
    * Logger the extractor.
@@ -120,6 +121,76 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler {
     } catch (IOException ex) {
       throw new SAXException(ex);
     }
+  }
+
+  // Lexical Handler =============================================================================
+
+  /**
+   * Copy the comment to the output.
+   * 
+   * {@inheritDoc}
+   */
+  @Override
+  public void comment(char[] ch, int start, int length) throws SAXException {
+    try {
+      this.to.writeComment(String.copyValueOf(ch, start, length));
+    } catch (IOException ex) {
+      throw new SAXException(ex);
+    }
+  }
+
+  /**
+   * Does nothing.
+   * 
+   * {@inheritDoc}
+   */
+  @Override
+  public void startCDATA() throws SAXException {
+  }
+
+  /**
+   * Does nothing.
+   * 
+   * {@inheritDoc}
+   */
+  @Override
+  public void endCDATA() throws SAXException {
+  }
+
+  /**
+   * Does nothing.
+   * 
+   * {@inheritDoc}
+   */
+  @Override
+  public void startDTD(String name, String publicId, String systemId) throws SAXException {
+  }
+
+  /**
+   * Does nothing.
+   * 
+   * {@inheritDoc}
+   */
+  @Override
+  public void endDTD() throws SAXException {
+  }
+
+  /**
+   * Does nothing.
+   * 
+   * {@inheritDoc}
+   */
+  @Override
+  public void startEntity(String name) throws SAXException {
+  }
+
+  /**
+   * Does nothing.
+   * 
+   * {@inheritDoc}
+   */
+  @Override
+  public void endEntity(String name) throws SAXException {
   }
 
   // Static helper ===============================================================================
