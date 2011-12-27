@@ -15,12 +15,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.xml.parsers.SAXParser;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -30,8 +36,11 @@ import com.topologi.diffx.xml.XMLWriterImpl;
 /**
  * Copy the parsed XML to the specified XML writer.
  * 
+ * <p>This class also implements the {@link LexicalHandler} interface, so that comments can be copied if the 
+ * {@link XMLReader} reader supports the {@value #LEXICAL_HANDLER_PROPERTY} property.
+ * 
  * @author Christophe Lauret (Weborganic)
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.4 - 27 December 2011
  * @since Berlioz 0.7
  */
 public final class XMLCopy extends DefaultHandler implements ContentHandler, LexicalHandler {
@@ -40,6 +49,16 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * Logger the extractor.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(XMLCopy.class);
+
+  /**
+   * The LexicalHandler property.
+   */
+  private static final String LEXICAL_HANDLER_PROPERTY = "http://xml.org/sax/properties/lexical-handler";
+
+  /**
+   * Whether comments are supported (optimistically assumes they are).
+   */
+  private static volatile boolean supportsComments = true;
 
   /**
    * Where the XML should be copied to. 
@@ -193,7 +212,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   public void endEntity(String name) throws SAXException {
   }
 
-  // Static helper ===============================================================================
+  // Static helpers
+  // ----------------------------------------------------------------------------------------------
 
   /**
    * Copy the specified File to the given XML Writer.
@@ -217,7 +237,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
         XMLWriter internal = new XMLWriterImpl(writer);
 
         // copy the data
-        XMLUtils.parse(new XMLCopy(internal), file, false);
+        parse(new XMLCopy(internal), new InputSource(file.toURI().toString()));
         internal.flush();
         String parsed = writer.toString();
 
@@ -261,7 +281,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
       XMLWriter internal = new XMLWriterImpl(writer);
 
       // copy the data
-      XMLUtils.parse(new XMLCopy(internal), reader, false);
+      parse(new XMLCopy(internal), new InputSource(reader));
       internal.flush();
       String parsed = writer.toString();
 
@@ -276,6 +296,58 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
       xml.attribute("error", "parsing");
       xml.attribute("details", ex.getMessage());
       xml.closeElement();
+    }
+  }
+
+  // private parsing methods
+  // --------------------------------------------------------------------------------------------------------
+
+  /**
+   * Parses the specified file using the given handler.
+   * 
+   * @param handler  The content handler to use.
+   * @param reader   The reader over the XML to parse.
+   * 
+   * @throws BerliozException Should something unexpected happen.
+   */
+  private static void parse(XMLCopy copier, InputSource source) throws BerliozException {
+    SAXParser parser = XMLUtils.getParser(false);
+    try {
+      // get the reader
+      XMLReader xmlreader = parser.getXMLReader();
+      // configure the reader
+      xmlreader.setContentHandler(copier);
+      trySettingLexicalHandler(xmlreader, copier);
+      xmlreader.setEntityResolver(BerliozEntityResolver.getInstance());
+      xmlreader.setErrorHandler(BerliozErrorHandler.getInstance());
+      xmlreader.parse(source);
+    } catch (SAXException ex) {
+      throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
+    } catch (IOException ex) {
+      ex.printStackTrace();
+      throw new BerliozException("Could not read file.", ex);
+    }
+  }
+
+  /**
+   * Try set the lexical handler property in order to copy comments.
+   * 
+   * <p>If the property is not supported, a warning is logged and no further attempts will be made.
+   * 
+   * @param xmlreader the XML reader.
+   * @param copier    the XML copy handler.
+   */
+  private static void trySettingLexicalHandler(XMLReader xmlreader, XMLCopy copier) {
+    if (supportsComments) {
+      try {
+        xmlreader.setProperty(LEXICAL_HANDLER_PROPERTY, copier);
+      } catch (SAXNotRecognizedException ex) {
+        supportsComments = false;
+        LOGGER.warn("Unable to copy comments", ex);
+      } catch (SAXNotSupportedException ex) {
+        supportsComments = false;
+        LOGGER.warn("Unable to copy comments", ex);
+      }
     }
   }
 
