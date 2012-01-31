@@ -113,7 +113,7 @@ public enum ISO8601 {
     // (it does not include the colon to separate hours from minutes)
     boolean hasTimeZone = (this._format.charAt(this._format.length() - 1) == 'Z');
     String parsable = date;
-    if (hasTimeZone) {
+    if (hasTimeZone && date.length() > 2) {
       parsable = date.substring(0, date.length() - 3) + date.substring(date.length() - 2);
     }
     return iso.parse(parsable);
