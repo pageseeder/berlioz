@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -16,24 +16,26 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
+import org.slf4j.ILoggerFactory;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.LifecycleListener;
 
 /**
  * Initialise a Berlioz-based application.
- * 
+ *
  * <p>
  * This servlet does not return any data, it is simply used to initialise some data, and therefore
  * only implements the {@link #init(ServletConfig)} method.
- * 
+ *
  * <p>
- * The {@link InitServlet#init()} method performs a sanity check to inform the user about which 
+ * The {@link InitServlet#init()} method performs a sanity check to inform the user about which
  * version of Berlioz is running and which configuration files are used.
- * 
+ *
  * <p>
  * Typically this servlet should be configured in the Web Configuration (web.xml) as:
- * 
+ *
  * <pre>
  * {@code <!-- Initialisation servlet -->
  * <servlet>
@@ -42,9 +44,9 @@ import org.weborganic.berlioz.LifecycleListener;
  *   <load-on-startup>1</load-on-startup>
  * </servlet> }
  * </pre>
- * 
+ *
  * @author Christophe Lauret (Weborganic)
- * @version Berlioz 0.9.3 - 9 December 2011
+ * @version Berlioz 0.9.5 - 14 September 2012
  * @since Berlioz 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
@@ -61,7 +63,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
 
   /**
    * Initialises Berlioz.
-   * 
+   *
    * <p>This method displays the configuration setting and does the following in order:
    * <ol>
    *  <li>Determines the Berlioz mode;</li>
@@ -70,11 +72,11 @@ public final class InitServlet extends HttpServlet implements Servlet {
    *  <li>Loads and checks the global config;</li>
    *  <li>Invokes the <code>start</code> method of the <code>LifecycleListener</code>.</li>
    * </ol>
-   * 
+   *
    * {@inheritDoc}
-   * 
+   *
    * @param config The servlet configuration.
-   * 
+   *
    * @throws ServletException Should an exception occur.
    */
   @Override
@@ -88,9 +90,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
       String listener = config.getInitParameter("lifecycle-listener");
 
       // Init message
-      System.out.println("[BERLIOZ_INIT] ===============================================================");
-      System.out.println("[BERLIOZ_INIT] Initialing Berlioz "+GlobalSettings.getVersion()+"...");
-      System.out.println("[BERLIOZ_INIT] Application Base: "+webinfPath.getAbsolutePath());
+      console("===============================================================");
+      console("Initialing Berlioz "+GlobalSettings.getVersion()+"...");
+      console("Application Base: "+webinfPath.getAbsolutePath());
 
       // Determine the mode (dev, production, etc...)
       String mode = getMode(config, configDir);
@@ -99,7 +101,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       checkServices(configDir);
 
       // Configuring the logger
-      configureLog4j(configDir, mode);
+      configureLogger(configDir, mode);
 
       // Setup the global settings
       checkSettings(webinfPath, mode);
@@ -108,19 +110,19 @@ public final class InitServlet extends HttpServlet implements Servlet {
       startListener(listener);
 
       // All done
-      System.out.println("[BERLIOZ_INIT] Done!");
-      System.out.println("[BERLIOZ_INIT] ===============================================================");
+      console("Done!");
+      console("===============================================================");
     }
   }
 
   /**
    * Reset the initialisation Berlioz.
-   * 
+   *
    * <p>This method unload the configuration setting and does the following in order:
    * <ol>
    *  <li>Invokes the <code>stop</code> method of the <code>ConfigListener</code>.</li>
    * </ol>
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -158,118 +160,195 @@ public final class InitServlet extends HttpServlet implements Servlet {
 
   /**
    * Attempts to configure Log4j through reflection.
-   * 
+   *
    * @param config The servlet config.
-   * @param configDir The directory containing the configuration files. 
+   * @param configDir The directory containing the configuration files.
    * @return The running mode.
    */
   private static String getMode(ServletConfig config, File configDir) {
     // Determine the mode (dev, production, etc...)
     String mode = config.getInitParameter("mode");
     if (mode != null) {
-      System.out.println("[BERLIOZ_INIT] Mode: defined with init-parameter 'mode'");
+      console("Mode: defined with init-parameter 'mode'");
     } else {
       // Try the system property
       mode = System.getProperty("berlioz.mode");
       if (mode != null) {
-        System.out.println("[BERLIOZ_INIT] Mode: defined with system property 'berlioz.mode'");
+        console("Mode: defined with system property 'berlioz.mode'");
       } else {
         mode = guessMode(configDir);
         if (mode != null) {
-          System.out.println("[BERLIOZ_INIT] Mode: derived from XML configuration file.");
+          console("Mode: derived from XML configuration file.");
         } else {
-          System.out.println("[BERLIOZ_INIT] Mode: undefined, using "+GlobalSettings.DEFAULT_MODE);
+          console("Mode: undefined, using "+GlobalSettings.DEFAULT_MODE);
           mode = GlobalSettings.DEFAULT_MODE;
         }
       }
     }
     // Report
-    System.out.println("[BERLIOZ_INIT] Mode: '"+mode+"'");
-    System.out.println("[BERLIOZ_INIT] Mode: OK ------------------------------------------------------");
+    console("Mode: '"+mode+"'");
+    console("Mode: OK ------------------------------------------------------");
     return mode;
   }
 
   /**
    * Checking that the 'config/services.xml' is there
-   * 
-   * @param configDir The directory containing the configuration files. 
+   *
+   * @param configDir The directory containing the configuration files.
    */
   private static void checkServices(File configDir) {
     File services = new File(configDir, "services.xml");
     if (services.exists()) {
-      System.out.println("[BERLIOZ_INIT] Services: found config/services.xml");
-      System.out.println("[BERLIOZ_INIT] Services: OK --------------------------------------------------");
+      console("Services: found config/services.xml");
+      console("Services: OK --------------------------------------------------");
     } else {
-      System.out.println("[BERLIOZ_INIT] (!) Could not find config/services.xml");
-      System.out.println("[BERLIOZ_INIT] Services: FAIL ------------------------------------------------");
+      console("(!) Could not find config/services.xml");
+      console("Services: FAIL ------------------------------------------------");
     }
   }
 
   /**
-   * Attempts to configure Log4j through reflection.
-   * 
-   * @param config The directory containing the configuration files. 
+   * Attempts to configure logger through reflection.
+   *
+   * <p>This method will look for logging configuration in the following order:
+   * <ol>
+   *   <li><code>logback-<i>[mode]</i>.xml</code></li>
+   *   <li><code>logback.xml</code></li>
+   *   <li><code>log4j-<i>[mode]</i>.prp</code></li>
+   *   <li><code>log4j.prp</code></li>
+   * </ol>
+   *
+   * @param config The directory containing the configuration files.
    * @param mode   The running mode.
    */
-  private static void configureLog4j(File config, String mode) {
-    // Configuring the logger
-    File logProperties = new File(config, "log4j-" + mode + ".prp");
-    if (logProperties.exists()) {
-      System.out.println("[BERLIOZ_INIT] Logging: found config/"+logProperties.getName()+" [log4j config file]");
+  private static void configureLogger(File config, String mode) {
+    boolean configured = false;
+    // Try specific logback first
+    File file = new File(config, "logback-" + mode + ".xml");
+    configured = configureLogback(file);
+    if (configured) return;
+    // Try generic logback
+    file = new File(config, "logback.xml");
+    configured = configureLogback(file);
+    if (configured) return;
+    // Try specific log4j
+    file = new File(config, "log4j-"+mode+".prp");
+    configured = configureLog4j(file);
+    if (configured) return;
+    // Try generic log4j
+    file = new File(config, "log4j.prp");
+    configured = configureLog4j(file);
+    if (configured) return;
+    // Unable to configure logging
+    console("(!) Logging: no logging configured.");
+    console("Logging: FAIL -------------------------------------------------");
+  }
+
+  /**
+   * Attempts to configure logger through reflection.
+   *
+   * @param config The directory containing the configuration files.
+   * @param mode   The running mode.
+   */
+  private static boolean configureLogback(File configuration) {
+    boolean configured = false;
+    // Look for LOGBACK first
+    if (configuration.exists()) {
+      console("Logging: found config/"+configuration.getName()+" [logback config file]");
+      try {
+        Class<?> joranClass = Class.forName("ch.qos.logback.classic.joran.JoranConfigurator");
+        Class<?> contextClass = Class.forName("ch.qos.logback.core.Context");
+        Object configurator = joranClass.newInstance();
+        // Set the context
+        ILoggerFactory context = LoggerFactory.getILoggerFactory();
+        Method setContext = joranClass.getMethod("setContext", contextClass);
+        setContext.invoke(configurator, contextClass.cast(context));
+        // Invoke the configuration
+        Method doConfigure = joranClass.getMethod("doConfigure", String.class);
+        doConfigure.invoke(configurator, configuration.getAbsolutePath());
+        configured = true;
+        console("Logging: logback config file OK");
+        console("Logging: OK ---------------------------------------------------");
+      } catch (ClassNotFoundException ex) {
+        console("(!) Logging: Attempt to load logback configuration failed!");
+        console("(!) Logging: logback could not be found on classpath!");
+      } catch (Exception ex) {
+        console("(!) Logging: Attempt to load Logback configuration failed!");
+        ex.printStackTrace();
+      }
+    } else {
+      console("Logging: config/"+configuration.getName()+" not found");
+    }
+    return configured;
+  }
+
+  /**
+   * Attempts to configure logger through reflection.
+   *
+   * @param config The directory containing the configuration files.
+   * @param mode   The running mode.
+   */
+  private static boolean configureLog4j(File configuration) {
+    boolean configured = false;
+    if (configuration.exists()) {
+      console("Logging: found config/"+configuration.getName()+" [log4j config file]");
       try {
         Class<?> configurator = Class.forName("org.apache.log4j.PropertyConfigurator");
         Method m = configurator.getDeclaredMethod("configure", String.class);
-        m.invoke(null, logProperties.getAbsolutePath());
-        System.out.println("[BERLIOZ_INIT] Logging: log4j config file OK");
-        System.out.println("[BERLIOZ_INIT] Logging: OK ---------------------------------------------------");
+        m.invoke(null, configuration.getAbsolutePath());
+        configured = true;
+        console("Logging: log4j config file OK");
+        console("Logging: OK ---------------------------------------------------");
+      } catch (ClassNotFoundException ex) {
+        console("(!) Logging: Attempt to load Log4j configuration failed!");
+        console("(!) Logging: Log4j could not be found on classpath!");
       } catch (Exception ex) {
-        System.out.println("[BERLIOZ_INIT] (!) Attempt to load Log4j configurator failed!");
+        console("(!) Logging: Attempt to load Log4j configuration failed!");
         ex.printStackTrace();
-        System.out.println("[BERLIOZ_INIT] Logging: FAIL -------------------------------------------------");
       }
     } else {
-      System.out.println("[BERLIOZ_INIT] (!) Logging: config/"+logProperties.getName()+" not found - no logging configured.");
-      System.out.println("[BERLIOZ_INIT] Logging: OK ---------------------------------------------------");
+      console("(!) Logging: config/"+configuration.getName()+" not found");
     }
+    return configured;
   }
 
   /**
    * Checking that the global setting are loaded properly.
-   * 
+   *
    * @param webinfPath The directory containing the configuration files.
    * @param mode       The mode
    */
   private static void checkSettings(File webinfPath, String mode) {
-    System.out.println("[BERLIOZ_INIT] Config: Setting repository to Application Base");
+    console("Config: Setting repository to Application Base");
     GlobalSettings.setRepository(webinfPath);
     if (mode != null) {
       GlobalSettings.setConfig(mode);
     }
     File f = GlobalSettings.getPropertiesFile();
     if (f != null && f.exists()) {
-      System.out.println("[BERLIOZ_INIT] Config: found "+toRelPath(f, webinfPath));
+      console("Config: found "+toRelPath(f, webinfPath));
       boolean loaded = GlobalSettings.load();
       if (loaded) {
-        System.out.println("[BERLIOZ_INIT] Config: loaded OK");
-        System.out.println("[BERLIOZ_INIT] Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_COMPRESSION));
-        System.out.println("[BERLIOZ_INIT] Config: HTTP Max Age = "+GlobalSettings.get(BerliozOption.HTTP_MAX_AGE));
-        System.out.println("[BERLIOZ_INIT] Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_CACHE));
-        System.out.println("[BERLIOZ_INIT] Config: XML Strict Parse = "+GlobalSettings.get(BerliozOption.XML_PARSE_STRICT));
-        System.out.println("[BERLIOZ_INIT] Config: OK ----------------------------------------------------");
+        console("Config: loaded OK");
+        console("Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_COMPRESSION));
+        console("Config: HTTP Max Age = "+GlobalSettings.get(BerliozOption.HTTP_MAX_AGE));
+        console("Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_CACHE));
+        console("Config: XML Strict Parse = "+GlobalSettings.get(BerliozOption.XML_PARSE_STRICT));
+        console("Config: OK ----------------------------------------------------");
       } else {
-        System.out.println("[BERLIOZ_INIT] (!) Unable to load global settings ");
-        System.out.println("[BERLIOZ_INIT] Config: FAIL --------------------------------------------------");
+        console("(!) Unable to load global settings ");
+        console("Config: FAIL --------------------------------------------------");
       }
     } else {
-      System.out.println("[BERLIOZ_INIT] (!) Could not find config/config-"+mode+".xml  or config/config-"+mode+".prp");
-      System.out.println("[BERLIOZ_INIT] Config: FAIL --------------------------------------------------");
+      console("(!) Could not find config/config-"+mode+".xml  or config/config-"+mode+".prp");
+      console("Config: FAIL --------------------------------------------------");
     }
 
   }
 
   /**
    * Checking that the global setting are loaded properly.
-   * 
+   *
    * @param listenerClass The lifecycle listener class.
    */
   private void startListener(String listenerClass) {
@@ -280,17 +359,17 @@ public final class InitServlet extends HttpServlet implements Servlet {
         Class<?> c = Class.forName(listenerClass);
         listener = (LifecycleListener)c.newInstance();
       } catch (ClassNotFoundException ex) {
-        System.out.println("[BERLIOZ_INIT] Lifecycle: Unable to find class for listener:");
-        System.out.println("[BERLIOZ_INIT]   "+listenerClass);
+        console("Lifecycle: Unable to find class for listener:");
+        console("  "+listenerClass);
       } catch (ClassCastException ex) {
-        System.out.println("[BERLIOZ_INIT] Lifecycle: Class does not implement LifecycleListener:");
-        System.out.println("[BERLIOZ_INIT]   "+listenerClass);
+        console("Lifecycle: Class does not implement LifecycleListener:");
+        console("  "+listenerClass);
       } catch (IllegalAccessException ex) {
-        System.out.println("[BERLIOZ_INIT] Lifecycle: Unable to access lifecycle listener:");
-        System.out.println("[BERLIOZ_INIT]   "+ex.getMessage());
+        console("Lifecycle: Unable to access lifecycle listener:");
+        console("  "+ex.getMessage());
       } catch (InstantiationException ex) {
-        System.out.println("[BERLIOZ_INIT] Lifecycle: Unable to instantiate lifecycle listener:");
-        System.out.println("[BERLIOZ_INIT]   "+ex.getMessage());
+        console("Lifecycle: Unable to instantiate lifecycle listener:");
+        console("  "+ex.getMessage());
       }
       // Start
       if (listener != null) {
@@ -302,15 +381,15 @@ public final class InitServlet extends HttpServlet implements Servlet {
           ex.printStackTrace();
         }
         if (ok) {
-          System.out.println("[BERLIOZ_INIT] Lifecycle: OK -------------------------------------------------");
+          console("Lifecycle: OK -------------------------------------------------");
         } else {
-          System.out.println("[BERLIOZ_INIT] (!) Unable to start Lifecycle listener");
-          System.out.println("[BERLIOZ_INIT] Lifecycle: FAIL -----------------------------------------------");
+          console("(!) Unable to start Lifecycle listener");
+          console("Lifecycle: FAIL -----------------------------------------------");
         }
       }
 
     } else {
-      System.out.println("[BERLIOZ_INIT] Lifecycle: OK (No listener)");
+      console("Lifecycle: OK (No listener)");
     }
   }
 
@@ -333,9 +412,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
    * Tries to guess the mode based on the configuration files in the config directory.
    *
    * <p>This method look for a configuration file matching <code>"config-<i>[mode]</i>.xml"</code>.
-   * <p>If there is only one such file, this method will use this mode, otherwise, this method will 
-   * return <code>null</code>. 
-   * 
+   * <p>If there is only one such file, this method will use this mode, otherwise, this method will
+   * return <code>null</code>.
+   *
    * @param config The configuration directory (<code>/WEB-INF/config</code>).
    * @return the mode if only one file.
    */
@@ -350,8 +429,8 @@ public final class InitServlet extends HttpServlet implements Servlet {
           final int suffix = 4;
           mode = name.substring(prefix, name.length() - suffix);
         } else {
-          System.out.println("[BERLIOZ_INIT] Mode: multiple modes to choose from!");
-          System.out.println("[BERLIOZ_INIT] Mode: use 'berlioz.mode' or specify only 1 'config-[mode].xml'");
+          console("Mode: multiple modes to choose from!");
+          console("Mode: use 'berlioz.mode' or specify only 1 'config-[mode].xml'");
           // multiple config files: unable to choose.
           mode = null;
         }
@@ -360,4 +439,12 @@ public final class InitServlet extends HttpServlet implements Servlet {
     return mode;
   }
 
+  /**
+   * Log what this servlet is doing on the console.
+   *
+   * @param message the message to log.
+   */
+  private static void console(String message) {
+    System.out.println("[BERLIOZ_INIT] "+message);
+  }
 }
