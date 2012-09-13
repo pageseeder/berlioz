@@ -263,6 +263,16 @@ public final class InitServlet extends HttpServlet implements Servlet {
         ILoggerFactory context = LoggerFactory.getILoggerFactory();
         Method setContext = joranClass.getMethod("setContext", contextClass);
         setContext.invoke(configurator, contextClass.cast(context));
+        // Reset the context
+        try {
+          Class<?> loggerContextClass = Class.forName("ch.qos.logback.classic.LoggerContext");
+          Method reset = loggerContextClass.getMethod("reset", new Class<?>[]{});
+          reset.invoke(context, new Object[]{});
+          console("Logging: logger context reset successfully");
+        } catch (Exception ex) {
+          console("(!) Logging: Failed to  logger context - logging messages may appear twice");
+          ex.printStackTrace();
+        }
         // Invoke the configuration
         Method doConfigure = joranClass.getMethod("doConfigure", String.class);
         doConfigure.invoke(configurator, configuration.getAbsolutePath());
@@ -270,10 +280,10 @@ public final class InitServlet extends HttpServlet implements Servlet {
         console("Logging: logback config file OK");
         console("Logging: OK ---------------------------------------------------");
       } catch (ClassNotFoundException ex) {
-        console("(!) Logging: Attempt to load logback configuration failed!");
+        console("(!) Logging: attempt to load logback configuration failed!");
         console("(!) Logging: logback could not be found on classpath!");
       } catch (Exception ex) {
-        console("(!) Logging: Attempt to load Logback configuration failed!");
+        console("(!) Logging: attempt to load Logback configuration failed!");
         ex.printStackTrace();
       }
     } else {
@@ -300,10 +310,10 @@ public final class InitServlet extends HttpServlet implements Servlet {
         console("Logging: log4j config file OK");
         console("Logging: OK ---------------------------------------------------");
       } catch (ClassNotFoundException ex) {
-        console("(!) Logging: Attempt to load Log4j configuration failed!");
+        console("(!) Logging: attempt to load Log4j configuration failed!");
         console("(!) Logging: Log4j could not be found on classpath!");
       } catch (Exception ex) {
-        console("(!) Logging: Attempt to load Log4j configuration failed!");
+        console("(!) Logging: attempt to load Log4j configuration failed!");
         ex.printStackTrace();
       }
     } else {
@@ -319,7 +329,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
    * @param mode       The mode
    */
   private static void checkSettings(File webinfPath, String mode) {
-    console("Config: Setting repository to Application Base");
+    console("Config: setting repository to Application Base");
     GlobalSettings.setRepository(webinfPath);
     if (mode != null) {
       GlobalSettings.setConfig(mode);
