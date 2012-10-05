@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.xml;
@@ -47,7 +47,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
   /**
    * The separator between properties.
    */
-  private static final String DOT = "."; 
+  private static final String DOT = ".";
 
   /**
    * Creates an empty property list with no default values.
@@ -120,6 +120,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    *
    * @throws IOException Should an error occur with the XML writer.
    */
+  @Override
   public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("properties", true);
     xml.openElement("root", true);
@@ -177,7 +178,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    * @author Christophe Lauret (Weborganic)
    * @version 9 October 2009
    */
-  private static final class Handler extends DefaultHandler {
+  static final class Handler extends DefaultHandler {
 
     /**
      * The properties to load.
@@ -191,9 +192,9 @@ public final class XMLProperties extends Properties implements XMLWritable {
 
     /**
      * Creates a new handler.
-     * 
+     *
      * @param properties The properties to load.
-     * 
+     *
      * @throws IllegalArgumentException If the properties are <code>null</code>.
      */
     public Handler(Properties properties) throws IllegalArgumentException {

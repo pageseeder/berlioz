@@ -332,7 +332,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
     console("Config: setting repository to Application Base");
     GlobalSettings.setRepository(webinfPath);
     if (mode != null) {
-      GlobalSettings.setConfig(mode);
+      GlobalSettings.setMode(mode);
     }
     File f = GlobalSettings.getPropertiesFile();
     if (f != null && f.exists()) {
