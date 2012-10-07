@@ -10,6 +10,7 @@ import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -20,7 +21,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
-import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.xml.XMLUtils;
 import org.weborganic.furi.URIParameters;
 import org.weborganic.furi.URIPattern;
@@ -33,9 +33,9 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * A basic filter to relocate URI patterns to other URI patterns.
- * 
+ *
  * <p>The relocation mapping can be specified as below:
- * 
+ *
  * <pre>{@code
  * <?xml version="1.0" encoding="utf-8"?>
  * <relocation-mapping>
@@ -46,14 +46,17 @@ import org.xml.sax.helpers.DefaultHandler;
  *   <relocation from="/{+path}.psml" to="/html/{+path}"/>
  * </relocation-mapping>
  * }</pre>
- * 
+ *
  * <p>See {@link #init(ServletConfig)} for details for configuration options.
- * 
- * @author Christophe Lauret (Weborganic)
- * @author Jean-Baptiste Reure (Weborganic)
- * @version 15 June 2011
+ *
+ * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.14">HTTP 1.1 - Content-Location</a>
+ *
+ * @author Christophe Lauret
+ * @author Jean-Baptiste Reure
+ *
+ * @version 8 October 2012
  */
-@Beta public final class RelocationFilter implements Filter {
+public final class RelocationFilter implements Filter {
 
   /**
    * Displays debug information.
@@ -76,16 +79,17 @@ import org.xml.sax.helpers.DefaultHandler;
 
   /**
    * Initialises the Relocation Servlet.
-   * 
+   *
    * <p>This servlet accepts the following init parameters:
    * <ul>
    *   <li><code>config</code> path to the URI relocation mapping XML file (eg. '/config/relocation.xml')</li>
    * </ul>
-   * 
+   *
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
-   * 
+   *
    * @param config The filter configuration.
    */
+  @Override
   public void init(FilterConfig config) {
     // get the WEB-INF directory
     ServletContext context = config.getServletContext();
@@ -99,27 +103,28 @@ import org.xml.sax.helpers.DefaultHandler;
       return;
     }
 
+    // The mapping file does not exist
     File mappingFile = new File(webinfPath, mapping);
     if (!mappingFile.exists()) {
-      LOGGER.warn("'config' init-parameter points to non existing file {} - filter will have no effect", 
+      LOGGER.warn("'config' init-parameter points to non existing file {} - filter will have no effect",
       mappingFile.getAbsolutePath());
     }
 
+    // Store the mapping file
     this._mappingFile = mappingFile;
   }
 
   /**
    * Resets the target URL.
    */
+  @Override
   public void destroy() {
     this._mappingFile = null;
     this._mapping = null;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) 
+  @Override
+  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
       throws ServletException, IOException {
     if (req instanceof HttpServletRequest && res instanceof HttpServletResponse) {
       doHTTPFilter((HttpServletRequest)req, (HttpServletResponse)res, chain);
@@ -128,15 +133,15 @@ import org.xml.sax.helpers.DefaultHandler;
 
   /**
    * Do the filtering for a HTTP request.
-   * 
+   *
    * @param req   The HTTP servlet request.
    * @param res   The HTTP servlet response.
    * @param chain The filter chain.
-   * 
+   *
    * @throws IOException      Should an error occurs while writing the response.
    * @throws ServletException If thrown by the filter chain.
    */
-  public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain) 
+  public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
      throws ServletException, IOException {
 
     // Load the config if needed
@@ -156,17 +161,17 @@ import org.xml.sax.helpers.DefaultHandler;
 
   /**
    * Actually performs the relocate.
-   * 
+   *
    * @param req   The HTTP servlet request.
    * @param res   The HTTP servlet response.
    * @param match The URI matched pattern.
-   * 
+   *
    * @throws ServletException If thrown by the HTTP servlet it was forwarded to.
    * @throws IOException      If thrown while writing  the HTTP the response.
-   * 
+   *
    * @return <code>true</code> to relocate; <code>false</code> otherwise.
    */
-  private boolean relocate(HttpServletRequest req, HttpServletResponse res, URIPattern match) 
+  private boolean relocate(HttpServletRequest req, HttpServletResponse res, URIPattern match)
       throws ServletException, IOException {
     URIPattern target = this._mapping.get(match);
 
@@ -175,7 +180,7 @@ import org.xml.sax.helpers.DefaultHandler;
     URIResolver resolver = new URIResolver(from);
     URIResolveResult result = resolver.resolve(match);
 
-    // Expand the target URI with URI variables 
+    // Expand the target URI with URI variables
     Set<String> names = result.names();
     URIParameters parameters = new URIParameters();
     for (String name : names) {
@@ -190,6 +195,7 @@ import org.xml.sax.helpers.DefaultHandler;
       LOGGER.debug("Invalid URL, no dispatcher found");
       return false;
     }
+
     // set Content-Location header
     res.setHeader("Content-Location", to);
     dispatcher.forward(req, res);
@@ -198,13 +204,13 @@ import org.xml.sax.helpers.DefaultHandler;
 
   /**
    * Load the URI redirect configuration file.
-   * 
+   *
    * @return <code>true</code> if loaded correctly;
    *         <code>false</code> otherwise.
    */
   private boolean loadConfig() {
     this._mapping = new HashMap<URIPattern, URIPattern>();
-    RelocationMappingHandler handler = new RelocationMappingHandler(this._mapping);
+    Handler handler = new Handler(this._mapping);
     boolean loaded = false;
     try {
       XMLUtils.parse(handler, this._mappingFile, false);
@@ -217,12 +223,13 @@ import org.xml.sax.helpers.DefaultHandler;
 
   /**
    * Handles the XML for the URI pattern mapping configuration.
-   * 
-   * @author Christophe Lauret (Weborganic)
-   * @author Jean-Baptiste Reure (Weborganic)
-   * @version 15 June 2011
+   *
+   * @author Christophe Lauret
+   * @author Jean-Baptiste Reure
+   *
+   * @version 8 October 2012
    */
-  @Beta static class RelocationMappingHandler extends DefaultHandler implements ContentHandler {
+  static class Handler extends DefaultHandler implements ContentHandler {
 
     /**
      * Maps URI patterns to URI patterns.
@@ -232,13 +239,10 @@ import org.xml.sax.helpers.DefaultHandler;
     /**
      * @param mapping The mapping to use for relocation.
      */
-    public RelocationMappingHandler(Map<URIPattern, URIPattern> mapping) {
+    public Handler(Map<URIPattern, URIPattern> mapping) {
       this._mapping = mapping;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
       if ("relocation".equals(localName)) {
@@ -251,7 +255,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
     /**
      * Parse the specified URI Pattern.
-     * 
+     *
      * @param pattern The URI pattern as a string.
      * @return the <code>URIPattern</code> instance or <code>null</code>.
      */

@@ -10,6 +10,8 @@ package org.weborganic.berlioz.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +36,10 @@ import org.weborganic.furi.URIParameters;
 import org.weborganic.furi.URIPattern;
 import org.weborganic.furi.URIResolveResult;
 import org.weborganic.furi.URIResolver;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * A basic filter to redirect URI patterns to other URI patterns.
@@ -51,9 +57,13 @@ import org.weborganic.furi.URIResolver;
  * </redirect-mapping>
  * }</pre>
  *
- * <p>Note: All redirects are currently temporary (302).
+ * <p>All redirects are currently temporary (302) unless the attribute 'permanent' is set to 'yes'
+ * in which case the HTTP code will be 301
  *
  * <p>See {@link #init(ServletConfig)} for details for configuration options.
+ *
+ * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.2">HTTP 1.1 - Moved Permanently</a>
+ * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.3">HTTP 1.1 - Found</a>
  *
  * @author Christophe Lauret (Weborganic)
  * @version 11 August 2010
@@ -80,12 +90,12 @@ import org.weborganic.furi.URIResolver;
   /**
    * Maps URI patterns to redirect to URI pattern target.
    */
-  private Map<URIPattern, URIPattern> _mapping = null;
+  private transient Map<URIPattern, URIPattern> _mapping = null;
 
   /**
    * IF a URI pattern is on this list, it indicates that the redirect is permanent (301 instead of 302)
    */
-  private List<URIPattern> _permanent = null;
+  private transient List<URIPattern> _permanent = null;
 
 // servlet methods --------------------------------------------------------------------------------
 
@@ -115,18 +125,17 @@ import org.weborganic.furi.URIResolver;
       return;
     }
 
+    // Mapping does not exist
     File mappingFile = new File(webinfPath, mapping);
     if (!mappingFile.exists()) {
       LOGGER.warn("'config' init-parameter points to non existing file {} - filter will have no effect",
       mappingFile.getAbsolutePath());
     }
 
+    // Simply set the mapping file, it will be loaded if needed only.
     this._mappingFile = mappingFile;
   }
 
-  /**
-   * Resets the target URL.
-   */
   @Override
   public void destroy() {
     this._mappingFile = null;
@@ -134,9 +143,6 @@ import org.weborganic.furi.URIResolver;
     this._permanent = null;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
     throws ServletException, IOException {
@@ -222,7 +228,7 @@ import org.weborganic.furi.URIResolver;
    *         <code>false</code> otherwise.
    */
   private boolean loadConfig() {
-    RedirectMappingHandler handler = new RedirectMappingHandler();
+    Handler handler = new Handler();
     boolean loaded = false;
     try {
       XMLUtils.parse(handler, this._mappingFile, false);
@@ -259,4 +265,75 @@ import org.weborganic.furi.URIResolver;
     return html.toString();
   }
 
+  /**
+   * Handles the XML for the URI pattern mapping configuration.
+   *
+   * @author Christophe Lauret
+   * @version 8 October 2012
+   */
+  static class Handler extends DefaultHandler implements ContentHandler {
+
+    /**
+     * Displays debug information.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(Handler.class);
+
+    /**
+     * Maps URI patterns to URI patterns.
+     */
+    private final Map<URIPattern, URIPattern> mapping = new HashMap<URIPattern, URIPattern>();
+
+    /**
+     * The list of permanent redirect.
+     */
+    private final List<URIPattern> permanent = new ArrayList<URIPattern>();
+
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+      if ("redirect".equals(localName)) {
+        URIPattern from = toPattern(atts.getValue("from"));
+        URIPattern to = toPattern(atts.getValue("to"));
+        if (from == null || to == null) return;
+        boolean isPermanent = "yes".equals(atts.getValue("permanent"));
+        this.mapping.put(from, to);
+        if (isPermanent) {
+          this.permanent.add(from);
+        }
+      }
+    }
+
+    /**
+     * Parse the specified URI Pattern.
+     *
+     * @param pattern The URI pattern as a string.
+     * @return the <code>URIPattern</code> instance or <code>null</code>.
+     */
+    private static URIPattern toPattern(String pattern) {
+      try {
+        return new URIPattern(pattern);
+      } catch (IllegalArgumentException ex) {
+        LOGGER.warn("Unparseable URI pattern: {} - ignored mapping", pattern);
+        return null;
+      }
+    }
+
+    /**
+     * Return the complete mapping of URI patterns that need be redirected.
+     *
+     * @return The mapping of URI patterns that need be redirected.
+     */
+    public Map<URIPattern, URIPattern> getMapping() {
+      return this.mapping;
+    }
+
+    /**
+     * The list of redirected URI patterns which will return a permanent redirect.
+     *
+     * @return The list of redirected URI patterns which will return a permanent redirect.
+     */
+    public List<URIPattern> getPermanent() {
+      return this.permanent;
+    }
+
+  }
 }
