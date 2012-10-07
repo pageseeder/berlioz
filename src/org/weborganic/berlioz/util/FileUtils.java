@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.util;
@@ -19,7 +19,7 @@ import org.weborganic.berlioz.GlobalSettings;
 
 /**
  * A bunch of utility functions for files.
- * 
+ *
  * @author Christophe Lauret
  * @version 25 May 2010
  */
@@ -31,9 +31,9 @@ public final class FileUtils {
   private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
   /**
-   * The MIME properties mapping file extensions to MIME types. 
+   * The MIME properties mapping file extensions to MIME types.
    */
-  private static final Properties MIME = new Properties(); 
+  private static final Properties MIME = new Properties();
 
   /** Utility classes need no constructor. */
   private FileUtils() {
@@ -41,15 +41,15 @@ public final class FileUtils {
 
   /**
    * Returns the Media Type for the given file.
-   * 
+   *
    * <p>The media type is only based on the file extension.
-   * 
+   *
    * <p>This method uses the the 'mime.properties' resource file from the classpath which maps
-   * file extensions to the corresponding Media Type. This file is loaded once. 
-   * 
+   * file extensions to the corresponding Media Type. This file is loaded once.
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2046">MIME Part Two: Media Types</a>
    * @see <a href="http://tools.ietf.org/html/rfc3023">XML Media Types</a>
-   * 
+   *
    * @param f The file.
    * @return the corresponding Media Type or <code>null</code> if not found.
    */
@@ -68,10 +68,10 @@ public final class FileUtils {
 
   /**
    * Indicates whether the specified file is in the specified containing file.
-   * 
+   *
    * @param root the container
    * @param file the file to check.
-   * 
+   *
    * @return <code>true</code> if the file is within the specified container;
    *         <code>false</code> otherwise.
    */
@@ -89,12 +89,12 @@ public final class FileUtils {
 
   /**
    * Returns the path from the root file to the specified file.
-   * 
+   *
    * <p>Note: implementation note, only works if the root contains the specified file.
-   * 
+   *
    * @param root the container
    * @param file the file to check.
-   * 
+   *
    * @return The path to the file from the root.
    */
   public static String path(File root, File file) {
@@ -120,12 +120,12 @@ public final class FileUtils {
   // Private helpers ------------------------------------------------------------------------------
 
   /**
-   * Loads the properties.
+   * Loads the MIME properties from the Berlioz jar or the local "config/mime.properties"
    */
   private static synchronized void loadMIMEProperties() {
     File file = new File(GlobalSettings.getRepository(), "config/mime.properties");
+    InputStream in = null;
     try {
-      InputStream in;
       if (file.exists()) {
         LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
         in = new FileInputStream(file);
@@ -134,9 +134,16 @@ public final class FileUtils {
         in = FileUtils.class.getResourceAsStream("/mime.properties");
       }
       MIME.load(in);
-      in.close();
     } catch (IOException ex) {
-      LOGGER.warn("Unable to read conf properties for template", ex);
+      LOGGER.warn("Unable to load MIME properties", ex);
+    } finally {
+      if (in != null) {
+        try {
+          in.close();
+        } catch (IOException ex) {
+          LOGGER.warn("Unable to close MIME properties file", ex);
+        }
+      }
     }
   }
 
