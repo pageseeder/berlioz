@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.util;
@@ -12,13 +12,13 @@ import java.io.File;
 /**
  * A basic implementation of the Entity info pointing to an existing file and producing weak
  * entity tags.
- * 
+ *
  * @author Christophe Lauret
  * @version 28 January 2010
  */
 public class FileEntityInfo implements EntityInfo {
 
-  /** 
+  /**
    * The file representing the bundle.
    */
   private final File _file;
@@ -40,7 +40,7 @@ public class FileEntityInfo implements EntityInfo {
 
   /**
    * Creates a new entity info for the specified file.
-   * 
+   *
    * @param file     The file representing the bundle.
    * @param mimeType The content type of the file.
    */
@@ -52,9 +52,7 @@ public class FileEntityInfo implements EntityInfo {
     this.mime = mimeType;
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  @Override
   public final long getLastModified() {
     return this.modified;
   }
@@ -69,15 +67,17 @@ public class FileEntityInfo implements EntityInfo {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final String getMimeType() {
     return this.mime;
   }
 
   /**
    * {@inheritDoc}
-   * 
+   *
    * Always a weak ETag.
    */
+  @Override
   public final String getETag() {
     if ((this.length >= 0) || (this.modified >= 0)) return "W/\"" + this.length + "-" + this.modified + "\"";
     return null;
@@ -85,7 +85,7 @@ public class FileEntityInfo implements EntityInfo {
 
   /**
    * Returns the file.
-   * 
+   *
    * @return the file used for this entity.
    */
   public final File getFile() {
