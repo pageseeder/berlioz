@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.xml;
@@ -28,7 +28,7 @@ import org.xml.sax.XMLReader;
  * A utility class to help with some simple XML operations.
  *
  * @author Christophe Lauret (Weborganic)
- * 
+ *
  * @version 3 December 2009
  */
 public final class XMLUtils {
@@ -56,10 +56,10 @@ public final class XMLUtils {
 
   /**
    * Parses the specified file using the given handler.
-   * 
+   *
    * @param handler The content handler to use.
    * @param xml     The XML file to parse.
-   * 
+   *
    * @throws BerliozException Should something unexpected happen.
    */
   public static void parse(ContentHandler handler, File xml) throws BerliozException {
@@ -68,11 +68,11 @@ public final class XMLUtils {
 
   /**
    * Parses the specified file using the given handler.
-   * 
+   *
    * @param handler  The content handler to use.
    * @param reader   The reader over the XML to parse.
    * @param validate whether to validate or not.
-   * 
+   *
    * @throws BerliozException Should something unexpected happen.
    */
   public static void parse(ContentHandler handler, Reader reader, boolean validate) throws BerliozException {
@@ -95,11 +95,11 @@ public final class XMLUtils {
 
   /**
    * Parses the specified file using the given handler.
-   * 
+   *
    * @param handler  The content handler to use.
    * @param xml      The XML file to parse.
    * @param validate whether to validate or not.
-   * 
+   *
    * @throws BerliozException Should something unexpected happen.
    */
   public static void parse(ContentHandler handler, File xml, boolean validate) throws BerliozException {
@@ -113,13 +113,15 @@ public final class XMLUtils {
       reader.setErrorHandler(BerliozErrorHandler.getInstance());
       // parse
       if (xml.isDirectory()) {
+        LOGGER.info("Parsing all XML files in directory {}", xml.toURI());
         File[] xmls = xml.listFiles(new XMLFilenameFilter());
         for (File f : xmls) {
           reader.parse(new InputSource(f.toURI().toString()));
         }
-        // TODO: and if there is no XML files in the directory?
+        if (xmls.length == 0)
+          LOGGER.warn("No XML file to parse in directory {} ", xml.toURI());
       } else {
-        LOGGER.info("parsing "+xml.toURI().toString());
+        LOGGER.info("Parsing file {}", xml.toURI());
         reader.parse(new InputSource(xml.toURI().toString()));
       }
     } catch (SAXException ex) {
@@ -135,11 +137,11 @@ public final class XMLUtils {
 
   /**
    * Returns the requested SAX Parser factory.
-   * 
+   *
    * @param validating <code>true</code> for the validating factory;
    *                   <code>false</code> for the non-validating factory;
    * @return the SAX parser factory to use.
-   * 
+   *
    * @throws BerliozException If one of the features is not recognised or supported by the factory.
    */
   public static SAXParser getParser(boolean validating) throws BerliozException {
