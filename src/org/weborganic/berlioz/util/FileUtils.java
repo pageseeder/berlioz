@@ -109,10 +109,10 @@ public final class FileUtils {
       } else
         throw new IllegalArgumentException("Cannot determine the path between the specified files.");
     } catch (IOException ex) {
-      // TODO handle exception
+      LOGGER.warn("Unable to compute path between {} and {}", root, file, ex);
       return null;
     } catch (SecurityException ex) {
-      // TODO handle exception
+      LOGGER.warn("Unable to compute path between {} and {}", root, file, ex);
       return null;
     }
   }
