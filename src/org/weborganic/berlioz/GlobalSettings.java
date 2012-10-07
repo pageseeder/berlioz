@@ -44,10 +44,10 @@ import org.weborganic.berlioz.xml.XMLProperties;
  *
  * @see #load
  * @see #setRepository(File)
- * @see #setConfig(String)
+ * @see #setMode(String)
  *
- * @author Christophe Lauret (Weborganic)
- * @version 20 May 2010
+ * @author Christophe Lauret
+ * @version 8 October 2012
  */
 public final class GlobalSettings {
 
