@@ -112,34 +112,6 @@ public final class MD5 {
       return hash(file.getCanonicalPath()+'$'+file.length()+'%'+file.lastModified());
   }
 
-  /**
-   * Returns a hash value for the specified file.
-   *
-   * @param file The file to read
-   * @return The MD5 checksum value as a string.
-   * @throws IOException If the file does not exist or an error occurred while reading the file.
-   * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
-  public static String hash(File file) throws IOException, UnsupportedOperationException {
-    long length = file.length();
-    byte[] buffer = new byte[length > 8096? 8096 : (int)length];
-    MessageDigest md = getAlgorithm();
-    InputStream in = new FileInputStream(file);
-    try {
-      int len;
-      do {
-        len = in.read(buffer);
-        if (len > 0) {
-          md.update(buffer, 0, len);
-        }
-      } while (len != -1);
-    } finally {
-      in.close();
-    }
-    byte[] bytes = md.digest();
-    return toHex(bytes);
-  }
-  */
-
   // Private helpers
   // ----------------------------------------------------------------------------------------------
 
