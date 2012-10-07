@@ -5,12 +5,12 @@ import java.util.Map;
 
 /**
  * A utility class for HTTP Status codes.
- * 
+ *
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10">HTTP/1.1 - 10 Status Code Definitions</a>
- * 
+ *
  * @author Christophe Lauret
  * @version 1 July 2011
- * 
+ *
  * @since Berlioz 0.8.3
  */
 public final class HttpStatusCodes {
@@ -75,11 +75,11 @@ public final class HttpStatusCodes {
 
   /**
    * Returns the title for the specified code based on the name defined in the RFC.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-10">HTTP/1.1 - 10 Status Code Definitions</a>
-   * 
+   *
    * @param code the HTTP status code.
-   * @return the corresponding title as defined in RFC 2616 or <code>null</code> if the code does not exist. 
+   * @return the corresponding title as defined in RFC 2616 or <code>null</code> if the code does not exist.
    */
   public static String getTitle(int code) {
     return HTTP_CODE_TITLE.get(Integer.valueOf(code));
@@ -87,7 +87,7 @@ public final class HttpStatusCodes {
 
   /**
    * Returns the class of the HTTP status code based on the class defined in the RFC.
-   * 
+   *
    * <p>Will return for range:
    * <ul>
    *   <li>100-199: <code>"Informational"</code></li>
@@ -96,7 +96,7 @@ public final class HttpStatusCodes {
    *   <li>400-499: <code>"Client Error"</code></li>
    *   <li>500-599: <code>"Server Error"</code></li>
    * </ul>
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-10">HTTP/1.1 - 10 Status Code Definitions</a>
    *
    * @param code the HTTP status code.
