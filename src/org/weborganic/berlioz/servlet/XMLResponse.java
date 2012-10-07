@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -40,9 +40,9 @@ import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * An XML response produced from content generators.
- * 
+ *
  * <p>This class is not thread-safe.
- * 
+ *
  * @author Christophe Lauret (Weborganic)
  * @author Christophe Lauret (Weborganic)
  * @version Berlioz 0.9.3 - 9 December 2011
@@ -82,7 +82,7 @@ public final class XMLResponse {
 
   /**
    * Creates a new XML response for the specified arguments.
-   * 
+   *
    * @param req    The HTTP servlet request.
    * @param res    The HTTP servlet response.
    * @param config The Berlioz configuration environment.
@@ -96,7 +96,7 @@ public final class XMLResponse {
 
   /**
    * Returns the service corresponding to this response.
-   * 
+   *
    * @return the service corresponding to this response.
    */
   public Service getService() {
@@ -105,14 +105,14 @@ public final class XMLResponse {
 
   /**
    * Returns the Etag for this response.
-   * 
+   *
    * <p>The Etag is computed from the Etags returned by each generator.
-   * 
+   *
    * <p>If any one of the generators is not cacheable, this response is not considered cacheable
    * and the Etag returned will be <code>null</code>.
-   * 
+   *
    * @return the Etag for this response if it is cacheable; <code>null</code> if it is not.
-   * 
+   *
    * @since Berlioz 0.8.0
    */
   public String getEtag() {
@@ -138,7 +138,7 @@ public final class XMLResponse {
 
   /**
    * Returns the status of this service response.
-   * 
+   *
    * @return the status of this service response.
    * @since Berlioz 0.8.2
    */
@@ -148,7 +148,7 @@ public final class XMLResponse {
 
   /**
    * Returns a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
-   * 
+   *
    * @return a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
    */
   public BerliozException getError() {
@@ -157,9 +157,9 @@ public final class XMLResponse {
 
   /**
    * Generates an XML response for the wrapped HTTP request and response objects.
-   * 
+   *
    * @return The XML content for the appropriate content generator.
-   * 
+   *
    * @throws IOException Should an I/O error occur.
    */
   public String generate() throws IOException {
@@ -190,11 +190,11 @@ public final class XMLResponse {
 
   /**
    * Generates the XML content for one generator.
-   * 
+   *
    * @param request   The generator request to process.
    * @param service   The service it is part of.
    * @param xml       The XML Writer to use.
-   * 
+   *
    * @throws IOException Should an I/O error occur while writing XML.
    */
   private void toXML(HttpContentRequest request, Service service, XMLWriter xml) throws IOException {
@@ -257,8 +257,8 @@ public final class XMLResponse {
   }
 
   /**
-   * Returns the list of content generator requests to process. 
-   * 
+   * Returns the list of content generator requests to process.
+   *
    * @param req   The HTTP servlet request.
    * @param res   The HTTP servlet response.
    * @param env   The current environment.
@@ -292,10 +292,10 @@ public final class XMLResponse {
 
   /**
    * Handles an exception thrown by a generator.
-   * 
+   *
    * @param exception The exception to handle.
    * @param generator The generator which caused the exception.
-   * 
+   *
    * @return a Berlioz exception for immediate use.
    */
   @SuppressWarnings("unchecked")
@@ -336,7 +336,7 @@ public final class XMLResponse {
 
   /**
    * Handles the status of this generator.
-   * 
+   *
    * @param status    The status of the generator after it has been invoked.
    * @param generator The generator.
    * @param service   The service that the generator is part of.
@@ -346,7 +346,7 @@ public final class XMLResponse {
     if (relevant) {
       ServiceStatusRule r = service.rule();
       CodeRule rule = r.rule();
-      // If null set it (works for all rules) 
+      // If null set it (works for all rules)
       if (this._status == null) {
         this._status = status;
       } else if (rule == CodeRule.HIGHEST && status.code() > this._status.code()) {

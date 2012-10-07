@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -33,7 +33,7 @@ import org.weborganic.furi.URIResolveResult;
  *
  * @author Christophe Lauret (Weborganic)
  * @author Tu Tak Tran (Allette Systems)
- * 
+ *
  * @version 12 April 2011
  */
 public abstract class HttpRequestWrapper implements ContentRequest {
@@ -68,9 +68,9 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
-   * 
+   *
    * @param wrapper The request to wrap.
-   * 
+   *
    * @throws NullPointerException If the wrapper is <code>null</code>.
    */
   HttpRequestWrapper(HttpRequestWrapper wrapper) {
@@ -83,11 +83,11 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
-   * 
+   *
    * @param req The request to wrap.
    * @param res The response to wrap.
    * @param env The environment for this request.
-   * 
+   *
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
   public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env)
@@ -102,15 +102,15 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
-   * 
+   *
    * @param req        The request to wrap.
    * @param res        The response to wrap.
    * @param env        The environment for this request.
    * @param parameters The list of parameters.
-   * 
+   *
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
-  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env, 
+  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env,
       Map<String, String> parameters) throws IllegalArgumentException {
     if (req == null)
       throw new IllegalArgumentException("Cannot construct wrapper around null request.");
@@ -125,6 +125,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final String getBerliozPath() {
     return getBerliozPath(this._req);
   };
@@ -132,6 +133,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final String getParameter(String name) {
     String value = this._parameters.get(name);
     if (value == null) {
@@ -143,6 +145,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final String getParameter(String name, String def) {
     String value = getParameter(name);
     return (value == null || "".equals(value))? def : value;
@@ -151,6 +154,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final String[] getParameterValues(String name) {
     String value = this._parameters.get(name);
     if (value != null)
@@ -162,13 +166,15 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final Enumeration<String> getParameterNames() {
-    return Collections.enumeration(this._parameters.keySet()); 
+    return Collections.enumeration(this._parameters.keySet());
   }
 
   /**
    * {@inheritDoc}
    */
+  @Override
   public final Environment getEnvironment() {
     return this._env;
   }
@@ -178,6 +184,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final int getIntParameter(String name, int def) {
     String value = getParameter(name);
     if (value == null || "".equals(value)) return def;
@@ -192,6 +199,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final Date getDateParameter(String name) {
     try {
       return ISO8601.parseAuto(this.getParameter(name));
@@ -203,16 +211,18 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Returns the path information (what comes after servlet path).
-   * 
+   *
    * @return The path information (what comes after servlet path).
    */
+  @Override
   public final String getPathInfo() {
     return this._req.getPathInfo();
   }
 
   /**
-   * {@inheritDoc} 
+   * {@inheritDoc}
    */
+  @Override
   public final Cookie[] getCookies() {
     return this._req.getCookies();
   }
@@ -222,6 +232,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final Object getAttribute(String name) {
     return this._req.getAttribute(name);
   }
@@ -229,16 +240,17 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * {@inheritDoc}
    */
+  @Override
   public final void setAttribute(String name, Object o) {
     this._req.setAttribute(name, o);
   }
 
   /**
    * Returns the wrapped HTTP servlet request.
-   * 
-   * <p>This effectively enables the content generator to bypass the clean and simple 
+   *
+   * <p>This effectively enables the content generator to bypass the clean and simple
    * methods of the content request, use wisely...
-   * 
+   *
    * @return The wrapped HTTP servlet request.
    */
   public final HttpServletRequest getHttpRequest() {
@@ -247,10 +259,10 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Returns the attached HTTP servlet response.
-   * 
+   *
    * <p>This effectively enables the content generator to make use of the HTTP servlet
    * response, use wisely...
-   * 
+   *
    * @return The attached HTTP servlet response.
    */
   public final HttpServletResponse getHttpResponse() {
@@ -273,9 +285,10 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Returns the session of the wrapped HTTP servlet request.
-   * 
+   *
    * @return The session of the HTTP servlet request.
    */
+  @Override
   public final HttpSession getSession() {
     return this._req.getSession();
   }
@@ -285,18 +298,18 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Returns the Berlioz path from an HTTP Servlet request.
-   * 
+   *
    * <p>The Berlioz path corresponds to:
    * <ul>
-   *   <li>the <code>pathInfo</code> when the Berlioz Servlet is mapped using a prefix servlet 
+   *   <li>the <code>pathInfo</code> when the Berlioz Servlet is mapped using a prefix servlet
    *   (for example <code>/html/*</code>);</li>
-   *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet 
+   *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet
    *   (for example <code>*.html</code>);</li>
    * </ul>
-   * 
+   *
    * <p>Use this method in preference to the {@link #getPathInfo()} which only works if Berlioz is
    * mapped to prefixes.
-   * 
+   *
    * @param req The HTTP servlet request.
    * @return the corresponding Berlioz Path.
    */
@@ -314,15 +327,15 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   /**
    * Configure this request wrapper for the specified service match.
-   * 
+   *
    * @param req     The HTTP servlet request.
    * @param results The results of the URI resolution.
-   * 
+   *
    * @return A map of the parameters for the specified request and results
    */
   @SuppressWarnings("unchecked")
   protected static Map<String, String> toParameters(HttpServletRequest req, URIResolveResult results) {
-    Map<String, String> parameters = new HashMap<String, String>(); 
+    Map<String, String> parameters = new HashMap<String, String>();
     // Load all HTTP parameters from the Query String first
     Map<String, String[]> map = req.getParameterMap();
     for (Entry<String, String[]> entry : map.entrySet()) {

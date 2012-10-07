@@ -2,17 +2,17 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
 
 /**
  * Holds the results of a transformation process.
- * 
+ *
  * <p>This class holds information about a process such as its content, processing time (in ms),
  * status and exception.
- * 
+ *
  * @author Christophe Lauret
  * @version 27 July 2010
  */
@@ -25,7 +25,7 @@ public final class XMLContent implements BerliozOutput {
 
   /**
    * Creates some new XML content.
-   * 
+   *
    * @param content The content.
    */
   public XMLContent(CharSequence content) {
@@ -33,8 +33,9 @@ public final class XMLContent implements BerliozOutput {
   }
 
   /**
-   * @return The actual XML content. 
+   * @return The actual XML content.
    */
+  @Override
   public CharSequence content() {
     return this._content;
   }
@@ -42,6 +43,7 @@ public final class XMLContent implements BerliozOutput {
   /**
    * @return Always <code>application/xml</code>.
    */
+  @Override
   public String getMediaType() {
     return "application/xml";
   }
@@ -49,6 +51,7 @@ public final class XMLContent implements BerliozOutput {
   /**
    * @return Always <code>utf-8</code>.
    */
+  @Override
   public String getEncoding() {
     return "utf-8";
   }

@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.MatchingService;
@@ -40,46 +41,46 @@ import org.weborganic.berlioz.util.ResourceCompressor;
 
 /**
  * Default Berlioz servlet.
- * 
- * <p>A berlioz servlet can only generate one content type and use one set of XSLT templates, these are defined at 
+ *
+ * <p>A berlioz servlet can only generate one content type and use one set of XSLT templates, these are defined at
  * initialisation. See {@link #init(ServletConfig)} for details.
- * 
+ *
  * <p>This servlet will pass on HTTP parameters to the underlying generators for the service it matches.
- * 
+ *
  * <h3>XSLT Caching</h3>
- * 
- * <p>The XSLT templates are cached by default unless the XSLT Cache global option property was set to 
+ *
+ * <p>The XSLT templates are cached by default unless the XSLT Cache global option property was set to
  * <code>false</code>; in other words XSLT templates are parsed once and reused for each call. The special parameter
  * <code>clear-xsl-cache</code> can be used to clear the XSLT cache.
  *
  * <h3>HTTP Caching</h3>
- * 
- * <p>The response is considered cacheable if all the generators in the matching service are cacheable; that is if 
+ *
+ * <p>The response is considered cacheable if all the generators in the matching service are cacheable; that is if
  * they implement the {@link Cacheable} interface).
- * 
+ *
  * <p>For cacheable responses, Berlioz will return the following Headers:
  * <pre>
  *   Expires: <i>[Expiry date 1 year from now]</i>
  *   Cache-Control: [Cache control] or "max-age=<i>[max age in seconds]</i>, must-revalidate"
  *   Etag: <i>[Etag for generator]</i>
  * </pre>
- * 
+ *
  * <p>The global option HTTP_MAX_AGE can be used to define the maximum age used in the
  * <code>Cache-Control</code> HTTP Header of cacheable response.
- * 
- * <p>The <code>Etag</code> is computed from the list of Etags of each generator and an Etag generated for the 
+ *
+ * <p>The <code>Etag</code> is computed from the list of Etags of each generator and an Etag generated for the
  * XSLT templates.
- * 
+ *
  * <p>Non cacheable responses, always return:
  * <pre>
  *   Expires: 0
  *   Cache-Control: no-cache
  * </pre>
- * 
+ *
  * <p>For security, the Berlioz administration parameters can be secures using a Berlioz control key.
- * The control key is a string that must be supplied as a parameter whenever one of the admin 
+ * The control key is a string that must be supplied as a parameter whenever one of the admin
  * parameters is used. Use the initialisation parameters to define a control key.
- * 
+ *
  * @author Christophe Lauret (Weborganic)
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
@@ -110,7 +111,7 @@ public final class BerliozServlet extends HttpServlet {
   private transient ServiceRegistry _services;
 
   /**
-   * The request dispatcher to forward to the error handler. 
+   * The request dispatcher to forward to the error handler.
    */
   private transient RequestDispatcher _errorHandler;
 
@@ -118,18 +119,18 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Initialises the Berlioz Servlet.
-   * 
+   *
    * <p>This servlet accepts the following init parameters:
    * <ul>
    *   <li><code>content-type</code> to specify the content type used by this Berlioz instance.
    *   <li><code>stylesheet</code> to specify the XSLT stylesheet to use for this Berlioz instance.
    *   <li><code>berlioz-control</code> to specify the Berlioz control key to enable admin parameters.
    * </ul>
-   * 
+   *
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
-   * 
+   *
    * @param servletConfig The servlet configuration.
-   * 
+   *
    * @throws ServletException Should an exception occur.
    */
   @Override
@@ -163,7 +164,7 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Handles a HEAD request.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -174,7 +175,7 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Handles a GET request.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -185,7 +186,7 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Handles a POST request.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -196,7 +197,7 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Handles a PUT request.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -207,7 +208,7 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Handles a DELETE request.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -221,11 +222,11 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Handles requests.
-   * 
+   *
    * @param req            The HTTP servlet request.
    * @param res            The HTTP servlet response.
    * @param includeContent Whether to include the content in the response.
-   * 
+   *
    * @throws ServletException To wrap any non IO exception.
    * @throws IOException For any IO exception.
    */
@@ -327,7 +328,7 @@ public final class BerliozServlet extends HttpServlet {
         ServiceInfo info = new ServiceInfo(etag);
         if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
 
-        // Update the headers 
+        // Update the headers
         res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
         String cc = xml.getService().cache();
         if (cc == null) {
@@ -433,13 +434,13 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Handles the specified error.
-   * 
+   *
    * @param req     The HTTP Servlet request.
    * @param res     The HTTP Servlet response.
    * @param code    The HTTP status response code.
    * @param message The message for the message.
    * @param ex      Any caught exception (may be <code>null</code>).
-   * 
+   *
    * @throws IOException      The HTTP Servlet Request.
    * @throws ServletException Should any error occur at this point.
    */
@@ -473,12 +474,12 @@ public final class BerliozServlet extends HttpServlet {
     }
   }
 
-  // Private internal class 
+  // Private internal class
   // ==============================================================================================
 
   /**
    * Provide a simple entity information for the service.
-   * 
+   *
    * @author Christophe Lauret
    * @version 19 July 2010
    */
@@ -491,7 +492,7 @@ public final class BerliozServlet extends HttpServlet {
 
     /**
      * Creates a new service info instance.
-     * 
+     *
      * @param etag The etag.
      */
     public ServiceInfo(String etag) {
@@ -501,6 +502,7 @@ public final class BerliozServlet extends HttpServlet {
     /**
      * @return the etag for this service.
      */
+    @Override
     public String getETag() {
       return this._etag;
     }
@@ -508,6 +510,7 @@ public final class BerliozServlet extends HttpServlet {
     /**
      * @return Always "text/html".
      */
+    @Override
     public String getMimeType() {
       return "text/html";
     }
@@ -515,6 +518,7 @@ public final class BerliozServlet extends HttpServlet {
     /**
      * @return Always -1 as we use the etag for caching.
      */
+    @Override
     public long getLastModified() {
       return -1;
     }

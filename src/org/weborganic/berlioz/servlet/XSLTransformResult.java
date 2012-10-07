@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -13,10 +13,10 @@ import javax.xml.transform.Templates;
 
 /**
  * Holds the results of a transformation process.
- * 
+ *
  * <p>This class holds information about a process such as its content, processing time (in ms),
  * status and exception.
- * 
+ *
  * @author Christophe Lauret
  * @version 27 July 2010
  */
@@ -24,7 +24,7 @@ public final class XSLTransformResult implements BerliozOutput {
 
   /**
    * The status of a process result.
-   * 
+   *
    * These are loosely based on the HTTP error codes.
    */
   public enum Status {
@@ -72,13 +72,13 @@ public final class XSLTransformResult implements BerliozOutput {
   private String contentType = "text/html";
 
   /**
-   * The encoding. 
+   * The encoding.
    */
   private String encoding = "utf-8";
 
   /**
    * Creates a successful transformation result.
-   * 
+   *
    * @param content   The content.
    * @param time      The processing time.
    * @param templates The templates used for the transformation.
@@ -96,7 +96,7 @@ public final class XSLTransformResult implements BerliozOutput {
 
   /**
    * Creates an unsuccessful process result.
-   * 
+   *
    * @param content   The content.
    * @param ex        An exception.
    * @param templates The templates used for the transformation.
@@ -118,6 +118,7 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * @return the transformed content.
    */
+  @Override
   public CharSequence content() {
     return this._content;
   }
@@ -131,7 +132,7 @@ public final class XSLTransformResult implements BerliozOutput {
 
   /**
    * Returns the status of the process result.
-   * 
+   *
    * @return the status of the process result.
    */
   public Status status() {
@@ -158,23 +159,25 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * @return The content type (MIME) as defined in the XSLT templates.
    */
+  @Override
   public String getMediaType() {
     return this.contentType;
   }
 
   /**
-   * @return The character encoding as defined in the XSLT templates. 
+   * @return The character encoding as defined in the XSLT templates.
    */
+  @Override
   public String getEncoding() {
     return this.encoding;
   }
 
   /**
    * Sets the output properties of this transform result.
-   * 
+   *
    * @see <a href="http://www.w3.org/TR/xslt20/#element-output">XSLT 2.0 - 20 Serialization</a>
-   * 
-   * @param templates the templates used to generate this. 
+   *
+   * @param templates the templates used to generate this.
    */
   protected void setOutputProperties(Templates templates) {
     Properties p = templates.getOutputProperties();
