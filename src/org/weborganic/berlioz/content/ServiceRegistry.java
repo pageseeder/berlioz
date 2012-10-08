@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -14,8 +14,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.furi.URIPattern;
@@ -24,9 +24,9 @@ import org.weborganic.furi.URIResolver.MatchRule;
 
 /**
  * A registry for services.
- * 
+ *
  * <p>Note: this class is not synchronized and must be synchronised externally.
- * 
+ *
  * @author Christophe Lauret
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.8
@@ -57,11 +57,11 @@ public final class ServiceRegistry {
 
   /**
    * Register the content generator.
-   * 
+   *
    * @param service the service to register.
    * @param pattern the URL pattern to associate to this content generator.
    * @param method  the method for this URL pattern.
-   * 
+   *
    * @throws NullPointerException If any argument is <code>null</code>
    */
   public void register(Service service, URIPattern pattern, HttpMethod method) {
@@ -75,9 +75,9 @@ public final class ServiceRegistry {
 
   /**
    * Returns the list of content generators for this URL.
-   * 
+   *
    * <p>This method iterates over each HTTP method in the following order: GET, POST, PUT, DELETE.
-   * 
+   *
    * @param url The URL.
    *
    * @return A content generator which URI pattern matches this URL or <code>null</code>.
@@ -94,10 +94,10 @@ public final class ServiceRegistry {
 
   /**
    * Returns the list of HTTP methods allowed for this URL.
-   * 
+   *
    * <p>If the GET method is supported, then the HEAD method is also supported and
    * added to this list.
-   * 
+   *
    * @param url The URL.
    *
    * @return the list of HTTP methods allowed for this URL or an empty list.
@@ -137,7 +137,7 @@ public final class ServiceRegistry {
 
   /**
    * Returns the list of URI Patterns that this service matches.
-   * 
+   *
    * @param service The Berlioz service.
    *
    * @return the list of URI Patterns that this service matches or an empty list.
@@ -156,12 +156,12 @@ public final class ServiceRegistry {
 
   /**
    * Returns the content generator for this URL and HTTP method.
-   * 
+   *
    * <p>If the HTTP method specified is HEAD, this method will return the service for a GET request.
-   * 
+   *
    * @param url    The URL.
    * @param method The HTTP method.
-   * 
+   *
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
   public MatchingService get(String url, String method) {
@@ -171,12 +171,12 @@ public final class ServiceRegistry {
 
   /**
    * Returns the content generator for this URL and HTTP method.
-   * 
+   *
    * <p>If the HTTP method specified is HEAD, this method will return the service for a GET request.
-   * 
+   *
    * @param url    The URL.
    * @param method The HTTP method.
-   * 
+   *
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
   public MatchingService get(String url, HttpMethod method) {
@@ -192,7 +192,7 @@ public final class ServiceRegistry {
 
   /**
    * Returns an unmodifiable map of services by URI Pattern for the specified HTTP method.
-   * 
+   *
    * @param method the HTTP method.
    * @return an unmodifiable map of services by URI Pattern
    */
@@ -203,7 +203,7 @@ public final class ServiceRegistry {
 
   /**
    * Returns the set of registered services.
-   * 
+   *
    * @return the set of registered services.
    */
   public List<Service> getServices() {
@@ -216,7 +216,7 @@ public final class ServiceRegistry {
 
   /**
    * Returns the list of services for the specified HTTP method.
-   * 
+   *
    * @param method the HTTP method.
    * @return the list of services.
    */
@@ -239,7 +239,7 @@ public final class ServiceRegistry {
    * @return The version of this registry.
    */
   public long version() {
-    return version;
+    return this.version;
   }
 
   /**
@@ -248,13 +248,13 @@ public final class ServiceRegistry {
   protected void touch() {
     this.version = System.currentTimeMillis();
   }
-  
+
   /**
    * Returns the HTTP method for the specified value (case insensitive)
-   * 
+   *
    * @param method The method to find
    * @return The corresponding instance or <code>null</code> if no match.
-   * 
+   *
    * @throws IllegalArgumentException if the HTTP method is not valid
    */
   private HttpMethod getHttpMethod(String method) throws IllegalArgumentException {
@@ -266,7 +266,7 @@ public final class ServiceRegistry {
 
   /**
    * Simply Maps generators to URI patterns.
-   * 
+   *
    * @author Christophe Lauret
    * @version 9 December 2011
    */
@@ -284,10 +284,10 @@ public final class ServiceRegistry {
 
     /**
      * Puts the given content generator in this map.
-     * 
+     *
      * @param pattern The URL pattern for this generator.
      * @param service The service to add.
-     * 
+     *
      * @return Always <code>true</code> ???
      */
     public boolean put(URIPattern pattern, Service service) {
@@ -298,7 +298,7 @@ public final class ServiceRegistry {
 
     /**
      * Returns the content generator for the specified URL.
-     * 
+     *
      * @param url The URL
      * @return the content generator for the specified URL.
      */
@@ -325,7 +325,7 @@ public final class ServiceRegistry {
 
     /**
      * Indicates whether the specified service is mapped to any URL.
-     * 
+     *
      * @param service The Berlioz service to check.
      * @return <code>true</code> if mapped to any URL; <code>false</code> otherwise.
      */
@@ -335,7 +335,7 @@ public final class ServiceRegistry {
 
     /**
      * Returns the list of URI patterns that this service matches.
-     * 
+     *
      * @param service the Berlioz Service.
      * @return the list URI pattern is matches
      */

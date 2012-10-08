@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -14,14 +14,15 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 
 /**
- * Provides a generic and uniform mechanism for the content generator to access parameters 
- * and attributes from a request. 
- * 
+ * Provides a generic and uniform mechanism for the content generator to access parameters
+ * and attributes from a request.
+ *
  * All of the methods will return a <code>NullPointerException</code> if the specified
- * parameter name, attribute name or object name is <code>null</code>. 
- * 
- * @author Tu Tak Tran (Allette Systems)
- * @author Christophe Lauret (Weborganic)
+ * parameter name, attribute name or object name is <code>null</code>.
+ *
+ * @author Tu Tak Tran
+ * @author Christophe Lauret
+ *
  * @version 27 May 2011
  */
 public interface ContentRequest {
@@ -35,25 +36,25 @@ public interface ContentRequest {
 
   /**
    * Returns the dynamic path of the Berlioz request.
-   * 
+   *
    * <p>The Berlioz path corresponds to:
    * <ul>
-   *   <li>the <code>pathInfo</code> when the Berlioz Servlet is mapped using a prefix servlet 
+   *   <li>the <code>pathInfo</code> when the Berlioz Servlet is mapped using a prefix servlet
    *   (for example <code>/html/*</code>);</li>
-   *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet 
+   *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet
    *   (for example <code>*.html</code>);</li>
    * </ul>
-   * 
+   *
    * <p>Use this method in preference to the {@link #getPathInfo()} which only works if Berlioz is
    * mapped to prefixes.
-   * 
+   *
    * @return The path information of this request.
    */
   String getBerliozPath();
 
   /**
    * Returns the specified parameter value or <code>null</code>.
-   * 
+   *
    * <p>This method guarantees that the returned value is not equal to an empty string.
    *
    * @param name The name of the requested parameter.
@@ -64,7 +65,7 @@ public interface ContentRequest {
 
   /**
    * Returns the specified parameter value or the specified default if <code>null</code>.
-   * 
+   *
    * <p>This method guarantees that a value is returned.
    *
    * @param name The name of the requested parameter.
@@ -76,7 +77,7 @@ public interface ContentRequest {
 
   /**
    * Returns the specified parameter value.
-   * 
+   *
    * <p>This method guarantees that a value is returned.
    *
    * @param name The name of the requested parameter.
@@ -93,15 +94,15 @@ public interface ContentRequest {
    * <p>If the parameter has a single value, the array has a length of 1.
    *
    * @param name A String containing the name of the parameter whose value is requested
-   * 
+   *
    * @return An array of String objects containing the parameter's values
    */
   String[] getParameterValues(String name);
 
   /**
-   * Returns an <code>Enumeration</code> of <code>String</code> objects containing the names of 
-   * the parameters contained in this request. 
-   * 
+   * Returns an <code>Enumeration</code> of <code>String</code> objects containing the names of
+   * the parameters contained in this request.
+   *
    * <p>If the request has no parameters, the method returns an empty Enumeration.
    *
    * @return An <code>Enumeration</code> of the names of each parameters as <code>String</code>s;
@@ -111,16 +112,16 @@ public interface ContentRequest {
 
   /**
    * Returns the specified attribute object or <code>null</code>.
-   * 
+   *
    * @param name The name of the attribute.
-   * 
+   *
    * @return the specified attribute object or <code>null</code>.
    */
   Object getAttribute(String name);
 
   /**
    * Sets the specified attribute object or <code>null</code>.
-   * 
+   *
    * @param name The name of the attribute.
    * @param o    The object for this attribute.
    */
@@ -128,18 +129,18 @@ public interface ContentRequest {
 
   /**
    * Returns a <code>Date</code> instance from the specified parameter.
-   * 
+   *
    * <p><b>Important note</b>: incompatible change, since Berlioz 0.8, dates are parsed as ISO 8601.
-   * 
+   *
    * @param name The name of the parameter.
-   * 
+   *
    * @return A <code>Date</code> instance or <code>null</code> if not specified.
    */
   Date getDateParameter(String name);
 
   /**
    * Returns an array containing all of the Cookie objects the client sent with this request.
-   * 
+   *
    * This method returns <code>null</code> if no cookies were sent.
    *
    * @return An array of all the Cookies included with this request,
@@ -149,21 +150,21 @@ public interface ContentRequest {
 
   /**
    * Returns the session of the wrapped HTTP servlet request.
-   * 
+   *
    * @return The session of the HTTP servlet request.
    */
   HttpSession getSession();
 
   /**
    * Returns the environment of the request.
-   * 
+   *
    * @return The environment of the request.
    */
   Environment getEnvironment();
 
   /**
    * Sets the status of this request.
-   * 
+   *
    * @param code The status code to use.
    */
   void setStatus(ContentStatus code);

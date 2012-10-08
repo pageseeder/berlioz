@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -26,9 +26,9 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * A SAX2 handler that parses the XML content generators access.
- * 
- * <p>This class should remain protected as there is no reason to expose its method to the public API. 
- * 
+ *
+ * <p>This class should remain protected as there is no reason to expose its method to the public API.
+ *
  * @author Christophe Lauret (Weborganic)
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
@@ -82,8 +82,8 @@ final class ServicesHandler10 extends DefaultHandler {
     private final String _name;
 
     /**
-     * Creates a new element using the name of the element is the lower case value of the 
-     * constant and uses '-' instead of '_' to separated words. 
+     * Creates a new element using the name of the element is the lower case value of the
+     * constant and uses '-' instead of '_' to separated words.
      */
     private Element() {
       this._name = name().toLowerCase().replace('_', '-');
@@ -91,7 +91,7 @@ final class ServicesHandler10 extends DefaultHandler {
 
     /**
      * Returns the element corresponding to the specified element name.
-     * 
+     *
      * @param name The name of the element.
      * @return The name of the element.
      */
@@ -130,7 +130,7 @@ final class ServicesHandler10 extends DefaultHandler {
   private final Service.Builder _builder = new Service.Builder();
 
   /**
-   * The rules for the services, this list is used like a stack. 
+   * The rules for the services, this list is used like a stack.
    */
   private final List<ServiceStatusRule> _rules = new ArrayList<ServiceStatusRule>();
 
@@ -146,12 +146,12 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Creates a new handler that will update the specified registry and use the given error handler.
-   * 
+   *
    * <p>Note: it is more efficient to pass the generators rather than access the outer class.
-   * 
+   *
    * @param registry  The service registry to use.
    * @param collector The error handler to collect errors.
-   * 
+   *
    * @throws NullPointerException If any of the method arguments is <code>null</code>.
    */
   public ServicesHandler10(ServiceRegistry registry, SAXErrorCollector collector) {
@@ -283,7 +283,7 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Ensure that we use the correct error handler so that warnings and errors can be collected.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -293,7 +293,7 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Ensure that we use the correct error handler so that warnings and errors can be collected.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -309,11 +309,11 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @param atts the attributes of the parameter element.
    * @return a new <code>Parameter</code> instance or <code>null</code>.
-   * 
+   *
    * @throws SAXException Only if thrown by error handler
    */
   private Parameter toParameter(Attributes atts) throws SAXException {
-    Parameter.Builder p = new Parameter.Builder(atts.getValue("name")); 
+    Parameter.Builder p = new Parameter.Builder(atts.getValue("name"));
     p.value(atts.getValue("value"));
     try {
       return p.build();
@@ -325,9 +325,9 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Handle the pattern attribute reporting duplicates and invalid patterns as warnings.
-   * 
+   *
    * @param pattern The URI pattern string to parse.
-   * 
+   *
    * @throws SAXException Only if thrown by underlying error handler.
    */
   private void handlePattern(String pattern) throws SAXException {
@@ -346,10 +346,10 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Handle the response rule element.
-   * 
+   *
    * @param use  The 'use' attribute
    * @param rule The 'rule' attribute
-   * 
+   *
    * @throws SAXException Only if thrown by underlying error handler.
    */
   private void handleResponseCode(String use, String rule) throws SAXException {
@@ -362,9 +362,9 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Handle the response rule element.
-   * 
+   *
    * @param method  The 'method' attribute
-   * 
+   *
    * @throws SAXException Only if thrown by underlying error handler.
    */
   private void handleMethod(String method) throws SAXException {
@@ -379,9 +379,9 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Handles the loading of the content generator.
-   * 
+   *
    * @param atts The attributes of the 'content-generator' element.
-   * 
+   *
    * @throws SAXException Only if thrown by underlying error handler.
    */
   private void handleGenerator(Attributes atts) throws SAXException {
@@ -404,11 +404,11 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Convenience method to report a warning to the underlying error handler.
-   * 
-   * <p>This method creates the SAXParseException and provides the locator. 
-   * 
+   *
+   * <p>This method creates the SAXParseException and provides the locator.
+   *
    * @param message The message for the warning.
-   * 
+   *
    * @throws SAXException Only if thrown by underlying error handler.
    */
   public void warning(String message) throws SAXException {
@@ -418,12 +418,12 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Convenience method to report a warning to the underlying error handler.
-   * 
-   * <p>This method creates the SAXParseException and provides the locator. 
-   * 
+   *
+   * <p>This method creates the SAXParseException and provides the locator.
+   *
    * @param message The message for the warning.
    * @param ex      Any associated exception.
-   * 
+   *
    * @throws SAXException Only if thrown by underlying error handler.
    */
   public void warning(String message, Exception ex) throws SAXException {

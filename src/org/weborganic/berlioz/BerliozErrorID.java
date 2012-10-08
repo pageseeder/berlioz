@@ -2,18 +2,20 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz;
 
 /**
  * A enumeration of errors known by Berlioz, so that it is easier to identify the type of error which occurred.
- * 
+ *
  * <p>These are included in error responses whenever Berlioz is able to identify the error.
- * 
+ *
  * @author Christophe Lauret
- * @version 30 June 2011
+ *
+ * @version Berlioz 0.8.3 - 30 June 2011
+ * @since Berlioz 0.8
  */
 @Beta public enum BerliozErrorID implements ErrorID {
 
@@ -79,18 +81,19 @@ package org.weborganic.berlioz;
 
   /**
    * Returns a string representation of this error code.
-   * 
+   *
    * <p>The ID is the same as the name, but
    * <ul>
    *   <li>In lower case;</li>
    *   <li>Using '-' instead of '_';</li>
    *   <li>Prefixed by "berlioz-"</li>
    * </ul>
-   * 
+   *
    * <p>For example, the ID of <code>SERVICES_NOT_FOUND</code> is <code>bzi-services-not-found</code>.
-   * 
+   *
    * @return The ID of this error code.
    */
+  @Override
   public final String id() {
     return "berlioz-"+name().toLowerCase().replace('_', '-');
   };

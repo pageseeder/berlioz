@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -11,29 +11,29 @@ import java.io.File;
 
 /**
  * Returns the environment for the service.
- * 
+ *
  * @author Christophe Lauret
- * @version 25 MAy 2010
+ * @version 25 May 2010
  */
 public interface Environment {
 
   /**
    * Returns the directory pointing to the public area of the Web site.
-   * 
+   *
    * @return the directory pointing to the public area of the Web site.
    */
   File getPublicFolder();
 
   /**
    * Returns the directory pointing to the private area of the Web site (generally WEB-INF).
-   * 
+   *
    * @return the directory pointing to the private area of the Web site (generally WEB-INF).
    */
   File getPrivateFolder();
 
   /**
    * Returns the file pointing to the public area of the Web site.
-   * 
+   *
    * @param path The path of the requested file.
    * @return the requested file.
    */
@@ -41,7 +41,7 @@ public interface Environment {
 
   /**
    * Returns the file pointing to the private area of the Web site (that is within WEB-INF).
-   * 
+   *
    * @param path The path of the requested file.
    * @return the requested file.
    */
