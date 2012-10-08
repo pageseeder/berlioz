@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.generator;
@@ -28,13 +28,13 @@ import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * Generates no content.
- * 
- * <p>This content generator is useful to display information about errors, when a 
+ *
+ * <p>This content generator is useful to display information about errors, when a
  * Berlioz service is used for error handling.
- * 
+ *
  * <h3>Configuration</h3>
  * <p>There is no configuration directly associated with this generator.</p>
- * <p>However, since the purpose is to display servlet error details, the services 
+ * <p>However, since the purpose is to display servlet error details, the services
  * using this generator should have their URLs mapped in the Web descriptor for error
  * catching.
  * For example:
@@ -42,18 +42,18 @@ import com.topologi.diffx.xml.XMLWriter;
  * <error-page>
  *   <error-code>404</error-code>
  *   <location>/not-found.html</location>
- * </error-page>   
+ * </error-page>
  * }</pre>
  *
  * <h3>Parameters</h3>
  * <p>This generator does not use and require any parameter.
- * 
+ *
  * <h3>Attributes</h3>
  * <p>This generator will try to retrieve values from the standard Servlet error request attributes.
- * 
+ *
  * <h3>Returned XML</h3>
  * <p>This generator does not have any content, so the XML content is always empty.
- * <p>Since Berlioz always wraps generators' content, the final XML is always: 
+ * <p>Since Berlioz always wraps generators' content, the final XML is always:
  * <pre>{@code
  * <content generator="org.weborganic.berlioz.generator.GetErrorDetails"
  *               name="[name]" target="[target]" status="ok">
@@ -63,20 +63,20 @@ import com.topologi.diffx.xml.XMLWriter;
  *     <request-uri>/fdhvjfdls</request-uri>
  *     <!-- Any exception will be serialised a XML here -->
  *   </error>
- * </content>              
+ * </content>
  * }</pre>
- * 
- * <p><i>Note: since this generator does produce any data, the return status is always 
+ *
+ * <p><i>Note: since this generator does produce any data, the return status is always
  * <code>ok</code>.</i></p>
- * 
+ *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
- * <pre>{@code <generator class="org.weborganic.berlioz.generator.GetErrorDetails" 
+ * <pre>{@code <generator class="org.weborganic.berlioz.generator.GetErrorDetails"
  *                         name="[name]" target="[target]"/>}</pre>
  *
  * <h3>Etag</h3>
  * <p>This generator is not cacheble.</code>.
- * 
+ *
  * @author Christophe Lauret (Weborganic)
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.8.7
@@ -85,9 +85,10 @@ public final class GetErrorDetails implements ContentGenerator {
 
   /**
    * Display the error details.
-   * 
+   *
    * {@inheritDoc}
    */
+  @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
     // Grab data from attributes
@@ -145,7 +146,7 @@ public final class GetErrorDetails implements ContentGenerator {
 
   /**
    * Return the root element name based on the status code.
-   * 
+   *
    * @param code the HTTP status code.
    * @return the root element name based on the HTTP status code or "unknown-status";
    */

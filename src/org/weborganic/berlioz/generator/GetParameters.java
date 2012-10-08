@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.generator;
@@ -19,10 +19,10 @@ import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * Returns the HTTP Parameters as XML.
- * 
+ *
  * <p>This content generator is only useful for when the XSLT needs to use the parameters to change
  * the content or for debugging.
- * 
+ *
  * <pre>{@code
  *   <parameters>
  *     <parameter name="[name-A]">[value-A]</parameter>
@@ -33,7 +33,7 @@ import com.topologi.diffx.xml.XMLWriter;
  *     <code class="comment"><!-- ... --></code>
  *   </parameters>
  * }</pre>
- * 
+ *
  * @author Christophe Lauret (Weborganic)
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
@@ -41,27 +41,26 @@ import com.topologi.diffx.xml.XMLWriter;
 public final class GetParameters implements ContentGenerator, Cacheable {
 
   /**
-   * Returns an MD5 Value of the query string. 
-   * 
+   * Returns an MD5 Value of the query string.
+   *
    * {@inheritDoc}
    */
+  @Override
   public String getETag(ContentRequest req) {
-    StringBuilder hash = new StringBuilder("?"); 
+    StringBuilder hash = new StringBuilder("?");
     Enumeration<String> names = req.getParameterNames();
     while (names.hasMoreElements()) {
       String name = names.nextElement();
       String[] values = req.getParameterValues(name);
-      for (int i = 0; i < values.length; i++) {
-        hash.append(name).append('=').append(values[i]).append('&');
+      for (String value : values) {
+        hash.append(name).append('=').append(value).append('&');
       }
     }
     // Returns a hash of the query string
     return MD5.hash(hash.toString());
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
     // write the http parameters
     xml.openElement("parameters", true);
@@ -69,10 +68,10 @@ public final class GetParameters implements ContentGenerator, Cacheable {
     while (names.hasMoreElements()) {
       String paramName = names.nextElement();
       String[] values = req.getParameterValues(paramName);
-      for (int i = 0; i < values.length; i++) {
+      for (String value : values) {
         xml.openElement("parameter", false);
         xml.attribute("name", paramName);
-        xml.writeText(values[i]);
+        xml.writeText(value);
         xml.closeElement();
       }
     }
