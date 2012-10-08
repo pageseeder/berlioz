@@ -99,7 +99,7 @@ public final class GlobalSettings {
   /**
    * The name of the configuration file to use.
    */
-  private static String mode;
+  private static volatile String mode;
   static {
     mode = System.getProperty("berlioz.mode");
     if (mode == null) {
@@ -110,12 +110,12 @@ public final class GlobalSettings {
   /**
    * The global properties.
    */
-  private static Map<String, String> settings;
+  private static volatile Map<String, String> settings;
 
   /**
    * Maps properties to nodes that have been processed.
    */
-  private static Map<String, Properties> nodes;
+  private static volatile Map<String, Properties> nodes;
 
 // constructor ---------------------------------------------------------------------------------
 
@@ -551,16 +551,16 @@ public final class GlobalSettings {
   public static synchronized boolean load() throws IllegalStateException {
     // make sure we have a repository
     File file = getPropertiesFile();
+    // Always initialise
+    settings = new HashMap<String, String>();
+    nodes = new Hashtable<String, Properties>();
     if (file != null) {
-      // initialise
-      settings = new HashMap<String, String>();
-      nodes = new Hashtable<String, Properties>();
       // load
       try {
         Format kind = detect(file);
         switch (kind) {
           case XML_CONFIG:
-            return loadConfig(file, settings);
+            return loadConfig(file);
           case XML_PROPERTIES:
             return loadProperties(file, new XMLProperties(), settings);
           case PROPERTIES:
@@ -646,7 +646,7 @@ public final class GlobalSettings {
    *
    * @throws IOException Should an error be reported by the parser.
    */
-  private static boolean loadConfig(File file, Map<String, String> settings) throws IOException {
+  private static boolean loadConfig(File file) throws IOException {
     XMLConfig config = XMLConfig.newInstance(file);
     settings.putAll(config.properties());
     return true;
