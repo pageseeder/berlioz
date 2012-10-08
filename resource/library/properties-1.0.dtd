@@ -1,0 +1,41 @@
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+<!--                                                                -->
+<!-- Title:         Berlioz DTD for the global properties           -->
+<!-- System:        Berlioz                                         -->
+<!-- Status:        Draft                                           -->
+<!-- Description:   A schema for the defining the global properties -->
+<!-- Version:       1.0                                             -->
+<!-- LastModified:  1 August 2006                                   -->
+<!-- Author(s):     Christophe Lauret                               -->
+<!--                                                                -->
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+
+<!-- The preferences element is at the root of an XML document
+         representing a Preferences tree. -->
+<!ELEMENT properties (root)>
+
+<!-- 
+  The root element has a map representing the root's properties (if any),
+  and one node for each child of the root (if any). 
+-->
+<!ELEMENT root                                           (map, node*) >
+
+<!--
+  Each node has a map representing its preferences (if any),
+  and one node for each child (if any).
+  The node must have name.
+-->
+<!ELEMENT node                                           (map, node*) >
+<!ATTLIST node         name            CDATA                #REQUIRED >
+
+<!-- 
+  A map represents the preferences stored at a node (if any).
+-->
+<!ELEMENT map                                                (entry*) >
+
+<!--
+  An property represents a single key-value pair.
+-->
+<!ELEMENT entry                                                 EMPTY >
+<!ATTLIST entry        key             CDATA                #REQUIRED
+                       value           CDATA                #REQUIRED >

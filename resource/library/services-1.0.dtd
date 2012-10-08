@@ -1,0 +1,93 @@
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+<!--                                                                        -->
+<!-- Title:         Berlioz DTD for Web Services                            -->
+<!-- System:        Berlioz                                                 -->
+<!-- Status:        Beta 3                                                  -->
+<!-- Description:   A schema for the defining the URL patterns and          -->
+<!--                associated content generators.                          -->
+<!-- Version:       1.0                                                     -->
+<!-- LastModified:  13 October 2011                                         -->
+<!-- Author(s):     Christophe Lauret                                       -->
+<!--                                                                        -->
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+
+<!-- A URI Pattern as defined in the URI Template specifications            -->
+<!ENTITY  % URI_PATTERN      "CDATA"                                          >
+
+<!-- The HTTP method for the associated service                             -->
+<!ENTITY  % HTTP_METHOD      "(get | put | delete | post)"                    >
+
+<!-- The rule to use to compute the response code                           -->
+<!ENTITY  % CODE_RULE        "(highest | lowest | first)"                     >
+
+<!--
+  Top level element.
+  
+  @version The version of service configuration.
+-->
+<!ELEMENT service-config                        ( response-code?, services* ) >
+<!ATTLIST service-config     version            CDATA            #FIXED "1.0" >
+
+<!--
+  A container for services.
+  
+  @group A name to group these services together.
+-->
+<!ELEMENT services                               ( response-code?, service* ) >
+<!ATTLIST services           group              NMTOKEN             #REQUIRED >
+
+<!--
+  A service composed of multiple generators and matching at least one URL.
+ 
+  @attribute id     A unique identifier for this service.
+  @attribute method The HTTP method this service accepts.
+-->
+<!ELEMENT service                        ( url+, response-code?, generator* ) >
+<!ATTLIST service            id                 ID                  #REQUIRED
+                             method             %HTTP_METHOD;       #REQUIRED 
+                             cache-control      CDATA                #IMPLIED >
+
+<!--
+  The URL pattern matching this service.
+
+  @attribute pattern The URI Pattern for this URL.
+-->
+<!ELEMENT url                                                           EMPTY >
+<!ATTLIST url                pattern            %URI_PATTERN;       #REQUIRED >
+
+<!--
+  The content generator.
+  
+  The class must implement the ContentGenerator interface defined in Berlioz.
+  
+  The name and target are preserved and can be used in the XSLT to determine
+  what to do with the generated content.
+  
+  @attribute class  The fully qualified Java class to load for this generator.
+  @attribute name   A name for this generator.
+  @attribute target A target for the content generated in the output.
+-->
+<!ELEMENT generator                                            ( parameter* ) >
+<!ATTLIST generator         class               CDATA               #REQUIRED
+                            name                NMTOKEN              #IMPLIED
+                            target              NMTOKEN              #IMPLIED >
+
+<!--
+  A parameter to pass to the content generator.
+  
+  @attribute name    The name of the parameter.
+  @attribute value   The value of this parameter.
+-->
+<!ELEMENT parameter                                                    EMPTY >
+<!ATTLIST parameter         name               CDATA               #REQUIRED
+                            value              CDATA               #REQUIRED >
+
+<!--
+  Top level element.
+  
+  @version The version of service configuration.
+  @version The version of service configuration.
+-->
+<!ELEMENT response-code                                                EMPTY >
+<!ATTLIST response-code     use                CDATA               #REQUIRED
+                            rule               %CODE_RULE;          #IMPLIED >
