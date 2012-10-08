@@ -18,7 +18,9 @@ import org.weborganic.berlioz.Beta;
  * <p>All class attributes are immutable and have a value (they are never <code>null</code>).
  *
  * @author Christophe Lauret
- * @version 1 July 2011
+ *
+ * @version Berlioz 0.8.3 - 1 July 2011
+ * @since Berlioz 0.8
  */
 @Beta public final class ServiceStatusRule {
 

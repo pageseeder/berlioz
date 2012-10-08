@@ -14,8 +14,8 @@ package org.weborganic.berlioz.content;
  * returned by the service.
  *
  * @author Christophe Lauret
- * @version 27 June 2011
  *
+ * @version Berlioz 0.8.3 - 27 June 2011
  * @since Berlioz 0.8.2
  */
 public enum ContentStatus {

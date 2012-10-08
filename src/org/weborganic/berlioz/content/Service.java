@@ -27,6 +27,7 @@ import com.topologi.diffx.xml.XMLWriter;
  * A list of of content generators or content instructions.
  *
  * @author Christophe Lauret (Weborganic)
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.7
  */

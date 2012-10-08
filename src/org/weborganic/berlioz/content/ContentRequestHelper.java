@@ -11,8 +11,10 @@ package org.weborganic.berlioz.content;
  * Provides a generic and uniform mechanism for the content generator to access parameters
  * and attributes from a request.
  *
- * @author Christophe Lauret (Weborganic)
- * @version 8 October 2009
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.6.0 - 8 October 2009
+ * @since Berlioz 0.6
  */
 public final class ContentRequestHelper {
 

@@ -25,9 +25,10 @@ import org.weborganic.furi.URIResolver.MatchRule;
 /**
  * A registry for services.
  *
- * <p>Note: this class is not synchronized and must be synchronised externally.
+ * <p>Note: this class is not synchronized and must be synchronized externally.
  *
  * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.8
  */

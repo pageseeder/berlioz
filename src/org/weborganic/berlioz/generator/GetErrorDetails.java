@@ -77,7 +77,8 @@ import com.topologi.diffx.xml.XMLWriter;
  * <h3>Etag</h3>
  * <p>This generator is not cacheble.</code>.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.8.7
  */

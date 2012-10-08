@@ -16,7 +16,9 @@ package org.weborganic.berlioz.content;
  * or is processor intensive.
  *
  * @author Christophe Lauret
- * @version 8 July 2010
+ *
+ * @version Berlioz 0.6.0 - 8 July 2010
+ * @since Berlioz 0.6
  */
 public interface Initializable {
 

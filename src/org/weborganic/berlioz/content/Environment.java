@@ -13,7 +13,9 @@ import java.io.File;
  * Returns the environment for the service.
  *
  * @author Christophe Lauret
- * @version 25 May 2010
+ *
+ * @version Berlioz 0.6.0 - 25 May 2010
+ * @since Berlioz 0.6
  */
 public interface Environment {
 

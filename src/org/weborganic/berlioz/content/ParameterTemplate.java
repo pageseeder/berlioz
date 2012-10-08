@@ -17,8 +17,8 @@ import java.util.regex.Pattern;
  * Defines a simple template for parameter values.
  *
  * @author Christophe Lauret
- * @version 28 June 2011
  *
+ * @version Berlioz 0.8.3 - 28 June 2011
  * @since Berlioz 0.8.2
  */
 public final class ParameterTemplate {

@@ -29,7 +29,8 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * <p>This class should remain protected as there is no reason to expose its method to the public API.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
  */

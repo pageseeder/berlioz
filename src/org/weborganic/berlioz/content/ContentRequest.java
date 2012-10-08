@@ -23,7 +23,8 @@ import javax.servlet.http.HttpSession;
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version 27 May 2011
+ * @version Berlioz 0.8.0 - 27 May 2011
+ * @since Berlioz 0.6
  */
 public interface ContentRequest {
 

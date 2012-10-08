@@ -57,7 +57,8 @@ import com.topologi.diffx.xml.XMLWriter;
  * <h3>Etag</h3>
  * <p>This generator uses a weak etag based on the name, length and last modified date of the file.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.9.3
  */

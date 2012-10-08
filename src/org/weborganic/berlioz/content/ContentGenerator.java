@@ -21,7 +21,8 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 8 July 2010
+ * @version Berlioz 0.9.3 - 8 July 2010
+ * @since Berlioz 0.6
  */
 public interface ContentGenerator {
 

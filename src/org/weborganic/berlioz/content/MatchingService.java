@@ -16,7 +16,9 @@ import org.weborganic.furi.URIResolveResult;
  * <p>Implementation note: all fields are immutable.
  *
  * @author Christophe Lauret
- * @version 31 May 2010
+ *
+ * @version Berlioz 0.6.0 - 31 May 2010
+ * @since Berlioz 0.6
  */
 public final class MatchingService {
 

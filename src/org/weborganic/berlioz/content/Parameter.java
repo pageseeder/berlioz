@@ -17,6 +17,7 @@ import java.util.Map;
  * send to a generator.
  *
  * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.8
  */

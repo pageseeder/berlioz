@@ -34,7 +34,8 @@ import com.topologi.diffx.xml.XMLWriter;
  *   </parameters>
  * }</pre>
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
  */
