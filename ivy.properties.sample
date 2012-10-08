@@ -1,0 +1,14 @@
+# --------------------------------------------------------------------------- #
+# Ivy Properties - This is a SAMPLE FILE.                                     #
+#                                                                             #
+# Create a file called 'ivy.properties' using the properties defined below.   #
+# Typically, only the path to the local repository needs to changed           #
+# --------------------------------------------------------------------------- # 
+
+# URL to the Ivy settings to use
+ivy.settings.url=http://ivy.pageseeder.com/settings/ivysettings.xml
+
+# Local Ivy repository
+ivy.local.default.root=C:/Users/Christophe/Job/PageSeeder/Ivy/local
+ivy.local.default.ivy.pattern=[organisation]/[module]/ivy-[revision].xml
+ivy.local.default.artifact.pattern=[organisation]/[module]/[artifact]-[revision].[ext]
