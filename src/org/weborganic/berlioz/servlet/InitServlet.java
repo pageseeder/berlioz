@@ -45,7 +45,8 @@ import org.weborganic.berlioz.LifecycleListener;
  * </servlet> }
  * </pre>
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.5 - 14 September 2012
  * @since Berlioz 0.7
  */

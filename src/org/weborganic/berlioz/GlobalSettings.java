@@ -44,10 +44,12 @@ import org.weborganic.berlioz.xml.XMLProperties;
  *
  * @see #load
  * @see #setRepository(File)
- * @see #setConfig(String)
+ * @see #setMode(String)
  *
- * @author Christophe Lauret (Weborganic)
- * @version 20 May 2010
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.6
  */
 public final class GlobalSettings {
 
@@ -79,7 +81,7 @@ public final class GlobalSettings {
   /**
    * The repository.
    */
-  private static File repository;
+  private static volatile File repository;
   static {
     if (System.getProperty("berlioz.repository") != null) {
       File r = new File(System.getProperty("berlioz.repository"));
@@ -92,12 +94,12 @@ public final class GlobalSettings {
   /**
    * The library.
    */
-  private static File library;
+  private static volatile File library;
 
   /**
    * The name of the configuration file to use.
    */
-  private static String mode;
+  private static volatile String mode;
   static {
     mode = System.getProperty("berlioz.mode");
     if (mode == null) {
@@ -108,12 +110,12 @@ public final class GlobalSettings {
   /**
    * The global properties.
    */
-  private static Map<String, String> settings;
+  private static volatile Map<String, String> settings;
 
   /**
    * Maps properties to nodes that have been processed.
    */
-  private static Map<String, Properties> nodes;
+  private static volatile Map<String, Properties> nodes;
 
 // constructor ---------------------------------------------------------------------------------
 
@@ -549,16 +551,16 @@ public final class GlobalSettings {
   public static synchronized boolean load() throws IllegalStateException {
     // make sure we have a repository
     File file = getPropertiesFile();
+    // Always initialise
+    settings = new HashMap<String, String>();
+    nodes = new Hashtable<String, Properties>();
     if (file != null) {
-      // initialise
-      settings = new HashMap<String, String>();
-      nodes = new Hashtable<String, Properties>();
       // load
       try {
         Format kind = detect(file);
         switch (kind) {
           case XML_CONFIG:
-            return loadConfig(file, settings);
+            return loadConfig(file);
           case XML_PROPERTIES:
             return loadProperties(file, new XMLProperties(), settings);
           case PROPERTIES:
@@ -571,6 +573,9 @@ public final class GlobalSettings {
     }
     return false;
   }
+
+  // ---------------------------------------------------------------------------------------------
+  // private helpers
 
   /**
    * Detects the kind of config file used.
@@ -605,8 +610,12 @@ public final class GlobalSettings {
   }
 
   /**
-   * Loads the
+   * Loads the settings from the specified XML config file.
    *
+   * @param file     The file to load.
+   * @param settings The global settings.
+   *
+   * @throws IOException Should an error be reported by the parser.
    */
   private static boolean loadProperties(File file, Properties p, Map<String, String> map) throws IOException {
     // load
@@ -620,7 +629,7 @@ public final class GlobalSettings {
       System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
       ex.printStackTrace();
     } finally {
-      in.close();
+      if (in != null) in.close();
     }
     // Load the values into the map
     for (Entry<Object, Object> e : p.entrySet()) {
@@ -630,24 +639,16 @@ public final class GlobalSettings {
   }
 
   /**
-   * Detects the
+   * Loads the settings from the specified XML config file.
    *
+   * @param file     The file to load.
+   * @param settings The global settings.
+   *
+   * @throws IOException Should an error be reported by the parser.
    */
-  private static boolean loadConfig(File file, Map<String, String> settings) throws IOException {
-    // load
-    boolean loaded = false;
-    InputStream in = null;
-    try {
-      XMLConfig config = new XMLConfig(settings);
-      in = new FileInputStream(file);
-      config.load(in);
-      loaded = true;
-    } catch (Exception ex) {
-      System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the global config file.");
-      ex.printStackTrace();
-    } finally {
-      in.close();
-    }
-    return loaded;
+  private static boolean loadConfig(File file) throws IOException {
+    XMLConfig config = XMLConfig.newInstance(file);
+    settings.putAll(config.properties());
+    return true;
   }
 }

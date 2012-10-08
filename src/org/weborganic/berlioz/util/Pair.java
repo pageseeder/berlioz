@@ -6,14 +6,16 @@ package org.weborganic.berlioz.util;
 /**
  * An implementation of an object that can be used as a fast key made of two objects for lookup in
  * sets and map.
- * 
+ *
  * <p>This is an immutable object.
- * 
+ *
  * @param <T> The type of the first constituent of the key
  * @param <V> The type of the second constituent of the key
- * 
+ *
  * @author Christophe Lauret
- * @version 29 June 2011
+ *
+ * @version Berlioz 0.8.2 - 29 June 2011
+ * @since Berlioz 0.8.2
  */
 public class Pair<T, V> {
 
@@ -34,7 +36,7 @@ public class Pair<T, V> {
 
   /**
    * Creates a new scoped path.
-   * 
+   *
    * @param a The first constituent of the key
    * @param b The second constituent of the key
    */
@@ -43,7 +45,7 @@ public class Pair<T, V> {
    this._b = b;
    this.hash = PRIME1
              + (a == null? 0 : PRIME2 * a.hashCode())
-             + (b == null? 0 : PRIME2 * b.hashCode()); 
+             + (b == null? 0 : PRIME2 * b.hashCode());
   }
 
   @Override
@@ -76,7 +78,7 @@ public class Pair<T, V> {
 
   /**
    * Compare two objects for equality.
-   * 
+   *
    * @param o1 The first object to compare.
    * @param o2 The second object to compare.
    * @return <code>true</code> if both are equals (including <code>null</code>);

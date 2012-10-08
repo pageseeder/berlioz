@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.xml;
@@ -35,11 +35,12 @@ import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * Copy the parsed XML to the specified XML writer.
- * 
- * <p>This class also implements the {@link LexicalHandler} interface, so that comments can be copied if the 
+ *
+ * <p>This class also implements the {@link LexicalHandler} interface, so that comments can be copied if the
  * {@link XMLReader} reader supports the {@value #LEXICAL_HANDLER_PROPERTY} property.
- * 
- * @author Christophe Lauret (Weborganic)
+ *
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.4 - 27 December 2011
  * @since Berlioz 0.7
  */
@@ -61,7 +62,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   private static volatile boolean supportsComments = true;
 
   /**
-   * Where the XML should be copied to. 
+   * Where the XML should be copied to.
    */
   private final XMLWriter to;
 
@@ -146,7 +147,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Copy the comment to the output.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -160,7 +161,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Does nothing.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -169,7 +170,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Does nothing.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -178,7 +179,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Does nothing.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -187,7 +188,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Does nothing.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -196,7 +197,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Does nothing.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -205,7 +206,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Does nothing.
-   * 
+   *
    * {@inheritDoc}
    */
   @Override
@@ -217,15 +218,15 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Copy the specified File to the given XML Writer.
-   * 
+   *
    * <p>Any error is reported as XML on the XML writer.
-   * 
+   *
    * <p>This method does not perform any caching, caching is better handled externally by
    * generators.
-   * 
+   *
    * @param file The file.
    * @param xml  The XML writer.
-   * 
+   *
    * @throws IOException should an error occur when writing the XML.
    */
   public static void copyTo(File file, XMLWriter xml) throws IOException {
@@ -264,13 +265,13 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Copy the specified File to the given XML Writer.
-   * 
-   * <p>Any error is reported as XML on the XML writer. This method does not perform any caching 
+   *
+   * <p>Any error is reported as XML on the XML writer. This method does not perform any caching
    * or validation.
-   * 
+   *
    * @param reader The reader over the XML to read.
    * @param xml    The XML writer.
-   * 
+   *
    * @throws IOException should an error occur when writing the XML.
    */
   public static void copyTo(Reader reader, XMLWriter xml) throws IOException {
@@ -304,10 +305,10 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Parses the specified file using the given handler.
-   * 
+   *
    * @param handler  The content handler to use.
    * @param reader   The reader over the XML to parse.
-   * 
+   *
    * @throws BerliozException Should something unexpected happen.
    */
   private static void parse(XMLCopy copier, InputSource source) throws BerliozException {
@@ -331,9 +332,9 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Try set the lexical handler property in order to copy comments.
-   * 
+   *
    * <p>If the property is not supported, a warning is logged and no further attempts will be made.
-   * 
+   *
    * @param xmlreader the XML reader.
    * @param copier    the XML copy handler.
    */

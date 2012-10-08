@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.util;
@@ -15,16 +15,19 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 
 import org.slf4j.LoggerFactory;
 
 /**
  * A utility class providing a simple method to generate MD5 hash values for text content.
- * 
+ *
  * <p>An MD5 hash is typically expressed as a 32-digit hexadecimal number.
- * 
+ *
  * @author Christophe Lauret
- * @version 31 May 2010
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.6
  */
 public final class MD5 {
 
@@ -41,7 +44,7 @@ public final class MD5 {
   /**
    * Mask for the high bits of a byte.
    */
-  private static final int BYTE_MASK_HIGH = 0xF0; 
+  private static final int BYTE_MASK_HIGH = 0xF0;
 
   /**
    * Mask for the low bits of a byte.
@@ -58,9 +61,9 @@ public final class MD5 {
    * Returns a hash value for the specified text.
    *
    * @param text The text value to hash.
-   * 
+   *
    * @return The {@link HashMap} value for the specified test or <code>null</code> if an error occurred.
-   * 
+   *
    * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
    */
   public static String hash(String text) throws UnsupportedOperationException {
@@ -71,32 +74,33 @@ public final class MD5 {
   }
 
   /**
-   * Returns a hash value for the specified file.
-   * 
+   * Returns a hash value for the specified file content.
+   *
    * <p>Implementation note: this method loads the entire file using NIO.
-   * 
+   *
    * @param file The file to read
    * @return The MD5 checksum value as a string.
-   * 
+   *
    * @throws IOException If the file does not exist or an error occurred while reading the file.
    * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
    */
   public static String hash(File file) throws IOException, UnsupportedOperationException {
     MessageDigest md = getAlgorithm();
-    FileChannel in = new FileInputStream(file).getChannel();
+    FileInputStream fis = new FileInputStream(file);
+    FileChannel in = fis.getChannel();
     try {
       MappedByteBuffer buffer = in.map(FileChannel.MapMode.READ_ONLY, 0, in.size());
       md.update(buffer);
       byte[] bytes = md.digest();
       return toHex(bytes);
     } finally {
-      in.close();
+      fis.close();
     }
   }
 
   /**
    * Returns a hash value for the specified file.
-   * 
+   *
    * @param file The file to read
    * @param strong <code>true</code> to calculate a strong etag based on the file content;
    *               <code>false</code> to compute it from the canonical path, date and length.
@@ -110,40 +114,12 @@ public final class MD5 {
       return hash(file.getCanonicalPath()+'$'+file.length()+'%'+file.lastModified());
   }
 
-  /**
-   * Returns a hash value for the specified file.
-   * 
-   * @param file The file to read
-   * @return The MD5 checksum value as a string.
-   * @throws IOException If the file does not exist or an error occurred while reading the file.
-   * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
-  public static String hash(File file) throws IOException, UnsupportedOperationException {
-    long length = file.length();
-    byte[] buffer = new byte[length > 8096? 8096 : (int)length];
-    MessageDigest md = getAlgorithm();
-    InputStream in = new FileInputStream(file);
-    try {
-      int len;
-      do {
-        len = in.read(buffer);
-        if (len > 0) {
-          md.update(buffer, 0, len);
-        }
-      } while (len != -1);
-    } finally {
-      in.close();
-    }
-    byte[] bytes = md.digest();
-    return toHex(bytes);
-  }
-  */
-
   // Private helpers
   // ----------------------------------------------------------------------------------------------
 
   /**
    * Converts the byte data into a sequence of hexadecimal characters.
-   * 
+   *
    * @param data The byte array to convert.
    * @return the corresponding sequence of hexadecimal characters.
    */
@@ -159,7 +135,7 @@ public final class MD5 {
 
   /**
    * Returns the MD5 algorithm throwing an unchecked exception if the algorithm is not available.
-   * 
+   *
    * @return the MD5 algorithm.
    * @throws UnsupportedOperationException Wrapping any occurring 'NoSuchAlgorithmException'.
    */

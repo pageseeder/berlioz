@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -36,13 +36,13 @@ import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * Servlet used to handle errors for a uniform response.
- * 
+ *
  * <p>
  * This servlet always returns an error code.
- * 
+ *
  * <p>
  * This servlet should be configured as:
- * 
+ *
  * <pre>
  * &lt;!-- Handler for errors (this servlet does not need to be mapped to anything) --&gt;
  * &lt;servlet&gt;
@@ -51,9 +51,11 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *   &lt;load-on-startup&gt;2&lt;/load-on-startup&gt;
  * &lt;/servlet&gt;
  * </pre>
- * 
- * @author Christophe Lauret (Weborganic)
- * @version 1 July 2011
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.9.2 - 29 November 2011
+ * @since Berlioz 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
 
@@ -95,13 +97,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Handles a GET request.
-   * 
+   *
    * <p>
    * No parameter required.
-   * 
+   *
    * @param req The servlet request.
    * @param res The servlet response.
-   * 
+   *
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException Should an I/O error occur.
    */
@@ -113,13 +115,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Handles a POST request.
-   * 
+   *
    * <p>
    * No parameter required.
-   * 
+   *
    * @param req The servlet request.
    * @param res The servlet response.
-   * 
+   *
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException Should an I/O error occur.
    */
@@ -131,10 +133,10 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Handle the errors using the fail safe options and templates.
-   * 
+   *
    * @param req The servlet request.
    * @param res The servlet response.
-   * 
+   *
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException Should an I/O error occur.
    */
@@ -176,9 +178,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Handles HTTP error using the error requests attributes.
-   * 
+   *
    * @param req The HTTP servlet request will cause the error.
-   * 
+   *
    * @return the error details as XML
    */
   private static String toXML(HttpServletRequest req) {
@@ -196,7 +198,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       code = Integer.valueOf(HttpServletResponse.SC_OK);
     }
 
-    // Write the XML 
+    // Write the XML
     StringWriter out = new StringWriter();
     try {
       XMLWriterImpl xml = new XMLWriterImpl(out, true);
@@ -284,7 +286,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Return the root element name based on the status code.
-   * 
+   *
    * @param code the HTTP status code.
    * @return the root element name based on the HTTP status code or "unknown-status";
    */

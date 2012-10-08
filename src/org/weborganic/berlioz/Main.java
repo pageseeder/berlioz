@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz;
@@ -13,9 +13,11 @@ import org.weborganic.berlioz.content.ContentManager;
 
 /**
  * Convenience class to invoke this library on the command-line.
- * 
+ *
  * @author Christophe Lauret
- * @version 9 October 2009
+ *
+ * @version Berlioz 0.6.2 - 9 October 2009
+ * @since Berlioz 0.6
  */
 public final class Main {
 
@@ -27,16 +29,16 @@ public final class Main {
 
   /**
    * Invokes this tool on the command-line.
-   * 
+   *
    * @param args The command-line parameters.
-   * 
+   *
    * @throws BerliozException Should an error occur while loading the services.
    */
   public static void main(String[] args) throws BerliozException {
     usage(null);
     // Try to load the content generators
     if (args.length > 1 && "-load".equals(args[0])) {
-      // Set 
+      // Set
       GlobalSettings.setRepository(new File("."));
       ContentManager.load();
     }
@@ -44,7 +46,7 @@ public final class Main {
 
   /**
    * Displays the usage of this class on System.err.
-   * 
+   *
    * @param message Any message (optional)
    */
   public static void usage(String message) {

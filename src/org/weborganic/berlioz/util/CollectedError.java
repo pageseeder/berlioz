@@ -2,28 +2,28 @@ package org.weborganic.berlioz.util;
 
 import java.io.IOException;
 
-import org.weborganic.berlioz.Beta;
-
 import com.topologi.diffx.xml.XMLWritable;
 import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * A simple class to associate an error collected by a parser to a level or seriousness.
- * 
- * <p>This class is designed to be used with an {@link org.xml.sax.ErrorHandler.ErrorHandler} 
+ *
+ * <p>This class is designed to be used with an {@link org.xml.sax.ErrorHandler.ErrorHandler}
  * or an {@link javax.xml.transform.ErrorListener} so that errors can be collected in a simple list.
- * 
+ *
  * @param <T> The type of error collected.
- * 
+ *
  * @author Christophe Lauret
- * @version 29 June 2011
+ *
+ * @version Berlioz 0.8.3 - 1 July 2011
+ * @since Berlioz 0.8.1
  */
-@Beta public final class CollectedError<T extends Exception> implements XMLWritable {
+public final class CollectedError<T extends Exception> implements XMLWritable {
 
   /**
    * The level of collected error.
-   * 
-   * <p>Note: the ordinal of this enumeration constant (its position in its enum declaration) is significant as it is used to compare levels. 
+   *
+   * <p>Note: the ordinal of this enumeration constant (its position in its enum declaration) is significant as it is used to compare levels.
    */
   public enum Level {
 
@@ -31,7 +31,7 @@ import com.topologi.diffx.xml.XMLWriter;
     WARNING,
 
     /** For normal non-fatal errors reported by the underlying process. */
-    ERROR, 
+    ERROR,
 
     /** Error was considered fatal by the underlying process. */
     FATAL;
@@ -50,14 +50,14 @@ import com.topologi.diffx.xml.XMLWriter;
   /**
    * The actual error (may be an exception, message as a string, etc...)
    */
-  private final T _error; 
+  private final T _error;
 
   /**
    * Creates a new collected error.
-   * 
+   *
    * @param level The seriousness of the error.
    * @param error The error itself.
-   * 
+   *
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public CollectedError(Level level, T error) {
@@ -69,7 +69,7 @@ import com.topologi.diffx.xml.XMLWriter;
 
   /**
    * The seriousness of the error.
-   * 
+   *
    * @return The captured error.
    */
   public Level level() {
@@ -78,7 +78,7 @@ import com.topologi.diffx.xml.XMLWriter;
 
   /**
    * The captured error.
-   * 
+   *
    * @return The captured error.
    */
   public T error() {
@@ -87,13 +87,14 @@ import com.topologi.diffx.xml.XMLWriter;
 
   /**
    * Returns the source locator as XML.
-   * 
+   *
    * <p>Does nothing if the locator is <code>null</code>.
-   * 
+   *
    * @param xml     the XML writer.
-   * 
+   *
    * @throws IOException If thrown by the XML writer.
    */
+  @Override
   public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("collected");
     xml.attribute("level", this._level.toString());

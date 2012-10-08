@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.http;
@@ -25,21 +25,23 @@ import org.weborganic.berlioz.util.EntityInfo;
 
 /**
  * A utility class for HTTP headers.
- * 
+ *
  * @author Christophe Lauret
- * @version 25 January 2009
+ *
+ * @version Berlioz 0.8.2 - 27 June 2011
+ * @since Berlioz 0.6
  */
 public final class HttpHeaderUtils {
 
   /**
-   * Logger for this class. 
+   * Logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpHeaderUtils.class);
 
   /**
    * HTTP date format.
    */
-  private static final SimpleDateFormat HTTP_DATE_FORMAT = 
+  private static final SimpleDateFormat HTTP_DATE_FORMAT =
     new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
 
   /**
@@ -62,9 +64,9 @@ public final class HttpHeaderUtils {
 
   /**
    * Check if the conditions specified in the optional If headers require further processing from the servlet.
-   * 
+   *
    * <p>If any of the conditions are met, the HTTP response headers will be updated.
-   * 
+   *
    * <p>The following conditional headers are checked:
    * <ul>
    *   <li><code>If-Match</code></li>
@@ -72,20 +74,20 @@ public final class HttpHeaderUtils {
    *   <li><code>If-None-Match</code></li>
    *   <li><code>If-Unmodified-Since</code></li>
    * </ul>
-   * 
+   *
    * <p>When an entity info is available, this method should be used in the servlet as follows:
    * <pre>
    *   if (!HttpHeaderUtils.checkIfHeaders(request, response, info)) {
    *     return;
    *   }
    * </pre>
-   * 
+   *
    * @param request  The servlet request we are processing.
    * @param response The servlet response we are creating.
    * @param info     The entity information.
-   * 
+   *
    * @return <code>true</code> if the entity info fail to meet all the specified conditions, continue processing;
-   *         <code>false</code> if the any entity info meets any the specified conditions, 
+   *         <code>false</code> if the any entity info meets any the specified conditions,
    *         further processing is unnecessary.
    *
    * @throws IOException If thrown during checking.
@@ -100,17 +102,17 @@ public final class HttpHeaderUtils {
 
   /**
    * Check if the <code>If-Match</code> condition is satisfied.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.24">HTTP/1.1 - 14.24 If-Match</a>
-   * 
+   *
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
    * @param info Resource metadata
-   * 
+   *
    * @return <code>true</code> if the resource meets the specified condition;
    *         <code>false</code> if the condition is not satisfied, in which case request processing is stopped.
-   * 
-   * @throws IOException If thrown while setting the response status code. 
+   *
+   * @throws IOException If thrown while setting the response status code.
    */
   protected static boolean checkIfMatch(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
      throws IOException {
@@ -147,17 +149,17 @@ public final class HttpHeaderUtils {
 
   /**
    * Check if the <code>If-Modified-Since</code> condition is satisfied.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.25">HTTP/1.1 - 14.25 If-Modified-Since</a>
-   * 
+   *
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
    * @param info Resource metadata
-   * 
+   *
    * @return <code>true</code> if the resource meets the specified condition;
    *         <code>false</code> if the condition is not satisfied, in which case request processing is stopped.
-   * 
-   * @throws IOException If thrown while setting the response status code. 
+   *
+   * @throws IOException If thrown while setting the response status code.
    */
   protected static boolean checkIfModifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
       throws IOException {
@@ -190,15 +192,15 @@ public final class HttpHeaderUtils {
    * Check if the <code>If-None-Match</code> condition is satisfied.
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.26">HTTP/1.1 - 14.26 If-None-Match</a>
-   * 
+   *
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
    * @param info Resource metadata
-   * 
+   *
    * @return <code>true</code> if the resource meets the specified condition;
    *         <code>false</code> if the condition is not satisfied, in which case request processing is stopped.
-   * 
-   * @throws IOException If thrown while setting the response status code. 
+   *
+   * @throws IOException If thrown while setting the response status code.
    */
   protected static boolean checkIfNoneMatch(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
       throws IOException {
@@ -252,17 +254,17 @@ public final class HttpHeaderUtils {
 
   /**
    * Check if the <code>If-Unmodified-Since</code> condition is satisfied.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.28">HTTP/1.1 - 14.28 If-Unmodified-Since</a>
-   * 
+   *
    * @param req  The servlet request we are processing
    * @param res  The servlet response we are creating
    * @param info Resource metadata
-   * 
+   *
    * @return <code>true</code> if the resource meets the specified condition;
    *         <code>false</code> if the condition is not satisfied, in which case request processing is stopped.
-   * 
-   * @throws IOException If thrown while setting the response status code. 
+   *
+   * @throws IOException If thrown while setting the response status code.
    */
   protected static boolean checkIfUnmodifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
       throws IOException {
@@ -285,9 +287,9 @@ public final class HttpHeaderUtils {
 
   /**
    * Indicates whether the client accepts GZip compression.
-   * 
+   *
    * @param req The HTTP servlet request.
-   * 
+   *
    * @return <code>true</code> if the 'Accept-Encoding' header contains "gzip";
    *         <code>false</code> otherwise.
    */
@@ -298,9 +300,9 @@ public final class HttpHeaderUtils {
 
   /**
    * Sets the content length handling the case when the value is larger than Max Integer.
-   * 
+   *
    * @param response      The HTTP servlet response.
-   * @param contentLength The content length to set. 
+   * @param contentLength The content length to set.
    */
   public static void setContentLength(HttpServletResponse response, long contentLength) {
     if (contentLength < Integer.MAX_VALUE) {
@@ -313,9 +315,9 @@ public final class HttpHeaderUtils {
 
   /**
    * Indicates whether the resource is compressible (only text is compressible by default).
-   * 
+   *
    * @param contentType The content type (MIME).
-   * 
+   *
    * @return <code>true</code> if the resource is compressible;
    *         <code>false</code> otherwise.
    */
@@ -350,9 +352,9 @@ public final class HttpHeaderUtils {
 
   /**
    * Returns a correctly formatted HTTP last modified header value.
-   * 
-   * @param modified the last modified date. 
-   * @return Last modified value as specified by HTTP. 
+   *
+   * @param modified the last modified date.
+   * @return Last modified value as specified by HTTP.
    */
   public static String toLastModified(long modified) {
     synchronized (HTTP_DATE_FORMAT) {
@@ -362,9 +364,9 @@ public final class HttpHeaderUtils {
 
   /**
    * Returns a correctly formatted HTTP last modified header value.
-   * 
-   * @param methods the list of allowed methods 
-   * @return Last modified value as specified by HTTP. 
+   *
+   * @param methods the list of allowed methods
+   * @return Last modified value as specified by HTTP.
    */
   @Beta public static String allow(List<String> methods) {
     StringBuilder allow = new StringBuilder();

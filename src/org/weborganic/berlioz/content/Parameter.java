@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -11,12 +11,13 @@ import java.util.Map;
 
 /**
  * Specifications for a parameter to send to a content generator.
- * 
- * <p>The parameters that content generators can take is fixed, this class allows content 
+ *
+ * <p>The parameters that content generators can take is fixed, this class allows content
  * generators to receives parameters from different sources and effectively remap the parameters
  * send to a generator.
- * 
+ *
  * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.8
  */
@@ -34,7 +35,7 @@ public final class Parameter {
 
   /**
    * Creates a new parameter.
-   * 
+   *
    * @param name     The name of the parameter.
    * @param template The template to use to generate the value of the parameter.
    */
@@ -59,7 +60,7 @@ public final class Parameter {
 
   /**
    * Resolves the value of this parameter using the specified map of parameters.
-   * 
+   *
    * @param parameters The map of parameters to use.
    * @return The resolved value of this parameter.
    */
@@ -69,10 +70,10 @@ public final class Parameter {
 
   /**
    * A builder for parameters.
-   * 
+   *
    * <p>this is a single use builder: this builder should not be used after the {@link #build()}
    * method has been invoked.
-   * 
+   *
    * @author Christophe Lauret
    * @version 28 June 2011
    */

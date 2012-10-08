@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.util;
@@ -14,9 +14,9 @@ import java.util.Date;
 
 /**
  * This class provides methods for date formatting and parsing according to ISO 8601.
- * 
+ *
  * <p>It is useful for generators as XSLT uses ISO 8601 for dates.
- * 
+ *
  * <p>
  * Notation:
  * <ul>
@@ -28,17 +28,19 @@ import java.util.Date;
  * <li>mm is the number of complete minutes since the start of the hour,</li>
  * <li>ss is the number of complete seconds since the start of the minute.</li>
  * </ul>
- * 
+ *
  * <p>
  * The capital letter T is used to separate the date and time components.
- * 
+ *
  * @see <a href="http://en.wikipedia.org/wiki/ISO_8601">Wikipedia: ISO 8601</a>
  * @see <a href="http://www.w3.org/TR/NOTE-datetime">W3C Note: Date and Time Formats</a>
  * @see <a href="http://www.iso.org/iso/date_and_time_format">ISO: Numeric representation of Dates
  *      and Time</a>
- * 
- * @author Christophe Lauret (Weborganic)
- * @version 9 December 2011
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.9.4 - 31 January 2012
+ * @since Berlioz 0.6
  */
 public enum ISO8601 {
 
@@ -74,7 +76,7 @@ public enum ISO8601 {
 
   /**
    * Creates a new ISO 8601 format.
-   * 
+   *
    * @param format The format string to use with a <code>SimpleDateFormat</code>.
    */
   private ISO8601(String format) {
@@ -83,7 +85,7 @@ public enum ISO8601 {
 
   /**
    * Formats the specified date for the specified ISO 8601 format.
-   * 
+   *
    * @param date The date the format
    * @return the corresponding date as the specified ISO 8601 format.
    */
@@ -101,10 +103,10 @@ public enum ISO8601 {
 
   /**
    * Parses the specified date as the specified ISO 8601 format.
-   * 
+   *
    * @param date The date the format
    * @return the corresponding date as the specified ISO 8601 format.
-   * 
+   *
    * @throws ParseException Should an error be thrown by the {@link SimpleDateFormat#parse(String)} method.
    */
   public Date parse(String date) throws ParseException {
@@ -121,7 +123,7 @@ public enum ISO8601 {
 
   /**
    * Returns the specified date as ISO 8601 format.
-   * 
+   *
    * @param date   the specified date.
    * @param format the ISO 8601 format to use.
    * @return the date formatted using ISO 8601.
@@ -132,10 +134,10 @@ public enum ISO8601 {
 
   /**
    * Returns the specified date as ISO 8601 format.
-   * 
+   *
    * @param date the specified date.
    * @return the date formatted using ISO 8601.
-   * 
+   *
    * @throws ParseException Should an error be thrown by the {@link SimpleDateFormat#parse(String)} method.
    */
   public static Date parseAuto(String date) throws ParseException {

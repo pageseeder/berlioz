@@ -7,9 +7,12 @@
  */
 package org.weborganic.berlioz.xml;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
@@ -25,12 +28,37 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * A simpler version of the XML config file to improve readability of Berlioz configuration.
  *
+ * <p>The XML is not required to validate a specific schema but will be parsed according to the
+ * following rules:
+ * <ul>
+ *   <li>Top level element is ignored;</li>
+ *   <li>Each attribute will be used to create a property;</li>
+ *   <li>The property name is the concatenation of all ancestor element names and attribute, separated by a dot;</li>
+ *   <li>The property value is the attribute value;</li>
+ *   <li>If the same property is declared multiple times, the latest value is used.</li>
+ * </ul>
+ *
+ * <p>For example, the following XML:
+ * <pre>{@code
+ *  <global>
+ *    <myapp test="true" id="123"/>
+ *  </global>
+ * }</pre>
+ *
+ * <p>Will be read as:
+ * <pre>{@code
+ *  myapp.test=true
+ *  myapp.id=123
+ * }</pre>
+ *
+ * <p>Note: all property values are internally stored as strings.
+ *
  * @author Christophe Lauret
- * @version 6 October 2012
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.9.7
  */
 public final class XMLConfig implements Serializable {
-
-  // TODO Javadoc
 
   /**
    * As per requirement for the Serializable interface.
@@ -45,8 +73,26 @@ public final class XMLConfig implements Serializable {
   /**
    * Creates an empty property list with no default values.
    */
+  public XMLConfig() {
+    this._properties = new HashMap<String, String>();
+  }
+
+  /**
+   * Creates an empty property list.
+   */
   public XMLConfig(Map<String, String> properties) {
     this._properties = properties;
+  }
+
+  /**
+   * Returns the properties as a map.
+   *
+   * <p>The object returned <i>is</i> the actual map instance of this class.
+   *
+   * @return the properties as a map.
+   */
+  public Map<String, String> properties() {
+    return this._properties;
   }
 
   /**
@@ -77,10 +123,30 @@ public final class XMLConfig implements Serializable {
     }
   }
 
+  /**
+   * Creates a new instance of an XML configuration by loading the specified file.
+   *
+   * @param file The file to load.
+   * @return The XML configuration instance with the values loaded from the file.
+   *
+   * @throws IOException Should any I/O error occur while reading the file.
+   */
+  public static XMLConfig newInstance(File file) throws IOException {
+    XMLConfig config = new XMLConfig();
+    InputStream in = null;
+    try {
+      in = new FileInputStream(file);
+      config.load(in);
+    } finally {
+      if (in != null) in.close();
+    }
+    return config;
+  }
+
 // a handler for the properties file in XML ----------------------------------------------------
 
   /**
-   * Parses the file as XML.
+   * Parses the file as XML following the rules for the config.
    *
    * @author Christophe Lauret (Weborganic)
    * @version 6 October 2012

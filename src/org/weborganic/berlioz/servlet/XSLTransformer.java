@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -54,12 +54,13 @@ import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
- * Performs the XSLT transformation from the generated XML content. 
- * 
+ * Performs the XSLT transformation from the generated XML content.
+ *
  * <p>By default, all XSLT templates are cached, use the global property <code>berlioz.cache.xslt</code>
  * to change this behaviour.
- * 
+ *
  * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
  */
@@ -77,7 +78,7 @@ public final class XSLTransformer {
 
   /**
    * The location of the XSLT templates.
-   * 
+   *
    * <p>For example, "/WEB-INF/xslt/html/global.xsl"
    */
   private final File _templates;
@@ -89,7 +90,7 @@ public final class XSLTransformer {
 
   /**
    * Creates a new XSLT Transformer.
-   * 
+   *
    * @param templates The location of the templates.
    */
   public XSLTransformer(File templates) {
@@ -100,11 +101,11 @@ public final class XSLTransformer {
 
   /**
    * Transforms the Specified content using XSLT.
-   * 
+   *
    * @param content The XML content to transform.
    * @param req     The HTTP Servlet request.
-   * @param service Required only to provide more information in the logs in case of errors. 
-   * 
+   * @param service Required only to provide more information in the logs in case of errors.
+   *
    * @return the results of the transformation.
    */
   public XSLTransformResult transform(String content, HttpServletRequest req, Service service) {
@@ -149,10 +150,10 @@ public final class XSLTransformer {
 
   /**
    * Performs a fail safe transformation using the internal templates.
-   * 
+   *
    * @param content The XML to transform.
    * @param url     The URL to use.
-   * 
+   *
    * @return the content transformed safely.
    */
   public static String transformFailSafe(String content, URL url) {
@@ -170,8 +171,8 @@ public final class XSLTransformer {
   }
 
   /**
-   * Returns an ETag corresponding to the templates. 
-   * 
+   * Returns an ETag corresponding to the templates.
+   *
    * @return an ETag corresponding to the templates.
    */
   public String getEtag() {
@@ -208,7 +209,7 @@ public final class XSLTransformer {
       LOGGER.error(templates.getPath());
       return null;
     }
-    List<File> files = new ArrayList<File>(); 
+    List<File> files = new ArrayList<File>();
     listTemplateFiles(templates.getParentFile(), files);
     StringBuilder b = new StringBuilder();
     try {
@@ -221,8 +222,8 @@ public final class XSLTransformer {
   }
 
   /**
-   * Lists all the files in the specified directory and its descendants. 
-   * 
+   * Lists all the files in the specified directory and its descendants.
+   *
    * @param dir      the root directory to scan.
    * @param collected files collected so far.
    */
@@ -243,16 +244,16 @@ public final class XSLTransformer {
 
   /**
    * Utility function to transforms the specified XML source and returns the results as XML.
-   * 
+   *
    * <p>Problems will be reported in the logs, the output will simply produce results as a comment.
-   * 
+   *
    * @param source     The Source XML data.
    * @param result     The Result XHTML data.
    * @param templates  The XSLT templates to use.
    * @param parameters Parameters to transmit to the transformer for use by the stylesheet (optional)
-   * 
+   *
    * @return The time it took to process the stylesheet.
-   * 
+   *
    * @throws TransformerException For XSLT Transformation errors or XSLT config errors
    */
   private static long transform(StreamSource source, StreamResult result, Templates templates, Map<String, String> parameters)
@@ -285,14 +286,14 @@ public final class XSLTransformer {
 
   /**
    * Returns the templates corresponding to the specified file.
-   * 
+   *
    * This method uses the caching mechanism.
-   * 
+   *
    * @param f The path to the XSLT style sheet.
-   * 
+   *
    * @return The corresponding templates
-   * 
-   * @throws TransformerException If the templates could not parsed. 
+   *
+   * @throws TransformerException If the templates could not parsed.
    */
   private Templates getTemplates(File f) throws TransformerException {
     boolean store = GlobalSettings.has(BerliozOption.XSLT_CACHE);
@@ -321,7 +322,7 @@ public final class XSLTransformer {
    * @param stylepath The path to the XSLT style sheet
    *
    * @return the corresponding XSLT templates object
-   * 
+   *
    * @throws TransformerException If the loading fails.
    */
   private static Templates toTemplates(File stylepath) throws TransformerException {
@@ -352,7 +353,7 @@ public final class XSLTransformer {
 
   /**
    * Returns the XSLT parameters for the transformer from the HTTP parameters starting with 'xsl-'.
-   * 
+   *
    * @param req The servlet request.
    * @return the map of parameters to pass to the XSLT as parameters.
    */
@@ -379,7 +380,7 @@ public final class XSLTransformer {
 
   /**
    * Handles transformation errors - to be used in catch blocks.
-   * 
+   *
    * @param ex         An error occurring during an XSLT transformation.
    * @param source     The XML source being transformed
    * @param parameters The XSLT parameters passed to the transformer
@@ -461,7 +462,7 @@ public final class XSLTransformer {
     Templates templates = null;
     try {
       in = url.openStream();
-      Source source = new StreamSource(in); 
+      Source source = new StreamSource(in);
       source.setSystemId(url.toString());
       TransformerFactory factory = TransformerFactory.newInstance();
       templates = factory.newTemplates(source);
@@ -480,13 +481,13 @@ public final class XSLTransformer {
 
   /**
    * Perform a fail safe transformation using the built-in stylesheet.
-   * 
+   *
    * <p>Note: If the transformation fails the source XML is returned verbatim as there is nothing
-   * more we can do. 
-   * 
+   * more we can do.
+   *
    * @param xml       The XML to transform
    * @param templates The fail-safe templates to use.
-   * 
+   *
    * @return The results of the transformation.
    */
   private static String transformFailSafe(String xml, Templates templates) {
@@ -512,7 +513,7 @@ public final class XSLTransformer {
 
   /**
    * Displays the path to the file from the web application (for debugging).
-   * 
+   *
    * @param s the file path.
    * @return The path from the "WEB-INF" directory
    */
@@ -538,9 +539,9 @@ public final class XSLTransformer {
 
   /**
    * Guess the Berlioz Error ID from the exception thrown.
-   * 
+   *
    * @param ex The captured Transformer exception.
-   * 
+   *
    * @return the Berlioz internal error ID corresponding to the specified exception.
    */
   private static BerliozErrorID toErrorID(TransformerException ex) {
@@ -557,13 +558,13 @@ public final class XSLTransformer {
 
   /**
    * Return the title ID based on the ID.
-   * 
+   *
    * @param id the ID
    * @return the corresponding message
    */
   private static String toTitle(BerliozErrorID id) {
     switch (id) {
-      case TRANSFORM_NOT_FOUND:            return "XSLT Not Found"; 
+      case TRANSFORM_NOT_FOUND:            return "XSLT Not Found";
       case TRANSFORM_INVALID:              return "XSLT Static Error";
       case TRANSFORM_DYNAMIC_ERROR:        return "XSLT Dynamic Error";
       case TRANSFORM_MALFORMED_SOURCE_XML: return "XML is not well formed";
@@ -576,7 +577,7 @@ public final class XSLTransformer {
 
   /**
    * Extends the transformer exception to preserve API and include additional details.
-   * 
+   *
    * @author Christophe Lauret
    * @version 8 February 2010
    */
@@ -590,7 +591,7 @@ public final class XSLTransformer {
 
     /**
      * Creates a new UI transformation exception wrapping an existing one.
-     * 
+     *
      * @param ex        the wrapped transformer exception.
      * @param collector the error details as XML.
      */

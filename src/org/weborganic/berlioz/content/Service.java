@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -25,8 +25,9 @@ import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * A list of of content generators or content instructions.
- * 
+ *
  * @author Christophe Lauret (Weborganic)
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.7
  */
@@ -79,7 +80,7 @@ public final class Service {
 
   /**
    * Creates a new service.
-   * 
+   *
    * @param id         the ID of the service.
    * @param group      the group the service is part of.
    * @param cache      the cache control for this service.
@@ -90,9 +91,9 @@ public final class Service {
    * @param targets    the targets of each generator (if any).
    */
   private Service(String id, String group, String cache, ServiceStatusRule rule,
-      List<ContentGenerator> generators, 
+      List<ContentGenerator> generators,
       Map<ContentGenerator, List<Parameter>> parameters,
-      Map<ContentGenerator, String> names, 
+      Map<ContentGenerator, String> names,
       Map<ContentGenerator, String> targets) {
     this._id = id;
     this._group = group;
@@ -107,7 +108,7 @@ public final class Service {
 
   /**
    * Returns the ID of this service.
-   * 
+   *
    * @return the ID of this service.
    */
   public String id() {
@@ -116,7 +117,7 @@ public final class Service {
 
   /**
    * Returns the group this service is part of.
-   * 
+   *
    * @return the group this service is part of.
    */
   public String group() {
@@ -125,7 +126,7 @@ public final class Service {
 
   /**
    * Returns the value of the 'Cache-Control' for this service.
-   * 
+   *
    * @return the value of the 'Cache-Control' for this service.
    */
   public String cache() {
@@ -134,7 +135,7 @@ public final class Service {
 
   /**
    * Returns the status rule for this service.
-   * 
+   *
    * @return the status rule for this service.
    */
   public ServiceStatusRule rule() {
@@ -143,9 +144,9 @@ public final class Service {
 
   /**
    * Indicates whether this service is cacheable.
-   * 
+   *
    * <p>A service is cacheable only if all its generators are cacheable.
-   * 
+   *
    * @return <code>true</code> if this response is cacheable;
    *         <code>false</code> otherwise.
    */
@@ -155,7 +156,7 @@ public final class Service {
 
   /**
    * Returns the list of generators for this service.
-   * 
+   *
    * @return the list of generators for this service.
    */
   public List<ContentGenerator> generators() {
@@ -164,7 +165,7 @@ public final class Service {
 
   /**
    * Returns the list of parameter specifications for the given generator.
-   * 
+   *
    * @param generator the content generator for which we need to parameters.
    * @return the list of parameter specifications for the given generator.
    */
@@ -176,7 +177,7 @@ public final class Service {
 
   /**
    * Returns the target of the given generator.
-   * 
+   *
    * @param generator the content generator for which we need the target.
    * @return the target if any (may be <code>null</code>).
    */
@@ -186,7 +187,7 @@ public final class Service {
 
   /**
    * Returns the name of the given generator.
-   * 
+   *
    * @param generator the content generator for which we need the name.
    * @return the name.
    */
@@ -218,11 +219,11 @@ public final class Service {
 
   /**
    * Serialises the specified service as XML.
-   * 
+   *
    * @param xml     the XML writer
    * @param method  the HTTP method the service is mapped to.
    * @param urls    the URI patterns this service matches
-   * 
+   *
    * @throws IOException if thrown by the XML writer.
    */
   @Beta
@@ -232,12 +233,12 @@ public final class Service {
 
   /**
    * Serialises the specified service as XML.
-   * 
+   *
    * @param xml          the XML writer
    * @param method       the HTTP method the service is mapped to.
    * @param urls         the URI patterns this service matches
    * @param cacheControl the cache control directives.
-   * 
+   *
    * @throws IOException if thrown by the XML writer.
    */
   @Beta
@@ -293,7 +294,7 @@ public final class Service {
 
   /**
    * Indicates whether the list of generators are all cacheable.
-   * 
+   *
    * @param generators the list of generators to evaluate.
    * @return <code>true</code> if all generators implement the {@link Cacheable} interface;
    *         <code>false</code> otherwise.
@@ -307,25 +308,25 @@ public final class Service {
 
   /**
    * A builder for services to ensure that <code>Service</code> instances are immutable.
-   * 
-   * <p>The same builder can be used for builder multiple services. 
-   * 
+   *
+   * <p>The same builder can be used for builder multiple services.
+   *
    * @author Christophe Lauret (Weborganic)
    * @version 8 July 2010
    */
   static final class Builder {
 
-    /** 
+    /**
      * The ID of the service to build.
      */
     private String _id;
 
-    /** 
+    /**
      * The group the service to build belongs to.
      */
     private String _group;
 
-    /** 
+    /**
      * The value of the 'Cache-Control' header for this service.
      */
     private String _cache;
@@ -363,7 +364,7 @@ public final class Service {
 
     /**
      * Returns the ID of the service to build.
-     * 
+     *
      * @return the ID of the service to build.
      */
     public String id() {
@@ -372,7 +373,7 @@ public final class Service {
 
     /**
      * Sets the ID of the service to build.
-     * 
+     *
      * @param id the ID of the service to build.
      * @return this builder for easy chaining.
      */
@@ -383,7 +384,7 @@ public final class Service {
 
     /**
      * Sets the group of the service to build.
-     * 
+     *
      * @param group the group of the service to build.
      * @return this builder for easy chaining.
      */
@@ -394,7 +395,7 @@ public final class Service {
 
     /**
      * Sets the cache control for this service.
-     * 
+     *
      * @param cache the 'Cache-Control' value of the service to build.
      * @return this builder for easy chaining.
      */
@@ -405,7 +406,7 @@ public final class Service {
 
     /**
      * Sets the status rule of the service to build.
-     * 
+     *
      * @param rule the status rule of the service to build.
      * @return this builder for easy chaining.
      */
@@ -416,7 +417,7 @@ public final class Service {
 
     /**
      * Adds a parameter to the last content generator entered.
-     * 
+     *
      * @param p The parameter to add to the latest generator added.
      * @return this builder for easy chaining.
      */
@@ -435,7 +436,7 @@ public final class Service {
 
     /**
      * Adds a content generator to this service.
-     * 
+     *
      * @param g the content generator to add to this service.
      * @return this builder for easy chaining.
      */
@@ -446,7 +447,7 @@ public final class Service {
 
     /**
      * Sets the target of the latest content generator added.
-     * 
+     *
      * @param target the target for the latest content generator.
      * @return this builder for easy chaining.
      */
@@ -460,7 +461,7 @@ public final class Service {
 
     /**
      * Sets the name of the latest content generator added.
-     * 
+     *
      * @param name the name for the latest content generator.
      * @return this builder for easy chaining.
      */
@@ -474,9 +475,9 @@ public final class Service {
 
     /**
      * Builds the service from the attributes in this builder.
-     * 
+     *
      * <p>Note: use the <code>reset</code> method to reset the class attributes.
-     * 
+     *
      * @return a new service instance.
      */
     public Service build() {
@@ -506,7 +507,7 @@ public final class Service {
 
     /**
      * Returns a new identical immutable list.
-     * 
+     *
      * @param original the list maintained by the builder.
      * @return a new identical immutable list.
      */
@@ -520,7 +521,7 @@ public final class Service {
 
     /**
      * Returns a new identical immutable map.
-     * 
+     *
      * @param original the map maintained by the builder.
      * @return a new identical immutable map.
      */
@@ -541,7 +542,7 @@ public final class Service {
 
     /**
      * Returns a new identical immutable list.
-     * 
+     *
      * @param original the list maintained by the builder.
      * @return a new identical immutable list.
      */
@@ -555,7 +556,7 @@ public final class Service {
 
     /**
      * Returns a new identical immutable map.
-     * 
+     *
      * @param original the map maintained by the builder.
      * @return a new identical immutable map.
      */

@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -12,11 +12,13 @@ import org.weborganic.furi.URIResolveResult;
 
 /**
  * Encapsulates the results of the service matching.
- * 
+ *
  * <p>Implementation note: all fields are immutable.
- * 
+ *
  * @author Christophe Lauret
- * @version 31 May 2010
+ *
+ * @version Berlioz 0.6.0 - 31 May 2010
+ * @since Berlioz 0.6
  */
 public final class MatchingService {
 
@@ -37,7 +39,7 @@ public final class MatchingService {
 
   /**
    * Creates a new matching service.
-   * 
+   *
    * @param service The matched service.
    * @param pattern The URI pattern it matched.
    * @param result  The resolved URI variables.
@@ -53,10 +55,10 @@ public final class MatchingService {
 
   /**
    * Indicates whether this response is cacheable.
-   * 
-   * <p>A response is cacheable only is the service has been found and all its generators are 
+   *
+   * <p>A response is cacheable only is the service has been found and all its generators are
    * cacheable.
-   * 
+   *
    * @return <code>true</code> if this response is cacheable;
    *         <code>false</code> otherwise.
    */
@@ -67,7 +69,7 @@ public final class MatchingService {
 
   /**
    * Always returns the matched service (always a value).
-   * 
+   *
    * @return The matched service (never <code>null</code>).
    */
   public Service service() {
@@ -76,7 +78,7 @@ public final class MatchingService {
 
   /**
    * Always returns the matching URI pattern.
-   * 
+   *
    * @return The URI pattern it matched (never <code>null</code>).
    */
   public URIPattern pattern() {
@@ -85,7 +87,7 @@ public final class MatchingService {
 
   /**
    * Always returns the resolved URI variables.
-   * 
+   *
    * @return The resolved URI variables (never <code>null</code>).
    */
   public URIResolveResult result() {

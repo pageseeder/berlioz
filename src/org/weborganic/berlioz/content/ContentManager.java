@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -35,7 +35,8 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * A utility class to provide access to the content of generators.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.6
  */
@@ -52,12 +53,12 @@ public final class ContentManager {
   private static final ServiceRegistry SERVICES = new ServiceRegistry();
 
   /**
-   * Indicates whether the boolean value was loaded. 
+   * Indicates whether the boolean value was loaded.
    */
   private static volatile boolean loaded = false;
 
   /**
-   * Prevents creation of instances. 
+   * Prevents creation of instances.
    */
   private ContentManager() {
     // no public constructors for utility classes
@@ -73,9 +74,9 @@ public final class ContentManager {
 
   /**
    * Update the patterns based on the current generators.
-   * 
+   *
    * @throws BerliozException Should something unexpected happen.
-   * 
+   *
    * @since Berlioz 0.8.2
    */
   public static synchronized void loadIfRequired() throws BerliozException {
@@ -87,7 +88,7 @@ public final class ContentManager {
 
   /**
    * Loads the content access file.
-   * 
+   *
    * @throws BerliozException Should something unexpected happen.
    */
   public static synchronized void load() throws BerliozException {
@@ -98,13 +99,13 @@ public final class ContentManager {
 
   /**
    * Loads the content access file.
-   * 
+   *
    * @param xml The XML file to load.
-   * 
+   *
    * @throws BerliozException Should something unexpected happen.
    */
   public static synchronized void load(File xml) throws BerliozException {
-    if (xml == null) 
+    if (xml == null)
       throw new NullPointerException("The service configuration file is null! That's it I give up.");
     // OK Let's start
     SAXParser parser = XMLUtils.getParser(true);
@@ -152,9 +153,9 @@ public final class ContentManager {
   // Inner class to determine which handler to use --------------------------------------------------
 
   /**
-   * A content handler to determine which handler implementation should be used to parse the 
+   * A content handler to determine which handler implementation should be used to parse the
    * web access configuration.
-   * 
+   *
    * @author Christophe Lauret
    * @version 29 June 2011
    */
@@ -177,7 +178,7 @@ public final class ContentManager {
 
     /**
      * Create a new version sniffer for the specified XML reader.
-     * 
+     *
      * @param reader   The XML Reader in use.
      * @param registry The service registry.
      */
@@ -196,9 +197,9 @@ public final class ContentManager {
 
     /**
      * Once the first element is matched, the reader is assigned the appropriate handler.
-     * 
+     *
      * {@inheritDoc}
-     * 
+     *
      * @throws SAXException if the the file being parsed is not a service configuration.
      */
     @Override
@@ -214,12 +215,12 @@ public final class ContentManager {
 
     /**
      * Returns the content handler to use based on the element and its attributes
-     * 
+     *
      * @param name The name of the element (local)
      * @param atts The attributes attached to the element.
-     * 
+     *
      * @return The corresponding handler
-     * 
+     *
      * @throws SAXException if the the file being parsed is not a service configuration.
      */
     private ContentHandler getHandler(String name, Attributes atts) throws SAXException {
@@ -239,7 +240,7 @@ public final class ContentManager {
           return new ServicesHandler10(this._registry, collector);
         }
 
-      // Definitely not supported 
+      // Definitely not supported
       } else {
         LOGGER.error("Unable to determine Berlioz configuration");
         SAXParseException fatal = new SAXParseException("Not a valid Berlioz service configuration!", this._locator);
