@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.content;
@@ -14,11 +14,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Defines a simple template for parameter values. 
- * 
+ * Defines a simple template for parameter values.
+ *
  * @author Christophe Lauret
- * @version 28 June 2011
- * 
+ *
+ * @version Berlioz 0.8.3 - 28 June 2011
  * @since Berlioz 0.8.2
  */
 public final class ParameterTemplate {
@@ -35,7 +35,7 @@ public final class ParameterTemplate {
 
   /**
    * Creates a new parameter template.
-   * 
+   *
    * @param tokens The tokens that make up this template.
    */
   private ParameterTemplate(Token[] tokens) {
@@ -44,7 +44,7 @@ public final class ParameterTemplate {
 
   /**
    * Resolves this template using the specified content request.
-   * 
+   *
    * @param map A map of values to use.
    * @return the resolved template as a string.
    */
@@ -58,7 +58,7 @@ public final class ParameterTemplate {
 
   /**
    * Returns the value of this template using the content request.
-   * 
+   *
    * @param template The template to parse.
    * @return the resolved template.
    */
@@ -86,10 +86,10 @@ public final class ParameterTemplate {
 
   /**
    * Returns a template for single constant string value.
-   * 
+   *
    * <p>Use this method when you know that the template is made of a single plain value and does
    * not require to be parsed.
-   * 
+   *
    * @param value The value.
    * @return the corresponding template.
    */
@@ -100,10 +100,10 @@ public final class ParameterTemplate {
 
   /**
    * Returns a template for single constant string value.
-   * 
+   *
    * <p>Use this method when you know that the template is made of a single plain value and does
    * not require to be parsed.
-   * 
+   *
    * @param name The value.
    * @param def   The default value for the parameter (optional)
    * @return the corresponding template.
@@ -117,7 +117,7 @@ public final class ParameterTemplate {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * A token which can be resolved using a content request. 
+   * A token which can be resolved using a content request.
    */
   private static class Token {
 
@@ -147,7 +147,7 @@ public final class ParameterTemplate {
     private final String _text;
 
     /**
-     * Creates a new token. 
+     * Creates a new token.
      * @param type the type of token
      * @param name the name of the parameter (may be <code>null</code>.
      * @param text the text or default value.
@@ -161,14 +161,14 @@ public final class ParameterTemplate {
     /**
      * Return the resolved value of this token.
      * @param map the map of values
-     * @return the resolved value of this token. 
+     * @return the resolved value of this token.
      */
     private String toString(Map<String, String> map) {
       switch (this._type) {
-        case STRING: 
+        case STRING:
           return this._text;
         case PARAMETER:
-          String value = map.get(this._name); 
+          String value = map.get(this._name);
           return value != null? value : this._text;
         default:
           return this._text;
@@ -177,7 +177,7 @@ public final class ParameterTemplate {
 
     /**
      * Parses the specified token.
-     * 
+     *
      * @param token the token to parse
      * @return the corresponding token instance.
      */
@@ -206,7 +206,7 @@ public final class ParameterTemplate {
 
     /**
      * Returns a simple STRING token with the text field set to the specified value.
-     * 
+     *
      * @param value the plain value to use to parse
      * @return the corresponding token instance.
      */
@@ -216,7 +216,7 @@ public final class ParameterTemplate {
 
     /**
      * Returns a simple PARAMETER token with the name and text fields set to the specified values.
-     * 
+     *
      * @param name the name of the parameter.
      * @param text the default value for the parameter (optional)
      * @return the corresponding token instance.

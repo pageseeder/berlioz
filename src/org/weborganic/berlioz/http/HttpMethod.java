@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.http;
@@ -11,45 +11,45 @@ import java.util.EnumSet;
 
 /**
  * An enumeration of HTTP methods supported by Berlioz.
- * 
+ *
  * @author Christophe Lauret
- * @version 1 July 2011
- * 
+ *
+ * @version Berlioz 0.8.2 - 1 July 2011
  * @since Berlioz 0.8.2
  */
 public enum HttpMethod {
 
   /**
    * GET HTTP Method.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.3">HTTP/1.1 - 9.3 GET</a>
    */
   GET(true),
 
   /**
    * POST HTTP Method.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.5">HTTP/1.1 - 9.5 POST</a>
    */
   POST(true),
 
   /**
    * PUT HTTP Method.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.6">HTTP/1.1 - 9.6 PUT</a>
    */
   PUT(true),
 
   /**
    * DELETE HTTP Method.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.7">HTTP/1.1 - 9.7 DELETE</a>
    */
   DELETE(true),
 
   /**
    * HEAD HTTP Method.
-   * 
+   *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.4">HTTP/1.1 - 9.4 HEAD</a>
    */
   HEAD(false);
@@ -74,7 +74,7 @@ public enum HttpMethod {
 
   /**
    * Indicates whether it can be mapped to a Berlioz Service.
-   * 
+   *
    * @return <code>true</code> if it can be mapped to a Berlioz Service;
    *         <code>false</code> otherwise.
    */

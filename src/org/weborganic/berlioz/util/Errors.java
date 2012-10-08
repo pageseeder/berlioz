@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.util;
@@ -23,11 +23,13 @@ import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * A utility class for the processing of errors.
- * 
+ *
  * <p>This class also includes a number of methods to turn various classes of exceptions and locators into XML.
- * 
+ *
  * @author Christophe Lauret
- * @version 30 June 2011
+ *
+ * @version Berlioz 0.8.3 - 1 July 2011
+ * @since Berlioz 0.8.1
  */
 public final class Errors {
 
@@ -39,14 +41,14 @@ public final class Errors {
 
   /**
    * Returns the stack trace of the specified error as a string.
-   * 
-   * <p>For security, this method will remove the part of the stacktrace which are specific 
+   *
+   * <p>For security, this method will remove the part of the stacktrace which are specific
    * to the servlet container.
-   * 
+   *
    * @param error The throwable.
    * @param safe  <code>true</code> to only include the StackTrace up to the servlet API;
    *              <code>false</code> to include the complete stack trace.
-   * 
+   *
    * @return The stacktrace.
    */
   public static String getStackTrace(Throwable error, boolean safe) {
@@ -66,12 +68,12 @@ public final class Errors {
 
   /**
    * Returns a clean message for the specified throwable.
-   * 
-   * <p>This method can be used to provide more user-friendly messages by removing the exception 
+   *
+   * <p>This method can be used to provide more user-friendly messages by removing the exception
    * class prefix to the message if the message is identical to that of the exception causing it.
-   * 
+   *
    * @param ex the throwable.
-   * 
+   *
    * @return a clean message.
    */
   public static String cleanMessage(Throwable ex) {
@@ -86,22 +88,22 @@ public final class Errors {
 
   /**
    * Writes the XML for the given exception.
-   * 
-   * <p>If there is a more specialised method for this exception defined in this class, this 
+   *
+   * <p>If there is a more specialised method for this exception defined in this class, this
    * method will automatically use the more specific method.
-   * 
+   *
    * <p>The default XML for a generic exception is:
-   * <p>The XML return will be: 
+   * <p>The XML return will be:
    * <pre>{@code <exception class="[class]">
    *   <message>[message]</message>
    *   <stack-trace>[exception]</stack-trace>
    *   <cause>[cause exception as XML (if any)]</cause>
    * </exception>
    * }</pre>
-   * 
+   *
    * @param ex  The exception to turn to XML.
    * @param xml The XML writer.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(Exception ex, XMLWriter xml) throws IOException {
@@ -110,11 +112,11 @@ public final class Errors {
 
   /**
    * Returns the specified exception as XML.
-   * 
+   *
    * @param ex   The exception to turn to XML.
    * @param xml  The XML writer.
    * @param wrap Whether to wrap the XML into an element.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(Throwable ex, XMLWriter xml, boolean wrap) throws IOException {
@@ -126,7 +128,7 @@ public final class Errors {
 
   /**
    * Returns the specified exception as XML.
-   * 
+   *
    * <p>The XML for a {@link SAXParseException} is:
    * <pre>{@code <exception class="[class]" type="SAXParseException">
    *   <message>[message]</message>
@@ -138,7 +140,7 @@ public final class Errors {
    *
    * @param ex  The exception to turn to XML.
    * @param xml The XML writer.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(SAXParseException ex, XMLWriter xml) throws IOException {
@@ -147,7 +149,7 @@ public final class Errors {
 
   /**
    * Returns the specified exception as XML.
-   * 
+   *
    * <p>The XML for a {@link TransformerException} is:
    * <pre>{@code <exception class="[class]" type="[TransformerException|TransformerConfigException]">
    *   <message>[message]</message>
@@ -156,10 +158,10 @@ public final class Errors {
    *   <location line="[line]" column="[column]" public-id=[public-id]" system-id="[system-id]"/>
    * </exception>
    * }</pre>
-   * 
+   *
    * @param ex  The exception to turn to XML.
    * @param xml The XML writer.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(TransformerException ex, XMLWriter xml) throws IOException {
@@ -168,17 +170,17 @@ public final class Errors {
 
   /**
    * Returns the specified source locator as XML.
-   * 
+   *
    * <p>Does nothing if the locator is <code>null</code>.
-   * 
+   *
    * <p>The XML return will be:
    * <pre>
    * {@code <location line="[line]" column="[column]" public-id=[public-id]" system-id="[system-id]"/>}
-   * </pre> 
-   * 
+   * </pre>
+   *
    * @param locator The source locator.
    * @param xml     The XML writer.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(SourceLocator locator, XMLWriter xml) throws IOException {
@@ -205,17 +207,17 @@ public final class Errors {
 
   /**
    * Returns the specified locator as XML.
-   * 
+   *
    * <p>Does nothing if the locator is <code>null</code>.
-   * 
+   *
    * <p>The XML return will be:
    * <pre>
    * {@code <location line="[line]" column="[column]" public-id=[public-id]" system-id="[system-id]"/>}
    * </pre>
-   * 
+   *
    * @param locator The source locator.
    * @param xml     The XML writer.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(Locator locator, XMLWriter xml) throws IOException {
@@ -245,7 +247,7 @@ public final class Errors {
 
   /**
    * Displays the path to the file from the web application (for debugging).
-   * 
+   *
    * @param s the file path.
    * @return The path from the "WEB-INF" directory
    */
@@ -271,11 +273,11 @@ public final class Errors {
 
   /**
    * Returns the XML for a generic exception.
-   * 
+   *
    * @param ex   The exception to turn to XML.
    * @param xml  The XML writer.
    * @param wrap Whether to wrap the XML into an element.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   private static void asExceptionXML(Exception ex, XMLWriter xml, boolean wrap) throws IOException {
@@ -298,11 +300,11 @@ public final class Errors {
 
   /**
    * Returns the XML for a generic error.
-   * 
+   *
    * @param ex   The error to turn to XML.
    * @param xml  The XML writer.
    * @param wrap Whether to wrap the XML into an element.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   private static void asErrorXML(Error ex, XMLWriter xml, boolean wrap) throws IOException {
@@ -325,11 +327,11 @@ public final class Errors {
 
   /**
    * Returns the specified exception as XML
-   * 
+   *
    * @param ex   The exception to turn to XML.
    * @param xml  The XML writer.
    * @param wrap Whether to wrap the XML into an element.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
   private static void asSAXParseExceptionXML(SAXParseException ex, XMLWriter xml, boolean wrap) throws IOException {
@@ -347,14 +349,14 @@ public final class Errors {
 
   /**
    * Returns the specified exception as XML
-   * 
+   *
    * @param ex   The exception to turn to XML.
    * @param xml  The XML writer.
    * @param wrap Whether to wrap the XML into an element.
-   * 
+   *
    * @throws IOException Only if thrown by the XML writer.
    */
-  private static void asTransformerExceptionXML(TransformerException ex, XMLWriter xml, boolean wrap) 
+  private static void asTransformerExceptionXML(TransformerException ex, XMLWriter xml, boolean wrap)
       throws IOException {
     if (wrap) {
       xml.openElement("exception");

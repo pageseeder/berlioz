@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.http;
@@ -16,34 +16,36 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A utility class to help dealing with the HTTP/1.1 request headers such as 'Accept', 'Accept-Language', 
+ * A utility class to help dealing with the HTTP/1.1 request headers such as 'Accept', 'Accept-Language',
  * 'Accept-Encoding', 'Accept-Charset'.
- * 
+ *
  * <p>The quality values returned are floats from 0.0f to 1.0f.
- * 
- * <p>For more info on Quality values see: 
+ *
+ * <p>For more info on Quality values see:
  * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.9">Hypertext Transfer Protocol
  *  -- HTTP/1.1 - 3.9 Quality Values</a>.
- * 
+ *
  * <p>For more information on Accept HTTP headers, see:
  * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html">Hypertext Transfer Protocol
  *  -- HTTP/1.1 - 14 Header Field Definitions</a>.
- * 
+ *
  * <p>Implementation note: for efficiency the results are cached and reused.
- * 
+ *
  * @author Christophe Lauret
- * @version 4 January 2010
+ *
+ * @version Berlioz 0.8.2 - 27 June 2011
+ * @since Berlioz 0.6
  */
 public final class HttpAcceptHeader {
 
   /**
    * Accepts headers that have already been processed.
    */
-  private static final Map<String, Map<String, Float>> MAPS = 
+  private static final Map<String, Map<String, Float>> MAPS =
     Collections.synchronizedMap(new HashMap<String, Map<String, Float>>());
 
   /**
-   * The maximum size of the cache for security, once the internal cache reaches this number of entries, 
+   * The maximum size of the cache for security, once the internal cache reaches this number of entries,
    * nothing more will be cached.
    */
   private static final int MAX_SIZE = 96;
@@ -61,12 +63,12 @@ public final class HttpAcceptHeader {
 
   /**
    * Returns the list of accepted content types mapped to their quality level.
-   * 
+   *
    * @param accept The 'Accept' HTTP/1.1 header.
    * @return an unmodifiable map of the accept header.
    */
   public static Map<String, Float> get(String accept) {
-    // no value, return an empty map 
+    // no value, return an empty map
     if (accept == null || "".equals(accept)) return Collections.emptyMap();
     // Try to see if this has been processed already
     Map<String, Float> map = MAPS.get(accept);
@@ -84,12 +86,12 @@ public final class HttpAcceptHeader {
 
   /**
    * Indicates whether the given 'Accept' header accepts the specified value.
-   * 
-   * <p>To be acceptable the value must 
-   * 
+   *
+   * <p>To be acceptable the value must
+   *
    * @param accept The 'Accept' or 'Accept-*' HTTP/1.1 header.
    * @param value  The value to look for.
-   * 
+   *
    * @return <code>true</code> if the specified value has a Q value  strictly greater than 0;
    *         <code>false</code> otherwise.
    */
@@ -99,12 +101,12 @@ public final class HttpAcceptHeader {
 
   /**
    * Indicates whether the given 'Accept' header accepts the specified value.
-   * 
-   * <p>To be acceptable the value must 
-   * 
-   * @param accept An accept map produced by this class. 
+   *
+   * <p>To be acceptable the value must
+   *
+   * @param accept An accept map produced by this class.
    * @param value  The value to look for.
-   * 
+   *
    * @return <code>true</code> if the specified value has a Q value  strictly greater than 0;
    *         <code>false</code> otherwise.
    */
@@ -130,7 +132,7 @@ public final class HttpAcceptHeader {
 
   /**
    * Parses the accept header and returns the corresponding map.
-   * 
+   *
    * @param accept The 'Accept' or 'Accept-*' HTTP/1.1 header.
    * @return the accepted content types mapped to their quality value (0 to 1000).
    */

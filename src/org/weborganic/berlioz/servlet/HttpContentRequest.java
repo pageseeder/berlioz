@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -21,8 +21,9 @@ import org.weborganic.berlioz.content.Service;
 /**
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods to access the parameters and attributes in
  * a consistent manner.
- * 
- * @author Christophe Lauret (Weborganic)
+ *
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.9
  */
@@ -47,7 +48,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
-   * 
+   *
    * @param wrapper The HTTP reque3st wrapper.
    * @param generator The generator for which this request is used.
    */
@@ -60,14 +61,14 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
-   * 
+   *
    * @param req        The request to wrap.
    * @param res        The response to wrap.
    * @param env        The environment for this request.
    * @param parameters The parameters to use.
    * @param generator  The generator for which this request is for.
    * @param service    The service this request is part of.
-   * 
+   *
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
   protected HttpContentRequest(HttpServletRequest req, HttpServletResponse res, Environment env,
@@ -81,10 +82,11 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
 
   /**
    * Sets the status of this request.
-   * 
+   *
    * @param status the status of this request.
    * @throws NullPointerException if the status is <code>null</code>.
    */
+  @Override
   public void setStatus(ContentStatus status) {
     if (status == null) throw new NullPointerException("Cannot set status to null");
     this._status = status;
@@ -92,7 +94,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
 
   /**
    * Returns the status of this request.
-   * 
+   *
    * @return the status of this request.
    */
   public ContentStatus getStatus() {
@@ -101,7 +103,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
 
   /**
    * Returns the generator for which this request is used for.
-   * 
+   *
    * @return the generator for which this request is used for.
    */
   public ContentGenerator generator() {
@@ -110,7 +112,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
 
   /**
    * Service the generator is part of.
-   * 
+   *
    * @return the service the generator is part of.
    */
   public Service getService() {

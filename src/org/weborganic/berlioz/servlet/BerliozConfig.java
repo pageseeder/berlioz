@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.servlet;
@@ -26,8 +26,9 @@ import org.weborganic.berlioz.content.Service;
 
 /**
  * Defines the configuration uses by a a Berlioz Servlet.
- * 
+ *
  * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.8.1
  */
@@ -96,7 +97,7 @@ public final class BerliozConfig {
   private final boolean _compression;
 
   /**
-   * The environment. 
+   * The environment.
    */
   private final Environment _env;
 
@@ -107,7 +108,7 @@ public final class BerliozConfig {
 
   /**
    * The XSLT Transformers to user.
-   * 
+   *
    * <p>The key depends on how the transformers are allocated.
    */
   private final Map<String, XSLTransformer> _transformers;
@@ -187,7 +188,7 @@ public final class BerliozConfig {
 
   /**
    * Returns the default cache control instruction.
-   * 
+   *
    * @return the cache control.
    */
   public String getCacheControl() {
@@ -196,7 +197,7 @@ public final class BerliozConfig {
 
   /**
    * Returns the content type.
-   * 
+   *
    * @return the content type.
    */
   public String getContentType() {
@@ -205,7 +206,7 @@ public final class BerliozConfig {
 
   /**
    * Indicates whether HTTP compression is enabled for the Berlioz configuration.
-   * 
+   *
    * @return <code>true</code> to enable HTTP compression;
    *         <code>false</code> otherwise.
    */
@@ -223,8 +224,8 @@ public final class BerliozConfig {
 
   /**
    * Indicates whether this configuration can be controlled by the user.
-   * 
-   * @param req the request including the control key is specified as a request parameter 
+   *
+   * @param req the request including the control key is specified as a request parameter
    * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
    *         the control key; false otherwise.
    */
@@ -235,7 +236,7 @@ public final class BerliozConfig {
 
   /**
    * Returns the XSLT transformer for the specified service.
-   * 
+   *
    * @param service the service which requires a transformer.
    * @return the corresponding XSLT transformer.
    */
@@ -252,7 +253,7 @@ public final class BerliozConfig {
 
   /**
    * Creates a new config for a given Servlet config.
-   * 
+   *
    * @param servletConfig The servlet configuration.
    * @return A new Berlioz config.
    */
@@ -265,7 +266,7 @@ public final class BerliozConfig {
 
   /**
    * Creates a new config for a given Servlet config.
-   * 
+   *
    * @param config The Berlioz configuration to unregister.
    * @return <code>true</code> if the config was unregistered;
    *         <code>false</code> otherwise.
@@ -280,12 +281,12 @@ public final class BerliozConfig {
 
   /**
    * Returns the value for the specified init parameter name.
-   * 
+   *
    * <p>If <code>null</code> returns the default value.
-   * 
+   *
    * @param name The name of the init parameter.
-   * @param def  The default value if the parameter value is <code>null</code> 
-   * 
+   * @param def  The default value if the parameter value is <code>null</code>
+   *
    * @return The values for the specified init parameter name.
    */
   private String getInitParameter(String name, String def) {
@@ -295,12 +296,12 @@ public final class BerliozConfig {
 
   /**
    * Returns the value for the specified init parameter name.
-   * 
+   *
    * <p>If <code>null</code> returns the default value.
-   * 
+   *
    * @param name The name of the init parameter.
    * @param def  The default value if the parameter value is <code>null</code>
-   * 
+   *
    * @return The values for the specified init parameter name.
    */
   private boolean getInitParameter(String name, boolean def) {
@@ -320,9 +321,9 @@ public final class BerliozConfig {
 
   /**
    * Returns the XSLT transformer for the specified service.
-   * 
+   *
    * <p>This method will create and cache the transformer if necessary.
-   * 
+   *
    * @param service the service which requires a transformer.
    * @param key the key to use to store the transformer.
    * @return the corresponding XSLT transformer.
@@ -338,13 +339,13 @@ public final class BerliozConfig {
 
   /**
    * Returns a new XSLT transformer for the specified service.
-   * 
+   *
    * <p>This method creates a new transform from the style path configuration and replaces the
    * <code>{GROUP}</code> and <code>{SERVICE}</code> tokens by the corresponding service attributes.
-   * 
+   *
    * @param service The service
    * @return a new XSLT transformer from the style path configuration for the service.
-   * 
+   *
    * @throws NullPointerException if the service is <code>null</code>.
    */
   private XSLTransformer newTransformer(Service service) {
@@ -357,11 +358,11 @@ public final class BerliozConfig {
 
   /**
    * Returns the value for the specified init parameter name.
-   * 
+   *
    * <p>If <code>null</code> returns the default value.
-   * 
+   *
    * @param stylePath The path to the stylesheet to use.
-   * 
+   *
    * @return The values for the specified init parameter name.
    */
   private static TransformAllocation toAllocation(String stylePath) {

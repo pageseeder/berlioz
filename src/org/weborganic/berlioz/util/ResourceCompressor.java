@@ -2,7 +2,7 @@
  * This file is part of the Berlioz library.
  *
  * For licensing information please see the file license.txt included in the release.
- * A copy of this licence can also be found at 
+ * A copy of this licence can also be found at
  *   http://www.opensource.org/licenses/artistic-license-2.0.php
  */
 package org.weborganic.berlioz.util;
@@ -19,9 +19,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * A utility class to compress the contents of a resource.
- * 
+ *
  * @author Christophe Lauret
- * @version 31 May 2010
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.8.2
  */
 public final class ResourceCompressor {
 
@@ -38,10 +40,10 @@ public final class ResourceCompressor {
 
   /**
    * Compresses the specified content.
-   * 
+   *
    * @param content The content to compress.
    * @param charset The Character set to use to encode the char sequence.
-   * 
+   *
    * @return The compressed content or an empty array if an error occurred.
    */
   public static byte[] compress(CharSequence content, Charset charset) {
@@ -50,7 +52,7 @@ public final class ResourceCompressor {
     GZIPOutputStream compressor = null;
     try {
       compressor = new GZIPOutputStream(os);
-      Writer w = new OutputStreamWriter(compressor, charset); 
+      Writer w = new OutputStreamWriter(compressor, charset);
       w.write(content.toString());
       w.close();
       compressor.finish();
@@ -59,9 +61,9 @@ public final class ResourceCompressor {
       // If an error occurs, we return a empty array
       compressed = new byte[]{};
     } finally {
-      // clean up and make sure the resources are release as soon as possible
+      // clean up and make sure the resources are released as soon as possible
       try {
-        compressor.close();
+        if (compressor != null) compressor.close();
       } catch (IOException ex) {
         LOGGER.error("Unable to close GZIPOutputStream stream", ex);
       }

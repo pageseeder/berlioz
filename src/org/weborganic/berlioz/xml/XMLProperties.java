@@ -34,8 +34,10 @@ import com.topologi.diffx.xml.XMLWriterImpl;
 /**
  * An XML version of the <code>Properties</code> class.
  *
- * @author Christophe Lauret (Allette Systems)
- * @version 1 August 2006
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.6.0 - 1 August 2006
+ * @since Berlioz 0.6
  */
 public final class XMLProperties extends Properties implements XMLWritable {
 
