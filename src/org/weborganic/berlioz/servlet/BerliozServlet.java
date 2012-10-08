@@ -81,7 +81,8 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * The control key is a string that must be supplied as a parameter whenever one of the admin
  * parameters is used. Use the initialisation parameters to define a control key.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.7
  */

@@ -27,7 +27,9 @@ import org.weborganic.berlioz.util.EntityInfo;
  * A utility class for HTTP headers.
  *
  * @author Christophe Lauret
- * @version 25 January 2009
+ *
+ * @version Berlioz 0.8.2 - 27 June 2011
+ * @since Berlioz 0.6
  */
 public final class HttpHeaderUtils {
 

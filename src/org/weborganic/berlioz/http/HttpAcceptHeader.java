@@ -32,7 +32,9 @@ import java.util.regex.Pattern;
  * <p>Implementation note: for efficiency the results are cached and reused.
  *
  * @author Christophe Lauret
- * @version 4 January 2010
+ *
+ * @version Berlioz 0.8.2 - 27 June 2011
+ * @since Berlioz 0.6
  */
 public final class HttpAcceptHeader {
 

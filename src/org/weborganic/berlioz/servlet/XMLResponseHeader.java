@@ -45,9 +45,9 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>The <var>remote port</var> is the result of
  * {@link javax.servlet.http.ServletRequest#getRemotePort()}.
  *
- * @author Christophe Lauret (Weborganic)
- * @version 19 November 2009
+ * @author Christophe Lauret
  *
+ * @version Berlioz 0.9.2 - 29 November 2011
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {

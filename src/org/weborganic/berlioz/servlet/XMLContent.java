@@ -14,7 +14,9 @@ package org.weborganic.berlioz.servlet;
  * status and exception.
  *
  * @author Christophe Lauret
- * @version 27 July 2010
+ *
+ * @version Berlioz 0.7.2 - 27 July 2010
+ * @since Berlioz 0.6
  */
 public final class XMLContent implements BerliozOutput {
 

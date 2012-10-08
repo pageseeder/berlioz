@@ -54,7 +54,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Christophe Lauret
  * @author Jean-Baptiste Reure
  *
- * @version 8 October 2012
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.7
  */
 public final class RelocationFilter implements Filter {
 

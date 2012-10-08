@@ -43,8 +43,8 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * <p>This class is not thread-safe.
  *
- * @author Christophe Lauret (Weborganic)
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.7
  */

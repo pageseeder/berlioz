@@ -15,8 +15,8 @@ import org.weborganic.berlioz.content.Environment;
 /**
  * Provides the environment common to all services.
  *
- * @author Christophe Lauret (Weborganic)
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.9
  */

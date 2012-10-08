@@ -31,10 +31,11 @@ import org.weborganic.furi.URIResolveResult;
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods
  * to access the parameters and attributes in a consistent manner.
  *
- * @author Christophe Lauret (Weborganic)
- * @author Tu Tak Tran (Allette Systems)
+ * @author Christophe Lauret
+ * @author Tu Tak Tran
  *
- * @version 12 April 2011
+ * @version Berlioz 0.8.3 - 28 June 2011
+ * @since Berlioz 0.7
  */
 public abstract class HttpRequestWrapper implements ContentRequest {
 

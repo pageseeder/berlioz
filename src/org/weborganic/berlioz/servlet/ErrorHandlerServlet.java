@@ -52,8 +52,10 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * &lt;/servlet&gt;
  * </pre>
  *
- * @author Christophe Lauret (Weborganic)
- * @version 1 July 2011
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.9.2 - 29 November 2011
+ * @since Berlioz 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
 

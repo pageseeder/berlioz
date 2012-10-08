@@ -22,7 +22,8 @@ import org.weborganic.berlioz.content.Service;
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods to access the parameters and attributes in
  * a consistent manner.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.3 - 9 December 2011
  * @since Berlioz 0.9
  */

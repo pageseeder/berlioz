@@ -30,7 +30,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
-import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.xml.XMLUtils;
 import org.weborganic.furi.URIParameters;
 import org.weborganic.furi.URIPattern;
@@ -65,10 +64,12 @@ import org.xml.sax.helpers.DefaultHandler;
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.2">HTTP 1.1 - Moved Permanently</a>
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.3">HTTP 1.1 - Found</a>
  *
- * @author Christophe Lauret (Weborganic)
- * @version 11 August 2010
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.7
  */
-@Beta public final class RedirectFilter implements Filter, Serializable {
+public final class RedirectFilter implements Filter, Serializable {
 
   /**
    * As per requirement for the Serializable interface.

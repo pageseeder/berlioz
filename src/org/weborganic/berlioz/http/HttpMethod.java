@@ -13,8 +13,8 @@ import java.util.EnumSet;
  * An enumeration of HTTP methods supported by Berlioz.
  *
  * @author Christophe Lauret
- * @version 1 July 2011
  *
+ * @version Berlioz 0.8.2 - 1 July 2011
  * @since Berlioz 0.8.2
  */
 public enum HttpMethod {

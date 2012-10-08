@@ -11,7 +11,9 @@ package org.weborganic.berlioz.servlet;
  * Defines content produced by Berlioz.
  *
  * @author Christophe Lauret
- * @version 27 July 2010
+ *
+ * @version Berlioz 0.6.0 - 27 July 2010
+ * @since Berlioz 0.6
  */
 public interface BerliozOutput {
 

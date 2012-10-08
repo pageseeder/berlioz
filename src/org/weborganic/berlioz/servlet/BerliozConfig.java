@@ -28,6 +28,7 @@ import org.weborganic.berlioz.content.Service;
  * Defines the configuration uses by a a Berlioz Servlet.
  *
  * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.0 - 13 October 2011
  * @since Berlioz 0.8.1
  */

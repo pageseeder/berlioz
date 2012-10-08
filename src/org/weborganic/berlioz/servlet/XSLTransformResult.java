@@ -18,7 +18,9 @@ import javax.xml.transform.Templates;
  * status and exception.
  *
  * @author Christophe Lauret
- * @version 27 July 2010
+ *
+ * @version Berlioz 0.7.9 - 12 April 2011
+ * @since Berlioz 0.7
  */
 public final class XSLTransformResult implements BerliozOutput {
 

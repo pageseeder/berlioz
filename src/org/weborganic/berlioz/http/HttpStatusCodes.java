@@ -9,8 +9,8 @@ import java.util.Map;
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10">HTTP/1.1 - 10 Status Code Definitions</a>
  *
  * @author Christophe Lauret
- * @version 1 July 2011
  *
+ * @version Berlioz 0.8.3 - 1 July 2011
  * @since Berlioz 0.8.3
  */
 public final class HttpStatusCodes {
