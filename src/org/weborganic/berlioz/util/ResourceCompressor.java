@@ -21,7 +21,9 @@ import org.slf4j.LoggerFactory;
  * A utility class to compress the contents of a resource.
  *
  * @author Christophe Lauret
- * @version 8 October 2012
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.8.2
  */
 public final class ResourceCompressor {
 

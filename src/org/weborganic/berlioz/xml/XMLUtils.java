@@ -29,7 +29,8 @@ import org.xml.sax.XMLReader;
  *
  * @author Christophe Lauret (Weborganic)
  *
- * @version 3 December 2009
+ * @version Berlioz 0.6.0 - 3 December 2009
+ * @since Berlioz 0.6
  */
 public final class XMLUtils {
 

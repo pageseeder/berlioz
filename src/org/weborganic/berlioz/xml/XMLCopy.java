@@ -39,7 +39,8 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  * <p>This class also implements the {@link LexicalHandler} interface, so that comments can be copied if the
  * {@link XMLReader} reader supports the {@value #LEXICAL_HANDLER_PROPERTY} property.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
+ *
  * @version Berlioz 0.9.4 - 27 December 2011
  * @since Berlioz 0.7
  */

@@ -26,8 +26,10 @@ import org.xml.sax.SAXException;
  *
  * <p>Note: this resolver also accepts the alias prefix <code>-//Berlioz//DTD::</code>.
  *
- * @author Christophe Lauret (Weborganic)
- * @version 26 November 2009
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.6.0 - 26 May 2010
+ * @since Berlioz 0.6
  */
 public final class BerliozEntityResolver implements EntityResolver {
 

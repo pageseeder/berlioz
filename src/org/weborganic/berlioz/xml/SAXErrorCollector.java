@@ -16,8 +16,10 @@ import org.xml.sax.SAXParseException;
 /**
  * A SAX error handler will collect all the exceptions reported by the SAX parser.
  *
- * @author Christophe Lauret (Weborganic)
- * @version 30 June 2011
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.8.5 - 15 August 2011
+ * @since Berlioz 0.8
  */
 public final class SAXErrorCollector extends ErrorCollector<SAXParseException> implements ErrorHandler {
 

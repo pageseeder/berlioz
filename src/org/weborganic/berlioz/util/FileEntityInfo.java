@@ -14,7 +14,9 @@ import java.io.File;
  * entity tags.
  *
  * @author Christophe Lauret
- * @version 28 January 2010
+ *
+ * @version Berlioz 0.6.0 - 31 May 2010
+ * @since Berlioz 0.6
  */
 public class FileEntityInfo implements EntityInfo {
 

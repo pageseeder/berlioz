@@ -16,7 +16,9 @@ import org.xml.sax.SAXParseException;
  * <p>This implementation treats all errors as fatal and will always throw an exception.
  *
  * @author Christophe Lauret (Weborganic)
- * @version 9 October 2009
+ *
+ * @version Berlioz 0.6.0 - 24 March 2010
+ * @since Berlioz 0.6
  */
 public final class BerliozErrorHandler implements ErrorHandler {
 

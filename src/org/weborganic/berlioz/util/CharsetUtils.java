@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
  * A bunch of utility functions for dealing with character sets.
  *
  * @author Christophe Lauret
- * @version 24 June 2011
+ *
+ * @version Berlioz 0.8.1 - 24 June 2011
+ * @since Berlioz 0.8.1
  */
 public final class CharsetUtils {
 

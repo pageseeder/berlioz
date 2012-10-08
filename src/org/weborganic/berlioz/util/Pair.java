@@ -13,7 +13,9 @@ package org.weborganic.berlioz.util;
  * @param <V> The type of the second constituent of the key
  *
  * @author Christophe Lauret
- * @version 29 June 2011
+ *
+ * @version Berlioz 0.8.2 - 29 June 2011
+ * @since Berlioz 0.8.2
  */
 public class Pair<T, V> {
 

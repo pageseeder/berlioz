@@ -25,7 +25,9 @@ import org.slf4j.LoggerFactory;
  * <p>An MD5 hash is typically expressed as a 32-digit hexadecimal number.
  *
  * @author Christophe Lauret
- * @version 8 October 2012
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.6
  */
 public final class MD5 {
 

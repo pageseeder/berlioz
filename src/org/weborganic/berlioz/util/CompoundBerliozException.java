@@ -7,7 +7,9 @@ import org.weborganic.berlioz.ErrorID;
  * A Berlioz exception to includes a list of collected errors.
  *
  * @author Christophe Lauret
- * @version 30 June 2011
+ *
+ * @version Berlioz 0.8.3 - 1 July 2011
+ * @since Berlioz 0.8.1
  */
 public final class CompoundBerliozException extends BerliozException {
 

@@ -14,7 +14,9 @@ import com.topologi.diffx.xml.XMLWriter;
  * @param <T> The type of error collected.
  *
  * @author Christophe Lauret
- * @version 29 June 2011
+ *
+ * @version Berlioz 0.8.3 - 1 July 2011
+ * @since Berlioz 0.8.1
  */
 public final class CollectedError<T extends Exception> implements XMLWritable {
 

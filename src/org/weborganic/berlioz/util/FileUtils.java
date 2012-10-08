@@ -21,7 +21,9 @@ import org.weborganic.berlioz.GlobalSettings;
  * A bunch of utility functions for files.
  *
  * @author Christophe Lauret
- * @version 25 May 2010
+ *
+ * @version Berlioz 0.9.8 - 8 October 2012
+ * @since Berlioz 0.6
  */
 public final class FileUtils {
 

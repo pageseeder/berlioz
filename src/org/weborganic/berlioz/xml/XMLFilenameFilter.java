@@ -13,8 +13,10 @@ import java.io.FilenameFilter;
 /**
  * Define a filename filter for XML file.
  *
- * @author Christophe Lauret (Weborganic)
- * @version 20 August 2004
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.6.0 - 20 August 2004
+ * @since Berlioz 0.6
  */
 public final class XMLFilenameFilter implements FilenameFilter {
 

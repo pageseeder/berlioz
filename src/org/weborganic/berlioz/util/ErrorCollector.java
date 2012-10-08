@@ -12,7 +12,9 @@ import org.weborganic.berlioz.util.CollectedError.Level;
  * @param <T> The class of exception that is collected.
  *
  * @author Christophe Lauret
- * @version 30 June 2011
+ *
+ * @version Berlioz 0.8.3 - 1 July 2011
+ * @since Berlioz 0.8.1
  */
 public class ErrorCollector<T extends Exception>  {
 

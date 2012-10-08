@@ -37,8 +37,10 @@ import java.util.Date;
  * @see <a href="http://www.iso.org/iso/date_and_time_format">ISO: Numeric representation of Dates
  *      and Time</a>
  *
- * @author Christophe Lauret (Weborganic)
- * @version 9 December 2011
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.9.4 - 31 January 2012
+ * @since Berlioz 0.6
  */
 public enum ISO8601 {
 

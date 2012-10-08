@@ -14,7 +14,9 @@ package org.weborganic.berlioz.util;
  * HTTP response.
  *
  * @author Christophe Lauret
- * @version 25 January 2010
+ *
+ * @version Berlioz 0.6.0 - 31 May 2010
+ * @since Berlioz 0.6
  */
 public interface EntityInfo {
 

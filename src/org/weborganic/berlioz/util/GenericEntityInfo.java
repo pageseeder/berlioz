@@ -15,7 +15,9 @@ import java.util.Date;
  * <p>This class can be used as a base class for other entity info implementations.
  *
  * @author Christophe Lauret
- * @author 28 January 2010
+ *
+ * @version Berlioz 0.6.0 - 31 May 2010
+ * @since Berlioz 0.6
  */
 public class GenericEntityInfo implements EntityInfo {
 

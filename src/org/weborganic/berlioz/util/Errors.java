@@ -27,7 +27,9 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>This class also includes a number of methods to turn various classes of exceptions and locators into XML.
  *
  * @author Christophe Lauret
- * @version 30 June 2011
+ *
+ * @version Berlioz 0.8.3 - 1 July 2011
+ * @since Berlioz 0.8.1
  */
 public final class Errors {
 
