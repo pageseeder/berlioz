@@ -10,7 +10,6 @@ package org.weborganic.berlioz.xml;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,12 +25,13 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.topologi.diffx.xml.XMLStringWriter;
 import com.topologi.diffx.xml.XMLWriter;
-import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * Copy the parsed XML to the specified XML writer.
@@ -41,7 +41,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.4 - 27 December 2011
+ * @version Berlioz 0.9.9 - 8 October 2012
  * @since Berlioz 0.7
  */
 public final class XMLCopy extends DefaultHandler implements ContentHandler, LexicalHandler {
@@ -80,10 +80,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     this.to = xml;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+  @Override
+  public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
     try {
       this.to.openElement(qName);
       for (int i = 0; i < atts.getLength(); i++) {
@@ -102,10 +100,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override public void characters(char[] ch, int start, int length) throws SAXException {
+  @Override
+  public void characters(char[] ch, int start, int length) throws SAXException {
     try {
       this.to.writeText(ch, start, length);
     } catch (IOException ex) {
@@ -113,10 +109,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override public void endElement(String uri, String localName, String qName) throws SAXException {
+  @Override
+  public void endElement(String uri, String localName, String qName) throws SAXException {
     try {
       this.to.closeElement();
     } catch (IOException ex) {
@@ -124,18 +118,14 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override public void startPrefixMapping(String prefix, String uri) throws SAXException {
+  @Override
+  public void startPrefixMapping(String prefix, String uri) throws SAXException {
     boolean hasPrefix = prefix != null && prefix.length() > 0;
     this.mapping.put((hasPrefix? prefix : ""), uri);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override public void processingInstruction(String target, String data) throws SAXException {
+  @Override
+  public void processingInstruction(String target, String data) throws SAXException {
     try {
       this.to.writePI(target, data);
     } catch (IOException ex) {
@@ -227,23 +217,27 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * @param file The file.
    * @param xml  The XML writer.
    *
+   * @return <code>true</code> if the copy was done successfully;
+   *         <code>false</code> otherwise.
+   *
    * @throws IOException should an error occur when writing the XML.
    */
-  public static void copyTo(File file, XMLWriter xml) throws IOException {
+  public static boolean copyTo(File file, XMLWriter xml) throws IOException {
+    boolean ok = false;
     // load
     if (file.exists()) {
       try {
         // writers to use
-        StringWriter writer = new StringWriter();
-        XMLWriter internal = new XMLWriterImpl(writer);
+        XMLStringWriter copy = new XMLStringWriter(false);
 
         // copy the data
-        parse(new XMLCopy(internal), new InputSource(file.toURI().toString()));
-        internal.flush();
-        String parsed = writer.toString();
+        parse(new XMLCopy(copy), new InputSource(file.toURI().toString()));
+        copy.flush();
+        String parsed = copy.toString();
 
         // write to XML writer
         xml.writeXML(parsed);
+        ok = true;
 
       // an error was reported by the parser
       } catch (BerliozException ex) {
@@ -252,6 +246,11 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
         xml.openElement("no-data");
         xml.attribute("error", "parsing");
         xml.attribute("details", ex.getMessage());
+        if (ex.getCause() instanceof SAXParseException) {
+          SAXParseException sax = (SAXParseException)ex.getCause();
+          xml.attribute("line", sax.getLineNumber());
+          xml.attribute("column", sax.getColumnNumber());
+        }
         xml.closeElement();
       }
     // the file does not exist
@@ -261,6 +260,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
       xml.attribute("error", "file-not-found");
       xml.closeElement();
     }
+    return ok;
   }
 
   /**
@@ -272,22 +272,26 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * @param reader The reader over the XML to read.
    * @param xml    The XML writer.
    *
+   * @return <code>true</code> if the copy was done successfully;
+   *         <code>false</code> otherwise.
+   *
    * @throws IOException should an error occur when writing the XML.
    */
-  public static void copyTo(Reader reader, XMLWriter xml) throws IOException {
+  public static boolean copyTo(Reader reader, XMLWriter xml) throws IOException {
+    boolean ok = false;
     // load
     try {
       // writers to use
-      StringWriter writer = new StringWriter();
-      XMLWriter internal = new XMLWriterImpl(writer);
+      XMLStringWriter copy = new XMLStringWriter(false);
 
       // copy the data
-      parse(new XMLCopy(internal), new InputSource(reader));
-      internal.flush();
-      String parsed = writer.toString();
+      parse(new XMLCopy(copy), new InputSource(reader));
+      copy.flush();
+      String parsed = copy.toString();
 
       // write to XML writer
       xml.writeXML(parsed);
+      ok = true;
 
     // an error was reported by the parser
     } catch (BerliozException ex) {
@@ -296,8 +300,14 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
       xml.openElement("no-data");
       xml.attribute("error", "parsing");
       xml.attribute("details", ex.getMessage());
+      if (ex.getCause() instanceof SAXParseException) {
+        SAXParseException sax = (SAXParseException)ex.getCause();
+        xml.attribute("line", sax.getLineNumber());
+        xml.attribute("column", sax.getColumnNumber());
+      }
       xml.closeElement();
     }
+    return ok;
   }
 
   // private parsing methods
@@ -325,7 +335,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     } catch (SAXException ex) {
       throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
     } catch (IOException ex) {
-      ex.printStackTrace();
+      LOGGER.error("Could not read file.", ex);
       throw new BerliozException("Could not read file.", ex);
     }
   }
