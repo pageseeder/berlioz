@@ -47,7 +47,7 @@ import org.weborganic.berlioz.LifecycleListener;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.5 - 14 September 2012
+ * @version Berlioz 0.9.9 - 10 October 2012
  * @since Berlioz 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
@@ -340,7 +340,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
       console("Config: found "+toRelPath(f, webinfPath));
       boolean loaded = GlobalSettings.load();
       if (loaded) {
-        console("Config: loaded OK");
+        console("Config: loaded OK ("+GlobalSettings.countProperties()+" properties found)");
         console("Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_COMPRESSION));
         console("Config: HTTP Max Age = "+GlobalSettings.get(BerliozOption.HTTP_MAX_AGE));
         console("Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_CACHE));

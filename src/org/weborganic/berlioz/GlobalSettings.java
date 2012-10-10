@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.xml.XMLConfig;
 import org.weborganic.berlioz.xml.XMLProperties;
 
@@ -48,10 +50,15 @@ import org.weborganic.berlioz.xml.XMLProperties;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.8 - 8 October 2012
+ * @version Berlioz 0.9.9 - 10 October 2012
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
+
+  /**
+   * Error about loading the properties are reported here.
+   */
+  private final static Logger LOGGER = LoggerFactory.getLogger(GlobalSettings.class);
 
   /**
    * The format of configuration used.
@@ -147,6 +154,18 @@ public final class GlobalSettings {
    */
   public static File getRepository() {
     return repository;
+  }
+
+  /**
+   * Returns the number of properties defined in the file.
+   *
+   * @return The number of properties defined in the file.
+   */
+  public static int countProperties() {
+    if (settings == null) {
+      load();
+    }
+    return settings.size();
   }
 
   /**
@@ -415,8 +434,7 @@ public final class GlobalSettings {
       try {
         if (file.exists()) return file.getCanonicalFile();
       } catch (IOException ex) {
-        ex.printStackTrace();
-        // TODO: report any error
+        LOGGER.warn("Unable to generate canonical file: {}", ex.getMessage());
       }
     }
     return null;
@@ -568,7 +586,7 @@ public final class GlobalSettings {
         }
       } catch (Exception ex) {
         System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
-        ex.printStackTrace();
+        LOGGER.warn("Unable to load the configuration file", ex);
       }
     }
     return false;
@@ -582,8 +600,10 @@ public final class GlobalSettings {
    *
    * <p>If it does not ends with ".xml", it assumes it is a regular java properties file.
    *
-   * <p>If it ends with ".xml", it scans the file to see if it can find a references to
-   * the "-//Berlioz//DTD::Properties 1.0//EN" public doctype and assumes an XML properties type.
+   * <p>If it ends with ".xml", it scans the file.
+   *
+   * <p>It assumes the XML properties format of it find a reference to the "-//Berlioz//DTD::Properties 1.0//EN"
+   * public doctype or a open "properties" element (this rule may change in the future)
    *
    * <p>Otherwise, it will attempt to read the file as an XML config.
    *
@@ -592,20 +612,34 @@ public final class GlobalSettings {
   private static Format detect(File file) throws IOException {
     if (!file.getName().endsWith(".xml")) return Format.PROPERTIES;
     BufferedReader b = new BufferedReader(new FileReader(file));
+    LOGGER.debug("Detecting configuration file format for {}", file.getName());
     Format kind = Format.XML_CONFIG;
     try {
       String line = b.readLine();
       while (line != null) {
+        // Look for the DOCTYPE
         if (line.indexOf("-//Berlioz//DTD::Properties 1.0//EN") >= 0) {
           kind = Format.XML_PROPERTIES;
+          break;
+        }
+        // Look for "<global>" at start of line
+        if (line.indexOf("<global>") == 0) {
+          kind = Format.XML_CONFIG;
+          break;
+        }
+        // Look for "<properties>"
+        if (line.indexOf("<properties>") >= 0) {
+          kind = Format.XML_PROPERTIES;
+          break;
         }
         line = b.readLine();
       }
     } catch (IOException ex) {
-
+      LOGGER.warn("Unable to detect the kind of properties file", ex);
     } finally {
       b.close();
     }
+    LOGGER.debug("Detected {}", kind);
     return kind;
   }
 
@@ -627,7 +661,7 @@ public final class GlobalSettings {
       loaded = true;
     } catch (Exception ex) {
       System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
-      ex.printStackTrace();
+      LOGGER.debug("Unable to read the properties file", ex);
     } finally {
       if (in != null) in.close();
     }
