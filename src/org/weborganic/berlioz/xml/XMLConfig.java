@@ -55,7 +55,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.8 - 8 October 2012
+ * @version Berlioz 0.9.9 - 10 October 2012
  * @since Berlioz 0.9.7
  */
 public final class XMLConfig implements Serializable {

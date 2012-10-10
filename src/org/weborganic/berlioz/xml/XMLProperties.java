@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Properties;
@@ -21,6 +20,7 @@ import java.util.Set;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.weborganic.berlioz.util.ISO8601;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -36,7 +36,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 1 August 2006
+ * @version Berlioz 0.9.9 - 10 October 2012
  * @since Berlioz 0.6
  */
 public final class XMLProperties extends Properties implements XMLWritable {
@@ -90,6 +90,8 @@ public final class XMLProperties extends Properties implements XMLWritable {
   /**
    * Stores these XML properties in an XML file.
    *
+   * <p>Since Berlioz 0.9.9, this method also prepends the doctype.
+   *
    * @param out An output stream.
    *
    * @param header A description of the property list.
@@ -107,11 +109,14 @@ public final class XMLProperties extends Properties implements XMLWritable {
     // create the writer
     BufferedWriter awriter = new BufferedWriter(new OutputStreamWriter(out, "utf-8"));
     XMLWriterImpl xml = new XMLWriterImpl(awriter, true);
+    xml.xmlDecl();
+    xml.writeXML("<!DOCTYPE properties PUBLIC \"-//Berlioz//DTD::Properties 1.0//EN\"" +
+        " \"http://www.weborganic.org/schema/berlioz/properties-1.0.dtd\">");
     // write the header if one is required
     if (header != null) {
       xml.writeComment(header);
     }
-    xml.writeComment(new Date().toString());
+    xml.writeComment(ISO8601.DATETIME.format(System.currentTimeMillis()));
     toXML(xml);
     xml.close();
   }
@@ -178,7 +183,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    * Parses the properties file as XML.
    *
    * @author Christophe Lauret (Weborganic)
-   * @version 9 October 2009
+   * @version 10 October 2009
    */
   static final class Handler extends DefaultHandler {
 
@@ -204,9 +209,6 @@ public final class XMLProperties extends Properties implements XMLWritable {
       this._properties = properties;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) {
       if ("node".equals(localName)) {
@@ -217,9 +219,6 @@ public final class XMLProperties extends Properties implements XMLWritable {
       }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void endElement(String uri, String localName, String qName) {
       if ("node".equals(localName)) {
