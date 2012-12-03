@@ -15,7 +15,7 @@ package org.weborganic.berlioz.content;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 27 June 2011
+ * @version Berlioz 0.9.10 - 3 December 2012
  * @since Berlioz 0.8.2
  */
 public enum ContentStatus {
@@ -223,6 +223,19 @@ public enum ContentStatus {
     }
     // Could not be found.
     return null;
+  }
+
+  /**
+   * Indicates whether the specified status corresponds to an HTTP redirect code.
+   *
+   * @param status The  content status
+   * @return <code>true</code> if the content status greater than or equal to 300 and less than 400;
+   *         <code>false</code> otherwise.
+   *
+   * @since Berlioz 0.9.10
+   */
+  public static boolean isRedirect(ContentStatus status) {
+    return status._code >= 300 && status._code < 400;
   }
 
   /**
