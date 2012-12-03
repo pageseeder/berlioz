@@ -83,7 +83,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.10 - 3 December 2012
  * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -263,9 +263,13 @@ public final class BerliozServlet extends HttpServlet {
       boolean resetEtags = reload || "true".equals(req.getParameter("reset-etags"));
       if (resetEtags) { config.resetETagSeed(); }
 
+      // Reload the global configuration
+      if (reload) { GlobalSettings.load(); }
+
       // Clear the service configuration
       boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
       if (clearServices) { ContentManager.clear(); }
+
     }
 
     // Load the services if required
@@ -367,7 +371,13 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
-    // TODO handle redirect
+    // Redirection (Beta)
+    if (ContentStatus.isRedirect(status)) {
+      String url = xml.getRedirectURL();
+      LOGGER.info("Redirecting to: {} with {}", url, status.code());
+      res.sendRedirect(url);
+      res.setStatus(status.code());
+    }
 
     // Produce the output
     BerliozOutput result = null;
