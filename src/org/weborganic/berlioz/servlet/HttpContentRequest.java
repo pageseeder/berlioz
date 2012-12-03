@@ -24,7 +24,7 @@ import org.weborganic.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.3 - 9 December 2011
+ * @version Berlioz 0.9.10 - 3 December 2012
  * @since Berlioz 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
@@ -44,13 +44,19 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    */
   private ContentStatus _status = ContentStatus.OK;
 
+  /**
+   * The URL to redirect to.
+   */
+  private String _redirectTo = null;
+
   // sole constructor -------------------------------------------------------------------------------
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
    *
-   * @param wrapper The HTTP reque3st wrapper.
+   * @param wrapper   The HTTP reque3st wrapper.
    * @param generator The generator for which this request is used.
+   * @param service   The Berlioz service associated
    */
   protected HttpContentRequest(HttpRequestWrapper wrapper, ContentGenerator generator, Service service) {
     super(wrapper);
@@ -85,11 +91,35 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    *
    * @param status the status of this request.
    * @throws NullPointerException if the status is <code>null</code>.
+   * @throws IllegalArgumentException if the status is a redirect status.
    */
   @Override
   public void setStatus(ContentStatus status) {
-    if (status == null) throw new NullPointerException("Cannot set status to null");
+    if (status == null)
+      throw new NullPointerException("Cannot set status to null");
+    if (ContentStatus.isRedirect(status))
+      throw new IllegalArgumentException("Unable to use redirect status code:"+status);
     this._status = status;
+  }
+
+  /**
+   * Sets the status of this request.
+   *
+   * {@inheritDoc}
+   *
+   * @throws NullPointerException if the URL is <code>null</code>.
+   * @throws IllegalArgumentException if the status is not a redirect status.
+   */
+  @Override
+  public void setRedirect(String url, ContentStatus status) {
+    if (url == null) throw new NullPointerException("Cannot set URL to null");
+    if (status != null) {
+      if (!ContentStatus.isRedirect(status)) throw new IllegalArgumentException("Invalid redirect status:"+status);
+      this._status = status;
+    } else {
+      this._status = ContentStatus.TEMPORARY_REDIRECT;
+    }
+    this._redirectTo = url;
   }
 
   /**
@@ -118,4 +148,14 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   public Service getService() {
     return this._service;
   }
+
+  /**
+   * Returns the URL to redirect to.
+   *
+   * @return the URL to redirect to (may be <code>null</code>).
+   */
+  public String getRedirectURL() {
+    return this._redirectTo;
+  }
+
 }
