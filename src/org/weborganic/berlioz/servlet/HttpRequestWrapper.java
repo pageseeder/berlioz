@@ -131,9 +131,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     return getBerliozPath(this._req);
   };
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final String getParameter(String name) {
     String value = this._parameters.get(name);
@@ -143,18 +140,12 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     return ("".equals(value))? null : value;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final String getParameter(String name, String def) {
     String value = getParameter(name);
     return (value == null || "".equals(value))? def : value;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final String[] getParameterValues(String name) {
     String value = this._parameters.get(name);
@@ -164,17 +155,11 @@ public abstract class HttpRequestWrapper implements ContentRequest {
       return this._req.getParameterValues(name);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final Enumeration<String> getParameterNames() {
     return Collections.enumeration(this._parameters.keySet());
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final Environment getEnvironment() {
     return this._env;
@@ -182,9 +167,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
 // specific methods ---------------------------------------------------------------------
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final int getIntParameter(String name, int def) {
     String value = getParameter(name);
@@ -197,9 +179,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final Date getDateParameter(String name) {
     try {
@@ -220,9 +199,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     return this._req.getPathInfo();
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final Cookie[] getCookies() {
     return this._req.getCookies();
@@ -230,17 +206,11 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
 // attributes -------------------------------------------------------------------------------------
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final Object getAttribute(String name) {
     return this._req.getAttribute(name);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final void setAttribute(String name, Object o) {
     this._req.setAttribute(name, o);

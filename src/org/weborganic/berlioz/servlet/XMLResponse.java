@@ -45,7 +45,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.3 - 9 December 2011
+ * @version Berlioz 0.9.10 - 3 December 2012
  * @since Berlioz 0.7
  */
 public final class XMLResponse {
@@ -74,6 +74,11 @@ public final class XMLResponse {
    * The request to send to the generators.
    */
   private ContentStatus _status = null;
+
+  /**
+   * The redirect URL.
+   */
+  private String _redirect = null;
 
   /**
    * Any exception caught while invoking the generators.
@@ -153,6 +158,15 @@ public final class XMLResponse {
    */
   public BerliozException getError() {
     return this._ex;
+  }
+
+  /**
+   * Returns the URL to redirect to.
+   *
+   * @return the URL to redirect to.
+   */
+  public String getRedirectURL() {
+    return this._redirect;
   }
 
   /**
@@ -241,7 +255,10 @@ public final class XMLResponse {
     }
 
     // Update Status
-    handleStatus(status, generator, service);
+    boolean wasSet = handleStatus(status, generator, service);
+    if (wasSet && ContentStatus.isRedirect(status)) {
+      this._redirect = request.getRedirectURL();
+    }
     xml.attribute("status", status.toString());
 
     // Write the XML
@@ -340,8 +357,11 @@ public final class XMLResponse {
    * @param status    The status of the generator after it has been invoked.
    * @param generator The generator.
    * @param service   The service that the generator is part of.
+   *
+   * @return <code>true</code> if the overall status was set as a result of this method;
+   *         <code>false</code> otherwise.
    */
-  private void handleStatus(ContentStatus status, ContentGenerator generator, Service service) {
+  private boolean handleStatus(ContentStatus status, ContentGenerator generator, Service service) {
     boolean relevant = service.affectStatus(generator);
     if (relevant) {
       ServiceStatusRule r = service.rule();
@@ -349,12 +369,16 @@ public final class XMLResponse {
       // If null set it (works for all rules)
       if (this._status == null) {
         this._status = status;
+        return true;
       } else if (rule == CodeRule.HIGHEST && status.code() > this._status.code()) {
         this._status = status;
+        return true;
       } else if (rule == CodeRule.LOWEST && status.code() < this._status.code()) {
         this._status = status;
+        return true;
       }
     }
+    return false;
   }
 
 }

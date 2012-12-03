@@ -23,7 +23,7 @@ import javax.servlet.http.HttpSession;
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.0 - 27 May 2011
+ * @version Berlioz 0.9.10 - 3 December 2012
  * @since Berlioz 0.6
  */
 public interface ContentRequest {
@@ -167,7 +167,21 @@ public interface ContentRequest {
    * Sets the status of this request.
    *
    * @param code The status code to use.
+   *
+   * @throws NullPointerException if the status is <code>null</code>.
+   * @throws IllegalArgumentException if the status is a redirect status.
    */
   void setStatus(ContentStatus code);
+
+  /**
+   * Sets the status of this request for redirection.
+   *
+   * @param code The status code to use (required).
+   * @param url  The URL to redirect to.
+   *
+   * @throws NullPointerException if the URL is <code>null</code>.
+   * @throws IllegalArgumentException if the status is not a redirect status.
+   */
+  void setRedirect(String url, ContentStatus code);
 
 }
