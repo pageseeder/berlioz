@@ -127,6 +127,8 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
    * @param xml The XML writer.
    *
    * @return the HTTP method or <code>null</code>.
+   *
+   * @throws IOException if an error occurs while writing the XML error message
    */
   private HttpMethod getMethod(ContentRequest req, XMLWriter xml) throws IOException {
     String method = req.getParameter("method", "GET");
@@ -149,6 +151,8 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
    * @param xml The XML writer.
    *
    * @return the url or <code>null</code>.
+   *
+   * @throws IOException if an error occurs while writing the XML error message
    */
   private String getURL(ContentRequest req, XMLWriter xml) throws IOException {
     String url = req.getParameter("url", "");
