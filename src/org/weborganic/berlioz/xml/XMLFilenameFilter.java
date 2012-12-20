@@ -36,7 +36,7 @@ public final class XMLFilenameFilter implements FilenameFilter {
     if (dot == -1)
       return false;
     else
-      return name.substring(dot).equalsIgnoreCase(".xml");
+      return ".xml".equalsIgnoreCase(name.substring(dot));
   }
 
 }

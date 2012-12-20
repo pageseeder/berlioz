@@ -58,12 +58,12 @@ public final class GlobalSettings {
   /**
    * Error about loading the properties are reported here.
    */
-  private final static Logger LOGGER = LoggerFactory.getLogger(GlobalSettings.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(GlobalSettings.class);
 
   /**
    * The format of configuration used.
    */
-  private enum Format {XML_PROPERTIES, XML_CONFIG, PROPERTIES};
+  private enum Format { XML_PROPERTIES, XML_CONFIG, PROPERTIES };
 
 // constants ----------------------------------------------------------------------------------
 
@@ -583,6 +583,7 @@ public final class GlobalSettings {
             return loadProperties(file, new XMLProperties(), settings);
           case PROPERTIES:
             return loadProperties(file, new Properties(), settings);
+          default:
         }
       } catch (Exception ex) {
         System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
@@ -607,7 +608,10 @@ public final class GlobalSettings {
    *
    * <p>Otherwise, it will attempt to read the file as an XML config.
    *
-   * @return The kind of config file used.
+   * @param file the configuration file
+   * @return The kind of configuration format used.
+   *
+   * @throws IOException Should an error occur while trying to read the file.
    */
   private static Format detect(File file) throws IOException {
     if (!file.getName().endsWith(".xml")) return Format.PROPERTIES;
@@ -646,8 +650,11 @@ public final class GlobalSettings {
   /**
    * Loads the settings from the specified XML config file.
    *
-   * @param file     The file to load.
-   * @param settings The global settings.
+   * @param file  The file to load.
+   * @param p     The properties file to load
+   * @param map   The global settings stored in this class
+   *
+   * @return <code>true</code> if loaded without error; <code>false</code> otherwise.
    *
    * @throws IOException Should an error be reported by the parser.
    */
@@ -676,7 +683,8 @@ public final class GlobalSettings {
    * Loads the settings from the specified XML config file.
    *
    * @param file     The file to load.
-   * @param settings The global settings.
+   *
+   * @return Always <code>true</code>.
    *
    * @throws IOException Should an error be reported by the parser.
    */

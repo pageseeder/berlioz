@@ -316,8 +316,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   /**
    * Parses the specified file using the given handler.
    *
-   * @param handler  The content handler to use.
-   * @param reader   The reader over the XML to parse.
+   * @param copier The XML Copy instance.
+   * @param source The input source to copy
    *
    * @throws BerliozException Should something unexpected happen.
    */

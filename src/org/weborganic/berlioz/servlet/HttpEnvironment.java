@@ -50,74 +50,50 @@ public final class HttpEnvironment implements Environment {
     this._cacheControl = cacheControl;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public File getPublicFolder() {
     return this._public;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public File getPrivateFolder() {
     return this._private;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public File getPrivateFile(String path) {
     File f = new File(this._private, path);
     return f;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public File getPublicFile(String path) {
     File f = new File(this._public, path);
     return f;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public String getProperty(String name) {
     return GlobalSettings.get(name);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public boolean getProperty(String name, boolean def) {
     return GlobalSettings.get(name, def);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public int getProperty(String name, int def) {
     return GlobalSettings.get(name, def);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public String getProperty(String name, String def) {
     return GlobalSettings.get(name, def);
   }
 
   /**
-   *
+   * @return The HTTP cache control value.
    */
   public String getCacheControl() {
     return this._cacheControl;

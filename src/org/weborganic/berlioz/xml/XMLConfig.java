@@ -79,6 +79,8 @@ public final class XMLConfig implements Serializable {
 
   /**
    * Creates an empty property list.
+   *
+   * @param properties The initial properties for this config.
    */
   public XMLConfig(Map<String, String> properties) {
     this._properties = properties;

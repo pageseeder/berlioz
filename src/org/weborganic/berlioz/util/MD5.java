@@ -15,7 +15,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +61,7 @@ public final class MD5 {
    *
    * @param text The text value to hash.
    *
-   * @return The {@link HashMap} value for the specified test or <code>null</code> if an error occurred.
+   * @return The Hash value for the specified test or <code>null</code> if an error occurred.
    *
    * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
    */
