@@ -45,7 +45,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.10 - 3 December 2012
+ * @version Berlioz 0.9.11 - 21 December 2012
  * @since Berlioz 0.7
  */
 public final class XMLResponse {
@@ -69,6 +69,11 @@ public final class XMLResponse {
    * The request to send to the generators.
    */
   private final List<HttpContentRequest> _requests;
+
+  /**
+   * Maps the etags to each HTTP request
+   */
+  private final Map<Integer, String> _etags = new HashMap<Integer, String>();
 
   /**
    * The request to send to the generators.
@@ -129,9 +134,9 @@ public final class XMLResponse {
         ContentGenerator generator = request.generator();
         // Check if cacheable
         if (generator instanceof Cacheable) {
-          String localtag = ((Cacheable)generator).getETag(request);
+          String localtag = getETag(request);
           if (localtag == null) return null;
-          etag.append(localtag).append("/");
+          etag.append(localtag).append('/');
         } else {
           cacheable = false;
           break;
@@ -225,8 +230,10 @@ public final class XMLResponse {
 
     // If cacheable, include etag
     if (generator instanceof Cacheable) {
-      String etag = ((Cacheable)generator).getETag(request);
-      xml.attribute("etag", etag);
+      String etag = getETag(request);
+      if (etag != null) {
+        xml.attribute("etag", etag);
+      }
     }
 
     // Detect if deprecated
@@ -289,11 +296,12 @@ public final class XMLResponse {
     // Create a request for each generator
     Service service = match.service();
     List<HttpContentRequest> requests = new ArrayList<HttpContentRequest>();
+    int order = 0;
     for (ContentGenerator generator : service.generators()) {
       List<Parameter> pconfig = service.parameters(generator);
       if (pconfig.isEmpty()) {
         // No specific parameters, return a request using the common parameters
-        requests.add(new HttpContentRequest(req, res, env, common, generator, match.service()));
+        requests.add(new HttpContentRequest(req, res, env, common, generator, match.service(), order));
 
       } else {
         // Some specific parameters, recompute the parameters
@@ -301,8 +309,9 @@ public final class XMLResponse {
         for (Parameter p : pconfig) {
           specific.put(p.name(), p.value(common));
         }
-        requests.add(new HttpContentRequest(req, res, env, specific, generator, match.service()));
+        requests.add(new HttpContentRequest(req, res, env, specific, generator, match.service(), order));
       }
+      order++;
     }
     return requests;
   }
@@ -381,4 +390,25 @@ public final class XMLResponse {
     return false;
   }
 
+  /**
+   * Returns the etag for the specified request.
+   *
+   * @param request The HTTP content request.
+   * @return the corresponding etag if there is one or <code>null</code>.
+   */
+  private String getETag(HttpContentRequest request) {
+    String etag = null;
+    Integer key = Integer.valueOf(request.order());
+    if (this._etags.containsKey(key)) {
+      etag = this._etags.get(key);
+    } else {
+      ContentGenerator generator = request.generator();
+      if (generator instanceof Cacheable) {
+        etag = ((Cacheable)generator).getETag(request);
+      }
+      // Store for reuse (even if null)
+      this._etags.put(key, etag);
+    }
+    return etag;
+  }
 }
