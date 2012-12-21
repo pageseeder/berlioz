@@ -24,7 +24,7 @@ import org.weborganic.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.10 - 3 December 2012
+ * @version Berlioz 0.9.11 - 21 December 2012
  * @since Berlioz 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
@@ -38,6 +38,11 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * Service the generator is part of.
    */
   private final Service _service;
+
+  /**
+   * Indicates in which order it is going to be invoked starting with 0.
+   */
+  private final int _order;
 
   /**
    * The status for this request.
@@ -54,20 +59,6 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
    *
-   * @param wrapper   The HTTP reque3st wrapper.
-   * @param generator The generator for which this request is used.
-   * @param service   The Berlioz service associated
-   */
-  protected HttpContentRequest(HttpRequestWrapper wrapper, ContentGenerator generator, Service service) {
-    super(wrapper);
-    if (generator == null) throw new NullPointerException("No generator specified");
-    this._generator = generator;
-    this._service = service;
-  }
-
-  /**
-   * Creates a new wrapper around the specified HTTP servlet request.
-   *
    * @param req        The request to wrap.
    * @param res        The response to wrap.
    * @param env        The environment for this request.
@@ -78,12 +69,13 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
   protected HttpContentRequest(HttpServletRequest req, HttpServletResponse res, Environment env,
-      Map<String, String> parameters, ContentGenerator generator, Service service) {
+      Map<String, String> parameters, ContentGenerator generator, Service service, int order) {
     super(req, res, env, parameters);
     if (generator == null) throw new NullPointerException("No generator specified");
     if (service == null) throw new NullPointerException("No generator specified");
     this._generator = generator;
     this._service = service;
+    this._order = order;
   }
 
   /**
@@ -158,4 +150,10 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
     return this._redirectTo;
   }
 
+  /**
+   * @return the order in which it will be invoked.
+   */
+  protected int order() {
+    return this._order;
+  }
 }
