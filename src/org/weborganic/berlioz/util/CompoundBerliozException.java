@@ -73,7 +73,8 @@ public final class CompoundBerliozException extends BerliozException {
    * @param id        An error ID to help with error handling and diagnostic.
    * @param collector The error collector.
    */
-  public CompoundBerliozException(String message, Exception ex, ErrorID id, ErrorCollector<? extends Exception> collector) {
+  public CompoundBerliozException(String message, Exception ex, ErrorID id,
+      ErrorCollector<? extends Exception> collector) {
     super(message, ex, id);
     this._collector = collector;
   }

@@ -30,7 +30,8 @@ public final class CollectedError<T extends Exception> implements XMLWritable {
   /**
    * The level of collected error.
    *
-   * <p>Note: the ordinal of this enumeration constant (its position in its enum declaration) is significant as it is used to compare levels.
+   * <p>Note: the ordinal of this enumeration constant (its position in its enum declaration)
+   * is significant as it is used to compare levels.
    */
   public enum Level {
 
