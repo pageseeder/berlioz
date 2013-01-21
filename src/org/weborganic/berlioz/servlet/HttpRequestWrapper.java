@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.content.Location;
 import org.weborganic.berlioz.util.ISO8601;
 import org.weborganic.furi.URIResolveResult;
 
@@ -34,7 +35,7 @@ import org.weborganic.furi.URIResolveResult;
  * @author Christophe Lauret
  * @author Tu Tak Tran
  *
- * @version Berlioz 0.8.3 - 28 June 2011
+ * @version Berlioz 0.9.13 - 21 January 2013
  * @since Berlioz 0.7
  */
 public abstract class HttpRequestWrapper implements ContentRequest {
@@ -60,46 +61,17 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   private final Environment _env;
 
   /**
+   * The location of the resource requested.
+   */
+  private final Location _loc;
+
+  /**
    * Maps parameter names to their values.
    */
   private final Map<String, String> _parameters;
 
   // Constructors
   // ----------------------------------------------------------------------------------------------
-
-  /**
-   * Creates a new wrapper around the specified HTTP servlet request.
-   *
-   * @param wrapper The request to wrap.
-   *
-   * @throws NullPointerException If the wrapper is <code>null</code>.
-   */
-  HttpRequestWrapper(HttpRequestWrapper wrapper) {
-    if (wrapper == null) throw new NullPointerException("Cannot construct wrapper from null wrapper.");
-    this._req = wrapper._req;
-    this._res = wrapper._res;
-    this._env = wrapper._env;
-    this._parameters = new HashMap<String, String>();
-  }
-
-  /**
-   * Creates a new wrapper around the specified HTTP servlet request.
-   *
-   * @param req The request to wrap.
-   * @param res The response to wrap.
-   * @param env The environment for this request.
-   *
-   * @throws IllegalArgumentException If the request is <code>null</code>.
-   */
-  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env)
-      throws IllegalArgumentException {
-    if (req == null)
-      throw new IllegalArgumentException("Cannot construct wrapper around null request.");
-    this._req = req;
-    this._res = res;
-    this._env = env;
-    this._parameters = new HashMap<String, String>();
-  }
 
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
@@ -118,17 +90,33 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     this._req = req;
     this._res = res;
     this._env = env;
+    this._loc = HttpLocation.build(req);
+    this._parameters = parameters;
+  }
+
+  /**
+   * Creates a new wrapper around the specified HTTP servlet request.
+   *
+   * @param core       The core HTTP information.
+   * @param parameters The list of parameters.
+   *
+   * @throws IllegalArgumentException If the request is <code>null</code>.
+   */
+  HttpRequestWrapper(CoreHttpRequest core, Map<String, String> parameters) throws IllegalArgumentException {
+    if (core == null)
+      throw new IllegalArgumentException("Cannot construct wrapper around null request.");
+    this._req = core.request();
+    this._res = core.response();
+    this._env = core.environment();
+    this._loc = core.location();
     this._parameters = parameters;
   }
 
 // generic parameter methods ----------------------------------------------------------------------
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final String getBerliozPath() {
-    return getBerliozPath(this._req);
+    return this._loc.info().path();
   };
 
   @Override
@@ -189,11 +177,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     }
   }
 
-  /**
-   * Returns the path information (what comes after servlet path).
-   *
-   * @return The path information (what comes after servlet path).
-   */
   @Override
   public final String getPathInfo() {
     return this._req.getPathInfo();
@@ -240,13 +223,18 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     return this._res;
   }
 
+  @Override
+  public final Location getLocation() {
+    return this._loc;
+  }
+
   /**
    * Utility method that determines whether this request contains multipart content.
    *
    * @return <code>true</code> if the request is multipart;
    *         <code>false</code> otherwise.
    */
-  public boolean isMultipartContent() {
+  public final boolean isMultipartContent() {
     if (!"post".equals(this._req.getMethod().toLowerCase())) return false;
     String contentType = this._req.getContentType();
     if (contentType == null) return false;

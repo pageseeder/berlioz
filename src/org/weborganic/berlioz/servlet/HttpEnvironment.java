@@ -17,7 +17,7 @@ import org.weborganic.berlioz.content.Environment;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.3 - 9 December 2011
+ * @version Berlioz 0.9.13 - 21 January 2013
  * @since Berlioz 0.9
  */
 public final class HttpEnvironment implements Environment {
