@@ -58,11 +58,6 @@ public final class HttpPathInfo implements PathInfo, Serializable {
    * @throws NullPointerException if the request is <code>null</code>
    */
   protected HttpPathInfo(HttpServletRequest req) {
-    System.err.print("PATH-INFO");
-    System.err.print("[context:"+req.getContextPath());
-    System.err.print(", path-info:"+req.getPathInfo());
-    System.err.print(", servlet-path:"+req.getServletPath());
-
     this._context = req.getContextPath();
     if (req.getPathInfo() != null) {
       // Try to get the path info (when mapped to '/prefix/*')
@@ -77,12 +72,6 @@ public final class HttpPathInfo implements PathInfo, Serializable {
       this._prefix = "";
       this._extension = (dot != -1)? path.substring(dot) : "";
     }
-    System.err.print(", prefix:"+this._prefix);
-    System.err.print(", prefix:"+this._prefix);
-    System.err.print(", path:"+this._path);
-    System.err.print(", extension:"+this._extension);
-    System.err.print("]=>");
-    System.err.println(toString());
   }
 
   @Override
