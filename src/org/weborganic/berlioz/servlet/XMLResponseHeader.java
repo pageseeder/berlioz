@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.content.Location;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.furi.URIResolveResult;
 
@@ -47,15 +48,15 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.2 - 29 November 2011
+ * @version Berlioz 0.9.13 - 21 January 2013
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
 
   /**
-   * The HTTP servlet request object.
+   * The core HTTP details.
    */
-  private final HttpServletRequest _request;
+  private final CoreHttpRequest _core;
 
   /**
    * The name of the service provided.
@@ -73,53 +74,14 @@ public final class XMLResponseHeader implements XMLWritable {
   private URIResolveResult _results;
 
   /**
-   * Creates a new XML response header using the path info to generate the service name.
-   *
-   * <p>For example, if the servlet is configured for URL pattern <code>/df/*</code>,
-   * and a given URL is <code>/df/something/do</code>, the name of the service will be
-   * <code>do-something</code>.
-   *
-   * @param request The HTTP request.
-   */
-  public XMLResponseHeader(HttpServletRequest request) {
-    this._request = request;
-    this._service = toServiceName(request);
-    this._group = "default";
-  }
-
-  /**
    * Creates a new XML response header.
    *
-   * @param request The HTTP request.
-   * @param service The service that is being provided.
-   */
-  public XMLResponseHeader(HttpServletRequest request, String service) {
-    this._request = request;
-    this._service = service;
-    this._group = "default";
-  }
-
-  /**
-   * Creates a new XML response header.
-   *
-   * @param request  The HTTP request.
-   * @param service  The service object.
-   */
-  public XMLResponseHeader(HttpServletRequest request, Service service) {
-    this._request = request;
-    this._service = service.id();
-    this._group = service.group();
-  }
-
-  /**
-   * Creates a new XML response header.
-   *
-   * @param request  The HTTP request.
+   * @param core     The core HTTP info.
    * @param service  The service object.
    * @param results  The result of URI resolution.
    */
-  public XMLResponseHeader(HttpServletRequest request, Service service, URIResolveResult results) {
-    this._request = request;
+  protected XMLResponseHeader(CoreHttpRequest core, Service service, URIResolveResult results) {
+    this._core = core;
     this._service = service.id();
     this._group = service.group();
     this._results = results;
@@ -188,42 +150,34 @@ public final class XMLResponseHeader implements XMLWritable {
    */
   @Override
   public void toXML(XMLWriter xml) throws IOException {
+    HttpServletRequest req = this._core.request();
+
     // start serialising
     xml.openElement("header", true);
     xml.element("group", this._group);
     xml.element("service", this._service);
-    xml.element("path-info", HttpRequestWrapper.getBerliozPath(this._request));
-    xml.element("context-path", this._request.getContextPath());
+    xml.element("path-info", HttpRequestWrapper.getBerliozPath(req));
+    xml.element("context-path", req.getContextPath());
 
     // Deprecated from 1.0
     if (GlobalSettings.has(BerliozOption.XML_HEADER_COMPATIBILITY)) {
-      xml.element("scheme", this._request.getScheme());
-      xml.element("host", this._request.getServerName());
-      xml.element("port", Integer.toString(this._request.getServerPort()));
-      xml.element("url", this._request.getRequestURL().toString());
-      xml.element("query-string", this._request.getQueryString());
+      xml.element("scheme", req.getScheme());
+      xml.element("host", req.getServerName());
+      xml.element("port", Integer.toString(req.getServerPort()));
+      xml.element("url", req.getRequestURL().toString());
+      xml.element("query-string", req.getQueryString());
     }
 
     // New location info
-    xml.openElement("location");
-    xml.attribute("scheme", this._request.getScheme());
-    xml.attribute("host", this._request.getServerName());
-    xml.attribute("port", Integer.toString(this._request.getServerPort()));
-    xml.attribute("path", this._request.getRequestURI());
-    xml.attribute("query", this._request.getQueryString());
-    StringBuffer url = this._request.getRequestURL();
-    if (this._request.getQueryString() != null) {
-      url.append('?').append(this._request.getQueryString());
-    }
-    xml.writeText(url.toString());
-    xml.closeElement();
+    Location location = this._core.location();
+    if (location != null) location.toXML(xml);
 
     // Write the http parameters
     xml.openElement("http-parameters", true);
-    Enumeration<?> names = this._request.getParameterNames();
+    Enumeration<?> names = req.getParameterNames();
     while (names.hasMoreElements()) {
       String paramName = (String)names.nextElement();
-      String[] values = this._request.getParameterValues(paramName);
+      String[] values = req.getParameterValues(paramName);
       for (String value : values) {
         xml.openElement("parameter", false);
         xml.attribute("name", paramName);

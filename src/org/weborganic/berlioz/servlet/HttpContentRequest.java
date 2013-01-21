@@ -9,13 +9,9 @@ package org.weborganic.berlioz.servlet;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.ContentStatus;
-import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.Service;
 
 /**
@@ -24,7 +20,7 @@ import org.weborganic.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.11 - 21 December 2012
+ * @version Berlioz 0.9.13 - 21 January 2013
  * @since Berlioz 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
@@ -59,18 +55,17 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
    *
-   * @param req        The request to wrap.
-   * @param res        The response to wrap.
-   * @param env        The environment for this request.
+   * @param core       The common HTTP info.
    * @param parameters The parameters to use.
    * @param generator  The generator for which this request is for.
    * @param service    The service this request is part of.
+   * @param order      The order in which this request is called.
    *
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
-  protected HttpContentRequest(HttpServletRequest req, HttpServletResponse res, Environment env,
-      Map<String, String> parameters, ContentGenerator generator, Service service, int order) {
-    super(req, res, env, parameters);
+  protected HttpContentRequest(CoreHttpRequest core, Map<String, String> parameters,
+      ContentGenerator generator, Service service, int order) {
+    super(core, parameters);
     if (generator == null) throw new NullPointerException("No generator specified");
     if (service == null) throw new NullPointerException("No generator specified");
     this._generator = generator;

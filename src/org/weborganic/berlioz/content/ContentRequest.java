@@ -23,7 +23,7 @@ import javax.servlet.http.HttpSession;
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.10 - 3 December 2012
+ * @version Berlioz 0.9.13 - 21 January 2013
  * @since Berlioz 0.6
  */
 public interface ContentRequest {
@@ -31,8 +31,11 @@ public interface ContentRequest {
   /**
    * Returns the path information of this request.
    *
+   * @deprecated Use {@link PathInfo} instead
+   *
    * @return The path information of this request.
    */
+  @Deprecated
   String getPathInfo();
 
   /**
@@ -162,6 +165,15 @@ public interface ContentRequest {
    * @return The environment of the request.
    */
   Environment getEnvironment();
+
+  /**
+   * Returns information about the location of the request.
+   *
+   * <p>This includes information about the request URI.
+   *
+   * @return information about the location of the request.
+   */
+  Location getLocation();
 
   /**
    * Sets the status of this request.

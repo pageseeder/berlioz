@@ -24,7 +24,6 @@ import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentStatus;
-import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Parameter;
 import org.weborganic.berlioz.content.Service;
@@ -45,7 +44,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.11 - 21 December 2012
+ * @version Berlioz 0.9.13 - 21 January 2013
  * @since Berlioz 0.7
  */
 public final class XMLResponse {
@@ -56,9 +55,9 @@ public final class XMLResponse {
   private static final Logger LOGGER = LoggerFactory.getLogger(XMLResponse.class);
 
   /**
-   * The HTTP servlet request.
+   * The core HTTP details.
    */
-  private final HttpServletRequest _req;
+  private final CoreHttpRequest _core;
 
   /**
    * The service that was matched for the given request.
@@ -99,9 +98,9 @@ public final class XMLResponse {
    * @param match  The matching service
    */
   public XMLResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, MatchingService match) {
-    this._req = req;
+    this._core = new CoreHttpRequest(req, res, config.getEnvironment());
     this._match = match;
-    this._requests = configure(req, res, config.getEnvironment(), match);
+    this._requests = configure(this._core, match);
   }
 
   /**
@@ -190,7 +189,7 @@ public final class XMLResponse {
 
     // Get service
     Service service = this._match.service();
-    XMLResponseHeader header = new XMLResponseHeader(this._req, service, this._match.result());
+    XMLResponseHeader header = new XMLResponseHeader(this._core, service, this._match.result());
     header.toXML(xml);
 
     // Call each generator in turn
@@ -283,16 +282,13 @@ public final class XMLResponse {
   /**
    * Returns the list of content generator requests to process.
    *
-   * @param req   The HTTP servlet request.
-   * @param res   The HTTP servlet response.
-   * @param env   The current environment.
+   * @param core  The core HTTP details
    * @param match The matching service
    * @return the list of content generator requests to process.
    */
-  private static List<HttpContentRequest> configure(HttpServletRequest req, HttpServletResponse res, Environment env,
-      MatchingService match) {
+  private static List<HttpContentRequest> configure(CoreHttpRequest core, MatchingService match) {
     // Get the list of parameters
-    Map<String, String> common = HttpRequestWrapper.toParameters(req, match.result());
+    Map<String, String> common = HttpRequestWrapper.toParameters(core.request(), match.result());
     // Create a request for each generator
     Service service = match.service();
     List<HttpContentRequest> requests = new ArrayList<HttpContentRequest>();
@@ -301,7 +297,7 @@ public final class XMLResponse {
       List<Parameter> pconfig = service.parameters(generator);
       if (pconfig.isEmpty()) {
         // No specific parameters, return a request using the common parameters
-        requests.add(new HttpContentRequest(req, res, env, common, generator, match.service(), order));
+        requests.add(new HttpContentRequest(core, common, generator, match.service(), order));
 
       } else {
         // Some specific parameters, recompute the parameters
@@ -309,7 +305,7 @@ public final class XMLResponse {
         for (Parameter p : pconfig) {
           specific.put(p.name(), p.value(common));
         }
-        requests.add(new HttpContentRequest(req, res, env, specific, generator, match.service(), order));
+        requests.add(new HttpContentRequest(core, specific, generator, match.service(), order));
       }
       order++;
     }
