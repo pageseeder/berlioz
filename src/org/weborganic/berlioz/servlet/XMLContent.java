@@ -15,7 +15,7 @@ package org.weborganic.berlioz.servlet;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.7.2 - 27 July 2010
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.6
  */
 public final class XMLContent implements BerliozOutput {

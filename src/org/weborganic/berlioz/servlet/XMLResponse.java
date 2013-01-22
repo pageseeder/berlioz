@@ -33,6 +33,7 @@ import org.weborganic.berlioz.util.CollectedError.Level;
 import org.weborganic.berlioz.util.CompoundBerliozException;
 import org.weborganic.berlioz.util.ErrorCollector;
 import org.weborganic.berlioz.util.Errors;
+import org.weborganic.berlioz.util.ProfileFormat;
 
 import com.topologi.diffx.xml.XMLWriter;
 import com.topologi.diffx.xml.XMLWriterImpl;
@@ -44,7 +45,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.7
  */
 public final class XMLResponse {
@@ -85,6 +86,11 @@ public final class XMLResponse {
   private String _redirect = null;
 
   /**
+   * Whether to profile the content generators.
+   */
+  private boolean _profile = false;
+
+  /**
    * Any exception caught while invoking the generators.
    */
   private BerliozException _ex = null;
@@ -92,15 +98,18 @@ public final class XMLResponse {
   /**
    * Creates a new XML response for the specified arguments.
    *
-   * @param req    The HTTP servlet request.
-   * @param res    The HTTP servlet response.
-   * @param config The Berlioz configuration environment.
-   * @param match  The matching service
+   * @param req     The HTTP servlet request.
+   * @param res     The HTTP servlet response.
+   * @param config  The Berlioz configuration environment.
+   * @param match   The matching service
+   * @param profile Whether to enable profiling.
    */
-  public XMLResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, MatchingService match) {
+  public XMLResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, MatchingService match,
+      boolean profile) {
     this._core = new CoreHttpRequest(req, res, config.getEnvironment());
     this._match = match;
     this._requests = configure(this._core, match);
+    this._profile = profile;
   }
 
   /**
@@ -244,6 +253,7 @@ public final class XMLResponse {
     String result = null;
     BerliozException error = null;
     ContentStatus status = ContentStatus.OK;
+    long start = System.nanoTime();
     try {
       // Normal response
       StringWriter writer = new StringWriter();
@@ -259,6 +269,7 @@ public final class XMLResponse {
       error = handleError(ex, generator);
       status = ContentStatus.INTERNAL_SERVER_ERROR;
     }
+    long end = System.nanoTime();
 
     // Update Status
     boolean wasSet = handleStatus(status, generator, service);
@@ -266,6 +277,11 @@ public final class XMLResponse {
       this._redirect = request.getRedirectURL();
     }
     xml.attribute("status", status.toString());
+    if (this._profile) {
+      xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));
+      xml.attribute("profile-process", ProfileFormat.format(end - start));
+      xml.attribute("profile", ProfileFormat.format(request.getProfileEtag() + end - start));
+    }
 
     // Write the XML
     if (error != null) {
@@ -400,7 +416,10 @@ public final class XMLResponse {
     } else {
       ContentGenerator generator = request.generator();
       if (generator instanceof Cacheable) {
+        long start = System.nanoTime();
         etag = ((Cacheable)generator).getETag(request);
+        long end = System.nanoTime();
+        request.setProfileEtag(end-start);
       }
       // Store for reuse (even if null)
       this._etags.put(key, etag);

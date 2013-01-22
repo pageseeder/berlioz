@@ -19,7 +19,7 @@ import javax.xml.transform.Templates;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.7.9 - 12 April 2011
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.7
  */
 public final class XSLTransformResult implements BerliozOutput {
@@ -49,7 +49,7 @@ public final class XSLTransformResult implements BerliozOutput {
   private final CharSequence _content;
 
   /**
-   * The processing time in ms.
+   * The processing time in nano seconds.
    */
   private final long _time;
 
@@ -82,7 +82,7 @@ public final class XSLTransformResult implements BerliozOutput {
    * Creates a successful transformation result.
    *
    * @param content   The content.
-   * @param time      The processing time.
+   * @param time      The processing nano seconds.
    * @param templates The templates used for the transformation.
    */
   public XSLTransformResult(CharSequence content, long time, Templates templates) {
@@ -126,7 +126,7 @@ public final class XSLTransformResult implements BerliozOutput {
   }
 
   /**
-   * @return The processing time in ms.
+   * @return The processing time in nano seconds.
    */
   public long time() {
     return this._time;

@@ -14,7 +14,7 @@ package org.weborganic.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.8.4
  */
 public enum BerliozOption {
@@ -239,6 +239,14 @@ public enum BerliozOption {
   ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", Boolean.TRUE),
 
   /**
+   * A boolean global property to indicate whether Berlioz should record the time taken by each content generator
+   * and by the transformer.
+   *
+   * @since Berlioz 0.9.14
+   */
+  PROFILE("berlioz.profile", Boolean.FALSE),
+
+  /**
    * A boolean global option to indicate whether to enable the caching of XSLT templates.
    *
    * <h3>Property</h3>
@@ -261,7 +269,6 @@ public enum BerliozOption {
    * @since Berlioz 0.8.3
    */
   XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
-
 
   /**
    * A boolean global option to indicate whether the header should use the header format used prior
