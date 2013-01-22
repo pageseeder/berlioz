@@ -19,6 +19,7 @@ import org.weborganic.berlioz.content.Location;
  * @author Christophe Lauret
  *
  * @version Berlioz 0.9.13 - 21 January 2013
+ * @since Berlioz 0.9.13
  */
 final class CoreHttpRequest {
 

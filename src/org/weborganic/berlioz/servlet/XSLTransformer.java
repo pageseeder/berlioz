@@ -61,7 +61,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.7
  */
 public final class XSLTransformer {
@@ -252,7 +252,7 @@ public final class XSLTransformer {
    * @param templates  The XSLT templates to use.
    * @param parameters Parameters to transmit to the transformer for use by the stylesheet (optional)
    *
-   * @return The time it took to process the stylesheet.
+   * @return The nano time it took to process the stylesheet.
    *
    * @throws TransformerException For XSLT Transformation errors or XSLT config errors
    */
@@ -270,7 +270,7 @@ public final class XSLTransformer {
     }
 
     // Process, write directly to the result
-    long before = System.currentTimeMillis();
+    long before = System.nanoTime();
     XSLTErrorCollector listener = new XSLTErrorCollector(LOGGER);
     transformer.setErrorListener(listener);
     try {
@@ -278,7 +278,7 @@ public final class XSLTransformer {
     } catch (TransformerException ex) {
       throw new TransformerExceptionWrapper(ex, listener);
     }
-    return System.currentTimeMillis() - before;
+    return System.nanoTime() - before;
   }
 
   // private helpers

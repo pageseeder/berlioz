@@ -20,7 +20,7 @@ import org.weborganic.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
@@ -49,6 +49,11 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * The URL to redirect to.
    */
   private String _redirectTo = null;
+
+  /**
+   * Profiling information.
+   */
+  private long _profile = 0;
 
   // sole constructor -------------------------------------------------------------------------------
 
@@ -150,5 +155,19 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    */
   protected int order() {
     return this._order;
+  }
+
+  /**
+   * @param profile Nano time for the etag
+   */
+  protected void setProfileEtag(long profile) {
+    this._profile = profile;
+  }
+
+  /**
+   * @return Nano time for the etag
+   */
+  protected long getProfileEtag() {
+    return this._profile;
   }
 }

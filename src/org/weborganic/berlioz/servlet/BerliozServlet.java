@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
-import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.MatchingService;
@@ -37,6 +36,7 @@ import org.weborganic.berlioz.servlet.XSLTransformResult.Status;
 import org.weborganic.berlioz.util.CharsetUtils;
 import org.weborganic.berlioz.util.EntityInfo;
 import org.weborganic.berlioz.util.MD5;
+import org.weborganic.berlioz.util.ProfileFormat;
 import org.weborganic.berlioz.util.ResourceCompressor;
 
 /**
@@ -56,7 +56,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  * <h3>HTTP Caching</h3>
  *
  * <p>The response is considered cacheable if all the generators in the matching service are cacheable; that is if
- * they implement the {@link Cacheable} interface).
+ * they implement the {@link org.weborganic.berlioz.content.Cacheable} interface).
  *
  * <p>For cacheable responses, Berlioz will return the following Headers:
  * <pre>
@@ -83,7 +83,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.10 - 3 December 2012
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -248,6 +248,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Determine the method in use.
     HttpMethod method = HttpMethod.valueOf(req.getMethod());
+    boolean profile = GlobalSettings.has(BerliozOption.PROFILE);
 
     // Berlioz Control
     if (config.hasControl(req)) {
@@ -270,6 +271,8 @@ public final class BerliozServlet extends HttpServlet {
       boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
       if (clearServices) { ContentManager.clear(); }
 
+      // If profile specified on URL
+      profile = profile || "true".equals(req.getParameter("berlioz-profile"));
     }
 
     // Load the services if required
@@ -281,7 +284,7 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Start handling XML content
-    long t0 = System.currentTimeMillis();
+    long start = System.nanoTime();
     String path = HttpRequestWrapper.getBerliozPath(req);
     MatchingService match = this._services.get(path, method);
 
@@ -308,7 +311,7 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Prepare the XML Response
-    XMLResponse xml = new XMLResponse(req, res, config, match);
+    XMLResponse xml = new XMLResponse(req, res, config, match, profile);
 
     // Include the service as a header for information
     res.setHeader("X-Berlioz-Service", match.service().id());
@@ -354,8 +357,10 @@ public final class BerliozServlet extends HttpServlet {
 
     // Generate the XML content
     String content = xml.generate();
-    long t1 = System.currentTimeMillis();
-    LOGGER.debug("Content generated in {} ms", (t1 - t0));
+    long end = System.nanoTime();
+    if (profile) {
+      LOGGER.info("Content generated in {} ms", ProfileFormat.format(end - start));
+    }
 
     // Examine the status
     ContentStatus status = xml.getStatus();
@@ -383,7 +388,9 @@ public final class BerliozServlet extends HttpServlet {
     BerliozOutput result = null;
     if (transformer != null) {
       XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
-      LOGGER.debug("XSLT Transformation {} ms", xslresult.time());
+      if (profile) {
+        LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(xslresult.time()));
+      }
       result = xslresult;
       if (xslresult.status() == Status.ERROR) {
         res.reset();

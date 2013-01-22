@@ -50,7 +50,7 @@ import org.weborganic.berlioz.xml.XMLProperties;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.9 - 10 October 2012
+ * @version Berlioz 0.9.14 - 22 January 2013
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
