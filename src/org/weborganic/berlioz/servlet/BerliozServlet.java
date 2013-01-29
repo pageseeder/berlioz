@@ -147,9 +147,6 @@ public final class BerliozServlet extends HttpServlet {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public void destroy() {
     super.destroy();
@@ -254,25 +251,25 @@ public final class BerliozServlet extends HttpServlet {
     if (config.hasControl(req)) {
 
       // Clear the cache and reload the services
-      boolean reload = "true".equals(req.getParameter("berlioz-reload"));
+      boolean reload = isTrue(req.getParameter("berlioz-reload"));
 
       // Clear the XSLT cache if requested
-      boolean clearCache = reload || "true".equals(req.getParameter("clear-xsl-cache"));
+      boolean clearCache = reload || isTrue(req.getParameter("clear-xsl-cache"));
       if (clearCache) { XSLTransformer.clearAllCache(); }
 
       // Allow ETags to be reset
-      boolean resetEtags = reload || "true".equals(req.getParameter("reset-etags"));
+      boolean resetEtags = reload || isTrue(req.getParameter("reset-etags"));
       if (resetEtags) { config.resetETagSeed(); }
 
       // Reload the global configuration
       if (reload) { GlobalSettings.load(); }
 
       // Clear the service configuration
-      boolean clearServices = reload || "true".equals(req.getParameter("reload-services"));
+      boolean clearServices = reload || isTrue(req.getParameter("reload-services"));
       if (clearServices) { ContentManager.clear(); }
 
       // If profile specified on URL
-      profile = profile || "true".equals(req.getParameter("berlioz-profile"));
+      profile = profile || isTrue(req.getParameter("berlioz-profile"));
     }
 
     // Load the services if required
@@ -323,6 +320,10 @@ public final class BerliozServlet extends HttpServlet {
     // Identify the transformer
     XSLTransformer transformer = this._config.getTransformer(match.service());
 
+    // Indicate that the representation may vary depending on the encoding
+    if (config.enableCompression())
+      res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
+
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
     boolean cacheable = code == null && match.isCacheable();
@@ -332,11 +333,7 @@ public final class BerliozServlet extends HttpServlet {
         String etagXSL = transformer != null? transformer.getEtag() : null;
         etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
 
-        // Check if the conditions specified in the optional If headers are satisfied.
-        ServiceInfo info = new ServiceInfo(etag);
-        if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
-
-        // Update the headers
+        // Update the headers (they should also be included in case of redirect)
         res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
         String cc = xml.getService().cache();
         if (cc == null) {
@@ -344,6 +341,11 @@ public final class BerliozServlet extends HttpServlet {
         }
         res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
         res.setHeader(HttpHeaders.ETAG, etag);
+
+        // Check if the conditions specified in the optional If headers are satisfied.
+        ServiceInfo info = new ServiceInfo(etag);
+        if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
+
       } else {
         cacheable = false;
       }
@@ -380,8 +382,10 @@ public final class BerliozServlet extends HttpServlet {
     if (ContentStatus.isRedirect(status)) {
       String url = xml.getRedirectURL();
       LOGGER.info("Redirecting to: {} with {}", url, status.code());
+      res.reset();
       res.sendRedirect(url);
       res.setStatus(status.code());
+      return;
     }
 
     // Produce the output
@@ -413,8 +417,6 @@ public final class BerliozServlet extends HttpServlet {
     boolean isCompressed = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType());
     if (isCompressed) {
 
-      // Indicate that the representation may vary depending on the encoding
-      res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
       if (HttpHeaderUtils.acceptsGZipCompression(req)) {
         byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
         if (compressed.length > 0) {
@@ -490,6 +492,15 @@ public final class BerliozServlet extends HttpServlet {
     } else {
       res.sendError(code, req.getRequestURI());
     }
+  }
+
+  /**
+   * @param parameter the parameter value to check.
+   * @return <code>true</code> if the parameter value is equal to "true";
+   *         <code>false</code> for any other value.
+   */
+  private boolean isTrue(String parameter) {
+    return "true".equals(parameter);
   }
 
   // Private internal class
