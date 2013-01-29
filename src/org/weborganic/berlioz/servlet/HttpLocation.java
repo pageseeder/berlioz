@@ -22,7 +22,8 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.9.15 - 30 January 2013
+ * @since Berlioz 0.9.13
  */
 public final class HttpLocation implements Location, Serializable {
 
@@ -30,6 +31,16 @@ public final class HttpLocation implements Location, Serializable {
    * As per requirement for <code>Serializable</code>.
    */
   private static final long serialVersionUID = -7167736932510978113L;
+
+  /**
+   * The default port number for HTTP.
+   */
+  private static final int DEFAULT_PORT_HTTP = 80;
+
+  /**
+   * The default port number for HTTP.
+   */
+  private static final int DEFAULT_PORT_HTTPS = 443;
 
   /** The scheme "http" or "https" */
   private final String _scheme;
@@ -63,9 +74,6 @@ public final class HttpLocation implements Location, Serializable {
     this._info = new HttpPathInfo(req);
   }
 
-  /**
-   * @return the _scheme
-   */
   @Override
   public String scheme() {
     return this._scheme;
@@ -105,10 +113,8 @@ public final class HttpLocation implements Location, Serializable {
     xml.attribute("path", this._path);
     xml.attribute("query", this._query);
     StringBuilder url = new StringBuilder();
-    url.append(this._scheme).append("://");
-    url.append(this._host);
-    if ("http".equals(this._scheme) && this.port() != 80
-     || "http".equals(this._scheme) && this.port() != 443) {
+    url.append(this._scheme).append("://").append(this._host);
+    if (!isDefaultPort(this._scheme, this._port)) {
       url.append(':').append(this._port);
     }
     url.append(this._path);
@@ -119,8 +125,63 @@ public final class HttpLocation implements Location, Serializable {
     xml.closeElement();
   }
 
+  /**
+   * Build a new instance from the specified servlet request.
+   *
+   * @param req The servlet request to use.
+   *
+   * @return a new instance.
+   */
   public static HttpLocation build(HttpServletRequest req) {
     return new HttpLocation(req);
   }
 
+  /**
+   * Returns the a base URL as a string builder.
+   *
+   * <p>This method contruct the base URL using the following methods:
+   * <ul>
+   *   <li><code>getScheme</code></li>
+   *   <li><code>getServerName</code></li>
+   *   <li><code>getServerPort</code></li>
+   * </ul>
+   *
+   * <p>The port number is only included if required.
+   *
+   * @param req the HTTP servlet request to use to build the base URL
+   * @return the corresponding base url
+   */
+  public static StringBuilder toBaseURL(HttpServletRequest req) {
+    StringBuilder base = new StringBuilder();
+    String scheme = req.getScheme();
+    int port = req.getServerPort();
+    base.append(scheme).append("://").append(req.getServerName());
+    if (!isDefaultPort(scheme, port)) {
+      base.append(':').append(port);
+    }
+    return base;
+  }
+
+  /**
+   * Indicates whether the default port is used for the specified scheme.
+   *
+   * <p>The port is considered to be the default for the scheme used if it is:
+   * <ul>
+   *   <li>less than 0</li>
+   *   <li>equal to 80 for "http"</li>
+   *   <li>equal to 443 for "https"</li>
+   * </ul>
+   *
+   * @param scheme The scheme ("http" or "http")
+   * @param port   the port number
+   *
+   * @return <code>true</code> if a default port is used;
+   *         <code>false</code> otherwise.
+   */
+  private static boolean isDefaultPort(String scheme, int port) {
+    if (port < 0) return true;
+    if (DEFAULT_PORT_HTTP == port  && "http".equals(scheme)) return true;
+    if (DEFAULT_PORT_HTTPS == port && "https".equals(scheme)) return true;
+    return false;
+  }
 }

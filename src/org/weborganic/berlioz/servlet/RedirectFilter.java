@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.http.HttpHeaders;
 import org.weborganic.berlioz.xml.XMLUtils;
 import org.weborganic.furi.URIParameters;
 import org.weborganic.furi.URIPattern;
@@ -192,8 +193,10 @@ public final class RedirectFilter implements Filter, Serializable {
    * @param match The URI matched pattern.
    *
    * @throws IOException If thrown by the HTTP the response.
+   * @throws ServletException If the a relative URL was used.
    */
-  private void redirect(HttpServletRequest req, HttpServletResponse res, URIPattern match) throws IOException {
+  private void redirect(HttpServletRequest req, HttpServletResponse res, URIPattern match)
+      throws IOException, ServletException {
     URIPattern target = this._mapping.get(match);
     HttpServletRequest hreq = req;
 
@@ -215,10 +218,8 @@ public final class RedirectFilter implements Filter, Serializable {
     LOGGER.debug("Redirecting from {} to {}", from, to);
 
     // And redirect
-    res.sendRedirect(to);
-    if (this._permanent != null && this._permanent.contains(match)) {
-      res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-    }
+    boolean permanent = this._permanent != null && this._permanent.contains(match);
+    sendRedirect(hreq, res, to, permanent);
   }
 
   /**
@@ -244,12 +245,56 @@ public final class RedirectFilter implements Filter, Serializable {
   // Utility methods ------------------------------------------------------------------------------
 
   /**
+   * Send the redirection.
+   *
+   * <p>We need to use our own implementation as some servers will not allow headers to be set
+   * after the <code>senRedirect</code> method has been called.
+   *
+   * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.30">HTTP/1.1 - 14.30 Location</a>
+   *
+   * @param req       The HTTP servlet request
+   * @param res       The HTTP servlet response
+   * @param location  The target location for "Location" header
+   * @param permanent <code>true</code> to use HTTP 301 status;
+   *                  <code>false</code> to HTTP 302.
+   *
+   * @throws IOException      Should an I/O error be reported by servlet response.
+   * @throws ServletException If the a relative URL was used.
+   */
+  private static void sendRedirect(HttpServletRequest req, HttpServletResponse res, String location, boolean permanent)
+      throws IOException, ServletException {
+    String url = location;
+
+    // Must use absolute URI
+    if (location.indexOf("://") < 4) {
+      StringBuilder buffer = HttpLocation.toBaseURL(req);
+      if (location.startsWith("/")) {
+        buffer.append(location);
+      } else {
+        throw new ServletException("Cannot use relative URL to redirect: "+location);
+      }
+      url = buffer.toString();
+    }
+
+    // Reset response and sent new location
+    res.reset();
+    res.setHeader(HttpHeaders.LOCATION, url);
+    res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=86400, must-revalidate");
+    if (permanent) {
+      res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+    } else {
+      res.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+    }
+    res.setContentLength(0);
+  }
+
+  /**
    * Handles the XML for the URI pattern mapping configuration.
    *
    * @author Christophe Lauret
    * @version 8 October 2012
    */
-  static class Handler extends DefaultHandler implements ContentHandler {
+  private static class Handler extends DefaultHandler implements ContentHandler {
 
     /**
      * Displays debug information.
