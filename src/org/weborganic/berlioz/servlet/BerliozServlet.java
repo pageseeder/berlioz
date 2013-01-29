@@ -83,7 +83,7 @@ import org.weborganic.berlioz.util.ResourceCompressor;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.9.15 - 30 January 2013
  * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
