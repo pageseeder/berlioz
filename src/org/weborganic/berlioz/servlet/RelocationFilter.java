@@ -17,7 +17,6 @@ import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -54,7 +53,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * </relocation-mapping>
  * }</pre>
  *
- * <p>See {@link #init(ServletConfig)} for details for configuration options.
+ * <p>See {@link #init(javax.servlet.ServletConfig)} for details for configuration options.
  *
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.14">HTTP 1.1 - Content-Location</a>
  *
