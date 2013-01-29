@@ -19,7 +19,6 @@ import java.util.Set;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -59,14 +58,14 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>All redirects are currently temporary (302) unless the attribute 'permanent' is set to 'yes'
  * in which case the HTTP code will be 301
  *
- * <p>See {@link #init(ServletConfig)} for details for configuration options.
+ * <p>See {@link #init(javax.servlet.ServletConfig)} for details for configuration options.
  *
- * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.2">HTTP 1.1 - Moved Permanently</a>
- * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.3">HTTP 1.1 - Found</a>
+ * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.2">HTTP/1.1 - Moved Permanently</a>
+ * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.3">HTTP/1.1 - Found</a>
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.8 - 8 October 2012
+ * @version Berlioz 0.9.15 - 30 January 2013
  * @since Berlioz 0.7
  */
 public final class RedirectFilter implements Filter, Serializable {
@@ -81,7 +80,8 @@ public final class RedirectFilter implements Filter, Serializable {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(RedirectFilter.class);
 
-// class attributes -------------------------------------------------------------------------------
+  // class attributes
+  // ---------------------------------------------------------------------------------------------
 
   /**
    * Where the redirect config is located.
@@ -98,7 +98,8 @@ public final class RedirectFilter implements Filter, Serializable {
    */
   private transient List<URIPattern> _permanent = null;
 
-// servlet methods --------------------------------------------------------------------------------
+  // servlet methods
+  // ---------------------------------------------------------------------------------------------
 
   /**
    * Initialises the Redirector Servlet.
@@ -212,14 +213,12 @@ public final class RedirectFilter implements Filter, Serializable {
     // Encode URL
     res.setCharacterEncoding("utf-8");
     LOGGER.debug("Redirecting from {} to {}", from, to);
-    String encoded = res.encodeRedirectURL(to);
 
     // And redirect
     res.sendRedirect(to);
     if (this._permanent != null && this._permanent.contains(match)) {
       res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
     }
-    res.getWriter().print(getMessage(to, encoded));
   }
 
   /**
@@ -243,28 +242,6 @@ public final class RedirectFilter implements Filter, Serializable {
   }
 
   // Utility methods ------------------------------------------------------------------------------
-
-  /**
-   * Returns the HTML message when redirected including a link to the target page.
-   *
-   * @param url     The URL to redirect to.
-   * @param encoded The encoded URL.
-   * @return the HTML message when redirected.
-   */
-  private static String getMessage(String url, String encoded) {
-    StringBuilder html = new StringBuilder();
-    html.append("<html>");
-    html.append("<head>");
-    html.append("<title>Redirect to ").append(url).append("</title>");
-    html.append("</head>");
-    html.append("<body>");
-    html.append("<p>You should be automatically redirected to ");
-    html.append("<a href=\"").append(encoded).append("\">").append(url).append("</a>");
-    html.append("</p>");
-    html.append("</body>");
-    html.append("</html>");
-    return html.toString();
-  }
 
   /**
    * Handles the XML for the URI pattern mapping configuration.
