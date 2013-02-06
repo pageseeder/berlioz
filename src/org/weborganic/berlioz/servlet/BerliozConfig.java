@@ -20,8 +20,10 @@ import javax.servlet.ServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozOption;
+import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Environment;
+import org.weborganic.berlioz.content.GeneratorListener;
 import org.weborganic.berlioz.content.Service;
 
 /**
@@ -274,6 +276,22 @@ public final class BerliozConfig {
   public static synchronized boolean unregister(BerliozConfig config) {
     String name = config._servletConfig.getServletName();
     return CONFIGS.remove(name) != null;
+  }
+
+  /**
+   * @param listener the listener to set
+   */
+  @Beta
+  public static synchronized void setListener(GeneratorListener listener) {
+    XMLResponse.setListener(listener);
+  }
+
+  /**
+   * @return the listener currently in use.
+   */
+  @Beta
+  public static synchronized GeneratorListener getListener() {
+    return XMLResponse.getListener();
   }
 
   // private helpers

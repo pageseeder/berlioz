@@ -21,9 +21,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozErrorID;
 import org.weborganic.berlioz.BerliozException;
+import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
 import org.weborganic.berlioz.content.ContentStatus;
+import org.weborganic.berlioz.content.GeneratorListener;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Parameter;
 import org.weborganic.berlioz.content.Service;
@@ -54,6 +56,11 @@ public final class XMLResponse {
    * Displays debug information.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(XMLResponse.class);
+
+  /**
+   * May be used to collect information about how generators perform.
+   */
+  private static volatile GeneratorListener _listener = null;
 
   /**
    * The core HTTP details.
@@ -212,6 +219,25 @@ public final class XMLResponse {
     return writer.toString();
   }
 
+  // Static configuration
+  // ---------------------------------------------------------------------------------------------
+
+  /**
+   * @param listener the listener to set
+   */
+  @Beta
+  static synchronized void setListener(GeneratorListener listener) {
+    XMLResponse._listener = listener;
+  }
+
+  /**
+   * @return the listener currently in use.
+   */
+  @Beta
+  static synchronized GeneratorListener getListener() {
+    return _listener;
+  }
+
   // Private helpers
   // ----------------------------------------------------------------------------------------------
 
@@ -281,6 +307,11 @@ public final class XMLResponse {
       xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));
       xml.attribute("profile-process", ProfileFormat.format(end - start));
       xml.attribute("profile", ProfileFormat.format(request.getProfileEtag() + end - start));
+    }
+
+    // Report if requested
+    if (_listener != null) {
+      _listener.generate(service, generator, status, request.getProfileEtag(), end - start);
     }
 
     // Write the XML
