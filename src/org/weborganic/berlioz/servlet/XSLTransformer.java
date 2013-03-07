@@ -19,10 +19,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
@@ -61,7 +61,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.9.18 - 7 March 2013
  * @since Berlioz 0.7
  */
 public final class XSLTransformer {
@@ -74,7 +74,7 @@ public final class XSLTransformer {
   /**
    * Maps XSLT templates to their name for easy retrieval.
    */
-  private static final Map<File, Templates> CACHE = new Hashtable<File, Templates>();
+  private static final Map<File, Templates> CACHE = new ConcurrentHashMap<File, Templates>();
 
   /**
    * The location of the XSLT templates.
@@ -182,7 +182,7 @@ public final class XSLTransformer {
   /**
    * Clears the internal XSLT cache.
    */
-  public void clearCache() {
+  public synchronized void clearCache() {
     LOGGER.debug("Clearing XSLT cache.");
     CACHE.remove(this._templates);
   }
@@ -190,7 +190,7 @@ public final class XSLTransformer {
   /**
    * Clears the internal XSLT cache.
    */
-  public static void clearAllCache() {
+  public static synchronized void clearAllCache() {
     LOGGER.debug("Clearing XSLT cache.");
     CACHE.clear();
   }
@@ -295,7 +295,7 @@ public final class XSLTransformer {
    *
    * @throws TransformerException If the templates could not parsed.
    */
-  private Templates getTemplates(File f) throws TransformerException {
+  private synchronized Templates getTemplates(File f) throws TransformerException {
     boolean store = GlobalSettings.has(BerliozOption.XSLT_CACHE);
     String stylesheet = toWebPath(f.getAbsolutePath());
     Templates templates = store? CACHE.get(f) : null;
