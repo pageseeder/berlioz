@@ -381,7 +381,7 @@ public final class BerliozServlet extends HttpServlet {
     // Redirection (Beta)
     if (ContentStatus.isRedirect(status)) {
       String url = xml.getRedirectURL();
-      LOGGER.info("Redirecting to: {} with {}", url, status.code());
+      LOGGER.debug("Redirecting to: {} with {}", url, status.code());
       res.reset();
       res.sendRedirect(url);
       res.setStatus(status.code());
@@ -485,11 +485,14 @@ public final class BerliozServlet extends HttpServlet {
       }
       // Use the error handler if defined, otherwise use the default error handling options
       if (this._errorHandler != null) {
+        LOGGER.error("Berlioz forwarding error {} [{}] to handler", message, code, ex);
         this._errorHandler.forward(req, res);
       } else {
+        LOGGER.error("Berlioz handling error {} [{}] to handler", message, code, ex);
         ErrorHandlerServlet.handle(req, res);
       }
     } else {
+      LOGGER.error("Berlioz sending error to Web container {} [{}] to handler", message, code, ex);
       res.sendError(code, req.getRequestURI());
     }
   }
