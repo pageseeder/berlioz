@@ -485,14 +485,23 @@ public final class BerliozServlet extends HttpServlet {
       }
       // Use the error handler if defined, otherwise use the default error handling options
       if (this._errorHandler != null) {
-        LOGGER.error("Berlioz forwarding error {} [{}] to handler", message, code, ex);
+        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+          LOGGER.error("Berlioz forwarding error {} [{}] to handler", message, code, ex);
+        else
+          LOGGER.warn("Berlioz forwarding error {} [{}] to handler", message, code, ex);
         this._errorHandler.forward(req, res);
       } else {
-        LOGGER.error("Berlioz handling error {} [{}] to handler", message, code, ex);
+        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+          LOGGER.error("Berlioz handling error {} [{}] to handler", message, code, ex);
+        else
+          LOGGER.warn("Berlioz handling error {} [{}] to handler", message, code, ex);
         ErrorHandlerServlet.handle(req, res);
       }
     } else {
-      LOGGER.error("Berlioz sending error to Web container {} [{}] to handler", message, code, ex);
+      if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+        LOGGER.error("Berlioz sending error to Web container {} [{}] to handler", message, code, ex);
+      else
+        LOGGER.warn("Berlioz sending error to Web container {} [{}] to handler", message, code, ex);
       res.sendError(code, req.getRequestURI());
     }
   }
