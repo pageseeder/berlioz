@@ -81,11 +81,11 @@
   <!-- generate the documentation -->
   <target name="javadoc" depends="init" description="generate the java documentation">
     <ivy:buildnumber organisation="weborganic" module="${name.short}" resolver="shared" />
-    <mkdir dir="${dir.doc}"/>
+    <mkdir dir="${dir.doc}/${ivy.revision}/"/>
     <path id="required.lib">
       <fileset dir="${dir.lib}" includes="*.jar"/>
     </path>
-    <javadoc destdir="${dir.doc}" access="public" 
+    <javadoc destdir="${dir.doc}/${ivy.revision}" access="public" 
                                   use="true" 
                                   notree="false" 
                                   nonavbar="false" 
@@ -101,10 +101,9 @@
       <classpath>
         <path refid="required.lib"/>
       </classpath>
-      <link href="http://java.sun.com/javase/6/docs/api/" />
-      <link href="http://www.weborganic.org/apidoc/diffx/core/"/>
-      <link href="http://www.weborganic.org/apidoc/furi/core/"/>
-      <link href="http://commons.apache.org/fileupload/apidocs/"/>
+      <link href="http://docs.oracle.com/javase/6/docs/api/" />
+      <link href="http://pageseeder.org/apidocs/diffx/latest/"/>
+      <link href="http://pageseeder.org/apidocs/furi/latest/"/>
       <link href="http://www.slf4j.org/apidocs/"/>
     </javadoc>
   </target>
