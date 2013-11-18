@@ -43,6 +43,7 @@ import org.weborganic.berlioz.BerliozErrorID;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Service;
+import org.weborganic.berlioz.util.Aeson;
 import org.weborganic.berlioz.util.CollectedError;
 import org.weborganic.berlioz.util.Errors;
 import org.weborganic.berlioz.util.ISO8601;
@@ -269,12 +270,15 @@ public final class XSLTransformer {
       }
     }
 
+    // Check for JSON
+    Result r = Aeson.updateResultIfPossible(transformer, result);
+
     // Process, write directly to the result
     long before = System.nanoTime();
     XSLTErrorCollector listener = new XSLTErrorCollector(LOGGER);
     transformer.setErrorListener(listener);
     try {
-      transformer.transform(source, result);
+      transformer.transform(source, r);
     } catch (TransformerException ex) {
       throw new TransformerExceptionWrapper(ex, listener);
     }
