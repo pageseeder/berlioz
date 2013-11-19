@@ -62,7 +62,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.18 - 7 March 2013
+ * @version Berlioz 0.9.21 - 18 November 2013
  * @since Berlioz 0.7
  */
 public final class XSLTransformer {

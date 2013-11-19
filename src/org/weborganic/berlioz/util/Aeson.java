@@ -14,9 +14,14 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.Beta;
 
 /**
+ * A utility class allowing Berlioz to produce JSON from the Aeson JSON library.
+ *
+ * <p>DO NOT USE THIS CLASS DIRECTLY AS IT IS SUBJECT TO CHANGE
+ *
  * @author Christophe Lauret
  * @version 18 November 2013
  */
+@Beta
 public final class Aeson {
 
   /**
@@ -39,12 +44,13 @@ public final class Aeson {
   }
 
   /**
+   * Updates the Result.
    *
-   * @param transformer
-   * @param result
-   * @return
+   * @param transformer The XSLT transformer
+   * @param result      The stream result to use
+   *
+   * @return A JSON Result instance to use for the transformation instead.
    */
-  @Beta
   public static Result updateResultIfPossible(Transformer transformer, StreamResult result) {
     Result r = result;
     // Fetch the method
@@ -64,8 +70,7 @@ public final class Aeson {
   }
 
   /**
-   *
-   * @return
+   * @return the method to invoke whenever JSON results are needed.
    */
   private static synchronized Method getMethod() {
     LOGGER.debug("Checking if Aeson is available");
