@@ -80,7 +80,7 @@ public final class Aeson {
       m = c.getMethod("newInstanceIfSupported", Transformer.class, StreamResult.class);
       // TODO Check return type class
     } catch (Exception ex) {
-      LOGGER.info("Aeson not available {}", ex.getMessage(), ex);
+      LOGGER.info("Aeson not available {}", ex.getMessage());
     }
     checkedAeson = true;
     return m;
