@@ -220,6 +220,11 @@ public final class GlobalSettings {
     // otherwise try as a text properties file
     File prp = new File(dir, "config-"+mode+".prp");
     if (prp.canRead()) return prp;
+    // Fall back on generic XML file
+    xml = new File(dir, "config.xml");
+    if (xml.canRead()) return xml;
+    prp = new File(dir, "config.prp");
+    if (prp.canRead()) return prp;
     return null;
   }
 

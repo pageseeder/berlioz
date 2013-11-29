@@ -8,7 +8,9 @@
 package org.weborganic.berlioz.servlet;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -47,7 +49,7 @@ import org.weborganic.berlioz.LifecycleListener;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.9 - 10 October 2012
+ * @version Berlioz 0.9.22 - 29 November 2013
  * @since Berlioz 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
@@ -94,6 +96,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
       console("===============================================================");
       console("Initialing Berlioz "+GlobalSettings.getVersion()+"...");
       console("Application Base: "+webinfPath.getAbsolutePath());
+
+      // Check for overlays
+      checkOverlays(contextPath);
 
       // Determine the mode (dev, production, etc...)
       String mode = getMode(config, configDir);
@@ -193,6 +198,26 @@ public final class InitServlet extends HttpServlet implements Servlet {
   }
 
   /**
+   * Check for overlays.
+   *
+   * @param contextPath the context path (root of the web application)
+   */
+  private static void checkOverlays(File contextPath) {
+    List<Overlay> overlays = Overlay.list(contextPath);
+    console("Overlays: found '"+overlays.size()+"' overlay(s)");
+    for (Overlay o : overlays) {
+      try {
+        File f  = o.getSource();
+        console("Overlays: unpacking '"+f.getName()+"'");
+        int count = o.unpack(contextPath);
+        console("Overlays: '"+f.getName()+"' - "+count+" files unpacked");
+      } catch (IOException ex) {
+        console("(!) Unable to unpack overlay: "+ex.getMessage());
+      }
+    }
+  }
+
+  /**
    * Checking that the 'config/services.xml' is there
    *
    * @param configDir The directory containing the configuration files.
@@ -248,8 +273,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
   /**
    * Attempts to configure logger through reflection.
    *
-   * @param config The directory containing the configuration files.
-   * @param mode   The running mode.
+   * @param configuration The logback configuration file.
+   * @return <code>true</code> if configuration was successful;
+   *         <code>false</code> in case of any error.
    */
   private static boolean configureLogback(File configuration) {
     boolean configured = false;
@@ -296,8 +322,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
   /**
    * Attempts to configure logger through reflection.
    *
-   * @param config The directory containing the configuration files.
-   * @param mode   The running mode.
+   * @param configuration The log4j configuration file.
+   * @return <code>true</code> if configuration was successful;
+   *         <code>false</code> in case of any error.
    */
   private static boolean configureLog4j(File configuration) {
     boolean configured = false;
