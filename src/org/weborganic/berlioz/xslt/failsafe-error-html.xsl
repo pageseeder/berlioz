@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-  Fail-safe stylesheet to display transform errors 
+<!--
+  Fail-safe stylesheet to display transform errors
 
   @author Christophe Lauret
   @version 1 July 2011
@@ -25,16 +25,15 @@
 <head>
   <title><xsl:value-of select="*/title"/></title>
   <style type="text/css">
+body {font-family: Frutiger, "Frutiger Linotype", Univers, Calibri, "Gill Sans", "Gill Sans MT", "Myriad Pro", Myriad, "Liberation Sans",  Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif; background: #f7f7f7; border-top: 80px solid #13476a; padding: 0; margin: 0}
 
-body {font-family: Frutiger, "Frutiger Linotype", Univers, Calibri, "Gill Sans", "Gill Sans MT", "Myriad Pro", Myriad, "Liberation Sans",  Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;}
-body {background: #f7f7f7; background-repeat: no-repeat; background-image: -moz-linear-gradient(top, #ddd 0%, #f7f7f7 200px); background-image: -webkit-linear-gradient(top, #bbb 0%, #eee 200px); background-image: -o-linear-gradient(top, #bbb 0%, #eee 200px); background-image: -ms-linear-gradient(top, #bbb 0%, #eee 200px); background-image: linear-gradient(top, #bbb 0%, #eee 200px);}
+h1   {margin-top: 0; font-weight: 100; color: white}
 
-h1   {margin-top: 0; border-bottom: 3px solid;}
-.informational h1 {border-color: #ccc; color: #999;}
-.server-error  h1 {border-color: #f60; color: #c01;}
-.client-error  h1 {border-color: #fc0; color: #e60;}
-.redirection   h1 {border-color: #9c3; color: #6a0;}
-.successful    h1 {border-color: #09f; color: #06a;}
+.informational {border-color: #666;}
+.server-error  {border-color: #c01;}
+.client-error  {border-color: #e60;}
+.redirection   {border-color: #146;}
+.successful    {border-color: #292;}
 
 h2   {border-bottom: 2px solid #09f; color: #09f; font-size: 3ex}
 h3   {border-bottom: 1px solid #06a; color: #06a; font-size: 2.5ex}
@@ -43,7 +42,7 @@ h4   {font-size: 2ex}
 code {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; line-height: 150%}
 pre  {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 70%; line-height: 150%; color: #666; }
 
-.container       {width: 1000px; margin: 30px auto; background: white; padding: 10px; border: 4px solid #e7e7e7; -moz-box-shadow: 0 0 24px rgba(0,0,0,.3); box-shadow: 0 0 24px rgba(0,0,0,.3);}
+.container       {width: 980px; margin: -56px auto; background: rgba(255,255,255,0.3); padding: 5px 10px; box-shadow: 0 0 15px 3px rgba(0,0,0,.2); border: 5px solid rgba(0,0,0,.1);}
 .message         {font-weight: bold}
 .footer          {border-top: 2px solid #999; height: 20px; color: #666; font-size: 80%;}
 .location        {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; line-height: 150%}
@@ -53,26 +52,24 @@ pre  {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courie
 li     {list-style-type: none; display: block; clear: both; font-size: 12px; font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; margin-bottom: 2px}
 .line  {float:left; margin-right: 4px; color: #999;width: 60px}
 .col   {float:left; margin-right: 4px; color: #999;width: 80px}
-.level {float:left; margin-right: 4px; color: #999;width: 70px; text-align: center; font-weight: bold; -moz-border-radius: 5px;border-radius: 5px; padding: 2px}
+.level {float:left; margin-right: 4px; color: #999;width: 70px; text-align: center; font-weight: bold; border-radius: 5px; padding: 2px}
 .warning > .level  {color: orange;}
 .error   > .level  {color: red;}
 .fatal   > .level  {color: white; background: #C01;}
 
-.help {border: 1px solid #ffe; background: #ffe; -moz-border-radius: 3px; border-radius: 3px; -moz-box-shadow: 0 0 8px #ec9; box-shadow: 0 0 4px #ec9; font-style: italic;}
+.help {border: 1px solid #ffe; background: #ffe; border-radius: 3px; box-shadow: 0 0 4px #ec9; font-style: italic;}
 .help p {margin: 4px}
-
   </style>
 </head>
-<body>
+<body class="{name(*)}">
   <xsl:apply-templates select="*"/>
 </body>
 </html>
 </xsl:template>
 
-
 <!-- Default template for errors -->
 <xsl:template match="continue|successful|redirection|client-error|server-error">
-  <div class="container {name()}">
+  <div class="container">
     <h1><xsl:value-of select="@http-code"/> - <xsl:value-of select="title"/></h1>
     <xsl:if test="not(message = exception/message)">
       <p class="message"><xsl:value-of select="message"/></p>
