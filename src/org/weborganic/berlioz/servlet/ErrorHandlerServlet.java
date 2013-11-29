@@ -15,7 +15,10 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,7 +57,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.2 - 29 November 2011
+ * @version Berlioz 0.9.22 - 29 November 2013
  * @since Berlioz 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -62,7 +65,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = 20060910261800002L;
+  private static final long serialVersionUID = -2993007522046978323L;
 
   /**
    * Displays debug information.
@@ -94,6 +97,33 @@ public final class ErrorHandlerServlet extends HttpServlet {
   public static final String BERLIOZ_ERROR_ID     = "org.weborganic.berlioz.error_id";
 
   // servlet methods ----------------------------------------------------------------------
+
+  /**
+   * The extension to preserve.
+   */
+  private static String[] forwardExtensions = new String[]{};
+
+  /**
+   * The extension to ignore.
+   */
+  private static String[] ignoreExtensions = new String[]{".jpg", ".png", ".css", ".js"};
+
+  /**
+   * The default extension to use for extensions which are neither preserved nor ignored.
+   */
+  private static String defaultExtension = ".html";
+
+  @Override
+  public void init(ServletConfig config) throws ServletException {
+    super.init(config);
+    String preserve = config.getInitParameter("preserve");
+    if (preserve == null) preserve = "";
+    forwardExtensions = preserve.split(",");
+    String ignore = config.getInitParameter("ignore");
+    if (ignore == null) ignore = "";
+    ignoreExtensions = preserve.split(",");
+    defaultExtension = config.getInitParameter("ignore");
+  }
 
   /**
    * Handles a GET request.
@@ -141,6 +171,42 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @throws IOException Should an I/O error occur.
    */
   public static void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+    // Get URI of error handler
+    String uri = req.getRequestURI();
+
+    // Fetch original URI and its extension
+    String original = getOriginalURI(req);
+    String ext = getExtension(original);
+
+    // Check if we should just ignore it
+    if (contains(ignoreExtensions, ext)) {
+      ServletOutputStream o = res.getOutputStream();
+      o.close();
+      res.setIntHeader("Content-Length", 0);
+      res.flushBuffer();
+      return;
+    }
+
+    // Check if we need to preserve the extension
+    if (!contains(forwardExtensions, ext)) {
+      ext = defaultExtension;
+    }
+
+    // Replace extension
+    String to = uri;
+    int dot = uri.lastIndexOf('.');
+    to = (dot >= 0? uri.substring(0, dot) : uri)+ext;
+
+    // If we do not detect a loop we forward the request
+    if (!uri.equals(to) && !uri.equals(to)) {
+
+      // Let's forward the request
+      RequestDispatcher dispatcher = req.getRequestDispatcher(to);
+      dispatcher.forward(req, res);
+      return;
+
+    }
 
     // Grab the status code (Default to 200 OK)
     Integer code  = (Integer)req.getAttribute(ERROR_STATUS_CODE);
@@ -295,4 +361,49 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return (element != null)? element.toLowerCase().replace(' ', '-') : "unknown-status";
   }
 
+
+  /**
+   * Returns the extension of the specified URI including the dot.
+   *
+   * @param uri The URI
+   * @return the extension or empty string
+   */
+  private static String getExtension(String uri) {
+    int dot = uri.lastIndexOf('.');
+    return dot >= 0? uri.substring(dot) : "";
+  }
+
+  /**
+   * Returns the original URI from <code>javax.servlet.error.request_uri</code>.
+   *
+   * @param req The HTTP servlet request
+   * @return The original URI or this URI if it is the original.
+   */
+  private static String getOriginalURI(HttpServletRequest req) {
+    Object original = req.getAttribute("javax.servlet.error.request_uri");
+    if (original != null && original instanceof String) {
+      return (String)original;
+    }
+    return req.getRequestURI();
+  }
+
+  /**
+   * Indicates whether the specified value is in the array.
+   *
+   * @param array The array
+   * @param value The value.
+   *
+   * @return <code>true</code> if found;
+   *         <code>false</code> otherwise.
+   */
+  private static boolean contains(String[] array, String value) {
+    for (String a : array) {
+      if (a.equals(value)) return true;
+    }
+    return false;
+  }
+
+  public static void main(String[] args) {
+    System.err.print("".split(",\\w*").length);
+  }
 }
