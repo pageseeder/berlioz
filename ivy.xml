@@ -5,7 +5,7 @@
 <ivy-module version="2.0">
   <info organisation="weborganic" module="wo-berlioz">
     <license name="Artistic Licence" url="http://www.opensource.org/licenses/artistic-license-2.0.php"/>
-    <description homepage="http://www.weborganic.org/code/berlioz/"/>
+    <description homepage="http://pageseeder.org/berlioz.html"/>
   </info>
   <configurations defaultconfmapping="core->default;runtime->runtime(default)">
      <conf name="core" transitive="false" visibility="private" description="Always required"/>
@@ -15,7 +15,7 @@
   <dependencies>
     <dependency org="weborganic" name="wo-diffx"             rev="latest.milestone" conf="core"/>
     <dependency org="weborganic" name="wo-furi"              rev="latest.milestone" conf="core"/>
-    <dependency org="javax"      name="servlet-api"          rev="2.4"              conf="default"/>
     <dependency org="slf4j"      name="slf4j-api"            rev="latest.milestone" conf="core"/>
+    <dependency org="javax"      name="servlet-api"          rev="[2.4,3.0]"        conf="default"/>
   </dependencies>
 </ivy-module>
