@@ -12,10 +12,15 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,7 +59,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.2 - 29 November 2011
+ * @version Berlioz 0.9.24 - 6 December 2013
  * @since Berlioz 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -62,7 +67,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = 20060910261800002L;
+  private static final long serialVersionUID = -2993007522046978323L;
 
   /**
    * Displays debug information.
@@ -94,6 +99,43 @@ public final class ErrorHandlerServlet extends HttpServlet {
   public static final String BERLIOZ_ERROR_ID     = "org.weborganic.berlioz.error_id";
 
   // servlet methods ----------------------------------------------------------------------
+
+  /**
+   * The extension to preserve.
+   */
+  private static Set<String> forwardExtensions = new HashSet<String>();
+
+  /**
+   * The extension to ignore.
+   */
+  private static Set<String> ignoreExtensions = new HashSet<String>();
+
+  /**
+   * The default extension to use for extensions which are neither preserved nor ignored.
+   */
+  private static String autoExtension = ".auto";
+
+  /**
+   * The default extension to use for extensions which are neither preserved nor ignored.
+   */
+  private static String defaultExtension = ".html";
+
+  @Override
+  public void init(ServletConfig config) throws ServletException {
+    super.init(config);
+    String preserve = config.getInitParameter("forward-extensions");
+    if (preserve == null) preserve = ".html,.xml";
+    for (String ext : preserve.split(",")) {
+      forwardExtensions.add(ext);
+    }
+    String ignore = config.getInitParameter("ignore-extensions");
+    if (ignore == null) ignore = ".jpg,.png,.css,.js";
+    for (String ext : ignore.split(",")) {
+      ignoreExtensions.add(ext);
+    }
+    defaultExtension = config.getInitParameter("forward-default");
+    if (defaultExtension == null) defaultExtension = ".html";
+  }
 
   /**
    * Handles a GET request.
@@ -146,6 +188,49 @@ public final class ErrorHandlerServlet extends HttpServlet {
     Integer code  = (Integer)req.getAttribute(ERROR_STATUS_CODE);
     if (code == null) {
       code = Integer.valueOf(HttpServletResponse.SC_OK);
+    }
+
+    // Get URI of error handler
+    String uri = req.getRequestURI();
+
+    // Fetch original URI and its extension
+    String original = getOriginalURI(req);
+    String ext = getExtension(original);
+
+    // Check if we should just ignore it
+    if (ignoreExtensions.contains(ext)) {
+      res.reset();
+      res.setStatus(code);
+      res.setContentType("text/plain;charset=UTF-8");
+      ServletOutputStream o = res.getOutputStream();
+      o.close();
+      res.setIntHeader("Content-Length", 0);
+      res.flushBuffer();
+      return;
+    }
+
+    // When processing an .auto URI
+    if (uri.endsWith(autoExtension)) {
+
+      // Check if we need to preserve the extension
+      if (!forwardExtensions.contains(ext)) {
+        ext = defaultExtension;
+      }
+
+      // Replace the .auto by the original extension (.html, .xml, .json, etc...)
+      String to = uri;
+      int dot = uri.lastIndexOf('.');
+      to = (dot >= 0? uri.substring(0, dot) : uri)+ext;
+
+      // If we do not detect a loop we forward the request
+      if (!uri.equals(to) && !uri.equals(to)) {
+
+        // Let's forward the request
+        RequestDispatcher dispatcher = req.getRequestDispatcher(to);
+        dispatcher.forward(req, res);
+        return;
+
+      }
     }
 
     // Generate error details as XML
@@ -284,6 +369,15 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return out.toString();
   }
 
+// TODO Find a mechanism to automate that process
+//  /**
+//   * Allows Berlioz to automatically add the extensions.
+//   * @param ext the extension to add.
+//   */
+//  static void addForwardExtension(String ext) {
+//    forwardExtensions.add(ext);
+//  }
+
   /**
    * Return the root element name based on the status code.
    *
@@ -293,6 +387,32 @@ public final class ErrorHandlerServlet extends HttpServlet {
   private static String getRootElementName(Integer code) {
     String element = HttpStatusCodes.getClassOfStatus(code);
     return (element != null)? element.toLowerCase().replace(' ', '-') : "unknown-status";
+  }
+
+
+  /**
+   * Returns the extension of the specified URI including the dot.
+   *
+   * @param uri The URI
+   * @return the extension or empty string
+   */
+  private static String getExtension(String uri) {
+    int dot = uri.lastIndexOf('.');
+    return dot >= 0? uri.substring(dot) : "";
+  }
+
+  /**
+   * Returns the original URI from <code>javax.servlet.error.request_uri</code>.
+   *
+   * @param req The HTTP servlet request
+   * @return The original URI or this URI if it is the original.
+   */
+  private static String getOriginalURI(HttpServletRequest req) {
+    Object original = req.getAttribute("javax.servlet.error.request_uri");
+    if (original != null && original instanceof String) {
+      return (String)original;
+    }
+    return req.getRequestURI();
   }
 
 }
