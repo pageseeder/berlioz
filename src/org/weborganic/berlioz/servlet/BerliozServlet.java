@@ -160,55 +160,30 @@ public final class BerliozServlet extends HttpServlet {
   // Standard HTTP Methods
   // ----------------------------------------------------------------------------------------------
 
-  /**
-   * Handles a HEAD request.
-   *
-   * {@inheritDoc}
-   */
   @Override
   public void doHead(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, false);
   }
 
-  /**
-   * Handles a GET request.
-   *
-   * {@inheritDoc}
-   */
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
 
-  /**
-   * Handles a POST request.
-   *
-   * {@inheritDoc}
-   */
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
 
-  /**
-   * Handles a PUT request.
-   *
-   * {@inheritDoc}
-   */
   @Override
   public void doPut(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
     process(req, res, true);
   }
 
-  /**
-   * Handles a DELETE request.
-   *
-   * {@inheritDoc}
-   */
   @Override
   public void doDelete(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
