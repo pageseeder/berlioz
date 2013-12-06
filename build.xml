@@ -85,16 +85,16 @@
     <path id="required.lib">
       <fileset dir="${dir.lib}" includes="*.jar"/>
     </path>
-    <javadoc destdir="${dir.doc}/${ivy.revision}" access="public" 
-                                  use="true" 
-                                  notree="false" 
-                                  nonavbar="false" 
-                                  noindex="false" 
-                                  splitindex="true" 
-                                  author="true" version="true" 
-                                  nodeprecatedlist="false" 
-                                  nodeprecated="false" 
-                                  packagenames="${package.names}" 
+    <javadoc destdir="${dir.doc}/${ivy.revision}" access="public"
+                                  use="true"
+                                  notree="false"
+                                  nonavbar="false"
+                                  noindex="false"
+                                  splitindex="true"
+                                  author="true" version="true"
+                                  nodeprecatedlist="false"
+                                  nodeprecated="false"
+                                  packagenames="${package.names}"
                                   sourcepath="${dir.src}"
                                   stylesheetfile="${dir.resource}/javadoc.css"
                                   doctitle="${name.display} ${ivy.revision} API">
@@ -113,7 +113,7 @@
     <delete dir="${dir.bin}"/>
   </target>
 
-  <!-- 
+  <!--
     Publish the build on the Ivy, must specify
     - publish.status    ('milestone' or 'integration')
     - publish.resolver  ('shared' or 'local')
@@ -132,19 +132,19 @@
     <jar jarfile="${dir.release}/${DSTAMP}/${name.short}-${publish.revision}.jar" basedir="${dir.bin}" index="true">
       <fileset dir="${dir.resource}" excludes="javadoc.css"/>
       <manifest>
-        <attribute name="Built-By"               value="Weborganic/${user.name}"/>
+        <attribute name="Built-By"               value="Allette/${user.name}"/>
         <attribute name="Main-Class"             value="${package.main}"/>
         <attribute name="Implementation-Title"   value="${name.display}"/>
         <attribute name="Implementation-Version" value="${publish.revision}"/>
-        <attribute name="Implementation-Vendor"  value="Weborganic Pty Ltd (Australia)"/>
-        <attribute name="Implementation-URL"     value="http://www.weborganic.org/code/berlioz/"/>
+        <attribute name="Implementation-Vendor"  value="Allette (Australia)"/>
+        <attribute name="Implementation-URL"     value="http://pageseeder.org/berlioz.html"/>
       </manifest>
     </jar>
     <!-- Publish to the local Ivy repository  -->
     <ivy:resolve revision="${publish.revision}" log="quiet"/>
     <ivy:publish resolver="${publish.resolver}"
                  module="${name.short}"
-                 artifactspattern="release/${DSTAMP}/[artifact]-[revision].[ext]" 
+                 artifactspattern="release/${DSTAMP}/[artifact]-[revision].[ext]"
                  revision="${publish.revision}"
                  status="${publish.status}"/>
     <echo message="Published ${publish.status} release as ${publish.revision}"/>
