@@ -41,23 +41,19 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * <h3>Etag</h3>
  * <p>This generator uses a weak etag based on the name, length and last modified date of the
- * properties file being loaded.
+ * properties file being loaded or <code>null</code> if no config file could be found.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.26 - 11 December 2013
  * @since Berlioz 0.8
  */
 public final class GetGlobalConfig implements ContentGenerator, Cacheable {
 
-  /**
-   * Returns a ETag based on the last modified date and length of the global propertied file.
-   *
-   * {@inheritDoc}
-   */
   @Override
   public String getETag(ContentRequest req) {
     File global = GlobalSettings.getPropertiesFile();
+    if (global == null) return null;
     return MD5.hash(global.length()+"x"+global.lastModified());
   }
 
