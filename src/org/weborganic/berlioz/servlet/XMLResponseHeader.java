@@ -48,7 +48,7 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.9.25 - 11 December 2013
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
@@ -161,6 +161,7 @@ public final class XMLResponseHeader implements XMLWritable {
 
     // Deprecated from 1.0
     if (GlobalSettings.has(BerliozOption.XML_HEADER_COMPATIBILITY)) {
+      xml.writeComment("Elements 'scheme', 'host', 'port', 'url' and 'query-string' will be deprecated in Berlioz 1.0, use 'location' instead");
       xml.element("scheme", req.getScheme());
       xml.element("host", req.getServerName());
       xml.element("port", Integer.toString(req.getServerPort()));
