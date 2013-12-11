@@ -19,7 +19,8 @@ import org.weborganic.berlioz.Beta;
  * <p>DO NOT USE THIS CLASS DIRECTLY AS IT IS SUBJECT TO CHANGE
  *
  * @author Christophe Lauret
- * @version 18 November 2013
+ * @version Berlioz 0.9.25 - 11 December 2013
+ * @since Berlioz 0.9.21
  */
 @Beta
 public final class Aeson {
@@ -77,6 +78,7 @@ public final class Aeson {
     Method m = null;
     try {
       Class<?> c = Class.forName("org.weborganic.aeson.JSONResult");
+      LOGGER.info("Aeson class detected!");
       m = c.getMethod("newInstanceIfSupported", Transformer.class, StreamResult.class);
       // TODO Check return type class
     } catch (Exception ex) {
