@@ -59,7 +59,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.24 - 6 December 2013
+ * @version Berlioz 0.9.25 - 11 December 2013
  * @since Berlioz 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -98,6 +98,26 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /** The Berlioz error ID (String). */
   public static final String BERLIOZ_ERROR_ID     = "org.weborganic.berlioz.error_id";
 
+  /**
+   * The default list of extensions to preserve.
+   */
+  private static final String FORWARD_EXTENSIONS = ".html,.xml";
+
+  /**
+   * The default list of extensions to ignore.
+   */
+  private static final String IGNORE_EXTENSIONS = ".jpg,.png,.css,.js";
+
+  /**
+   * The default extension to use for extensions which are neither preserved nor ignored.
+   */
+  private static final String AUTO_EXTENSION = ".auto";
+
+  /**
+   * The default extension to use for extensions which are neither preserved nor ignored.
+   */
+  private static final String DEFAULT_EXTENSION = ".html";
+
   // servlet methods ----------------------------------------------------------------------
 
   /**
@@ -113,28 +133,28 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.
    */
-  private static String autoExtension = ".auto";
+  private static String autoExtension = AUTO_EXTENSION;
 
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.
    */
-  private static String defaultExtension = ".html";
+  private static String defaultExtension = DEFAULT_EXTENSION;
 
   @Override
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
     String preserve = config.getInitParameter("forward-extensions");
-    if (preserve == null) preserve = ".html,.xml";
+    if (preserve == null) preserve = FORWARD_EXTENSIONS;
     for (String ext : preserve.split(",")) {
       forwardExtensions.add(ext);
     }
     String ignore = config.getInitParameter("ignore-extensions");
-    if (ignore == null) ignore = ".jpg,.png,.css,.js";
+    if (ignore == null) ignore = IGNORE_EXTENSIONS;
     for (String ext : ignore.split(",")) {
       ignoreExtensions.add(ext);
     }
     defaultExtension = config.getInitParameter("forward-default");
-    if (defaultExtension == null) defaultExtension = ".html";
+    if (defaultExtension == null) defaultExtension = DEFAULT_EXTENSION;
   }
 
   /**
@@ -369,6 +389,113 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return out.toString();
   }
 
+
+  /**
+   * Handles HTTP error using the error requests attributes.
+   *
+   * @param req The HTTP servlet request will cause the error.
+   *
+   * @return the error details as JSON
+   */
+  private static String toJSON(HttpServletRequest req) {
+
+    // Grab data from attributes
+    String message = (String)req.getAttribute(ERROR_MESSAGE);
+    Integer code   = (Integer)req.getAttribute(ERROR_STATUS_CODE);
+    String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
+    Throwable throwable = (Throwable)req.getAttribute(ERROR_EXCEPTION);
+    String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
+    String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
+
+    // Ensure we have a status code
+    if (code == null) {
+      code = Integer.valueOf(HttpServletResponse.SC_OK);
+    }
+
+    // Write the JSON
+    StringBuilder json = new StringBuilder();
+    json.append('{');
+    appendJSONProperty(json, "http-code", code).append(',');
+    appendJSONProperty(json, "datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME)).append(',');
+
+    // If it has a Berlioz ID
+    if (throwable instanceof BerliozException && ((BerliozException)throwable).id() != null) {
+      appendJSONProperty(json, "id", ((BerliozException)throwable).id().id()).append(',');
+    } else {
+      appendJSONProperty(json, "id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString()).append(',');
+    }
+
+    // Berlioz info
+    appendJSONName(json, "berlioz");
+    json.append('{');
+    appendJSONProperty(json, "version", GlobalSettings.getVersion());
+    json.append('}');
+    json.append(',');
+
+    // Other informational elements
+    String title = HttpStatusCodes.getTitle(code);
+    appendJSONProperty(json, "title",   title != null? title : "Berlioz Status").append(',');
+    appendJSONProperty(json, "message", message).append(',');
+    appendJSONProperty(json, "request-uri", requestURI != null? requestURI : req.getRequestURI()).append(',');
+    appendJSONProperty(json, "servlet",  servlet != null? servlet : "null").append(',');
+
+    // TODO: display error in json format
+//      if (throwable != null) {
+//        Errors.toXML(throwable, xml, true);
+//
+//        // If some errors were collected, let's include them
+//        if (throwable instanceof CompoundBerliozException) {
+//          xml.openElement("collected-errors");
+//          ErrorCollector<? extends Exception> collector = ((CompoundBerliozException)throwable).getCollector();
+//          for (CollectedError<? extends Exception> collected : collector.getErrors()) {
+//            collected.toXML(xml);
+//          }
+//          xml.closeElement();
+//        }
+//
+//      }
+
+    // HTTP Headers
+    appendJSONName(json, "http-headers");
+    json.append('[');
+    Enumeration<?> names = req.getHeaderNames();
+    while (names.hasMoreElements()) {
+      String name = names.nextElement().toString();
+      Enumeration<?> values = req.getHeaders(name);
+      while (values.hasMoreElements()) {
+        String value = values.nextElement().toString();
+        json.append('{');
+        appendJSONProperty(json, "name", name);
+        json.append(',');
+        appendJSONProperty(json, "value", value);
+        json.append('}');
+      }
+    }
+    json.append(']');
+    json.append(',');
+
+    // HTTP parameters
+    appendJSONName(json, "http-parameters");
+    json.append('[');
+    Map<?, ?> parameters = req.getParameterMap();
+    for (Entry<?, ?> entry : parameters.entrySet()) {
+      String name = entry.getKey().toString();
+      // Must be an array according to Servlet Specifications
+      String[] values = (String[])entry.getValue();
+      for (String value : values) {
+        json.append('{');
+        appendJSONProperty(json, "name", name);
+        json.append(',');
+        appendJSONProperty(json, "value", value);
+        json.append('}');
+      }
+    }
+    json.append(']');
+    json.append('}');
+
+    return json.toString();
+  }
+
 // TODO Find a mechanism to automate that process
 //  /**
 //   * Allows Berlioz to automatically add the extensions.
@@ -388,7 +515,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String element = HttpStatusCodes.getClassOfStatus(code);
     return (element != null)? element.toLowerCase().replace(' ', '-') : "unknown-status";
   }
-
 
   /**
    * Returns the extension of the specified URI including the dot.
@@ -415,4 +541,17 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return req.getRequestURI();
   }
 
+  private static StringBuilder appendJSONName(StringBuilder json, String name) {
+    return json.append('"').append(name).append('"').append(':');
+  }
+
+  private static StringBuilder appendJSONProperty(StringBuilder json, String name, String value) {
+    json.append('"').append(name).append('"').append(':');
+    json.append('"').append(value).append('"');
+    return json;
+  }
+
+  private static StringBuilder appendJSONProperty(StringBuilder json, String name, int value) {
+    return json;
+  }
 }
