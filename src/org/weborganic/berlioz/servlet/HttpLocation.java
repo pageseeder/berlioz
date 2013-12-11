@@ -22,7 +22,7 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.15 - 30 January 2013
+ * @version Berlioz 0.9.25 - 11 December 2013
  * @since Berlioz 0.9.13
  */
 public final class HttpLocation implements Location, Serializable {
@@ -117,6 +117,8 @@ public final class HttpLocation implements Location, Serializable {
     if (!isDefaultPort(this._scheme, this._port)) {
       url.append(':').append(this._port);
     }
+    // Include the base (without the path or query)
+    xml.attribute("base", url.toString());
     url.append(this._path);
     if (this._query != null) {
       url.append('?').append(this._query);

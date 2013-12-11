@@ -205,6 +205,9 @@ public final class XMLResponse {
 
     // Get service
     Service service = this._match.service();
+    xml.attribute("service", service.id());
+    xml.attribute("group", service.group());
+
     XMLResponseHeader header = new XMLResponseHeader(this._core, service, this._match.result());
     header.toXML(xml);
 
