@@ -136,18 +136,6 @@ public final class GlobalSettings {
 // general static methods ----------------------------------------------------------------------
 
   /**
-   * Returns whether the debug information is displayed or not.
-   *
-   * @deprecated Use a logging framework instead.
-   *
-   * @return <code>true</code> to display; <code>false</code> otherwise.
-   */
-  @Deprecated
-  public static boolean debug() {
-    return System.getProperty("berlioz.debug") != null;
-  }
-
-  /**
    * Returns the main repository or <code>null</code> if it has not been setup.
    *
    * @return The directory used as a repository or <code>null</code>.
