@@ -95,7 +95,7 @@ public final class Parameter {
      * Creates a new builder.
      * @param name the name of the parameter to build.
      */
-    public Builder(String name) {
+    Builder(String name) {
       this._name = name;
     }
 
@@ -104,7 +104,7 @@ public final class Parameter {
      * @param template The value template.
      * @return this builder
      */
-    public Builder value(String template) {
+    Builder value(String template) {
       this._template = template;
       return this;
     }
@@ -114,7 +114,7 @@ public final class Parameter {
      * @param source The source of the value.
      * @return this builder
      */
-    public Builder source(String source) {
+    Builder source(String source) {
       this._source = source;
       return this;
     }
@@ -124,7 +124,7 @@ public final class Parameter {
      * @param def The default value (may be <code>null</code>)
      * @return this builder
      */
-    public Builder def(String def) {
+    Builder def(String def) {
       this._def = def;
       return this;
     }
