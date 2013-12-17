@@ -79,7 +79,7 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.27 - 17 December 2013
  * @since Berlioz 0.8.7
  */
 public final class GetErrorDetails implements ContentGenerator {
@@ -141,7 +141,9 @@ public final class GetErrorDetails implements ContentGenerator {
     xml.closeElement();
 
     // Set the status code of the generator
-    req.setStatus(ContentStatus.forCode(code));
+    ContentStatus status = ContentStatus.forCode(code);
+    if (status != null)
+      req.setStatus(status);
 
   }
 
