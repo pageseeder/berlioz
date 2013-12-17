@@ -31,7 +31,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.26 - 13 October 2011
  * @since Berlioz 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
@@ -161,17 +161,11 @@ final class ServicesHandler10 extends DefaultHandler {
     this._collector = collector;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public void setDocumentLocator(Locator locator) {
     this._locator = locator;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
     // Do not continue if there is an error
@@ -225,9 +219,6 @@ final class ServicesHandler10 extends DefaultHandler {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public void endElement(String uri, String localName, String qName) throws SAXException {
     // Do not continue if there is an error
