@@ -8,9 +8,12 @@
 package org.weborganic.berlioz.servlet;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletConfig;
@@ -31,7 +34,7 @@ import org.weborganic.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.26 - 16 December 2013
  * @since Berlioz 0.8.1
  */
 public final class BerliozConfig {
@@ -144,7 +147,7 @@ public final class BerliozConfig {
     this._controlKey = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));
     this._compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
     this._env = new HttpEnvironment(contextPath, webinfPath, this._cacheControl);
-    this._etagSeed = newEtagSeed();
+    this._etagSeed = getEtagSeed();
   }
 
   /**
@@ -331,9 +334,43 @@ public final class BerliozConfig {
    * Expiry date is a year from now.
    * @return One year into the future.
    */
-  private static long newEtagSeed() {
+  private long getEtagSeed() {
+    long seed = 0L;
+    File f = this._env.getPrivateFile("berlioz.etag");
+    if (f.exists() && f.length() < 100) {
+      try {
+        String etag = new Scanner(f).useDelimiter("\\Z").next();
+        etag = etag.replaceAll("[^a-zA-Z0-9-]", "");
+        seed = Long.parseLong(etag, 36);
+        LOGGER.info("Loading the etag seed {}", etag);
+      } catch (IOException ex) {
+        LOGGER.warn("Unable to load the etag seed", ex);
+      } catch (NumberFormatException ex) {
+        LOGGER.warn("Unable to load the etag seed", ex);
+      }
+    }
+    return seed;
+  }
+
+  /**
+   * Expiry date is a year from now.
+   * @return One year into the future.
+   */
+  private long newEtagSeed() {
     Long seed = RANDOM.nextLong();
-    LOGGER.info("Generating new ETag Seed: {}", seed);
+    LOGGER.info("Generating new ETag Seed: {}", Long.toString(seed.longValue(), 36));
+    File f = this._env.getPrivateFile("berlioz.etag");
+    if (f.exists() && f.canWrite() || f.getParentFile().canWrite()) {
+      try {
+        FileOutputStream os = new FileOutputStream(f);
+        for (char c : Long.toString(seed.longValue(), 36).toCharArray()) {
+          os.write(c);
+        }
+        os.close();
+      } catch (IOException ex) {
+        LOGGER.warn("Unable to save the etag seed", ex);
+      }
+    }
     return seed;
   }
 

@@ -10,13 +10,13 @@ package org.weborganic.berlioz.servlet;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Location;
+import org.weborganic.berlioz.content.PathInfo;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.furi.URIResolveResult;
 
@@ -48,7 +48,7 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.25 - 11 December 2013
+ * @version Berlioz 0.9.26 - 17 December 2013
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
@@ -88,44 +88,31 @@ public final class XMLResponseHeader implements XMLWritable {
   }
 
   /**
-   * Converts the path info from the servlet request to the name of the service.
-   *
-   * @param request The servlet request.
-   *
-   * @return The name of the service.
-   */
-  public static String toServiceName(HttpServletRequest request) {
-    String pathInfo = request.getPathInfo();
-    if (pathInfo == null) return "";
-    StringBuffer name = new StringBuffer();
-    StringTokenizer st = new StringTokenizer(pathInfo, "/");
-    while (st.hasMoreTokens()) {
-      if (name.length() > 0) {
-        name.insert(0, '-');
-      }
-      name.insert(0, st.nextToken());
-    }
-    return name.toString();
-  }
-
-  /**
    * Writes the XML response for this header.
    *
    * <pre class="xml">{@code
    *   <header>
+   *     <!-- Deprecated in Berlioz 1.0 -->
    *     <group>[service group name]</group>
    *     <service>[service name]</service>
    *     <path-info>[berlioz path]</path-info>
    *     <context-path>[servlet context path]</context-path>
+   *     <!-- Deprecated in Berlioz 1.0 -->
    *     <host>[server host]</host>
    *     <port>[server port]</port>
    *     <url>[url (up to query)]</url>
    *     <query-string>[query string]</query-string>
+   *     <!-- End deprecated in Berlioz 1.0 -->
    *     <location scheme="[http|https]"
    *                 host="[hostname]"
    *                 port="[post]"
    *                 path="[path]"
+   *                 base="[base]"
    *                query="[query]">[full url]</location>
+   *     <path context="[servlet context path]"
+   *            prefix="[prefix if berlioz mapped to a prefix]"
+   *              info="[berlioz path]"
+   *         extension="[prefix if berlioz mapped to an extension]"/>
    *     <http-parameters>
    *       <parameter name="[name-A]">[value-A]</parameter>
    *       <parameter name="[name-B]">[value-B1]</parameter>
@@ -139,6 +126,7 @@ public final class XMLResponseHeader implements XMLWritable {
    *       <parameter name="[name-Y]">[value-Y]</parameter>
    *       <!-- ... -->
    *     </uri-parameters>
+   *     <berlioz version="[version]" mode="[mode]"/>
    *   </header>
    * }</pre>
    *
@@ -152,26 +140,34 @@ public final class XMLResponseHeader implements XMLWritable {
   public void toXML(XMLWriter xml) throws IOException {
     HttpServletRequest req = this._core.request();
 
+    boolean compatibility = GlobalSettings.has(BerliozOption.XML_HEADER_COMPATIBILITY)
+                         && !"1.0".equals(GlobalSettings.get(BerliozOption.XML_HEADER_VERSION));
+
     // start serialising
     xml.openElement("header", true);
-    xml.element("group", this._group);
-    xml.element("service", this._service);
-    xml.element("path-info", HttpRequestWrapper.getBerliozPath(req));
-    xml.element("context-path", req.getContextPath());
-
-    // Deprecated from 1.0
-    if (GlobalSettings.has(BerliozOption.XML_HEADER_COMPATIBILITY)) {
-      xml.writeComment("Elements 'scheme', 'host', 'port', 'url' and 'query-string' will be deprecated in Berlioz 1.0, use 'location' instead");
+    if (compatibility) {
+      xml.writeComment("Elements below will be deprecated in Berlioz 1.0");
+      xml.element("group", this._group);
+      xml.element("service", this._service);
+      xml.writeComment("Use 'path' instead");
+      xml.element("path-info", HttpRequestWrapper.getBerliozPath(req));
+      xml.element("context-path", req.getContextPath());
+      xml.writeComment("Use 'location' instead");
       xml.element("scheme", req.getScheme());
       xml.element("host", req.getServerName());
       xml.element("port", Integer.toString(req.getServerPort()));
       xml.element("url", req.getRequestURL().toString());
       xml.element("query-string", req.getQueryString());
+      xml.writeComment("End deprecated elements");
     }
 
     // New location info
     Location location = this._core.location();
-    if (location != null) location.toXML(xml);
+    if (location != null) {
+      location.toXML(xml);
+      PathInfo path = location.info();
+      path.toXML(xml);
+    }
 
     // Write the http parameters
     xml.openElement("http-parameters", true);
@@ -202,9 +198,10 @@ public final class XMLResponseHeader implements XMLWritable {
       xml.closeElement();
     }
 
-    // Include Berlioz version
+    // Include Berlioz version and mode
     xml.openElement("berlioz");
     xml.attribute("version", GlobalSettings.getVersion());
+    xml.attribute("mode", GlobalSettings.getMode());
     xml.closeElement();
 
     xml.closeElement(); // close header

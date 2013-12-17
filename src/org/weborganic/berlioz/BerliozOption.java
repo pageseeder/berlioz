@@ -14,7 +14,7 @@ package org.weborganic.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.9.26 - 14 December 2013
  * @since Berlioz 0.8.4
  */
 public enum BerliozOption {
@@ -290,10 +290,37 @@ public enum BerliozOption {
    * </table>
    * <p>This option will be default to <code>false</code> for Berlioz 1.0</p>
    *
+   * @deprecated Use XML_HEADER_VERSION instead.
+   *
    * @since Berlioz 0.9.2
    */
   @Beta
+  @Deprecated
   XML_HEADER_COMPATIBILITY("berlioz.xml.header.compatibility", Boolean.TRUE),
+
+  /**
+   * Indicates the version of the XML header format  berlioz should use.
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.xml.header.version</code></td>
+   *     <td><code>"0.9"</code></td>
+   *   </tr>
+   * </table>
+   *
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr><td><code>1.0</code></td><td><code>1.0</code></td></tr></tbody>
+   * </table>
+   * <p>This option will default to <code>1.0</code> from Berlioz 1.0.</p>
+   *
+   * @since Berlioz 0.9.26
+   */
+  @Beta
+  XML_HEADER_VERSION("berlioz.xml.header.version", "0.9"),
 
   /**
    * A boolean global option to indicate whether to tolerate warnings or throw an error when they

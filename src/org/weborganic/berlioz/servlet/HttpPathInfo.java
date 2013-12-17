@@ -96,12 +96,12 @@ public final class HttpPathInfo implements PathInfo, Serializable {
 
   @Override
   public void toXML(XMLWriter xml) throws IOException {
-    xml.openElement("path-info");
+    xml.openElement("path");
     if (this._context.length() > 0)
       xml.attribute("context", this._context);
     if (this._prefix.length() > 0)
       xml.attribute("prefix", this._prefix);
-    xml.attribute("path", this._path);
+    xml.attribute("info", this._path);
     if (this._extension.length() > 0)
       xml.attribute("extension", this._extension);
     xml.closeElement();
