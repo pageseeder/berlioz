@@ -105,7 +105,7 @@ final class Overlays {
      *
      * @param source The war or zip file.
      */
-    Overlay(File source) {
+    private Overlay(File source) {
       this._source = source;
       String filename = source.getName();
       filename = filename.substring(0, filename.length() - 4); // always an extension

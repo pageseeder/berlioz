@@ -15,7 +15,7 @@ package org.weborganic.berlioz.http;
  * @version Berlioz 0.8.2 - 27 June 2011
  * @since Berlioz 0.6
  */
-public final class HttpHeaders {
+public final class HttpHeaders { // NO_UCD
 
   /**
    * Utility class.
