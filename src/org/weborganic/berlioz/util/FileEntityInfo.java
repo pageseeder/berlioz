@@ -10,8 +10,8 @@ package org.weborganic.berlioz.util;
 import java.io.File;
 
 /**
- * A basic implementation of the Entity info pointing to an existing file and producing weak
- * entity tags.
+ * A basic implementation of the Entity info pointing to an existing file and producing
+ * entity tags based on length and last modified date.
  *
  * @author Christophe Lauret
  *
@@ -66,22 +66,14 @@ public class FileEntityInfo implements EntityInfo {
     return this.length;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public final String getMimeType() {
     return this.mime;
   }
 
-  /**
-   * {@inheritDoc}
-   *
-   * Always a weak ETag.
-   */
   @Override
   public final String getETag() {
-    if ((this.length >= 0) || (this.modified >= 0)) return "W/\"" + this.length + "-" + this.modified + "\"";
+    if ((this.length >= 0) || (this.modified >= 0)) return "\"" + this.length + "-" + this.modified + "\"";
     return null;
   }
 
