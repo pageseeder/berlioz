@@ -76,27 +76,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * Creates a new wrapper around the specified HTTP servlet request.
    *
-   * @param req        The request to wrap.
-   * @param res        The response to wrap.
-   * @param env        The environment for this request.
-   * @param parameters The list of parameters.
-   *
-   * @throws IllegalArgumentException If the request is <code>null</code>.
-   */
-  public HttpRequestWrapper(HttpServletRequest req, HttpServletResponse res, Environment env,
-      Map<String, String> parameters) throws IllegalArgumentException {
-    if (req == null)
-      throw new IllegalArgumentException("Cannot construct wrapper around null request.");
-    this._req = req;
-    this._res = res;
-    this._env = env;
-    this._loc = HttpLocation.build(req);
-    this._parameters = parameters;
-  }
-
-  /**
-   * Creates a new wrapper around the specified HTTP servlet request.
-   *
    * @param core       The core HTTP information.
    * @param parameters The list of parameters.
    *
@@ -292,7 +271,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    *
    * @return A map of the parameters for the specified request and results
    */
-  @SuppressWarnings("unchecked")
   protected static Map<String, String> toParameters(HttpServletRequest req, URIResolveResult results) {
     Map<String, String> parameters = new HashMap<String, String>();
     // Load all HTTP parameters from the Query String first

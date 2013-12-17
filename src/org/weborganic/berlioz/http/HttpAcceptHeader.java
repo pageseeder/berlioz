@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  * @version Berlioz 0.8.2 - 27 June 2011
  * @since Berlioz 0.6
  */
-public final class HttpAcceptHeader {
+public final class HttpAcceptHeader { // NO_UCD
 
   /**
    * Accepts headers that have already been processed.
