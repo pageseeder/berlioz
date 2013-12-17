@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.furi.URIPattern;
 import org.weborganic.furi.URIResolver;
@@ -274,6 +276,11 @@ public final class ServiceRegistry {
   private static class ServiceMap {
 
     /**
+     * To report errors.
+     */
+    private final Logger logger = LoggerFactory.getLogger(ServiceRegistry.class);
+
+    /**
      * Maps services to the URI Pattern.
      */
     private final Map<String, Service> mapping = new Hashtable<String, Service>();
@@ -289,10 +296,13 @@ public final class ServiceRegistry {
      * @param pattern The URL pattern for this generator.
      * @param service The service to add.
      *
-     * @return Always <code>true</code> ???
+     * @return Always <code>true</code>
      */
     public boolean put(URIPattern pattern, Service service) {
-      this.mapping.put(pattern.toString(), service);
+      Service previous = this.mapping.put(pattern.toString(), service);
+      if (previous != null) {
+        this.logger.warn("Service ID={} was already registered to {}", previous, pattern.toString());
+      }
       this.patterns.add(pattern);
       return true;
     }

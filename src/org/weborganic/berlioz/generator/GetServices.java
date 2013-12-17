@@ -9,10 +9,11 @@ package org.weborganic.berlioz.generator;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
-import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Cacheable;
 import org.weborganic.berlioz.content.ContentGenerator;
+import org.weborganic.berlioz.content.ContentManager;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.util.MD5;
 import org.weborganic.berlioz.xml.XMLCopy;
@@ -52,29 +53,40 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.9.26 - 16 December 2013
  * @since Berlioz 0.8
  */
 public final class GetServices implements ContentGenerator, Cacheable {
 
-  /**
-   * Default location of the services.
-   */
-  private static final String SERVICES = "config/services.xml";
-
   @Override
   public String getETag(ContentRequest req) {
-    File services = new File(GlobalSettings.getRepository(), SERVICES);
-    return MD5.hash(services.length()+"x"+services.lastModified());
+    StringBuilder etag = new StringBuilder();
+    for (File f : ContentManager.getServiceFiles()) {
+      etag.append('~').append(f.length()).append('!').append(f.lastModified());
+    }
+    return MD5.hash(etag.toString());
   }
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
-    File services = new File(GlobalSettings.getRepository(), SERVICES);
 
-    // All good, print to the XML stream
-    if (services.exists()) {
-      XMLCopy.copyTo(services, xml);
+    List<File> files = ContentManager.getServiceFiles();
+
+    // Display the main file (always comes first)
+    if (files.size() >= 1) {
+      File main = files.get(0);
+      if (main.exists()) {
+        XMLCopy.copyTo(main, xml);
+      }
+    }
+
+    // Display additional modules
+    if (files.size() > 1) {
+      xml.openElement("service-modules", true);
+      for (int i = 1; i < files.size(); i++) {
+        XMLCopy.copyTo(files.get(i), xml);
+      }
+      xml.closeElement();
     }
   }
 
