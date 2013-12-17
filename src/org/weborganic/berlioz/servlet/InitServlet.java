@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.LifecycleListener;
+import org.weborganic.berlioz.servlet.Overlays.Overlay;
 
 /**
  * Initialise a Berlioz-based application.
@@ -203,9 +204,15 @@ public final class InitServlet extends HttpServlet implements Servlet {
    * @param contextPath the context path (root of the web application)
    */
   private static void checkOverlays(File contextPath) {
-    List<Overlay> overlays = Overlay.list(contextPath);
+    List<Overlay> overlays = Overlays.list(contextPath);
     console("Overlays: found '"+overlays.size()+"' overlay(s)");
+    Overlay previous = null;
+    // Check if there is already an overlay with the same name
     for (Overlay o : overlays) {
+      if (previous != null && previous.name().equals(o.name())) {
+        console("(!) Multiple versions of the same overlay found!");
+      }
+      previous = o;
       try {
         File f  = o.getSource();
         console("Overlays: unpacking '"+f.getName()+"'");
