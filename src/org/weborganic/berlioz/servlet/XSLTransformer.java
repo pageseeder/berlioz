@@ -62,7 +62,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.21 - 18 November 2013
+ * @version Berlioz 0.9.27 - 18 December 2013
  * @since Berlioz 0.7
  */
 public final class XSLTransformer {
@@ -85,19 +85,35 @@ public final class XSLTransformer {
   private final File _templates;
 
   /**
+   * The URL to a fallback template.
+   */
+  private final URL _fallback;
+
+  /**
    * An etag for these templates.
    */
   private transient String _etag = null;
 
   /**
-   * Creates a new XSLT Transformer.
+   * Creates a new XSLT Transformer with no fallback templates.
    *
    * @param templates The location of the templates.
    */
   public XSLTransformer(File templates) {
+    this(templates, null);
+  }
+
+  /**
+   * Creates a new XSLT Transformer.
+   *
+   * @param templates The location of the templates.
+   * @param fallback  The URL to the fallback templates (optional)
+   */
+  public XSLTransformer(File templates, URL fallback) {
     if (templates == null) throw new NullPointerException("No Templates file specified");
     this._templates = templates;
-    this._etag = computeEtag(templates);
+    this._fallback = fallback;
+    this._etag = computeEtag(templates, fallback);
   }
 
   /**
@@ -126,7 +142,11 @@ public final class XSLTransformer {
       StreamSource source = new StreamSource(new StringReader(content));
       source.setPublicId("-//Berlioz//Service/XML/"+service.group()+"/"+service.id());
       // TODO: provide better info (identify the service)
-//      source.setSystemId(req.getRequestURI().replaceAll("/html/", "/xml/"));
+      String uri = req.getRequestURI();
+      int dot = uri.lastIndexOf('.');
+      if (dot >= 0) {
+        source.setSystemId(req.getRequestURI().replaceAll(uri.substring(dot), ".src"));
+      }
 
       // Setup the result
       StreamResult result = new StreamResult(buffer);
@@ -139,7 +159,7 @@ public final class XSLTransformer {
       String error = toXML(ex, content, parameters);
       ClassLoader loader = XSLTransformer.class.getClassLoader();
       URL url = loader.getResource("org/weborganic/berlioz/xslt/failsafe-error-html.xsl");
-      Templates failsafe = toFailSafeTemplates(url);
+      Templates failsafe = toTemplates(url);
       // Try to use the fail-safe template to present the error
       error = transformFailSafe(error, failsafe);
       return new XSLTransformResult(error, ex, failsafe);
@@ -158,7 +178,7 @@ public final class XSLTransformer {
    * @return the content transformed safely.
    */
   public static String transformFailSafe(String content, URL url) {
-    Templates failsafe = toFailSafeTemplates(url);
+    Templates failsafe = toTemplates(url);
     return transformFailSafe(content, failsafe);
   }
 
@@ -203,12 +223,16 @@ public final class XSLTransformer {
    * @param templates The main file for the templates.
    * @return The corresponding etag.
    */
-  private static String computeEtag(File templates) {
+  private static String computeEtag(File templates, URL fallback) {
     if (!templates.exists()) {
-      LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getName());
-      LOGGER.error("Create a stylesheet at the path below:");
-      LOGGER.error(templates.getPath());
-      return null;
+      if (fallback != null) {
+        return MD5.hash(fallback.toString());
+      } else {
+        LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getName());
+        LOGGER.error("Create a stylesheet at the path below:");
+        LOGGER.error(templates.getPath());
+        return null;
+      }
     }
     List<File> files = new ArrayList<File>();
     listTemplateFiles(templates.getParentFile(), files);
@@ -307,11 +331,11 @@ public final class XSLTransformer {
       LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", stylesheet, store? "enabled" : "disabled");
       // Generate the templates if necessary
       long t0 = System.currentTimeMillis();
-      templates = toTemplates(f);
+      templates = toTemplates(f, this._fallback);
       long t1 = System.currentTimeMillis();
       LOGGER.debug("Templates loaded in {}ms", (t1 - t0));
       // Recalculate the Etag
-      this._etag = computeEtag(f);
+      this._etag = computeEtag(f, this._fallback);
       if (store) {
         CACHE.put(f, templates);
         LOGGER.info("Caching XSLT stylesheet '{}'", stylesheet);
@@ -324,12 +348,13 @@ public final class XSLTransformer {
    * Return the XSLT templates from the given style.
    *
    * @param stylepath The path to the XSLT style sheet
+   * @param fallback  The URL to the fallback XSLT style sheet
    *
    * @return the corresponding XSLT templates object
    *
    * @throws TransformerException If the loading fails.
    */
-  private static Templates toTemplates(File stylepath) throws TransformerException {
+  private static Templates toTemplates(File stylepath, URL fallback) throws TransformerException {
     // load the templates from the source file
     InputStream in = null;
     Templates templates = null;
@@ -346,9 +371,14 @@ public final class XSLTransformer {
         throw new TransformerExceptionWrapper(ex, listener);
       }
     } catch (FileNotFoundException ex) {
-      // Should not happen because we check before that the file exists, so we can safely ignore
-      LOGGER.warn("Unable to find template file: {}", stylepath);
-      throw new TransformerConfigurationException("Unable to find stylesheet: "+toWebPath(stylepath.getPath()), ex);
+      // The file does not exist
+      if (fallback != null) {
+        LOGGER.warn("Unable to find template file: {} using fallback templates {}", stylepath, fallback);
+        templates = toTemplates(fallback);
+      } else {
+        LOGGER.warn("Unable to find template file: {}", stylepath);
+        throw new TransformerConfigurationException("Unable to find stylesheet: "+toWebPath(stylepath.getPath()), ex);
+      }
     } finally {
       closeQuietly(in);
     }
@@ -460,7 +490,7 @@ public final class XSLTransformer {
    * @param url The URL to load (within Berlioz Package)
    * @return templates or <code>null</code>.
    */
-  private static Templates toFailSafeTemplates(URL url) {
+  private static Templates toTemplates(URL url) {
     // load the templates from the source file
     InputStream in = null;
     Templates templates = null;
@@ -472,10 +502,10 @@ public final class XSLTransformer {
       templates = factory.newTemplates(source);
       // Any error we need to give up...
     } catch (IOException ex) {
-      LOGGER.warn("Unable to load fail safe templates!", ex);
+      LOGGER.warn("Unable to load fallback/failsafe templates!", ex);
       return null;
     } catch (TransformerException ex) {
-      LOGGER.warn("Unable to load fail safe templates!", ex);
+      LOGGER.warn("Unable to load fallback/failsafe templates!", ex);
       return null;
     } finally {
       closeQuietly(in);
