@@ -10,7 +10,10 @@ package org.weborganic.berlioz.servlet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Calendar;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
@@ -18,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +37,7 @@ import org.weborganic.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.26 - 16 December 2013
+ * @version Berlioz 0.9.27 - 18 December 2013
  * @since Berlioz 0.8.1
  */
 public final class BerliozConfig {
@@ -97,6 +100,11 @@ public final class BerliozConfig {
   private final String _stylePath;
 
   /**
+   * The fallback stylesheet (points to a URL)
+   */
+  private final String _fallbackStyleSheet;
+
+  /**
    * Indicates whether the Berlioz instance should use HTTP compression (when possible)
    */
   private final boolean _compression;
@@ -135,6 +143,7 @@ public final class BerliozConfig {
     File webinfPath = new File(contextPath, "WEB-INF");
     this._stylePath = this.getInitParameter("stylesheet", "IDENTITY");
     this._allocation = toAllocation(this._stylePath);
+    this._fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", null);
     this._transformers = this._allocation != TransformAllocation.NIL? new ConcurrentHashMap<String, XSLTransformer>() : null;
     this._contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     if ("IDENTITY".equals(this._stylePath) && !this._contentType.contains("xml")) {
@@ -234,9 +243,17 @@ public final class BerliozConfig {
    * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
    *         the control key; false otherwise.
    */
-  public boolean hasControl(ServletRequest req) {
+  public boolean hasControl(HttpServletRequest req) {
     if (this._controlKey == null || "".equals(this._controlKey)) return true;
-    return this._controlKey.equals(req.getParameter("berlioz-control"));
+    if (this._controlKey.equals(req.getParameter("berlioz-control"))) return true;
+    // TODO Check if this is appropriate!!
+    Enumeration<String> e = req.getHeaders("Authorization");
+    while (e.hasMoreElements()) {
+      String auth = e.nextElement();
+      if (auth.startsWith("Berlioz ") && auth.endsWith(this._controlKey))
+        return true;
+    }
+    return false;
   }
 
   /**
@@ -408,7 +425,7 @@ public final class BerliozConfig {
     path = path.replaceAll("\\{GROUP\\}", service.group());
     path = path.replaceAll("\\{SERVICE\\}", service.id());
     File styleSheet = this._env.getPrivateFile(path);
-    return new XSLTransformer(styleSheet);
+    return new XSLTransformer(styleSheet, toURL(this._fallbackStyleSheet));
   }
 
   /**
@@ -430,6 +447,35 @@ public final class BerliozConfig {
     } else {
       return TransformAllocation.GLOBAL;
     }
+  }
+
+  /**
+   * Returns the URL instance from the specified path.
+   *
+   * If the path starts with "resource:", the XSLt will be loaded from a resource
+   * using the same class loader as Berlioz.
+   *
+   * @param path the path to create the URL
+   * @return the corresponding URL.
+   */
+  private URL toURL(String path) {
+    if (path == null) return null;
+    URL url = null;
+    if (path.startsWith("resource:")) {
+      ClassLoader loader = BerliozConfig.class.getClassLoader();
+      url = loader.getResource(path.substring("resource:".length()));
+      if (url == null) {
+        LOGGER.warn("Unable to load {} as fallback templates", path);
+      }
+    } else {
+      File file = this._env.getPrivateFile(path);
+      try {
+        url = file.toURI().toURL();
+      } catch (MalformedURLException ex) {
+        LOGGER.warn("Unable to load {} as fallback templates", path, ex);
+      }
+    }
+    return url;
   }
 
 }
