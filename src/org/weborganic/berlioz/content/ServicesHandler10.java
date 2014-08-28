@@ -14,6 +14,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.generator.NoContent;
 import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.berlioz.util.Pair;
 import org.weborganic.berlioz.xml.SAXErrorCollector;
@@ -31,7 +32,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.26 - 13 October 2011
+ * @version Berlioz 0.9.29 - 28 August 2014
  * @since Berlioz 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
@@ -377,8 +378,15 @@ final class ServicesHandler10 extends DefaultHandler {
    * @throws SAXException Only if thrown by underlying error handler.
    */
   private void handleGenerator(Attributes atts) throws SAXException {
+    String className = atts.getValue("class");
+    ContentGenerator generator;
     try {
-      ContentGenerator generator = (ContentGenerator)Class.forName(atts.getValue("class")).newInstance();
+      // Allow unspecified class (defaults to no content)
+      if (className == null || className.length() ==0) {
+        generator = new NoContent();
+      } else {
+        generator = (ContentGenerator)Class.forName(className).newInstance();
+      }
       this._builder.add(generator);
       this._builder.target(atts.getValue("target"));
       this._builder.name(atts.getValue("name"));
