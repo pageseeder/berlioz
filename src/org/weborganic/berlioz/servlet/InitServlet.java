@@ -10,6 +10,7 @@ package org.weborganic.berlioz.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.Servlet;
@@ -21,6 +22,7 @@ import javax.servlet.http.HttpServlet;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozOption;
+import org.weborganic.berlioz.Beta;
 import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.LifecycleListener;
 import org.weborganic.berlioz.servlet.Overlays.Overlay;
@@ -50,7 +52,7 @@ import org.weborganic.berlioz.servlet.Overlays.Overlay;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.22 - 29 November 2013
+ * @version Berlioz 0.9.30 - 8 January 2015
  * @since Berlioz 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
@@ -61,9 +63,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
   private static final long serialVersionUID = 20061009261800002L;
 
   /**
-   * As per requirement for the Serializable interface.
+   * The lifecycle listener notified when Berlioz starts and stops.
    */
-  private LifecycleListener _listener = null;
+  private static List<LifecycleListener> listeners = new ArrayList<LifecycleListener>();
 
   /**
    * Initialises Berlioz.
@@ -138,14 +140,16 @@ public final class InitServlet extends HttpServlet implements Servlet {
     System.out.println("[BERLIOZ_STOP] ===============================================================");
     System.out.println("[BERLIOZ_STOP] Stopping Berlioz "+GlobalSettings.getVersion()+"...");
     System.out.println("[BERLIOZ_STOP] Application Base: "+GlobalSettings.getRepository().getAbsolutePath());
-    if (this._listener != null) {
-      System.out.println("[BERLIOZ_STOP] Lifecycle: Invoking listener");
-      try {
-        this._listener.stop();
-      } catch (Exception ex) {
-        System.out.println("[BERLIOZ_STOP] (!) Unable to stop Lifecycle listener");
+    if (listeners.size() > 0) {
+      System.out.println("[BERLIOZ_STOP] Lifecycle: Invoking listeners");
+      for (LifecycleListener listener : listeners) {
+        try {
+          listener.stop();
+        } catch (Exception ex) {
+          System.out.println("[BERLIOZ_STOP] (!) Unable to stop Lifecycle listener: "+listener.getClass().getSimpleName());
+        }
       }
-      this._listener = null;
+      listeners.clear();
     } else {
       System.out.println("[BERLIOZ_STOP] Lifecycle: OK (No listener)");
     }
@@ -160,6 +164,16 @@ public final class InitServlet extends HttpServlet implements Servlet {
   @Override
   public String getServletInfo() {
     return "Berlioz Initialisation Servlet";
+  }
+
+  /**
+   * Add a listener to invoke when the Berlioz starts or stops.
+   *
+   * @param listener The listener to register.
+   */
+  @Beta
+  public static void registerListener(LifecycleListener listener) {
+    listeners.add(listener);
   }
 
   // private helpers
@@ -418,23 +432,29 @@ public final class InitServlet extends HttpServlet implements Servlet {
       }
       // Start
       if (listener != null) {
-        this._listener = listener;
-        boolean ok = false;
+        listeners.add(listener);
+      }
+    }
+    // Start
+    if (listeners.size() > 0) {
+      boolean ok = true;
+      for (LifecycleListener listener : listeners) {
         try {
-          ok = listener.start();
+          ok = ok && listener.start();
         } catch (Exception ex) {
+          ok = false;
           ex.printStackTrace();
         }
-        if (ok) {
-          console("Lifecycle: OK -------------------------------------------------");
-        } else {
-          console("(!) Unable to start Lifecycle listener");
-          console("Lifecycle: FAIL -----------------------------------------------");
-        }
+      }
+      if (ok) {
+        console("Lifecycle: OK -------------------------------------------------");
+      } else {
+        console("(!) Unable to start Lifecycle listener");
+        console("Lifecycle: FAIL -----------------------------------------------");
       }
 
     } else {
-      console("Lifecycle: OK (No listener)");
+      console("Lifecycle: OK (No listeners)");
     }
   }
 
