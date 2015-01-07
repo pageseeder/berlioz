@@ -13,10 +13,12 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -50,7 +52,7 @@ import org.weborganic.berlioz.xml.XMLProperties;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.9.30 - 8 January 2015
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
@@ -123,6 +125,11 @@ public final class GlobalSettings {
    * Maps properties to nodes that have been processed.
    */
   private static volatile Map<String, Properties> nodes;
+
+  /**
+   * The list of listeners to invoke when the global settings have been reloaded.
+   */
+  private static List<ConfigListener> listeners = new ArrayList<ConfigListener>();
 
 // constructor ---------------------------------------------------------------------------------
 
@@ -565,25 +572,50 @@ public final class GlobalSettings {
     // Always initialise
     settings = new HashMap<String, String>();
     nodes = new Hashtable<String, Properties>();
+    boolean loaded = false;
     if (file != null) {
       // load
       try {
         Format kind = detect(file);
         switch (kind) {
           case XML_CONFIG:
-            return loadConfig(file);
+            loaded = loadConfig(file);
+            break;
           case XML_PROPERTIES:
-            return loadProperties(file, new XMLProperties(), settings);
+            loaded = loadProperties(file, new XMLProperties(), settings);
+            break;
           case PROPERTIES:
-            return loadProperties(file, new Properties(), settings);
+            loaded = loadProperties(file, new Properties(), settings);
+            break;
           default:
         }
+        if (loaded) {
+          for (ConfigListener listener : listeners) {
+            try {
+              listener.load();
+            } catch (Exception ex) {
+              // MUST NOT
+              LOGGER.warn("Listener threw an exception", ex);
+            }
+          }
+        }
+
       } catch (Exception ex) {
         System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
         LOGGER.warn("Unable to load the configuration file", ex);
       }
     }
     return false;
+  }
+
+  /**
+   * Add a listener to invoke when the settings are being loaded or reloaded.
+   *
+   * @param listener The listener to register.
+   */
+  @Beta
+  public static void registerListener(ConfigListener listener) {
+    listeners.add(listener);
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -663,7 +695,9 @@ public final class GlobalSettings {
       System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
       LOGGER.debug("Unable to read the properties file", ex);
     } finally {
-      if (in != null) in.close();
+      if (in != null) {
+        in.close();
+      }
     }
     // Load the values into the map
     for (Entry<Object, Object> e : p.entrySet()) {
