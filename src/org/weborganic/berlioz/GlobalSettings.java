@@ -52,7 +52,7 @@ import org.weborganic.berlioz.xml.XMLProperties;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.30 - 8 January 2015
+ * @version Berlioz 0.9.31 - 8 January 2015
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
@@ -605,7 +605,7 @@ public final class GlobalSettings {
         LOGGER.warn("Unable to load the configuration file", ex);
       }
     }
-    return false;
+    return loaded;
   }
 
   /**
