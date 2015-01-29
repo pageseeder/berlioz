@@ -21,6 +21,7 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,7 +60,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.25 - 11 December 2013
+ * @version Berlioz 0.9.32 - 29 January 2015
  * @since Berlioz 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -144,17 +145,23 @@ public final class ErrorHandlerServlet extends HttpServlet {
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
     String preserve = config.getInitParameter("forward-extensions");
-    if (preserve == null) preserve = FORWARD_EXTENSIONS;
+    if (preserve == null) {
+      preserve = FORWARD_EXTENSIONS;
+    }
     for (String ext : preserve.split(",")) {
       forwardExtensions.add(ext);
     }
     String ignore = config.getInitParameter("ignore-extensions");
-    if (ignore == null) ignore = IGNORE_EXTENSIONS;
+    if (ignore == null) {
+      ignore = IGNORE_EXTENSIONS;
+    }
     for (String ext : ignore.split(",")) {
       ignoreExtensions.add(ext);
     }
     defaultExtension = config.getInitParameter("forward-default");
-    if (defaultExtension == null) defaultExtension = DEFAULT_EXTENSION;
+    if (defaultExtension == null) {
+      defaultExtension = DEFAULT_EXTENSION;
+    }
   }
 
   /**
@@ -205,13 +212,20 @@ public final class ErrorHandlerServlet extends HttpServlet {
   public static void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
     // Grab the status code (Default to 200 OK)
-    Integer code  = (Integer)req.getAttribute(ERROR_STATUS_CODE);
-    if (code == null) {
-      code = Integer.valueOf(HttpServletResponse.SC_OK);
-    }
+    int code  = getErrorCode(req);
 
     // Get URI of error handler
     String uri = req.getRequestURI();
+
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Error handler for URI:{}", uri);
+      LOGGER.debug(ERROR_MESSAGE+":{}", req.getAttribute(ERROR_MESSAGE));
+      LOGGER.debug(ERROR_STATUS_CODE+":{}", req.getAttribute(ERROR_STATUS_CODE));
+      LOGGER.debug(ERROR_SERVLET_NAME+":{}", req.getAttribute(ERROR_SERVLET_NAME));
+      LOGGER.debug(ERROR_EXCEPTION+":{}", req.getAttribute(ERROR_EXCEPTION));
+      LOGGER.debug(ERROR_REQUEST_URI+":{}", req.getAttribute(ERROR_REQUEST_URI));
+      LOGGER.debug(BERLIOZ_ERROR_ID+":{}", req.getAttribute(BERLIOZ_ERROR_ID));
+    }
 
     // Fetch original URI and its extension
     String original = getOriginalURI(req);
@@ -238,12 +252,10 @@ public final class ErrorHandlerServlet extends HttpServlet {
       }
 
       // Replace the .auto by the original extension (.html, .xml, .json, etc...)
-      String to = uri;
-      int dot = uri.lastIndexOf('.');
-      to = (dot >= 0? uri.substring(0, dot) : uri)+ext;
+      String to = replaceAutoURI(uri, ext, req.getContextPath());
 
       // If we do not detect a loop we forward the request
-      if (!uri.equals(to) && !uri.equals(to)) {
+      if (!uri.equals(to)) {
 
         // Let's forward the request
         RequestDispatcher dispatcher = req.getRequestDispatcher(to);
@@ -292,16 +304,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     // Grab data from attributes
     String message = (String)req.getAttribute(ERROR_MESSAGE);
-    Integer code   = (Integer)req.getAttribute(ERROR_STATUS_CODE);
+    int code = getErrorCode(req);
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
-    Throwable throwable = (Throwable)req.getAttribute(ERROR_EXCEPTION);
+    Throwable throwable = getErrorException(req);
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
     String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
-
-    // Ensure we have a status code
-    if (code == null) {
-      code = Integer.valueOf(HttpServletResponse.SC_OK);
-    }
 
     // Write the XML
     StringWriter out = new StringWriter();
@@ -337,8 +344,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
         // If some errors were collected, let's include them
         if (throwable instanceof CompoundBerliozException) {
           xml.openElement("collected-errors");
-          ErrorCollector<? extends Exception> collector = ((CompoundBerliozException)throwable).getCollector();
-          for (CollectedError<? extends Exception> collected : collector.getErrors()) {
+          ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)throwable).getCollector();
+          for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
             collected.toXML(xml);
           }
           xml.closeElement();
@@ -401,16 +408,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     // Grab data from attributes
     String message = (String)req.getAttribute(ERROR_MESSAGE);
-    Integer code   = (Integer)req.getAttribute(ERROR_STATUS_CODE);
+    int code = getErrorCode(req);
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
-    Throwable throwable = (Throwable)req.getAttribute(ERROR_EXCEPTION);
+    Throwable throwable = getErrorException(req);
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
     String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
-
-    // Ensure we have a status code
-    if (code == null) {
-      code = Integer.valueOf(HttpServletResponse.SC_OK);
-    }
 
     // Write the JSON
     StringBuilder json = new StringBuilder();
@@ -535,11 +537,66 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static String getOriginalURI(HttpServletRequest req) {
     Object original = req.getAttribute("javax.servlet.error.request_uri");
-    if (original != null && original instanceof String) {
-      return (String)original;
-    }
+    if (original != null && original instanceof String) return (String)original;
     return req.getRequestURI();
   }
+
+  /**
+   * Returns the error code from the request attribute '<code>javax.servlet.error.status_code</code>'.
+   *
+   * @param req the servlet request
+   *
+   * @return the error code.
+   */
+  private static int getErrorCode(ServletRequest req) {
+    Object o = req.getAttribute(ERROR_STATUS_CODE);
+    if (o == null) return HttpServletResponse.SC_OK;
+    else if (o instanceof Integer) {
+      Integer code  = (Integer)o;
+      return code.intValue();
+    } else {
+      LOGGER.error("The 'javax.servlet.error.status_code' must contain an Integer, but was of type: {}", o.getClass().getSimpleName());
+      return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+    }
+  }
+
+  /**
+   * Returns the error code from the request attribute '<code>javax.servlet.error.exception</code>'.
+   *
+   * @param req the servlet request
+   *
+   * @return the error code.
+   */
+  private static Throwable getErrorException(ServletRequest req) {
+    Object o = req.getAttribute(ERROR_EXCEPTION);
+    if (o == null) return null;
+    else if (o instanceof Throwable) return (Throwable)o;
+    else {
+      LOGGER.error("The 'javax.servlet.error.exception' must contain a Throwable, but was of type: {}", o.getClass().getSimpleName());
+      return null;
+    }
+  }
+
+
+  /**
+   * Replace the .auto by the original extension (.html, .xml, .json, etc...)
+   *
+   * <p>The application context is removed from the request URI as the RequestDiscpatcher will automatically add it.
+   *
+   * @param uri     The original request URI
+   * @param ext     The extension to map the .auto to
+   * @param context The application context
+   *
+   * @return THe path to forward to.
+   */
+  private static String replaceAutoURI(String uri, String ext, String context) {
+    String to = uri.substring(context.length());
+    int dot = to.lastIndexOf('.');
+    to = (dot >= 0? to.substring(0, dot) : uri)+ext;
+    LOGGER.debug("Auto forward: {} to {}", uri, to);
+    return  to;
+  }
+
 
   private static StringBuilder appendJSONName(StringBuilder json, String name) {
     return json.append('"').append(name).append('"').append(':');

@@ -79,7 +79,7 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.27 - 17 December 2013
+ * @version Berlioz 0.9.32 - 29 January 2015
  * @since Berlioz 0.8.7
  */
 public final class GetErrorDetails implements ContentGenerator {
@@ -92,10 +92,12 @@ public final class GetErrorDetails implements ContentGenerator {
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
+    // XXX: Copy of error handler!
+
     // Grab data from attributes
     String message = (String)req.getAttribute(ErrorHandlerServlet.ERROR_MESSAGE);
     Integer code   = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
-    Exception exception = (Exception)req.getAttribute(ErrorHandlerServlet.ERROR_EXCEPTION);
+    Throwable exception = (Throwable)req.getAttribute(ErrorHandlerServlet.ERROR_EXCEPTION);
     String requestURI = (String)req.getAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI);
     String errorId = (String)req.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_ID);
 
@@ -119,19 +121,21 @@ public final class GetErrorDetails implements ContentGenerator {
     // Other informational elements
     String title = HttpStatusCodes.getTitle(code);
     xml.element("title", title != null? title : "Berlioz Status");
-    if (message != null)
+    if (message != null) {
       xml.element("message", message);
-    if (requestURI != null)
+    }
+    if (requestURI != null) {
       xml.element("request-uri", requestURI);
+    }
 
     if (exception != null) {
-      Errors.toXML(exception, xml);
+      Errors.toXML(exception, xml, true);
 
       // If some errors were collected, let's include them
       if (exception instanceof CompoundBerliozException) {
         xml.openElement("collected-errors");
-        ErrorCollector<? extends Exception> collector = ((CompoundBerliozException)exception).getCollector();
-        for (CollectedError<? extends Exception> collected : collector.getErrors()) {
+        ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)exception).getCollector();
+        for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
           collected.toXML(xml);
         }
         xml.closeElement();
@@ -142,8 +146,9 @@ public final class GetErrorDetails implements ContentGenerator {
 
     // Set the status code of the generator
     ContentStatus status = ContentStatus.forCode(code);
-    if (status != null)
+    if (status != null) {
       req.setStatus(status);
+    }
 
   }
 
