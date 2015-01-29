@@ -296,8 +296,9 @@ public final class BerliozServlet extends HttpServlet {
     XSLTransformer transformer = this._config.getTransformer(match.service());
 
     // Indicate that the representation may vary depending on the encoding
-    if (config.enableCompression())
+    if (config.enableCompression()) {
       res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
+    }
 
     // Compute the ETag for the request if cacheable and method GET or HEAD
     String etag = null;
@@ -460,23 +461,29 @@ public final class BerliozServlet extends HttpServlet {
       }
       // Use the error handler if defined, otherwise use the default error handling options
       if (this._errorHandler != null) {
-        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-          LOGGER.error("Berlioz forwarding error {} [{}] to handler", message, code, ex);
-        else
-          LOGGER.warn("Berlioz forwarding error {} [{}] to handler", message, code, ex);
+        String format = "Berlioz forwarding error {} [{}] to handler";
+        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
+          LOGGER.error(format, message, code, ex);
+        } else {
+          LOGGER.warn(format, message, code, ex);
+        }
         this._errorHandler.forward(req, res);
       } else {
-        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-          LOGGER.error("Berlioz handling error {} [{}] to handler", message, code, ex);
-        else
-          LOGGER.warn("Berlioz handling error {} [{}] to handler", message, code, ex);
+        String format = "Berlioz handling error {} [{}] to handler";
+        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
+          LOGGER.error(format, message, code, ex);
+        } else {
+          LOGGER.warn(format, message, code, ex);
+        }
         ErrorHandlerServlet.handle(req, res);
       }
     } else {
-      if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-        LOGGER.error("Berlioz sending error to Web container {} [{}] to handler", message, code, ex);
-      else
-        LOGGER.warn("Berlioz sending error to Web container {} [{}] to handler", message, code, ex);
+      String format = "Berlioz sending error to Web container {} [{}] to handler";
+      if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
+        LOGGER.error(format, message, code, ex);
+      } else {
+        LOGGER.warn(format, message, code, ex);
+      }
       res.sendError(code, req.getRequestURI());
     }
   }

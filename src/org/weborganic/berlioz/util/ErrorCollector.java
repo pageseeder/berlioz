@@ -20,10 +20,10 @@ import org.weborganic.berlioz.util.CollectedError.Level;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 1 July 2011
+ * @version Berlioz 0.9.32 - 29 January 2015
  * @since Berlioz 0.8.1
  */
-public class ErrorCollector<T extends Exception>  {
+public class ErrorCollector<T extends Throwable>  {
 
   /**
    * Errors are collected here.

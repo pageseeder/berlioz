@@ -15,7 +15,7 @@ import org.weborganic.berlioz.ErrorID;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 1 July 2011
+ * @version Berlioz 0.9.32 - 29 January 2015
  * @since Berlioz 0.8.1
  */
 public final class CompoundBerliozException extends BerliozException {
@@ -28,7 +28,7 @@ public final class CompoundBerliozException extends BerliozException {
   /**
    * The error collector.
    */
-  private final ErrorCollector<? extends Exception> _collector;
+  private final ErrorCollector<? extends Throwable> _collector;
 
   /**
    * Creates a new compound exception.
@@ -36,7 +36,7 @@ public final class CompoundBerliozException extends BerliozException {
    * @param message   An explanatory message.
    * @param collector The error collector.
    */
-  public CompoundBerliozException(String message, ErrorCollector<? extends Exception> collector) {
+  public CompoundBerliozException(String message, ErrorCollector<? extends Throwable> collector) {
     super(message);
     this._collector = collector;
   }
@@ -48,7 +48,7 @@ public final class CompoundBerliozException extends BerliozException {
    * @param ex        The original exception causing this exception to be raised.
    * @param collector The error collector.
    */
-  public CompoundBerliozException(String message, Exception ex, ErrorCollector<? extends Exception> collector) {
+  public CompoundBerliozException(String message, Exception ex, ErrorCollector<? extends Throwable> collector) {
     super(message, ex);
     this._collector = collector;
   }
@@ -60,7 +60,7 @@ public final class CompoundBerliozException extends BerliozException {
    * @param id        An error ID to help with error handling and diagnostic.
    * @param collector The error collector.
    */
-  public CompoundBerliozException(String message, ErrorID id, ErrorCollector<? extends Exception> collector) {
+  public CompoundBerliozException(String message, ErrorID id, ErrorCollector<? extends Throwable> collector) {
     super(message, id);
     this._collector = collector;
   }
@@ -74,7 +74,7 @@ public final class CompoundBerliozException extends BerliozException {
    * @param collector The error collector.
    */
   public CompoundBerliozException(String message, Exception ex, ErrorID id,
-      ErrorCollector<? extends Exception> collector) {
+      ErrorCollector<? extends Throwable> collector) {
     super(message, ex, id);
     this._collector = collector;
   }
@@ -84,7 +84,7 @@ public final class CompoundBerliozException extends BerliozException {
    *
    * @return The error collector included in this exception.
    */
-  public ErrorCollector<? extends Exception> getCollector() {
+  public ErrorCollector<? extends Throwable> getCollector() {
     return this._collector;
   }
 }

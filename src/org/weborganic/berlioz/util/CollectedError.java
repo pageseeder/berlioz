@@ -22,10 +22,10 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 1 July 2011
+ * @version Berlioz 0.9.32 - 29 January 2015
  * @since Berlioz 0.8.1
  */
-public final class CollectedError<T extends Exception> implements XMLWritable {
+public final class CollectedError<T extends Throwable> implements XMLWritable {
 
   /**
    * The level of collected error.
@@ -46,7 +46,7 @@ public final class CollectedError<T extends Exception> implements XMLWritable {
 
     @Override
     public String toString() {
-      return this.name().toLowerCase();
+      return name().toLowerCase();
     }
   };
 

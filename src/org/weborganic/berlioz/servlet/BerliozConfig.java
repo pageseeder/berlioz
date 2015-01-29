@@ -151,7 +151,9 @@ public final class BerliozConfig {
     }
     String maxAge = GlobalSettings.get(BerliozOption.HTTP_MAX_AGE);
     String cacheControl = GlobalSettings.get(BerliozOption.HTTP_CACHE_CONTROL);
-    if (cacheControl.isEmpty()) cacheControl = "max-age="+maxAge+", must-revalidate";
+    if (cacheControl.isEmpty()) {
+      cacheControl = "max-age="+maxAge+", must-revalidate";
+    }
     this._cacheControl = this.getInitParameter("cache-control", cacheControl);
     this._controlKey = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));
     this._compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
@@ -438,21 +440,16 @@ public final class BerliozConfig {
    * @return The values for the specified init parameter name.
    */
   private static TransformAllocation toAllocation(String stylePath) {
-    if ("IDENTITY".equals(stylePath) || stylePath == null) {
-      return TransformAllocation.NIL;
-    } else if (stylePath.contains("{SERVICE}")) {
-      return TransformAllocation.SERVICE;
-    } else if (stylePath.contains("{GROUP}")) {
-      return TransformAllocation.GROUP;
-    } else {
-      return TransformAllocation.GLOBAL;
-    }
+    if ("IDENTITY".equals(stylePath) || stylePath == null) return TransformAllocation.NIL;
+    else if (stylePath.contains("{SERVICE}")) return TransformAllocation.SERVICE;
+    else if (stylePath.contains("{GROUP}")) return TransformAllocation.GROUP;
+    else return TransformAllocation.GLOBAL;
   }
 
   /**
    * Returns the URL instance from the specified path.
    *
-   * If the path starts with "resource:", the XSLt will be loaded from a resource
+   * If the path starts with "resource:", the XSLT will be loaded from a resource
    * using the same class loader as Berlioz.
    *
    * @param path the path to create the URL
