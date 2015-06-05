@@ -18,7 +18,7 @@ import org.weborganic.berlioz.GlobalSettings;
 import org.weborganic.berlioz.content.Location;
 import org.weborganic.berlioz.content.PathInfo;
 import org.weborganic.berlioz.content.Service;
-import org.weborganic.furi.URIResolveResult;
+import org.weborganic.berlioz.furi.URIResolveResult;
 
 import com.topologi.diffx.xml.XMLWritable;
 import com.topologi.diffx.xml.XMLWriter;
