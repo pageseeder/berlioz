@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.content.ContentRequest;
 import org.weborganic.berlioz.content.Environment;
 import org.weborganic.berlioz.content.Location;
+import org.weborganic.berlioz.furi.URIResolveResult;
 import org.weborganic.berlioz.util.ISO8601;
-import org.weborganic.furi.URIResolveResult;
 
 /**
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods

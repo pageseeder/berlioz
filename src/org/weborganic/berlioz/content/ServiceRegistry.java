@@ -19,10 +19,10 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.furi.URIPattern;
+import org.weborganic.berlioz.furi.URIResolver;
+import org.weborganic.berlioz.furi.URIResolver.MatchRule;
 import org.weborganic.berlioz.http.HttpMethod;
-import org.weborganic.furi.URIPattern;
-import org.weborganic.furi.URIResolver;
-import org.weborganic.furi.URIResolver.MatchRule;
 
 /**
  * A registry for services.
@@ -31,7 +31,7 @@ import org.weborganic.furi.URIResolver.MatchRule;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.3 - 9 December 2011
+ * @version Berlioz 0.9.32
  * @since Berlioz 0.8
  */
 public final class ServiceRegistry {
@@ -131,9 +131,7 @@ public final class ServiceRegistry {
     if (service == null) return null;
     for (HttpMethod m : this.registry.keySet()) {
       ServiceMap mapping = this.registry.get(m);
-      if (mapping.isMapped(service)) {
-        return m;
-      }
+      if (mapping.isMapped(service)) return m;
     }
     return null;
   }
@@ -150,9 +148,7 @@ public final class ServiceRegistry {
     for (HttpMethod m : this.registry.keySet()) {
       ServiceMap mapping = this.registry.get(m);
       boolean mapped = mapping.isMapped(service);
-      if (mapped) {
-        return mapping.matches(service);
-      }
+      if (mapped) return mapping.matches(service);
     }
     return Collections.emptyList();
   }

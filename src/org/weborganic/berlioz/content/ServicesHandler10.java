@@ -14,11 +14,11 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.weborganic.berlioz.furi.URIPattern;
 import org.weborganic.berlioz.generator.NoContent;
 import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.berlioz.util.Pair;
 import org.weborganic.berlioz.xml.SAXErrorCollector;
-import org.weborganic.furi.URIPattern;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
@@ -32,7 +32,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.29 - 28 August 2014
+ * @version Berlioz 0.9.32
  * @since Berlioz 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {

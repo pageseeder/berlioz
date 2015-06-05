@@ -7,8 +7,8 @@
  */
 package org.weborganic.berlioz.content;
 
-import org.weborganic.furi.URIPattern;
-import org.weborganic.furi.URIResolveResult;
+import org.weborganic.berlioz.furi.URIPattern;
+import org.weborganic.berlioz.furi.URIResolveResult;
 
 /**
  * Encapsulates the results of the service matching.

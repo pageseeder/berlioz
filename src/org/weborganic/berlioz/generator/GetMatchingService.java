@@ -19,10 +19,10 @@ import org.weborganic.berlioz.content.ContentStatus;
 import org.weborganic.berlioz.content.MatchingService;
 import org.weborganic.berlioz.content.Service;
 import org.weborganic.berlioz.content.ServiceRegistry;
+import org.weborganic.berlioz.furi.URIPattern;
+import org.weborganic.berlioz.furi.URIResolveResult;
 import org.weborganic.berlioz.http.HttpMethod;
 import org.weborganic.berlioz.servlet.HttpEnvironment;
-import org.weborganic.furi.URIPattern;
-import org.weborganic.furi.URIResolveResult;
 
 import com.topologi.diffx.xml.XMLWriter;
 
@@ -59,7 +59,7 @@ import com.topologi.diffx.xml.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.3 - 9 December 2011
+ * @version Berlioz 0.9.32
  * @since Berlioz 0.9.3
  */
 @Beta
