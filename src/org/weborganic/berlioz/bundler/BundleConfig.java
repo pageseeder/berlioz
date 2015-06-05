@@ -244,14 +244,14 @@ public final class BundleConfig implements Serializable {
    */
   public static BundleConfig newInstance(String name, BundleType type, File root) {
     String lctype = type.name().toLowerCase();
-    String[] names = getBundleNames("bastille."+lctype+"bundler.configs."+name);
+    String[] names = getBundleNames("berlioz."+lctype+"bundler.configs."+name);
     Map<String, BundleDefinition> defaults = BundleType.JS == type? DEFAULT_JS_BUNDLE : DEFAULT_CSS_BUNDLE;
-    List<BundleDefinition> definitions = loadDefinitions(names, "bastille."+lctype+"bundler.bundles.", defaults);
-    boolean minimize = GlobalSettings.get("bastille."+lctype+"bundler.minimize", true);
+    List<BundleDefinition> definitions = loadDefinitions(names, "berlioz."+lctype+"bundler.bundles.", defaults);
+    boolean minimize = GlobalSettings.get("berlioz."+lctype+"bundler.minimize", true);
 
     // Create the bundle store
     String defaultLocation = getDefaultLocation(type);
-    String location = GlobalSettings.get("bastille."+lctype+"bundler.location", defaultLocation);
+    String location = GlobalSettings.get("berlioz."+lctype+"bundler.location", defaultLocation);
     File store = new File(root, location);
     if (!store.exists()) {
       store.mkdirs();
@@ -273,7 +273,7 @@ public final class BundleConfig implements Serializable {
     // Initialise the bundler
     WebBundleTool bundler = new WebBundleTool(new File(this._root, this._location));
     if (this._type == BundleType.CSS) {
-      int threshold = GlobalSettings.get("bastille.cssbundler.datauris.threshold", 4096);
+      int threshold = GlobalSettings.get("berlioz.cssbundler.datauris.threshold", 4096);
       bundler.setDataURIThreshold(threshold);
     }
     return bundler;
