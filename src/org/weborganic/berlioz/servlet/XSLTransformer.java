@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
 import org.weborganic.berlioz.BerliozErrorID;
 import org.weborganic.berlioz.BerliozOption;
 import org.weborganic.berlioz.GlobalSettings;
+import org.weborganic.berlioz.aeson.JSONResult;
 import org.weborganic.berlioz.content.Service;
-import org.weborganic.berlioz.util.Aeson;
 import org.weborganic.berlioz.util.CollectedError;
 import org.weborganic.berlioz.util.Errors;
 import org.weborganic.berlioz.util.ISO8601;
@@ -62,7 +62,7 @@ import com.topologi.diffx.xml.XMLWriterImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.27 - 18 December 2013
+ * @version Berlioz 0.9.32
  * @since Berlioz 0.7
  */
 public final class XSLTransformer {
@@ -225,9 +225,8 @@ public final class XSLTransformer {
    */
   private static String computeEtag(File templates, URL fallback) {
     if (!templates.exists()) {
-      if (fallback != null) {
-        return MD5.hash(fallback.toString());
-      } else {
+      if (fallback != null) return MD5.hash(fallback.toString());
+      else {
         LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getName());
         LOGGER.error("Create a stylesheet at the path below:");
         LOGGER.error(templates.getPath());
@@ -295,7 +294,7 @@ public final class XSLTransformer {
     }
 
     // Check for JSON
-    Result r = Aeson.updateResultIfPossible(transformer, result);
+    Result r = JSONResult.newInstanceIfSupported(transformer, result);
 
     // Process, write directly to the result
     long before = System.nanoTime();
