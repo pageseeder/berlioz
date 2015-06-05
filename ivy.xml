@@ -17,5 +17,7 @@
     <dependency org="weborganic" name="wo-furi"              rev="latest.milestone" conf="core"/>
     <dependency org="slf4j"      name="slf4j-api"            rev="latest.milestone" conf="core"/>
     <dependency org="javax"      name="servlet-api"          rev="[2.4,3.0]"        conf="default"/>
+    <dependency org="javax"      name="json-api"             rev="1.0"              conf="default"/>
+
   </dependencies>
 </ivy-module>
