@@ -52,8 +52,8 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>This generator is highly configurable and the configuration properties are specific (but similar)
  * for styles and scripts.
  *
- * <p>Properties pertaining to scripts and styles are prefixed by respectively <code>bastille.jsbundler</code>
- * and <code>bastille.cssbundler</code>.
+ * <p>Properties pertaining to scripts and styles are prefixed by respectively <code>berlioz.jsbundler</code>
+ * and <code>berlioz.cssbundler</code>.
  *
  * <p>The <code>minimize</code> property can be used to control minimization of the code.
  *
