@@ -120,10 +120,15 @@ public final class Errors {
    * @throws IOException Only if thrown by the XML writer.
    */
   public static void toXML(Throwable ex, XMLWriter xml, boolean wrap) throws IOException {
-    if (ex instanceof SAXParseException)    { asSAXParseExceptionXML((SAXParseException)ex, xml, wrap); return; }
-    if (ex instanceof TransformerException) { asTransformerExceptionXML((TransformerException)ex, xml, wrap); return; }
-    if (ex instanceof Exception)            { asExceptionXML((Exception)ex, xml, wrap); return; }
-    if (ex instanceof Error)                { asErrorXML((Error)ex, xml, wrap); return; }
+    if (ex instanceof SAXParseException)    {
+      asSAXParseExceptionXML((SAXParseException)ex, xml, wrap);
+    } else if (ex instanceof TransformerException) {
+      asTransformerExceptionXML((TransformerException)ex, xml, wrap);
+    } else if (ex instanceof Exception) {
+      asExceptionXML((Exception)ex, xml, wrap);
+    } else if (ex instanceof Error) {
+      asErrorXML((Error)ex, xml, wrap);
+    }
   }
 
   /**

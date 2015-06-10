@@ -151,8 +151,12 @@ public final class WebBundle {
    * @return <code>true</code> if it can be safely minimized; <code>false</code> otherwise.
    */
   public boolean isCSSMinimizable() {
-    for (File f : this._files) if (f.getName().endsWith(".min.css")) return false;
-    for (File f : this._imported) if (f.getName().endsWith(".min.css")) return false;
+    for (File f : this._files) {
+      if (f.getName().endsWith(".min.css")) return false;
+    }
+    for (File f : this._imported) {
+      if (f.getName().endsWith(".min.css")) return false;
+    }
     return true;
   }
 

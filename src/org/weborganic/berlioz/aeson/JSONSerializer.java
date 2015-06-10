@@ -228,10 +228,8 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Handles <code>json:*</code> elements and indicates whether the handler should continue.
    *
-   * @param localName
-   * @param atts
-   *
-   * @throws SAXException
+   * @param localName Local element name
+   * @param atts      List of attributes on that element
    */
   private void handleJSONElement(String localName, Attributes atts) {
     String name = atts.getValue(NS_URI, "name");
@@ -290,10 +288,8 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Handles <code>json:*</code> elements and indicates whether the handler should continue.
    *
-   * @param localName
-   * @param atts
-   *
-   * @throws SAXException
+   * @param localName Local element name
+   * @param atts      List of attributes on that element
    */
   private void handleElement(String localName, Attributes atts) {
     String name = atts.getValue(NS_URI, "name");
@@ -431,13 +427,12 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * Attempts to write the specified name/value pair as a <code>null</code>.
    *
    * @param name  The JSON name to write (may be <code>null</code>)
-   * @param value The JSON value to write.
    */
   private void asNull(String name) {
     if (name != null) {
       this.json.writeNull2(name);
     } else {
-      this.json.writeNull();
+      this.json.writeNull2();
     }
   }
 

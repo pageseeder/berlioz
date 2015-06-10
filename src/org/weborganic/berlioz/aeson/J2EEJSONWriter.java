@@ -151,7 +151,7 @@ final class J2EEJSONWriter implements JSONWriter {
 
   @Override
   public void close() {
-    close();
+    this._json.close();
   }
 
   /**

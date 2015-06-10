@@ -119,20 +119,6 @@ public final class TokenFactory {
   }
 
   /**
-   * Generates the token corresponding to the specified expression.
-   *
-   * @param exp The expression.
-   *
-   * @return The corresponding token instance.
-   *
-   * @throws URITemplateSyntaxException If the expression could not be parsed as a valid token.
-   */
-  public static Token newToken(String exp, Syntax syntax) {
-    TokenFactory factory = getInstance(syntax);
-    return factory.newToken(exp);
-  }
-
-  /**
    * Creates a new 'wildcard' token for legacy purposes.
    *
    * <p>This is used for conventional URI patterns which have been implemented using "*".
@@ -154,6 +140,8 @@ public final class TokenFactory {
 
   /**
    * Returns a token factory instance.
+   *
+   * @param syntax The syntax to use for the token factory.
    *
    * @return a token factory instance.
    */

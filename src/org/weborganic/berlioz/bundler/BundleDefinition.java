@@ -10,7 +10,16 @@ package org.weborganic.berlioz.bundler;
 import java.io.Serializable;
 
 /**
- * Holds the basic configurations for a bundle.
+ * Holds the definition of a single bundle configuration item.
+ *
+ * <p>A bundle definition has:
+ * <ul>
+ *   <li>A name (e.g. "global", "group", "service")</li>
+ *   <li>A filename which may include tokens (e.g. "global", "{GROUP}", "{SERVICE}")</li>
+ *   <li>A list of web paths included as part of this bundle which may also include dynamic tokens.</li>
+ * </ul>
+ *
+ * <p>When a bundle definition is instantiated for a specific service, the tokens are resolved and fixed.
  *
  * @version Berlioz 0.9.32
  * @since Berlioz 0.9.32
@@ -21,7 +30,7 @@ final class BundleDefinition implements Serializable {
   private static final long serialVersionUID = -663743071617576797L;
 
   /**
-   * The name of the bundle.
+   * The name of the bundle definition.
    */
   private final String _name;
 
@@ -54,6 +63,10 @@ final class BundleDefinition implements Serializable {
   }
 
   /**
+   * The name to use for the file name of the bundle instance.
+   *
+   * <p>The name may contain tokens to be resolved when instantiated.
+   *
    * @return The name to use of the filename of the bundle.
    */
   public String filename() {
@@ -61,6 +74,10 @@ final class BundleDefinition implements Serializable {
   }
 
   /**
+   * The list of paths to include in the bundle.
+   *
+   * <p>The name may contain tokens to be resolved when instantiated.
+   *
    * @return The list of paths to include in the bundle.
    */
   public String[] paths() {

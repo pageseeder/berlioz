@@ -31,12 +31,12 @@ final class JSONState {
   /**
    * How property values should be serialized.
    */
-  public enum JSONType {STRING, NUMBER, BOOLEAN, NULL, DEFAULT};
+  public enum JSONType { STRING, NUMBER, BOOLEAN, NULL, DEFAULT };
 
   /**
    * The current context.
    */
-  public enum JSONContext {ROOT, OBJECT, ARRAY, NULL, VALUE};
+  public enum JSONContext { ROOT, OBJECT, ARRAY, NULL, VALUE };
 
   /**
    * Keeps track of the context.
@@ -121,7 +121,7 @@ final class JSONState {
   }
 
   /**
-   * Outputs the current state as a string.
+   * @return the current state as a string.
    */
   @Override
   public String toString() {

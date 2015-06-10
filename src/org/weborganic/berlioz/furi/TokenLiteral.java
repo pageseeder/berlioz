@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  * @version Berlioz 0.9.32
  * @since Berlioz 0.9.32
  */
-public class TokenLiteral extends TokenBase implements Token, Matchable {
+public final class TokenLiteral extends TokenBase implements Token, Matchable {
 
   /**
    * Creates a new literal text token.
@@ -34,29 +34,20 @@ public class TokenLiteral extends TokenBase implements Token, Matchable {
    *
    * @throws NullPointerException If the specified text is <code>null</code>.
    */
-  public TokenLiteral(String text) throws NullPointerException {
+  public TokenLiteral(String text) {
     super(text);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public String expand(Parameters parameters) {
     return expression();
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public boolean match(String part) {
     return expression().equals(part);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public Pattern pattern() {
     return Pattern.compile(Pattern.quote(expression()));

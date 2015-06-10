@@ -131,6 +131,7 @@ public class URITemplate implements Expandable {
    * Returns the list of tokens corresponding to the specified URI template.
    *
    * @param template The URI template to digest.
+   * @param factory  The token factory to use.
    *
    * @return The corresponding list of URL tokens.
    *
