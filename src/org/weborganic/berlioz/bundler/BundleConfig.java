@@ -217,7 +217,9 @@ public final class BundleConfig implements Serializable {
   }
 
   /**
-   * Creates new instance of a bundle configuration for the specific service.
+   * Returns the list of bundle instance for the specific service.
+   *
+   * @param service the service for which the bundle instances are needed.
    *
    * @return the corresponding configuration.
    */

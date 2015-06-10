@@ -35,9 +35,8 @@ abstract class TokenBase implements Token {
    *
    * @throws NullPointerException If the specified expression is <code>null</code>.
    */
-  public TokenBase(String exp) throws NullPointerException {
-    if (exp == null)
-      throw new NullPointerException("Cannot create a token with a null value.");
+  public TokenBase(String exp) {
+    if (exp == null) throw new NullPointerException("Cannot create a token with a null value.");
     this._exp = exp;
   }
 

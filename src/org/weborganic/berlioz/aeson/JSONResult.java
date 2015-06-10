@@ -67,12 +67,12 @@ public class JSONResult extends SAXResult implements Result {
   // ---------------------------------------------------------------------------------------------
 
   /**
-   * Returns a new instance of the
+   * Returns a new instance of the XSLT result if applicable.
    *
-   * @param t
+   * @param t      The XSLT transformer
+   * @param result The result of transformation as a stream
    *
-   *
-   * @return
+   * @return A new XSLT result if applicable.
    */
   public static Result newInstanceIfSupported(Transformer t, StreamResult result) {
     return supports(t)? newInstance(result) : result;
@@ -84,10 +84,13 @@ public class JSONResult extends SAXResult implements Result {
    * @param result a non-null stream result instance.
    *
    * @return a new <code>JSONResult</code> instance using the same properties as the stream result.
+   *
+   * @throws NullPointerException If the result is stream is <code>null</code>
    */
   public static JSONResult newInstance(StreamResult result) {
     // try to set the JSON result using the byte stream from the stream result
     OutputStream out = result.getOutputStream();
+    String systemId = result.getSystemId();
     JSONResult json = null;
     if (out != null) {
       json = new JSONResult(out);
@@ -97,7 +100,6 @@ public class JSONResult extends SAXResult implements Result {
       if (writer != null) {
         json = new JSONResult(writer);
       } else {
-        String systemId = result.getSystemId();
         if (systemId != null) {
           try {
             File f = new File(URI.create(systemId));
@@ -108,11 +110,14 @@ public class JSONResult extends SAXResult implements Result {
             ex.printStackTrace();
           }
         } else {
+          // Will output to System.out
           json = new JSONResult();
         }
       }
     }
-    json.setSystemId(result.getSystemId());
+    if (systemId != null) {
+      json.setSystemId(systemId);
+    }
     return json;
   }
 

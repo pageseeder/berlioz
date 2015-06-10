@@ -58,6 +58,7 @@ public enum HttpMethod {
    * Set of HTTP methods mappable to a service.
    */
   private static final EnumSet<HttpMethod> MAPPABLE = EnumSet.of(GET, POST, PUT, DELETE);
+  // TODO Add support for PATCH
 
   /**
    * Indicates whether it can be mapped to a content generator.

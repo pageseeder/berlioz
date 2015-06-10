@@ -24,7 +24,7 @@ import javax.xml.transform.stream.StreamSource;
  * @version Berlioz 0.9.32
  * @since Berlioz 0.9.32
  */
-public class Aeson {
+public final class Aeson {
 
   /**
    * To invoke this library on the command line.

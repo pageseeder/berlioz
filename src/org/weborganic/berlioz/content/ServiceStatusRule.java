@@ -181,7 +181,9 @@ import org.weborganic.berlioz.Beta;
       list = Collections.emptyList();
     } else {
       list = Arrays.asList(items.split(","));
-      for (String i : list) { validate(i); }
+      for (String i : list) {
+        validate(i);
+      }
     }
     return new ServiceStatusRule(t, Collections.unmodifiableList(list), r);
   }

@@ -12,7 +12,11 @@ import java.io.Closeable;
 /**
  * Simple interface used internally to pass JSON events to the actual JSON writer.
  *
- * <p>This class is required in order to adapt to the different kind of
+ * <p>This class is required in order to handle the case when a <code>JsonGenerator</code>
+ * implementation is not available. Aeson uses this interface so that it is not coupled
+ * directly the <code>JsonGenerator</code> and can revert back to its internal JSON writer.
+ *
+ * <p>The methods are intendedly similar to the <code>JsonGenerator</code> interface.
  *
  * @author Christophe Lauret
  *
@@ -21,12 +25,34 @@ import java.io.Closeable;
  */
 public interface JSONWriter extends Closeable {
 
+  /**
+   * Start writing a JSON array in the context of an object.
+   *
+   * @param name The name of the array
+   * @return this instance.
+   */
   JSONWriter startArray(String name);
 
+  /**
+   * Start writing a JSON array in the context of an array.
+   *
+   * @return this instance.
+   */
   JSONWriter startArray();
 
+  /**
+   * Start writing a JSON object in the context of an object.
+   *
+   * @param name The name of the array
+   * @return this instance.
+   */
   JSONWriter startObject(String name);
 
+  /**
+   * Start writing a JSON object in the context of an array.
+   *
+   * @return this instance.
+   */
   JSONWriter startObject();
 
   /**
@@ -35,12 +61,34 @@ public interface JSONWriter extends Closeable {
    */
   JSONWriter end();
 
+  /**
+   * Start writing a JSON object in the context of an array.
+   *
+   * @param name a name in the JSON name/value pair to be written in current JSON object
+   * @return this instance.
+   */
   JSONWriter writeNull(String name);
 
+  /**
+   * Start writing a JSON object in the context of an array.
+   *
+   * @return this instance.
+   */
   JSONWriter writeNull();
 
+  /**
+   * Writes a value-pair which value is <code>null</code>.
+   *
+   * @param name a name in the JSON name/value pair to be written in current JSON object
+   * @return this instance.
+   */
   JSONWriter writeNull2(String name);
 
+  /**
+   * Writes a <code>null</code> value.
+   *
+   * @return this instance.
+   */
   JSONWriter writeNull2();
 
   /**

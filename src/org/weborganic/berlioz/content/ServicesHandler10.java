@@ -392,13 +392,13 @@ final class ServicesHandler10 extends DefaultHandler {
       this._builder.name(atts.getValue("name"));
     } catch (NoClassDefFoundError error) {
       ClassNotFoundException ex = new ClassNotFoundException("Class definition problem", error);
-      warning("Failed to create generator "+ atts.getValue("class")+" for service "+this._builder.id(), ex);
+      warning("Failed to create generator "+className+" for service "+this._builder.id(), ex);
     } catch (ClassNotFoundException ex) {
-      warning("Failed to find generator "+ atts.getValue("class")+" for service "+this._builder.id(), ex);
+      warning("Failed to find generator "+className+" for service "+this._builder.id(), ex);
     } catch (IllegalAccessException ex) {
-      warning("Failed to access generator "+ atts.getValue("class")+" for service "+this._builder.id(), ex);
+      warning("Failed to access generator "+className+" for service "+this._builder.id(), ex);
     } catch (InstantiationException ex) {
-      warning("Failed to instantiate generator "+ atts.getValue("class")+" for service "+this._builder.id(), ex);
+      warning("Failed to instantiate generator "+className+" for service "+this._builder.id(), ex);
     }
   }
 

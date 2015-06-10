@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  * A class to hold a collection of parameters for use during the expansion process.
  *

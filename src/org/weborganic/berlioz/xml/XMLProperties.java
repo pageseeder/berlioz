@@ -145,7 +145,7 @@ public final class XMLProperties extends Properties implements XMLWritable {
    * @throws IOException Should an error occur with the XML writer.
    */
   private void nodeToXML(String prefix, XMLWriter xml) throws IOException {
-    final Set<String> nodes = new HashSet<String>();
+    Set<String> nodes = new HashSet<String>();
     // get all the entries
     xml.openElement("map", true);
     for (Enumeration<?> e = keys(); e.hasMoreElements();) {

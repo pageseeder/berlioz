@@ -9,6 +9,7 @@ package org.weborganic.berlioz.bundler;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,45 +17,53 @@ import java.util.List;
 import org.weborganic.berlioz.content.Service;
 
 /**
+ * Represents an actual instance of a bundle.
  *
- * @author clauret
+ * <p>A bundle instance is specific to a service.
+ *
+ * @author christophe Lauret
  *
  * @version Berlioz 0.9.32
  * @since Berlioz 0.9.32
  */
-final class BundleInstance {
+final class BundleInstance implements Serializable {
+
+  /** As per requirement for Serializable. */
+  private static final long serialVersionUID = -4507097239658105026L;
 
   /**
-   * The name of this instance, "global", the name of a group or servive.
+   * The name of this instance, "global", the name of a group or service.
    */
   private final String _name;
 
   /**
    * The list of paths from the web root for that instance.
    */
-  private final String[] _ipaths;
+  private final String[] _paths;
 
   /**
    * The list of files in that instance.
    */
-  private final File[] _ifiles;
+  private final File[] _files;
 
   /**
    * Creates the list of paths
-   * @param name
-   * @param ipaths
+   *
+   * @param name  The name of this bundle.
+   * @param paths The paths to the files for that bundle.
+   * @param root  The root of the website (paths are relative to the root)
    */
-  private BundleInstance(String name, String[] ipaths, File root) {
+  private BundleInstance(String name, String[] paths, File root) {
     this._name = name;
-    this._ipaths = ipaths;
-    this._ifiles = new File[ipaths.length];
-    for (int i=0; i < this._ipaths.length; i++) {
-      this._ifiles[i] = new File(root, this._ipaths[i]);
+    this._paths = paths;
+    this._files = new File[paths.length];
+    for (int i = 0; i < this._paths.length; i++) {
+      this._files[i] = new File(root, this._paths[i]);
     }
   }
 
   /**
-   * @return  The name of this instance, "global", the name of a group or service id.
+   * @return The name of this instance, "global", the name of a group or service id.
    */
   public String name() {
     return this._name;
@@ -77,51 +86,56 @@ final class BundleInstance {
         bundle = bundler.bundleStyles(files, this._name, config.minimize());
       }
     } catch (IOException ex) {
-
+      // TODO Report something!
     }
     return bundle;
   }
 
   /**
-   * @param root the root of the web application
-   * @return a list of existing paths
+   * Updates the specified list of paths to include only the paths which correspond to
+   * existing files.
+   *
+   * @param paths the list of paths to update.
    */
   public void addToExistingPaths(List<String> paths) {
     if (paths == null) return;
-    for (int i=0; i < this._ifiles.length; i++) {
-      if (this._ifiles[i].exists()) {
-        paths.add(this._ipaths[i]);
+    for (int i = 0; i < this._files.length; i++) {
+      if (this._files[i].exists()) {
+        paths.add(this._paths[i]);
       }
     }
   }
 
   /**
-   * @param root the root of the web application
+   * Returns all the existing paths for this bundle.
+   *
    * @return a list of existing paths
    */
   public List<String> listExistingPaths() {
-    return computePaths(this._ipaths, this._ifiles);
+    return computePaths(this._paths, this._files);
   }
 
   /**
-   * @param root the root of the web application
+   * Returns all the existing paths for this bundle.
+   *
    * @return a list of existing files
    */
   public List<File> listExistingFiles() {
-    return computeFiles(this._ifiles);
+    return computeFiles(this._files);
   }
 
   /**
-   * Instantiate a bundle definition for a service
+   * Instantiate a bundle definition for a service.
    *
-   * @param config
-   * @param definition
-   * @param service
-   * @return
+   * @param config     The bundle configuration
+   * @param definition The bundle definition to instantiate.
+   * @param service    The service for which the definition is instantiated.
+   *
+   * @return The corresponding instance.
    */
   public static BundleInstance instantiate(BundleConfig config, BundleDefinition definition, Service service) {
     String name = replaceTokens(definition.filename(), service);
-    final int count = definition.paths().length;
+    int count = definition.paths().length;
     String[] paths = new String[count];
     for (int i = 0; i < count; i++) {
       paths[i] = replaceTokens(definition.paths()[i], service);
@@ -133,7 +147,7 @@ final class BundleInstance {
    * Returns the files in the bundle filtering out files which do not exist and automatically replacing tokens.
    *
    * @param paths The list of paths
-   * @param root  The root of the web application
+   * @param files The list of files corresponding to the specified list of paths
    *
    * @return the list of paths to the files to bundles.
    */
@@ -142,7 +156,7 @@ final class BundleInstance {
     if (paths.length > 1) {
       // multiple paths specified
       List<String> existing = new ArrayList<String>(paths.length);
-      for (int i=0; i < files.length; i++) {
+      for (int i = 0; i < files.length; i++) {
         if (files[i].exists()) {
           existing.add(paths[i]);
         }
@@ -158,8 +172,8 @@ final class BundleInstance {
   /**
    * Returns the files in the bundle filtering out files which do not exist and automatically replacing tokens.
    *
-   * @param paths   The list of paths
-   * @param env     The environment
+   * @param files The list of files to check.
+   *
    * @return the list of files to bundle.
    */
   private static List<File> computeFiles(File[] files) {
