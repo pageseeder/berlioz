@@ -130,7 +130,7 @@
     </zip>
     <!-- make jar -->
     <jar jarfile="${dir.release}/${DSTAMP}/${name.short}-${publish.revision}.jar" basedir="${dir.bin}" index="true">
-      <fileset dir="${dir.resource}" excludes="javadoc.css"/>
+      <fileset dir="${dir.resource}" excludes="javadoc.css,**/*Test.class"/>
       <manifest>
         <attribute name="Built-By"               value="Allette/${user.name}"/>
         <attribute name="Main-Class"             value="${package.main}"/>
