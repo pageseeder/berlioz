@@ -27,9 +27,8 @@ import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.content.PathInfo;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.furi.URIResolveResult;
-
-import com.topologi.diffx.xml.XMLWritable;
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * The XML header common to all Berlioz responses.
@@ -138,7 +137,7 @@ public final class XMLResponseHeader implements XMLWritable {
    *   </header>
    * }</pre>
    *
-   * @see XMLWritable#toXML(com.topologi.diffx.xml.XMLWriter)
+   * @see XMLWritable#toXML(org.pageseeder.xmlwriter.XMLWriter)
    *
    * @param xml The XML Writer to use.
    *

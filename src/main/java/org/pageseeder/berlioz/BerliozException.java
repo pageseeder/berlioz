@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import com.topologi.diffx.xml.XMLWritable;
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * Class of exceptions thrown by this library.
@@ -28,7 +28,7 @@ import com.topologi.diffx.xml.XMLWriter;
  * <p>This class should be used to wrap exceptions thrown by the tools or utility classes that
  * are specific to this library.
  *
- * <p>For convenience, this class is {@link com.topologi.diffx.xml.XMLWritable} so
+ * <p>For convenience, this class is {@link org.pageseeder.xmlwriter.XMLWritable} so
  * that if the exception is caught it can be converted into an XML message.
  *
  * @see XMLWritable

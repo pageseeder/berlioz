@@ -31,8 +31,8 @@ import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.util.ISO8601;
 
-import com.topologi.diffx.xml.XMLWritable;
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * Collects basic statistics about generators.

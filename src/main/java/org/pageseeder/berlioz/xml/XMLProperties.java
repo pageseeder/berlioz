@@ -29,15 +29,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.pageseeder.berlioz.util.ISO8601;
+import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
-
-import com.topologi.diffx.xml.XMLWritable;
-import com.topologi.diffx.xml.XMLWriter;
-import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * An XML version of the <code>Properties</code> class.

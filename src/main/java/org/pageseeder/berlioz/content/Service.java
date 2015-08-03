@@ -26,10 +26,10 @@ import java.util.Map.Entry;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.xmlwriter.XMLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * A list of of content generators or content instructions.

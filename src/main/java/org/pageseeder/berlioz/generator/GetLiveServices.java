@@ -27,8 +27,7 @@ import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * Returns the current service configuration as XML.

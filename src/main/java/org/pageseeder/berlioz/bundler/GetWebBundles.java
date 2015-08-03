@@ -28,8 +28,7 @@ import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.servlet.HttpContentRequest;
-
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * This generator returns the list of timestamped scripts and styles for a given service.

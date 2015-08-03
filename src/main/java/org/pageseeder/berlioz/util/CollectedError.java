@@ -17,8 +17,8 @@ package org.pageseeder.berlioz.util;
 
 import java.io.IOException;
 
-import com.topologi.diffx.xml.XMLWritable;
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * A simple class to associate an error collected by a parser to a level or seriousness.

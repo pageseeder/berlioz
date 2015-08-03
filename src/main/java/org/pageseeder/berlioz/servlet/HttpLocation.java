@@ -22,8 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.content.PathInfo;
-
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * Capture details about the location of a resource.

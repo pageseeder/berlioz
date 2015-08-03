@@ -25,8 +25,7 @@ import org.pageseeder.berlioz.content.ContentManager;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.util.MD5;
 import org.pageseeder.berlioz.xml.XMLCopy;
-
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * Returns the current service configuration as XML.

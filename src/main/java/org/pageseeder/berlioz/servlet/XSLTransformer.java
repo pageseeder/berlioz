@@ -55,12 +55,11 @@ import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ISO8601;
 import org.pageseeder.berlioz.util.MD5;
 import org.pageseeder.berlioz.xslt.XSLTErrorCollector;
+import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXParseException;
-
-import com.topologi.diffx.xml.XMLWriter;
-import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * Performs the XSLT transformation from the generated XML content.

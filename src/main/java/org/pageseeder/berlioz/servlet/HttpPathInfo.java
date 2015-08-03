@@ -21,8 +21,7 @@ import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.content.PathInfo;
-
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * An implementation of the path info based on HTTP servlets.

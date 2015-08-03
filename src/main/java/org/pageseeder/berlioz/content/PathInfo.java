@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.content;
 
-import com.topologi.diffx.xml.XMLWritable;
+import org.pageseeder.xmlwriter.XMLWritable;
 
 /**
  * Returns information about the content path.

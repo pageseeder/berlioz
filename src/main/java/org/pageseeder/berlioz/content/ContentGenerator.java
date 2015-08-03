@@ -18,8 +18,7 @@ package org.pageseeder.berlioz.content;
 import java.io.IOException;
 
 import org.pageseeder.berlioz.BerliozException;
-
-import com.topologi.diffx.xml.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * An interface to generate XML content.

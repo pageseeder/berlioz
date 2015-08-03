@@ -25,6 +25,8 @@ import java.util.Map.Entry;
 import javax.xml.parsers.SAXParser;
 
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -37,9 +39,6 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.DefaultHandler;
-
-import com.topologi.diffx.xml.XMLStringWriter;
-import com.topologi.diffx.xml.XMLWriter;
 
 /**
  * Copy the parsed XML to the specified XML writer.

@@ -43,10 +43,9 @@ import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ISO8601;
+import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.topologi.diffx.xml.XMLWriterImpl;
 
 /**
  * Servlet used to handle errors for a uniform response.
