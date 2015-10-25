@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.pageseeder.berlioz</groupId>
   <artifactId>pso-berlioz</artifactId>
-  <version>0.10.2</version>
+  <version>0.10.3-SNAPSHOT</version>
   <name>Berlioz</name>
   <description>Berlioz framework</description>
   <url>https://berlioz.pageseeder.org</url>
