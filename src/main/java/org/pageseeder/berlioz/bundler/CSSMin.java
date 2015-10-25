@@ -670,9 +670,9 @@ public final class CSSMin {
      * Simplifies multiple-parameter properties.
      */
     private void simplifyParameters() {
-      StringBuilder newContents = new StringBuilder();
-
       String[] params = this._contents.split(" ");
+      if ("\"".equals(params[0]) || "'".equals(params[0])) return;
+
       if (params.length == 4) {
         // We can drop off the fourth item if the second and fourth items match
         // ie turn 3px 0 3px 0 into 3px 0 3px
@@ -695,12 +695,13 @@ public final class CSSMin {
         }
       }
 
-      for (String param : params) {
-        newContents.append(param + " ");
+      StringBuilder min = new StringBuilder();
+      for (String p : params) {
+        if (min.length() > 0) min.append(' ');
+        min.append(p);
       }
-      newContents.deleteCharAt(newContents.length() - 1); // Delete the trailing space
 
-      this._contents = newContents.toString();
+      this._contents = min.toString();
     }
 
     /**
