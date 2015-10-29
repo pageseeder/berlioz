@@ -14,7 +14,7 @@
     </license>
   </licenses>
   
-   <developers>
+  <developers>
     <developer>
       <name>Christophe Lauret</name>
       <email>clauret@weborganic.com</email>
@@ -22,12 +22,6 @@
       <organizationUrl>http://www.allette.com.au</organizationUrl>
     </developer>
   </developers>
-
-  <scm>
-    <connection>scm:git:git@github.com:pageseeder/berlioz.git</connection>
-    <developerConnection>scm:git:git@github.com:pageseeder/berlioz.git</developerConnection>
-    <url>git@github.com:pageseeder/berlioz.git</url>
-  </scm>
 
   <organization>
     <name>Allette Systems</name>
@@ -38,7 +32,45 @@
     <java.version>1.7</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <bintray.repo>maven</bintray.repo>
+    <bintray.package>berlioz</bintray.package>
   </properties>
+
+  <scm>
+    <connection>scm:git:git@github.com:pageseeder/berlioz.git</connection>
+    <developerConnection>scm:git:git@github.com:pageseeder/berlioz.git</developerConnection>
+    <url>git@github.com:pageseeder/berlioz.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>bintray</id>
+      <url>https://api.bintray.com/maven/pageseeder/${bintray.repo}/${bintray.package}/;publish=1</url>
+    </repository>
+  </distributionManagement>
+
+  <profiles>
+    <profile>
+      <id>bintray</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.4</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <dependencies>
   
