@@ -1,4 +1,6 @@
-# wo-berlioz
+[ ![Download](https://api.bintray.com/packages/pageseeder/maven/berlioz/images/download.svg) ](https://bintray.com/pageseeder/maven/berlioz/_latestVersion)
+
+# Berlioz
 A light Web framework built on URI templates and XSLT
 
 A simple, Java-based web framework that uses XLST for rendering and a URI template notation to allocate services. Implemented as a set of servlets, Berlioz is both powerful and simple. It is also easy to deploy and extend.
