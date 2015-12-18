@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.2 - 27 June 2011
+ * @version Berlioz 0.10.3
  * @since Berlioz 0.6
  */
 public final class HttpHeaderUtils {
@@ -331,7 +331,10 @@ public final class HttpHeaderUtils {
    */
   public static boolean isCompressible(String contentType) {
     if (contentType == null) return false;
-    return contentType.startsWith("text") || contentType.endsWith("xml") || contentType.endsWith("javascript");
+    return contentType.startsWith("text")
+        || contentType.endsWith("xml")
+        || contentType.endsWith("json")
+        || contentType.endsWith("javascript");
   }
 
   /**
