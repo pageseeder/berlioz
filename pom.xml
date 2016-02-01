@@ -155,4 +155,37 @@
     
   </build>
 
+  <reporting>
+
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.10.3</version>
+        <configuration>
+          <show>private</show>
+          <nohelp>true</nohelp>
+          <links>
+            <link>http://www.slf4j.org/api/</link>
+            <link>https://javaee-spec.java.net/nonav/javadocs/</link>
+          </links>
+          <javaApiLinks>
+            <property>
+              <name>api_1.7</name>
+              <value>http://download.java.net/jdk7/docs/api/</value>
+            </property>
+          </javaApiLinks>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <version>2.5</version>
+      </plugin>
+
+    </plugins>
+
+  </reporting>
 </project>
