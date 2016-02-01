@@ -27,12 +27,10 @@ import org.pageseeder.berlioz.furi.Variable.Reserved;
  *
  * @see TokenLiteral
  * @see TokenVariable
- * @see TokenOperatorD3
- * @see TokenOperatorPS
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.3
  * @since Berlioz 0.9.32
  */
 public final class TokenFactory {

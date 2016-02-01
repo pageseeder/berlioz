@@ -22,7 +22,7 @@ package org.pageseeder.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.26 - 14 December 2013
+ * @version Berlioz 0.10.3
  * @since Berlioz 0.8.4
  */
 public enum BerliozOption {
@@ -50,7 +50,7 @@ public enum BerliozOption {
    * compressible; most images and other media files are not.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="HTTP compression usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.http.compression</code></td>
@@ -59,7 +59,7 @@ public enum BerliozOption {
    *  </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="HTTP compression recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>true</code></td><td><code>true</code></td></tr></tbody>
    * </table>
@@ -80,7 +80,7 @@ public enum BerliozOption {
    * to accept both GET and POST requests such as searches.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="HTTP Get-Via-POST usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.http.get-via-post</code></td>
@@ -91,7 +91,7 @@ public enum BerliozOption {
    * this may change in subsequent versions of Berlioz.</p>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="HTTP Get-Via-POST recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>false</code></td><td><code>false</code></td></tr></tbody>
    * </table>
@@ -119,7 +119,7 @@ public enum BerliozOption {
    * <code>Cache-Control</code> HTTP header has been defined for the service.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="HTTP Cache-Control usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.http.cache-control</code></td>
@@ -128,7 +128,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="HTTP Cache-Control recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>no-cache, no-store</code></td><td><code>N/A*</code></td></tr></tbody>
    * </table>
@@ -161,7 +161,7 @@ public enum BerliozOption {
    * <code>Cache-Control</code> HTTP header has been defined for the service.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="HTTP Max-Age usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.http.max-age</code></td>
@@ -170,7 +170,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="HTTP Max-Age recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>60</code></td><td><code>60</code></td></tr></tbody>
    * </table>
@@ -196,7 +196,7 @@ public enum BerliozOption {
    * (<code>web.xml</code>).</p>
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="Errors handling usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.errors.handle</code></td>
@@ -205,7 +205,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="Errors handling recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>true</code></td><td><code>false</code></td></tr></tbody>
    * </table>
@@ -223,7 +223,7 @@ public enum BerliozOption {
    * or thrown.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="Generator errors usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.errors.generator-catch</code></td>
@@ -232,7 +232,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="Generator errors recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>true</code></td><td><code>false</code></td></tr></tbody>
    * </table>
@@ -258,7 +258,7 @@ public enum BerliozOption {
    * A boolean global option to indicate whether to enable the caching of XSLT templates.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="XSLT cache usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.xslt.cache</code></td>
@@ -267,7 +267,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="XSLT cache recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>false</code></td><td><code>true</code></td></tr></tbody>
    * </table>
@@ -283,7 +283,7 @@ public enum BerliozOption {
    * to version 1.0.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="XML header compatibility usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.xml.header.compatibility</code></td>
@@ -292,7 +292,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="XML header compatibility recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>false</code></td><td><code>false</code></td></tr></tbody>
    * </table>
@@ -310,7 +310,7 @@ public enum BerliozOption {
    * Indicates the version of the XML header format  berlioz should use.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="XML header version usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.xml.header.version</code></td>
@@ -319,7 +319,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="XML header version recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>1.0</code></td><td><code>1.0</code></td></tr></tbody>
    * </table>
@@ -335,7 +335,7 @@ public enum BerliozOption {
    * are found in Berlioz XML files.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="XML strict parsing usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.xml.parse-strict</code></td>
@@ -344,7 +344,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="XML strict parsing recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>true</code></td><td><code>false</code></td></tr></tbody>
    * </table>
@@ -364,7 +364,7 @@ public enum BerliozOption {
    * <p>If the control key is empty, then the control parameters can be used directly.
    *
    * <h3>Property</h3>
-   * <table>
+   * <table summary="Control key usage">
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.control-key</code></td>
@@ -373,7 +373,7 @@ public enum BerliozOption {
    * </table>
    *
    * <h3>Recommended values</h3>
-   * <table>
+   * <table summary="Control key recommended value">
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>""</code><i>(Empty string)</i></td><td><code>[a complex string]</code></td></tr></tbody>
    * </table>

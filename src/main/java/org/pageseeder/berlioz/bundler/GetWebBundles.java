@@ -54,7 +54,6 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * bundle; the etag is the 4-character alphanumerical stamp; and the extension depends on the MIME type and
  * minimization options.
  *
- *
  * <h3>Configuration</h3>
  * <p>This generator is highly configurable and the configuration properties are specific (but similar)
  * for styles and scripts.

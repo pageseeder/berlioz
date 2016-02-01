@@ -555,8 +555,7 @@ public final class GlobalSettings {
    *
    * <p>There are several mechanism to load the properties.
    *
-   * <p>First, this method will try to use the properties file that might have been setup with
-   * the {@link #setPropertiesFile(File)} method.
+   * <p>First, this method will try to use the properties file for the mode.
    *
    * <p>If all of the above fail, the properties will remain empty, this method will return
    * <code>false</code> to indicate that the properties could not be loaded.

@@ -26,9 +26,9 @@ import java.io.UnsupportedEncodingException;
  *
  * <p>Example:</p>
  *
- * <code>String encoded = Base64.encode( myByteArray );</code>
- * <br />
- * <code>byte[] myByteArray = Base64.decode( encoded );</code>
+ * <p><code>String encoded = Base64.encode( myByteArray );</code></p>
+ *
+ * <p><code>byte[] myByteArray = Base64.decode( encoded );</code></p>
  *
  * <p>The <tt>options</tt> parameter, which appears in a few places, is used to pass
  * several pieces of information to the encoder. In the "higher level" methods such as
@@ -56,10 +56,9 @@ import java.io.UnsupportedEncodingException;
  * @see <a href="http://iharder.net/base64">http://iharder.net/base64</a>.</p>
  *
  * @author Robert Harder
- * @author rob@iharder.net
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.3
  * @since Berlioz 0.9.32
  */
 public final class Base64 {
@@ -1455,7 +1454,7 @@ public final class Base64 {
      * Valid options:<pre>
      *   ENCODE or DECODE: Encode or Decode as data is read.
      *   DO_BREAK_LINES: break lines at 76 characters
-     *     (only meaningful when encoding)</i>
+     *     (only meaningful when encoding)
      * </pre>
      * <p>
      * Example: <code>new Base64.InputStream( in, Base64.DECODE )</code>
@@ -1641,7 +1640,7 @@ public final class Base64 {
      * Valid options:<pre>
      *   ENCODE or DECODE: Encode or Decode as data is read.
      *   DO_BREAK_LINES: don't break lines at 76 characters
-     *     (only meaningful when encoding)</i>
+     *     (only meaningful when encoding)
      * </pre>
      * <p>
      * Example: <code>new Base64.OutputStream( out, Base64.ENCODE )</code>

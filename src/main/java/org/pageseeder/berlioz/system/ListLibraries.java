@@ -31,7 +31,6 @@ import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -62,6 +61,9 @@ public final class ListLibraries implements ContentGenerator {
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+
+    // TODO: Set<String> libs = getServletContext().getResourcePaths("/WEB-INF/lib");
+    // TODO: if(libs == null || libs.isEmpty()) {
 
     File lib = req.getEnvironment().getPrivateFile("lib");
     xml.openElement("libraries");
