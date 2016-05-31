@@ -362,7 +362,7 @@ public final class GlobalSettings {
     if (settings == null) { load(); }
     String value = settings.get(name);
     if (value == null) return def;
-    return def? "false".equals(value) : "true".equals(value);
+    return def? !"false".equals(value) : "true".equals(value);
   }
 
   /**
