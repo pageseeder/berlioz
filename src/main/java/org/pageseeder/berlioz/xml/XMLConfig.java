@@ -143,14 +143,8 @@ public final class XMLConfig implements Serializable {
    */
   public static XMLConfig newInstance(File file) throws IOException {
     XMLConfig config = new XMLConfig();
-    InputStream in = null;
-    try {
-      in = new FileInputStream(file);
+    try (InputStream in = new FileInputStream(file)) {
       config.load(in);
-    } finally {
-      if (in != null) {
-        in.close();
-      }
     }
     return config;
   }
@@ -160,8 +154,7 @@ public final class XMLConfig implements Serializable {
   /**
    * Parses the file as XML following the rules for the config.
    *
-   * @author Christophe Lauret (Weborganic)
-   * @version 6 October 2012
+   * @author Christophe Lauret
    */
   private static final class Handler extends DefaultHandler {
 
@@ -202,6 +195,14 @@ public final class XMLConfig implements Serializable {
         }
       } else {
         this.nodes = new Stack<String>();
+        int attCount = atts.getLength();
+        if (attCount > 0) {
+          for (int i = 0; i < attCount; i++) {
+            String name = atts.getLocalName(i);
+            String value = atts.getValue(i);
+            this._properties.put(name, value);
+          }
+        }
       }
     }
 

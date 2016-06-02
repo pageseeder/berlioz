@@ -1,0 +1,7 @@
+
+# Override Berlioz property
+berlioz.xslt.cache=false
+
+# Override App properties
+app.name=app2
+app.cache=false

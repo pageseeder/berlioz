@@ -15,10 +15,8 @@
  */
 package org.pageseeder.berlioz;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -32,7 +30,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.pageseeder.berlioz.xml.XMLConfig;
-import org.pageseeder.berlioz.xml.XMLProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +70,7 @@ public final class GlobalSettings {
   /**
    * The format of configuration used.
    */
-  private enum Format { XML_PROPERTIES, XML_CONFIG, PROPERTIES };
+  private enum Format { XML_CONFIG, PROPERTIES };
 
 // constants ----------------------------------------------------------------------------------
 
@@ -216,18 +213,10 @@ public final class GlobalSettings {
   public static File getPropertiesFile() {
     if (repository == null) return null;
     File dir = new File(repository, CONFIG_DIRECTORY);
-    if (!dir.isDirectory()) return null;
-    // try as an XML file
-    File xml = new File(dir, "config-"+mode+".xml");
-    if (xml.canRead()) return xml;
-    // otherwise try as a text properties file
-    File prp = new File(dir, "config-"+mode+".prp");
-    if (prp.canRead()) return prp;
-    // Fall back on generic XML file
-    xml = new File(dir, "config.xml");
-    if (xml.canRead()) return xml;
-    prp = new File(dir, "config.prp");
-    if (prp.canRead()) return prp;
+    File f = getModeConfigFile(dir);
+    if (f == null) {
+      f = getDefaultConfigFile(dir);
+    }
     return null;
   }
 
@@ -535,22 +524,6 @@ public final class GlobalSettings {
   }
 
   /**
-   * Sets the configuration to use.
-   *
-   * @deprecated Use {@link #setMode(String)} instead.
-   *
-   * @param name The name of the configuration to use.
-   *
-   * @throws IllegalArgumentException If the name of the configuration is <code>null</code>.
-   */
-  @Deprecated
-  public static void setConfig(String name) throws IllegalArgumentException {
-    if (name == null)
-      throw new IllegalArgumentException("The configuration must be specified.");
-    mode = name;
-  }
-
-  /**
    * Loads the properties.
    *
    * <p>There are several mechanism to load the properties.
@@ -574,44 +547,51 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static synchronized boolean load() throws IllegalStateException {
-    // make sure we have a repository
-    File file = getPropertiesFile();
-    // Always initialise
-    settings = new HashMap<String, String>();
-    nodes = new Hashtable<String, Properties>();
     boolean loaded = false;
-    if (file != null) {
-      // load
-      try {
-        Format kind = detect(file);
-        switch (kind) {
-          case XML_CONFIG:
-            loaded = loadConfig(file);
-            break;
-          case XML_PROPERTIES:
-            loaded = loadProperties(file, new XMLProperties(), settings);
-            break;
-          case PROPERTIES:
-            loaded = loadProperties(file, new Properties(), settings);
-            break;
-          default:
-        }
-        if (loaded) {
-          for (ConfigListener listener : listeners) {
-            try {
-              listener.load();
-            } catch (Exception ex) {
-              // MUST NOT
-              LOGGER.warn("Listener threw an exception", ex);
-            }
-          }
-        }
 
-      } catch (Exception ex) {
-        System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
-        LOGGER.warn("Unable to load the configuration file", ex);
+    // make sure we have a repository
+    if (repository == null) return false;
+    File dir = new File(repository, CONFIG_DIRECTORY);
+    Map<String, String> properties = new HashMap<String, String>();
+
+    try {
+      // Try to load the default config file
+      File defaultConfig = getDefaultConfigFile(dir);
+      if (defaultConfig != null) {
+        loadInto(defaultConfig, properties);
+      }
+
+      // Try to override with the mode-specific config file
+      File modeConfig = getModeConfigFile(dir);
+      if (modeConfig != null) {
+        loadInto(modeConfig, properties);
+      }
+
+      // Considered loaded if any file was loaded without error
+      loaded = defaultConfig != null || modeConfig != null;
+
+    } catch (Exception ex) {
+      System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
+      LOGGER.warn("Unable to load the configuration file", ex);
+      properties.clear(); // Let's not load dirty properties
+    } finally {
+      // Reset after loading
+      settings = properties;
+      nodes = new Hashtable<String, Properties>();
+    }
+
+    // Notify the listeners
+    if (loaded) {
+      for (ConfigListener listener : listeners) {
+        try {
+          listener.load();
+        } catch (Exception ex) {
+          // MUST NOT throw an exception, silently ignore and report in logs
+          LOGGER.warn("Listener threw an exception", ex);
+        }
       }
     }
+
     return loaded;
   }
 
@@ -629,102 +609,90 @@ public final class GlobalSettings {
   // private helpers
 
   /**
-   * Detects the kind of config file used.
+   * Loads the specified configuration file into the specific map.
    *
-   * <p>If it does not ends with ".xml", it assumes it is a regular java properties file.
+   * @param file The file to load
+   * @param map  The map containing the global settings
    *
-   * <p>If it ends with ".xml", it scans the file.
-   *
-   * <p>It assumes the XML properties format of it find a reference to the "-//Berlioz//DTD::Properties 1.0//EN"
-   * public doctype or a open "properties" element (this rule may change in the future)
-   *
-   * <p>Otherwise, it will attempt to read the file as an XML config.
-   *
-   * @param file the configuration file
-   * @return The kind of configuration format used.
-   *
-   * @throws IOException Should an error occur while trying to read the file.
+   * @throws IOException Should an I/O error occur while reading the properties
    */
-  private static Format detect(File file) throws IOException {
-    if (!file.getName().endsWith(".xml")) return Format.PROPERTIES;
-    BufferedReader b = new BufferedReader(new FileReader(file));
-    LOGGER.debug("Detecting configuration file format for {}", file.getName());
-    Format kind = Format.XML_CONFIG;
-    try {
-      String line = b.readLine();
-      while (line != null) {
-        // Look for the DOCTYPE
-        if (line.indexOf("-//Berlioz//DTD::Properties 1.0//EN") >= 0) {
-          kind = Format.XML_PROPERTIES;
-          break;
-        }
-        // Look for "<global>" at start of line
-        if (line.indexOf("<global>") == 0) {
-          kind = Format.XML_CONFIG;
-          break;
-        }
-        // Look for "<properties>"
-        if (line.indexOf("<properties>") >= 0) {
-          kind = Format.XML_PROPERTIES;
-          break;
-        }
-        line = b.readLine();
-      }
-    } catch (IOException ex) {
-      LOGGER.warn("Unable to detect the kind of properties file", ex);
-    } finally {
-      b.close();
+  private static void loadInto(File file, Map<String, String> properties) throws IOException{
+    if (file == null) return;
+    Format format = file.getName().endsWith(".xml")? Format.XML_CONFIG : Format.PROPERTIES;
+    LOGGER.debug("Loading Berlioz config {} as {}", file.getName(), format);
+    switch (format) {
+      case XML_CONFIG:
+        loadXMLConfig(file, properties);
+        break;
+      case PROPERTIES:
+        loadProperties(file, properties);
+        break;
     }
-    LOGGER.debug("Detected {}", kind);
-    return kind;
   }
 
   /**
    * Loads the settings from the specified XML config file.
    *
-   * @param file  The file to load.
-   * @param p     The properties file to load
-   * @param map   The global settings stored in this class
-   *
-   * @return <code>true</code> if loaded without error; <code>false</code> otherwise.
+   * @param file The XML config file to load.
+   * @param map  The properties to load into
    *
    * @throws IOException Should an error be reported by the parser.
    */
-  private static boolean loadProperties(File file, Properties p, Map<String, String> map) throws IOException {
-    // load
-    boolean loaded = false;
-    InputStream in = null;
-    try {
-      in = new FileInputStream(file);
+  private static void loadProperties(File file, Map<String, String> map) throws IOException {
+    Properties p = new Properties();
+    try (InputStream in = new FileInputStream(file)){
       p.load(in);
-      loaded = true;
-    } catch (Exception ex) {
-      System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
-      LOGGER.debug("Unable to read the properties file", ex);
-    } finally {
-      if (in != null) {
-        in.close();
+      // Load the values into the map
+      for (Entry<Object, Object> e : p.entrySet()) {
+        map.put(e.getKey().toString(), e.getValue().toString());
       }
     }
-    // Load the values into the map
-    for (Entry<Object, Object> e : p.entrySet()) {
-      map.put(e.getKey().toString(), e.getValue().toString());
-    }
-    return loaded;
   }
 
   /**
    * Loads the settings from the specified XML config file.
    *
-   * @param file     The file to load.
-   *
-   * @return Always <code>true</code>.
+   * @param file The XML config file to load.
+   * @param map  The properties to load into
    *
    * @throws IOException Should an error be reported by the parser.
    */
-  private static boolean loadConfig(File file) throws IOException {
-    XMLConfig config = XMLConfig.newInstance(file);
-    settings.putAll(config.properties());
-    return true;
+  private static void loadXMLConfig(File file, Map<String, String> map) throws IOException {
+    XMLConfig config = new XMLConfig(map);
+    try (InputStream in = new FileInputStream(file)) {
+      config.load(in);
+    }
+  }
+
+  /**
+   * Returns the properties file to use externally.
+   *
+   * @return The properties file to load or <code>null</code>.
+   */
+  private static File getModeConfigFile(File dir) {
+    if (dir == null || !dir.isDirectory()) return null;
+    // try as an XML file
+    File xml = new File(dir, "config-"+mode+".xml");
+    if (xml.canRead()) return xml;
+    // otherwise try as a properties file
+    File prp = new File(dir, "config-"+mode+".prp");
+    if (prp.canRead()) return prp;
+    return null;
+  }
+
+  /**
+   * Returns the properties file to use externally.
+   *
+   * @return The properties file to load or <code>null</code>.
+   */
+  private static File getDefaultConfigFile(File dir) {
+    if (dir == null || !dir.isDirectory()) return null;
+    // try as an XML file
+    File xml = new File(dir, "config.xml");
+    if (xml.canRead()) return xml;
+    // otherwise try as a properties file
+    File prp = new File(dir, "config.prp");
+    if (prp.canRead()) return prp;
+    return null;
   }
 }

@@ -41,11 +41,14 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * An XML version of the <code>Properties</code> class.
  *
+ * @deprecated This format is no longer supported for global settings.
+ *
  * @author Christophe Lauret
  *
  * @version Berlioz 0.9.9 - 10 October 2012
  * @since Berlioz 0.6
  */
+@Deprecated
 public final class XMLProperties extends Properties implements XMLWritable {
 
   /**

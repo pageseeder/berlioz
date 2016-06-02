@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<global>
+
+  <berlioz>
+    <xslt cache="false"/>
+  </berlioz>
+
+  <!-- Used to test override -->
+  <app name="app1" cache="false"/>
+
+</global>

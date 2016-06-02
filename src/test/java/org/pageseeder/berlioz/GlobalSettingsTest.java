@@ -35,6 +35,7 @@ public final class GlobalSettingsTest {
   public void setup() {
     File repo = new File("src/test/resources/org/pageseeder/berlioz");
     GlobalSettings.setRepository(repo);
+    GlobalSettings.setMode("default");
   }
 
   /**
@@ -113,4 +114,92 @@ public final class GlobalSettingsTest {
     Assert.assertEquals(777, GlobalSettings.get("test.int.undefined", 777));
   }
 
+  @Test
+  public void testSetMode() {
+    Assert.assertEquals("default", GlobalSettings.getMode());
+    GlobalSettings.setMode("test");
+    Assert.assertEquals("test", GlobalSettings.getMode());
+    GlobalSettings.setMode("default");
+    Assert.assertEquals("default", GlobalSettings.getMode());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testSetMode_Null() {
+    GlobalSettings.setMode(null);
+  }
+
+  @Test
+  public void testLoad_Override() {
+    GlobalSettings.setMode("undefined"); // Loads without the override
+    GlobalSettings.load();
+    Assert.assertEquals("true", GlobalSettings.get("berlioz.xslt.cache"));
+    Assert.assertEquals("default", GlobalSettings.get("app.location"));
+    Assert.assertEquals("true", GlobalSettings.get("app.cache"));
+    Assert.assertNull(GlobalSettings.get("app.name"));
+
+    GlobalSettings.setMode("override1"); // Loads with the override (xml)
+    GlobalSettings.load();
+    Assert.assertEquals("false", GlobalSettings.get("berlioz.xslt.cache"));
+    Assert.assertEquals("app1", GlobalSettings.get("app.name"));
+    Assert.assertEquals("default", GlobalSettings.get("app.location"));
+    Assert.assertEquals("false", GlobalSettings.get("app.cache"));
+
+    GlobalSettings.setMode("override2"); // Loads with the override (properties)
+    GlobalSettings.load();
+    Assert.assertEquals("false", GlobalSettings.get("berlioz.xslt.cache"));
+    Assert.assertEquals("app2", GlobalSettings.get("app.name"));
+    Assert.assertEquals("default", GlobalSettings.get("app.location"));
+    Assert.assertEquals("false", GlobalSettings.get("app.cache"));
+
+  }
+
+  @Test
+  public void testLoad_Errors() {
+    Assert.assertTrue(GlobalSettings.load());
+    Assert.assertFalse(GlobalSettings.countProperties() == 0);
+
+    GlobalSettings.setMode("empty");
+    Assert.assertFalse(GlobalSettings.load());
+    Assert.assertEquals(0, GlobalSettings.countProperties());
+
+    GlobalSettings.setMode("invalid");
+    Assert.assertFalse(GlobalSettings.load());
+    Assert.assertEquals(0, GlobalSettings.countProperties());
+  }
+
+  @Test
+  public void testLoad_Listeners() {
+    final class NotifiableConfigListener implements ConfigListener {
+      public int notifications = 0;
+      @Override public void load() {
+        this.notifications++;
+      }
+    };
+
+    // Listener that behaves properly
+    final NotifiableConfigListener good = new NotifiableConfigListener();
+
+    // Listener that throws an exception
+    final ConfigListener bad = new ConfigListener() {
+      @Override public void load() {
+        throw new RuntimeException();
+      }
+    };
+
+    // Register good listener and check that it received notification
+    GlobalSettings.registerListener(good);
+    Assert.assertTrue(GlobalSettings.load());
+    Assert.assertEquals(1, good.notifications);
+
+    // Register bad listener and check that the good listener received notification and no exception is thrown
+    GlobalSettings.registerListener(bad);
+    Assert.assertTrue(GlobalSettings.load());
+    Assert.assertEquals(2, good.notifications);
+
+    // Check that listener is not notified if load fails
+    GlobalSettings.setMode("empty");
+    Assert.assertFalse(GlobalSettings.load());
+    Assert.assertEquals(2,  good.notifications);
+
+  }
 }
