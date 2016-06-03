@@ -1,7 +1,9 @@
 package org.pageseeder.berlioz.xml;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -108,4 +110,56 @@ public final class XMLConfigTest {
     config.load(new ByteArrayInputStream(invalid.getBytes()));
   }
 
+  @Test
+  public void testToXML_Empty() throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    new XMLConfig().save(out);
+    byte[] xml = out.toByteArray();
+    XMLConfig config = new XMLConfig();
+    config.load(new ByteArrayInputStream(xml));
+    Assert.assertNotNull(config.properties());
+    Assert.assertTrue(config.properties().isEmpty());
+  }
+
+  @Test
+  public void testToXML_Global() throws IOException {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("a", "1");
+    properties.put("b", "2");
+    // Save
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    new XMLConfig(properties).save(out);
+    byte[] xml = out.toByteArray();
+    // Load
+    XMLConfig config = new XMLConfig();
+    config.load(new ByteArrayInputStream(xml));
+    Assert.assertNotNull(config.properties());
+    Assert.assertEquals(properties.size(), config.properties().size());
+    Assert.assertEquals(properties, config.properties());
+  }
+
+
+  @Test
+  public void testToXML_ManyProperties() throws IOException {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("version", "1.0");
+    properties.put("berlioz.cache", "true");
+    properties.put("berlioz.xslt.cache", "true");
+    properties.put("app.a", "1");
+    properties.put("app.b", "2");
+    properties.put("app.a.x", "3");
+    properties.put("app.a.y", "4");
+    properties.put("app.c.m", "5");
+    properties.put("app.d.m", "6");
+    // Save
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    new XMLConfig(properties).save(out);
+    byte[] xml = out.toByteArray();
+    // Load
+    XMLConfig config = new XMLConfig();
+    config.load(new ByteArrayInputStream(xml));
+    Assert.assertNotNull(config.properties());
+    Assert.assertEquals(properties.size(), config.properties().size());
+    Assert.assertEquals(properties, config.properties());
+  }
 }

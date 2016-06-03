@@ -19,14 +19,25 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.Stack;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -63,10 +74,10 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.9 - 10 October 2012
+ * @version Berlioz 0.10.5
  * @since Berlioz 0.9.7
  */
-public final class XMLConfig implements Serializable {
+public final class XMLConfig implements Serializable, XMLWritable {
 
   /**
    * As per requirement for the Serializable interface.
@@ -95,45 +106,6 @@ public final class XMLConfig implements Serializable {
   }
 
   /**
-   * Returns the properties as a map.
-   *
-   * <p>The object returned <i>is</i> the actual map instance of this class.
-   *
-   * @return the properties as a map.
-   */
-  public Map<String, String> properties() {
-    return this._properties;
-  }
-
-  /**
-   * Reads a XML property list from the input stream.
-   *
-   * @param inStream The XML input stream to parse.
-   *
-   * @throws IOException If an error occurred when reading from the input stream.
-   */
-  public synchronized void load(InputStream inStream) throws IOException {
-    try {
-      // use the SAX parser factory to ensure validation
-      SAXParserFactory factory = SAXParserFactory.newInstance();
-      factory.setValidating(false);
-      factory.setNamespaceAware(true);
-      // get the parser
-      XMLReader reader = factory.newSAXParser().getXMLReader();
-      // configure the reader
-      Handler handler = new Handler(this._properties);
-      reader.setContentHandler(handler);
-      reader.setEntityResolver(BerliozEntityResolver.getInstance());
-      // parse
-      reader.parse(new InputSource(inStream));
-    } catch (ParserConfigurationException ex) {
-      throw new IOException("Could not configure SAX parser.");
-    } catch (SAXException ex) {
-      throw new IOException("Error while parsing: "+ex.getMessage());
-    }
-  }
-
-  /**
    * Creates a new instance of an XML configuration by loading the specified file.
    *
    * @param file The file to load.
@@ -147,6 +119,151 @@ public final class XMLConfig implements Serializable {
       config.load(in);
     }
     return config;
+  }
+
+  /**
+   * Returns the properties as a map.
+   *
+   * <p>The object returned <i>is</i> the actual map instance of this class.
+   *
+   * @return the properties as a map.
+   */
+  public Map<String, String> properties() {
+    return this._properties;
+  }
+
+  /**
+   * Reads a XML property list from the input stream.
+   *
+   * @param in The XML input stream to parse.
+   *
+   * @throws IOException If an error occurred when reading from the input stream.
+   */
+  public synchronized void load(InputStream in) throws IOException {
+    try {
+      // use the SAX parser factory to ensure validation
+      SAXParserFactory factory = SAXParserFactory.newInstance();
+      factory.setValidating(false);
+      factory.setNamespaceAware(true);
+      // get the parser
+      XMLReader reader = factory.newSAXParser().getXMLReader();
+      // configure the reader
+      Handler handler = new Handler(this._properties);
+      reader.setContentHandler(handler);
+      reader.setEntityResolver(BerliozEntityResolver.getInstance());
+      // parse
+      reader.parse(new InputSource(in));
+    } catch (ParserConfigurationException ex) {
+      throw new IOException("Could not configure SAX parser.");
+    } catch (SAXException ex) {
+      throw new IOException("Error while parsing: "+ex.getMessage());
+    }
+  }
+
+  /**
+   * Saves the XML properties to the specified stream as UTF-8.
+   *
+   * @param out The XML output stream to parse.
+   *
+   * @throws IOException If an error occurred when reading from the input stream.
+   */
+  public void save(OutputStream out) throws IOException {
+    try (OutputStreamWriter w = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
+      XMLWriter xml = new XMLWriterImpl(w, true);
+      toXML(xml);
+    }
+  }
+
+//a handler for the properties file in XML ----------------------------------------------------
+
+  @Override
+  public void toXML(XMLWriter xml) throws IOException {
+    SortedMap<String, String> sorted = new TreeMap<>(this._properties);
+    xml.openElement("global", true);
+    toXML(xml, sorted);
+    xml.closeElement();
+  }
+
+  /**
+   * Recursive function
+   *
+   * @param xml The XML writer
+   * @param map The map to process.
+   *
+   * @throws IOException If thrown by the XML Writer.
+   */
+  private static void toXML(XMLWriter xml, SortedMap<String, String> map) throws IOException {
+    attributes(xml, map);
+    for (String node : nodes(map)) {
+      xml.openElement(node, true);
+      toXML(xml, sub(map, node));
+      xml.closeElement();
+    }
+  }
+
+  /**
+   * Writes attributes for the current node onto the XML including only properties
+   * without a '.'
+   *
+   * @param xml The XML writer
+   * @param map The map to process.
+   *
+   * @throws IOException If thrown by the XML Writer.
+   */
+  private static void attributes(XMLWriter xml, Map<String, String> map) throws IOException {
+    for (Entry<String, String> x : map.entrySet()) {
+      String property = x.getKey();
+      if (property.indexOf('.') < 0) {
+        xml.attribute(property, x.getValue());
+      }
+    }
+  }
+
+  /**
+   * Returns the set of notes from the map.
+   *
+   * <p>A node is the prefix of a property where the property is <code>[node].[name]</code>
+   *
+   * @param xml The XML writer
+   * @param map The map to process.
+   *
+   * @return A set of nodes from the map
+   *
+   * @throws IOException If thrown by the XML Writer.
+   */
+  private static SortedSet<String> nodes(Map<String, String> map) {
+    SortedSet<String> nodes = new TreeSet<>();
+    for (String property : map.keySet()) {
+      int dot = property.indexOf('.');
+      if (dot >= 0) {
+        nodes.add(property.substring(0, dot));
+      }
+    }
+    return nodes;
+  }
+
+  /**
+   * Returns the subset of the map with the node prefix removed from the key.
+   *
+   * <p>A node is the prefix of a property where the property is <code>[node].[name]</code>
+   *
+   * @param map  The map to process.
+   * @param node The node to use for prefixing.
+   *
+   * @return A set of nodes from the map
+   *
+   * @throws IOException If thrown by the XML Writer.
+   */
+  private static SortedMap<String, String> sub(SortedMap<String, String> map, String node) {
+    String prefix = node+".";
+    SortedMap<String, String> sub = new TreeMap<>();
+    for (Entry<String, String> e : map.entrySet()) {
+      String property = e.getKey();
+      if (property.startsWith(prefix)) {
+        sub.put(property.substring(prefix.length()), e.getValue());
+      }
+    }
+    return sub;
   }
 
 // a handler for the properties file in XML ----------------------------------------------------
