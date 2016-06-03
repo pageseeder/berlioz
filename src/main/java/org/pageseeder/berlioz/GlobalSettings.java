@@ -217,7 +217,7 @@ public final class GlobalSettings {
     if (f == null) {
       f = getDefaultConfigFile(dir);
     }
-    return null;
+    return f;
   }
 
 // properties methods --------------------------------------------------------------------------
