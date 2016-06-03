@@ -19,7 +19,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.pageseeder.berlioz.furi.TokenFactory.Syntax;
-import org.pageseeder.berlioz.furi.TokenOperatorDX.Operator;
+import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
 
 /**
  * A test class for the URI template syntax <code>DRAFTX</code>.
@@ -32,7 +32,7 @@ import org.pageseeder.berlioz.furi.TokenOperatorDX.Operator;
  * @author Christophe Lauret
  * @version 5 November 2009
  */
-public final class SyntaxDraftXTest {
+public final class BerliozSyntaxTest {
 
   /**
    * Parameters for use in all tests.
@@ -67,7 +67,7 @@ public final class SyntaxDraftXTest {
   public void testNew_TokenOperatorDX() {
     boolean nullThrown = false;
     try {
-      new TokenOperatorDX(Operator.PATH_PARAMETER, (Variable) null);
+      new BerliozTokenOperator(Operator.PATH_PARAMETER, (Variable) null);
     } catch (NullPointerException ex) {
       nullThrown = true;
     } finally {

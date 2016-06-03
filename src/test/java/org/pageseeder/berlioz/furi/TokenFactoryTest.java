@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.pageseeder.berlioz.furi.TokenOperatorDX.Operator;
+import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
 
 /**
  * A test class for the <code>TokenFactory</code>.
@@ -83,7 +83,7 @@ public final class TokenFactoryTest {
     // make sure that all defined operators are supported
     for (Operator o : Operator.values()) {
       TokenFactory factory = TokenFactory.getInstance();
-      TokenOperator t = new TokenOperatorDX(o, vars);
+      TokenOperator t = new BerliozTokenOperator(o, vars);
       // FIXME
 //      Assert.assertEquals(t, factory.newToken("{-" + o.name().toLowerCase() + "|x|y}"));
     }

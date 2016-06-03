@@ -51,9 +51,9 @@ public final class TokenFactory {
       @Override
       protected Token newExpansion(String exp) {
         // possibly Roy Fielding's operators
-        if (!Character.isLetter(exp.charAt(0)) && !Character.isDigit(exp.charAt(0))) return TokenOperatorDX.parse(exp);
+        if (!Character.isLetter(exp.charAt(0)) && !Character.isDigit(exp.charAt(0))) return BerliozTokenOperator.parse(exp);
         // maybe a collection
-        else if (exp.indexOf(',') >= 0) return TokenOperatorDX.parse(exp);
+        else if (exp.indexOf(',') >= 0) return BerliozTokenOperator.parse(exp);
         // assume a variable
         else return new TokenVariable(Variable.parse(exp));
       }
@@ -132,7 +132,7 @@ public final class TokenFactory {
    * @return A new 'wildcard' token.
    */
   private static Token newWildcard() {
-    return new TokenOperatorDX(TokenOperatorDX.Operator.URI_INSERT, new Variable(Reserved.WILDCARD));
+    return new BerliozTokenOperator(BerliozTokenOperator.Operator.URI_INSERT, new Variable(Reserved.WILDCARD));
   }
 
   /**
