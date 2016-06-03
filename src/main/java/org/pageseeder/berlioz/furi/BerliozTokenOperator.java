@@ -45,7 +45,7 @@ import org.pageseeder.berlioz.furi.Variable.Form;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.5
  * @since Berlioz 0.9.32
  */
 public class BerliozTokenOperator extends TokenBase implements TokenOperator, Matchable {
