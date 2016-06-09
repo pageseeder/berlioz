@@ -162,4 +162,29 @@ public final class XMLConfigTest {
     Assert.assertEquals(properties.size(), config.properties().size());
     Assert.assertEquals(properties, config.properties());
   }
+
+  @Test
+  public void testToXML_IllegalNames() throws IOException {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("app.1", "1");
+    properties.put("app.2a", "2");
+    properties.put("app.a.&", "3");
+    properties.put("app.a.#", "4");
+    properties.put("app.c.-", "5");
+    properties.put("app.1.a", "6");
+    properties.put("app.&.b", "3");
+    properties.put("app.#.c", "4");
+    properties.put("app.-.d", "5");
+    properties.put("app.!.f", "6");
+    // Save
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    new XMLConfig(properties).save(out);
+    byte[] xml = out.toByteArray();
+    // Load
+    XMLConfig config = new XMLConfig();
+    config.load(new ByteArrayInputStream(xml));
+    Assert.assertNotNull(config.properties());
+    Assert.assertEquals(0, config.properties().size());
+//    Assert.assertEquals(properties, config.properties());
+  }
 }

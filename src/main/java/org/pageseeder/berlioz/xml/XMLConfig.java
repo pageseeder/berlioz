@@ -31,6 +31,7 @@ import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -38,6 +39,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -74,7 +76,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.5
+ * @version Berlioz 0.10.6
  * @since Berlioz 0.9.7
  */
 public final class XMLConfig implements Serializable, XMLWritable {
@@ -83,6 +85,18 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * As per requirement for the Serializable interface.
    */
   private static final long serialVersionUID = 20120123256100001L;
+
+  /**
+   * Check that it is a valid attribute name in XML.
+   *
+   * NB: We disallow ':' to avoid issues with namespaces.
+   */
+  private final static Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
+
+  /**
+   * Logger.
+   */
+  private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(XMLConfig.class);
 
   /**
    * List of properties to load.
@@ -195,9 +209,13 @@ public final class XMLConfig implements Serializable, XMLWritable {
   private static void toXML(XMLWriter xml, SortedMap<String, String> map) throws IOException {
     attributes(xml, map);
     for (String node : nodes(map)) {
-      xml.openElement(node, true);
-      toXML(xml, sub(map, node));
-      xml.closeElement();
+      if (VALID_XML_NAME.matcher(node).matches()) {
+        xml.openElement(node, true);
+        toXML(xml, sub(map, node));
+        xml.closeElement();
+      } else {
+        LOGGER.warn("Unable to write this element as xml (invalid name): {}", node);
+      }
     }
   }
 
@@ -214,7 +232,11 @@ public final class XMLConfig implements Serializable, XMLWritable {
     for (Entry<String, String> x : map.entrySet()) {
       String property = x.getKey();
       if (property.indexOf('.') < 0) {
-        xml.attribute(property, x.getValue());
+        if (VALID_XML_NAME.matcher(property).matches()) {
+          xml.attribute(property, x.getValue());
+        } else {
+          LOGGER.warn("Unable to write this attribute as xml (invalid name): {}", property);
+        }
       }
     }
   }
