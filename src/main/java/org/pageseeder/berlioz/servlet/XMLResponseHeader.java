@@ -234,7 +234,6 @@ public final class XMLResponseHeader implements XMLWritable {
       }
       xml.closeElement();
     }
-    xml.openElement("app");
 
     xml.closeElement(); // close header
   }
