@@ -17,7 +17,10 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -55,10 +58,17 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.26 - 17 December 2013
+ * @version Berlioz 0.10.6
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
+
+  /**
+   * Check that it is a valid attribute name in XML.
+   *
+   * NB: We disallow ':' to avoid issues with namespaces.
+   */
+  private final static Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
 
   /**
    * The core HTTP details.
@@ -210,6 +220,21 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.attribute("version", GlobalSettings.getVersion());
     xml.attribute("mode", GlobalSettings.getMode());
     xml.closeElement();
+
+    // Include App info
+    Properties app = GlobalSettings.getNode("berlioz.app");
+    if (app != null && app.size() > 0) {
+      xml.openElement("app");
+      for (Entry<Object, Object> p : app.entrySet()) {
+        String name = (String)p.getKey();
+        String value = (String)p.getValue();
+        if (VALID_XML_NAME.matcher(name).matches()) {
+          xml.attribute(name, value);
+        }
+      }
+      xml.closeElement();
+    }
+    xml.openElement("app");
 
     xml.closeElement(); // close header
   }
