@@ -20,7 +20,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -33,15 +33,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.8 - 8 October 2012
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.6
  */
 public final class MD5 {
-
-  /**
-   * Character set for the hashing function.
-   */
-  private static final Charset UTF8 = Charset.forName("utf-8");
 
   /**
    * Stores the hex character for easy retrieval.
@@ -75,7 +70,7 @@ public final class MD5 {
    */
   public static String hash(String text) throws UnsupportedOperationException {
     MessageDigest md = getAlgorithm();
-    md.update(text.getBytes(UTF8), 0, text.length());
+    md.update(text.getBytes(StandardCharsets.UTF_8), 0, text.length());
     byte[] bytes = md.digest();
     return toHex(bytes);
   }
