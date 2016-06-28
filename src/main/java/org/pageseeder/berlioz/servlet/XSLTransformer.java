@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletRequest;
@@ -117,8 +118,7 @@ public final class XSLTransformer {
    * @param fallback  The URL to the fallback templates (optional)
    */
   public XSLTransformer(File templates, URL fallback) {
-    if (templates == null) throw new NullPointerException("No Templates file specified");
-    this._templates = templates;
+    this._templates = Objects.requireNonNull(templates, "The template file is required");
     this._fallback = fallback;
     this._etag = computeEtag(templates, fallback);
   }

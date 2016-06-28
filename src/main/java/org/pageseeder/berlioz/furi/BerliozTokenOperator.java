@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -485,11 +486,11 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    *
    * @throws NullPointerException If any of the argument is <code>null</code>.
    */
-  public BerliozTokenOperator(Operator op, Variable var) throws NullPointerException {
+  public BerliozTokenOperator(Operator op, Variable var) {
     super(toExpression(op, var));
-    if (op == null || var == null)
+    if (var == null)
       throw new NullPointerException("The operator must have a value");
-    this._operator = op;
+    this._operator = Objects.requireNonNull(op, "The operator is required");
     this._vars = new ArrayList<Variable>(1);
     this._vars.add(var);
     this._pattern = op.pattern(this._vars);
@@ -503,11 +504,11 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    *
    * @throws NullPointerException If any of the argument is <code>null</code>.
    */
-  public BerliozTokenOperator(Operator op, List<Variable> vars) throws NullPointerException {
+  public BerliozTokenOperator(Operator op, List<Variable> vars) {
     super(toExpression(op, vars));
-    if (op == null || vars == null)
+    if (vars == null)
       throw new NullPointerException("The operator must have a value");
-    this._operator = op;
+    this._operator = Objects.requireNonNull(op, "The operator is required");;
     this._vars = vars;
     this._pattern = op.pattern(vars);
   }

@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.Stack;
@@ -315,8 +316,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
      * @throws NullPointerException If the properties are <code>null</code>.
      */
     public Handler(Map<String, String> properties) {
-      if (properties == null) throw new NullPointerException("Properties must be specified.");
-      this._properties = properties;
+      this._properties = Objects.requireNonNull(properties, "Properties must be specified.");
     }
 
     @Override

@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.pageseeder.berlioz.util.CollectedError.Level;
 
@@ -69,8 +70,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If the threshold argument is <code>null</code>.
    */
   public final void setException(Level threshold) {
-    if (threshold == null) throw new NullPointerException("Specified threshold is null");
-    this._exception = threshold;
+    this._exception = Objects.requireNonNull(threshold, "Specified threshold is null");
   }
 
   /**
@@ -80,8 +80,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If the threshold argument is <code>null</code>.
    */
   public final void setErrorFlag(Level threshold) {
-    if (threshold == null) throw new NullPointerException("Specified threshold is null");
-    this._flag = threshold;
+    this._flag = Objects.requireNonNull(threshold, "Specified threshold is null");;
   }
 
   /**

@@ -49,7 +49,7 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
    * @throws URITemplateSyntaxException If the specified expression could not be parsed as a
    *           variable.
    */
-  public TokenVariable(String exp) throws NullPointerException, URITemplateSyntaxException {
+  public TokenVariable(String exp) throws URITemplateSyntaxException {
     this(Variable.parse(exp));
   }
 
@@ -60,7 +60,7 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
    *
    * @throws NullPointerException If the specified text is <code>null</code>.
    */
-  public TokenVariable(Variable var) throws NullPointerException {
+  public TokenVariable(Variable var) {
     super('{' + var.toString() + "}");
     this._var = var;
   }

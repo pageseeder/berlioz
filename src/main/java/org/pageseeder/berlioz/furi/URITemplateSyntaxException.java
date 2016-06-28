@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.furi;
 
+import java.util.Objects;
+
 /**
  * Thrown to indicate that a URI Template or URI Template fragment does not follow the appropriate
  * syntax.
@@ -55,10 +57,8 @@ public final class URITemplateSyntaxException extends IllegalArgumentException {
    */
   public URITemplateSyntaxException(String input, String reason) {
     super(reason + " : " + input);
-    if ((input == null) || (reason == null))
-      throw new NullPointerException();
-    this._input = input;
-    this._reason = reason;
+    this._input = Objects.requireNonNull(input);
+    this._reason = Objects.requireNonNull(reason);
   }
 
   /**

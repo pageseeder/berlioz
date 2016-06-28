@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,10 +65,8 @@ public class URITemplate implements Expandable {
    * @throws URITemplateSyntaxException If the string provided does not follow the proper syntax.
    */
   public URITemplate(String template) {
-    if (template == null)
-      throw new NullPointerException("Cannot create a URI template with a null template");
+    this._template = Objects.requireNonNull("Cannot create a URI template with a null template");
     this._tokens = digest(template);
-    this._template = template;
   }
 
   // TODO: method to indicate how many variables are used involved in the template
@@ -84,10 +83,8 @@ public class URITemplate implements Expandable {
    * @throws URITemplateSyntaxException If the string provided does not follow the proper syntax.
    */
   public URITemplate(String template, TokenFactory factory) {
-    if (template == null)
-      throw new NullPointerException("Cannot create a URI template with a null template");
+    this._template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
     this._tokens = digest(template, factory != null? factory : TokenFactory.getInstance());
-    this._template = template;
   }
 
   /**

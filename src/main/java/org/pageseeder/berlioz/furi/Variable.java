@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.furi;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -209,7 +210,7 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(Reserved reserved) throws NullPointerException, IllegalArgumentException {
+  public Variable(Reserved reserved) {
     this._name = reserved.symbol();
     this._default = DEFAULT_VALUE;
     this._form = Form.STRING;
@@ -224,7 +225,7 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(String name) throws NullPointerException, IllegalArgumentException {
+  public Variable(String name) {
     this(name, DEFAULT_VALUE);
   }
 
@@ -237,7 +238,7 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(String name, String def) throws NullPointerException, IllegalArgumentException {
+  public Variable(String name, String def) {
     this(name, def, null);
   }
 
@@ -251,16 +252,13 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(String name, String def, VariableType type) throws NullPointerException,
-      IllegalArgumentException {
-    if (name == null)
-      throw new NullPointerException("A variable must have a name, but was null");
-    if (!isValidName(name))
-      throw new IllegalArgumentException("The variable name is not valid: " + name);
-    this._name = name;
+  public Variable(String name, String def, VariableType type) {
+    this._name = Objects.requireNonNull("A variable must have a name, but was null");
     this._default = def != null ? def : DEFAULT_VALUE;
     this._type = type;
     this._form = Form.getType(name);
+    if (!isValidName(name))
+      throw new IllegalArgumentException("The variable name is not valid: " + name);
   }
 
   /**
@@ -273,16 +271,13 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(String name, String def, VariableType type, Form form) throws NullPointerException,
-      IllegalArgumentException {
-    if (name == null)
-      throw new NullPointerException("A variable must have a name, but was null");
-    if (!isValidName(name))
-      throw new IllegalArgumentException("The variable name is not valid: " + name);
-    this._name = name;
+  public Variable(String name, String def, VariableType type, Form form) {
+    this._name = Objects.requireNonNull(name, "A variable must have a name, but was null");
     this._default = def != null ? def : DEFAULT_VALUE;
     this._type = type;
     this._form = form != null? form : Form.STRING;
+    if (!isValidName(name))
+      throw new IllegalArgumentException("The variable name is not valid: " + name);
   }
 
   /**

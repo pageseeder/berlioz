@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.furi;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -52,11 +53,9 @@ public final class VariableType {
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
   public VariableType(String name) {
-    if (name == null)
-      throw new NullPointerException("A variable type must have a name, but was null");
+    this._name = Objects.requireNonNull(name, "A variable type must have a name, but was null");
     if (!isValidName(name))
       throw new IllegalArgumentException("The variable name is not valid: " + name);
-    this._name = name;
   }
 
   /**

@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 
 import org.pageseeder.berlioz.furi.URIResolveResult.Status;
@@ -82,8 +83,7 @@ public final class URIResolver {
    * @param uri The URI to resolve.
    */
   public URIResolver(String uri) {
-    if (uri == null) throw new NullPointerException("Specified URI cannot be null");
-    this._uri = uri;
+    this._uri = Objects.requireNonNull(uri, "Specified URI cannot be null");
   }
 
   /**

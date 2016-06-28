@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -44,8 +45,7 @@ abstract class TokenBase implements Token {
    * @throws NullPointerException If the specified expression is <code>null</code>.
    */
   public TokenBase(String exp) {
-    if (exp == null) throw new NullPointerException("Cannot create a token with a null value.");
-    this._exp = exp;
+    this._exp = Objects.requireNonNull(exp, "Cannot create a token with a null value.");
   }
 
   /**

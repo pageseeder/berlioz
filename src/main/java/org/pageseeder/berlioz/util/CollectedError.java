@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.util;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -77,10 +78,8 @@ public final class CollectedError<T extends Throwable> implements XMLWritable {
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public CollectedError(Level level, T error) {
-    if (level == null) throw new NullPointerException("level was not specified");
-    if (error == null) throw new NullPointerException("error was not specified");
-    this._level = level;
-    this._error = error;
+    this._level = Objects.requireNonNull(level, "The level is required");
+    this._error = Objects.requireNonNull(error, "The error is required");
   }
 
   /**
