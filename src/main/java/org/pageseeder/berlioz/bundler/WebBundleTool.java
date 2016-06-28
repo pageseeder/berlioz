@@ -285,10 +285,8 @@ public final class WebBundleTool {
    * @throws IOException if an input/output error occurs.
    */
   protected static void concatenate(List<File> files, File bundle, boolean minimize) throws IOException {
-    FileOutputStream out = new FileOutputStream(bundle);
-
     // Copy the input stream to the output stream
-    try {
+    try (FileOutputStream out = new FileOutputStream(bundle)) {
       for (File f : files) {
         if (minimize && !f.getName().endsWith(".min.js")) {
           minimizeAndCopyTo(f, out);
@@ -296,8 +294,6 @@ public final class WebBundleTool {
           copyTo(f, out);
         }
       }
-    } finally {
-      closeQuietly(out);
     }
   }
 
