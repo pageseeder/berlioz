@@ -27,6 +27,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
 
 import org.pageseeder.berlioz.xml.XMLConfig;
@@ -518,9 +519,7 @@ public final class GlobalSettings {
    * @throws NullPointerException If the name of the mode is <code>null</code>.
    */
   public static void setMode(String name) {
-    if (name == null)
-      throw new NullPointerException("The configuration mode must be specified.");
-    mode = name;
+    mode = Objects.requireNonNull(name, "The configuration mode must be specified.");
   }
 
   /**

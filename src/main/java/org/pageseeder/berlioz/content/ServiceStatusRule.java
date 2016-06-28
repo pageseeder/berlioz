@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.content;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.pageseeder.berlioz.Beta;
 
@@ -75,12 +76,8 @@ import org.pageseeder.berlioz.Beta;
   /**
    * The default rule to use when none is specified.
    */
-  protected static final ServiceStatusRule DEFAULT_RULE;
-  static {
-    // Required for type safety
-    List<String> empty = Collections.emptyList();
-    DEFAULT_RULE = new ServiceStatusRule(SelectType.NAME, empty, CodeRule.HIGHEST);
-  }
+  static final ServiceStatusRule DEFAULT_RULE =
+    new ServiceStatusRule(SelectType.NAME, Collections.<String>emptyList(), CodeRule.HIGHEST);
 
   /**
    * How the generator should be selected.
@@ -103,14 +100,13 @@ import org.pageseeder.berlioz.Beta;
    * @param use   How the generator should be selected.
    * @param items The names or targets of the generators to select.
    * @param rule  How is the status code for the determined.
+   *
+   * @throws NullPointerException If any argument is <code>null</code>
    */
-  protected ServiceStatusRule(SelectType use, List<String> items, CodeRule rule) {
-    if (use == null)   throw new NullPointerException("Argument use is null.");
-    if (items == null) throw new NullPointerException("Argument items is null.");
-    if (rule == null)  throw new NullPointerException("Argument rule is null.");
-    this._use = use;
-    this._items = items;
-    this._rule = rule;
+  ServiceStatusRule(SelectType use, List<String> items, CodeRule rule) {
+    this._use = Objects.requireNonNull(use, "Use is required.");
+    this._items = Objects.requireNonNull(items, "List of generators is required.");
+    this._rule = Objects.requireNonNull(rule, "Code role is required.");
   }
 
   /**
@@ -201,7 +197,7 @@ import org.pageseeder.berlioz.Beta;
    *
    * @param item the use definition
    *
-   * @throws IllegalArgumentException If either argument is invalid.
+   * @throws IllegalArgumentException If the item is empty or contains an illegal character.
    */
   private static void validate(String item) {
     if (item.isEmpty()) throw new IllegalArgumentException("Named item is empty");

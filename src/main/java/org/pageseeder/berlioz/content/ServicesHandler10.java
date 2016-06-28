@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.content;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.pageseeder.berlioz.furi.URIPattern;
@@ -165,9 +166,8 @@ final class ServicesHandler10 extends DefaultHandler {
    * @throws NullPointerException If any of the method arguments is <code>null</code>.
    */
   public ServicesHandler10(ServiceRegistry registry, SAXErrorCollector collector) {
-    if (registry == null || collector == null) throw new NullPointerException("Missing argument");
-    this._registry = registry;
-    this._collector = collector;
+    this._registry = Objects.requireNonNull(registry, "service registry is required");
+    this._collector = Objects.requireNonNull(collector, "error collector is required");
   }
 
   @Override
