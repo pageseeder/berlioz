@@ -23,7 +23,7 @@ package org.pageseeder.berlioz.util;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 31 May 2010
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.6
  */
 public interface EntityInfo {
@@ -45,7 +45,7 @@ public interface EntityInfo {
   /**
    * Get ETag.
    *
-   * @return strong ETag if available, otherwise weak ETag.
+   * @return a strong ETag if available
    */
   String getETag();
 
