@@ -205,6 +205,7 @@ final class ServicesHandler10 extends DefaultHandler {
         }
         this._builder.id(atts.getValue("id"));
         this._builder.cache(atts.getValue("cache-control"));
+        this._builder.flags(atts.getValue("flags"));
         handleMethod(atts.getValue("method"));
         break;
 
@@ -314,11 +315,11 @@ final class ServicesHandler10 extends DefaultHandler {
    * @throws SAXException Only if thrown by error handler
    */
   private Parameter toParameter(Attributes atts) throws SAXException {
-    Parameter.Builder p = new Parameter.Builder(atts.getValue("name"));
-    p.value(atts.getValue("value"));
+    String name = atts.getValue("name");
+    String value = atts.getValue("value");
     try {
-      return p.build();
-    } catch (IllegalStateException ex) {
+      return new Parameter(name, value);
+    } catch (NullPointerException ex) {
       warning("Bad parameter specifications - ignoring");
       return null;
     }

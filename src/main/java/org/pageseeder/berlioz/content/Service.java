@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
@@ -62,6 +63,11 @@ public final class Service {
   private final String _cache;
 
   /**
+   * The flags attached to this service.
+   */
+  private final String _flags;
+
+  /**
    * How the status code this service is calculated.
    */
   private final ServiceStatusRule _rule;
@@ -89,29 +95,19 @@ public final class Service {
   /**
    * Creates a new service.
    *
-   * @param id         the ID of the service.
-   * @param group      the group the service is part of.
-   * @param cache      the cache control for this service.
-   * @param rule       the status rule for the service status.
-   * @param generators the list of generators.
-   * @param parameters the parameters specifications for each generator.
-   * @param names      the names of each generator (if any).
-   * @param targets    the targets of each generator (if any).
+   * @param builder The builder used to create this service.
    */
-  private Service(String id, String group, String cache, ServiceStatusRule rule,
-      List<ContentGenerator> generators,
-      Map<ContentGenerator, List<Parameter>> parameters,
-      Map<ContentGenerator, String> names,
-      Map<ContentGenerator, String> targets) {
-    this._id = id;
-    this._group = group;
-    this._cache = cache;
-    this._rule = rule;
-    this._generators = generators;
-    this._parameters = parameters;
-    this._cacheable = isCacheable(generators);
-    this._names = names;
-    this._targets = targets;
+  private Service(Builder builder) {
+    this._id = Objects.requireNonNull(builder.id, "The service must have an id");
+    this._group = Objects.requireNonNull(builder.group, "The service must belong to a collection (group)");
+    this._rule = Objects.requireNonNull(builder.rule, "There must be a rule for this service");
+    this._cache = builder.cache;
+    this._flags = builder.flags;
+    this._generators = immutable(builder._generators);
+    this._parameters = immutable(builder._parameters);
+    this._cacheable = isCacheable(this._generators);
+    this._names = immutable3(builder._names);
+    this._targets = immutable3(builder._targets);
   }
 
   /**
@@ -139,6 +135,15 @@ public final class Service {
    */
   public String cache() {
     return this._cache;
+  }
+
+  /**
+   * Returns the flags attached to this service.
+   *
+   * @return the flags attached to this service.
+   */
+  public String flags() {
+    return this._flags;
   }
 
   /**
@@ -259,6 +264,9 @@ public final class Service {
     if (method != null) {
       xml.attribute("method", method.toString().toLowerCase());
     }
+    if (this._flags != null) {
+      xml.attribute("flags", this._flags);
+    }
 
     // Caching information
     xml.attribute("cacheable", Boolean.toString(this._cacheable));
@@ -321,30 +329,34 @@ public final class Service {
    *
    * <p>The same builder can be used for builder multiple services.
    *
-   * @author Christophe Lauret (Weborganic)
-   * @version 8 July 2010
+   * @author Christophe Lauret
    */
   static final class Builder {
 
     /**
      * The ID of the service to build.
      */
-    private String _id;
+    private String id;
 
     /**
      * The group the service to build belongs to.
      */
-    private String _group;
+    private String group;
 
     /**
      * The value of the 'Cache-Control' header for this service.
      */
-    private String _cache;
+    private String cache;
+
+    /**
+     * The value of the 'Cache-Control' header for this service.
+     */
+    private String flags;
 
     /**
      * Maps targets to a given generator instance.
      */
-    private ServiceStatusRule _rule;
+    private ServiceStatusRule rule;
 
     /**
      * The list of generators associated with this service.
@@ -378,7 +390,7 @@ public final class Service {
      * @return the ID of the service to build.
      */
     public String id() {
-      return this._id;
+      return this.id;
     }
 
     /**
@@ -388,7 +400,7 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder id(String id) {
-      this._id = id;
+      this.id = id;
       return this;
     }
 
@@ -399,7 +411,7 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder group(String group) {
-      this._group = group;
+      this.group = group;
       return this;
     }
 
@@ -410,7 +422,18 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder cache(String cache) {
-      this._cache = cache;
+      this.cache = cache;
+      return this;
+    }
+
+    /**
+     * Sets the flags for this service.
+     *
+     * @param flags the flags of the service to build.
+     * @return this builder for easy chaining.
+     */
+    public Builder flags(String flags) {
+      this.flags = flags;
       return this;
     }
 
@@ -421,7 +444,7 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder rule(ServiceStatusRule rule) {
-      this._rule = rule;
+      this.rule = rule;
       return this;
     }
 
@@ -492,99 +515,95 @@ public final class Service {
      */
     public Service build() {
       // warn when attempting to use cache control with uncacheable service
-      if (this._cache != null && !isCacheable(this._generators)) {
+      if (this.cache != null && !isCacheable(this._generators)) {
         Logger logger = LoggerFactory.getLogger(Builder.class);
-        logger.warn("Building non-cacheable service {} - cache control ignored.", this._id);
+        logger.warn("Building non-cacheable service {} - cache control ignored.", this.id);
       }
-      return new Service(this._id, this._group, this._cache, this._rule,
-          immutable(this._generators),
-          immutable(this._parameters),
-          immutable3(this._names),
-          immutable3(this._targets));
+      return new Service(this);
     }
 
     /**
      * Resets the all the class attributes (except group).
      */
     public void reset() {
-      this._id = null;
-      this._cache = null;
+      this.id = null;
+      this.cache = null;
+      this.flags = null;
       this._generators.clear();
       this._parameters.clear();
       this._names.clear();
       this._targets.clear();
     }
 
-    /**
-     * Returns a new identical immutable list.
-     *
-     * @param original the list maintained by the builder.
-     * @return a new identical immutable list.
-     */
-    private static List<ContentGenerator> immutable(List<ContentGenerator> original) {
-      if (original.isEmpty())
-        return Collections.emptyList();
-      else if (original.size() == 1) return Collections.singletonList(original.get(0));
-      else
-        return Collections.unmodifiableList(new ArrayList<ContentGenerator>(original));
-    }
-
-    /**
-     * Returns a new identical immutable map.
-     *
-     * @param original the map maintained by the builder.
-     * @return a new identical immutable map.
-     */
-    private static Map<ContentGenerator, List<Parameter>> immutable(Map<ContentGenerator, List<Parameter>> original) {
-      if (original.isEmpty())
-        return Collections.emptyMap();
-      else if (original.size() == 1) {
-        Entry<ContentGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
-        return Collections.singletonMap(entry.getKey(), immutable2(entry.getValue()));
-      } else {
-        Map<ContentGenerator, List<Parameter>> map = new HashMap<ContentGenerator, List<Parameter>>();
-        for (Entry<ContentGenerator, List<Parameter>> entry : original.entrySet()) {
-          map.put(entry.getKey(), immutable2(entry.getValue()));
-        }
-        return Collections.unmodifiableMap(map);
-      }
-    }
-
-    /**
-     * Returns a new identical immutable list.
-     *
-     * @param original the list maintained by the builder.
-     * @return a new identical immutable list.
-     */
-    private static List<Parameter> immutable2(List<Parameter> original) {
-      if (original.isEmpty())
-        return Collections.emptyList();
-      else if (original.size() == 1) return Collections.singletonList(original.get(0));
-      else
-        return Collections.unmodifiableList(new ArrayList<Parameter>(original));
-    }
-
-    /**
-     * Returns a new identical immutable map.
-     *
-     * @param original the map maintained by the builder.
-     * @return a new identical immutable map.
-     */
-    private static Map<ContentGenerator, String> immutable3(Map<ContentGenerator, String> original) {
-      if (original.isEmpty())
-        return Collections.emptyMap();
-      else if (original.size() == 1) {
-        Entry<ContentGenerator, String> entry = original.entrySet().iterator().next();
-        return Collections.singletonMap(entry.getKey(), entry.getValue());
-      } else {
-        Map<ContentGenerator, String> map = new HashMap<ContentGenerator, String>();
-        for (Entry<ContentGenerator, String> entry : original.entrySet()) {
-          map.put(entry.getKey(), entry.getValue());
-        }
-        return Collections.unmodifiableMap(map);
-      }
-    }
-
   }
 
+  /**
+   * Returns a new identical immutable list.
+   *
+   * @param original the list maintained by the builder.
+   * @return a new identical immutable list.
+   */
+  private static List<ContentGenerator> immutable(List<ContentGenerator> original) {
+    if (original.isEmpty())
+      return Collections.emptyList();
+    else if (original.size() == 1) return Collections.singletonList(original.get(0));
+    else
+      return Collections.unmodifiableList(new ArrayList<ContentGenerator>(original));
+  }
+
+  /**
+   * Returns a new identical immutable map.
+   *
+   * @param original the map maintained by the builder.
+   * @return a new identical immutable map.
+   */
+  private static Map<ContentGenerator, List<Parameter>> immutable(Map<ContentGenerator, List<Parameter>> original) {
+    if (original.isEmpty())
+      return Collections.emptyMap();
+    else if (original.size() == 1) {
+      Entry<ContentGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
+      return Collections.singletonMap(entry.getKey(), immutable2(entry.getValue()));
+    } else {
+      Map<ContentGenerator, List<Parameter>> map = new HashMap<ContentGenerator, List<Parameter>>();
+      for (Entry<ContentGenerator, List<Parameter>> entry : original.entrySet()) {
+        map.put(entry.getKey(), immutable2(entry.getValue()));
+      }
+      return Collections.unmodifiableMap(map);
+    }
+  }
+
+  /**
+   * Returns a new identical immutable list.
+   *
+   * @param original the list maintained by the builder.
+   * @return a new identical immutable list.
+   */
+  private static List<Parameter> immutable2(List<Parameter> original) {
+    if (original.isEmpty())
+      return Collections.emptyList();
+    else if (original.size() == 1) return Collections.singletonList(original.get(0));
+    else
+      return Collections.unmodifiableList(new ArrayList<Parameter>(original));
+  }
+
+  /**
+   * Returns a new identical immutable map.
+   *
+   * @param original the map maintained by the builder.
+   * @return a new identical immutable map.
+   */
+  private static Map<ContentGenerator, String> immutable3(Map<ContentGenerator, String> original) {
+    if (original.isEmpty())
+      return Collections.emptyMap();
+    else if (original.size() == 1) {
+      Entry<ContentGenerator, String> entry = original.entrySet().iterator().next();
+      return Collections.singletonMap(entry.getKey(), entry.getValue());
+    } else {
+      Map<ContentGenerator, String> map = new HashMap<ContentGenerator, String>();
+      for (Entry<ContentGenerator, String> entry : original.entrySet()) {
+        map.put(entry.getKey(), entry.getValue());
+      }
+      return Collections.unmodifiableMap(map);
+    }
+  }
 }

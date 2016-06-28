@@ -17,7 +17,7 @@ package org.pageseeder.berlioz;
 
 import java.io.File;
 
-import org.pageseeder.berlioz.content.ContentManager;
+import org.pageseeder.berlioz.content.ServiceLoader;
 
 /**
  * Convenience class to invoke this library on the command-line.
@@ -48,7 +48,7 @@ public final class Main {
     if (args.length > 1 && "-load".equals(args[0])) {
       // Set
       GlobalSettings.setRepository(new File("."));
-      ContentManager.load();
+      ServiceLoader.getInstance().load();
     }
   }
 

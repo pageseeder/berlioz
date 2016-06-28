@@ -21,8 +21,8 @@ import java.util.List;
 
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentManager;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.util.MD5;
 import org.pageseeder.berlioz.xml.XMLCopy;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -68,7 +68,7 @@ public final class GetServices implements ContentGenerator, Cacheable {
   @Override
   public String getETag(ContentRequest req) {
     StringBuilder etag = new StringBuilder();
-    for (File f : ContentManager.listServiceFiles()) {
+    for (File f : ServiceLoader.getInstance().listServiceFiles()) {
       etag.append('~').append(f.length()).append('!').append(f.lastModified());
     }
     return MD5.hash(etag.toString());
@@ -77,7 +77,7 @@ public final class GetServices implements ContentGenerator, Cacheable {
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
-    List<File> files = ContentManager.listServiceFiles();
+    List<File> files = ServiceLoader.getInstance().listServiceFiles();
 
     // Display the main file (always comes first)
     if (files.size() >= 1) {

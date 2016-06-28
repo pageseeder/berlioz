@@ -21,11 +21,11 @@ import java.util.List;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentManager;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
@@ -74,7 +74,7 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
 
   @Override
   public String getETag(ContentRequest req) {
-    ServiceRegistry registry = ContentManager.getDefaultRegistry();
+    ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     return Long.toString(registry.version());
   }
 
@@ -89,7 +89,7 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
     if (url == null || method == null) return;
 
     // Identify the service
-    ServiceRegistry registry = ContentManager.getDefaultRegistry();
+    ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     MatchingService match = registry.get(url, method);
 
     // Display info as XML

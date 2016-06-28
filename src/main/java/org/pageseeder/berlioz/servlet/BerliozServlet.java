@@ -31,9 +31,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
-import org.pageseeder.berlioz.content.ContentManager;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.http.HttpHeaderUtils;
 import org.pageseeder.berlioz.http.HttpHeaders;
@@ -147,7 +147,7 @@ public final class BerliozServlet extends HttpServlet {
     super.init(servletConfig);
     BerliozConfig config = BerliozConfig.newConfig(servletConfig);
     this._config = config;
-    this._services = ContentManager.getDefaultRegistry();
+    this._services = ServiceLoader.getInstance().getDefaultRegistry();
     this._errorHandler = servletConfig.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
     if (this._errorHandler == null) {
       LOGGER.info("No ErrorHandlerServlet is defined in the Web descriptor");
@@ -227,6 +227,7 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Determine the method in use.
+    ServiceLoader loader = ServiceLoader.getInstance();
     HttpMethod method = HttpMethod.valueOf(req.getMethod());
     boolean profile = GlobalSettings.has(BerliozOption.PROFILE);
 
@@ -249,7 +250,7 @@ public final class BerliozServlet extends HttpServlet {
 
       // Clear the service configuration
       boolean clearServices = reload || isTrue(req.getParameter("reload-services"));
-      if (clearServices) { ContentManager.clear(); }
+      if (clearServices) { loader.clear(); }
 
       // If profile specified on URL
       profile = profile || isTrue(req.getParameter("berlioz-profile"));
@@ -257,7 +258,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Load the services if required
     try {
-      ContentManager.loadIfRequired();
+      loader.loadIfRequired();
     } catch (BerliozException ex) {
       sendError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
       return;

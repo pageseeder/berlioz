@@ -214,6 +214,9 @@ public final class XMLResponse {
     Service service = this._match.service();
     xml.attribute("service", service.id());
     xml.attribute("group", service.group());
+    if (service.flags() != null) {
+      xml.attribute("flags", service.flags());
+    }
 
     XMLResponseHeader header = new XMLResponseHeader(this._core, service, this._match.result());
     header.toXML(xml);

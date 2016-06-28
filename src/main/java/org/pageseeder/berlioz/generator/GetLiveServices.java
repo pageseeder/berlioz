@@ -21,9 +21,9 @@ import java.util.List;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentManager;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
@@ -70,13 +70,13 @@ public final class GetLiveServices implements ContentGenerator, Cacheable {
 
   @Override
   public String getETag(ContentRequest req) {
-    ServiceRegistry registry = ContentManager.getDefaultRegistry();
+    ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     return Long.toString(registry.version());
   }
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
-    ServiceRegistry registry = ContentManager.getDefaultRegistry();
+    ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     xml.openElement("live-services", true);
 
     // Get the cache control
