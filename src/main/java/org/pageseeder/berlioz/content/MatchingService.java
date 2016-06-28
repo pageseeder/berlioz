@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
+import java.util.Objects;
+
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
 
@@ -25,7 +27,7 @@ import org.pageseeder.berlioz.furi.URIResolveResult;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 31 May 2010
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.6
  */
 public final class MatchingService {
@@ -51,14 +53,13 @@ public final class MatchingService {
    * @param service The matched service.
    * @param pattern The URI pattern it matched.
    * @param result  The resolved URI variables.
+   *
+   * @throws NullPointerException If any argument is <code>null</code>
    */
   public MatchingService(Service service, URIPattern pattern, URIResolveResult result) {
-    if (service == null) throw new NullPointerException("Cannot match null service");
-    if (pattern == null) throw new NullPointerException("Pattern must be specified");
-    if (result == null) throw new NullPointerException("Resolution results must be specified");
-    this._service = service;
-    this._pattern = pattern;
-    this._result = result;
+    this._service = Objects.requireNonNull(service, "Cannot match null service");
+    this._pattern = Objects.requireNonNull(pattern, "Pattern must be specified");
+    this._result = Objects.requireNonNull(result, "Resolution results must be specified");
   }
 
   /**
@@ -71,7 +72,6 @@ public final class MatchingService {
    *         <code>false</code> otherwise.
    */
   public boolean isCacheable() {
-    if (this._service == null) return false;
     return this._service.isCacheable();
   }
 

@@ -88,6 +88,7 @@ public final class ContentManager {
 
   /**
    * Returns the default service registry (mapped to "services.xml").
+   *
    * @return the default service registry (mapped to "services.xml").
    */
   public static ServiceRegistry getDefaultRegistry() {
@@ -114,20 +115,44 @@ public final class ContentManager {
    * @throws BerliozException Should something unexpected happen.
    */
   public static synchronized void load() throws BerliozException {
-    File repository = GlobalSettings.getRepository();
-    File config = new File(repository, "config");
-    File xml = new File(config, "services.xml");
-    load(xml);
-    // look for other files
-    for (File sub : config.listFiles(FILE_FILTER)) {
-      load(sub);
+    List<File> files = getServiceFiles();
+    for (File f : files) {
+      load(f);
     }
   }
 
   /**
+   * Returns the list of services files to load from the config folder
+   * of the repository.
+   *
+   * <p>This list includes the main file <code>services.xml</code> as well as
+   * any file starting with <code>services!</code> and ending in <code>.xml</code>.
+   *
+   * <p>If it exists, the main file is always returned first. There is no
+   * guaranteed ordering for the other services files.
+   *
+   * @return the list of services files.
+   *
+   * @deprecated Use {@link #listServiceFiles()} instead
+   */
+  @Deprecated
+  public static List<File> getServiceFiles() {
+    return listServiceFiles();
+  }
+
+  /**
+   * Returns the list of services files to load from the config folder
+   * of the repository.
+   *
+   * <p>This list includes the main file <code>services.xml</code> as well as
+   * any file starting with <code>services!</code> and ending in <code>.xml</code>.
+   *
+   * <p>If it exists, the main file is always returned first. There is no
+   * guaranteed ordering for the other services files.
+   *
    * @return the list of services files.
    */
-  public static List<File> getServiceFiles() {
+  public static List<File> listServiceFiles() {
     File repository = GlobalSettings.getRepository();
     File config = new File(repository, "config");
     File xml = new File(config, "services.xml");

@@ -47,12 +47,12 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * }</pre>
  *
  * <h3>Etag</h3>
- * <p>This generator uses a weak etag based on the name, length and last modified date of the
+ * <p>This generator uses an etag based on the name, length and last modified date of the
  * properties file being loaded or <code>null</code> if no config file could be found.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.26 - 11 December 2013
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.8
  */
 public final class GetGlobalConfig implements ContentGenerator, Cacheable {

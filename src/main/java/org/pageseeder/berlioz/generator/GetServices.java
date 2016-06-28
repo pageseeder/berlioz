@@ -56,11 +56,11 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *                         name="[name]" target="[target]"/>}</pre>
  *
  * <h3>Etag</h3>
- * <p>This generator uses a weak etag based on the name, length and last modified date of the file.
+ * <p>This generator uses a etag based on the name, length and last modified date of the file.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.26 - 16 December 2013
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.8
  */
 public final class GetServices implements ContentGenerator, Cacheable {
@@ -68,7 +68,7 @@ public final class GetServices implements ContentGenerator, Cacheable {
   @Override
   public String getETag(ContentRequest req) {
     StringBuilder etag = new StringBuilder();
-    for (File f : ContentManager.getServiceFiles()) {
+    for (File f : ContentManager.listServiceFiles()) {
       etag.append('~').append(f.length()).append('!').append(f.lastModified());
     }
     return MD5.hash(etag.toString());
@@ -77,7 +77,7 @@ public final class GetServices implements ContentGenerator, Cacheable {
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
-    List<File> files = ContentManager.getServiceFiles();
+    List<File> files = ContentManager.listServiceFiles();
 
     // Display the main file (always comes first)
     if (files.size() >= 1) {
