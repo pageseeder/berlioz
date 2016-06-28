@@ -31,7 +31,7 @@ import javax.servlet.http.HttpSession;
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.6
  */
 public interface ContentRequest {
@@ -98,6 +98,18 @@ public interface ContentRequest {
    * @return A value of the parameter or the default value if missing or could not be parsed.
    */
   int getIntParameter(String name, int def);
+
+  /**
+   * Returns the specified parameter value.
+   *
+   * <p>This method guarantees that a value is returned.
+   *
+   * @param name The name of the requested parameter.
+   * @param def  A default value if the value is <code>null</code> or empty string.
+   *
+   * @return A value of the parameter or the default value if missing or could not be parsed.
+   */
+  long getLongParameter(String name, long def);
 
   /**
    * Returns an array of String objects containing all of the values the given request parameter

@@ -155,6 +155,18 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   }
 
   @Override
+  public final long getLongParameter(String name, long def) {
+    String value = getParameter(name);
+    if (value == null || "".equals(value)) return def;
+    try {
+      return Long.parseLong(value);
+    } catch (NumberFormatException ex) {
+      LOGGER.error("Unable to parse value "+value+" for "+name+" parameter.", ex);
+      return def;
+    }
+  }
+
+  @Override
   public final Date getDateParameter(String name) {
     try {
       return ISO8601.parseAuto(this.getParameter(name));

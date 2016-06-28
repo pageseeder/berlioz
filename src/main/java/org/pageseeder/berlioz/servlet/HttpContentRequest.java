@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.servlet;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -79,10 +80,8 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   protected HttpContentRequest(CoreHttpRequest core, Map<String, String> parameters,
       ContentGenerator generator, Service service, int order) {
     super(core, parameters);
-    if (generator == null) throw new NullPointerException("No generator specified");
-    if (service == null) throw new NullPointerException("No generator specified");
-    this._generator = generator;
-    this._service = service;
+    this._generator = Objects.requireNonNull(generator, "The generator is required");
+    this._service = Objects.requireNonNull(service, "The service is required");
     this._order = order;
   }
 
