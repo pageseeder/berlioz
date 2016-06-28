@@ -253,8 +253,8 @@ public class Variable {
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
   public Variable(String name, String def, VariableType type) {
-    this._name = Objects.requireNonNull("A variable must have a name, but was null");
-    this._default = def != null ? def : DEFAULT_VALUE;
+    this._name = Objects.requireNonNull(name, "A variable must have a name, but was null");
+    this._default = Objects.toString(def, DEFAULT_VALUE);
     this._type = type;
     this._form = Form.getType(name);
     if (!isValidName(name))

@@ -62,6 +62,7 @@ public final class ListLibraries implements ContentGenerator {
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
 
+    // TODO: Use Weak cache to avoid having to reopen all libs, reload on Berlioz Reload
     // TODO: Set<String> libs = getServletContext().getResourcePaths("/WEB-INF/lib");
     // TODO: if(libs == null || libs.isEmpty()) {
 
@@ -73,37 +74,32 @@ public final class ListLibraries implements ContentGenerator {
       File[] jars = lib.listFiles(JAR_FILES);
 
       // Iterate over each library
-      for (File f : jars) {
-        String filename = f.getName();
+      if (jars != null) {
+        for (File f : jars) {
+          String filename = f.getName();
 
-        // Get the name and version from the file name
-        int dot = filename.lastIndexOf('.');
-        int dash = filename.lastIndexOf('-');
-        String name = dash != -1? filename.substring(0, dash) : filename.substring(0, dot);
-        String version = dash != -1? filename.substring(dash+1, dot) : null;
+          // Get the name and version from the file name
+          int dot = filename.lastIndexOf('.');
+          int dash = filename.lastIndexOf('-');
+          String name = dash != -1? filename.substring(0, dash) : filename.substring(0, dot);
+          String version = dash != -1? filename.substring(dash+1, dot) : null;
 
-        // Start writing out the XML
-        xml.openElement("library");
-        xml.attribute("file", filename);
-        xml.attribute("name", name);
-        if (version != null) {
-          xml.attribute("version", version);
-        }
-
-        JarFile jar = null;
-        try {
-          jar = new JarFile(f);
-          Manifest manifest = jar.getManifest();
-          Attributes attributes = manifest.getMainAttributes();
-          getAll(xml, attributes);
-
-        } finally {
-          if (jar != null) {
-            jar.close();
+          // Start writing out the XML
+          xml.openElement("library");
+          xml.attribute("file", filename);
+          xml.attribute("name", name);
+          if (version != null) {
+            xml.attribute("version", version);
           }
-        }
 
-        xml.closeElement();
+          try (JarFile jar = new JarFile(f)) {
+            Manifest manifest = jar.getManifest();
+            Attributes attributes = manifest.getMainAttributes();
+            getAll(xml, attributes);
+          }
+
+          xml.closeElement();
+        }
       }
 
     }

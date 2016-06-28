@@ -123,12 +123,16 @@ public final class XMLUtils {
       // parse
       if (xml.isDirectory()) {
         LOGGER.info("Parsing all XML files in directory {}", xml.toURI());
-        File[] xmls = xml.listFiles(new XMLFilenameFilter());
-        for (File f : xmls) {
-          reader.parse(new InputSource(f.toURI().toString()));
-        }
-        if (xmls.length == 0) {
-          LOGGER.warn("No XML file to parse in directory {} ", xml.toURI());
+        File[] files = xml.listFiles(new XMLFilenameFilter());
+        if (files != null) {
+          for (File f : files) {
+            reader.parse(new InputSource(f.toURI().toString()));
+          }
+          if (files.length == 0) {
+            LOGGER.warn("No XML file to parse in directory {} ", xml.toURI());
+          }
+        } else {
+          LOGGER.warn("Unable to list files in directory {} ", xml.toURI());
         }
       } else {
         LOGGER.info("Parsing file {}", xml.toURI());

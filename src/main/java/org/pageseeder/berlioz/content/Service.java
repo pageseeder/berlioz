@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret (Weborganic)
  *
- * @version Berlioz 0.9.3 - 9 December 2011
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.7
  */
 public final class Service {

@@ -24,7 +24,6 @@ import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -71,15 +70,18 @@ public final class GetFileSystemInfo implements ContentGenerator {
     DirInfo global = new DirInfo(name);
     List<DirInfo> locals = new ArrayList<DirInfo>();
     File[] files = dir.listFiles();
-    for (File f : files) {
-      if (f.isDirectory()) {
-        if (!"WEB-INF".equals(f.getName())) {
-          DirInfo local = new DirInfo(f.getName());
-          analyze(local, f);
-          locals.add(local);
+    // TODO Use Files.walkFileTree instead
+    if (files != null) {
+      for (File f : files) {
+        if (f.isDirectory()) {
+          if (!"WEB-INF".equals(f.getName())) {
+            DirInfo local = new DirInfo(f.getName());
+            analyze(local, f);
+            locals.add(local);
+          }
+        } else {
+          global.add(f);
         }
-      } else {
-        global.add(f);
       }
     }
     xml.openElement(name);
@@ -106,11 +108,13 @@ public final class GetFileSystemInfo implements ContentGenerator {
    */
   private static void analyze(DirInfo local, File dir) {
     File[] files = dir.listFiles();
-    for (File f : files) {
-      if (f.isDirectory()) {
-        analyze(local, f);
-      } else {
-        local.add(f);
+    if (files != null) {
+      for (File f : files) {
+        if (f.isDirectory()) {
+          analyze(local, f);
+        } else {
+          local.add(f);
+        }
       }
     }
   }

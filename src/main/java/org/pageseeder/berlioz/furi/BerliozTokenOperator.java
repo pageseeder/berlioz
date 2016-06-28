@@ -488,9 +488,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   public BerliozTokenOperator(Operator op, Variable var) {
     super(toExpression(op, var));
-    if (var == null)
-      throw new NullPointerException("The operator must have a value");
-    this._operator = Objects.requireNonNull(op, "The operator is required");
+    this._operator = op;
     this._vars = new ArrayList<Variable>(1);
     this._vars.add(var);
     this._pattern = op.pattern(this._vars);
@@ -506,8 +504,6 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   public BerliozTokenOperator(Operator op, List<Variable> vars) {
     super(toExpression(op, vars));
-    if (vars == null)
-      throw new NullPointerException("The operator must have a value");
     this._operator = Objects.requireNonNull(op, "The operator is required");;
     this._vars = vars;
     this._pattern = op.pattern(vars);
@@ -625,6 +621,8 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    *
    * @param op The operator.
    * @param var The variable.
+   *
+   * @throws NullPointerException If either argument is <code>null</code>
    */
   private static String toExpression(Operator op, Variable var) {
     return "{"+op.character()+var.name()+'}';
@@ -638,7 +636,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    * @param vars The variables.
    */
   private static String toExpression(Operator op, List<Variable> vars) {
-    StringBuffer exp = new StringBuffer();
+    StringBuilder exp = new StringBuilder();
     exp.append('{');
     exp.append(op.character());
     boolean first = true;

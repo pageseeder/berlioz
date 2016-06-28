@@ -22,7 +22,6 @@ import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
-
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -30,7 +29,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.9.32
  */
 @Beta
@@ -39,16 +38,11 @@ public final class GetThreadInfo implements ContentGenerator {
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
 
-    long threadId = -1;
-    String id = req.getParameter("id", "-1");
-    if (id != null) {
-      try {
-        threadId = Long.parseLong(id);
-      } catch (NumberFormatException ex) {
-        req.setStatus(ContentStatus.BAD_REQUEST);
-        xml.writeComment("Interval must be strictly positive");
-        return;
-      }
+    long threadId = req.getLongParameter("id", -1L);
+    if (threadId < 0) {
+      req.setStatus(ContentStatus.BAD_REQUEST);
+      xml.writeComment("Interval must be strictly positive");
+      return;
     } else {
       threadId = Thread.currentThread().getId();
     }

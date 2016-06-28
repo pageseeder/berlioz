@@ -365,8 +365,8 @@ public final class BerliozConfig {
     long seed = 0L;
     File f = this._env.getPrivateFile("berlioz.etag");
     if (f.exists() && f.length() < 100) {
-      try {
-        String etag = new Scanner(f).useDelimiter("\\Z").next();
+      try (Scanner scanner = new Scanner(f)) {
+        String etag = scanner.useDelimiter("\\Z").next();
         etag = etag.replaceAll("[^a-zA-Z0-9-]", "");
         seed = Long.parseLong(etag, 36);
         LOGGER.info("Loading the etag seed {}", etag);

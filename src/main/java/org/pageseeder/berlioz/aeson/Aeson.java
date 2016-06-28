@@ -91,11 +91,17 @@ public final class Aeson {
       }
 
       // Iterate over files in directory
-      for (File f : source.listFiles()) {
-        StreamSource s = new StreamSource(f);
-        StreamResult r = new StreamResult(new File(output, toOutputName(f.getName(), transformer)));
-        Result result = JSONResult.newInstanceIfSupported(transformer, r);
-        transformer.transform(s, result);
+      File[] files = source.listFiles();
+      if (files != null) {
+        for (File f : files) {
+          StreamSource s = new StreamSource(f);
+          StreamResult r = new StreamResult(new File(output, toOutputName(f.getName(), transformer)));
+          Result result = JSONResult.newInstanceIfSupported(transformer, r);
+          transformer.transform(s, result);
+        }
+      } else {
+        System.err.println("Unable to list source files");
+        System.exit(0);
       }
 
     } else {

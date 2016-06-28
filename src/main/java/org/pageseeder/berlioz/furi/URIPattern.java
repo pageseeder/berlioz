@@ -69,9 +69,7 @@ public final class URIPattern extends URITemplate implements Matchable {
    * @throws IllegalArgumentException If the string provided does not follow the proper syntax.
    */
   public URIPattern(URITemplate template) {
-    super(template != null ? template.toString() : "");
-    if (template == null)
-      throw new NullPointerException("Cannot create a URL pattern with a null template");
+    super(template);
     if (!isMatchable(template))
       throw new IllegalArgumentException("Cannot create a URL pattern from template containing non-matchable tokens.");
     this._pattern = computePattern(tokens());

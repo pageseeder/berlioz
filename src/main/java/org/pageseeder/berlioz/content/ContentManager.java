@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.SAXParser;
@@ -48,7 +49,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.26 - 16 December 2013
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.6
  */
 public final class ContentManager {
@@ -115,7 +116,7 @@ public final class ContentManager {
    * @throws BerliozException Should something unexpected happen.
    */
   public static synchronized void load() throws BerliozException {
-    List<File> files = getServiceFiles();
+    List<File> files = listServiceFiles();
     for (File f : files) {
       load(f);
     }
@@ -156,10 +157,28 @@ public final class ContentManager {
     File repository = GlobalSettings.getRepository();
     File config = new File(repository, "config");
     File xml = new File(config, "services.xml");
-    List<File> files = new ArrayList<File>();
-    files.add(xml);
-    for (File sub : config.listFiles(FILE_FILTER)) {
-      files.add(sub);
+    File[] subs = config.listFiles(FILE_FILTER);
+    List<File> files;
+
+    // `services.xml` file and/or at least one module
+    if (subs != null && subs.length > 0) {
+      files = new ArrayList<File>(subs.length+1);
+      if (xml.exists()) {
+        files.add(xml);
+      }
+      for (File sub : subs) {
+        files.add(sub);
+      }
+    }
+
+    // Single `services.xml` file
+    else if (xml.exists()) {
+      files = Collections.singletonList(xml);
+    }
+
+    // No services file at all!
+    else {
+      files = Collections.emptyList();
     }
     return files;
   }

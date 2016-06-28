@@ -261,15 +261,19 @@ public final class XSLTransformer {
   private static void listTemplateFiles(File dir, List<File> collected) {
     // get all the files in the current directory
     File[] files = dir.listFiles();
-    // iterate over the files, collect
-    for (File f : files) {
-      // scan directories
-      if (f.isDirectory()) {
-        listTemplateFiles(f, collected);
-      } else {
-        // collect files only
-        collected.add(f);
+    if (files != null) {
+      // iterate over the files, collect
+      for (File f : files) {
+        // scan directories
+        if (f.isDirectory()) {
+          listTemplateFiles(f, collected);
+        } else {
+          // collect files only
+          collected.add(f);
+        }
       }
+    } else {
+      LOGGER.warn("Unable to list files from directory {}", dir.getName());
     }
   }
 

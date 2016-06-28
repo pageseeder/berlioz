@@ -57,6 +57,18 @@ public class URITemplate implements Expandable {
   private final List<Token> _tokens;
 
   /**
+   * Creates a new URI Template instance from an existing instance
+   *
+   * @param template The original template URI template syntax.
+   *
+   * @throws NullPointerException If the specified template is <code>null</code>.
+   */
+  URITemplate(URITemplate original) {
+    this._template = original._template;
+    this._tokens = original._tokens;
+  }
+
+  /**
    * Creates a new URI Template instance.
    *
    * @param template A String following the URI template syntax.
@@ -65,7 +77,7 @@ public class URITemplate implements Expandable {
    * @throws URITemplateSyntaxException If the string provided does not follow the proper syntax.
    */
   public URITemplate(String template) {
-    this._template = Objects.requireNonNull("Cannot create a URI template with a null template");
+    this._template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
     this._tokens = digest(template);
   }
 

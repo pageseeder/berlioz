@@ -494,20 +494,25 @@ public final class InitServlet extends HttpServlet implements Servlet {
   private static String guessMode(File config) {
     if (config == null) return null;
     String mode = null;
-    for (String name : config.list()) {
-      if (name.startsWith("config-") && name.endsWith(".xml")) {
-        if (mode == null) {
-          // Found a config file
-          final int prefix = 7;
-          final int suffix = 4;
-          mode = name.substring(prefix, name.length() - suffix);
-        } else {
-          console("Mode: multiple modes to choose from!");
-          console("Mode: use 'berlioz.mode' or specify only 1 'config-[mode].xml'");
-          // multiple config files: unable to choose.
-          mode = null;
+    String[] filenames = config.list();
+    if (filenames != null) {
+      for (String name : filenames) {
+        if (name.startsWith("config-") && name.endsWith(".xml")) {
+          if (mode == null) {
+            // Found a config file
+            final int prefix = 7;
+            final int suffix = 4;
+            mode = name.substring(prefix, name.length() - suffix);
+          } else {
+            console("Mode: multiple modes to choose from!");
+            console("Mode: use 'berlioz.mode' or specify only 1 'config-[mode].xml'");
+            // multiple config files: unable to choose.
+            mode = null;
+          }
         }
       }
+    } else {
+      console("Mode: unable to list config files!");
     }
     return mode;
   }

@@ -60,16 +60,9 @@ public class URITemplateTest {
   /**
    * Test that a null pointer exception is thrown by the constructor.
    */
-  @Test
+  @Test(expected = NullPointerException.class)
   public void testNew_Null() {
-    boolean nullThrown = false;
-    try {
-      new URITemplate(null);
-    } catch (NullPointerException ex) {
-      nullThrown = true;
-    } finally {
-      Assert.assertTrue(nullThrown);
-    }
+    new URITemplate((String)null);
   }
 
   /**

@@ -70,11 +70,14 @@ final class Overlays {
         }
       });
       List<Overlay> list = new ArrayList<Overlay>();
-      for (File f : files) {
-        Overlay overlay = new Overlay(f);
-        list.add(overlay);
+      if (files != null) {
+        for (File f : files) {
+          Overlay overlay = new Overlay(f);
+          list.add(overlay);
+        }
+        Collections.sort(list);
       }
-      Collections.sort(list);
+      // TODO Warn that files could not be listed.
       return list;
     } else return Collections.emptyList();
   }
