@@ -29,7 +29,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.9.32
  */
 public final class WebBundleTool {
@@ -55,11 +55,6 @@ public final class WebBundleTool {
    * Logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(WebBundleTool.class);
-
-  /**
-   * All I/O operations requiring encoding/decoding should use utf8.
-   */
-  private static final Charset UTF8 = Charset.forName("utf-8");
 
   /**
    * Matches URL references in CSS.
@@ -359,10 +354,8 @@ public final class WebBundleTool {
    * @throws IOException if an input/output error occurs
    */
   private static void copyTo(File file, OutputStream out) throws IOException {
-    BufferedReader reader = null;
-    try {
-      reader = newBufferedReader(file);
-      OutputStreamWriter writer = new OutputStreamWriter(out, UTF8);
+    try (BufferedReader reader = newBufferedReader(file)){
+      OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
       String line = reader.readLine();
       while (line != null) {
         writer.append(line);
@@ -371,8 +364,6 @@ public final class WebBundleTool {
       }
       writer.flush();
       writer = null;
-    } finally {
-      closeQuietly(reader);
     }
   }
 
@@ -386,7 +377,7 @@ public final class WebBundleTool {
    * @throws IOException if an input/output error occurs
    */
   private static void copyTo(StringReader reader, OutputStream out) throws IOException {
-    OutputStreamWriter writer = new OutputStreamWriter(out, UTF8);
+    OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
     char[] buffer = new char[1024];
     while (true) {
       int length = reader.read(buffer);
@@ -432,10 +423,8 @@ public final class WebBundleTool {
     if (processed.contains(file)) return exception;
     processed.add(file);
     // start processing
-    InputStreamReader reader = new InputStreamReader(new FileInputStream(file), UTF8);
-    BufferedReader b = new BufferedReader(reader);
-    try {
-      String line = b.readLine();
+    try (BufferedReader reader = newBufferedReader(file)) {
+      String line = reader.readLine();
       while (line != null) {
         Matcher m = CSS_URL.matcher(line);
         if (m.find()) {
@@ -489,13 +478,11 @@ public final class WebBundleTool {
         }
         // Always end with a new line
         out.write('\n');
-        line = b.readLine();
+        line = reader.readLine();
       }
-      b.close();
     } catch (IOException ex) {
       exception = ex;
     }
-    reader.close();
     return exception;
   }
 
@@ -614,6 +601,6 @@ public final class WebBundleTool {
    * @throws FileNotFoundException if the file could not be found.
    */
   private static BufferedReader newBufferedReader(File f) throws FileNotFoundException {
-    return new BufferedReader(new InputStreamReader(new FileInputStream(f), UTF8));
+    return new BufferedReader(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8));
   }
 }

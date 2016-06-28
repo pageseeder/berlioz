@@ -16,7 +16,7 @@
 package org.pageseeder.berlioz.furi;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 
@@ -46,11 +46,6 @@ import java.text.Normalizer.Form;
  * @since Berlioz 0.9.32
  */
 public final class URICoder {
-
-  /**
-   * The UTF8 character set for reuse - Always defined.
-   */
-  private static final Charset UTF8 = Charset.forName("UTF-8");
 
   /**
    * The hexadecimal digits for use by the encoder.
@@ -161,10 +156,9 @@ public final class URICoder {
    * @param e A character that does not require encoding if found in the string.
    */
   private static String encodeUTF8(String s, char e) {
-    // TODO: Normalizer requires Java 6!
     String n = (Normalizer.isNormalized(s, Form.NFKC)) ? s : Normalizer.normalize(s, Form.NFKC);
     // convert String to UTF-8
-    ByteBuffer bb = UTF8.encode(n);
+    ByteBuffer bb = StandardCharsets.UTF_8.encode(n);
     // URI encode
     StringBuffer sb = new StringBuffer();
     while (bb.hasRemaining()) {
@@ -184,10 +178,9 @@ public final class URICoder {
    * @param s The string the encode (assuming ASCII characters only)
    */
   private static String minimalEncodeUTF8(String s) {
-    // TODO: Normalizer requires Java 6!
     String n = (Normalizer.isNormalized(s, Form.NFKC)) ? s : Normalizer.normalize(s, Form.NFKC);
     // convert String to UTF-8
-    ByteBuffer bb = UTF8.encode(n);
+    ByteBuffer bb = StandardCharsets.UTF_8.encode(n);
     // URI encode
     StringBuffer sb = new StringBuffer();
     while (bb.hasRemaining()) {
@@ -265,7 +258,7 @@ public final class URICoder {
     }
     bb.limit(bb.position());
     bb.position(0);
-    return UTF8.decode(bb).toString();
+    return StandardCharsets.UTF_8.decode(bb).toString();
   }
 
   /**

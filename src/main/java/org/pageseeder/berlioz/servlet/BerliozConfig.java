@@ -388,12 +388,11 @@ public final class BerliozConfig {
     LOGGER.info("Generating new ETag Seed: {}", Long.toString(seed.longValue(), 36));
     File f = this._env.getPrivateFile("berlioz.etag");
     if (f.exists() && f.canWrite() || f.getParentFile().canWrite()) {
-      try {
-        FileOutputStream os = new FileOutputStream(f);
+      // NB. We don't care about encoding
+      try (FileOutputStream os = new FileOutputStream(f)) {
         for (char c : Long.toString(seed.longValue(), 36).toCharArray()) {
           os.write(c);
         }
-        os.close();
       } catch (IOException ex) {
         LOGGER.warn("Unable to save the etag seed", ex);
       }

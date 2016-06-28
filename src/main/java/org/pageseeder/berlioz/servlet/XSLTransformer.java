@@ -501,11 +501,9 @@ public final class XSLTransformer {
    * @return templates or <code>null</code>.
    */
   private static Templates toTemplates(URL url) {
-    // load the templates from the source file
-    InputStream in = null;
+    // load the templates from the URL
     Templates templates = null;
-    try {
-      in = url.openStream();
+    try (InputStream in = url.openStream()) {
       Source source = new StreamSource(in);
       source.setSystemId(url.toString());
       TransformerFactory factory = TransformerFactory.newInstance();
@@ -517,8 +515,6 @@ public final class XSLTransformer {
     } catch (TransformerException ex) {
       LOGGER.warn("Unable to load fallback/failsafe templates!", ex);
       return null;
-    } finally {
-      closeQuietly(in);
     }
     return templates;
   }

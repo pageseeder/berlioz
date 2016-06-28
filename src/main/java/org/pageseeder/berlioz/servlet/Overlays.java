@@ -163,13 +163,10 @@ final class Overlays {
      * @throws IOException Should any error occur.
      */
     public int unpack(final File root) throws IOException {
-      BufferedOutputStream out = null;
-      BufferedInputStream is = null;
       int unpacked = 0;
       long modified = this._source.lastModified();
-      try {
+      try (ZipFile zip = new ZipFile(this._source)) {
         ZipEntry entry;
-        ZipFile zip = new ZipFile(this._source);
         for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements();) {
           entry = e.nextElement();
           String name = entry.getName();
@@ -189,30 +186,19 @@ final class Overlays {
           if (!entry.isDirectory()) {
             File f = new File(root, name);
             if (!f.exists() || f.length() != entry.getSize() || f.lastModified() < modified) {
-              is = new BufferedInputStream(zip.getInputStream(entry));
-              int count;
-              byte[] data = new byte[BUFFER];
-              FileOutputStream fos = new FileOutputStream(f);
-              try {
-                out = new BufferedOutputStream(fos, BUFFER);
-                while ((count = is.read(data, 0, BUFFER)) != -1) {
-                  out.write(data, 0, count);
+              try (BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry))) {
+                int count;
+                byte[] data = new byte[BUFFER];
+                try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f), BUFFER)){
+                  while ((count = is.read(data, 0, BUFFER)) != -1) {
+                    out.write(data, 0, count);
+                  }
+                  out.flush();
                 }
-                out.flush();
-              } finally {
-                out.close();
+                unpacked++;
               }
-              is.close();
-              unpacked++;
             }
           }
-        }
-      } finally {
-        if (is != null) {
-          is.close();
-        }
-        if (out != null) {
-          out.close();
         }
       }
       return unpacked;
