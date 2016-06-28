@@ -398,7 +398,6 @@ public final class InitServlet extends HttpServlet implements Servlet {
       if (loaded) {
         console("Config: loaded OK ("+GlobalSettings.countProperties()+" properties found)");
         console("Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_COMPRESSION));
-        console("Config: HTTP Max Age = "+GlobalSettings.get(BerliozOption.HTTP_MAX_AGE));
         console("Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_CACHE));
         console("Config: XML Strict Parse = "+GlobalSettings.get(BerliozOption.XML_PARSE_STRICT));
         console("Config: OK ----------------------------------------------------");

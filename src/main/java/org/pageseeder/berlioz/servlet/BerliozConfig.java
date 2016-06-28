@@ -157,10 +157,9 @@ public final class BerliozConfig {
     if ("IDENTITY".equals(this._stylePath) && !this._contentType.contains("xml")) {
       LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this._contentType);
     }
-    String maxAge = GlobalSettings.get(BerliozOption.HTTP_MAX_AGE);
     String cacheControl = GlobalSettings.get(BerliozOption.HTTP_CACHE_CONTROL);
     if (cacheControl.isEmpty()) {
-      cacheControl = "max-age="+maxAge+", must-revalidate";
+      cacheControl = "no-cache";
     }
     this._cacheControl = this.getInitParameter("cache-control", cacheControl);
     this._controlKey = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));

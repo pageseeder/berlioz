@@ -181,6 +181,8 @@ public enum BerliozOption {
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.9">HTTP/1.1 - 14.9 Cache-Control</a>
    *
    * @since Berlioz 0.7.0
+   *
+   * @deprecated No replacement - default cache control is now "no-cache"
    */
   HTTP_MAX_AGE("berlioz.http.max-age", Integer.valueOf(60)),
 

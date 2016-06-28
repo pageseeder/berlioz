@@ -73,7 +73,8 @@ public final class GlobalSettings {
    */
   private enum Format { XML_CONFIG, PROPERTIES };
 
-// constants ----------------------------------------------------------------------------------
+  // constants
+  // --------------------------------------------------------------------------
 
   /**
    * Name of the configuration directory in the repository.
@@ -91,7 +92,8 @@ public final class GlobalSettings {
    */
   public static final String DEFAULT_MODE = "default";
 
-// static variables ---------------------------------------------------------------------------
+  // static variables
+  // --------------------------------------------------------------------------
 
   /**
    * The repository.

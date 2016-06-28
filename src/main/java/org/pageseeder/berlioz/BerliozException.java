@@ -48,7 +48,7 @@ public class BerliozException extends Exception implements XMLWritable {
   /**
    * An Berlioz Error ID
    */
-  private ErrorID _id = null;
+  private ErrorID id = null;
 
   /**
    * Creates a new Berlioz exception.
@@ -77,7 +77,7 @@ public class BerliozException extends Exception implements XMLWritable {
    */
   public BerliozException(String message, ErrorID id) {
     super(message);
-    this._id = id;
+    this.id = id;
   }
 
   /**
@@ -89,7 +89,7 @@ public class BerliozException extends Exception implements XMLWritable {
    */
   public BerliozException(String message, Exception cause, ErrorID id) {
     super(message, cause);
-    this._id = id;
+    this.id = id;
   }
 
   /**
@@ -99,7 +99,7 @@ public class BerliozException extends Exception implements XMLWritable {
    */
   @Beta
   public final ErrorID id() {
-    return this._id;
+    return this.id;
   }
 
   /**
@@ -108,7 +108,7 @@ public class BerliozException extends Exception implements XMLWritable {
    * @param id The error ID of the berlioz exception.
    */
   public final void setId(ErrorID id) {
-    this._id = id;
+    this.id = id;
   }
 
   /**

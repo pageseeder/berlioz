@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz;
 
+import java.io.Serializable;
+
 /**
  * An ID for errors to help with error handling and diagnostic.
  *
@@ -27,7 +29,7 @@ package org.pageseeder.berlioz;
  * @version Berlioz 0.8.3 - 30 June 2011
  * @since Berlioz 0.8
  */
-@Beta public interface ErrorID {
+@Beta public interface ErrorID extends Serializable {
 
   /**
    * Returns the error identifier as a string.
