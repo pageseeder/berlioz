@@ -46,7 +46,7 @@ import org.pageseeder.berlioz.furi.Variable.Form;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.5
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.9.32
  */
 public class BerliozTokenOperator extends TokenBase implements TokenOperator, Matchable {
@@ -93,7 +93,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       @Override
       public String expand(List<Variable> vars, Parameters parameters) {
         if (parameters == null) return "";
-        StringBuffer expansion = new StringBuffer();
+        StringBuilder expansion = new StringBuilder();
         boolean first = true;
         for (Variable var : vars) {
           if (parameters.exists(var.name())) {
@@ -156,7 +156,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
 
       @Override
       Pattern pattern(List<Variable> vars) {
-        StringBuffer pattern = new StringBuffer();
+        StringBuilder pattern = new StringBuilder();
         pattern.append("\\?(");
         for (Variable var : vars) {
           pattern.append('(');
@@ -188,7 +188,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       @Override
       String expand(List<Variable> vars, Parameters parameters) {
         if (parameters == null) return "";
-        StringBuffer expansion = new StringBuffer();
+        StringBuilder expansion = new StringBuilder();
         for (Variable var : vars) {
           if (parameters.exists(var.name())) {
             // An associative array: odd index for names, even index for values
@@ -245,7 +245,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
 
       @Override
       Pattern pattern(List<Variable> vars) {
-        StringBuffer pattern = new StringBuffer();
+        StringBuilder pattern = new StringBuilder();
         pattern.append("(?:");
         for (Variable var : vars) {
           pattern.append("(?:;");
@@ -274,7 +274,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       @Override
       String expand(List<Variable> vars, Parameters parameters) {
         if (parameters == null) return "";
-        StringBuffer expansion = new StringBuffer();
+        StringBuilder expansion = new StringBuilder();
         for (Variable var : vars) {
           if (parameters.exists(var.name())) {
             String[] values = var.values(parameters);
@@ -327,7 +327,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       @Override
       String expand(List<Variable> vars, Parameters parameters) {
         if (parameters == null) return "";
-        StringBuffer expansion = new StringBuffer();
+        StringBuilder expansion = new StringBuilder();
         for (Iterator<Variable> i = vars.iterator(); i.hasNext();) {
           Variable var = i.next();
           if (parameters.exists(var.name())) {
@@ -371,7 +371,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       @Override
       String expand(List<Variable> vars, Parameters parameters) {
         if (parameters == null) return "";
-        StringBuffer expansion = new StringBuffer();
+        StringBuilder expansion = new StringBuilder();
         for (Iterator<Variable> i = vars.iterator(); i.hasNext();) {
           Variable var = i.next();
           if (parameters.exists(var.name())) {

@@ -42,7 +42,7 @@ import java.text.Normalizer.Form;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.9.32
  */
 public final class URICoder {
@@ -121,7 +121,7 @@ public final class URICoder {
    * @param e A character that does not require encoding if found in the string.
    */
   private static String encodeASCII(String s, char e) {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for (char c : s.toCharArray()) {
       if (isUnreserved(c) || c == e) {
         sb.append(c);
@@ -138,7 +138,7 @@ public final class URICoder {
    * @param s The string the encode (assuming ASCII characters only)
    */
   private static String minimalEncodeASCII(String s) {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for (char c : s.toCharArray()) {
       if (isLegal(c)) {
         sb.append(c);
@@ -160,7 +160,7 @@ public final class URICoder {
     // convert String to UTF-8
     ByteBuffer bb = StandardCharsets.UTF_8.encode(n);
     // URI encode
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     while (bb.hasRemaining()) {
       int b = bb.get() & 0xff;
       if (isUnreserved(b) || b == e) {
@@ -182,7 +182,7 @@ public final class URICoder {
     // convert String to UTF-8
     ByteBuffer bb = StandardCharsets.UTF_8.encode(n);
     // URI encode
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     while (bb.hasRemaining()) {
       int b = bb.get() & 0xff;
       if (isLegal(b)) {
@@ -216,7 +216,7 @@ public final class URICoder {
    * Decodes a string containing only ASCII characters.
    */
   private static String decodeASCII(String s) {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for (int i = 0; i < s.length(); i++) {
       char c = s.charAt(i);
       if (c == '%') {
@@ -267,7 +267,7 @@ public final class URICoder {
    * @param sb The string buffer.
    * @param b The byte to escape.
    */
-  private static void appendEscape(StringBuffer sb, byte b) {
+  private static void appendEscape(StringBuilder sb, byte b) {
     sb.append('%');
     sb.append(HEX_DIGITS[(b >> 4) & 0x0f]);
     sb.append(HEX_DIGITS[(b >> 0) & 0x0f]);
@@ -279,7 +279,7 @@ public final class URICoder {
    * @param sb The string buffer.
    * @param b The byte to escape.
    */
-  private static void appendEscape(StringBuffer sb, char c) {
+  private static void appendEscape(StringBuilder sb, char c) {
     sb.append('%');
     sb.append(HEX_DIGITS[(c >> 4) & 0x0f]);
     sb.append(HEX_DIGITS[(c >> 0) & 0x0f]);

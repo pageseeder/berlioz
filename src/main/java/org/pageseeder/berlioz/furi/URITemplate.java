@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.9.32
  */
 public class URITemplate implements Expandable {
@@ -106,7 +106,7 @@ public class URITemplate implements Expandable {
    */
   @Override
   public final String expand(Parameters parameters) {
-    StringBuffer uri = new StringBuffer();
+    StringBuilder uri = new StringBuilder();
     for (Token t : this._tokens) {
       uri.append(t.expand(parameters));
     }

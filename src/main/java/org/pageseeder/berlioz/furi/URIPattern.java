@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.10.7
  * @since Berlioz 0.9.32
  */
 public final class URIPattern extends URITemplate implements Matchable {
@@ -156,7 +156,7 @@ public final class URIPattern extends URITemplate implements Matchable {
    * @return The regex Pattern instance corresponding to this URI pattern.
    */
   private Pattern computePattern(List<Token> tokens) {
-    StringBuffer p = new StringBuffer();
+    StringBuilder p = new StringBuilder();
     for (Token t : tokens) {
       Matchable mt = (Matchable) t;
       // wrap each token in a capturing group to facilitate the resolve process.
