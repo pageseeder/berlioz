@@ -144,49 +144,6 @@ public enum BerliozOption {
   HTTP_CACHE_CONTROL("berlioz.http.cache-control", ""),
 
   /**
-   * An integer global option to specify the default maximum age in seconds of cacheable content.
-   *
-   * <p>This option is used to define a default value for the <code>max-age</code> directive of
-   * the <code>Cache-Control</code> HTTP header of cacheable responses when it has not been defined
-   * for a service.
-   *
-   * <p>For cacheable responses, Berlioz will return the following Headers:
-   * <pre>
-   *   Expires: <i>[Expiry date 1 year from now]</i>
-   *   Cache-Control: max-age=<i>[max age in seconds]</i>, must-revalidate
-   *   Etag: <i>[Etag for generator]</i>
-   * </pre>
-   *
-   * <p>Note: this option has no effect when the response is not cacheable or when a
-   * <code>Cache-Control</code> HTTP header has been defined for the service.
-   *
-   * <h3>Property</h3>
-   * <table summary="HTTP Max-Age usage">
-   *   <tr><th>Name</th><th>Value</th></tr>
-   *   <tr>
-   *     <td><code>berlioz.http.max-age</code></td>
-   *     <td><code>60</code> <i>(Time in seconds)</i></td>
-   *   </tr>
-   * </table>
-   *
-   * <h3>Recommended values</h3>
-   * <table summary="HTTP Max-Age recommended value">
-   *   <tr><th>Development</th><th>Production</th></tr>
-   *   <tbody><tr><td><code>60</code></td><td><code>60</code></td></tr></tbody>
-   * </table>
-   * <p>The value recommended for development is a small as possible but not too small to allow
-   * testing; in production mode, it should be as large as possible but not too large to allow
-   * proper refreshing.
-   *
-   * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.9">HTTP/1.1 - 14.9 Cache-Control</a>
-   *
-   * @since Berlioz 0.7.0
-   *
-   * @deprecated No replacement - default cache control is now "no-cache"
-   */
-  HTTP_MAX_AGE("berlioz.http.max-age", Integer.valueOf(60)),
-
-  /**
    * A boolean global option to indicate whether Berlioz should use its own error handler when
    * an error occurs.
    *
@@ -279,34 +236,6 @@ public enum BerliozOption {
    * @since Berlioz 0.8.3
    */
   XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
-
-  /**
-   * A boolean global option to indicate whether the header should use the header format used prior
-   * to version 1.0.
-   *
-   * <h3>Property</h3>
-   * <table summary="XML header compatibility usage">
-   *   <tr><th>Name</th><th>Value</th></tr>
-   *   <tr>
-   *     <td><code>berlioz.xml.header.compatibility</code></td>
-   *     <td><code>true</code></td>
-   *   </tr>
-   * </table>
-   *
-   * <h3>Recommended values</h3>
-   * <table summary="XML header compatibility recommended value">
-   *   <tr><th>Development</th><th>Production</th></tr>
-   *   <tbody><tr><td><code>false</code></td><td><code>false</code></td></tr></tbody>
-   * </table>
-   * <p>This option will be default to <code>false</code> for Berlioz 1.0</p>
-   *
-   * @deprecated Use XML_HEADER_VERSION instead.
-   *
-   * @since Berlioz 0.9.2
-   */
-  @Beta
-  @Deprecated
-  XML_HEADER_COMPATIBILITY("berlioz.xml.header.compatibility", Boolean.TRUE),
 
   /**
    * Indicates the version of the XML header format  berlioz should use.

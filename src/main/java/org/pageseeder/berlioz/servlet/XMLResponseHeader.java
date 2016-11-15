@@ -58,7 +58,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.6
+ * @version Berlioz 0.11.0
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
@@ -157,8 +157,7 @@ public final class XMLResponseHeader implements XMLWritable {
   public void toXML(XMLWriter xml) throws IOException {
     HttpServletRequest req = this._core.request();
 
-    boolean compatibility = GlobalSettings.has(BerliozOption.XML_HEADER_COMPATIBILITY)
-                         && !"1.0".equals(GlobalSettings.get(BerliozOption.XML_HEADER_VERSION));
+    boolean compatibility = !"1.0".equals(GlobalSettings.get(BerliozOption.XML_HEADER_VERSION));
 
     // start serialising
     xml.openElement("header", true);
