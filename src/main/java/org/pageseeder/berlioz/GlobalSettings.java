@@ -38,27 +38,39 @@ import org.slf4j.LoggerFactory;
  * Berlioz global settings.
  *
  * <p>This class provides a global access to the settings for the application.
- * It needs to be setup prior to using most of the classes used in this application.
+ * It needs to be setup prior to using most of the classes used in this
+ * application.
  *
  * <p>This class uses two main access points:
  * <ul>
- *   <li><var>repository</var>: is the root directory that contains all of the configuration
- *   files for the application.</li>
+ *   <li><var>webinf</var>: is the Web application directory that contains all
+ *   things related to the application that aren't in the document root of the
+ *   application. It normally corresponds to the <code>WEB-INF</code>
+ *   folder.</li>
+ *
+ *   <li><var>appdata</var>: is the directory that contains the application
+ *   data that is not part of the application distribution such as a WAR file
+ *   and that needs to survive redeployments and updates. This folder default
+ *   to the same as the <i>webinf</i> folder.</li>
+ *
  *   <li><var>configuration</var>: is the file that contains all the global properties used
  *   in this application; it is always located in the <i>/config</i> directory of the
  *   repository; the default name of this file 'config.xml'.</li>
  * </ul>
  *
- * <p>The <var>repository</var> and <var>config</var> may be specified using System properties,
- * respectively <code>berlioz.repository</code> and <code>berlioz.config</code>.
+ * <p>The <var>appdata</var> and <var>config</var> may be specified using System properties,
+ * respectively <code>berlioz.appdata</code> and <code>berlioz.config</code>.
+ *
+ * <p>Since Berlioz 0.10, the <code>berlioz.repository</code> is no longer supported.
  *
  * @see #load
- * @see #setRepository(File)
+ * @see #setWebInf(File)
+ * @see #setAppData(File)
  * @see #setMode(String)
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.31 - 8 January 2015
+ * @version Berlioz 0.11.0
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
@@ -77,7 +89,8 @@ public final class GlobalSettings {
   // --------------------------------------------------------------------------
 
   /**
-   * Name of the configuration directory in the repository.
+   * Name of the directory containing the configuration files for Berlioz
+   * including the global settings, services, logging, etc...
    */
   public static final String CONFIG_DIRECTORY = "config";
 
@@ -85,6 +98,7 @@ public final class GlobalSettings {
    * Name of the directory in the repository that contains all the schemas / DTD for the XML files
    * used by Berlioz.
    */
+  @Deprecated
   public static final String LIBRARY_DIRECTORY = "library";
 
   /**
@@ -96,22 +110,21 @@ public final class GlobalSettings {
   // --------------------------------------------------------------------------
 
   /**
-   * The repository.
+   * The Web application directory.
+   *
+   * <p>This should always be the <code>WEB-INF</code> folder of the Web
+   * application.
    */
-  private static volatile File repository;
-  static {
-    if (System.getProperty("berlioz.repository") != null) {
-      File r = new File(System.getProperty("berlioz.repository"));
-      if (r.isDirectory()) {
-        repository = r;
-      }
-    }
-  }
+  private static volatile File webInf;
 
   /**
-   * The library.
+   * Web application data directory.
+   *
+   * It can be the same as the Web application directory, but may different in
+   * cases where the data needs to be persistent and separate from the
+   * application itself.
    */
-  private static volatile File library;
+  private static volatile File appData;
 
   /**
    * The name of the configuration file to use.
@@ -137,9 +150,10 @@ public final class GlobalSettings {
   /**
    * The list of listeners to invoke when the global settings have been reloaded.
    */
-  private static List<ConfigListener> listeners = new ArrayList<ConfigListener>();
+  private static final List<ConfigListener> LISTENERS = new ArrayList<>();
 
-// constructor ---------------------------------------------------------------------------------
+  // Constructor
+  // ---------------------------------------------------------------------------------
 
   /**
    * Prevents the creation of instances.
@@ -148,15 +162,29 @@ public final class GlobalSettings {
     // empty constructor
   }
 
-// general static methods ----------------------------------------------------------------------
+  // General static methods
+  // --------------------------------------------------------------------------
 
   /**
    * Returns the main repository or <code>null</code> if it has not been setup.
    *
    * @return The directory used as a repository or <code>null</code>.
    */
-  public static File getRepository() {
-    return repository;
+  public static File getWebInf() {
+    return webInf;
+  }
+
+  /**
+   * Returns the application data folder.
+   *
+   * It can be the same as the Web application directory (<code>WEB-INF</code>),
+   * but may different in cases where the data needs to be persistent and
+   * separate from the application itself.
+   *
+   * @return The Web application data folder or <code>null</code>.
+   */
+  public static File getAppData() {
+    return appData;
   }
 
   /**
@@ -191,21 +219,17 @@ public final class GlobalSettings {
   }
 
   /**
-   * Returns the directory containing the DTDs and schemas for the XML in use in the
-   * system.
+   * Returns the properties file to use externally.
    *
-   * <p>This method will return a file only if the repository has been properly set,
-   * and will be the directory defined by {@link #LIBRARY_DIRECTORY} in the repository.
-   *
-   * @return The directory containing the DTDs and schemas for the XML.
+   * @return The properties file to load or <code>null</code>.
    */
-  public static File getLibrary() {
-    // set if not set
-    if (library == null && repository != null) {
-      library = new File(repository, LIBRARY_DIRECTORY);
+  public static File getPropertiesFile() {
+    if (appData == null || webInf == null) return null;
+    File f = getModeConfigFile();
+    if (f == null) {
+      f = getDefaultConfigFile();
     }
-    // return if already defined.
-    return library;
+    return f;
   }
 
   /**
@@ -213,17 +237,27 @@ public final class GlobalSettings {
    *
    * @return The properties file to load or <code>null</code>.
    */
-  public static File getPropertiesFile() {
-    if (repository == null) return null;
-    File dir = new File(repository, CONFIG_DIRECTORY);
+  public static File getModeConfigFile() {
+    if (appData == null) return null;
+    File dir = new File(appData, CONFIG_DIRECTORY);
     File f = getModeConfigFile(dir);
-    if (f == null) {
-      f = getDefaultConfigFile(dir);
-    }
     return f;
   }
 
-// properties methods --------------------------------------------------------------------------
+  /**
+   * Returns the properties file to use externally.
+   *
+   * @return The properties file to load or <code>null</code>.
+   */
+  public static File getDefaultConfigFile() {
+    if (webInf == null) return null;
+    File dir = new File(webInf, CONFIG_DIRECTORY);
+    File f = getDefaultConfigFile(dir);
+    return f;
+  }
+
+  // Properties methods
+  // --------------------------------------------------------------------------
 
   /**
    * Return the requested property.
@@ -351,7 +385,9 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static boolean get(String name, boolean def) throws IllegalStateException {
-    if (settings == null) { load(); }
+    if (settings == null) {
+      load();
+    }
     String value = settings.get(name);
     if (value == null) return def;
     return def? !"false".equals(value) : "true".equals(value);
@@ -430,11 +466,21 @@ public final class GlobalSettings {
     }
     String filepath = settings.get(name);
     if (filepath != null) {
-      File file = new File(repository, filepath);
+      // try appData first
+      File file = new File(appData, filepath);
       try {
         if (file.exists()) return file.getCanonicalFile();
       } catch (IOException ex) {
         LOGGER.warn("Unable to generate canonical file: {}", ex.getMessage());
+      }
+      // fall back on webinf
+      if (appData != webInf) {
+        file = new File(webInf, filepath);
+        try {
+          if (file.exists()) return file.getCanonicalFile();
+        } catch (IOException ex) {
+          LOGGER.warn("Unable to generate canonical file: {}", ex.getMessage());
+        }
       }
     }
     return null;
@@ -484,33 +530,42 @@ public final class GlobalSettings {
     return Collections.enumeration(settings.keySet());
   }
 
-// setup methods -------------------------------------------------------------------------------
+  // Setup methods
+  // -------------------------------------------------------------------------------
 
   /**
-   * Sets the repository to the specified file if it exists and is a directory.
+   * Sets the application directory to the specified file if it exists and is a directory.
    *
-   * <p>Does nothing if the specified file is <code>null</code>.
+   * <p>The application directory corresponds to the <code>/WEB-INF</code> folder in your
+   * application context root.
    *
-   * <p>If the specified file does not exist or is not a directory, the repository will
-   * remain unchanged.
+   * @param dir The directory to use.
    *
-   * @param dir The directory to use as the main repository.
-   *
+   * @throws NullPointerException If the specified file is <code>null</code>.
    * @throws IllegalArgumentException If the specified file is not a valid repository.
    */
-  public static void setRepository(File dir) throws IllegalArgumentException {
-    // ignore the case when this is null
-    if (dir == null) return;
-    // check directory
-    if (!dir.exists())
-      throw new IllegalArgumentException("The specified repository "+dir+" does not exist.");
-    else if (!dir.isDirectory())
-      throw new IllegalArgumentException("The specified repository "+dir+" is not a directory.");
-    else {
-      repository = dir;
-      // reset the library, it will be properly set during the next call.
-      library = null;
+  public static void setWebInf(File dir) {
+    checkDirectoryExists(dir);
+    webInf = dir;
+    // Also set the appdata if not set
+    if (appData != null) {
+      appData = webInf;
     }
+  }
+
+  /**
+   * Sets the application data directory to the specified file if it exists and is a directory.
+   *
+   * <p>The application data directory is used to store persistent data
+   *
+   * @param dir The directory to use for application data
+   *
+   * @throws NullPointerException If the specified file is null.
+   * @throws IllegalArgumentException If the specified file is not a valid repository.
+   */
+  public static void setAppData(File dir) {
+    checkDirectoryExists(dir);
+    appData = dir;
   }
 
   /**
@@ -551,19 +606,18 @@ public final class GlobalSettings {
     boolean loaded = false;
 
     // make sure we have a repository
-    if (repository == null) return false;
-    File dir = new File(repository, CONFIG_DIRECTORY);
-    Map<String, String> properties = new HashMap<String, String>();
+    Map<String, String> properties = new HashMap<>();
 
     try {
+      if (webInf == null) return false;
       // Try to load the default config file
-      File defaultConfig = getDefaultConfigFile(dir);
+      File defaultConfig = getDefaultConfigFile();
       if (defaultConfig != null) {
         loadInto(defaultConfig, properties);
       }
 
       // Try to override with the mode-specific config file
-      File modeConfig = getModeConfigFile(dir);
+      File modeConfig = getModeConfigFile();
       if (modeConfig != null) {
         loadInto(modeConfig, properties);
       }
@@ -578,12 +632,12 @@ public final class GlobalSettings {
     } finally {
       // Reset after loading
       settings = properties;
-      nodes = new Hashtable<String, Properties>();
+      nodes = new Hashtable<>();
     }
 
     // Notify the listeners
     if (loaded) {
-      for (ConfigListener listener : listeners) {
+      for (ConfigListener listener : LISTENERS) {
         try {
           listener.load();
         } catch (Exception ex) {
@@ -603,11 +657,69 @@ public final class GlobalSettings {
    */
   @Beta
   public static void registerListener(ConfigListener listener) {
-    listeners.add(listener);
+    LISTENERS.add(listener);
   }
 
-  // ---------------------------------------------------------------------------------------------
+  /**
+   * Removes all the listeners from the global settings.
+   */
+  @Beta
+  public static void removeAllListeners() {
+    LISTENERS.clear();
+  }
+
+  // Deprecated in 0.11.x
+  // --------------------------------------------------------------------------
+
+  /**
+   * Returns the main repository or <code>null</code> if it has not been setup.
+   *
+   * @return The directory used as a repository or <code>null</code>.
+   */
+  @Deprecated
+  public static File getRepository() {
+    return appData;
+  }
+
+  /**
+   * Sets the repository to the specified file if it exists and is a directory.
+   *
+   * <p>Does nothing if the specified file is <code>null</code>.
+   *
+   * <p>If the specified file does not exist or is not a directory, the repository will
+   * remain unchanged.
+   *
+   * @deprecated Use {@link #setWebInf(File)} or {@link #setAppData(File)} instead
+   *
+   * @param dir The directory to use as the main repository.
+   *
+   * @throws IllegalArgumentException If the specified file is not a valid repository.
+   */
+  @Deprecated
+  public static void setRepository(File dir) {
+    // ignore the case when this is null
+    if (dir == null) return;
+    checkDirectoryExists(dir);
+    webInf = dir;
+    appData = dir;
+  }
+
+  /**
+   * Returns the directory containing the DTDs and schemas for the XML in use in the
+   * system.
+   *
+   * <p>This method will return a file only if the repository has been properly set,
+   * and will be the directory defined by {@link #LIBRARY_DIRECTORY} in the repository.
+   *
+   * @return The directory containing the DTDs and schemas for the XML.
+   */
+  @Deprecated
+  public static File getLibrary() {
+    return new File(appData, LIBRARY_DIRECTORY);
+  }
+
   // private helpers
+  // --------------------------------------------------------------------------
 
   /**
    * Loads the specified configuration file into the specific map.
@@ -676,7 +788,7 @@ public final class GlobalSettings {
     File xml = new File(dir, "config-"+mode+".xml");
     if (xml.canRead()) return xml;
     // otherwise try as a properties file
-    File prp = new File(dir, "config-"+mode+".prp");
+    File prp = new File(dir, "config-"+mode+".properties");
     if (prp.canRead()) return prp;
     return null;
   }
@@ -692,8 +804,27 @@ public final class GlobalSettings {
     File xml = new File(dir, "config.xml");
     if (xml.canRead()) return xml;
     // otherwise try as a properties file
-    File prp = new File(dir, "config.prp");
+    File prp = new File(dir, "config.properties");
     if (prp.canRead()) return prp;
     return null;
   }
+
+  /**
+   * Checks that the specified file exists and is a directory.
+   *
+   * @param dir The file directory to check.
+   *
+   * @throws NullPointerException If the file is <code>null</code>
+   * @throws IllegalArgumentException If the file is not a directory or does not exist
+   */
+  private static void checkDirectoryExists(File dir) {
+    // ignore the case when this is null
+    if (dir == null)
+      throw new NullPointerException("The specified file "+dir+" is null");
+    else if (!dir.exists())
+      throw new IllegalArgumentException("The specified file "+dir+" does not exist.");
+    else if (!dir.isDirectory())
+      throw new IllegalArgumentException("The specified file "+dir+" is not a directory.");
+  }
+
 }

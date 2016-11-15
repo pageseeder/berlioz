@@ -133,7 +133,7 @@ public final class FileUtils {
    * Loads the MIME properties from the Berlioz jar or the local "config/mime.properties"
    */
   private static synchronized void loadMIMEProperties() {
-    File file = new File(GlobalSettings.getRepository(), "config/mime.properties");
+    File file = new File(GlobalSettings.getWebInf(), "config/mime.properties");
     InputStream in = null;
     try {
       if (file.exists()) {

@@ -49,7 +49,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.0
  * @since Berlioz 0.6
  */
 public final class ServiceLoader {
@@ -146,15 +146,15 @@ public final class ServiceLoader {
    * @return the list of services files.
    */
   public List<File> listServiceFiles() {
-    File repository = GlobalSettings.getRepository();
-    File config = new File(repository, "config");
+    File webinf = GlobalSettings.getWebInf();
+    File config = new File(webinf, "config");
     File xml = new File(config, "services.xml");
     File[] subs = config.listFiles(FILE_FILTER);
     List<File> files;
 
     // `services.xml` file and/or at least one module
     if (subs != null && subs.length > 0) {
-      files = new ArrayList<File>(subs.length+1);
+      files = new ArrayList<>(subs.length+1);
       if (xml.exists()) {
         files.add(xml);
       }
