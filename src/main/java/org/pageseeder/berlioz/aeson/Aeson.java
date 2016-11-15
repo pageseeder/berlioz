@@ -58,6 +58,7 @@ public final class Aeson {
     if (source == null || !source.exists()) {
       System.err.println("Unable to process source: "+source);
       System.exit(0);
+      return;
     }
 
     // Output folder required if source is a folder
@@ -65,6 +66,7 @@ public final class Aeson {
       if (output == null || output.isFile()) {
         System.err.println("When source is a directory, the output must be specified and be a directory");
         System.exit(0);
+        return;
       }
     }
 

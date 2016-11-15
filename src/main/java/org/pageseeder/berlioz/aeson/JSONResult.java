@@ -123,7 +123,7 @@ public class JSONResult extends SAXResult implements Result {
         }
       }
     }
-    if (systemId != null) {
+    if (json != null && systemId != null) {
       json.setSystemId(systemId);
     }
     return json;
