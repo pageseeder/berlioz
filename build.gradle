@@ -28,7 +28,8 @@ dependencies {
   // Expected to be provided by environment
   compileOnly (
     'javax.servlet:javax.servlet-api:3.1.0',
-    'javax.json:javax.json-api:1.0'
+    'javax.json:javax.json-api:1.0',
+    'org.eclipse.jdt:org.eclipse.jdt.annotation:2.0.0'
   )
 
   testCompile (
