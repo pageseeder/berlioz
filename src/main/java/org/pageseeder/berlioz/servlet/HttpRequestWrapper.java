@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author Christophe Lauret
  * @author Tu Tak Tran
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.11.0
  * @since Berlioz 0.7
  */
 public abstract class HttpRequestWrapper implements ContentRequest {
@@ -176,7 +176,6 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     }
   }
 
-  @Override
   public final String getPathInfo() {
     return this._req.getPathInfo();
   }
@@ -292,7 +291,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * @return A map of the parameters for the specified request and results
    */
   protected static Map<String, String> toParameters(HttpServletRequest req, URIResolveResult results) {
-    Map<String, String> parameters = new HashMap<String, String>();
+    Map<String, String> parameters = new HashMap<>();
     // Load all HTTP parameters from the Query String first
     Map<String, String[]> map = req.getParameterMap();
     for (Entry<String, String[]> entry : map.entrySet()) {

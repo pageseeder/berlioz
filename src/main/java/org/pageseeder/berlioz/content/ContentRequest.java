@@ -31,20 +31,10 @@ import javax.servlet.http.HttpSession;
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.0
  * @since Berlioz 0.6
  */
 public interface ContentRequest {
-
-  /**
-   * Returns the path information of this request.
-   *
-   * @deprecated Use {@link PathInfo} instead
-   *
-   * @return The path information of this request.
-   */
-  @Deprecated
-  String getPathInfo();
 
   /**
    * Returns the dynamic path of the Berlioz request.
@@ -56,9 +46,6 @@ public interface ContentRequest {
    *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet
    *   (for example <code>*.html</code>);</li>
    * </ul>
-   *
-   * <p>Use this method in preference to the {@link #getPathInfo()} which only works if Berlioz is
-   * mapped to prefixes.
    *
    * @return The path information of this request.
    */
