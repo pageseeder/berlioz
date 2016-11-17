@@ -625,6 +625,11 @@ public final class GlobalSettings {
       // Considered loaded if any file was loaded without error
       loaded = defaultConfig != null || modeConfig != null;
 
+    } catch (IOException ex) {
+      System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
+      LOGGER.warn("Unable to load the configuration file", ex.getMessage());
+      properties.clear(); // Let's not load dirty properties
+
     } catch (Exception ex) {
       System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
       LOGGER.warn("Unable to load the configuration file", ex);
