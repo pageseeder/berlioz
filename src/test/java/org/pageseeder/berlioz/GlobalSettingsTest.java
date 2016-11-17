@@ -181,8 +181,10 @@ public final class GlobalSettingsTest {
 
     // Listener that throws an exception
     final ConfigListener bad = new ConfigListener() {
+      final RuntimeException ignore = new RuntimeException("You can ignore this exception.");
       @Override public void load() {
-        throw new RuntimeException();
+        this.ignore.setStackTrace(new StackTraceElement[]{});
+        throw this.ignore;
       }
     };
 
@@ -200,6 +202,6 @@ public final class GlobalSettingsTest {
     GlobalSettings.setMode("empty");
     Assert.assertFalse(GlobalSettings.load());
     Assert.assertEquals(2,  good.notifications);
-
+    GlobalSettings.removeAllListeners();
   }
 }
