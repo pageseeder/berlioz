@@ -1,1 +1,3 @@
 rootProject.name = 'pso-berlioz'
+
+include ':pso-berlioz-kickstart'

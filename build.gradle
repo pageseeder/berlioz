@@ -2,8 +2,12 @@ plugins {
   id "com.jfrog.bintray" version "1.7"
 }
 
+ext {
+  globalVersion = file('version.txt').text
+}
+
 group       = 'org.pageseeder.berlioz'
-version     = file('version.txt').text
+version     = "$globalVersion"
 description = "$title"
 
 apply plugin: 'java'
@@ -37,4 +41,19 @@ dependencies {
     'org.slf4j:slf4j-simple:1.7.21'
   )
 
+}
+
+subprojects {
+  group   = 'org.pageseeder.berlioz'
+  version = "$globalVersion"
+
+  apply plugin: 'java'
+
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
+
+  repositories {
+    maven { url 'http://dl.bintray.com/pageseeder/maven' }
+    jcenter()
+  }
 }

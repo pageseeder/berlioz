@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-fragment xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns="http://java.sun.com/xml/ns/javaee"
+              xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+     xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-fragment_3_0.xsd" id="WebAppFragment_ID" version="3.0"
+     metadata-complete="true">
+
+  <!-- Jetty Default Servlet =============================================== -->
+
+  <!-- Disable directory browsing  -->
+  <context-param>
+    <param-name>org.eclipse.jetty.servlet.Default.dirAllowed</param-name>
+    <param-value>false</param-value>
+  </context-param>
+
+  <!-- Allow welcome page to be delivered by Berlioz  -->
+  <context-param>
+    <param-name>org.eclipse.jetty.servlet.Default.welcomeServlets</param-name>
+    <param-value>true</param-value>
+  </context-param>
+
+  <!-- Servlet Declarations =============================================== -->
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz Initialisation servlet.                                      -->
+  <!--  o Loads the global properties                                       -->
+  <!--  o Checks the environment                                            -->
+  <!--  o Sets up logging                                                   -->
+  <!--                                                                      -->
+  <!-- This servlet does not need to be mapped, but should be loaded first  -->
+  <!--                                                                      -->
+  <!-- The default config file is 'WEB-INF/config/config-[mode].xml')       -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <servlet>
+    <servlet-name>Initialiser</servlet-name>
+    <servlet-class>org.pageseeder.berlioz.servlet.InitServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz Error handler                                                -->
+  <!--  o Catches errors thrown by Servlets                                 -->
+  <!--  o displays the details as HTML                                      -->
+  <!--                                                                      -->
+  <!-- This is most useful during development to catch bugs.                -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <servlet>
+    <servlet-name>ErrorHandlerServlet</servlet-name>
+    <servlet-class>org.pageseeder.berlioz.servlet.ErrorHandlerServlet</servlet-class>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz servlet                                                      -->
+  <!--  o Provide Berlioz services as defined in the 'services.xml'         -->
+  <!--  o Transforms results using XSLT into specified content type         -->
+  <!--                                                                      -->
+  <!-- Initialisation parameters:                                           -->
+  <!--                                                                      -->
+  <!--  stylesheet         XSLT stylesheet to apply onto XML output         -->
+  <!--                     Use 'IDENTITY' to skip transformation            -->
+  <!--                     [/xslt/html/global.xsl]                          -->
+  <!--                                                                      -->
+  <!--  content-type       Defines 'Content-Type' HTTP header               -->
+  <!--                     It is overridden by the XSLT <xsl:output>        -->
+  <!--                     instruction [text/html;charset=utf-8]            -->
+  <!--                                                                      -->
+  <!--  cache-control      The default 'Cache-Control' HTTP header, it may  -->
+  <!--                     overridden by individual services                -->
+  <!--                     [max-age=3600, must-revalidate]                  -->
+  <!--                                                                      -->
+  <!--  berlioz-control    A secret key that must be provided whenever the  -->
+  <!--                     configuration or XSLT should be reloaded         -->
+  <!--                     (optional)                                       -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz HTML Setup                                                   -->
+  <!--      This Berlioz instance is configured to serve the response       -->
+  <!--      as HTML. XML returned by services is processed by the           -->
+  <!--      XSLT stylesheet specified below                                 -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <servlet>
+    <servlet-name>BerliozHTML</servlet-name>
+    <servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+    <init-param>
+      <param-name>stylesheet</param-name>
+      <param-value>/xslt/html/{GROUP}.xsl</param-value>
+    </init-param>
+    <init-param>
+      <param-name>content-type</param-name>
+      <param-value>text/html;charset=utf-8</param-value>
+    </init-param>
+    <load-on-startup>3</load-on-startup>
+  </servlet>
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz servlet                                                      -->
+  <!--  o Provide Berlioz services as defined in the 'services.xml'         -->
+  <!--  o Transforms results using XSLT into specified content type         -->
+  <!--                                                                      -->
+  <!-- Initialisation parameters:                                           -->
+  <!--                                                                      -->
+  <!--  stylesheet         XSLT stylesheet to apply onto XML output         -->
+  <!--                     Use 'IDENTITY' to skip transformation            -->
+  <!--                     [/xslt/html/global.xsl]                          -->
+  <!--                                                                      -->
+  <!--  content-type       Defines 'Content-Type' HTTP header               -->
+  <!--                     It is overridden by the XSLT <xsl:output>        -->
+  <!--                     instruction [text/html;charset=utf-8]            -->
+  <!--                                                                      -->
+  <!--  cache-control      The default 'Cache-Control' HTTP header, it may  -->
+  <!--                     overridden by individual services                -->
+  <!--                     [max-age=3600, must-revalidate]                  -->
+  <!--                                                                      -->
+  <!--  berlioz-control    A secret key that must be provided whenever the  -->
+  <!--                     configuration or XSLT should be reloaded         -->
+  <!--                     (optional)                                       -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz HTML Setup                                                   -->
+  <!--      This Berlioz instance is configured to serve the response       -->
+  <!--      as HTML. XML returned by services is processed by the           -->
+  <!--      XSLT stylesheet specified below                                 -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <servlet>
+    <servlet-name>BerliozXML</servlet-name>
+    <servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+    <init-param>
+      <param-name>stylesheet</param-name>
+      <param-value>/xslt/xml/{GROUP}.xsl</param-value>
+    </init-param>
+    <init-param>
+      <param-name>fallback-stylesheet</param-name>
+      <param-value>resource:/org/pageseeder/berlioz/kickstart/fallback-xml.xsl</param-value>
+    </init-param>
+    <init-param>
+      <param-name>content-type</param-name>
+      <param-value>application/xml;charset=utf-8</param-value>
+    </init-param>
+  </servlet>
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz servlet                                                      -->
+  <!--  o Provide Berlioz services as defined in the 'services.xml'         -->
+  <!--  o Transforms results using XSLT into specified content type         -->
+  <!--                                                                      -->
+  <!-- Initialisation parameters:                                           -->
+  <!--                                                                      -->
+  <!--  stylesheet         XSLT stylesheet to apply onto XML output         -->
+  <!--                     Use 'IDENTITY' to skip transformation            -->
+  <!--                     [/xslt/html/global.xsl]                          -->
+  <!--                                                                      -->
+  <!--  content-type       Defines 'Content-Type' HTTP header               -->
+  <!--                     It is overridden by the XSLT <xsl:output>        -->
+  <!--                     instruction [text/html;charset=utf-8]            -->
+  <!--                                                                      -->
+  <!--  cache-control      The default 'Cache-Control' HTTP header, it may  -->
+  <!--                     overridden by individual services                -->
+  <!--                     [max-age=3600, must-revalidate]                  -->
+  <!--                                                                      -->
+  <!--  berlioz-control    A secret key that must be provided whenever the  -->
+  <!--                     configuration or XSLT should be reloaded         -->
+  <!--                     (optional)                                       -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz HTML Setup                                                   -->
+  <!--      This Berlioz instance is configured to serve the response       -->
+  <!--      as HTML. XML returned by services is processed by the           -->
+  <!--      XSLT stylesheet specified below                                 -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <servlet>
+    <servlet-name>BerliozJSON</servlet-name>
+    <servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+    <init-param>
+      <param-name>stylesheet</param-name>
+      <param-value>/xslt/json/{GROUP}.xsl</param-value>
+    </init-param>
+    <init-param>
+      <param-name>fallback-stylesheet</param-name>
+      <param-value>resource:/org/pageseeder/berlioz/kickstart/fallback-json.xsl</param-value>
+    </init-param>
+    <init-param>
+      <param-name>content-type</param-name>
+      <param-value>application/json;charset=utf-8</param-value>
+    </init-param>
+  </servlet>
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz servlet                                                      -->
+  <!--  o Provide Berlioz services as defined in the 'services.xml'         -->
+  <!--  o Transforms results using XSLT into specified content type         -->
+  <!--                                                                      -->
+  <!-- Initialisation parameters:                                           -->
+  <!--                                                                      -->
+  <!--  stylesheet         XSLT stylesheet to apply onto XML output         -->
+  <!--                     Use 'IDENTITY' to skip transformation            -->
+  <!--                     [/xslt/html/global.xsl]                          -->
+  <!--                                                                      -->
+  <!--  content-type       Defines 'Content-Type' HTTP header               -->
+  <!--                     It is overridden by the XSLT <xsl:output>        -->
+  <!--                     instruction [text/html;charset=utf-8]            -->
+  <!--                                                                      -->
+  <!--  cache-control      The default 'Cache-Control' HTTP header, it may  -->
+  <!--                     overridden by individual services                -->
+  <!--                     [max-age=3600, must-revalidate]                  -->
+  <!--                                                                      -->
+  <!--  berlioz-control    A secret key that must be provided whenever the  -->
+  <!--                     configuration or XSLT should be reloaded         -->
+  <!--                     (optional)                                       -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <!-- Berlioz XML Setup                                                    -->
+  <!--      This Berlioz instance is configured to serve the response       -->
+  <!--      directly as XML.It is useful for debugging XSLT and for AJAX),  -->
+  <!--      but is neither is needed it is preferable to remove this for    -->
+  <!--      production.                                                     -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+  <servlet>
+    <servlet-name>BerliozSource</servlet-name>
+    <servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+    <init-param>
+      <param-name>stylesheet</param-name>
+      <param-value>IDENTITY</param-value>
+    </init-param>
+    <init-param>
+      <param-name>content-type</param-name>
+      <param-value>application/xml;charset=utf-8</param-value>
+    </init-param>
+    <init-param>
+      <param-name>cache-control</param-name>
+      <param-value>max-age=0, must-revalidate</param-value>
+    </init-param>
+  </servlet>
+
+  <!-- Servlet Mapping ========================================================================= -->
+
+  <!-- HTML servlet -->
+  <servlet-mapping>
+    <servlet-name>BerliozHTML</servlet-name>
+    <url-pattern>*.html</url-pattern>
+  </servlet-mapping>
+
+  <!-- JSON servlet -->
+  <servlet-mapping>
+    <servlet-name>BerliozJSON</servlet-name>
+    <url-pattern>*.json</url-pattern>
+  </servlet-mapping>
+
+  <!-- XML servlet -->
+  <servlet-mapping>
+    <servlet-name>BerliozXML</servlet-name>
+    <url-pattern>*.xml</url-pattern>
+  </servlet-mapping>
+
+  <!-- XML source servlet -->
+  <servlet-mapping>
+    <servlet-name>BerliozSource</servlet-name>
+    <url-pattern>*.src</url-pattern>
+  </servlet-mapping>
+
+  <!-- Error handler servlet -->
+  <servlet-mapping>
+    <servlet-name>ErrorHandlerServlet</servlet-name>
+    <url-pattern>*.error</url-pattern>
+    <url-pattern>*.auto</url-pattern>
+  </servlet-mapping>
+
+  <!-- Error Handling ===================================================== -->
+
+  <!-- Generic Error -->
+  <error-page>
+    <exception-type>java.lang.Exception</exception-type>
+    <location>/error.error</location>
+  </error-page>
+
+  <!-- General error page -->
+  <error-page>
+    <location>/error.auto</location>
+  </error-page>
+
+</web-fragment>
