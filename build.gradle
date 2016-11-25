@@ -57,3 +57,19 @@ subprojects {
     jcenter()
   }
 }
+
+allprojects {
+  jar {
+    manifest {
+      attributes 'Implementation-Vendor':  'Allette Systems',
+                 'Implementation-Title':   "$title",
+                 'Implementation-Version': "$globalVersion"
+    }
+  }
+}
+
+task publishAllToBintray(group: 'pageseeder') {
+  subprojects.each {
+    dependsOn("${it.path}:bintrayUpload" )
+  }
+}

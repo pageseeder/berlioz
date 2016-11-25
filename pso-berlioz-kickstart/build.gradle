@@ -1,6 +1,7 @@
 description = "Simple jar for Servlet 3.0 to make it easier to configure a Berlioz site"
 
 apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
 apply from: "$rootDir/gradle/publishing.gradle"
 
 // Dependencies of the project
