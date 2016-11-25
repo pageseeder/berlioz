@@ -67,9 +67,3 @@ allprojects {
     }
   }
 }
-
-task publishAllToBintray(group: 'pageseeder') {
-  subprojects.each {
-    dependsOn("${it.path}:bintrayUpload" )
-  }
-}
