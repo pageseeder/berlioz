@@ -548,7 +548,7 @@ public final class GlobalSettings {
     checkDirectoryExists(dir);
     webInf = dir;
     // Also set the appdata if not set
-    if (appData != null) {
+    if (appData == null) {
       appData = webInf;
     }
   }
