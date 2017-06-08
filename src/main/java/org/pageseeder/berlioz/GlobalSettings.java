@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.xml.XMLConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +71,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.0
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
@@ -115,7 +116,7 @@ public final class GlobalSettings {
    * <p>This should always be the <code>WEB-INF</code> folder of the Web
    * application.
    */
-  private static volatile File webInf;
+  private static volatile @Nullable File webInf;
 
   /**
    * Web application data directory.
@@ -124,28 +125,29 @@ public final class GlobalSettings {
    * cases where the data needs to be persistent and separate from the
    * application itself.
    */
-  private static volatile File appData;
+  private static volatile @Nullable File appData;
 
   /**
    * The name of the configuration file to use.
    */
   private static volatile String mode;
   static {
-    mode = System.getProperty("berlioz.mode");
-    if (mode == null) {
-      mode = DEFAULT_MODE;
+    String m  = System.getProperty("berlioz.mode");
+    if (m == null) {
+      m = DEFAULT_MODE;
     }
+    mode = m;
   }
 
   /**
    * The global properties.
    */
-  private static volatile Map<String, String> settings;
+  private static volatile @Nullable Map<String, String> settings;
 
   /**
    * Maps properties to nodes that have been processed.
    */
-  private static volatile Map<String, Properties> nodes;
+  private static volatile @Nullable Map<String, Properties> nodes;
 
   /**
    * The list of listeners to invoke when the global settings have been reloaded.
@@ -170,7 +172,7 @@ public final class GlobalSettings {
    *
    * @return The directory used as a repository or <code>null</code>.
    */
-  public static File getWebInf() {
+  public static @Nullable File getWebInf() {
     return webInf;
   }
 
@@ -183,7 +185,7 @@ public final class GlobalSettings {
    *
    * @return The Web application data folder or <code>null</code>.
    */
-  public static File getAppData() {
+  public static @Nullable File getAppData() {
     return appData;
   }
 
@@ -193,10 +195,7 @@ public final class GlobalSettings {
    * @return The number of properties defined in the file.
    */
   public static int countProperties() {
-    if (settings == null) {
-      load();
-    }
-    return settings.size();
+    return ensureSettings().size();
   }
 
   /**
@@ -206,7 +205,8 @@ public final class GlobalSettings {
    */
   public static String getVersion() {
     Package p = Package.getPackage("org.pageseeder.berlioz");
-    return p != null ? p.getImplementationVersion() : "unknown";
+    String v = p != null ? p.getImplementationVersion() : "unknown";
+    return v != null ? v : "unknown";
   }
 
   /**
@@ -223,7 +223,7 @@ public final class GlobalSettings {
    *
    * @return The properties file to load or <code>null</code>.
    */
-  public static File getPropertiesFile() {
+  public static @Nullable File getPropertiesFile() {
     if (appData == null || webInf == null) return null;
     File f = getModeConfigFile();
     if (f == null) {
@@ -237,7 +237,7 @@ public final class GlobalSettings {
    *
    * @return The properties file to load or <code>null</code>.
    */
-  public static File getModeConfigFile() {
+  public static @Nullable File getModeConfigFile() {
     if (appData == null) return null;
     File dir = new File(appData, CONFIG_DIRECTORY);
     File f = getModeConfigFile(dir);
@@ -249,7 +249,7 @@ public final class GlobalSettings {
    *
    * @return The properties file to load or <code>null</code>.
    */
-  public static File getDefaultConfigFile() {
+  public static @Nullable File getDefaultConfigFile() {
     if (webInf == null) return null;
     File dir = new File(webInf, CONFIG_DIRECTORY);
     File f = getDefaultConfigFile(dir);
@@ -273,11 +273,8 @@ public final class GlobalSettings {
    *
    * @throws IllegalStateException If this class has not been setup properly.
    */
-  public static String get(String name) throws IllegalStateException {
-    if (settings == null) {
-      load();
-    }
-    return settings.get(name);
+  public static @Nullable String get(String name) throws IllegalStateException {
+    return ensureSettings().get(name);
   }
 
   /**
@@ -315,11 +312,8 @@ public final class GlobalSettings {
    * @throws NullPointerException     If the specified option is <code>null</code>.
    */
   public static boolean has(BerliozOption option) {
-    if (settings == null) {
-      load();
-    }
     if (option == null) throw new NullPointerException("No Berlioz option specified");
-    String value = settings.get(option.property());
+    String value = ensureSettings().get(option.property());
     Object def = option.defaultTo();
     if (option.isBoolean()) return value != null? Boolean.parseBoolean(value) : ((Boolean)def).booleanValue();
     else
@@ -342,10 +336,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static String get(String name, String def) throws IllegalStateException {
-    if (settings == null) {
-      load();
-    }
-    String value = settings.get(name);
+    String value = ensureSettings().get(name);
     return value == null? def : value;
   }
 
@@ -359,11 +350,8 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static int get(String name, int def) throws IllegalStateException {
-    if (settings == null) {
-      load();
-    }
     try {
-      String value = settings.get(name);
+      String value = ensureSettings().get(name);
       return value == null? def : Integer.parseInt(value);
     } catch (NumberFormatException ex) {
       return def;
@@ -385,10 +373,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static boolean get(String name, boolean def) throws IllegalStateException {
-    if (settings == null) {
-      load();
-    }
-    String value = settings.get(name);
+    String value = ensureSettings().get(name);
     if (value == null) return def;
     return def? !"false".equals(value) : "true".equals(value);
   }
@@ -435,7 +420,7 @@ public final class GlobalSettings {
    *
    * @throws IllegalStateException If this class has not been setup properly.
    */
-  public static File getDirProperty(String name) throws IllegalStateException {
+  public static @Nullable File getDirProperty(String name) throws IllegalStateException {
     File file = getFileProperty(name);
     if (file != null && file.isDirectory())
       return file;
@@ -460,11 +445,8 @@ public final class GlobalSettings {
    *
    * @throws IllegalStateException If this class has not been setup properly.
    */
-  public static File getFileProperty(String name) throws IllegalStateException {
-    if (settings == null) {
-      load();
-    }
-    String filepath = settings.get(name);
+  public static @Nullable File getFileProperty(String name) throws IllegalStateException {
+    String filepath = ensureSettings().get(name);
     if (filepath != null) {
       // try appData first
       File file = new File(appData, filepath);
@@ -495,26 +477,25 @@ public final class GlobalSettings {
    *
    * @throws IllegalStateException If this class has not been setup properly.
    */
-  public static Properties getNode(String name) {
-    if (settings == null) {
-      load();
-    }
-    if (nodes == null) return null;
+  public static @Nullable Properties getNode(String name) {
+    Map<String, Properties> all = nodes;
+    if (all == null) return null;
     // return the node if already processed.
-    if (nodes.containsKey(name))
-      return nodes.get(name);
+    if (all.containsKey(name))
+      return all.get(name);
     // other process and store
     Properties node = new Properties();
     String prefix = name+'.';
-    for (Entry<String, String> e : settings.entrySet()) {
+    for (Entry<String, String> e : ensureSettings().entrySet()) {
       String key = e.getKey();
       if (key.startsWith(prefix) && key.substring(prefix.length()).indexOf('.') < 0) {
         node.setProperty(key.substring(prefix.length()), e.getValue());
       }
     }
-    nodes.put(name, node);
+    all.put(name, node);
     return node;
   }
+
 
   /**
    * Enumerates the properties in the global settings.
@@ -524,10 +505,20 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static Enumeration<String> propertyNames() throws IllegalStateException {
-    if (settings == null) {
-      load();
-    }
-    return Collections.enumeration(settings.keySet());
+    return Collections.enumeration(ensureSettings().keySet());
+  }
+
+  /**
+   * Returns all the global properties as an ummodifiable map.
+   *
+   * @return An ummodifiable map of the properties.
+   *
+   * @throws IllegalStateException If this class has not been setup properly.
+   *
+   * @since Berlioz 0.11.2
+   */
+  public static Map<String, String> getAll() throws IllegalStateException {
+    return Collections.unmodifiableMap(ensureSettings());
   }
 
   // Setup methods
@@ -682,7 +673,7 @@ public final class GlobalSettings {
    * @return The directory used as a repository or <code>null</code>.
    */
   @Deprecated
-  public static File getRepository() {
+  public static @Nullable File getRepository() {
     return appData;
   }
 
@@ -787,7 +778,7 @@ public final class GlobalSettings {
    *
    * @return The properties file to load or <code>null</code>.
    */
-  private static File getModeConfigFile(File dir) {
+  private static @Nullable File getModeConfigFile(File dir) {
     if (dir == null || !dir.isDirectory()) return null;
     // try as an XML file
     File xml = new File(dir, "config-"+mode+".xml");
@@ -803,7 +794,7 @@ public final class GlobalSettings {
    *
    * @return The properties file to load or <code>null</code>.
    */
-  private static File getDefaultConfigFile(File dir) {
+  private static @Nullable File getDefaultConfigFile(File dir) {
     if (dir == null || !dir.isDirectory()) return null;
     // try as an XML file
     File xml = new File(dir, "config.xml");
@@ -823,13 +814,27 @@ public final class GlobalSettings {
    * @throws IllegalArgumentException If the file is not a directory or does not exist
    */
   private static void checkDirectoryExists(File dir) {
-    // ignore the case when this is null
     if (dir == null)
       throw new NullPointerException("The specified file "+dir+" is null");
     else if (!dir.exists())
       throw new IllegalArgumentException("The specified file "+dir+" does not exist.");
     else if (!dir.isDirectory())
       throw new IllegalArgumentException("The specified file "+dir+" is not a directory.");
+  }
+
+  /**
+   * Returns the settings map and attempts to load if needed.
+   *
+   * @return The settings map if load
+   *
+   * @throws IllegalStateException If this class has not been setup properly.
+   */
+  private static Map<String, String> ensureSettings() throws IllegalStateException {
+    if (settings == null) {
+      load();
+    }
+    Map<String, String> s = settings;
+    return s != null? s : Collections.emptyMap();
   }
 
 }

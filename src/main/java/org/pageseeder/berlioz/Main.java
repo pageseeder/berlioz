@@ -17,6 +17,7 @@ package org.pageseeder.berlioz;
 
 import java.io.File;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.content.ServiceLoader;
 
 /**
@@ -24,7 +25,7 @@ import org.pageseeder.berlioz.content.ServiceLoader;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.2 - 9 October 2009
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class Main {
@@ -47,7 +48,7 @@ public final class Main {
     // Try to load the content generators
     if (args.length > 1 && "-load".equals(args[0])) {
       // Set
-      GlobalSettings.setRepository(new File("."));
+      GlobalSettings.setWebInf(new File("."));
       ServiceLoader.getInstance().load();
     }
   }
@@ -57,7 +58,7 @@ public final class Main {
    *
    * @param message Any message (optional)
    */
-  public static void usage(String message) {
+  public static void usage(@Nullable String message) {
     if (message != null) {
       System.err.println(message);
     }

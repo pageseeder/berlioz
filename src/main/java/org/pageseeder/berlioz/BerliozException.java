@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 
@@ -35,7 +36,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 30 June 2011
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8
  */
 public class BerliozException extends Exception implements XMLWritable {
@@ -48,7 +49,7 @@ public class BerliozException extends Exception implements XMLWritable {
   /**
    * An Berlioz Error ID
    */
-  private ErrorID id = null;
+  private @Nullable ErrorID id = null;
 
   /**
    * Creates a new Berlioz exception.
@@ -98,7 +99,7 @@ public class BerliozException extends Exception implements XMLWritable {
    * @return the ID for this Berlioz Exception or <code>null</code>.
    */
   @Beta
-  public final ErrorID id() {
+  public final @Nullable ErrorID id() {
     return this.id;
   }
 
@@ -134,8 +135,9 @@ public class BerliozException extends Exception implements XMLWritable {
   @Deprecated public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("berlioz-exception", true);
     xml.element("message", super.getMessage());
-    if (super.getCause() != null) {
-      xml.element("cause", super.getCause().toString());
+    Throwable cause = super.getCause();
+    if (cause != null) {
+      xml.element("cause", cause.toString());
     }
     // print the stack trace as a string.
     StringWriter writer = new StringWriter();

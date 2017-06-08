@@ -16,4 +16,5 @@
 /**
  * High level classes used by Berlioz.
  */
+@org.eclipse.jdt.annotation.NonNullByDefault
 package org.pageseeder.berlioz;
