@@ -21,6 +21,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 
 /**
  * A URI Template for constructing URIs following the same structure.
@@ -36,7 +38,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public class URITemplate implements Expandable {
@@ -155,7 +157,7 @@ public class URITemplate implements Expandable {
    * @throws URITemplateSyntaxException If the string cannot be parsed.
    */
   public static List<Token> digest(String template, TokenFactory factory) throws URITemplateSyntaxException {
-    List<Token> tokens = new ArrayList<Token>();
+    List<Token> tokens = new ArrayList<>();
     Matcher m = EXPANSION_PATTERN.matcher(template);
     int start = 0;
     while (m.find()) {
@@ -166,7 +168,10 @@ public class URITemplate implements Expandable {
       }
       // add the expansion
       String exp = m.group();
-      tokens.add(factory.newToken(exp));
+      Token t = factory.newToken(exp);
+      if (t != TokenLiteral.EMPTY) {
+        tokens.add(t);
+      }
       // update the state variables
       start = m.end();
     }
@@ -197,7 +202,7 @@ public class URITemplate implements Expandable {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (o == this)
       return true;
     if ((o == null) || (o.getClass() != this.getClass()))

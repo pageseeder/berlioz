@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A class to hold a collection of parameters for use during the expansion process.
  *
@@ -42,7 +44,7 @@ public class URIParameters implements Parameters {
    * Creates a new instance.
    */
   public URIParameters() {
-    this._parameters = new HashMap<String, String[]>();
+    this._parameters = new HashMap<>();
   }
 
   /**
@@ -51,17 +53,17 @@ public class URIParameters implements Parameters {
    * @param parameters The map of parameters to supply
    */
   public URIParameters(Map<String, String[]> parameters) {
-    this._parameters = new HashMap<String, String[]>(parameters);
+    this._parameters = new HashMap<>(parameters);
   }
 
   @Override
-  public void set(String name, String value) {
+  public void set(String name, @Nullable String value) {
     if (value == null) return;
     this._parameters.put(name, new String[] { value });
   }
 
   @Override
-  public void set(String name, String[] values) {
+  public void set(String name, String @Nullable [] values) {
     if (values == null) return;
     this._parameters.put(name, values);
   }
@@ -72,7 +74,7 @@ public class URIParameters implements Parameters {
   }
 
   @Override
-  public String getValue(String name) {
+  public @Nullable String getValue(String name) {
     String[] vals = this._parameters.get(name);
     if (vals == null || vals.length == 0)
       return null;
@@ -81,7 +83,7 @@ public class URIParameters implements Parameters {
   }
 
   @Override
-  public String[] getValues(String name) {
+  public String @Nullable [] getValues(String name) {
     return this._parameters.get(name);
   }
 

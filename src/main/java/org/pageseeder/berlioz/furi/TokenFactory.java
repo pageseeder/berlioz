@@ -15,9 +15,6 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import java.util.Hashtable;
-import java.util.Map;
-
 import org.pageseeder.berlioz.furi.Variable.Reserved;
 
 /**
@@ -30,7 +27,7 @@ import org.pageseeder.berlioz.furi.Variable.Reserved;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.3
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class TokenFactory {
@@ -76,12 +73,7 @@ public final class TokenFactory {
   /**
    * Factories for reuse.
    */
-  private static final Map<Syntax, TokenFactory> FACTORIES = new Hashtable<Syntax, TokenFactory>();
-  static {
-    for (Syntax syntax : Syntax.values()) {
-      FACTORIES.put(syntax, new TokenFactory(syntax));
-    }
-  }
+  private static final TokenFactory FACTORY = new TokenFactory(Syntax.DRAFTX);
 
   /**
    * The URI template syntax to use for generating tokens.
@@ -109,7 +101,7 @@ public final class TokenFactory {
   public Token newToken(String exp) {
     // no expression: no token!
     if (exp == null || exp.length() == 0)
-      return null;
+      return TokenLiteral.EMPTY;
     // intercept the wild card
     if ("*".equals(exp))
       return newWildcard();
@@ -136,12 +128,12 @@ public final class TokenFactory {
   }
 
   /**
-   * Returns a token factory instance using the default syntax (DRAFTX).
+   * Returns a token factory instance using the default syntax.
    *
-   * @return a token factory instance using the default syntax (DRAFTX).
+   * @return a token factory instance using the default syntax.
    */
   public static TokenFactory getInstance() {
-    return FACTORIES.get(Syntax.DRAFTX);
+    return FACTORY;
   }
 
   /**

@@ -17,12 +17,14 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Holds the values of a resolved variables.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public interface ResolvedVariables {
@@ -41,6 +43,6 @@ public interface ResolvedVariables {
    *
    * @return The object corresponding to the specified variable; may be <code>null</code>.
    */
-  Object get(String name);
+  @Nullable Object get(String name);
 
 }

@@ -17,6 +17,8 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * An interface to hold a collection of parameters for use during the expansion process.
  *
@@ -34,7 +36,7 @@ public interface Parameters {
    *
    * @return The value for this parameter or <code>null</code> if not specified.
    */
-  String getValue(String name);
+  @Nullable String getValue(String name);
 
   /**
    * Returns the values for the specified parameter.
@@ -43,7 +45,7 @@ public interface Parameters {
    *
    * @return The values for this parameter or <code>null</code> if not specified.
    */
-  String[] getValues(String name);
+  String @Nullable [] getValues(String name);
 
   /**
    * Indicates whether the parameters for the given name has a value.

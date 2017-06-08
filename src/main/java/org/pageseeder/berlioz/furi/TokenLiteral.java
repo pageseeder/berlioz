@@ -36,6 +36,11 @@ import java.util.regex.Pattern;
 public final class TokenLiteral extends TokenBase implements Token, Matchable {
 
   /**
+   * Empty token literal.
+   */
+  public static final TokenLiteral EMPTY = new TokenLiteral("");
+
+  /**
    * Creates a new literal text token.
    *
    * @param text The text corresponding to this URI token.

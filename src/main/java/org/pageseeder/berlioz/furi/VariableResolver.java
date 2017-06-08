@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.furi;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Classes implementing this interface should provide a mechanism to resolve the value of a
  * variable in the context of a URI pattern matching operation.
@@ -55,6 +57,6 @@ public interface VariableResolver {
    *
    * @return Any associated object.
    */
-  Object resolve(String value);
+  @Nullable Object resolve(String value);
 
 }

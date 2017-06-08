@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.furi.URIResolveResult.Status;
 
 
@@ -44,7 +45,7 @@ import org.pageseeder.berlioz.furi.URIResolveResult.Status;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class URIResolver {
@@ -102,7 +103,7 @@ public final class URIResolver {
    *
    * @return The first URI pattern that matches or <code>null</code>.
    */
-  public URIPattern find(List<URIPattern> patterns) {
+  public @Nullable URIPattern find(List<URIPattern> patterns) {
     return findFirst(patterns);
   }
 
@@ -114,7 +115,7 @@ public final class URIResolver {
    *
    * @return The first URI pattern that matches or <code>null</code>.
    */
-  public URIPattern find(List<URIPattern> patterns, MatchRule rule) {
+  public @Nullable URIPattern find(List<URIPattern> patterns, MatchRule rule) {
     switch (rule) {
       case FIRST_MATCH: return findFirst(patterns);
       case BEST_MATCH: return findBest(patterns);
@@ -132,7 +133,7 @@ public final class URIResolver {
    * @return A collection of matching URI patterns.
    */
   public Collection<URIPattern> findAll(List<URIPattern> patterns) {
-    Collection<URIPattern> matches = new ArrayList<URIPattern>();
+    Collection<URIPattern> matches = new ArrayList<>();
     if (patterns == null || patterns.size() == 0)
       return matches;
     for (URIPattern p : patterns) {
@@ -174,7 +175,7 @@ public final class URIResolver {
     }
     // extracts the variable token
     List<Token> tokens = pattern.tokens();
-    Map<Variable, Object> map = new HashMap<Variable, Object>();
+    Map<Variable, Object> map = new HashMap<>();
     for (int i = 0; i < mx.groupCount(); i++) {
       Token mt = tokens.get(i);
       String s = mx.group(i + 1);
@@ -208,9 +209,10 @@ public final class URIResolver {
       // most common case: a string
       if (value instanceof String) {
         Object o = r.resolve(value.toString());
-        result.put(entry.getKey().name(), o);
         if (o == null) {
           status = Status.UNRESOLVED;
+        } else {
+          result.put(entry.getKey().name(), o);
         }
 
       // returned an array of values
@@ -233,7 +235,7 @@ public final class URIResolver {
    *
    * @return The first URI pattern that matches or <code>null</code>.
    */
-  private URIPattern findFirst(List<URIPattern> patterns) {
+  private @Nullable URIPattern findFirst(List<URIPattern> patterns) {
     if (patterns == null || patterns.size() == 0)
       return null;
     for (URIPattern p : patterns) {
@@ -250,7 +252,7 @@ public final class URIResolver {
    *
    * @return The best URI pattern that matches or <code>null</code>.
    */
-  private URIPattern findBest(List<URIPattern> patterns) {
+  private @Nullable URIPattern findBest(List<URIPattern> patterns) {
     if (patterns == null || patterns.size() == 0)
       return null;
     URIPattern best = null;

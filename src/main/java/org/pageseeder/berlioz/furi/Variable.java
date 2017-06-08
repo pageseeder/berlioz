@@ -18,6 +18,8 @@ package org.pageseeder.berlioz.furi;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A variable in a URL pattern or template.
  *
@@ -63,7 +65,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public class Variable {
@@ -190,7 +192,7 @@ public class Variable {
    * <p>
    * Use <code>null</code> for untyped.
    */
-  private VariableType _type;
+  private @Nullable VariableType _type;
 
   /**
    * The name of this variable.
@@ -238,7 +240,7 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(String name, String def) {
+  public Variable(String name, @Nullable String def) {
     this(name, def, null);
   }
 
@@ -252,7 +254,7 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(String name, String def, VariableType type) {
+  public Variable(String name, @Nullable String def, @Nullable VariableType type) {
     this._name = Objects.requireNonNull(name, "A variable must have a name, but was null");
     this._default = Objects.toString(def, DEFAULT_VALUE);
     this._type = type;
@@ -323,7 +325,7 @@ public class Variable {
    *
    * @return The type of this variable.
    */
-  public VariableType type() {
+  public @Nullable VariableType type() {
     return this._type;
   }
 
@@ -336,7 +338,7 @@ public class Variable {
    *
    * @return The value.
    */
-  public String value(Parameters parameters) {
+  public String value(@Nullable Parameters parameters) {
     // No parameters: use the default value
     if (parameters == null)
       return this._default;
@@ -356,7 +358,7 @@ public class Variable {
    *
    * @return The values.
    */
-  public String[] values(Parameters parameters) {
+  public String[] values(@Nullable Parameters parameters) {
     // No parameters: use the default value
     if (parameters == null)
       return new String[] { this._default };
@@ -368,7 +370,7 @@ public class Variable {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (o == this)
       return true;
     if ((o == null) || (o.getClass() != this.getClass()))
@@ -453,7 +455,7 @@ public class Variable {
    *
    * @return <code>true</code> if the name is valid; <code>false</code> otherwise.
    */
-  public static boolean isValidName(String name) {
+  public static boolean isValidName(@Nullable String name) {
     if (name == null)
       return false;
     return VALID_NAME.matcher(name).matches();
@@ -466,7 +468,7 @@ public class Variable {
    *
    * @return <code>true</code> if the name is not valid; <code>false</code> otherwise.
    */
-  public static boolean isValidValue(String value) {
+  public static boolean isValidValue(@Nullable String value) {
     if (value == null)
       return false;
     return VALID_VALUE.matcher(value).matches();

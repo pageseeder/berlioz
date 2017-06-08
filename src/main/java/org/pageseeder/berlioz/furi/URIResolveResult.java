@@ -19,13 +19,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 
 /**
  * Holds the results of a URI resolver.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class URIResolveResult implements ResolvedVariables {
@@ -43,7 +45,7 @@ public final class URIResolveResult implements ResolvedVariables {
   /**
    * Maps variable names to their corresponding resolved objects.
    */
-  private final Map<String, Object> values = new HashMap<String, Object>();
+  private final Map<String, Object> values = new HashMap<>();
 
   /**
    * The URI Pattern that was used to produce this result.
@@ -63,7 +65,7 @@ public final class URIResolveResult implements ResolvedVariables {
   }
 
   @Override
-  public Object get(String name) {
+  public @Nullable Object get(String name) {
     return this.values.get(name);
   }
 

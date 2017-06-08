@@ -18,6 +18,8 @@ package org.pageseeder.berlioz.furi;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Defines a variable type.
  *
@@ -29,7 +31,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class VariableType {
@@ -68,7 +70,7 @@ public final class VariableType {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (o == this)
       return true;
     if ((o == null) || (o.getClass() != this.getClass()))
@@ -95,7 +97,7 @@ public final class VariableType {
    *
    * @return <code>true</code> if the name is valid; <code>false</code> otherwise.
    */
-  protected static boolean isValidName(String name) {
+  protected static boolean isValidName(@Nullable String name) {
     if (name == null)
       return false;
     return VALID_NAME.matcher(name).matches();

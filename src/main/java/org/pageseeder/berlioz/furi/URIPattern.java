@@ -18,6 +18,8 @@ package org.pageseeder.berlioz.furi;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 
 /**
  * A URI Pattern for matching URI following the same regular structure.
@@ -32,7 +34,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class URIPattern extends URITemplate implements Matchable {
@@ -119,7 +121,7 @@ public final class URIPattern extends URITemplate implements Matchable {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     return super.equals(o);
   }
 

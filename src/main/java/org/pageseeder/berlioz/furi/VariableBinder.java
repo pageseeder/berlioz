@@ -18,6 +18,8 @@ package org.pageseeder.berlioz.furi;
 import java.util.Hashtable;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A convenience class is to bind variables to resolvers in a set of URI patterns.
  *
@@ -48,7 +50,7 @@ import java.util.Map;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public class VariableBinder {
@@ -66,12 +68,12 @@ public class VariableBinder {
   /**
    * Maps a variable names to a resolver.
    */
-  private Map<String,VariableResolver> _byname = new Hashtable<String,VariableResolver>();
+  private Map<String,VariableResolver> _byname = new Hashtable<>();
 
   /**
    * Maps a variable types to a resolver.
    */
-  private Map<String,VariableResolver> _bytype = new Hashtable<String,VariableResolver>();
+  private Map<String,VariableResolver> _bytype = new Hashtable<>();
 
   /**
    * Binds the variables with the specified name to the specified resolver.
@@ -120,7 +122,7 @@ public class VariableBinder {
    *
    * @return the corresponding resolver.
    */
-  public VariableResolver getResolver(String name, VariableType type) {
+  public VariableResolver getResolver(String name, @Nullable VariableType type) {
     VariableResolver resolver = this._byname.get(name);
     // try to find a resolver by type
     if (resolver == null && type != null) {
@@ -155,7 +157,7 @@ public class VariableBinder {
    *
    * @return the corresponding resolver.
    */
-  public VariableResolver getResolver(VariableType type) {
+  public VariableResolver getResolver(@Nullable VariableType type) {
     if (type == null) return DEFAULT_RESOLVER;
     VariableResolver resolver = this._bytype.get(type.getName());
     return resolver != null? resolver : DEFAULT_RESOLVER;
@@ -169,7 +171,7 @@ public class VariableBinder {
    * @return <code>true</code> if a given variable resolver is bound to the specific name;
    *         <code>false</code> otherwise (including if the name is <code>null</code>.
    */
-  public boolean isNameBound(String name) {
+  public boolean isNameBound(@Nullable String name) {
     if (name == null) return false;
     return this._byname.containsKey(name);
   }
@@ -182,7 +184,7 @@ public class VariableBinder {
    * @return <code>true</code> if a given variable resolver is bound to the specific type;
    *         <code>false</code> otherwise (including if the type is <code>null</code>.
    */
-  public boolean isTypeBound(String type) {
+  public boolean isTypeBound(@Nullable String type) {
     if (type == null) return false;
     return this._bytype.containsKey(type);
   }

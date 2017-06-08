@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 
 /**
  * An abstract token for use as a base for other tokens.
@@ -27,7 +29,7 @@ import java.util.Objects;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 abstract class TokenBase implements Token {
@@ -69,7 +71,7 @@ abstract class TokenBase implements Token {
    * {@inheritDoc}
    */
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (o == this)
       return true;
     if ((o == null) || (o.getClass() != this.getClass()))
@@ -119,9 +121,11 @@ abstract class TokenBase implements Token {
    */
   protected static final List<Variable> toVariables(String exp) throws URITemplateSyntaxException {
     String[] exps = exp.split(",");
-    List<Variable> vars = new ArrayList<Variable>(exps.length);
+    List<Variable> vars = new ArrayList<>(exps.length);
     for (String e : exps) {
-      vars.add(Variable.parse(e));
+      if (e != null) {
+        vars.add(Variable.parse(e));
+      }
     }
     return vars;
   }
