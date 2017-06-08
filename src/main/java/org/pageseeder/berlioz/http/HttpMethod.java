@@ -60,13 +60,17 @@ public enum HttpMethod {
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-9.4">HTTP/1.1 - 9.4 HEAD</a>
    */
-  HEAD(false);
+  HEAD(false),
+
+  /**
+   * PATCH HTTP Method.
+   */
+  PATCH(true);
 
   /**
    * Set of HTTP methods mappable to a service.
    */
-  private static final EnumSet<HttpMethod> MAPPABLE = EnumSet.of(GET, POST, PUT, DELETE);
-  // TODO Add support for PATCH
+  private static final EnumSet<HttpMethod> MAPPABLE = EnumSet.of(GET, POST, PUT, PATCH, DELETE);
 
   /**
    * Indicates whether it can be mapped to a content generator.
