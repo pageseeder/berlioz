@@ -23,7 +23,7 @@ import java.io.FilenameFilter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 20 August 2004
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class XMLFilenameFilter implements FilenameFilter {

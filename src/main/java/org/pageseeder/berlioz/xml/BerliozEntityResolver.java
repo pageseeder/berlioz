@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.xml;
 
 import java.io.InputStream;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.EntityResolver;
@@ -36,7 +37,7 @@ import org.xml.sax.SAXException;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 26 May 2010
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class BerliozEntityResolver implements EntityResolver {
@@ -87,7 +88,7 @@ public final class BerliozEntityResolver implements EntityResolver {
    * @throws SAXException If the library has not been defined.
    */
   @Override
-  public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
+  public @Nullable InputSource resolveEntity(@Nullable String publicId, String systemId) throws SAXException {
     InputSource source = null;
     // process only public identifiers that are valid for Berlioz
     String dtd = toFileName(publicId);
@@ -118,7 +119,7 @@ public final class BerliozEntityResolver implements EntityResolver {
    * @param publicId the public identifier.
    * @return The corresponding filename.
    */
-  protected static String toFileName(String publicId) {
+  protected static @Nullable String toFileName(@Nullable String publicId) {
     if (publicId == null) return null;
     if (!publicId.endsWith(PUBLIC_ID_SUFFIX)) return null;
     int length = publicId.length() - PUBLIC_ID_SUFFIX.length();

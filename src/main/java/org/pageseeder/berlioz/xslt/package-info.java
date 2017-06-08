@@ -16,4 +16,5 @@
 /**
  * XSLT related utility classes and built-in style sheets used by Berlioz.
  */
+@org.eclipse.jdt.annotation.NonNullByDefault
 package org.pageseeder.berlioz.xslt;

@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
@@ -77,7 +78,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.6
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.7
  */
 public final class XMLConfig implements Serializable, XMLWritable {
@@ -108,7 +109,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * Creates an empty property list with no default values.
    */
   public XMLConfig() {
-    this._properties = new HashMap<String, String>();
+    this._properties = new HashMap<>();
   }
 
   /**
@@ -306,7 +307,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
     /**
      * Keeps track of the nodes.
      */
-    private Stack<String> nodes = null;
+    private @Nullable Stack<String> nodes = null;
 
     /**
      * Creates a new handler.
@@ -321,25 +322,30 @@ public final class XMLConfig implements Serializable, XMLWritable {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) {
-      if (this.nodes != null) {
-        this.nodes.push(localName);
+      Stack<String> nodes = this.nodes;
+      if (nodes != null) {
+        nodes.push(localName);
         int attCount = atts.getLength();
         if (attCount > 0) {
-          String prefix = getPrefix();
+          String prefix = getPrefix(nodes);
           for (int i = 0; i < attCount; i++) {
             String name = atts.getLocalName(i);
             String value = atts.getValue(i);
-            this._properties.put(prefix+name, value);
+            if (value != null) {
+              this._properties.put(prefix+name, value);
+            }
           }
         }
       } else {
-        this.nodes = new Stack<String>();
+        this.nodes = new Stack<>();
         int attCount = atts.getLength();
         if (attCount > 0) {
           for (int i = 0; i < attCount; i++) {
             String name = atts.getLocalName(i);
             String value = atts.getValue(i);
-            this._properties.put(name, value);
+            if (name != null && value != null) {
+              this._properties.put(name, value);
+            }
           }
         }
       }
@@ -347,9 +353,10 @@ public final class XMLConfig implements Serializable, XMLWritable {
 
     @Override
     public void endElement(String uri, String localName, String qName) {
-      if (this.nodes != null) {
-        if (this.nodes.size() > 0) {
-          this.nodes.pop();
+      Stack<String> nodes = this.nodes;
+      if (nodes != null) {
+        if (nodes.size() > 0) {
+          nodes.pop();
         } else {
           this.nodes = null;
         }
@@ -359,9 +366,9 @@ public final class XMLConfig implements Serializable, XMLWritable {
     /**
      * @return the prefix from the current stack of nodes.
      */
-    private String getPrefix() {
+    private static String getPrefix(Stack<String> nodes) {
       StringBuilder prefix = new StringBuilder();
-      for (String node : this.nodes) {
+      for (String node : nodes) {
         prefix.append(node).append('.');
       }
       return prefix.toString();

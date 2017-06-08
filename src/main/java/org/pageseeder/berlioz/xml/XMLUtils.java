@@ -24,6 +24,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ import org.xml.sax.XMLReader;
  *
  * @author Christophe Lauret (Weborganic)
  *
- * @version Berlioz 0.6.0 - 3 December 2009
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class XMLUtils {
@@ -50,12 +51,12 @@ public final class XMLUtils {
   /**
    * The SAX parser factory to generate non-validating XML readers.
    */
-  private static transient SAXParserFactory nfactory;
+  private static transient @Nullable SAXParserFactory nfactory;
 
   /**
    * The SAX parser factory to generate validating XML readers.
    */
-  private static transient SAXParserFactory vfactory;
+  private static transient @Nullable SAXParserFactory vfactory;
 
   /**
    * Prevents creation of instances.

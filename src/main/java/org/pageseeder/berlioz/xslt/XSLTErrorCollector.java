@@ -27,7 +27,7 @@ import org.slf4j.Logger;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.2 - 1 July 2011
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8
  */
 public final class XSLTErrorCollector extends ErrorCollector<TransformerException> implements ErrorListener {

@@ -24,7 +24,9 @@ import java.util.Map.Entry;
 
 import javax.xml.parsers.SAXParser;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.slf4j.Logger;
@@ -48,7 +50,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.9 - 8 October 2012
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class XMLCopy extends DefaultHandler implements ContentHandler, LexicalHandler {
@@ -76,7 +78,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   /**
    * The prefix mapping to add to the next <i>startElement</i> event.
    */
-  private final Map<String, String> mapping = new HashMap<String, String>();
+  private final Map<String, String> mapping = new HashMap<>();
 
   /**
    * Creates a new XMLExtractor wrapping the specified XML writer.
@@ -92,7 +94,11 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     try {
       this.to.openElement(qName);
       for (int i = 0; i < atts.getLength(); i++) {
-        this.to.attribute(atts.getQName(i), atts.getValue(i));
+        String name = atts.getQName(i);
+        String value = atts.getValue(i);
+        if (name != null &&  value != null) {
+          this.to.attribute(name, value);
+        }
       }
       // Put the prefix mapping was reported BEFORE the startElement was reported...
       if (!this.mapping.isEmpty()) {
@@ -180,7 +186,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * {@inheritDoc}
    */
   @Override
-  public void startDTD(String name, String publicId, String systemId) throws SAXException {
+  public void startDTD(String name, @Nullable String publicId, @Nullable String systemId) throws SAXException {
   }
 
   /**
@@ -235,7 +241,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     if (file.exists()) {
       try {
         // writers to use
-        XMLStringWriter copy = new XMLStringWriter(false);
+        XMLStringWriter copy = new XMLStringWriter(NamespaceAware.No);
 
         // copy the data
         parse(new XMLCopy(copy), new InputSource(file.toURI().toString()));
@@ -248,13 +254,15 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
       // an error was reported by the parser
       } catch (BerliozException ex) {
+        String m = ex.getMessage();
+        Throwable cause = ex.getCause();
         LOGGER.warn("An error was reported by the parser while parsing {}", file.toURI());
         LOGGER.warn("Error details:", ex);
         xml.openElement("no-data");
         xml.attribute("error", "parsing");
-        xml.attribute("details", ex.getMessage());
-        if (ex.getCause() instanceof SAXParseException) {
-          SAXParseException sax = (SAXParseException)ex.getCause();
+        xml.attribute("details", m != null? m : "(No message)");
+        if (cause instanceof SAXParseException) {
+          SAXParseException sax = (SAXParseException)cause;
           xml.attribute("line", sax.getLineNumber());
           xml.attribute("column", sax.getColumnNumber());
         }
@@ -289,7 +297,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     // load
     try {
       // writers to use
-      XMLStringWriter copy = new XMLStringWriter(false);
+      XMLStringWriter copy = new XMLStringWriter(NamespaceAware.No);
 
       // copy the data
       parse(new XMLCopy(copy), new InputSource(reader));
@@ -302,13 +310,15 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
     // an error was reported by the parser
     } catch (BerliozException ex) {
+      String m = ex.getMessage();
+      Throwable cause = ex.getCause();
       LOGGER.warn("An error was reported by the parser while parsing reader");
       LOGGER.warn("Error details:", ex);
       xml.openElement("no-data");
       xml.attribute("error", "parsing");
-      xml.attribute("details", ex.getMessage());
-      if (ex.getCause() instanceof SAXParseException) {
-        SAXParseException sax = (SAXParseException)ex.getCause();
+      xml.attribute("details", m != null? m : "(No message)");
+      if (cause instanceof SAXParseException) {
+        SAXParseException sax = (SAXParseException)cause;
         xml.attribute("line", sax.getLineNumber());
         xml.attribute("column", sax.getColumnNumber());
       }
