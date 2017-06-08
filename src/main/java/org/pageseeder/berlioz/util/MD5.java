@@ -126,7 +126,6 @@ public final class MD5 {
    * @return the corresponding sequence of hexadecimal characters.
    */
   private static String toHex(byte[] data) {
-    if (data == null) return null;
     final StringBuilder hex = new StringBuilder(2 * data.length);
     final int shift = 4;
     for (final byte b : data) {

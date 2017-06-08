@@ -17,6 +17,8 @@ package org.pageseeder.berlioz.util;
 
 import java.io.File;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A basic implementation of the Entity info pointing to an existing file and producing
  * entity tags based on length and last modified date.
@@ -80,7 +82,7 @@ public class FileEntityInfo implements EntityInfo {
   }
 
   @Override
-  public final String getETag() {
+  public final @Nullable String getETag() {
     if ((this.length >= 0) || (this.modified >= 0)) return "\"" + this.length + "-" + this.modified + "\"";
     return null;
   }

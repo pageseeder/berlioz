@@ -17,10 +17,12 @@ package org.pageseeder.berlioz.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +32,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.8 - 8 October 2012
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class FileUtils {
@@ -43,7 +45,7 @@ public final class FileUtils {
   /**
    * The MIME properties mapping file extensions to MIME types.
    */
-  private static final Properties MIME = new Properties();
+  private static final Properties MEDIATYPES = new Properties();
 
   /** Utility classes need no constructor. */
   private FileUtils() {
@@ -63,15 +65,15 @@ public final class FileUtils {
    * @param f The file.
    * @return the corresponding Media Type or <code>null</code> if not found.
    */
-  public static String getMediaType(File f) {
+  public static @Nullable String getMediaType(File f) {
     // Load if empty
-    if (MIME.isEmpty()) {
+    if (MEDIATYPES.isEmpty()) {
       loadMIMEProperties();
     }
     // Lookup extension in properties file
     String name = f.getName();
     int dot = name.lastIndexOf(".");
-    if (dot >= 0) return MIME.getProperty(name.substring(dot+1));
+    if (dot >= 0) return MEDIATYPES.getProperty(name.substring(dot+1));
     else
       return null;
   }
@@ -85,7 +87,7 @@ public final class FileUtils {
    * @return <code>true</code> if the file is within the specified container;
    *         <code>false</code> otherwise.
    */
-  public static boolean contains(File root, File file) {
+  public static boolean contains(@Nullable File root, @Nullable File file) {
     if (root == null || file == null) return false;
     try {
       String prefix = root.getCanonicalPath();
@@ -107,7 +109,7 @@ public final class FileUtils {
    *
    * @return The path to the file from the root.
    */
-  public static String path(File root, File file) {
+  public static @Nullable String path(File root, File file) {
     if (root == null || file == null)
       throw new NullPointerException("Cannot determine the path between the specified files.");
     try {
@@ -118,10 +120,7 @@ public final class FileUtils {
         return path.startsWith("/")? path.substring(1) : path;
       } else
         throw new IllegalArgumentException("Cannot determine the path between the specified files.");
-    } catch (IOException ex) {
-      LOGGER.warn("Unable to compute path between {} and {}", root, file, ex);
-      return null;
-    } catch (SecurityException ex) {
+    } catch (IOException | SecurityException ex) {
       LOGGER.warn("Unable to compute path between {} and {}", root, file, ex);
       return null;
     }
@@ -133,27 +132,23 @@ public final class FileUtils {
    * Loads the MIME properties from the Berlioz jar or the local "config/mime.properties"
    */
   private static synchronized void loadMIMEProperties() {
-    File file = new File(GlobalSettings.getWebInf(), "config/mime.properties");
-    InputStream in = null;
-    try {
-      if (file.exists()) {
-        LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
-        in = new FileInputStream(file);
-      } else {
-        LOGGER.info("Loading MIME properties from Berlioz JAR", file.getAbsolutePath());
-        in = FileUtils.class.getResourceAsStream("/mime.properties");
+    try (InputStream in = getMediaTypesInputStream()) {
+      if (in != null) {
+        MEDIATYPES.load(in);
       }
-      MIME.load(in);
     } catch (IOException ex) {
       LOGGER.warn("Unable to load MIME properties", ex);
-    } finally {
-      if (in != null) {
-        try {
-          in.close();
-        } catch (IOException ex) {
-          LOGGER.warn("Unable to close MIME properties file", ex);
-        }
-      }
+    }
+  }
+
+  private static @Nullable InputStream getMediaTypesInputStream() throws FileNotFoundException {
+    File file = new File(GlobalSettings.getWebInf(), "config/mime.properties");
+    if (file.exists()) {
+      LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
+      return new FileInputStream(file);
+    } else {
+      LOGGER.info("Loading MIME properties from Berlioz JAR", file.getAbsolutePath());
+      return FileUtils.class.getResourceAsStream("/mime.properties");
     }
   }
 

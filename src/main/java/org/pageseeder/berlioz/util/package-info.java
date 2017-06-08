@@ -16,4 +16,5 @@
 /**
  * A collection of utility classes.
  */
+@org.eclipse.jdt.annotation.NonNullByDefault
 package org.pageseeder.berlioz.util;

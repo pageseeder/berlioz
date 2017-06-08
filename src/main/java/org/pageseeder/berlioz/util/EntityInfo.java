@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.util;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Interface to define basic information that can be held about a resource to be served via HTTP.
  *
@@ -40,13 +42,13 @@ public interface EntityInfo {
    *
    * @return Returns the MIME Type.
    */
-  String getMimeType();
+  @Nullable String getMimeType();
 
   /**
    * Get ETag.
    *
    * @return a strong ETag if available
    */
-  String getETag();
+  @Nullable String getETag();
 
 }

@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.util;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * An implementation of an object that can be used as a fast key made of two objects for lookup in
  * sets and map.
@@ -61,7 +63,7 @@ public class Pair<T, V> {
   }
 
   @Override
-  public final boolean equals(Object o) {
+  public final boolean equals(@Nullable Object o) {
     if (o == this) return true;
     if (o == null || !(o instanceof Pair<?, ?>)) return false;
     Pair<?, ?> k = (Pair<?, ?>)o;
@@ -96,7 +98,7 @@ public class Pair<T, V> {
    * @return <code>true</code> if both are equals (including <code>null</code>);
    *         <code>false</code> otherwise.
    */
-  private static boolean equals(Object o1, Object o2) {
+  private static boolean equals(@Nullable Object o1, @Nullable Object o2) {
     // if they are both null, they are both equal
     if (o1 == o2) return true;
     // if one of them is null return false

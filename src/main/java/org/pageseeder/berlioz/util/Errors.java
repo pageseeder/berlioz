@@ -23,11 +23,11 @@ import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.eclipse.jdt.annotation.Nullable;
+import org.pageseeder.xmlwriter.XMLWriter;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.LocatorImpl;
-
-import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * A utility class for the processing of errors.
@@ -36,7 +36,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 1 July 2011
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8.1
  */
 public final class Errors {
@@ -85,10 +85,14 @@ public final class Errors {
    * @return a clean message.
    */
   public static String cleanMessage(Throwable ex) {
-    if (ex.getCause() == null) return ex.getMessage();
-    Throwable t = ex.getCause();
-    if (!ex.getMessage().equals(t.getClass().getName()+": "+t.getMessage())) return ex.getMessage();
-    else return cleanMessage(t);
+    Throwable cause = ex.getCause();
+    String message = ex.getMessage();
+    if (message == null) {
+      message = "No message";
+    }
+    if (cause == null) return message;
+    if (!message.equals(cause.getClass().getName()+": "+cause.getMessage())) return message;
+    else return cleanMessage(cause);
   }
 
   // XML Formatters
@@ -196,7 +200,7 @@ public final class Errors {
    *
    * @throws IOException Only if thrown by the XML writer.
    */
-  public static void toXML(SourceLocator locator, XMLWriter xml) throws IOException {
+  public static void toXML(@Nullable SourceLocator locator, XMLWriter xml) throws IOException {
     if (locator == null) return;
     int line = locator.getLineNumber();
     int column = locator.getColumnNumber();
@@ -233,7 +237,7 @@ public final class Errors {
    *
    * @throws IOException Only if thrown by the XML writer.
    */
-  public static void toXML(Locator locator, XMLWriter xml) throws IOException {
+  public static void toXML(@Nullable Locator locator, XMLWriter xml) throws IOException {
     if (locator == null) return;
     int line = locator.getLineNumber();
     int column = locator.getColumnNumber();

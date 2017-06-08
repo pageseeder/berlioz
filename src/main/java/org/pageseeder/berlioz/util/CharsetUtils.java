@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.1 - 24 June 2011
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8.1
  */
 public final class CharsetUtils {
