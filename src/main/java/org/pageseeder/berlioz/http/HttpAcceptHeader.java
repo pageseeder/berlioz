@@ -23,6 +23,8 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A utility class to help dealing with the HTTP/1.1 request headers such as 'Accept', 'Accept-Language',
  * 'Accept-Encoding', 'Accept-Charset'.
@@ -41,7 +43,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.2 - 27 June 2011
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class HttpAcceptHeader { // NO_UCD
@@ -75,7 +77,7 @@ public final class HttpAcceptHeader { // NO_UCD
    * @param accept The 'Accept' HTTP/1.1 header.
    * @return an unmodifiable map of the accept header.
    */
-  public static Map<String, Float> get(String accept) {
+  public static Map<String, Float> get(@Nullable String accept) {
     // no value, return an empty map
     if (accept == null || "".equals(accept)) return Collections.emptyMap();
     // Try to see if this has been processed already
@@ -103,7 +105,7 @@ public final class HttpAcceptHeader { // NO_UCD
    * @return <code>true</code> if the specified value has a Q value  strictly greater than 0;
    *         <code>false</code> otherwise.
    */
-  public static boolean accepts(String accept, String value) {
+  public static boolean accepts(@Nullable String accept, String value) {
     return accepts(get(accept), value);
   }
 
@@ -145,7 +147,7 @@ public final class HttpAcceptHeader { // NO_UCD
    * @return the accepted content types mapped to their quality value (0 to 1000).
    */
   protected static Map<String, Float> parse(String accept) {
-    Map<String, Float> values = new LinkedHashMap<String, Float>();
+    Map<String, Float> values = new LinkedHashMap<>();
     StringTokenizer t = new StringTokenizer(accept, ",");
     while (t.hasMoreElements()) {
       String token = t.nextToken();

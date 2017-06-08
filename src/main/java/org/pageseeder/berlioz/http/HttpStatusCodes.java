@@ -18,6 +18,8 @@ package org.pageseeder.berlioz.http;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A utility class for HTTP Status codes.
  *
@@ -25,7 +27,7 @@ import java.util.Map;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 1 July 2011
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8.3
  */
 public final class HttpStatusCodes {
@@ -33,7 +35,7 @@ public final class HttpStatusCodes {
   /**
    * The default titles to use for the various HTTP Codes (reusing titles defined by RFC 2616)
    */
-  private static final Map<Integer, String> HTTP_CODE_TITLE = new HashMap<Integer, String>();
+  private static final Map<Integer, String> HTTP_CODE_TITLE = new HashMap<>();
   static {
     // Informational 1xx
     HTTP_CODE_TITLE.put(100, "Continue");
@@ -96,7 +98,7 @@ public final class HttpStatusCodes {
    * @param code the HTTP status code.
    * @return the corresponding title as defined in RFC 2616 or <code>null</code> if the code does not exist.
    */
-  public static String getTitle(int code) {
+  public static @Nullable String getTitle(int code) {
     return HTTP_CODE_TITLE.get(Integer.valueOf(code));
   }
 
@@ -118,7 +120,7 @@ public final class HttpStatusCodes {
    * @return the class of the HTTP status code based on the class defined in the RFC;
    *         or <code>null</code> if code is out of range (less than 100 or greater than 599)
    */
-  public static String getClassOfStatus(int code) {
+  public static @Nullable String getClassOfStatus(int code) {
     int x = code / 100;
     switch (x) {
       case 1: return "Informational";

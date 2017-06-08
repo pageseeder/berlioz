@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.util.EntityInfo;
 import org.slf4j.Logger;
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.3
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class HttpHeaderUtils {
@@ -329,7 +330,7 @@ public final class HttpHeaderUtils {
    * @return <code>true</code> if the resource is compressible;
    *         <code>false</code> otherwise.
    */
-  public static boolean isCompressible(String contentType) {
+  public static boolean isCompressible(@Nullable String contentType) {
     if (contentType == null) return false;
     return contentType.startsWith("text")
         || contentType.endsWith("xml")
@@ -343,7 +344,7 @@ public final class HttpHeaderUtils {
    * @param etag the entity tag of the response before compression.
    * @return the entity tag of the compressed response.
    */
-  public static String getETagForGZip(String etag) {
+  public static @Nullable String getETagForGZip(@Nullable String etag) {
     if (etag == null) return null;
     int q = etag.lastIndexOf("\"");
     return (q > 0)? etag.substring(0, q)+"-gzip\"" : etag;
@@ -355,7 +356,7 @@ public final class HttpHeaderUtils {
    * @param etag the entity tag.
    * @return the entity tag of the uncompressed response.
    */
-  public static String getETagForUncompressed(String etag) {
+  public static @Nullable String getETagForUncompressed(@Nullable String etag) {
     if (etag == null) return null;
     int q = etag.lastIndexOf("-gzip\"");
     return (q > 0)? etag.substring(0, q-6)+'"' : etag;
