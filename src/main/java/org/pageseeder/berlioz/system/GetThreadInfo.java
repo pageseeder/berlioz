@@ -48,7 +48,13 @@ public final class GetThreadInfo implements ContentGenerator {
     }
 
     Thread thread = Threads.getThread(threadId);
-    toXML(thread, xml);
+    if (thread != null) {
+      toXML(thread, xml);
+    } else {
+      xml.openElement("no-thread", true);
+      xml.attribute("id", Long.toString(threadId));
+      xml.closeElement();
+    }
   }
 
   /**
@@ -68,7 +74,7 @@ public final class GetThreadInfo implements ContentGenerator {
     xml.attribute("state", thread.getState().name());
     xml.attribute("alive", Boolean.toString(thread.isAlive()));
     xml.attribute("daemon", Boolean.toString(thread.isDaemon()));
-    xml.attribute("group", thread.getThreadGroup().getName());
+    xml.attribute("group", Threads.toThreadGroupName(thread));
 
     StackTraceElement[] stacktrace = thread.getStackTrace();
     if (stacktrace != null) {

@@ -22,10 +22,9 @@ import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.servlet.BerliozConfig;
+import org.pageseeder.xmlwriter.XMLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
  * @author Christophe Lauret
@@ -46,7 +45,7 @@ public class GetGeneratorStatistics implements ContentGenerator {
   public GetGeneratorStatistics() {
     GeneratorListener listener = BerliozConfig.getListener();
     StatisticsCollector collector = StatisticsCollector.getInstance();
-    if (BerliozConfig.getListener() == null) {
+    if (listener == null) {
       BerliozConfig.setListener(collector);
     } else if (collector != listener) {
       LOGGER.warn("Unable to initialise the Berlioz statistics for generators");

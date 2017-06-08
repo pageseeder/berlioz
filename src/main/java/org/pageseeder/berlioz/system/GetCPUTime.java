@@ -49,7 +49,7 @@ public final class GetCPUTime implements ContentGenerator {
 
     long threadId = -1L;
     try {
-      threadId = Long.parseLong(req.getParameter("thread", "-1"));
+      threadId = req.getLongParameter("thread", -1);
     } catch (NumberFormatException ex) {
       req.setStatus(ContentStatus.BAD_REQUEST);
       xml.writeComment("Invalid thread ID");

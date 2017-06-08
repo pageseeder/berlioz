@@ -21,11 +21,11 @@ import java.lang.management.ThreadMXBean;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -86,7 +86,7 @@ public final class ListThreads implements ContentGenerator {
    *
    * @throws IOException Should an error occur while writing the XML
    */
-  private static void toXML(ThreadGroup group, ThreadMXBean bean, XMLWriter xml) throws IOException {
+  private static void toXML(ThreadGroup group, @Nullable ThreadMXBean bean, XMLWriter xml) throws IOException {
 
     // Grab all the threads
     Thread[] threads = new Thread[group.activeCount()];
@@ -105,7 +105,7 @@ public final class ListThreads implements ContentGenerator {
         xml.attribute("state", t.getState().name());
         xml.attribute("alive", Boolean.toString(t.isAlive()));
         xml.attribute("daemon", Boolean.toString(t.isDaemon()));
-        xml.attribute("group", t.getThreadGroup().getName());
+        xml.attribute("group", Threads.toThreadGroupName(t));
         if (t == Thread.currentThread()) {
           // Flag the current thread
           xml.attribute("current", "true");
@@ -136,7 +136,7 @@ public final class ListThreads implements ContentGenerator {
    *
    * @throws IOException If thrown while writing XML.
    */
-  private static void toXML(Thread thread, StackTraceElement[] stacktrace, ThreadMXBean bean, XMLWriter xml)
+  private static void toXML(Thread thread, StackTraceElement[] stacktrace, @Nullable ThreadMXBean bean, XMLWriter xml)
       throws IOException {
     xml.openElement("thread", true);
     xml.attribute("id", Long.toString(thread.getId()));
@@ -145,7 +145,7 @@ public final class ListThreads implements ContentGenerator {
     xml.attribute("state", thread.getState().name());
     xml.attribute("alive", Boolean.toString(thread.isAlive()));
     xml.attribute("daemon", Boolean.toString(thread.isDaemon()));
-    xml.attribute("group", thread.getThreadGroup().getName());
+    xml.attribute("group", Threads.toThreadGroupName(thread));
     if (thread == Thread.currentThread()) {
       // Flag the current thread
       xml.attribute("current", "true");

@@ -23,7 +23,6 @@ import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**

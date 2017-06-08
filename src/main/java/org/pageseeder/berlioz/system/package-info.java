@@ -16,4 +16,5 @@
 /**
  * Generators and classes providing system information.
  */
+@org.eclipse.jdt.annotation.NonNullByDefault
 package org.pageseeder.berlioz.system;

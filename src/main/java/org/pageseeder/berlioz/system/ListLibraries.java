@@ -15,22 +15,28 @@
  */
 package org.pageseeder.berlioz.system;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 import java.util.jar.Attributes;
-import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.servlet.HttpContentRequest;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -41,70 +47,113 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 @Beta
 public final class ListLibraries implements ContentGenerator {
 
   /**
-   * Only accepts files ending with ".jar".
+   * Maps the library paths to the main attributes of the manifest.
+   *
+   * We cap the amount of entries to 100 to avoid potential memory leaks.
    */
-  private static final FileFilter JAR_FILES = new FileFilter() {
-
-    @Override
-    public boolean accept(File file) {
-      return file.isFile() && file.getName().endsWith(".jar");
-    }
-
-  };
+  private final Map<String, Map<String, String>> _manifest = createLRUMap(100);
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+    HttpServletRequest http = ((HttpContentRequest)req).getHttpRequest();
+    ServletContext context = http.getServletContext();
+    extractLibs(context, xml);
+  }
+
+  private void extractLibs(ServletContext context, XMLWriter xml) throws BerliozException, IOException {
 
     // TODO: Use Weak cache to avoid having to reopen all libs, reload on Berlioz Reload
-    // TODO: Set<String> libs = getServletContext().getResourcePaths("/WEB-INF/lib");
-    // TODO: if(libs == null || libs.isEmpty()) {
+    Set<String> paths = context.getResourcePaths("/WEB-INF/lib");
 
-    File lib = req.getEnvironment().getPrivateFile("lib");
     xml.openElement("libraries");
-    if (lib.exists() && lib.isDirectory()) {
+    if (paths != null) {
 
       // List all the jars
-      File[] jars = lib.listFiles(JAR_FILES);
+      for (String path : paths) {
 
-      // Iterate over each library
-      if (jars != null) {
-        for (File f : jars) {
-          String filename = f.getName();
+        String filename = path.indexOf('/')>=0? path.substring(path.lastIndexOf('/')) : path;
 
-          // Get the name and version from the file name
-          int dot = filename.lastIndexOf('.');
-          int dash = filename.lastIndexOf('-');
-          String name = dash != -1? filename.substring(0, dash) : filename.substring(0, dot);
-          String version = dash != -1? filename.substring(dash+1, dot) : null;
+        // Get the name and version from the file name
+        int dot = filename.lastIndexOf('.');
+        int dash = filename.lastIndexOf('-');
+        String name = dash != -1? filename.substring(0, dash) : filename.substring(0, dot);
+        String version = dash != -1? filename.substring(dash+1, dot) : null;
 
-          // Start writing out the XML
-          xml.openElement("library");
-          xml.attribute("file", filename);
-          xml.attribute("name", name);
-          if (version != null) {
-            xml.attribute("version", version);
-          }
-
-          try (JarFile jar = new JarFile(f)) {
-            Manifest manifest = jar.getManifest();
-            Attributes attributes = manifest.getMainAttributes();
-            getAll(xml, attributes);
-          }
-
-          xml.closeElement();
+        // Start writing out the XML
+        xml.openElement("library");
+        xml.attribute("file", filename);
+        xml.attribute("name", name);
+        if (version != null) {
+          xml.attribute("version", version);
         }
+
+        // Get attributes
+        Map<String, String> attributes = getMainAttributes(path, context);
+        toXML(xml, attributes);
+
+        xml.closeElement();
       }
 
     }
     xml.closeElement();
   }
+
+  /**
+   * Get the attributes from the cache if available otherwise parse the jar.
+   *
+   * @param path    The path to the Jar
+   * @param context The servlet context
+   *
+   * @return the attributes
+   */
+  private Map<String, String> getMainAttributes(String path, ServletContext context) {
+    Map<String, String> attributes = this._manifest.get(path);
+    if (attributes == null) {
+      attributes = loadMainAttributes(path, context);
+      this._manifest.put(path, attributes);
+    }
+    return attributes;
+  }
+
+  /**
+   * Loads the main attributes from the manifest of the jat corresponding to the specified path
+   *
+   * @param path    The path to the Jar
+   * @param context The servlet context
+   *
+   * @return Always a Map.
+   */
+  private static Map<String, String> loadMainAttributes(String path, ServletContext context) {
+    Map<String, String> m = new HashMap<>();
+    try (InputStream in = context.getResourceAsStream(path)) {
+      if (in != null) {
+        try (JarInputStream jar = new JarInputStream(in)) {
+          Manifest manifest = jar.getManifest();
+          if (manifest != null) {
+            Attributes attributes = manifest.getMainAttributes();
+            for (Entry<Object, Object> e : attributes.entrySet()) {
+              String key = e.getKey().toString().toLowerCase();
+              Object o = e.getValue();
+              if (o != null) {
+                m.put(key, o.toString());
+              }
+            }
+          }
+        }
+      }
+    } catch (IOException ex) {
+      // TODO We should log this
+    }
+    return m;
+  }
+
 
   /**
    * Extracts all the attributes of the manifest as XML
@@ -114,21 +163,20 @@ public final class ListLibraries implements ContentGenerator {
    *
    * @throws IOException If an error occurs while writing the XML.
    */
-  private static void getAll(XMLWriter xml, Attributes attributes) throws IOException {
-    Map<String, List<String>> keys = new HashMap<String, List<String>>();
-    for (Object o : attributes.keySet()) {
-      String key = o.toString();
+  private static void toXML(XMLWriter xml, Map<String, String> attributes) throws IOException {
+    Map<String, List<String>> keys = new HashMap<>();
+    for (String key : attributes.keySet()) {
       int dash = key.indexOf('-');
       if (dash == -1) {
         // Just add as an attribute
-        xml.attribute(key.toLowerCase(), attributes.getValue(key));
+        xml.attribute(key.toLowerCase(), Objects.toString(attributes.get(key), ""));
       } else {
         // Sort the composed manifest attributes
         String category = key.substring(0, dash);
         String value = key.substring(dash+1);
         List<String> values = keys.get(category);
         if (values == null) {
-          values = new ArrayList<String>();
+          values = new ArrayList<>();
           keys.put(category, values);
         }
         values.add(value);
@@ -139,12 +187,22 @@ public final class ListLibraries implements ContentGenerator {
     for (Entry<String, List<String>> e : keys.entrySet()) {
       xml.openElement(e.getKey().toLowerCase());
       for (String key :  e.getValue()) {
-        String value = attributes.getValue(e.getKey()+'-'+key);
-        xml.attribute(key.toLowerCase(), value);
+        String value = attributes.get(e.getKey()+'-'+key);
+        xml.attribute(key.toLowerCase(), Objects.toString(value, ""));
       }
       xml.closeElement();
     }
 
+  }
+
+  @SuppressWarnings("serial")
+  private static <K, V> Map<K, V> createLRUMap(final int maxEntries) {
+    return new LinkedHashMap<K, V>(maxEntries*10/7, 0.7f, true) {
+      @Override
+      protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return size() > maxEntries;
+      }
+    };
   }
 
 }

@@ -15,12 +15,14 @@
  */
 package org.pageseeder.berlioz.system;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A utility class for retrieving information about threads.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 final class Threads {
@@ -36,6 +38,7 @@ final class Threads {
    */
   protected static ThreadGroup getRootThreadGroup() {
     ThreadGroup current = Thread.currentThread().getThreadGroup();
+    if (current == null) throw new IllegalStateException("The current thread has died?");
     ThreadGroup parent;
     while ((parent = current.getParent()) != null) {
       current = parent;
@@ -49,7 +52,7 @@ final class Threads {
    * @param id the ID of the thread
    * @return The corresponding thread instance or <code>null</code>.
    */
-  protected static Thread getThread(long id) {
+  protected static @Nullable Thread getThread(long id) {
     ThreadGroup root = getRootThreadGroup();
     // load the threads in an array
     Thread[] threads = new Thread[root.activeCount()];
@@ -63,4 +66,12 @@ final class Threads {
     // not found
     return null;
   }
+
+  protected static String toThreadGroupName(Thread thread) {
+    ThreadGroup group = thread.getThreadGroup();
+    if (group == null) return "(No thread group)";
+    String groupName = group.getName();
+    return groupName != null? groupName : "(No thread group Name)";
+  }
+
 }
