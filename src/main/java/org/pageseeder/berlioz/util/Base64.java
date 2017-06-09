@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>
  *
@@ -448,7 +450,10 @@ public final class Base64 {
    * @param raw input buffer
    * @param encoded output buffer
    * @since 2.3
+   *
+   * @deprecated Will be removed in 0.12.x release
    */
+  @Deprecated
   public static void encode(java.nio.ByteBuffer raw, java.nio.ByteBuffer encoded) {
     byte[] raw3 = new byte[3];
     byte[] enc4 = new byte[4];
@@ -468,10 +473,13 @@ public final class Base64 {
    * This is an experimental feature. Currently it does not pass along any options
    * (such as {@link #DO_BREAK_LINES} or {@link #GZIP}.
    *
+   * @deprecated Will be removed in 0.12.x release
+   *
    * @param raw input buffer
    * @param encoded output buffer
    * @since 2.3
    */
+  @Deprecated
   public static void encode(java.nio.ByteBuffer raw, java.nio.CharBuffer encoded) {
     byte[] raw3 = new byte[3];
     byte[] enc4 = new byte[4];
@@ -503,8 +511,11 @@ public final class Base64 {
    * @throws java.io.IOException if there is an error
    * @throws NullPointerException if serializedObject is <code>null</code>
    *
+   * @deprecated Will be removed in 0.12.x release
+   *
    * @since 1.4
    */
+  @Deprecated
   public static String encodeObject(Serializable serializableObject) throws IOException {
     return encodeObject(serializableObject, NO_OPTIONS);
   }
@@ -536,9 +547,12 @@ public final class Base64 {
    * @see Base64#GZIP
    * @see Base64#DO_BREAK_LINES
    *
+   * @deprecated Will be removed in 0.12.x release
+   *
    * @throws java.io.IOException if there is an error
    * @since 2.0
    */
+  @Deprecated
   public static String encodeObject(Serializable o, int options) throws IOException {
     if (o == null) throw new NullPointerException("Cannot serialize a null object.");
 
@@ -594,16 +608,15 @@ public final class Base64 {
    * @since 1.4
    */
   public static String encodeBytes(byte[] source) {
-    // Since we're not going to have the GZIP encoding turned on,
-    // we're not going to have an IOException thrown, so
-    // we should not force the user to have to catch it.
     String encoded = null;
     try {
       encoded = encodeBytes(source, 0, source.length, NO_OPTIONS);
     } catch (IOException ex) {
-      assert false : ex.getMessage();
+      // Since we're not going to have the GZIP encoding turned on,
+      // we're not going to have an IOException thrown, so
+      // we should not force the user to have to catch it.
+      encoded = "";
     }
-    assert encoded != null;
     return encoded;
   }
 
@@ -667,9 +680,11 @@ public final class Base64 {
     try {
       encoded = encodeBytes(source, off, len, NO_OPTIONS);
     } catch (IOException ex) {
-      assert false : ex.getMessage();
+      // Since we're not going to have the GZIP encoding turned on,
+      // we're not going to have an IOException thrown, so
+      // we should not force the user to have to catch it.
+      encoded = "";
     }
-    assert encoded != null;
     return encoded;
   }
 
@@ -703,8 +718,11 @@ public final class Base64 {
    * @throws NullPointerException if source array is <code>null</code>
    * @throws IllegalArgumentException if source array, offset, or length are invalid
    *
+   * @deprecated Will be removed in 0.12.x release
+   *
    * @since 2.0
    */
+  @Deprecated
   public static String encodeBytes(byte[] source, int off, int len, int options) throws IOException {
     byte[] encoded = encodeBytesToBytes(source, off, len, options);
     // Return value according to relevant encoding.
@@ -725,13 +743,15 @@ public final class Base64 {
    *
    * @throws NullPointerException if source array is <code>null</code>
    * @since 2.3.1
+   *
    */
   public static byte[] encodeBytesToBytes(byte[] source) {
     byte[] encoded = null;
     try {
       encoded = encodeBytesToBytes(source, 0, source.length, Base64.NO_OPTIONS);
     } catch (IOException ex) {
-      assert false : "IOExceptions only come from GZipping, which is turned off: " + ex.getMessage();
+      // IOExceptions only come from GZipping, which is turned off
+      encoded = new byte[]{};
     }
     return encoded;
   }
@@ -1118,8 +1138,11 @@ public final class Base64 {
    * @throws ClassNotFoundException if the decoded object is of a
    *         class that cannot be found by the JVM
    * @since 2.3.4
+   *
+   * @deprecated Will be removed in 0.12.x release
    */
-  public static Object decodeToObject(String encodedObject, int options, final ClassLoader loader)
+  @Deprecated
+  public static Object decodeToObject(String encodedObject, int options, final @Nullable ClassLoader loader)
     throws IOException, java.lang.ClassNotFoundException {
 
     // Decode and gunzip if necessary
@@ -1381,7 +1404,7 @@ public final class Base64 {
    *
    * @param is the stream to close.
    */
-  private static void closeQuietly(java.io.InputStream is) {
+  private static void closeQuietly(java.io.@Nullable InputStream is) {
     try {
       if (is != null) {
         is.close();
@@ -1396,7 +1419,7 @@ public final class Base64 {
    *
    * @param os the stream to close.
    */
-  private static void closeQuietly(java.io.OutputStream os) {
+  private static void closeQuietly(java.io.@Nullable OutputStream os) {
     try {
       if (os != null) {
         os.close();
@@ -1770,7 +1793,7 @@ public final class Base64 {
       // 2. Actually close the stream (Base class both flushes and closes)
       super.close();
 
-      this.buffer = null;
+//      this.buffer = null;
       this.out    = null;
     }
 
