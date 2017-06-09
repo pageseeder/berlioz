@@ -30,7 +30,6 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.util.ISO8601;
-
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 
@@ -39,7 +38,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 final class StatisticsCollector implements GeneratorListener, XMLWritable {
@@ -52,7 +51,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
   /**
    * All the statistics.
    */
-  private final ConcurrentHashMap<Class<?>, BasicStats> stats = new ConcurrentHashMap<Class<?>, BasicStats>();
+  private final ConcurrentHashMap<Class<?>, BasicStats> _stats = new ConcurrentHashMap<>();
 
   /**
    * When did we start collecting statistics
@@ -67,12 +66,12 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
 
   @Override
   public void generate(Service service, ContentGenerator generator, ContentStatus status, long etag, long process) {
-    BasicStats basic = this.stats.get(generator.getClass());
+    BasicStats basic = this._stats.get(generator.getClass());
 
     // Create entry if it does not exist
     if (basic == null) {
       basic = new BasicStats(generator.getClass().getName(), status, etag, process);
-      this.stats.put(generator.getClass(), basic);
+      this._stats.put(generator.getClass(), basic);
     } else {
       // update
       basic.update(status, etag, process);
@@ -83,7 +82,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
    * Clears all the statistics.
    */
   public void clear() {
-    this.stats.clear();
+    this._stats.clear();
     synchronized (this) {
       this.since = System.currentTimeMillis();
     }
@@ -100,7 +99,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
   public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("statistics");
     xml.attribute("since", ISO8601.format(this.since, ISO8601.DATETIME));
-    for (BasicStats s : this.stats.values()) {
+    for (BasicStats s : this._stats.values()) {
       s.toXML(xml);
     }
     xml.closeElement();
@@ -114,57 +113,57 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
     /**
      * The class name of the generator.
      */
-    private final String generator;
+    private final String _generator;
 
     /**
      * The number of times the method was invoked.
      */
-    private Map<ContentStatus, AtomicLong> _status;
+    private final Map<ContentStatus, AtomicLong> _status;
 
     /**
      * The number of times the method was invoked.
      */
-    private final AtomicLong count;
+    private final AtomicLong _count;
 
     /**
      * Total amount of time taken by the getEtag() method in microseconds.
      */
-    private final AtomicLong totalEtagTime;
+    private final AtomicLong _totalEtagTime;
 
     /**
      * Total amount of time taken by the process() method in microseconds.
      */
-    private final AtomicLong totalProcessTime;
+    private final AtomicLong _totalProcessTime;
 
     /**
      * Minimum time taken by the getEtag() method in microseconds.
      */
-    private final AtomicLong minEtagTime;
+    private final AtomicLong _minEtagTime;
 
     /**
      * Minimum time taken by the process() method in microseconds.
      */
-    private final AtomicLong minProcessTime;
+    private final AtomicLong _minProcessTime;
 
     /**
      * Maximum time taken by the getEtag() method in microseconds.
      */
-    private final AtomicLong maxEtagTime;
+    private final AtomicLong _maxEtagTime;
 
     /**
      * Maximum time taken by the process() method in microseconds.
      */
-    private final AtomicLong maxProcessTime;
+    private final AtomicLong _maxProcessTime;
 
     /**
      * Maximum time taken by the process() method in microseconds.
      */
-    private final LinkedBlockingDeque<Long> lastEtag = new LinkedBlockingDeque<Long>(10);
+    private final LinkedBlockingDeque<Long> _lastEtag = new LinkedBlockingDeque<>(10);
 
     /**
      * Maximum time taken by the process() method in microseconds.
      */
-    private final LinkedBlockingDeque<Long> lastProcess = new LinkedBlockingDeque<Long>(10);
+    private final LinkedBlockingDeque<Long> _lastProcess = new LinkedBlockingDeque<>(10);
 
     /**
      * Creates a instance with the specified initial status and time values.
@@ -175,18 +174,18 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
      * @param process The process time in nano seconds
      */
     private BasicStats(String name, ContentStatus status, long etag, long process) {
-      this.generator = name;
+      this._generator = name;
       this._status = Collections.synchronizedMap(new EnumMap<ContentStatus, AtomicLong>(ContentStatus.class));
       this._status.put(status, new AtomicLong(1));
-      this.count = new AtomicLong(1);
+      this._count = new AtomicLong(1);
       long e = etag / 1000;
-      this.minEtagTime = new AtomicLong(e);
-      this.maxEtagTime = new AtomicLong(e);
-      this.totalEtagTime = new AtomicLong(e);
+      this._minEtagTime = new AtomicLong(e);
+      this._maxEtagTime = new AtomicLong(e);
+      this._totalEtagTime = new AtomicLong(e);
       long p = process / 1000;
-      this.minProcessTime = new AtomicLong(p);
-      this.maxProcessTime = new AtomicLong(p);
-      this.totalProcessTime = new AtomicLong(p);
+      this._minProcessTime = new AtomicLong(p);
+      this._maxProcessTime = new AtomicLong(p);
+      this._totalProcessTime = new AtomicLong(p);
     }
 
     /**
@@ -205,56 +204,56 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
         i.incrementAndGet();
       }
 
-      this.count.incrementAndGet();
+      this._count.incrementAndGet();
       // times in microseconds
       long e = etag / 1000;
       long p = process / 1000;
       // min and max
-      if (e > this.maxEtagTime.get()) {
-        this.maxEtagTime.set(e);
+      if (e > this._maxEtagTime.get()) {
+        this._maxEtagTime.set(e);
       }
-      if (e < this.minEtagTime.get()) {
-        this.minEtagTime.set(e);
+      if (e < this._minEtagTime.get()) {
+        this._minEtagTime.set(e);
       }
-      if (p > this.maxProcessTime.get()) {
-        this.maxProcessTime.set(p);
+      if (p > this._maxProcessTime.get()) {
+        this._maxProcessTime.set(p);
       }
-      if (p < this.minProcessTime.get()) {
-        this.minProcessTime.set(p);
+      if (p < this._minProcessTime.get()) {
+        this._minProcessTime.set(p);
       }
       // Total
-      this.totalEtagTime.addAndGet(e);
-      this.totalProcessTime.addAndGet(p);
-      if (this.lastEtag.remainingCapacity() == 0) {
-        this.lastEtag.pollFirst();
+      this._totalEtagTime.addAndGet(e);
+      this._totalProcessTime.addAndGet(p);
+      if (this._lastEtag.remainingCapacity() == 0) {
+        this._lastEtag.pollFirst();
       }
-      this.lastEtag.offerLast(e);
-      if (this.lastProcess.remainingCapacity() == 0) {
-        this.lastProcess.pollFirst();
+      this._lastEtag.offerLast(e);
+      if (this._lastProcess.remainingCapacity() == 0) {
+        this._lastProcess.pollFirst();
       }
-      this.lastProcess.offerLast(p);
+      this._lastProcess.offerLast(p);
     }
 
     @Override
     public synchronized void toXML(XMLWriter xml) throws IOException {
       xml.openElement("statistic");
-      xml.attribute("generator", this.generator);
-      xml.attribute("count", this.count.toString());
+      xml.attribute("generator", this._generator);
+      xml.attribute("count", this._count.toString());
       // times
-      xml.attribute("min-etag",      this.minEtagTime.toString());
-      xml.attribute("min-process",   this.minProcessTime.toString());
-      xml.attribute("max-etag",      this.maxEtagTime.toString());
-      xml.attribute("max-process",   this.maxProcessTime.toString());
-      xml.attribute("total-etag",    this.totalEtagTime.toString());
-      xml.attribute("total-process", this.totalProcessTime.toString());
+      xml.attribute("min-etag",      this._minEtagTime.toString());
+      xml.attribute("min-process",   this._minProcessTime.toString());
+      xml.attribute("max-etag",      this._maxEtagTime.toString());
+      xml.attribute("max-process",   this._maxProcessTime.toString());
+      xml.attribute("total-etag",    this._totalEtagTime.toString());
+      xml.attribute("total-process", this._totalProcessTime.toString());
       // compute the average
-      long avgEtag = this.totalEtagTime.longValue() / this.count.longValue();
-      long avgProcess = this.totalProcessTime.longValue() / this.count.longValue();
+      long avgEtag = this._totalEtagTime.longValue() / this._count.longValue();
+      long avgProcess = this._totalProcessTime.longValue() / this._count.longValue();
       xml.attribute("avg-etag",    Long.toString(avgEtag));
       xml.attribute("avg-process", Long.toString(avgProcess));
 
-      long avgLastEtag = average(this.lastEtag);
-      long avgLastProcess = average(this.lastProcess);
+      long avgLastEtag = average(this._lastEtag);
+      long avgLastProcess = average(this._lastProcess);
       xml.attribute("avg-last-etag",    Long.toString(avgLastEtag));
       xml.attribute("avg-last-process", Long.toString(avgLastProcess));
 
