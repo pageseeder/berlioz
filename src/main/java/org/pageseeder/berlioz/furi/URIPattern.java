@@ -42,12 +42,12 @@ public final class URIPattern extends URITemplate implements Matchable {
   /**
    * The regular expression pattern for matching URIs to this URI Pattern.
    */
-  private Pattern _pattern;
+  private final Pattern _pattern;
 
   /**
    * The score for this pattern, the length of the literal text.
    */
-  private int _score = -1;
+  private int score = -1;
 
   /**
    * Creates a new URI Pattern instance from the specified URI template string.
@@ -139,10 +139,10 @@ public final class URIPattern extends URITemplate implements Matchable {
    * @return the score for this URI pattern.
    */
   protected int score() {
-    if (this._score < 0) {
-      this._score = computeScore(tokens());
+    if (this.score < 0) {
+      this.score = computeScore(tokens());
     }
-    return this._score;
+    return this.score;
   }
 
   // private helpers ----------------------------------------------------------

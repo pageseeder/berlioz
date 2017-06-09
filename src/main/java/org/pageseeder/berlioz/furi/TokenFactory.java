@@ -78,7 +78,7 @@ public final class TokenFactory {
   /**
    * The URI template syntax to use for generating tokens.
    */
-  private Syntax _syntax;
+  private final Syntax _syntax;
 
   /**
    * Prevents creation of instances.

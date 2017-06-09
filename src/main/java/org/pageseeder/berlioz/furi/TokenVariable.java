@@ -38,7 +38,7 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
   /**
    * The variable for this token.
    */
-  private Variable _var;
+  private final Variable _var;
 
   /**
    * Creates a new variable token.

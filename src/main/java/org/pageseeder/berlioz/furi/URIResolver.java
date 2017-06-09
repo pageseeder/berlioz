@@ -76,7 +76,7 @@ public final class URIResolver {
   /**
    * The URI to resolve.
    */
-  private String _uri;
+  private final String _uri;
 
   /**
    * Creates a new resolver for the specified URI.

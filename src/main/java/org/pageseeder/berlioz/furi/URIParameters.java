@@ -30,7 +30,7 @@ import org.eclipse.jdt.annotation.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public class URIParameters implements Parameters {
@@ -38,7 +38,7 @@ public class URIParameters implements Parameters {
   /**
    * Maps the parameter names to the values.
    */
-  private Map<String, String[]> _parameters;
+  private final Map<String, String[]> _parameters;
 
   /**
    * Creates a new instance.

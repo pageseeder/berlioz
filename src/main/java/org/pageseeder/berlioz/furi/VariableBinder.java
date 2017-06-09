@@ -68,12 +68,12 @@ public class VariableBinder {
   /**
    * Maps a variable names to a resolver.
    */
-  private Map<String,VariableResolver> _byname = new Hashtable<>();
+  private final Map<String,VariableResolver> _byname = new Hashtable<>();
 
   /**
    * Maps a variable types to a resolver.
    */
-  private Map<String,VariableResolver> _bytype = new Hashtable<>();
+  private final Map<String,VariableResolver> _bytype = new Hashtable<>();
 
   /**
    * Binds the variables with the specified name to the specified resolver.

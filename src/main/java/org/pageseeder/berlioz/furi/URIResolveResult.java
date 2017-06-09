@@ -38,11 +38,6 @@ public final class URIResolveResult implements ResolvedVariables {
   public enum Status {UNRESOLVED, RESOLVED, ERROR}
 
   /**
-   * The status of this result.
-   */
-  private Status _status = Status.UNRESOLVED;
-
-  /**
    * Maps variable names to their corresponding resolved objects.
    */
   private final Map<String, Object> values = new HashMap<>();
@@ -51,6 +46,11 @@ public final class URIResolveResult implements ResolvedVariables {
    * The URI Pattern that was used to produce this result.
    */
   private final URIPattern _pattern;
+
+  /**
+   * The status of this result.
+   */
+  private Status status = Status.UNRESOLVED;
 
   /**
    * Constructs an instance of this class with fields initialised to null.
@@ -75,7 +75,7 @@ public final class URIResolveResult implements ResolvedVariables {
    * @return The status of this result.
    */
   public Status getStatus() {
-    return this._status;
+    return this.status;
   }
 
   /**
@@ -105,7 +105,7 @@ public final class URIResolveResult implements ResolvedVariables {
    * @param status The status of the result.
    */
   protected void setStatus(Status status) {
-    this._status = status;
+    this.status = status;
   }
 
 }

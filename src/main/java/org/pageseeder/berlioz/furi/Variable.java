@@ -83,7 +83,7 @@ public class Variable {
     /**
      * The symbol for this reserved.
      */
-    private String _symbol;
+    private final String _symbol;
 
     /**
      * Construct a new reserved variable - keep it private.
@@ -184,7 +184,7 @@ public class Variable {
   /**
    * The type of this variable.
    */
-  private Form _form = Form.STRING;
+  private Form form = Form.STRING;
 
   /**
    * The implementation type of this variable (eg. string, integer, etc... can be user-defined).
@@ -192,17 +192,17 @@ public class Variable {
    * <p>
    * Use <code>null</code> for untyped.
    */
-  private @Nullable VariableType _type;
+  private @Nullable VariableType type;
 
   /**
    * The name of this variable.
    */
-  private String _name;
+  private final String _name;
 
   /**
    * The default value for this variable.
    */
-  private String _default;
+  private final String _default;
 
   /**
    * Creates a new untyped reserved variable.
@@ -215,8 +215,8 @@ public class Variable {
   public Variable(Reserved reserved) {
     this._name = reserved.symbol();
     this._default = DEFAULT_VALUE;
-    this._form = Form.STRING;
-    this._type = null;
+    this.form = Form.STRING;
+    this.type = null;
   }
 
   /**
@@ -257,8 +257,8 @@ public class Variable {
   public Variable(String name, @Nullable String def, @Nullable VariableType type) {
     this._name = Objects.requireNonNull(name, "A variable must have a name, but was null");
     this._default = Objects.toString(def, DEFAULT_VALUE);
-    this._type = type;
-    this._form = Form.getType(name);
+    this.type = type;
+    this.form = Form.getType(name);
     if (!isValidName(name))
       throw new IllegalArgumentException("The variable name is not valid: " + name);
   }
@@ -276,8 +276,8 @@ public class Variable {
   public Variable(String name, String def, VariableType type, Form form) {
     this._name = Objects.requireNonNull(name, "A variable must have a name, but was null");
     this._default = def != null ? def : DEFAULT_VALUE;
-    this._type = type;
-    this._form = form != null? form : Form.STRING;
+    this.type = type;
+    this.form = form != null? form : Form.STRING;
     if (!isValidName(name))
       throw new IllegalArgumentException("The variable name is not valid: " + name);
   }
@@ -291,7 +291,7 @@ public class Variable {
    * @return The form of this variable.
    */
   public Form form() {
-    return this._form;
+    return this.form;
   }
 
   /**
@@ -326,7 +326,7 @@ public class Variable {
    * @return The type of this variable.
    */
   public @Nullable VariableType type() {
-    return this._type;
+    return this.type;
   }
 
   /**
@@ -415,18 +415,18 @@ public class Variable {
     // untyped
     if (colon < 0) {
       Variable v = parseUntyped(exp);
-      v._form = f;
+      v.form = f;
       return v;
     // ignore the empty type and treat as untyped
     } else if (colon == 0) {
       Variable v = parseUntyped(exp.substring(1));
-      v._form = f;
+      v.form = f;
       return v;
     // a type is specified
     } else {
       Variable v = parseUntyped(exp.substring(colon + 1));
-      v._type = new VariableType(exp.substring(0, colon));
-      v._form = f;
+      v.type = new VariableType(exp.substring(0, colon));
+      v.form = f;
       return v;
     }
   }

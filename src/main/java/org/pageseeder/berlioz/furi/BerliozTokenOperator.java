@@ -46,7 +46,7 @@ import org.pageseeder.berlioz.furi.Variable.Form;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public class BerliozTokenOperator extends TokenBase implements TokenOperator, Matchable {
@@ -466,17 +466,17 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   /**
    * The operator.
    */
-  private Operator _operator;
+  private final Operator _operator;
 
   /**
    * The variables for this token.
    */
-  private List<Variable> _vars;
+  private final List<Variable> _vars;
 
   /**
    * The pattern for this token.
    */
-  private Pattern _pattern;
+  private final Pattern _pattern;
 
   /**
    * Creates a new operator token for one variable only.
@@ -489,7 +489,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   public BerliozTokenOperator(Operator op, Variable var) {
     super(toExpression(op, var));
     this._operator = op;
-    this._vars = new ArrayList<Variable>(1);
+    this._vars = new ArrayList<>(1);
     this._vars.add(var);
     this._pattern = op.pattern(this._vars);
   }

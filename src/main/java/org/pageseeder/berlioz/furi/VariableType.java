@@ -44,7 +44,7 @@ public final class VariableType {
   /**
    * The name of this variable type.
    */
-  private String _name;
+  private final String _name;
 
   /**
    * Create a new variable type.
