@@ -36,7 +36,7 @@ import javax.xml.transform.stream.StreamResult;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public class JSONResult extends SAXResult implements Result {
@@ -114,8 +114,8 @@ public class JSONResult extends SAXResult implements Result {
             FileOutputStream o = new FileOutputStream(f);
             json = new JSONResult(o);
           } catch (IOException ex) {
-            // TODO: Handle this proper
-            ex.printStackTrace();
+            // TODO Use more appropriate exception
+            throw new RuntimeException("Unable to write JSON to "+systemId, ex);
           }
         } else {
           // Will output to System.out
@@ -123,7 +123,7 @@ public class JSONResult extends SAXResult implements Result {
         }
       }
     }
-    if (json != null && systemId != null) {
+    if (systemId != null) {
       json.setSystemId(systemId);
     }
     return json;

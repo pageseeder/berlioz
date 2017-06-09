@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.aeson;
 
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.Collections;
 
 import javax.json.JsonException;
 import javax.json.JsonValue;
@@ -24,6 +25,7 @@ import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 final class J2EEJSONWriter implements JSONWriter {
@@ -41,7 +43,7 @@ final class J2EEJSONWriter implements JSONWriter {
   private static final Logger LOGGER = LoggerFactory.getLogger(J2EEJSONWriter.class);
 
   /** The JSON generator */
-  private static JsonGeneratorFactory factory = null;
+  private static @Nullable JsonGeneratorFactory factory = null;
 
   /** The JSON generator */
   private final JsonGenerator _json;
@@ -170,8 +172,7 @@ final class J2EEJSONWriter implements JSONWriter {
    * @return The JSON writer to use.
    */
   public static J2EEJSONWriter newInstance(OutputStream out) {
-    if (factory == null && !init()) throw new UnsupportedOperationException("Unable to find suitable provider");
-    JsonGenerator json = factory.createGenerator(out);
+    JsonGenerator json = factory().createGenerator(out);
     return new J2EEJSONWriter(json);
   }
 
@@ -183,8 +184,7 @@ final class J2EEJSONWriter implements JSONWriter {
    * @return The JSON writer to use.
    */
   public static J2EEJSONWriter newInstance(Writer writer) {
-    if (factory == null && !init()) throw new UnsupportedOperationException("Unable to find suitable provider");
-    JsonGenerator json = factory.createGenerator(writer);
+    JsonGenerator json = factory().createGenerator(writer);
     return new J2EEJSONWriter(json);
   }
 
@@ -193,17 +193,47 @@ final class J2EEJSONWriter implements JSONWriter {
    *
    * @return The JSON writer to use.
    */
-  public static synchronized boolean init() {
+  protected static synchronized boolean init() {
+    try {
+      factory();
+      return true;
+    } catch (UnsupportedOperationException ex) {
+      return false;
+    }
+  }
+
+  /**
+   * Always return a JSON Writer.
+   *
+   * @return The JSON writer to use.
+   *
+   * @throws UnsupportedOperationException if it could not be loaded.
+   */
+  private static synchronized JsonGeneratorFactory factory() {
+    JsonGeneratorFactory f = factory;
+    if (f == null) {
+      factory = f = loadFactory();
+    }
+    return f;
+  }
+
+  /**
+   * Always return a JSON Writer.
+   *
+   * @return The JSON writer to use.
+   *
+   * @throws UnsupportedOperationException if no provider could be found.
+   */
+  private static synchronized JsonGeneratorFactory loadFactory() {
     try {
       // This method does not return null, it throws a JsonException instead
       JsonProvider provider = JsonProvider.provider();
       LOGGER.debug("JSON Provider found using {}", provider.getClass().getName());
       // XXX: We could supply configuration for the factory
-      factory = provider.createGeneratorFactory(null);
-      return true;
+      return provider.createGeneratorFactory(Collections.emptyMap());
     } catch (JsonException ex) {
       LOGGER.warn("JSON Provider not found: {}", ex.getMessage());
-      return false;
+      throw new UnsupportedOperationException("Unable to find suitable provider");
     }
   }
 

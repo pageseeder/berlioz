@@ -24,12 +24,14 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Contains logic to invoke this library on the command-line.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class Aeson {
@@ -88,7 +90,7 @@ public final class Aeson {
     if (source.isDirectory()) {
 
       // Let's ensure the output dir exists
-      if (!output.exists()) {
+      if (output != null && !output.exists()) {
         output.mkdirs();
       }
 
@@ -130,7 +132,7 @@ public final class Aeson {
    *
    * @return the file corresponding to a matching argument without the prefix or <code>null</code>
    */
-  private static File getFile(String[] args, String prefix) {
+  private static @Nullable File getFile(String[] args, String prefix) {
     String value = getByPrefix(args, prefix);
     if (value != null)
       return new File(value);
@@ -146,7 +148,7 @@ public final class Aeson {
    *
    * @return the matching argument without the prefix or <code>null</code>
    */
-  private static String getByPrefix(String[] args, String prefix) {
+  private static @Nullable String getByPrefix(String[] args, String prefix) {
     for (String arg : args) {
       if (arg.startsWith(prefix))
         return arg.substring(prefix.length());

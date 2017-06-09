@@ -21,6 +21,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.xml.sax.Attributes;
 
 /**
@@ -31,7 +32,7 @@ import org.xml.sax.Attributes;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 final class JSONState {
@@ -49,17 +50,17 @@ final class JSONState {
   /**
    * Keeps track of the context.
    */
-  private final Deque<JSONContext> context = new ArrayDeque<JSONContext>();
+  private final Deque<JSONContext> context = new ArrayDeque<>();
 
   /**
    * Maintains instructions for the JSON serialization at each level of the structure.
    */
-  private final Deque<JSONTypeMap> types = new ArrayDeque<JSONTypeMap>();
+  private final Deque<JSONTypeMap> types = new ArrayDeque<>();
 
   /**
    * Keeps track of the name of the current context.
    */
-  private final Deque<String> names = new ArrayDeque<String>();
+  private final Deque<String> names = new ArrayDeque<>();
 
   /**
    * Initialise the state with the ROOT context.
@@ -77,9 +78,9 @@ final class JSONState {
    * @param atts    The attributes (may affect types)
    * @param name    The name of the context.
    */
-  public void pushState(JSONContext context, Attributes atts, String name) {
+  public void pushState(JSONContext context, Attributes atts, @Nullable String name) {
     this.context.push(context);
-    JSONTypeMap map = JSONTypeMap.make(this.types.peek(), atts);
+    JSONTypeMap map = JSONTypeMap.make(currentTypeMap(), atts);
     this.types.push(map);
     this.names.push(name != null? name : "");
   }
@@ -97,7 +98,9 @@ final class JSONState {
    * @return the current context.
    */
   public JSONContext currentContext() {
-    return this.context.peek();
+    JSONContext c = this.context.peek();
+    if (c == null) throw new IllegalStateException("No JSON context!");
+    return c;
   }
 
   /**
@@ -108,14 +111,25 @@ final class JSONState {
    *         <code>false</code> otherwise.
    */
   public boolean isContext(JSONContext context) {
-    return this.context.peek() == context;
+    return currentContext() == context;
   }
 
   /**
    * @return the name of the current context.
    */
   public String currentName() {
-    return this.names.peek();
+    String name = this.names.peek();
+    if (name == null) throw new IllegalStateException("No JSON name");
+    return name;
+  }
+
+  /**
+   * @return the name of the current context.
+   */
+  private JSONTypeMap currentTypeMap() {
+    JSONTypeMap type = this.types.peek();
+    if (type == null) throw new IllegalStateException("No JSON type map");
+    return type;
   }
 
   /**
@@ -125,7 +139,7 @@ final class JSONState {
    * @return The corresponding type (never <code>null</code>)
    */
   public JSONType getType(String name) {
-    return this.types.peek().getType(name);
+    return currentTypeMap().getType(name);
   }
 
   /**
@@ -133,7 +147,7 @@ final class JSONState {
    */
   @Override
   public String toString() {
-    return currentContext()+"|"+this.types.peek()+'|'+currentName();
+    return currentContext()+"|"+currentTypeMap()+'|'+currentName();
   }
 
   // Helper inner classes
@@ -201,7 +215,7 @@ final class JSONState {
       return current;
       else {
         // Update the mapping
-        Map<String, JSONType> updated = new HashMap<String, JSONType>(current.map);
+        Map<String, JSONType> updated = new HashMap<>(current.map);
         if (toBoolean != null) {
           for (String name : toBoolean.split(" ")) {
             updated.put(name, JSONType.BOOLEAN);

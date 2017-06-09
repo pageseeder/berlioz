@@ -17,7 +17,9 @@ package org.pageseeder.berlioz.aeson;
 
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.Objects;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.aeson.JSONState.JSONContext;
 import org.pageseeder.berlioz.aeson.JSONState.JSONType;
 import org.xml.sax.Attributes;
@@ -36,7 +38,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class JSONSerializer extends DefaultHandler implements ContentHandler {
@@ -64,7 +66,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * The document locator used when reporting warnings.
    */
-  private Locator locator = null;
+  private @Nullable Locator locator = null;
 
   // Constructors
   // =============================================================================================
@@ -197,7 +199,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   }
 
   @Override
-  public void setDocumentLocator(Locator locator) {
+  public void setDocumentLocator(@Nullable Locator locator) {
     this.locator = locator;
   }
 
@@ -211,7 +213,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param uri the namespace URI
    * @return whether the attribute belonging to that namespace should be considered.
    */
-  private static boolean filterNamespace(String uri) {
+  private static boolean filterNamespace(@Nullable String uri) {
     return !(NS_URI.equals(uri)
          || "http://www.w3.org/2000/xmlns/".equals(uri)
          || "http://www.w3.org/XML/1998/namespace".equals(uri));
@@ -241,10 +243,15 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    */
   private void handleJSONElement(String localName, Attributes atts) {
     String name = atts.getValue(NS_URI, "name");
-    if (name == null && this.state.isContext(JSONContext.OBJECT)) {
-      warning(new SAXParseException("Attribute json:name must be used to specify array/object name", this.locator));
+    if (name == null) {
+      // Name must not be null
       name = localName;
+      // Warn if in object context
+      if (this.state.isContext(JSONContext.OBJECT)) {
+        warning(new SAXParseException("Attribute json:name must be used to specify array/object name", this.locator));
+      }
     }
+
     if ("array".equals(localName)) {
 
       // A JavaScript array explicitly
@@ -342,8 +349,8 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
     final int _upto = atts.getLength();
     for (int i = 0; i < _upto; i++) {
       if (filterNamespace(atts.getURI(i))) {
-        String name = atts.getLocalName(i);
-        String value = atts.getValue(i);
+        String name = Objects.requireNonNull(atts.getLocalName(i));
+        String value = Objects.requireNonNull(atts.getValue(i));
         JSONType type = this.state.getType(name);
         writeProperty(name, value, type);
       }
@@ -357,7 +364,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param value The value of the property
    * @param type  The type of property
    */
-  private void writeProperty(String name, String value, JSONType type) {
+  private void writeProperty(@Nullable String name, String value, JSONType type) {
     switch (type) {
       case NUMBER:
         asNumber(name, value);
@@ -381,7 +388,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param name  The JSON name to write.
    * @param value The JSON value to write.
    */
-  private void asNumber(String name, String value) {
+  private void asNumber(@Nullable String name, String value) {
     try {
       if (value.indexOf('.') != -1) {
         double number = Double.parseDouble(value);
@@ -412,7 +419,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param name  The JSON name to write (may be <code>null</code>)
    * @param value The JSON value to write.
    */
-  private void asBoolean(String name, String value) {
+  private void asBoolean(@Nullable String name, String value) {
     if ("true".equals(value)) {
       if (name != null) {
         this.json.property(name, true);
@@ -436,7 +443,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    *
    * @param name  The JSON name to write (may be <code>null</code>)
    */
-  private void asNull(String name) {
+  private void asNull(@Nullable String name) {
     if (name != null) {
       this.json.writeNull2(name);
     } else {
@@ -450,7 +457,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param name  The JSON name to write (may be <code>null</code>)
    * @param value The JSON value to write.
    */
-  private void asString(String name, String value) {
+  private void asString(@Nullable String name, String value) {
     if (name != null) {
       this.json.property(name, value);
     } else {
