@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.Beta;
 
 /**
@@ -129,7 +130,7 @@ import org.pageseeder.berlioz.Beta;
    * @return <code>true</code> if this rule applies to all the generators;
    *         <code>false</code> otherwise.
    */
-  public boolean appliesTo(String nameOrTarget) {
+  public boolean appliesTo(@Nullable String nameOrTarget) {
     if (this._items.isEmpty()) return true;
     if (nameOrTarget == null) return false;
     return this._items.contains(nameOrTarget);
@@ -167,7 +168,7 @@ import org.pageseeder.berlioz.Beta;
    * @throws NullPointerException     If the use parameter is <code>null</code>.
    * @throws IllegalArgumentException If either argument is invalid.
    */
-  public static ServiceStatusRule newInstance(String use, String rule) {
+  public static ServiceStatusRule newInstance(String use, @Nullable String rule) {
     if (use == null) throw new NullPointerException("Argument use is null.");
     // Default rule to HIGHEST (if unspecified)
     CodeRule r = rule != null? CodeRule.valueOf(rule.toUpperCase()) : CodeRule.HIGHEST;

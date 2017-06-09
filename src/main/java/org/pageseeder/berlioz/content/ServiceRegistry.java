@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolver;
 import org.pageseeder.berlioz.furi.URIResolver.MatchRule;
@@ -39,7 +40,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8
  */
 public final class ServiceRegistry {
@@ -58,7 +59,7 @@ public final class ServiceRegistry {
    * Creates a new registry.
    */
   public ServiceRegistry() {
-    this.registry = new EnumMap<HttpMethod, ServiceMap>(HttpMethod.class);
+    this.registry = new EnumMap<>(HttpMethod.class);
     // Create a map for each mappable HTTP method
     for (HttpMethod m : HttpMethod.mappable()) {
       this.registry.put(m, new ServiceMap());
@@ -81,7 +82,7 @@ public final class ServiceRegistry {
     if (pattern == null) throw new NullPointerException("URL Pattern must be specified to register a service.");
     if (method == null) throw new NullPointerException("HTTP Method must be specified to register a service.");
     // Register the generator with the URL pattern
-    this.registry.get(method).put(pattern, service);
+    getMapping(method).put(pattern, service);
   }
 
   /**
@@ -93,9 +94,9 @@ public final class ServiceRegistry {
    *
    * @return A content generator which URI pattern matches this URL or <code>null</code>.
    */
-  public MatchingService get(String url) {
+  public @Nullable MatchingService get(String url) {
     for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = this.registry.get(m);
+      ServiceMap mapping = getMapping(m);
       MatchingService service = mapping.match(url);
       if (service != null) return service;
     }
@@ -114,9 +115,9 @@ public final class ServiceRegistry {
    * @return the list of HTTP methods allowed for this URL or an empty list.
    */
   public List<String> allows(String url) {
-    List<String> methods = new ArrayList<String>();
+    List<String> methods = new ArrayList<>();
     for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = this.registry.get(m);
+      ServiceMap mapping = getMapping(m);
       MatchingService service = mapping.match(url);
       if (service != null) {
         methods.add(m.toString());
@@ -135,10 +136,10 @@ public final class ServiceRegistry {
    *
    * @return the list of HTTP methods this Berlioz service is mapped to or <code>null</code>.
    */
-  public HttpMethod getMethod(Service service) {
+  public @Nullable HttpMethod getMethod(Service service) {
     if (service == null) return null;
     for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = this.registry.get(m);
+      ServiceMap mapping = getMapping(m);
       if (mapping.isMapped(service)) return m;
     }
     return null;
@@ -154,7 +155,7 @@ public final class ServiceRegistry {
   public List<String> matches(Service service) {
     if (service == null) return Collections.emptyList();
     for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = this.registry.get(m);
+      ServiceMap mapping = getMapping(m);
       boolean mapped = mapping.isMapped(service);
       if (mapped) return mapping.matches(service);
     }
@@ -171,9 +172,11 @@ public final class ServiceRegistry {
    *
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
-  public MatchingService get(String url, String method) {
+  public @Nullable MatchingService get(String url, String method) {
     if (method == null) return null;
-    return get(url, getHttpMethod(method));
+    HttpMethod m = getHttpMethod(method);
+    if (m == null) return null;
+    return get(url, m);
   }
 
   /**
@@ -186,13 +189,13 @@ public final class ServiceRegistry {
    *
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
-  public MatchingService get(String url, HttpMethod method) {
+  public @Nullable MatchingService get(String url, HttpMethod method) {
     if (method == null) return null;
     HttpMethod m = method;
     if (method == HttpMethod.HEAD) {
       m = HttpMethod.GET;
     }
-    ServiceMap mapping = this.registry.get(m);
+    ServiceMap mapping = getMapping(m);
     MatchingService service = mapping.match(url);
     return service;
   }
@@ -204,7 +207,7 @@ public final class ServiceRegistry {
    * @return an unmodifiable map of services by URI Pattern
    */
   public Map<String, Service> getServiceMap(HttpMethod method) {
-    ServiceMap map = this.registry.get(method);
+    ServiceMap map = getMapping(method);
     return Collections.unmodifiableMap(map.mapping);
   }
 
@@ -214,7 +217,7 @@ public final class ServiceRegistry {
    * @return the set of registered services.
    */
   public List<Service> getServices() {
-    List<Service> services = new ArrayList<Service>();
+    List<Service> services = new ArrayList<>();
     for (ServiceMap map : this.registry.values()) {
      services.addAll(map.mapping.values());
     }
@@ -228,13 +231,13 @@ public final class ServiceRegistry {
    * @return the list of services.
    */
   public List<Service> getServices(HttpMethod method) {
-    ServiceMap map = this.registry.get(method);
-    Set<Service> services = new HashSet<Service>(map.mapping.values());
-    return new ArrayList<Service>(services);
+    ServiceMap map = getMapping(method);
+    Set<Service> services = new HashSet<>(map.mapping.values());
+    return new ArrayList<>(services);
   }
 
   /**
-   * Clears each generator mapping.
+   * Clears the service registry.
    */
   public void clear() {
     for (ServiceMap map : this.registry.values()) {
@@ -261,14 +264,19 @@ public final class ServiceRegistry {
    *
    * @param method The method to find
    * @return The corresponding instance or <code>null</code> if no match.
-   *
-   * @throws IllegalArgumentException if the HTTP method is not valid
    */
-  private HttpMethod getHttpMethod(String method) throws IllegalArgumentException {
+  private @Nullable HttpMethod getHttpMethod(String method) {
     for (HttpMethod m : HttpMethod.values()) {
       if (m.name().equals(method.toUpperCase())) return m;
     }
     return null;
+  }
+
+  private ServiceMap getMapping(HttpMethod method) {
+    ServiceMap mapping = this.registry.get(method);
+    // this should never happen since we initialise method
+    if (mapping == null) throw new IllegalStateException("Failure to initialize service registry");
+    return mapping;
   }
 
   /**
@@ -287,12 +295,12 @@ public final class ServiceRegistry {
     /**
      * Maps services to the URI Pattern.
      */
-    private final Map<String, Service> mapping = new Hashtable<String, Service>();
+    private final Map<String, Service> mapping = new Hashtable<>();
 
     /**
      * List of URI Patterns that match a service.
      */
-    private final List<URIPattern> patterns = new ArrayList<URIPattern>();
+    private final List<URIPattern> patterns = new ArrayList<>();
 
     /**
      * Puts the given content generator in this map.
@@ -317,7 +325,7 @@ public final class ServiceRegistry {
      * @param url The URL
      * @return the content generator for the specified URL.
      */
-    public MatchingService match(String url) {
+    public @Nullable MatchingService match(String url) {
       // Attempt to the find service directly
       MatchingService match = null;
       Service service = this.mapping.get(url);
@@ -332,7 +340,9 @@ public final class ServiceRegistry {
         URIPattern p = resolver.find(this.patterns, MatchRule.BEST_MATCH);
         if (p != null) {
           service = this.mapping.get(p.toString());
-          match = new MatchingService(service, p, resolver.resolve(p));
+          if (service != null) {
+            match = new MatchingService(service, p, resolver.resolve(p));
+          }
         }
       }
       return match;
@@ -355,7 +365,7 @@ public final class ServiceRegistry {
      * @return the list URI pattern is matches
      */
     public List<String> matches(Service service) {
-      List<String> urls = new ArrayList<String>();
+      List<String> urls = new ArrayList<>();
       for (Entry<String, Service> e : this.mapping.entrySet()) {
         if (e.getValue() == service) {
           urls.add(e.getKey());

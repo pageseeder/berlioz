@@ -17,6 +17,8 @@ package org.pageseeder.berlioz.content;
 
 import java.io.File;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Returns the environment for the service.
  *
@@ -65,7 +67,7 @@ public interface Environment {
    * @param name  the name of the property
    * @return  the property value or <code>null</code>.
    */
-  String getProperty(String name);
+  @Nullable String getProperty(String name);
 
   /**
    * Returns the requested property or it default value.

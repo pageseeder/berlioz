@@ -21,6 +21,8 @@ import java.util.Enumeration;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Provides a generic and uniform mechanism for the content generator to access parameters
  * and attributes from a request.
@@ -60,7 +62,7 @@ public interface ContentRequest {
    *
    * @return A <code>String</code> or <code>null</code>.
    */
-  String getParameter(String name);
+  @Nullable String getParameter(String name);
 
   /**
    * Returns the specified parameter value or the specified default if <code>null</code>.
@@ -72,7 +74,7 @@ public interface ContentRequest {
    *
    * @return A value of the parameter or the default value if missing.
    */
-  String getParameter(String name, String def);
+  @Nullable String getParameter(String name, @Nullable String def);
 
   /**
    * Returns the specified parameter value.
@@ -108,7 +110,7 @@ public interface ContentRequest {
    *
    * @return An array of String objects containing the parameter's values
    */
-  String[] getParameterValues(String name);
+  String @Nullable[] getParameterValues(String name);
 
   /**
    * Returns an <code>Enumeration</code> of <code>String</code> objects containing the names of
@@ -128,7 +130,7 @@ public interface ContentRequest {
    *
    * @return the specified attribute object or <code>null</code>.
    */
-  Object getAttribute(String name);
+  @Nullable Object getAttribute(String name);
 
   /**
    * Sets the specified attribute object or <code>null</code>.
@@ -147,7 +149,7 @@ public interface ContentRequest {
    *
    * @return A <code>Date</code> instance or <code>null</code> if not specified.
    */
-  Date getDateParameter(String name);
+  @Nullable Date getDateParameter(String name);
 
   /**
    * Returns an array containing all of the Cookie objects the client sent with this request.
@@ -157,7 +159,7 @@ public interface ContentRequest {
    * @return An array of all the Cookies included with this request,
    *         or <code>null</code> if the request has no cookies
    */
-  Cookie[] getCookies();
+  Cookie @Nullable[] getCookies();
 
   /**
    * Returns the session of the wrapped HTTP servlet request.

@@ -24,6 +24,8 @@ import java.util.List;
 
 import javax.xml.parsers.SAXParser;
 
+import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
@@ -37,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
@@ -49,7 +52,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.0
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6
  */
 public final class ServiceLoader {
@@ -149,7 +152,7 @@ public final class ServiceLoader {
     File webinf = GlobalSettings.getWebInf();
     File config = new File(webinf, "config");
     File xml = new File(config, "services.xml");
-    File[] subs = config.listFiles(FILE_FILTER);
+    @NonNull File[] subs = config.listFiles(FILE_FILTER);
     List<File> files;
 
     // `services.xml` file and/or at least one module
@@ -249,7 +252,7 @@ public final class ServiceLoader {
     /**
      * The document locator for use when reporting the location of errors and warnings.
      */
-    private Locator _locator;
+    private @Nullable Locator locator;
 
     /**
      * Create a new version sniffer for the specified XML reader.
@@ -263,8 +266,8 @@ public final class ServiceLoader {
     }
 
     @Override
-    public void setDocumentLocator(Locator locator) {
-      this._locator = locator;
+    public void setDocumentLocator(@Nullable Locator locator) {
+      this.locator = locator;
     }
 
     /**
@@ -278,7 +281,7 @@ public final class ServiceLoader {
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
       // Identify the handler to use
       ContentHandler handler = getHandler(localName, atts);
-      handler.setDocumentLocator(this._locator);
+      handler.setDocumentLocator(this.locator);
       // re-trigger events on handler to ensure proper initialisation
       handler.startDocument();
       handler.startElement(uri, localName, qName, atts);
@@ -296,7 +299,8 @@ public final class ServiceLoader {
      * @throws SAXException if the the file being parsed is not a service configuration.
      */
     private ContentHandler getHandler(String name, Attributes atts) throws SAXException {
-      SAXErrorCollector collector = (SAXErrorCollector)this._reader.getErrorHandler();
+      SAXErrorCollector collector = getErrorCollector(this._reader);
+
       // Service configuration
       if ("service-config".equals(name)) {
         String version = atts.getValue("version");
@@ -320,13 +324,18 @@ public final class ServiceLoader {
       // Definitely not supported
       } else {
         LOGGER.error("Unable to determine Berlioz configuration");
-        SAXParseException fatal = new SAXParseException("Not a valid Berlioz service configuration!", this._locator);
+        SAXParseException fatal = new SAXParseException("Not a valid Berlioz service configuration!", this.locator);
         collector.fatalError(fatal);
         // Just in case it wasn't thrown
         throw fatal;
       }
     }
 
+    private SAXErrorCollector getErrorCollector(XMLReader reader) {
+      ErrorHandler collector = reader.getErrorHandler();
+      if (!(collector instanceof SAXErrorCollector)) throw new IllegalStateException("Expected SAX error collector for reader!");
+      return (SAXErrorCollector)collector;
+    }
   }
 
 }

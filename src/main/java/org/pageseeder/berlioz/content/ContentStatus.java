@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * An enumeration of status codes supported by Berlioz generators.
  *
@@ -23,7 +25,7 @@ package org.pageseeder.berlioz.content;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.10 - 3 December 2012
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8.2
  */
 public enum ContentStatus {
@@ -354,7 +356,7 @@ public enum ContentStatus {
    *
    * @since Berlioz 0.8.3
    */
-  public static ContentStatus forCode(int code) {
+  public static @Nullable ContentStatus forCode(int code) {
     for (ContentStatus status : values()) {
       // First match (all content status have a different HTTP code)
       if (status.code() == code) return status;

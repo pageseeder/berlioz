@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 import org.pageseeder.berlioz.http.HttpMethod;
@@ -35,9 +36,9 @@ import org.slf4j.LoggerFactory;
 /**
  * A list of of content generators or content instructions.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class Service {
@@ -194,7 +195,7 @@ public final class Service {
    * @param generator the content generator for which we need the target.
    * @return the target if any (may be <code>null</code>).
    */
-  public String target(ContentGenerator generator) {
+  public @Nullable String target(ContentGenerator generator) {
     return this._targets.get(generator);
   }
 
@@ -255,23 +256,25 @@ public final class Service {
    * @throws IOException if thrown by the XML writer.
    */
   @Beta
-  public void toXML(XMLWriter xml, HttpMethod method, List<String> urls, String cacheControl) throws IOException {
+  public void toXML(XMLWriter xml, HttpMethod method, List<String> urls, @Nullable String cacheControl) throws IOException {
     xml.openElement("service", true);
     xml.attribute("id", this._id);
-    if (this._group != null) {
-      xml.attribute("group", this._group);
-    }
+    xml.attribute("group", this._group);
     if (method != null) {
       xml.attribute("method", method.toString().toLowerCase());
     }
-    if (this._flags != null) {
+    if (this._flags.length() > 0) {
       xml.attribute("flags", this._flags);
     }
 
     // Caching information
     xml.attribute("cacheable", Boolean.toString(this._cacheable));
-    if (this._cacheable && (cacheControl != null || this._cache != null)) {
-      xml.attribute("cache-control", this._cache != null? this._cache : cacheControl);
+    if (this._cacheable) {
+      if (this._cache.length()>0) {
+        xml.attribute("cache-control", this._cache.length());
+      } else if (cacheControl != null) {
+        xml.attribute("cache-control", cacheControl);
+      }
     }
 
     // How the response code is calculated
@@ -291,11 +294,14 @@ public final class Service {
 
     // Generators
     for (ContentGenerator generator : this._generators) {
+      String target = target(generator);
       List<Parameter> parameters = parameters(generator);
       xml.openElement("generator", !parameters.isEmpty());
       xml.attribute("class", generator.getClass().getName());
       xml.attribute("name", name(generator));
-      xml.attribute("target", target(generator));
+      if (target != null) {
+        xml.attribute("target", target);
+      }
       xml.attribute("cacheable", Boolean.toString(generator instanceof Cacheable));
       xml.attribute("affect-status", Boolean.toString(affectStatus(generator)));
       for (Parameter p : parameters) {
@@ -336,47 +342,47 @@ public final class Service {
     /**
      * The ID of the service to build.
      */
-    private String id;
+    private @Nullable String id;
 
     /**
      * The group the service to build belongs to.
      */
-    private String group;
+    private String group = "default";
 
     /**
      * The value of the 'Cache-Control' header for this service.
      */
-    private String cache;
+    private String cache = "";
 
     /**
      * The value of the 'Cache-Control' header for this service.
      */
-    private String flags;
+    private String flags = "";
 
     /**
      * Maps targets to a given generator instance.
      */
-    private ServiceStatusRule rule;
+    private @Nullable ServiceStatusRule rule;
 
     /**
      * The list of generators associated with this service.
      */
-    private final List<ContentGenerator> _generators = new ArrayList<ContentGenerator>();
+    private final List<ContentGenerator> _generators = new ArrayList<>();
 
     /**
      * Maps parameter specifications to a given generator instance.
      */
-    private final Map<ContentGenerator, List<Parameter>> _parameters = new HashMap<ContentGenerator, List<Parameter>>();
+    private final Map<ContentGenerator, List<Parameter>> _parameters = new HashMap<>();
 
     /**
      * Maps names to a given generator instance.
      */
-    private final Map<ContentGenerator, String> _names = new HashMap<ContentGenerator, String>();
+    private final Map<ContentGenerator, String> _names = new HashMap<>();
 
     /**
      * Maps targets to a given generator instance.
      */
-    private final Map<ContentGenerator, String> _targets = new HashMap<ContentGenerator, String>();
+    private final Map<ContentGenerator, String> _targets = new HashMap<>();
 
     /**
      * Creates a new builder.
@@ -389,8 +395,15 @@ public final class Service {
      *
      * @return the ID of the service to build.
      */
-    public String id() {
+    public @Nullable String id() {
       return this.id;
+    }
+
+    /**
+     * @return the group of the service to build.
+     */
+    public String group() {
+      return this.group;
     }
 
     /**
@@ -410,8 +423,8 @@ public final class Service {
      * @param group the group of the service to build.
      * @return this builder for easy chaining.
      */
-    public Builder group(String group) {
-      this.group = group;
+    public Builder group(@Nullable String group) {
+      this.group = group != null? group : "default";
       return this;
     }
 
@@ -421,8 +434,8 @@ public final class Service {
      * @param cache the 'Cache-Control' value of the service to build.
      * @return this builder for easy chaining.
      */
-    public Builder cache(String cache) {
-      this.cache = cache;
+    public Builder cache(@Nullable String cache) {
+      this.cache = cache != null? cache : "";
       return this;
     }
 
@@ -432,8 +445,8 @@ public final class Service {
      * @param flags the flags of the service to build.
      * @return this builder for easy chaining.
      */
-    public Builder flags(String flags) {
-      this.flags = flags;
+    public Builder flags(@Nullable String flags) {
+      this.flags = flags != null? flags : "";
       return this;
     }
 
@@ -454,12 +467,12 @@ public final class Service {
      * @param p The parameter to add to the latest generator added.
      * @return this builder for easy chaining.
      */
-    public Builder parameter(Parameter p) {
-      if (this._generators.size() > 0) {
+    public Builder parameter(@Nullable Parameter p) {
+      if (this._generators.size() > 0 && p != null) {
         ContentGenerator generator = this._generators.get(this._generators.size() - 1);
         List<Parameter> parameters = this._parameters.get(generator);
         if (parameters == null) {
-          parameters = new ArrayList<Parameter>();
+          parameters = new ArrayList<>();
           this._parameters.put(generator, parameters);
         }
         parameters.add(p);
@@ -484,7 +497,7 @@ public final class Service {
      * @param target the target for the latest content generator.
      * @return this builder for easy chaining.
      */
-    public Builder target(String target) {
+    public Builder target(@Nullable String target) {
       if (this._generators.size() > 0 && target != null) {
         ContentGenerator generator = this._generators.get(this._generators.size() - 1);
         this._targets.put(generator, target);
@@ -498,7 +511,7 @@ public final class Service {
      * @param name the name for the latest content generator.
      * @return this builder for easy chaining.
      */
-    public Builder name(String name) {
+    public Builder name(@Nullable String name) {
       if (this._generators.size() > 0 && name != null) {
         ContentGenerator generator = this._generators.get(this._generators.size() - 1);
         this._names.put(generator, name);
@@ -527,8 +540,8 @@ public final class Service {
      */
     public void reset() {
       this.id = null;
-      this.cache = null;
-      this.flags = null;
+      this.cache = "";
+      this.flags = "";
       this._generators.clear();
       this._parameters.clear();
       this._names.clear();
@@ -548,7 +561,7 @@ public final class Service {
       return Collections.emptyList();
     else if (original.size() == 1) return Collections.singletonList(original.get(0));
     else
-      return Collections.unmodifiableList(new ArrayList<ContentGenerator>(original));
+      return Collections.unmodifiableList(new ArrayList<>(original));
   }
 
   /**
@@ -562,11 +575,11 @@ public final class Service {
       return Collections.emptyMap();
     else if (original.size() == 1) {
       Entry<ContentGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
-      return Collections.singletonMap(entry.getKey(), immutable2(entry.getValue()));
+      return Collections.singletonMap(entry.getKey(), immutableList(entry.getValue()));
     } else {
-      Map<ContentGenerator, List<Parameter>> map = new HashMap<ContentGenerator, List<Parameter>>();
+      Map<ContentGenerator, List<Parameter>> map = new HashMap<>();
       for (Entry<ContentGenerator, List<Parameter>> entry : original.entrySet()) {
-        map.put(entry.getKey(), immutable2(entry.getValue()));
+        map.put(entry.getKey(), immutableList(entry.getValue()));
       }
       return Collections.unmodifiableMap(map);
     }
@@ -578,12 +591,12 @@ public final class Service {
    * @param original the list maintained by the builder.
    * @return a new identical immutable list.
    */
-  private static List<Parameter> immutable2(List<Parameter> original) {
+  private static <T> List<T> immutableList(List<T> original) {
     if (original.isEmpty())
       return Collections.emptyList();
     else if (original.size() == 1) return Collections.singletonList(original.get(0));
     else
-      return Collections.unmodifiableList(new ArrayList<Parameter>(original));
+      return Collections.unmodifiableList(new ArrayList<>(original));
   }
 
   /**
@@ -599,7 +612,7 @@ public final class Service {
       Entry<ContentGenerator, String> entry = original.entrySet().iterator().next();
       return Collections.singletonMap(entry.getKey(), entry.getValue());
     } else {
-      Map<ContentGenerator, String> map = new HashMap<ContentGenerator, String>();
+      Map<ContentGenerator, String> map = new HashMap<>();
       for (Entry<ContentGenerator, String> entry : original.entrySet()) {
         map.put(entry.getKey(), entry.getValue());
       }

@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Generators implementing this interface can be cached and must provide a consistent content
  * response given a content request.
@@ -38,6 +40,6 @@ public interface Cacheable {
    * @param req the content request.
    * @return The corresponding ETag.
    */
-  String getETag(ContentRequest req);
+  @Nullable String getETag(ContentRequest req);
 
 }

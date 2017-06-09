@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
@@ -41,7 +42,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
@@ -106,7 +107,7 @@ final class ServicesHandler10 extends DefaultHandler {
      * @param name The name of the element.
      * @return The name of the element.
      */
-    public static Element get(String name) {
+    public static @Nullable Element get(String name) {
       for (Element element : values()) {
         if (element._name.equals(name)) return element;
       }
@@ -123,17 +124,17 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The list of URI patterns for the current service.
    */
-  private final List<URIPattern> _patterns = new ArrayList<URIPattern>();
+  private final List<URIPattern> _patterns = new ArrayList<>();
 
   /**
    * The current HTTP method for the service.
    */
-  private HttpMethod _method;
+  private HttpMethod method = HttpMethod.GET;
 
   /**
    * The document locator for use when reporting errors and warnings.
    */
-  private Locator _locator;
+  private @Nullable Locator locator;
 
   /**
    * The service builder.
@@ -143,17 +144,17 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The rules for the services, this list is used like a stack.
    */
-  private final List<ServiceStatusRule> _rules = new ArrayList<ServiceStatusRule>();
+  private final List<ServiceStatusRule> _rules = new ArrayList<>();
 
   /**
    * Used to detect duplicate URI Patterns.
    */
-  private final Set<Pair<HttpMethod, URIPattern>> _patternsToMethod = new HashSet<Pair<HttpMethod, URIPattern>>();
+  private final Set<Pair<HttpMethod, URIPattern>> _patternsToMethod = new HashSet<>();
 
   /**
    * Used to detect duplicate service groups.
    */
-  private final Set<String> _groups = new HashSet<String>();
+  private final Set<String> _groups = new HashSet<>();
 
   /**
    * Creates a new handler that will update the specified registry and use the given error handler.
@@ -172,7 +173,7 @@ final class ServicesHandler10 extends DefaultHandler {
 
   @Override
   public void setDocumentLocator(Locator locator) {
-    this._locator = locator;
+    this.locator = locator;
   }
 
   @Override
@@ -181,6 +182,10 @@ final class ServicesHandler10 extends DefaultHandler {
     if (this._collector.hasError()) return;
     // Identify element
     Element element = Element.get(localName);
+    if (element == null) {
+      warning("Unknown element "+localName+" found");
+      return;
+    }
     switch(element) {
       case SERVICE_CONFIG:
         this._registry.clear();
@@ -189,7 +194,7 @@ final class ServicesHandler10 extends DefaultHandler {
       case SERVICES:
         String group = atts.getValue("group");
         this._builder.group(group);
-        if (!this._groups.add(group)) {
+        if (!this._groups.add(this._builder.group())) {
           warning("Duplicate group of services '"+group+"' - services will belong to the same group");
         }
         // If no rule where defined at the 'service-config' level, we assume the default rule
@@ -203,7 +208,8 @@ final class ServicesHandler10 extends DefaultHandler {
         if (this._rules.size() == 1) {
           this._rules.add(ServiceStatusRule.DEFAULT_RULE);
         }
-        this._builder.id(atts.getValue("id"));
+        String id = atts.getValue("id");
+        this._builder.id(id != null? id : "");
         this._builder.cache(atts.getValue("cache-control"));
         this._builder.flags(atts.getValue("flags"));
         handleMethod(atts.getValue("method"));
@@ -235,20 +241,25 @@ final class ServicesHandler10 extends DefaultHandler {
     if (this._collector.hasError()) return;
     // Identify element
     Element element = Element.get(localName);
+    // We've already put a warning in the startElement
+    if (element == null) return;
     switch(element) {
       case SERVICE:
+        HttpMethod method = this.method;
         // Assign the latest rule
         this._builder.rule(this._rules.get(this._rules.size() - 1));
-        Service service = this._builder.build();
-        if (this._method == null) {
-          warning("No HTTP method for "+service.id()+" - service will be ignored");
-        } else if (this._patterns.isEmpty()) {
-          warning("No URI pattern match service "+service.id()+" - service will be ignored");
-        } else {
-          for (URIPattern pattern : this._patterns) {
-            this._registry.register(service, pattern, this._method);
-            LOGGER.debug("Assigning "+pattern+" ["+this._method+"] to "+service);
+        if (!"".equals(this._builder.id())) {
+          Service service = this._builder.build();
+          if (this._patterns.isEmpty()) {
+            warning("No URI pattern match service "+service.id()+" - service will be ignored");
+          } else {
+            for (URIPattern pattern : this._patterns) {
+              this._registry.register(service, pattern, method);
+              LOGGER.debug("Assigning "+pattern+" ["+method+"] to "+service);
+            }
           }
+        } else {
+          warning("Service cannot be created without an id");
         }
         this._builder.reset();
         this._patterns.clear();
@@ -314,15 +325,14 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @throws SAXException Only if thrown by error handler
    */
-  private Parameter toParameter(Attributes atts) throws SAXException {
+  private @Nullable Parameter toParameter(Attributes atts) throws SAXException {
     String name = atts.getValue("name");
     String value = atts.getValue("value");
-    try {
-      return new Parameter(name, value);
-    } catch (NullPointerException ex) {
+    if (name == null || value == null) {
       warning("Bad parameter specifications - ignoring");
       return null;
     }
+    return new Parameter(name, value);
   }
 
   /**
@@ -332,10 +342,14 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @throws SAXException Only if thrown by underlying error handler.
    */
-  private void handlePattern(String pattern) throws SAXException {
+  private void handlePattern(@Nullable String pattern) throws SAXException {
+    if (pattern == null) {
+      warning("Ignoring null pattern", null);
+      return;
+    }
     try {
       URIPattern p = new URIPattern(pattern);
-      Pair<HttpMethod, URIPattern> k = new Pair<HttpMethod, URIPattern>(this._method, p);
+      Pair<HttpMethod, URIPattern> k = new Pair<>(this.method, p);
       if (this._patternsToMethod.add(k)) {
         this._patterns.add(p);
       } else {
@@ -354,7 +368,11 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @throws SAXException Only if thrown by underlying error handler.
    */
-  private void handleResponseCode(String use, String rule) throws SAXException {
+  private void handleResponseCode(@Nullable String use, @Nullable String rule) throws SAXException {
+    if (use == null) {
+      warning("Ignoring response code rule: @use is null", null);
+      return;
+    }
     try {
       this._rules.add(ServiceStatusRule.newInstance(use, rule));
     } catch (IllegalArgumentException ex) {
@@ -369,13 +387,16 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @throws SAXException Only if thrown by underlying error handler.
    */
-  private void handleMethod(String method) throws SAXException {
-    try {
-      this._method = HttpMethod.valueOf(method.toUpperCase());
-    } catch (NullPointerException ex) {
-      warning("Ignoring null method for service id "+this._builder.id(), ex);
-    } catch (IllegalArgumentException ex) {
-      warning("Ignoring illegal method '"+method+"' for service id "+this._builder.id(), ex);
+  private void handleMethod(@Nullable String method) throws SAXException {
+    if (method == null) {
+      warning("Ignoring null method for service id "+this._builder.id()+" defaulting to GET");
+      this.method = HttpMethod.GET;
+    } else {
+      try {
+        this.method = HttpMethod.valueOf(method.toUpperCase());
+      } catch (IllegalArgumentException ex) {
+        warning("Ignoring illegal method '"+method+"' for service id "+this._builder.id(), ex);
+      }
     }
   }
 
@@ -421,7 +442,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * @throws SAXException Only if thrown by underlying error handler.
    */
   public void warning(String message) throws SAXException {
-    SAXParseException warning = new SAXParseException(message, this._locator);
+    SAXParseException warning = new SAXParseException(message, this.locator);
     warning(warning);
   }
 
@@ -435,8 +456,8 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @throws SAXException Only if thrown by underlying error handler.
    */
-  public void warning(String message, Exception ex) throws SAXException {
-    SAXParseException warning = new SAXParseException(message, this._locator, ex);
+  public void warning(String message, @Nullable Exception ex) throws SAXException {
+    SAXParseException warning = new SAXParseException(message, this.locator, ex);
     warning(warning);
   }
 

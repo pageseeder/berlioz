@@ -22,12 +22,14 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Defines a simple template for parameter values.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8.2
  */
 public final class ParameterTemplate {
@@ -85,14 +87,17 @@ public final class ParameterTemplate {
     if (template.indexOf('{') < 0) return ParameterTemplate.value(template);
     // Parse
     Matcher m = VARIABLE.matcher(template);
-    List<Token> tokens = new ArrayList<Token>();
+    List<Token> tokens = new ArrayList<>();
     int start = 0;
     while (m.find()) {
       if (m.start() > start) {
         String text = template.substring(start, m.start());
         tokens.add(new Literal(text));
       }
-      tokens.add(parseToken(m.group()));
+      Token t = parseToken(m.group());
+      if (t != null) {
+        tokens.add(t);
+      }
       start = m.end();
     }
     if (start < template.length()) {
@@ -153,7 +158,7 @@ public final class ParameterTemplate {
    * @param token the token to parse
    * @return the corresponding token instance.
    */
-  public static Token parseToken(String token) {
+  public static @Nullable Token parseToken(@Nullable String token) {
     if (token == null || token.isEmpty()) return null;
     if (token.length() > 1 && token.charAt(0) == '{' && token.charAt(token.length()-1) == '}') {
       int eq = token.indexOf('=');
