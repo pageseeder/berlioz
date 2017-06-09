@@ -43,7 +43,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class GetParameters implements ContentGenerator, Cacheable {
@@ -56,12 +56,15 @@ public final class GetParameters implements ContentGenerator, Cacheable {
   @Override
   public String getETag(ContentRequest req) {
     StringBuilder hash = new StringBuilder("?");
+    // TODO Use parameter map
     Enumeration<String> names = req.getParameterNames();
     while (names.hasMoreElements()) {
       String name = names.nextElement();
       String[] values = req.getParameterValues(name);
-      for (String value : values) {
-        hash.append(name).append('=').append(value).append('&');
+      if (values != null) {
+        for (String value : values) {
+          hash.append(name).append('=').append(value).append('&');
+        }
       }
     }
     // Returns a hash of the query string
@@ -76,11 +79,13 @@ public final class GetParameters implements ContentGenerator, Cacheable {
     while (names.hasMoreElements()) {
       String paramName = names.nextElement();
       String[] values = req.getParameterValues(paramName);
-      for (String value : values) {
-        xml.openElement("parameter", false);
-        xml.attribute("name", paramName);
-        xml.writeText(value);
-        xml.closeElement();
+      if (values != null) {
+        for (String value : values) {
+          xml.openElement("parameter", false);
+          xml.attribute("name", paramName);
+          xml.writeText(value);
+          xml.closeElement();
+        }
       }
     }
     xml.closeElement(); // close parameters

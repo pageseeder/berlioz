@@ -16,4 +16,5 @@
 /**
  * A collection of basic content generator implementations.
  */
+@org.eclipse.jdt.annotation.NonNullByDefault
 package org.pageseeder.berlioz.generator;

@@ -17,8 +17,9 @@ package org.pageseeder.berlioz.generator;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Enumeration;
+import java.util.Map.Entry;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
@@ -52,13 +53,13 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8
  */
 public final class GetGlobalConfig implements ContentGenerator, Cacheable {
 
   @Override
-  public String getETag(ContentRequest req) {
+  public @Nullable String getETag(ContentRequest req) {
     File global = GlobalSettings.getPropertiesFile();
     if (global == null) return null;
     return MD5.hash(global.length()+"x"+global.lastModified());
@@ -66,16 +67,23 @@ public final class GetGlobalConfig implements ContentGenerator, Cacheable {
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
-    Enumeration<String> names = GlobalSettings.propertyNames();
+    File global = GlobalSettings.getPropertiesFile();
+
     xml.openElement("properties", true);
-    xml.attribute("source", GlobalSettings.getPropertiesFile().getName());
-    while (names.hasMoreElements()) {
-      String name = names.nextElement();
+    if (global != null) {
+      xml.attribute("source", global.getName());
+    }
+
+    // Iterate over properties
+    for (Entry<String, String> e : GlobalSettings.getAll().entrySet()) {
+      String name = e.getKey();
+      String value = e.getValue();
       xml.openElement("property", false);
       xml.attribute("name", name);
-      xml.attribute("value", GlobalSettings.get(name));
+      xml.attribute("value", value);
       xml.closeElement();
     }
+
     xml.closeElement();
   }
 

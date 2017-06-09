@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.generator;
 import java.io.IOException;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
@@ -137,7 +138,7 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
    *
    * @throws IOException if an error occurs while writing the XML error message
    */
-  private HttpMethod getMethod(ContentRequest req, XMLWriter xml) throws IOException {
+  private @Nullable HttpMethod getMethod(ContentRequest req, XMLWriter xml) throws IOException {
     String method = req.getParameter("method", "GET");
     try {
       return HttpMethod.valueOf(method);
@@ -161,7 +162,7 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
    *
    * @throws IOException if an error occurs while writing the XML error message
    */
-  private String getURL(ContentRequest req, XMLWriter xml) throws IOException {
+  private @Nullable String getURL(ContentRequest req, XMLWriter xml) throws IOException {
     String url = req.getParameter("url", "");
     if (url.isEmpty()) {
       xml.openElement("error");

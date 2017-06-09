@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.ErrorID;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
@@ -82,20 +83,15 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *                         name="[name]" target="[target]"/>}</pre>
  *
  * <h3>Etag</h3>
- * <p>This generator is not cacheble.</code>.
+ * <p>This generator is not cacheable.</code>.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32 - 29 January 2015
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8.7
  */
 public final class GetErrorDetails implements ContentGenerator {
 
-  /**
-   * Display the error details.
-   *
-   * {@inheritDoc}
-   */
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
@@ -119,8 +115,9 @@ public final class GetErrorDetails implements ContentGenerator {
     xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
     // If it has a Berlioz ID
-    if (exception instanceof BerliozException && ((BerliozException)exception).id() != null) {
-      xml.attribute("id", ((BerliozException)exception).id().id());
+    ErrorID berliozId = exception instanceof BerliozException? ((BerliozException)exception).id() : null;
+    if (berliozId != null) {
+      xml.attribute("id", berliozId.id());
     } else {
       xml.attribute("id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString());
     }
