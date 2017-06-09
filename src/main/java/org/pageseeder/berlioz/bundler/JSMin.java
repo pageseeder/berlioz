@@ -57,7 +57,7 @@ import java.io.PushbackInputStream;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class JSMin {
@@ -84,7 +84,7 @@ public final class JSMin {
   /**
    * The minimised version.
    */
-  private OutputStream _out;
+  private OutputStream out;
 
   /** What to do with byte A. */
   private int theA;
@@ -110,7 +110,7 @@ public final class JSMin {
    */
   public JSMin(InputStream in, OutputStream out) {
     this._in = new PushbackInputStream(in);
-    this._out = out;
+    this.out = out;
     this.line = 0;
     this.column = 0;
   }
@@ -234,21 +234,21 @@ public final class JSMin {
   private void process(int action) throws IOException, UnterminatedRegExpLiteralException, UnterminatedCommentException, UnterminatedStringLiteralException {
     switch (action) {
       case WRITE:
-        this._out.write(this.theA);
+        this.out.write(this.theA);
 
       // fall through
       case COPY:
         this.theA = this.theB;
         if (this.theA == '\'' || this.theA == '"') {
           for (;;) {
-            this._out.write(this.theA);
+            this.out.write(this.theA);
             this.theA = get();
             if (this.theA == this.theB) {
               break;
             }
             if (this.theA <= '\n') throw new UnterminatedStringLiteralException(this.line, this.column);
             if (this.theA == '\\') {
-              this._out.write(this.theA);
+              this.out.write(this.theA);
               this.theA = get();
             }
           }
@@ -261,17 +261,17 @@ public final class JSMin {
             && (this.theA == '(' || this.theA == ',' || this.theA == '=' || this.theA == ':' || this.theA == '[' || this.theA == '!' || this.theA == '&'
                 || this.theA == '|' || this.theA == '?' || this.theA == '{' || this.theA == '}' || this.theA == ';' || this.theA == '\n')) {
 
-          this._out.write(this.theA);
-          this._out.write(this.theB);
+          this.out.write(this.theA);
+          this.out.write(this.theB);
           for (;;) {
             this.theA = get();
             if (this.theA == '/') {
               break;
             } else if (this.theA == '\\') {
-              this._out.write(this.theA);
+              this.out.write(this.theA);
               this.theA = get();
             } else if (this.theA <= '\n') throw new UnterminatedRegExpLiteralException(this.line, this.column);
-            this._out.write(this.theA);
+            this.out.write(this.theA);
           }
           this.theB = next();
         }
@@ -361,7 +361,7 @@ public final class JSMin {
           }
       }
     }
-    this._out.flush();
+    this.out.flush();
   }
 
   // Predefined Exceptions

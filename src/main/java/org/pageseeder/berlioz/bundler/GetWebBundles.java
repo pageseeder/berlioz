@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
@@ -115,7 +117,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class GetWebBundles implements ContentGenerator, Cacheable {
@@ -123,24 +125,24 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
   /**
    * The CSS bundle configuration - static as it is common to all generators.
    */
-  private static final Map<String, BundleConfig> CSS_CONFIGS = new HashMap<String, BundleConfig>();
+  private static final Map<String, BundleConfig> CSS_CONFIGS = new HashMap<>();
 
   /**
    * The JS bundle configuration - static as it is common to all generators.
    */
-  private static final Map<String, BundleConfig> JS_CONFIGS = new HashMap<String, BundleConfig>();
+  private static final Map<String, BundleConfig> JS_CONFIGS = new HashMap<>();
 
   /**
    * Indicates whether the bundle can be written..
    */
-  private static volatile Boolean isWritable = null;
+  private static volatile @Nullable Boolean isWritable = null;
 
   @Override
-  public String getETag(ContentRequest req) {
+  public @Nullable String getETag(ContentRequest req) {
     HttpContentRequest hreq = (HttpContentRequest)req;
     Service service = hreq.getService();
     Environment env = req.getEnvironment();
-    String config = req.getParameter("config", "default");
+    String config = getConfig(req);
     // Get the bundle configurations
     BundleConfig js = getConfig(config, BundleType.JS, env.getPublicFolder());
     BundleConfig css =  getConfig(config, BundleType.CSS, env.getPublicFolder());
@@ -165,7 +167,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
 
     // Parameters
     boolean doBundle = canBundle(req);
-    String config = req.getParameter("config", "default");
+    String config = getConfig(req);
 
     // Scripts
     BundleConfig js = getConfig(config, BundleType.JS, env.getPublicFolder());
@@ -216,6 +218,10 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
 
   // Private helpers
   // ----------------------------------------------------------------------------------------------
+
+  private static String getConfig(ContentRequest req) {
+    return Objects.requireNonNull(req.getParameter("config", "default"));
+  }
 
   /**
    * @param req content request

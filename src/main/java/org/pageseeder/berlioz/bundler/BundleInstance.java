@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.content.Service;
 
 /**
@@ -31,7 +32,7 @@ import org.pageseeder.berlioz.content.Service;
  *
  * @author christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 final class BundleInstance implements Serializable {
@@ -81,9 +82,9 @@ final class BundleInstance implements Serializable {
    * Return the bundle file for this instance.
    *
    * @param config the bundle configuration
-   * @return the corresponding file
+   * @return the corresponding file or <code>null</code> if an error occurred
    */
-  public File getBundleFile(BundleConfig config) {
+  public @Nullable File getBundleFile(BundleConfig config) {
     List<File> files = listExistingFiles();
     WebBundleTool bundler = config.bundler();
     File bundle = null;
@@ -163,7 +164,7 @@ final class BundleInstance implements Serializable {
     if (paths == null) return Collections.emptyList();
     if (paths.length > 1) {
       // multiple paths specified
-      List<String> existing = new ArrayList<String>(paths.length);
+      List<String> existing = new ArrayList<>(paths.length);
       for (int i = 0; i < files.length; i++) {
         if (files[i].exists()) {
           existing.add(paths[i]);
@@ -188,7 +189,7 @@ final class BundleInstance implements Serializable {
     if (files == null) return Collections.emptyList();
     if (files.length > 1) {
       // multiple paths specified
-      List<File> existing = new ArrayList<File>(files.length);
+      List<File> existing = new ArrayList<>(files.length);
       for (File f : files) {
         if (f.exists()) {
           existing.add(f);

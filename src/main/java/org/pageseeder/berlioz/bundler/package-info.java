@@ -19,4 +19,5 @@
  * @version Berlioz 0.9.32
  * @since Berlioz 0.9.32
  */
+@org.eclipse.jdt.annotation.NonNullByDefault
 package org.pageseeder.berlioz.bundler;

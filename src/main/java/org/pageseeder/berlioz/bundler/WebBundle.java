@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.util.ISO8601;
 import org.pageseeder.berlioz.util.MD5;
 
@@ -61,7 +62,7 @@ public final class WebBundle {
   /**
    * The hash values for this bundle.
    */
-  private volatile String _etag;
+  private volatile @Nullable String _etag;
 
   /**
    * Creates a new bundles of files.
@@ -74,7 +75,7 @@ public final class WebBundle {
     this._name = name;
     this._files = Collections.unmodifiableList(files);
     this._id = id(files);
-    this._imported = new ArrayList<File>();
+    this._imported = new ArrayList<>();
     this._minimized = minimized;
   }
 
@@ -129,10 +130,12 @@ public final class WebBundle {
    * @return the etag for that bundle.
    */
   public String getETag(boolean refresh) {
-    if (this._etag == null || refresh) {
-      this._etag = calculateEtag(this._files, this._imported);
+    String etag = this._etag;
+    if (etag == null || refresh) {
+      etag = calculateEtag(this._files, this._imported);
+      this._etag = etag;
     }
-    return this._etag;
+    return etag;
   }
 
   /**
@@ -235,7 +238,7 @@ public final class WebBundle {
    * @param file the file which extension is needed.
    * @return the extension or <code>null</code> if none available.
    */
-  private static String getExtension(File file) {
+  private static @Nullable String getExtension(File file) {
     int dot = file.getName().lastIndexOf('.');
     return dot >= 0? file.getName().substring(dot) : null;
   }

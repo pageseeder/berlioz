@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.32
  */
 public final class WebBundleTool {
@@ -64,7 +65,7 @@ public final class WebBundleTool {
   /**
    * Stores bundles instances to check for freshness.
    */
-  private static Map<String, WebBundle> instances = new Hashtable<String, WebBundle>();
+  private static Map<String, WebBundle> instances = new Hashtable<>();
 
   /**
    * The maximum size for turning the content of an image into a data URI.
@@ -141,7 +142,7 @@ public final class WebBundleTool {
    *
    * @return The file corresponding to the generated bundle.
    */
-  public File getBundle(List<File> files, String prefix, boolean minimize) {
+  public @Nullable File getBundle(List<File> files, String prefix, boolean minimize) {
     if (files.isEmpty()) return null;
     String filename = new WebBundle(prefix, files, minimize).getFileName();
     return new File(this._bundles, filename);
@@ -158,11 +159,11 @@ public final class WebBundleTool {
    *
    * @throws IOException should an error occur while reading the files or writing the bundle.
    */
-  public File bundle(List<File> files, String name, boolean minimize) throws IOException {
+  public @Nullable File bundle(List<File> files, String name, boolean minimize) throws IOException {
     if (files.isEmpty()) return null;
     String ext = getExtension(files.get(0));
     for (BundleType t : BundleType.values()) {
-      if (t.matches(ext)) return bundle(files, name, t, minimize);
+      if (ext != null && t.matches(ext)) return bundle(files, name, t, minimize);
     }
     // no matching type
     return null;
@@ -180,7 +181,7 @@ public final class WebBundleTool {
    *
    * @throws IOException should an error occur while reading the files or writing the bundle.
    */
-  public File bundle(List<File> files, String name, BundleType type, boolean minimize) throws IOException {
+  public @Nullable File bundle(List<File> files, String name, BundleType type, boolean minimize) throws IOException {
     switch (type) {
       case JS : return bundleScripts(files, name, minimize);
       case CSS : return bundleStyles(files, name, minimize);
@@ -199,12 +200,12 @@ public final class WebBundleTool {
    *
    * @throws IOException should an error occur while reading the files or writing the bundle.
    */
-  public File bundleScripts(List<File> files, String name, boolean minimize) throws IOException {
+  public @Nullable File bundleScripts(List<File> files, String name, boolean minimize) throws IOException {
     if (files.isEmpty()) return null;
     // Generate the hash value based on the filename, length and last modified date
     File bundle = getBundle(files, name, minimize);
     // concatenate the content if the file does not already exist
-    if (!bundle.exists()) {
+    if (bundle != null && !bundle.exists()) {
       LOGGER.debug("Generating bundle:{} with {} files", bundle.getName(), files.size());
       concatenate(files, bundle, minimize);
       bundle.deleteOnExit();
@@ -224,7 +225,7 @@ public final class WebBundleTool {
    *
    * @throws IOException should an error occur while reading the files or writing the bundle.
    */
-  public File bundleStyles(List<File> files, String name, boolean minimize) throws IOException {
+  public @Nullable File bundleStyles(List<File> files, String name, boolean minimize) throws IOException {
     if (files.isEmpty()) return null;
     String key = WebBundle.id(files);
     WebBundle bundle = instances.get(key);
@@ -306,7 +307,7 @@ public final class WebBundleTool {
 
     // Copy the input stream to the output stream
     IOException exception = null;
-    List<File> processed = new ArrayList<File>();
+    List<File> processed = new ArrayList<>();
     for (File f : bundle.files()) {
       exception = expandStylesTo(bundle, f, virtual, writer, processed, minimize, threshold);
       writer.write('\n'); // insert new line
@@ -396,7 +397,7 @@ public final class WebBundleTool {
    * @param file the file which extension is needed.
    * @return the extension or <code>null</code> if none available.
    */
-  private static String getExtension(File file) {
+  private static @Nullable String getExtension(File file) {
     int dot = file.getName().lastIndexOf('.');
     return dot >= 0? file.getName().substring(dot) : null;
   }
@@ -416,7 +417,7 @@ public final class WebBundleTool {
    *
    * @throws IOException if unable to read file.
    */
-  private static IOException expandStylesTo(WebBundle bundle, File file, File virtual, Writer out, List<File> processed, boolean minimize, long threshold)
+  private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, Writer out, List<File> processed, boolean minimize, long threshold)
       throws IOException {
     IOException exception = null;
     // prevent circular references
@@ -583,7 +584,7 @@ public final class WebBundleTool {
    *
    * @param closeable The object to close.
    */
-  private static void closeQuietly(Closeable closeable) {
+  private static void closeQuietly(@Nullable Closeable closeable) {
     if (closeable == null) return;
     try {
       closeable.close();
