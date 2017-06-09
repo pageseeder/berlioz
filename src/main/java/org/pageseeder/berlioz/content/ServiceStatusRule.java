@@ -169,13 +169,12 @@ import org.pageseeder.berlioz.Beta;
    * @throws IllegalArgumentException If either argument is invalid.
    */
   public static ServiceStatusRule newInstance(String use, @Nullable String rule) {
-    if (use == null) throw new NullPointerException("Argument use is null.");
     // Default rule to HIGHEST (if unspecified)
     CodeRule r = rule != null? CodeRule.valueOf(rule.toUpperCase()) : CodeRule.HIGHEST;
     // Select type default to NAME
     SelectType t = use.startsWith(TARGET_SELECTOR_PREFIX)? SelectType.TARGET : SelectType.NAME;
     // Now get the list of items if any
-    String items = use;
+    String items = Objects.requireNonNull(use, "Parameter use is null.");
     if (items.startsWith(NAME_SELECTOR_PREFIX)) {
       items = items.substring(NAME_SELECTOR_PREFIX.length());
     } else if (items.startsWith(TARGET_SELECTOR_PREFIX)) {

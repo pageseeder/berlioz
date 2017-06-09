@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletRequest;
@@ -46,6 +47,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
@@ -70,7 +73,7 @@ import org.xml.sax.SAXParseException;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class XSLTransformer {
@@ -83,7 +86,21 @@ public final class XSLTransformer {
   /**
    * Maps XSLT templates to their name for easy retrieval.
    */
-  private static final Map<File, Templates> CACHE = new ConcurrentHashMap<File, Templates>();
+  private static final Map<File, Templates> CACHE = new ConcurrentHashMap<>();
+
+  /**
+   * Identity templates for worse case scenario!
+   */
+  private static Templates IDENTITY_TEMPLATES = new Templates() {
+    @Override
+    public @NonNull Transformer newTransformer() throws TransformerConfigurationException {
+      return TransformerFactory.newInstance().newTransformer();
+    }
+    @Override
+    public @NonNull Properties getOutputProperties() {
+      return new Properties();
+    }
+  };
 
   /**
    * The location of the XSLT templates.
@@ -95,12 +112,12 @@ public final class XSLTransformer {
   /**
    * The URL to a fallback template.
    */
-  private final URL _fallback;
+  private final @Nullable URL _fallback;
 
   /**
    * An etag for these templates.
    */
-  private transient String _etag = null;
+  private @Nullable String etag = null;
 
   /**
    * Creates a new XSLT Transformer with no fallback templates.
@@ -117,10 +134,10 @@ public final class XSLTransformer {
    * @param templates The location of the templates.
    * @param fallback  The URL to the fallback templates (optional)
    */
-  public XSLTransformer(File templates, URL fallback) {
+  public XSLTransformer(File templates, @Nullable URL fallback) {
     this._templates = Objects.requireNonNull(templates, "The template file is required");
     this._fallback = fallback;
-    this._etag = computeEtag(templates, fallback);
+    this.etag = computeEtag(templates, fallback);
   }
 
   /**
@@ -136,14 +153,11 @@ public final class XSLTransformer {
     StringWriter buffer = new StringWriter();
     long time = 0;
     Templates templates = null;
-    Map<String, String> parameters = null;
+    Map<String, String> parameters = toParameters(req);
 
     try {
       // Creates a transformer from the templates
       templates = getTemplates(this._templates);
-
-      // Setup the transformer
-      parameters = toParameters(req);
 
       // Setup the source
       StreamSource source = new StreamSource(new StringReader(content));
@@ -203,8 +217,8 @@ public final class XSLTransformer {
    *
    * @return an ETag corresponding to the templates.
    */
-  public String getEtag() {
-    return this._etag;
+  public @Nullable String getEtag() {
+    return this.etag;
   }
 
   /**
@@ -230,7 +244,7 @@ public final class XSLTransformer {
    * @param templates The main file for the templates.
    * @return The corresponding etag.
    */
-  private static String computeEtag(File templates, URL fallback) {
+  private static @Nullable String computeEtag(File templates, @Nullable URL fallback) {
     if (!templates.exists()) {
       if (fallback != null) return MD5.hash(fallback.toString());
       else {
@@ -240,8 +254,11 @@ public final class XSLTransformer {
         return null;
       }
     }
-    List<File> files = new ArrayList<File>();
-    listTemplateFiles(templates.getParentFile(), files);
+    List<File> files = new ArrayList<>();
+    File parent = templates.getParentFile();
+    if (parent != null) {
+      listTemplateFiles(parent, files);
+    }
     StringBuilder b = new StringBuilder();
     try {
       for (File f : files) { b.append(MD5.hash(f, false)); }
@@ -345,7 +362,7 @@ public final class XSLTransformer {
       long t1 = System.currentTimeMillis();
       LOGGER.debug("Templates loaded in {}ms", (t1 - t0));
       // Recalculate the Etag
-      this._etag = computeEtag(f, this._fallback);
+      this.etag = computeEtag(f, this._fallback);
       if (store) {
         CACHE.put(f, templates);
         LOGGER.info("Caching XSLT stylesheet '{}'", stylesheet);
@@ -364,7 +381,7 @@ public final class XSLTransformer {
    *
    * @throws TransformerException If the loading fails.
    */
-  private static Templates toTemplates(File stylepath, URL fallback) throws TransformerException {
+  private static Templates toTemplates(File stylepath, @Nullable URL fallback) throws TransformerException {
     // load the templates from the source file
     InputStream in = null;
     Templates templates = null;
@@ -406,12 +423,13 @@ public final class XSLTransformer {
     Map<String, String> p = null;
     final int xsl_prefix = 4;
     for (Enumeration<?> names = req.getParameterNames(); names.hasMoreElements();) {
-      String param = (String)names.nextElement();
-      if (param.startsWith("xsl-")) {
+      String name = (String)names.nextElement();
+      String value = req.getParameter(name);
+      if (name != null && value != null && name.startsWith("xsl-")) {
         if (p == null) {
-          p = new HashMap<String, String>();
+          p = new HashMap<>();
         }
-        p.put(param.substring(xsl_prefix), req.getParameter(param));
+        p.put(name.substring(xsl_prefix), value);
       }
     }
     // Return parameters
@@ -446,8 +464,11 @@ public final class XSLTransformer {
       // Unwrap if needed
       if (ex instanceof TransformerExceptionWrapper) {
         TransformerExceptionWrapper wrapper = (TransformerExceptionWrapper)ex;
-        actual = (TransformerException)wrapper.getException();
-        collector = wrapper.collector();
+        TransformerException wrapped = (TransformerException)wrapper.getException();
+        if (wrapped != null) {
+          actual = wrapped;
+          collector = wrapper.collector();
+        }
       }
 
       // Let's guess the Berlioz internal code
@@ -500,7 +521,8 @@ public final class XSLTransformer {
    * @param url The URL to load (within Berlioz Package)
    * @return templates or <code>null</code>.
    */
-  private static Templates toTemplates(URL url) {
+  private static Templates toTemplates(@Nullable URL url) {
+    if (url == null) return IDENTITY_TEMPLATES;
     // load the templates from the URL
     Templates templates = null;
     try (InputStream in = url.openStream()) {
@@ -509,12 +531,9 @@ public final class XSLTransformer {
       TransformerFactory factory = TransformerFactory.newInstance();
       templates = factory.newTemplates(source);
       // Any error we need to give up...
-    } catch (IOException ex) {
+    } catch (IOException | TransformerException ex) {
       LOGGER.warn("Unable to load fallback/failsafe templates!", ex);
-      return null;
-    } catch (TransformerException ex) {
-      LOGGER.warn("Unable to load fallback/failsafe templates!", ex);
-      return null;
+      return IDENTITY_TEMPLATES;
     }
     return templates;
   }
@@ -531,6 +550,8 @@ public final class XSLTransformer {
    * @return The results of the transformation.
    */
   private static String transformFailSafe(String xml, Templates templates) {
+    // No need to process, let's copy directly the output
+    if (templates == IDENTITY_TEMPLATES) return xml;
     // Let's try to format it
     String out = null;
     try {
@@ -567,7 +588,7 @@ public final class XSLTransformer {
    * Close an input stream ignoring any exception.
    * @param in the input stream
    */
-  private static void closeQuietly(InputStream in) {
+  private static void closeQuietly(@Nullable InputStream in) {
     if (in != null) {
       try {
         in.close();
@@ -617,9 +638,6 @@ public final class XSLTransformer {
 
   /**
    * Extends the transformer exception to preserve API and include additional details.
-   *
-   * @author Christophe Lauret
-   * @version 8 February 2010
    */
   private static class TransformerExceptionWrapper extends TransformerException {
 

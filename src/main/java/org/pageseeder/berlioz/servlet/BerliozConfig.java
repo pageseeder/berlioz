@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Random;
@@ -31,6 +32,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.GlobalSettings;
@@ -45,7 +47,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.27 - 18 December 2013
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.8.1
  */
 public final class BerliozConfig {
@@ -56,7 +58,7 @@ public final class BerliozConfig {
   /**
    * Stores all the berlioz config here.
    */
-  private static final Map<String, BerliozConfig> CONFIGS = new ConcurrentHashMap<String, BerliozConfig>();
+  private static final Map<String, BerliozConfig> CONFIGS = new ConcurrentHashMap<>();
 
   /**
    * Used to generate ETag Seeds.
@@ -137,7 +139,7 @@ public final class BerliozConfig {
   /**
    * A seed to use for the calculation of etags (allows them to be reset)
    */
-  private volatile long _etagSeed = 0L;
+  private volatile long etagSeed = 0L;
 
   /**
    * Create a new Berlioz configuration.
@@ -151,8 +153,8 @@ public final class BerliozConfig {
     File webinfPath = new File(contextPath, "WEB-INF");
     this._stylePath = this.getInitParameter("stylesheet", "IDENTITY");
     this._allocation = toAllocation(this._stylePath);
-    this._fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", null);
-    this._transformers = this._allocation != TransformAllocation.NIL? new ConcurrentHashMap<String, XSLTransformer>() : null;
+    this._fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", "");
+    this._transformers = this._allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Collections.emptyMap();
     this._contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     if ("IDENTITY".equals(this._stylePath) && !this._contentType.contains("xml")) {
       LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this._contentType);
@@ -165,7 +167,7 @@ public final class BerliozConfig {
     this._controlKey = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));
     this._compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
     this._env = new HttpEnvironment(contextPath, webinfPath, this._cacheControl);
-    this._etagSeed = getEtagSeed();
+    this.etagSeed = getEtagSeed();
   }
 
   /**
@@ -189,14 +191,14 @@ public final class BerliozConfig {
    * @return the ETag Seed.
    */
   public long getETagSeed() {
-    return this._etagSeed;
+    return this.etagSeed;
   }
 
   /**
    * Resets the ETag Seed.
    */
   public void resetETagSeed() {
-    this._etagSeed = newEtagSeed();
+    this.etagSeed = newEtagSeed();
   }
 
   /**
@@ -271,7 +273,7 @@ public final class BerliozConfig {
    * @param service the service which requires a transformer.
    * @return the corresponding XSLT transformer.
    */
-  public XSLTransformer getTransformer(Service service) {
+  public @Nullable XSLTransformer getTransformer(Service service) {
     switch (this._allocation) {
       case NIL:     return null;
       case GLOBAL:  return getTransformer(service, "global");
@@ -319,7 +321,7 @@ public final class BerliozConfig {
    * @return the listener currently in use.
    */
   @Beta
-  public static synchronized GeneratorListener getListener() {
+  public static synchronized @Nullable GeneratorListener getListener() {
     return XMLResponse.getListener();
   }
 
@@ -386,7 +388,8 @@ public final class BerliozConfig {
     Long seed = RANDOM.nextLong();
     LOGGER.info("Generating new ETag Seed: {}", Long.toString(seed.longValue(), 36));
     File f = this._env.getPrivateFile("berlioz.etag");
-    if (f.exists() && f.canWrite() || f.getParentFile().canWrite()) {
+    File p = f.getParentFile();
+    if (f.exists() && f.canWrite() || p != null && p.canWrite()) {
       // NB. We don't care about encoding
       try (FileOutputStream os = new FileOutputStream(f)) {
         for (char c : Long.toString(seed.longValue(), 36).toCharArray()) {
@@ -408,7 +411,7 @@ public final class BerliozConfig {
    * @param key the key to use to store the transformer.
    * @return the corresponding XSLT transformer.
    */
-  private XSLTransformer getTransformer(Service service, String key) {
+  private @Nullable XSLTransformer getTransformer(Service service, String key) {
     XSLTransformer transformer = this._transformers.get(key);
     if (transformer == null) {
       transformer = newTransformer(service);
@@ -461,8 +464,8 @@ public final class BerliozConfig {
    * @param path the path to create the URL
    * @return the corresponding URL.
    */
-  private URL toURL(String path) {
-    if (path == null) return null;
+  private @Nullable URL toURL(String path) {
+    if (path.length() == 0) return null;
     URL url = null;
     if (path.startsWith("resource:")) {
       ClassLoader loader = BerliozConfig.class.getClassLoader();

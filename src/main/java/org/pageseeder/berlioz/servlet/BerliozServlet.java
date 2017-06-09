@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Objects;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -28,6 +29,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
@@ -91,7 +93,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.15 - 30 January 2013
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -112,17 +114,17 @@ public final class BerliozServlet extends HttpServlet {
   /**
    * The transformer factory to generate the templates
    */
-  private transient BerliozConfig _config;
+  private transient @Nullable BerliozConfig berliozConfig;
 
   /**
    * The services managed by this servlet.
    */
-  private transient ServiceRegistry _services;
+  private transient @Nullable ServiceRegistry serviceRegistry;
 
   /**
    * The request dispatcher to forward to the error handler.
    */
-  private transient RequestDispatcher _errorHandler;
+  private transient @Nullable RequestDispatcher errorHandler;
 
 // servlet methods --------------------------------------------------------------------------------
 
@@ -145,11 +147,10 @@ public final class BerliozServlet extends HttpServlet {
   @Override
   public void init(ServletConfig servletConfig) throws ServletException {
     super.init(servletConfig);
-    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
-    this._config = config;
-    this._services = ServiceLoader.getInstance().getDefaultRegistry();
-    this._errorHandler = servletConfig.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
-    if (this._errorHandler == null) {
+    this.berliozConfig = BerliozConfig.newConfig(servletConfig);
+    this.serviceRegistry = ServiceLoader.getInstance().getDefaultRegistry();
+    this.errorHandler = servletConfig.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
+    if (this.errorHandler == null) {
       LOGGER.info("No ErrorHandlerServlet is defined in the Web descriptor");
       LOGGER.info("Berlioz will use the fail safe error handler instead");
     }
@@ -159,43 +160,68 @@ public final class BerliozServlet extends HttpServlet {
   public void destroy() {
     super.destroy();
     LOGGER.info("Destroying Berlioz Servlet");
-    BerliozConfig.unregister(this._config);
-    this._config = null;
-    this._services = null;
-    this._errorHandler = null;
+    BerliozConfig.unregister(getBerliozConfig());
+    this.berliozConfig = null;
+    this.serviceRegistry = null;
+    this.errorHandler = null;
   }
 
   // Standard HTTP Methods
   // ----------------------------------------------------------------------------------------------
 
   @Override
+  protected void service(HttpServletRequest req, HttpServletResponse res)
+      throws ServletException, IOException {
+    try {
+      HttpMethod method = HttpMethod.valueOf(req.getMethod());
+      if (method == HttpMethod.OPTIONS) {
+        doOptions(req, res);
+      } else {
+        process(req, res, method, method != HttpMethod.HEAD);
+      }
+
+    } catch (IllegalArgumentException ex) {
+      sendError(req, res, HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported HTTP method", null);
+    }
+  }
+
+  @Override
   public void doHead(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    process(req, res, false);
+    process(req, res, HttpMethod.HEAD, false);
   }
 
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    process(req, res, true);
+    process(req, res, HttpMethod.GET, true);
   }
 
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    process(req, res, true);
+    process(req, res, HttpMethod.POST, true);
   }
 
   @Override
   public void doPut(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    process(req, res, true);
+    process(req, res, HttpMethod.PUT, true);
   }
 
   @Override
   public void doDelete(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
-    process(req, res, true);
+    process(req, res, HttpMethod.DELETE, true);
+  }
+
+  @Override
+  public void doOptions(HttpServletRequest req, HttpServletResponse res)
+      throws ServletException, IOException {
+    ServiceRegistry services = getServiceRegistry();
+    String path = HttpRequestWrapper.getBerliozPath(req);
+    List<String> methods = services.allows(path);
+    res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
   }
 
   // Standard HTTP Methods
@@ -211,11 +237,12 @@ public final class BerliozServlet extends HttpServlet {
    * @throws ServletException To wrap any non IO exception.
    * @throws IOException For any IO exception.
    */
-  protected void process(HttpServletRequest req, HttpServletResponse res, boolean includeContent)
+  private void process(HttpServletRequest req, HttpServletResponse res, HttpMethod method, boolean includeContent)
       throws ServletException, IOException {
 
     // Use Berlioz config locally
-    BerliozConfig config = this._config;
+    BerliozConfig config = getBerliozConfig();
+    ServiceRegistry services = getServiceRegistry();
 
     // Setup and ensure that we use UTF-8 to read data
     req.setCharacterEncoding("utf-8");
@@ -228,7 +255,6 @@ public final class BerliozServlet extends HttpServlet {
 
     // Determine the method in use.
     ServiceLoader loader = ServiceLoader.getInstance();
-    HttpMethod method = HttpMethod.valueOf(req.getMethod());
     boolean profile = GlobalSettings.has(BerliozOption.PROFILE);
 
     // Berlioz Control
@@ -267,18 +293,18 @@ public final class BerliozServlet extends HttpServlet {
     // Start handling XML content
     long start = System.nanoTime();
     String path = HttpRequestWrapper.getBerliozPath(req);
-    MatchingService match = this._services.get(path, method);
+    MatchingService match = services.get(path, method);
 
     // No matching service (backward compatibility)
     if (match == null && method == HttpMethod.POST && GlobalSettings.has(BerliozOption.HTTP_GET_VIA_POST)) {
-      match = this._services.get(path, HttpMethod.GET);
+      match = services.get(path, HttpMethod.GET);
     }
 
     // Still no matching service
     if (match == null) {
       // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
       if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
-        List<String> methods = this._services.allows(path);
+        List<String> methods = services.allows(path);
         if (methods.size() > 0) {
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
           String message = "Only the following are allowed: "+HttpHeaderUtils.allow(methods);
@@ -302,7 +328,7 @@ public final class BerliozServlet extends HttpServlet {
     Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
 
     // Identify the transformer
-    XSLTransformer transformer = this._config.getTransformer(match.service());
+    XSLTransformer transformer = config.getTransformer(match.service());
 
     // Indicate that the representation may vary depending on the encoding
     if (config.enableCompression()) {
@@ -321,7 +347,7 @@ public final class BerliozServlet extends HttpServlet {
         // Update the headers (they should also be included in case of redirect)
         res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
         String cc = xml.getService().cache();
-        if (cc == null) {
+        if (cc.isEmpty()) {
           cc = config.getCacheControl();
         }
         res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
@@ -449,7 +475,7 @@ public final class BerliozServlet extends HttpServlet {
    * @throws IOException      The HTTP Servlet Request.
    * @throws ServletException Should any error occur at this point.
    */
-  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, Exception ex)
+  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex)
       throws IOException, ServletException {
 
     // Is Berlioz already handling an error?
@@ -460,7 +486,7 @@ public final class BerliozServlet extends HttpServlet {
       req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, error != null? error.intValue() : code);
       req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
       req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
-      req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, this._config.getName());
+      req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, getBerliozConfig().getName());
       // TODO: also add Berlioz specific data
 
       // If an exception has occurred
@@ -469,14 +495,15 @@ public final class BerliozServlet extends HttpServlet {
         req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION_TYPE, ex.getClass());
       }
       // Use the error handler if defined, otherwise use the default error handling options
-      if (this._errorHandler != null) {
+      RequestDispatcher handler = this.errorHandler;
+      if (handler != null) {
         String format = "Berlioz forwarding error {} [{}] to handler";
         if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
           LOGGER.error(format, message, code, ex);
         } else {
           LOGGER.warn(format, message, code, ex);
         }
-        this._errorHandler.forward(req, res);
+        handler.forward(req, res);
       } else {
         String format = "Berlioz handling error {} [{}] to handler";
         if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
@@ -502,8 +529,16 @@ public final class BerliozServlet extends HttpServlet {
    * @return <code>true</code> if the parameter value is equal to "true";
    *         <code>false</code> for any other value.
    */
-  private boolean isTrue(String parameter) {
+  private boolean isTrue(@Nullable String parameter) {
     return "true".equals(parameter);
+  }
+
+  private BerliozConfig getBerliozConfig() {
+    return Objects.requireNonNull(this.berliozConfig, "Berlioz is not configured!");
+  }
+
+  private ServiceRegistry getServiceRegistry() {
+    return Objects.requireNonNull(this.serviceRegistry, "Berlioz services are not configured!");
   }
 
   // Private internal class
@@ -511,9 +546,6 @@ public final class BerliozServlet extends HttpServlet {
 
   /**
    * Provide a simple entity information for the service.
-   *
-   * @author Christophe Lauret
-   * @version 19 July 2010
    */
   private static final class ServiceInfo implements EntityInfo {
 

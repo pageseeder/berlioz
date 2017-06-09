@@ -28,7 +28,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.11.2
  */
 public final class HttpPathInfo implements PathInfo, Serializable {
 
@@ -68,7 +68,8 @@ public final class HttpPathInfo implements PathInfo, Serializable {
     this._context = req.getContextPath();
     if (req.getPathInfo() != null) {
       // Try to get the path info (when mapped to '/prefix/*')
-      this._path = req.getPathInfo();
+      String path = req.getPathInfo();
+      this._path = path != null? path : "";
       this._prefix = req.getServletPath();
       this._extension = "";
     } else {

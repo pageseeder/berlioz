@@ -20,6 +20,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +55,8 @@ public final class CharsetUtils {
    * @throws NullPointerException if either argument is <code>null</code>.
    */
   public static int length(CharSequence content, Charset charset) {
-    if (content == null) throw new NullPointerException("No length for null content");
-    if (charset == null) throw new NullPointerException("Charset is null");
+    Objects.requireNonNull("No length for null content");
+    Objects.requireNonNull("Charset is null");
     int length = -1;
     try {
       CharsetEncoder encoder = charset.newEncoder();

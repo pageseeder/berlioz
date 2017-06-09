@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.eclipse.jdt.annotation.Nullable;
@@ -78,9 +79,9 @@ public final class ServiceRegistry {
    */
   public void register(Service service, URIPattern pattern, HttpMethod method) {
     // preliminary checks
-    if (service == null) throw new NullPointerException("No service to register.");
-    if (pattern == null) throw new NullPointerException("URL Pattern must be specified to register a service.");
-    if (method == null) throw new NullPointerException("HTTP Method must be specified to register a service.");
+    Objects.requireNonNull(service, "No service to register.");
+    Objects.requireNonNull(pattern, "URL Pattern must be specified to register a service.");
+    Objects.requireNonNull(method, "HTTP Method must be specified to register a service.");
     // Register the generator with the URL pattern
     getMapping(method).put(pattern, service);
   }

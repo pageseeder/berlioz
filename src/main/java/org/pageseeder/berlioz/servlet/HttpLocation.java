@@ -29,7 +29,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.25 - 11 December 2013
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9.13
  */
 public final class HttpLocation implements Location, Serializable {
@@ -77,7 +77,8 @@ public final class HttpLocation implements Location, Serializable {
     this._host = req.getServerName();
     this._port = req.getServerPort();
     this._path = req.getRequestURI();
-    this._query = req.getQueryString();
+    String query = req.getQueryString();
+    this._query = query != null? query : "";
     this._info = new HttpPathInfo(req);
   }
 
@@ -127,7 +128,7 @@ public final class HttpLocation implements Location, Serializable {
     // Include the base (without the path or query)
     xml.attribute("base", url.toString());
     url.append(this._path);
-    if (this._query != null) {
+    if (this._query.length()>0) {
       url.append('?').append(this._query);
     }
     xml.writeText(url.toString());

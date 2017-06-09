@@ -65,7 +65,12 @@ public enum HttpMethod {
   /**
    * PATCH HTTP Method.
    */
-  PATCH(true);
+  PATCH(true),
+
+  /**
+   * OPTIONS HTTP method.
+   */
+  OPTIONS(false);
 
   /**
    * Set of HTTP methods mappable to a service.

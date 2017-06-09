@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Environment;
 
@@ -25,7 +26,7 @@ import org.pageseeder.berlioz.content.Environment;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9
  */
 public final class HttpEnvironment implements Environment {
@@ -81,7 +82,7 @@ public final class HttpEnvironment implements Environment {
   }
 
   @Override
-  public String getProperty(String name) {
+  public @Nullable String getProperty(String name) {
     return GlobalSettings.get(name);
   }
 

@@ -17,4 +17,5 @@
  *
  * Berlioz Servlets and related classes.
  */
+@org.eclipse.jdt.annotation.NonNullByDefault
 package org.pageseeder.berlioz.servlet;

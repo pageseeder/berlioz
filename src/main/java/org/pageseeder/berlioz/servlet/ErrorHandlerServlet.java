@@ -34,8 +34,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.ErrorID;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.http.HttpStatusCodes;
 import org.pageseeder.berlioz.util.CollectedError;
@@ -131,12 +133,12 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * The extension to preserve.
    */
-  private static Set<String> forwardExtensions = new HashSet<String>();
+  private static Set<String> forwardExtensions = new HashSet<>();
 
   /**
    * The extension to ignore.
    */
-  private static Set<String> ignoreExtensions = new HashSet<String>();
+  private static Set<String> ignoreExtensions = new HashSet<>();
 
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.
@@ -165,10 +167,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
     for (String ext : ignore.split(",")) {
       ignoreExtensions.add(ext);
     }
-    defaultExtension = config.getInitParameter("forward-default");
-    if (defaultExtension == null) {
-      defaultExtension = DEFAULT_EXTENSION;
-    }
+    String defExt = config.getInitParameter("forward-default");
+    defaultExtension = defExt != null? defExt : DEFAULT_EXTENSION;
   }
 
   /**
@@ -327,8 +327,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
       // If it has a Berlioz ID
-      if (throwable instanceof BerliozException && ((BerliozException)throwable).id() != null) {
-        xml.attribute("id", ((BerliozException)throwable).id().id());
+      ErrorID eid = throwable instanceof BerliozException? ((BerliozException)throwable).id() : null;
+      if (eid != null) {
+        xml.attribute("id", eid.id());
       } else {
         xml.attribute("id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString());
       }
@@ -383,11 +384,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
         String name = entry.getKey().toString();
         // Must be an array according to Servlet Specifications
         String[] values = (String[])entry.getValue();
-        for (String value : values) {
-          xml.openElement("parameters");
-          xml.attribute("name", name);
-          xml.attribute("value", value);
-          xml.closeElement();
+        if (values != null) {
+          for (String value : values) {
+            xml.openElement("parameters");
+            xml.attribute("name", name);
+            xml.attribute("value", value);
+            xml.closeElement();
+          }
         }
       }
       xml.closeElement();
@@ -428,8 +431,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
     appendJSONProperty(json, "datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME)).append(',');
 
     // If it has a Berlioz ID
-    if (throwable instanceof BerliozException && ((BerliozException)throwable).id() != null) {
-      appendJSONProperty(json, "id", ((BerliozException)throwable).id().id()).append(',');
+    ErrorID eid = throwable instanceof BerliozException? ((BerliozException)throwable).id() : null;
+    if (eid != null) {
+      appendJSONProperty(json, "id", eid.id()).append(',');
     } else {
       appendJSONProperty(json, "id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString()).append(',');
     }
@@ -491,12 +495,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
       String name = entry.getKey().toString();
       // Must be an array according to Servlet Specifications
       String[] values = (String[])entry.getValue();
-      for (String value : values) {
-        json.append('{');
-        appendJSONProperty(json, "name", name);
-        json.append(',');
-        appendJSONProperty(json, "value", value);
-        json.append('}');
+      if (values != null) {
+        for (String value : values) {
+          json.append('{');
+          appendJSONProperty(json, "name", name);
+          json.append(',');
+          appendJSONProperty(json, "value", value);
+          json.append('}');
+        }
       }
     }
     json.append(']');
@@ -574,7 +580,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    *
    * @return the error code.
    */
-  private static Throwable getErrorException(ServletRequest req) {
+  private static @Nullable Throwable getErrorException(ServletRequest req) {
     Object o = req.getAttribute(ERROR_EXCEPTION);
     if (o == null) return null;
     else if (o instanceof Throwable) return (Throwable)o;

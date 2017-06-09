@@ -74,7 +74,7 @@ public interface ContentRequest {
    *
    * @return A value of the parameter or the default value if missing.
    */
-  @Nullable String getParameter(String name, @Nullable String def);
+  String getParameter(String name, String def);
 
   /**
    * Returns the specified parameter value.

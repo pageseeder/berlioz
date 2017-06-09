@@ -37,17 +37,17 @@ public class ErrorCollector<T extends Throwable>  {
   /**
    * Errors are collected here.
    */
-  private final List<CollectedError<T>> _collected = new ArrayList<CollectedError<T>>();
+  private final List<CollectedError<T>> _collected = new ArrayList<>();
 
   /**
    * The threshold level for the collect method to throw an exception.
    */
-  private Level _exception = Level.FATAL;
+  private Level _exception = Level.FATAL; // XXX: convention
 
   /**
    * The threshold level for the collect method to set the error flag to <code>true</code>.
    */
-  private Level _flag = Level.ERROR;
+  private Level _flag = Level.ERROR; // XXX: convention
 
   /**
    * Indicates whether an error has been reported during parsing.
@@ -96,7 +96,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public final void collect(Level level, T exception) throws T {
-    this._collected.add(new CollectedError<T>(level, exception));
+    this._collected.add(new CollectedError<>(level, exception));
     if (this._flag.compareTo(level) <= 0) {
       this._hasError = true;
     }
@@ -113,7 +113,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public final void collectQuietly(Level level, T exception) {
-    this._collected.add(new CollectedError<T>(level, exception));
+    this._collected.add(new CollectedError<>(level, exception));
     if (this._flag.compareTo(level) <= 0) {
       this._hasError = true;
     }

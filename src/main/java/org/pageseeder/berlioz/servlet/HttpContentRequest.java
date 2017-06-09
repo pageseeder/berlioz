@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.servlet;
 import java.util.Map;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
@@ -29,7 +30,7 @@ import org.pageseeder.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
@@ -52,17 +53,17 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   /**
    * The status for this request.
    */
-  private ContentStatus _status = ContentStatus.OK;
+  private ContentStatus status = ContentStatus.OK;
 
   /**
    * The URL to redirect to.
    */
-  private String _redirectTo = null;
+  private @Nullable String redirectTo = null;
 
   /**
    * Profiling information.
    */
-  private long _profile = 0;
+  private long profile = 0;
 
   // sole constructor -------------------------------------------------------------------------------
 
@@ -89,6 +90,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * Sets the status of this request.
    *
    * @param status the status of this request.
+   *
    * @throws NullPointerException if the status is <code>null</code>.
    * @throws IllegalArgumentException if the status is a redirect status.
    */
@@ -98,7 +100,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
       throw new NullPointerException("Cannot set status to null");
     if (ContentStatus.isRedirect(status))
       throw new IllegalArgumentException("Unable to use redirect status code:"+status);
-    this._status = status;
+    this.status = status;
   }
 
   /**
@@ -110,15 +112,15 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @throws IllegalArgumentException if the status is not a redirect status.
    */
   @Override
-  public void setRedirect(String url, ContentStatus status) {
+  public void setRedirect(String url, @Nullable ContentStatus status) {
     if (url == null) throw new NullPointerException("Cannot set URL to null");
     if (status != null) {
       if (!ContentStatus.isRedirect(status)) throw new IllegalArgumentException("Invalid redirect status:"+status);
-      this._status = status;
+      this.status = status;
     } else {
-      this._status = ContentStatus.TEMPORARY_REDIRECT;
+      this.status = ContentStatus.TEMPORARY_REDIRECT;
     }
-    this._redirectTo = url;
+    this.redirectTo = url;
   }
 
   /**
@@ -127,7 +129,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @return the status of this request.
    */
   public ContentStatus getStatus() {
-    return this._status;
+    return this.status;
   }
 
   /**
@@ -153,8 +155,8 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    *
    * @return the URL to redirect to (may be <code>null</code>).
    */
-  public String getRedirectURL() {
-    return this._redirectTo;
+  public @Nullable String getRedirectURL() {
+    return this.redirectTo;
   }
 
   /**
@@ -168,13 +170,13 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @param profile Nano time for the etag
    */
   protected void setProfileEtag(long profile) {
-    this._profile = profile;
+    this.profile = profile;
   }
 
   /**
    * @return Nano time for the etag
    */
   protected long getProfileEtag() {
-    return this._profile;
+    return this.profile;
   }
 }

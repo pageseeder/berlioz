@@ -32,6 +32,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.furi.URIParameters;
 import org.pageseeder.berlioz.furi.URIPattern;
@@ -68,7 +69,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Christophe Lauret
  * @author Jean-Baptiste Reure
  *
- * @version Berlioz 0.9.8 - 8 October 2012
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class RelocationFilter implements Filter {
@@ -83,12 +84,12 @@ public final class RelocationFilter implements Filter {
   /**
    * Where the relocation config is located.
    */
-  private File _mappingFile;
+  private @Nullable File mappingFile;
 
   /**
    * Maps URI patterns to relocate to URI pattern target.
    */
-  private Map<URIPattern, URIPattern> _mapping = null;
+  private @Nullable Map<URIPattern, URIPattern> mapping = null;
 
 // servlet methods --------------------------------------------------------------------------------
 
@@ -126,7 +127,7 @@ public final class RelocationFilter implements Filter {
     }
 
     // Store the mapping file
-    this._mappingFile = mappingFile;
+    this.mappingFile = mappingFile;
   }
 
   /**
@@ -134,8 +135,8 @@ public final class RelocationFilter implements Filter {
    */
   @Override
   public void destroy() {
-    this._mappingFile = null;
-    this._mapping = null;
+    this.mappingFile = null;
+    this.mapping = null;
   }
 
   @Override
@@ -160,12 +161,10 @@ public final class RelocationFilter implements Filter {
      throws ServletException, IOException {
 
     // Load the config if needed
-    if (this._mapping == null) {
-      loadConfig();
-    }
+    Map<URIPattern, URIPattern> mapping = mapping();
 
     // Evaluate URI patterns
-    for (URIPattern p : this._mapping.keySet()) {
+    for (URIPattern p : mapping.keySet()) {
       String uri = req.getRequestURI();
       if (p.match(uri) && relocate(req, res, p)) return;
     }
@@ -188,7 +187,10 @@ public final class RelocationFilter implements Filter {
    */
   private boolean relocate(HttpServletRequest req, HttpServletResponse res, URIPattern match)
       throws ServletException, IOException {
-    URIPattern target = this._mapping.get(match);
+    URIPattern target = mapping().get(match);
+
+    // Unlikely but possible
+    if (target == null) return false;
 
     // Resolve URI variables
     String from = req.getRequestURI();
@@ -218,31 +220,38 @@ public final class RelocationFilter implements Filter {
   }
 
   /**
-   * Load the URI redirect configuration file.
+   * @return the URI pattern mapping loading the configuration file if necessary.
+   */
+  private Map<URIPattern, URIPattern> mapping() {
+    Map<URIPattern, URIPattern> mapping = this.mapping;
+    if (mapping == null) {
+      mapping = loadConfig(this.mappingFile);
+      this.mapping = mapping;
+    }
+    return mapping;
+  }
+
+  /**
+   * Load the URI relocation configuration file.
    *
    * @return <code>true</code> if loaded correctly;
    *         <code>false</code> otherwise.
    */
-  private boolean loadConfig() {
-    this._mapping = new HashMap<URIPattern, URIPattern>();
-    Handler handler = new Handler(this._mapping);
-    boolean loaded = false;
-    try {
-      XMLUtils.parse(handler, this._mappingFile, false);
-      loaded = true;
-    } catch (BerliozException ex) {
-      LOGGER.error("Unable to load redirect mapping {} : {}", this._mappingFile, ex);
+  private static Map<URIPattern, URIPattern> loadConfig(@Nullable File file) {
+    Map<URIPattern, URIPattern> mapping = new HashMap<>();
+    if (file != null) {
+      Handler handler = new Handler(mapping);
+      try {
+        XMLUtils.parse(handler, file, false);
+      } catch (BerliozException ex) {
+        LOGGER.error("Unable to load relocation mapping {} : {}", file, ex);
+      }
     }
-    return loaded;
+    return mapping;
   }
 
   /**
    * Handles the XML for the URI pattern mapping configuration.
-   *
-   * @author Christophe Lauret
-   * @author Jean-Baptiste Reure
-   *
-   * @version 8 October 2012
    */
   static class Handler extends DefaultHandler implements ContentHandler {
 
@@ -274,7 +283,8 @@ public final class RelocationFilter implements Filter {
      * @param pattern The URI pattern as a string.
      * @return the <code>URIPattern</code> instance or <code>null</code>.
      */
-    private URIPattern toPattern(String pattern) {
+    private @Nullable URIPattern toPattern(@Nullable String pattern) {
+      if (pattern == null) return null;
       try {
         return new URIPattern(pattern);
       } catch (IllegalArgumentException ex) {

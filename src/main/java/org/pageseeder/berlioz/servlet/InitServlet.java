@@ -23,6 +23,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.LifecycleListener;
 
@@ -69,7 +70,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
   /**
    * The application initializer.
    */
-  private AppInitializer initializer = null;
+  private @Nullable AppInitializer initializer = null;
 
   /**
    * Initialises Berlioz.

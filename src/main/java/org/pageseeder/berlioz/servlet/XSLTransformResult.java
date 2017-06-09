@@ -19,6 +19,8 @@ import java.util.Properties;
 
 import javax.xml.transform.Templates;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Holds the results of a transformation process.
  *
@@ -27,7 +29,7 @@ import javax.xml.transform.Templates;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class XSLTransformResult implements BerliozOutput {
@@ -69,12 +71,12 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * Any caught exception.
    */
-  private final Exception _ex;
+  private final @Nullable Exception _ex;
 
   /**
    * Any error message.
    */
-  private final String _error;
+  private final @Nullable String _error;
 
   /**
    * The content type produced by this transformer.
@@ -111,7 +113,7 @@ public final class XSLTransformResult implements BerliozOutput {
    * @param ex        An exception.
    * @param templates The templates used for the transformation.
    */
-  public XSLTransformResult(CharSequence content, Exception ex, Templates templates) {
+  public XSLTransformResult(CharSequence content, Exception ex, @Nullable Templates templates) {
     this._content = content;
     this._time = 0;
     this._status = Status.ERROR;
@@ -155,14 +157,14 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * @return An error message or <code>null</code> if none.
    */
-  public String getErrorMessage() {
+  public @Nullable String getErrorMessage() {
     return this._error;
   }
 
   /**
    * @return An error message or <code>null</code> if none.
    */
-  public Exception getException() {
+  public @Nullable Exception getException() {
     return this._ex;
   }
 

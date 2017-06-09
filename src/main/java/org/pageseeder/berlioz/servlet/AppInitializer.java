@@ -26,6 +26,7 @@ import java.util.Objects;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.LifecycleListener;
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class initializes a Berlioz application.
  *
- * @version Berlioz 0.11.0
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.11.0
  */
 public abstract class AppInitializer {
@@ -133,7 +134,7 @@ public abstract class AppInitializer {
   public final void destroy() {
     console(Phase.STOP, "===============================================================");
     console(Phase.STOP, "Stopping Berlioz "+GlobalSettings.getVersion()+"...");
-    console(Phase.STOP, "Application Base: "+GlobalSettings.getWebInf().getAbsolutePath());
+    console(Phase.STOP, "Application Base: "+this._webinf.getAbsolutePath());
     if (this._listeners.size() > 0) {
       console(Phase.STOP, "Lifecycle: Invoking listeners");
       for (LifecycleListener listener : this._listeners) {
@@ -158,12 +159,12 @@ public abstract class AppInitializer {
   /**
    * @return the path to the application data folder if specified in the configuration.
    */
-  abstract String getAppDataPath();
+  @Nullable abstract String getAppDataPath();
 
   /**
    * @return the mode if specified in the configuration.
    */
-  abstract String getMode();
+  @Nullable abstract String getMode();
 
   /**
    * Deploys the overlays
@@ -228,7 +229,7 @@ public abstract class AppInitializer {
     }
 
     @Override
-    String getAppDataPath() {
+    @Nullable String getAppDataPath() {
       String appdata = this._config.getInitParameter("appdata");
       if (appdata != null) {
         console(Phase.INIT, "AppData: defined with servlet init-parameter 'appdata'");
@@ -239,7 +240,7 @@ public abstract class AppInitializer {
     }
 
     @Override
-    String getMode() {
+    @Nullable String getMode() {
       String mode = this._config.getInitParameter("mode");
       if (mode != null) {
         console(Phase.INIT, "Mode: defined with servlet init-parameter 'mode'");
@@ -280,7 +281,7 @@ public abstract class AppInitializer {
     }
 
     @Override
-    String getAppDataPath() {
+    @Nullable String getAppDataPath() {
       // Check context level
       String appdata = this._context.getInitParameter("berlioz.appdata");
       if (appdata != null) {
@@ -292,7 +293,7 @@ public abstract class AppInitializer {
     }
 
     @Override
-    String getMode() {
+    @Nullable String getMode() {
       String mode = this._context.getInitParameter("berlioz.mode");
       if (mode != null) {
         console(Phase.INIT, "Mode: defined with context init-parameter 'berlioz.mode'");
@@ -329,7 +330,7 @@ public abstract class AppInitializer {
     }
 
     @Override
-    String getAppDataPath() {
+    @Nullable String getAppDataPath() {
       // JVM property
       String appdata = System.getProperty("berlioz.appdata");
       if (appdata != null) {
@@ -349,7 +350,7 @@ public abstract class AppInitializer {
     }
 
     @Override
-    String getMode() {
+    @Nullable String getMode() {
       // JVM property
       String mode = System.getProperty("berlioz.mode");
       if (mode != null) {
@@ -386,7 +387,7 @@ public abstract class AppInitializer {
   /**
    * Configure the AppData directory from the current context.
    */
-  private File configureAppData() {
+  private @Nullable File configureAppData() {
     File appData = null;
     try {
       String appDataPath = getAppDataPath();
@@ -459,7 +460,7 @@ public abstract class AppInitializer {
    * @param config The configuration directory (<code>/WEB-INF/config</code>).
    * @return the mode if only one file.
    */
-  private static String autoDetect(File directory) {
+  private static @Nullable String autoDetect(File directory) {
     String mode = null;
     String[] filenames = directory.list();
     if (filenames != null) {
@@ -678,11 +679,13 @@ public abstract class AppInitializer {
     File defaultConfigFile = GlobalSettings.getDefaultConfigFile();
     String mode = GlobalSettings.getMode();
     if (modeConfigFile != null || defaultConfigFile != null) {
-      if (modeConfigFile != null) {
-        console(Phase.INIT, "Config: found [appdata]/"+toRelPath(modeConfigFile, GlobalSettings.getAppData()));
+      File appdata = GlobalSettings.getAppData();
+      File webinf = GlobalSettings.getWebInf();
+      if (modeConfigFile != null && appdata != null) {
+        console(Phase.INIT, "Config: found [appdata]/"+toRelPath(modeConfigFile, appdata));
       }
-      if (defaultConfigFile != null) {
-        console(Phase.INIT, "Config: found [webinf]/"+toRelPath(defaultConfigFile, GlobalSettings.getWebInf()));
+      if (defaultConfigFile != null && webinf != null) {
+        console(Phase.INIT, "Config: found [webinf]/"+toRelPath(defaultConfigFile, webinf));
       }
       boolean loaded = GlobalSettings.load();
       if (loaded) {

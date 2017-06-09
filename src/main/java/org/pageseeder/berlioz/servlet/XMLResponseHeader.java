@@ -58,7 +58,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.0
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
@@ -88,7 +88,7 @@ public final class XMLResponseHeader implements XMLWritable {
   /**
    * The results of URI resolution.
    */
-  private URIResolveResult _results;
+  private URIResolveResult _results; // XXX: convention
 
   /**
    * Creates a new XML response header.
@@ -187,15 +187,20 @@ public final class XMLResponseHeader implements XMLWritable {
 
     // Write the http parameters
     xml.openElement("http-parameters", true);
+    // TODO Use getParameterMap
     Enumeration<?> names = req.getParameterNames();
     while (names.hasMoreElements()) {
-      String paramName = (String)names.nextElement();
-      String[] values = req.getParameterValues(paramName);
-      for (String value : values) {
-        xml.openElement("parameter", false);
-        xml.attribute("name", paramName);
-        xml.writeText(value);
-        xml.closeElement();
+      String name = (String)names.nextElement();
+      if (name != null) {
+        String[] values = req.getParameterValues(name);
+        if (values != null) {
+          for (String value : values) {
+            xml.openElement("parameter", false);
+            xml.attribute("name", name);
+            xml.writeText(value);
+            xml.closeElement();
+          }
+        }
       }
     }
     xml.closeElement(); // close http-parameters

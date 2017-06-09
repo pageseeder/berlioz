@@ -22,12 +22,14 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.Location;
@@ -43,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * @author Christophe Lauret
  * @author Tu Tak Tran
  *
- * @version Berlioz 0.11.0
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public abstract class HttpRequestWrapper implements ContentRequest {
@@ -87,11 +89,10 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * @param core       The core HTTP information.
    * @param parameters The list of parameters.
    *
-   * @throws IllegalArgumentException If the request is <code>null</code>.
+   * @throws NullPointerException If the request is <code>null</code>.
    */
-  HttpRequestWrapper(CoreHttpRequest core, Map<String, String> parameters) throws IllegalArgumentException {
-    if (core == null)
-      throw new IllegalArgumentException("Cannot construct wrapper around null request.");
+  HttpRequestWrapper(CoreHttpRequest core, Map<String, String> parameters) {
+    Objects.requireNonNull(core, "Cannot construct wrapper around null request.");
     this._req = core.request();
     this._res = core.response();
     this._env = core.environment();
@@ -107,7 +108,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   };
 
   @Override
-  public final String getParameter(String name) {
+  public final @Nullable String getParameter(String name) {
     String value = this._parameters.get(name);
     if (value == null) {
       value = this._req.getParameter(name);
@@ -122,7 +123,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   }
 
   @Override
-  public final String[] getParameterValues(String name) {
+  public final String @Nullable [] getParameterValues(String name) {
     String value = this._parameters.get(name);
     if (value != null)
       return new String[]{value};
@@ -167,28 +168,30 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   }
 
   @Override
-  public final Date getDateParameter(String name) {
+  public final @Nullable Date getDateParameter(String name) {
+    String value = this.getParameter(name);
+    if (value == null) return null;
     try {
-      return ISO8601.parseAuto(this.getParameter(name));
+      return ISO8601.parseAuto(value);
     } catch (ParseException ex) {
       LOGGER.warn("The date parameter cannot be parsed :"+this._req.getParameter(name), ex);
       return null;
     }
   }
 
-  public final String getPathInfo() {
+  public final @Nullable String getPathInfo() {
     return this._req.getPathInfo();
   }
 
   @Override
-  public final Cookie[] getCookies() {
+  public final Cookie @Nullable [] getCookies() {
     return this._req.getCookies();
   }
 
 // attributes -------------------------------------------------------------------------------------
 
   @Override
-  public final Object getAttribute(String name) {
+  public final @Nullable Object getAttribute(String name) {
     return this._req.getAttribute(name);
   }
 
@@ -272,7 +275,8 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    */
   public static String getBerliozPath(HttpServletRequest req) {
     // Try to get the path info (when mapped to '/prefix/*')
-    if (req.getPathInfo() != null) return req.getPathInfo();
+    String pathInfo = req.getPathInfo();
+    if (pathInfo != null) return pathInfo;
     // Otherwise assume that it is mapped to '*.suffix'
     String path = req.getServletPath();
     int dot = path.lastIndexOf('.');

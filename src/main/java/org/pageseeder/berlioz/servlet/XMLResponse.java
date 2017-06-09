@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
@@ -54,7 +55,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.11.2
  * @since Berlioz 0.7
  */
 public final class XMLResponse {
@@ -67,7 +68,7 @@ public final class XMLResponse {
   /**
    * May be used to collect information about how generators perform.
    */
-  private static volatile GeneratorListener _listener = null;
+  private static volatile @Nullable GeneratorListener listener = null;
 
   /**
    * The core HTTP details.
@@ -87,27 +88,27 @@ public final class XMLResponse {
   /**
    * Maps the etags to each HTTP request
    */
-  private final Map<Integer, String> _etags = new HashMap<Integer, String>();
+  private final Map<Integer, String> _etags = new HashMap<>();
 
   /**
    * The request to send to the generators.
    */
-  private ContentStatus _status = null;
+  private @Nullable ContentStatus _status = null; // XXX: convention
 
   /**
    * The redirect URL.
    */
-  private String _redirect = null;
+  private @Nullable String _redirect = null; // XXX: convention
 
   /**
    * Whether to profile the content generators.
    */
-  private boolean _profile = false;
+  private boolean _profile = false; // XXX: convention
 
   /**
    * Any exception caught while invoking the generators.
    */
-  private BerliozException _ex = null;
+  private @Nullable BerliozException _ex = null; // XXX: convention
 
   /**
    * Creates a new XML response for the specified arguments.
@@ -132,7 +133,7 @@ public final class XMLResponse {
    * @return the service corresponding to this response.
    */
   public Service getService() {
-    return this._match != null? this._match.service() : null;
+    return this._match.service();
   }
 
   /**
@@ -147,7 +148,7 @@ public final class XMLResponse {
    *
    * @since Berlioz 0.8.0
    */
-  public String getEtag() {
+  public @Nullable String getEtag() {
     Service service = this._match.service();
     boolean cacheable = service.isCacheable();
     StringBuilder etag = new StringBuilder();
@@ -157,7 +158,7 @@ public final class XMLResponse {
         // Check if cacheable
         if (generator instanceof Cacheable) {
           String localtag = getETag(request);
-          if (localtag == null) return null;
+          if (localtag.isEmpty()) return null;
           etag.append(localtag).append('/');
         } else {
           cacheable = false;
@@ -175,7 +176,8 @@ public final class XMLResponse {
    * @since Berlioz 0.8.2
    */
   public ContentStatus getStatus() {
-    return this._status == null? ContentStatus.OK : this._status;
+    ContentStatus status = this._status;
+    return status == null? ContentStatus.OK : status;
   }
 
   /**
@@ -183,7 +185,7 @@ public final class XMLResponse {
    *
    * @return a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
    */
-  public BerliozException getError() {
+  public @Nullable BerliozException getError() {
     return this._ex;
   }
 
@@ -192,7 +194,7 @@ public final class XMLResponse {
    *
    * @return the URL to redirect to.
    */
-  public String getRedirectURL() {
+  public @Nullable String getRedirectURL() {
     return this._redirect;
   }
 
@@ -240,15 +242,15 @@ public final class XMLResponse {
    */
   @Beta
   static synchronized void setListener(GeneratorListener listener) {
-    XMLResponse._listener = listener;
+    XMLResponse.listener = listener;
   }
 
   /**
    * @return the listener currently in use.
    */
   @Beta
-  static synchronized GeneratorListener getListener() {
-    return _listener;
+  static synchronized @Nullable GeneratorListener getListener() {
+    return listener;
   }
 
   // Private helpers
@@ -278,7 +280,7 @@ public final class XMLResponse {
     // If cacheable, include etag
     if (generator instanceof Cacheable) {
       String etag = getETag(request);
-      if (etag != null) {
+      if (etag.length() > 0) {
         xml.attribute("etag", etag);
       }
     }
@@ -323,8 +325,9 @@ public final class XMLResponse {
     }
 
     // Report if requested
-    if (_listener != null) {
-      _listener.generate(service, generator, status, request.getProfileEtag(), end - start);
+    GeneratorListener l = listener;
+    if (l != null) {
+      l.generate(service, generator, status, request.getProfileEtag(), end - start);
     }
 
     // Write the XML
@@ -351,7 +354,7 @@ public final class XMLResponse {
     Map<String, String> common = HttpRequestWrapper.toParameters(core.request(), match.result());
     // Create a request for each generator
     Service service = match.service();
-    List<HttpContentRequest> requests = new ArrayList<HttpContentRequest>();
+    List<HttpContentRequest> requests = new ArrayList<>();
     int order = 0;
     for (ContentGenerator generator : service.generators()) {
       List<Parameter> pconfig = service.parameters(generator);
@@ -361,7 +364,7 @@ public final class XMLResponse {
 
       } else {
         // Some specific parameters, recompute the parameters
-        Map<String, String> specific = new HashMap<String, String>(common);
+        Map<String, String> specific = new HashMap<>(common);
         for (Parameter p : pconfig) {
           specific.put(p.name(), p.value(common));
         }
@@ -394,20 +397,22 @@ public final class XMLResponse {
       bex = new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
     }
     // Maintain the state of this Response
-    if (this._ex == null) {
-      this._ex = bex;
+    BerliozException ex = this._ex;
+    if (ex == null) {
+      this._ex = ex = bex;
 
     // In less frequent case when multiple errors are thrown...
     } else {
-      CompoundBerliozException compound;
+      CompoundBerliozException compound = this._ex instanceof CompoundBerliozException? (CompoundBerliozException)this._ex : null;
       ErrorCollector<Exception> collector;
-      if (this._ex instanceof CompoundBerliozException) {
-        compound = (CompoundBerliozException)this._ex;
+      if (compound != null) {
         collector = (ErrorCollector<Exception>)compound.getCollector();
       } else {
-        collector = new ErrorCollector<Exception>();
+        collector = new ErrorCollector<>();
         compound = new CompoundBerliozException("Multiple errors thrown by generators", BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
-        collector.collectQuietly(Level.ERROR, (Exception)this._ex.getCause());
+        // TODO This should be cleaned up
+        Throwable t = ex.getCause();
+        collector.collectQuietly(Level.ERROR, t != null? (Exception)t : ex);
         this._ex = compound;
       }
       collector.collectQuietly(Level.ERROR, exception);
@@ -432,13 +437,14 @@ public final class XMLResponse {
       ServiceStatusRule r = service.rule();
       CodeRule rule = r.rule();
       // If null set it (works for all rules)
-      if (this._status == null) {
+      ContentStatus s = this._status;
+      if (s == null) {
         this._status = status;
         return true;
-      } else if (rule == CodeRule.HIGHEST && status.code() > this._status.code()) {
+      } else if (rule == CodeRule.HIGHEST && status.code() > s.code()) {
         this._status = status;
         return true;
-      } else if (rule == CodeRule.LOWEST && status.code() < this._status.code()) {
+      } else if (rule == CodeRule.LOWEST && status.code() < s.code()) {
         this._status = status;
         return true;
       }
@@ -466,8 +472,8 @@ public final class XMLResponse {
         request.setProfileEtag(end-start);
       }
       // Store for reuse (even if null)
-      this._etags.put(key, etag);
+      this._etags.put(key, etag != null? etag : "");
     }
-    return etag;
+    return etag != null? etag : "";
   }
 }
