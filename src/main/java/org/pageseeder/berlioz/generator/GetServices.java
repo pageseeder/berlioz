@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -66,7 +67,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class GetServices implements ContentGenerator, Cacheable {
 
   @Override
-  public String getETag(ContentRequest req) {
+  public @NonNull String getETag(ContentRequest req) {
     StringBuilder etag = new StringBuilder();
     for (File f : ServiceLoader.getInstance().listServiceFiles()) {
       etag.append('~').append(f.length()).append('!').append(f.lastModified());

@@ -17,6 +17,9 @@ package org.pageseeder.berlioz.util;
 
 import java.util.Date;
 
+import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * A basic implementation of the entity info interface.
  *
@@ -42,7 +45,7 @@ public class GenericEntityInfo implements EntityInfo {
   /**
    * The entity tag.
    */
-  private final String _etag;
+  private final @Nullable String _etag;
 
   /**
    * Creates a new entity info.
@@ -51,7 +54,7 @@ public class GenericEntityInfo implements EntityInfo {
    * @param contentType The content type of the entity.
    * @param etag        The etag for the entity.
    */
-  public GenericEntityInfo(long modified, String contentType, String etag) {
+  public GenericEntityInfo(long modified, String contentType, @Nullable String etag) {
     this._modified = modified;
     this._mime = contentType;
     this._etag = etag;
@@ -64,7 +67,7 @@ public class GenericEntityInfo implements EntityInfo {
    * @param contentType The content type of the entity.
    * @param etag        The etag for the entity.
    */
-  public GenericEntityInfo(Date modified, String contentType, String etag) {
+  public GenericEntityInfo(Date modified, String contentType, @Nullable String etag) {
     this(modified.getTime(), contentType, etag);
   }
 
@@ -74,12 +77,12 @@ public class GenericEntityInfo implements EntityInfo {
   }
 
   @Override
-  public final String getMimeType() {
+  public final @NonNull String getMimeType() {
     return this._mime;
   }
 
   @Override
-  public final String getETag() {
+  public final @Nullable String getETag() {
     return this._etag;
   }
 }

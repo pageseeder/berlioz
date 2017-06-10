@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.util;
 
 import java.io.File;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 
 /**
@@ -77,7 +78,7 @@ public class FileEntityInfo implements EntityInfo {
   }
 
   @Override
-  public final String getMimeType() {
+  public final @NonNull String getMimeType() {
     return this.mime;
   }
 

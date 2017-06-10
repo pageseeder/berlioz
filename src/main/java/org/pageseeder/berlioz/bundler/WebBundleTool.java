@@ -83,7 +83,7 @@ public final class WebBundleTool {
   /**
    * The virtual location of the bundles (to calculate the relative path).
    */
-  private File _virtual;
+  private File virtual;
 
   /**
    * The maximum size for converting the content of an image in CSS into a data URI.
@@ -97,15 +97,17 @@ public final class WebBundleTool {
    *
    * @throws IllegalArgumentException If the specified file is <code>null</code>, does not exist or is not a directory.
    */
-  public WebBundleTool(File bundles) throws IllegalArgumentException {
-    if (bundles == null)
-      throw new IllegalArgumentException("The location where bundles are saved cannot be null.");
+  public WebBundleTool(File bundles) {
+    this._bundles = checkBundlesFile(bundles);
+    this.virtual = bundles;
+  }
+
+  private File checkBundlesFile(File bundles) {
     if (!bundles.exists())
       throw new IllegalArgumentException("The location where bundles are saved must exist: "+bundles);
     if (!bundles.isDirectory())
       throw new IllegalArgumentException("The location where bundles are saved must be a directory: "+bundles);
-    this._bundles = bundles;
-    this._virtual = bundles;
+    return bundles;
   }
 
   /**
@@ -114,7 +116,7 @@ public final class WebBundleTool {
    * @param virtual the virtual location of the bundles.
    */
   public void setVirtual(File virtual) {
-    this._virtual = virtual;
+    this.virtual = virtual;
   }
 
   /**
@@ -249,7 +251,7 @@ public final class WebBundleTool {
       // Write to the file
       bundle.clearImport();
       StringWriter writer = new StringWriter();
-      expandStyles(bundle, writer, new File(this._virtual, file.getName()), minimize, this._dataURIThreshold);
+      expandStyles(bundle, writer, new File(this.virtual, file.getName()), minimize, this._dataURIThreshold);
       bundle.getETag(true);
       filename = bundle.getFileName();
       instances.put(key, bundle);

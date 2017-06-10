@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 import org.eclipse.jdt.annotation.Nullable;
 
@@ -554,7 +555,7 @@ public final class Base64 {
    */
   @Deprecated
   public static String encodeObject(Serializable o, int options) throws IOException {
-    if (o == null) throw new NullPointerException("Cannot serialize a null object.");
+    Objects.requireNonNull(o, "Cannot serialize a null object.");
 
     // Streams
     java.io.ByteArrayOutputStream  baos  = null;
@@ -777,7 +778,7 @@ public final class Base64 {
    * @since 2.3.1
    */
   public static byte[] encodeBytesToBytes(byte[] source, int off, int len, int options) throws IOException {
-    if (source == null) throw new NullPointerException("Cannot serialize a null array.");
+    Objects.requireNonNull(source, "Cannot serialize a null array.");
     if (off < 0) throw new IllegalArgumentException("Cannot have negative offset: " + off);
     if (len < 0) throw new IllegalArgumentException("Cannot have length offset: " + len);
     if (off + len > source.length) throw new IllegalArgumentException(String.format(
@@ -895,8 +896,8 @@ public final class Base64 {
   private static int decode4to3(byte[] source, int srcOffset, byte[] destination, int destOffset, int options) {
 
     // Lots of error checking and exception throwing
-    if (source == null) throw new NullPointerException("Source array was null.");
-    if (destination == null) throw new NullPointerException("Destination array was null.");
+    Objects.requireNonNull(source, "Source array was null.");
+    Objects.requireNonNull(destination, "Destination array was null.");
     if (srcOffset < 0 || srcOffset + 3 >= source.length) throw new IllegalArgumentException(String.format(
         "Source array with length %d cannot have offset of %d and still process four bytes.", source.length, srcOffset));
     if (destOffset < 0 || destOffset + 2 >= destination.length) throw new IllegalArgumentException(String.format(
@@ -980,7 +981,7 @@ public final class Base64 {
   public static byte[] decode(byte[] source, int off, int len, int options) throws IOException {
 
     // Lots of error checking and exception throwing
-    if (source == null) throw new NullPointerException("Cannot decode null source array.");
+    Objects.requireNonNull(source, "Cannot decode null source array.");
     if (off < 0 || off + len > source.length) throw new IllegalArgumentException(String.format(
       "Source array with length %d cannot have offset of %d and process %d bytes.", source.length, off, len));
 
@@ -1056,7 +1057,7 @@ public final class Base64 {
    * @since 1.4
    */
   public static byte[] decode(String s, int options) throws IOException {
-    if (s == null) throw new NullPointerException("Input string was null.");
+    Objects.requireNonNull(s, "Input string was null.");
 
     byte[] bytes;
     try {
@@ -1202,7 +1203,7 @@ public final class Base64 {
    * @since 2.1
    */
   public static void encodeToFile(byte[] dataToEncode, String filename) throws IOException {
-    if (dataToEncode == null) throw new NullPointerException("Data to encode was null.");
+    Objects.requireNonNull(dataToEncode, "Data to encode was null.");
     Base64.OutputStream bos = null;
     try {
       bos = new Base64.OutputStream(new java.io.FileOutputStream(filename), Base64.ENCODE);

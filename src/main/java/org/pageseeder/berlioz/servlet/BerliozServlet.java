@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
@@ -567,7 +568,7 @@ public final class BerliozServlet extends HttpServlet {
      * @return the etag for this service.
      */
     @Override
-    public String getETag() {
+    public @NonNull String getETag() {
       return this._etag;
     }
 
@@ -575,7 +576,7 @@ public final class BerliozServlet extends HttpServlet {
      * @return Always "text/html".
      */
     @Override
-    public String getMimeType() {
+    public @NonNull String getMimeType() {
       return "text/html";
     }
 

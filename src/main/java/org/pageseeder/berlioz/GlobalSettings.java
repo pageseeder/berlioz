@@ -312,7 +312,7 @@ public final class GlobalSettings {
    * @throws NullPointerException     If the specified option is <code>null</code>.
    */
   public static boolean has(BerliozOption option) {
-    if (option == null) throw new NullPointerException("No Berlioz option specified");
+    Objects.requireNonNull(option, "No Berlioz option specified");
     String value = ensureSettings().get(option.property());
     Object def = option.defaultTo();
     if (option.isBoolean()) return value != null? Boolean.parseBoolean(value) : ((Boolean)def).booleanValue();
@@ -814,9 +814,8 @@ public final class GlobalSettings {
    * @throws IllegalArgumentException If the file is not a directory or does not exist
    */
   private static void checkDirectoryExists(File dir) {
-    if (dir == null)
-      throw new NullPointerException("The specified file "+dir+" is null");
-    else if (!dir.exists())
+    Objects.requireNonNull(dir, "The specified file "+dir+" is null");
+    if (!dir.exists())
       throw new IllegalArgumentException("The specified file "+dir+" does not exist.");
     else if (!dir.isDirectory())
       throw new IllegalArgumentException("The specified file "+dir+" is not a directory.");

@@ -367,12 +367,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
       while (names.hasMoreElements()) {
         String name = names.nextElement().toString();
         Enumeration<?> values = req.getHeaders(name);
-        while (values.hasMoreElements()) {
-          String value = values.nextElement().toString();
-          xml.openElement("header");
-          xml.attribute("name", name);
-          xml.attribute("value", value);
-          xml.closeElement();
+        if (values != null) {
+          while (values.hasMoreElements()) {
+            String value = values.nextElement().toString();
+            xml.openElement("header");
+            xml.attribute("name", name);
+            xml.attribute("value", value);
+            xml.closeElement();
+          }
         }
       }
       xml.closeElement();
@@ -475,13 +477,15 @@ public final class ErrorHandlerServlet extends HttpServlet {
     while (names.hasMoreElements()) {
       String name = names.nextElement().toString();
       Enumeration<?> values = req.getHeaders(name);
-      while (values.hasMoreElements()) {
-        String value = values.nextElement().toString();
-        json.append('{');
-        appendJSONProperty(json, "name", name);
-        json.append(',');
-        appendJSONProperty(json, "value", value);
-        json.append('}');
+      if (values != null) {
+        while (values.hasMoreElements()) {
+          String value = values.nextElement().toString();
+          json.append('{');
+          appendJSONProperty(json, "name", name);
+          json.append(',');
+          appendJSONProperty(json, "value", value);
+          json.append('}');
+        }
       }
     }
     json.append(']');

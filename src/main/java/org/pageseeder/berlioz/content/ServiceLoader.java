@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.parsers.SAXParser;
 
@@ -186,8 +187,7 @@ public final class ServiceLoader {
    * @throws BerliozException Should something unexpected happen.
    */
   public synchronized void load(File xml) throws BerliozException {
-    if (xml == null)
-      throw new NullPointerException("The service configuration file is null! That's it I give up.");
+    Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
     // OK Let's start
     SAXParser parser = XMLUtils.getParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
@@ -281,7 +281,9 @@ public final class ServiceLoader {
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
       // Identify the handler to use
       ContentHandler handler = getHandler(localName, atts);
-      handler.setDocumentLocator(this.locator);
+      Locator loc = this.locator;
+      if (loc != null)
+        handler.setDocumentLocator(loc);
       // re-trigger events on handler to ensure proper initialisation
       handler.startDocument();
       handler.startElement(uri, localName, qName, atts);

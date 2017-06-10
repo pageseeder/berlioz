@@ -138,7 +138,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   }
 
   @Override
-  public void processingInstruction(String target, String data) throws SAXException {
+  public void processingInstruction(String target, @Nullable String data) throws SAXException {
     try {
       this.to.writePI(target, data);
     } catch (IOException ex) {

@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.generator;
 import java.io.IOException;
 import java.util.Enumeration;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -54,7 +55,7 @@ public final class GetParameters implements ContentGenerator, Cacheable {
    * {@inheritDoc}
    */
   @Override
-  public String getETag(ContentRequest req) {
+  public @NonNull String getETag(ContentRequest req) {
     StringBuilder hash = new StringBuilder("?");
     // TODO Use parameter map
     Enumeration<String> names = req.getParameterNames();

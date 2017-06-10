@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.generator;
 import java.io.IOException;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
@@ -74,7 +75,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class GetMatchingService implements ContentGenerator, Cacheable {
 
   @Override
-  public String getETag(ContentRequest req) {
+  public @NonNull String getETag(ContentRequest req) {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     return Long.toString(registry.version());
   }

@@ -259,10 +259,12 @@ public final class BerliozConfig {
     if (this._controlKey.equals(req.getParameter("berlioz-control"))) return true;
     // TODO Check if this is appropriate!!
     Enumeration<String> e = req.getHeaders("Authorization");
-    while (e.hasMoreElements()) {
-      String auth = e.nextElement();
-      if (auth.startsWith("Berlioz ") && auth.endsWith(this._controlKey))
-        return true;
+    if (e != null) {
+      while (e.hasMoreElements()) {
+        String auth = e.nextElement();
+        if (auth.startsWith("Berlioz ") && auth.endsWith(this._controlKey))
+          return true;
+      }
     }
     return false;
   }

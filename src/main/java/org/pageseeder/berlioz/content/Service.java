@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
@@ -591,7 +592,7 @@ public final class Service {
    * @param original the list maintained by the builder.
    * @return a new identical immutable list.
    */
-  private static <T> List<T> immutableList(List<T> original) {
+  private static <T> List<T> immutableList(List<@NonNull T> original) {
     if (original.isEmpty())
       return Collections.emptyList();
     else if (original.size() == 1) return Collections.singletonList(original.get(0));

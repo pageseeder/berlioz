@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.furi;
 import java.util.Hashtable;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 
 /**
@@ -62,7 +63,7 @@ public class VariableBinder {
     @Override
     public boolean exists(String value) { return true; }
     @Override
-    public Object resolve(String value) { return value; }
+    public @NonNull String resolve(String value) { return value; }
   };
 
   /**
