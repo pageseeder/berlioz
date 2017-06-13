@@ -105,8 +105,8 @@ public final class Service {
     this._rule = Objects.requireNonNull(builder.rule, "There must be a rule for this service");
     this._cache = builder.cache;
     this._flags = builder.flags;
-    this._generators = immutable(builder._generators);
-    this._parameters = immutable(builder._parameters);
+    this._generators = immutableList(builder._generators);
+    this._parameters = immutableMap(builder._parameters);
     this._cacheable = isCacheable(this._generators);
     this._names = immutable3(builder._names);
     this._targets = immutable3(builder._targets);
@@ -529,7 +529,7 @@ public final class Service {
      */
     public Service build() {
       // warn when attempting to use cache control with uncacheable service
-      if (this.cache != null && !isCacheable(this._generators)) {
+      if (this.cache.length() > 0 && !isCacheable(this._generators)) {
         Logger logger = LoggerFactory.getLogger(Builder.class);
         logger.warn("Building non-cacheable service {} - cache control ignored.", this.id);
       }
@@ -557,7 +557,7 @@ public final class Service {
    * @param original the list maintained by the builder.
    * @return a new identical immutable list.
    */
-  private static List<ContentGenerator> immutable(List<ContentGenerator> original) {
+  private static <T> List<T> immutableList(List<@NonNull T> original) {
     if (original.isEmpty())
       return Collections.emptyList();
     else if (original.size() == 1) return Collections.singletonList(original.get(0));
@@ -571,7 +571,7 @@ public final class Service {
    * @param original the map maintained by the builder.
    * @return a new identical immutable map.
    */
-  private static Map<ContentGenerator, List<Parameter>> immutable(Map<ContentGenerator, List<Parameter>> original) {
+  private static Map<ContentGenerator, List<Parameter>> immutableMap(Map<ContentGenerator, List<Parameter>> original) {
     if (original.isEmpty())
       return Collections.emptyMap();
     else if (original.size() == 1) {
@@ -584,20 +584,6 @@ public final class Service {
       }
       return Collections.unmodifiableMap(map);
     }
-  }
-
-  /**
-   * Returns a new identical immutable list.
-   *
-   * @param original the list maintained by the builder.
-   * @return a new identical immutable list.
-   */
-  private static <T> List<T> immutableList(List<@NonNull T> original) {
-    if (original.isEmpty())
-      return Collections.emptyList();
-    else if (original.size() == 1) return Collections.singletonList(original.get(0));
-    else
-      return Collections.unmodifiableList(new ArrayList<>(original));
   }
 
   /**
