@@ -97,10 +97,11 @@ public final class TokenFactory {
    * @return The corresponding token instance.
    *
    * @throws URITemplateSyntaxException If the expression could not be parsed as a valid token.
+   * @throws NullPointerException If the expression is <code>null</code>.
    */
   public Token newToken(String exp) {
     // no expression: no token!
-    if (exp == null || exp.length() == 0)
+    if (exp.length() == 0)
       return TokenLiteral.EMPTY;
     // intercept the wild card
     if ("*".equals(exp))

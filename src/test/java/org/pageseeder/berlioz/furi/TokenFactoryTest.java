@@ -34,7 +34,7 @@ public final class TokenFactoryTest {
    * Test that the <code>NewToken</code> method returns a <code>null</code> token for a
    * <code>null</code> expression.
    */
-  @Test
+  @Test(expected = NullPointerException.class)
   public void testNewToken_Null() {
     Assert.assertNull(TokenFactory.getInstance().newToken(null));
   }
@@ -45,7 +45,7 @@ public final class TokenFactoryTest {
    */
   @Test
   public void testNewToken_EmptyString() {
-    Assert.assertNull(TokenFactory.getInstance().newToken(""));
+    Assert.assertEquals(TokenLiteral.EMPTY, TokenFactory.getInstance().newToken(""));
   }
 
   /**
@@ -77,7 +77,7 @@ public final class TokenFactoryTest {
    */
   @Test
   public void testNewToken_Operator() {
-    List<Variable> vars = new ArrayList<Variable>();
+    List<Variable> vars = new ArrayList<>();
     Variable y = new Variable("y");
     vars.add(y);
     // make sure that all defined operators are supported
