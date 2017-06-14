@@ -313,7 +313,7 @@ public final class GlobalSettings {
    */
   public static boolean has(BerliozOption option) {
     Objects.requireNonNull(option, "No Berlioz option specified");
-    String value = ensureSettings().get(option.property());
+    @Nullable String value = ensureSettings().get(option.property());
     Object def = option.defaultTo();
     if (option.isBoolean()) return value != null? Boolean.parseBoolean(value) : ((Boolean)def).booleanValue();
     else
@@ -336,7 +336,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static String get(String name, String def) throws IllegalStateException {
-    String value = ensureSettings().get(name);
+    @Nullable String value = ensureSettings().get(name);
     return value == null? def : value;
   }
 
@@ -351,7 +351,7 @@ public final class GlobalSettings {
    */
   public static int get(String name, int def) throws IllegalStateException {
     try {
-      String value = ensureSettings().get(name);
+      @Nullable String value = ensureSettings().get(name);
       return value == null? def : Integer.parseInt(value);
     } catch (NumberFormatException ex) {
       return def;
@@ -373,7 +373,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static boolean get(String name, boolean def) throws IllegalStateException {
-    String value = ensureSettings().get(name);
+    @Nullable String value = ensureSettings().get(name);
     if (value == null) return def;
     return def? !"false".equals(value) : "true".equals(value);
   }
@@ -446,7 +446,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static @Nullable File getFileProperty(String name) throws IllegalStateException {
-    String filepath = ensureSettings().get(name);
+    @Nullable String filepath = ensureSettings().get(name);
     if (filepath != null) {
       // try appData first
       File file = new File(appData, filepath);
@@ -495,7 +495,6 @@ public final class GlobalSettings {
     all.put(name, node);
     return node;
   }
-
 
   /**
    * Enumerates the properties in the global settings.
@@ -726,7 +725,6 @@ public final class GlobalSettings {
    * @throws IOException Should an I/O error occur while reading the properties
    */
   private static void loadInto(File file, Map<String, String> properties) throws IOException{
-    if (file == null) return;
     Format format = file.getName().endsWith(".xml")? Format.XML_CONFIG : Format.PROPERTIES;
     LOGGER.debug("Loading Berlioz config {} as {}", file.getName(), format);
     switch (format) {
