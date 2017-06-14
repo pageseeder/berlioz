@@ -88,7 +88,7 @@ public final class XMLResponseHeader implements XMLWritable {
   /**
    * The results of URI resolution.
    */
-  private URIResolveResult _results; // XXX: convention
+  private final URIResolveResult _results;
 
   /**
    * Creates a new XML response header.

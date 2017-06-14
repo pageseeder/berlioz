@@ -38,7 +38,7 @@ public interface PathInfo extends XMLWritable {
   String context();
 
   /**
-   * Returns the prefix used for the request if mapped as "/xxx/*".
+   * Returns the prefix used for the request if mapped as "/xyz/*".
    *
    * @return the prefix or empty string.
    */
@@ -52,7 +52,7 @@ public interface PathInfo extends XMLWritable {
   String path();
 
   /**
-   * Returns the suffix used for the request if mapped as "*.xxx" including the '.'.
+   * Returns the suffix used for the request if mapped as "*.xyz" including the '.'.
    *
    * @return the suffix or empty string.
    */

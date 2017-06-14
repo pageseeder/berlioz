@@ -102,12 +102,12 @@ public final class RedirectFilter implements Filter, Serializable {
   /**
    * Maps URI patterns to redirect to URI pattern target.
    */
-  private transient @Nullable Map<URIPattern, URIPattern> _mapping = null; // XXX: convention
+  private transient @Nullable Map<URIPattern, URIPattern> mapping = null;
 
   /**
    * IF a URI pattern is on this list, it indicates that the redirect is permanent (301 instead of 302)
    */
-  private transient List<URIPattern> _permanent = Collections.emptyList(); // XXX: convention
+  private transient List<URIPattern> permanent = Collections.emptyList();
 
   // servlet methods
   // ---------------------------------------------------------------------------------------------
@@ -130,16 +130,16 @@ public final class RedirectFilter implements Filter, Serializable {
     ServletContext context = config.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
-    String mapping = config.getInitParameter("config");
+    String mappingConfig = config.getInitParameter("config");
 
     // Mapping not specified
-    if (mapping == null) {
+    if (mappingConfig == null) {
       LOGGER.warn("Missing 'config' init-parameter - filter will have no effect");
       return;
     }
 
     // Mapping does not exist
-    File mappingFile = new File(webinfPath, mapping);
+    File mappingFile = new File(webinfPath, mappingConfig);
     if (!mappingFile.exists()) {
       LOGGER.warn("'config' init-parameter points to non existing file {} - filter will have no effect",
       mappingFile.getAbsolutePath());
@@ -152,7 +152,7 @@ public final class RedirectFilter implements Filter, Serializable {
   @Override
   public void destroy() {
     this.mappingFile = null;
-    this._mapping = null;
+    this.mapping = null;
   }
 
   @Override
@@ -228,8 +228,8 @@ public final class RedirectFilter implements Filter, Serializable {
     LOGGER.debug("Redirecting from {} to {}", from, to);
 
     // And redirect
-    boolean permanent = this._permanent.contains(match);
-    sendRedirect(req, res, to, permanent);
+    boolean isPermanent = this.permanent.contains(match);
+    sendRedirect(req, res, to, isPermanent);
     return true;
   }
 
@@ -237,10 +237,10 @@ public final class RedirectFilter implements Filter, Serializable {
    * @return the URI pattern mapping loading the configuration file if necessary.
    */
   private Map<URIPattern, URIPattern> mapping() {
-    Map<URIPattern, URIPattern> mapping = this._mapping;
+    Map<URIPattern, URIPattern> mapping = this.mapping;
     if (mapping == null) {
       mapping = loadConfig(this.mappingFile);
-      this._mapping = mapping;
+      this.mapping = mapping;
     }
     return mapping;
   }
@@ -261,7 +261,7 @@ public final class RedirectFilter implements Filter, Serializable {
         LOGGER.error("Unable to load redirect mapping {} : {}", file, ex);
       }
       mapping = handler.getMapping();
-      this._permanent = handler.getPermanent();
+      this.permanent = handler.getPermanent();
     }
     return mapping;
   }

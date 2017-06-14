@@ -91,24 +91,24 @@ public final class XMLResponse {
   private final Map<Integer, String> _etags = new HashMap<>();
 
   /**
+   * Whether to profile the content generators.
+   */
+  private final boolean _profile;
+
+  /**
    * The request to send to the generators.
    */
-  private @Nullable ContentStatus _status = null; // XXX: convention
+  private @Nullable ContentStatus status = null;
 
   /**
    * The redirect URL.
    */
-  private @Nullable String _redirect = null; // XXX: convention
-
-  /**
-   * Whether to profile the content generators.
-   */
-  private boolean _profile = false; // XXX: convention
+  private @Nullable String redirect = null;
 
   /**
    * Any exception caught while invoking the generators.
    */
-  private @Nullable BerliozException _ex = null; // XXX: convention
+  private @Nullable BerliozException exception = null;
 
   /**
    * Creates a new XML response for the specified arguments.
@@ -176,7 +176,7 @@ public final class XMLResponse {
    * @since Berlioz 0.8.2
    */
   public ContentStatus getStatus() {
-    ContentStatus status = this._status;
+    ContentStatus status = this.status;
     return status == null? ContentStatus.OK : status;
   }
 
@@ -186,7 +186,7 @@ public final class XMLResponse {
    * @return a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
    */
   public @Nullable BerliozException getError() {
-    return this._ex;
+    return this.exception;
   }
 
   /**
@@ -195,7 +195,7 @@ public final class XMLResponse {
    * @return the URL to redirect to.
    */
   public @Nullable String getRedirectURL() {
-    return this._redirect;
+    return this.redirect;
   }
 
   /**
@@ -315,7 +315,7 @@ public final class XMLResponse {
     // Update Status
     boolean wasSet = handleStatus(status, generator, service);
     if (wasSet && ContentStatus.isRedirect(status)) {
-      this._redirect = request.getRedirectURL();
+      this.redirect = request.getRedirectURL();
     }
     xml.attribute("status", status.toString());
     if (this._profile) {
@@ -397,13 +397,13 @@ public final class XMLResponse {
       bex = new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
     }
     // Maintain the state of this Response
-    BerliozException ex = this._ex;
+    BerliozException ex = this.exception;
     if (ex == null) {
-      this._ex = ex = bex;
+      this.exception = ex = bex;
 
     // In less frequent case when multiple errors are thrown...
     } else {
-      CompoundBerliozException compound = this._ex instanceof CompoundBerliozException? (CompoundBerliozException)this._ex : null;
+      CompoundBerliozException compound = ex instanceof CompoundBerliozException? (CompoundBerliozException)ex : null;
       ErrorCollector<Exception> collector;
       if (compound != null) {
         collector = (ErrorCollector<Exception>)compound.getCollector();
@@ -413,7 +413,7 @@ public final class XMLResponse {
         // TODO This should be cleaned up
         Throwable t = ex.getCause();
         collector.collectQuietly(Level.ERROR, t != null? (Exception)t : ex);
-        this._ex = compound;
+        ex = compound;
       }
       collector.collectQuietly(Level.ERROR, exception);
     }
@@ -437,15 +437,15 @@ public final class XMLResponse {
       ServiceStatusRule r = service.rule();
       CodeRule rule = r.rule();
       // If null set it (works for all rules)
-      ContentStatus s = this._status;
+      ContentStatus s = this.status;
       if (s == null) {
-        this._status = status;
+        this.status = status;
         return true;
       } else if (rule == CodeRule.HIGHEST && status.code() > s.code()) {
-        this._status = status;
+        this.status = status;
         return true;
       } else if (rule == CodeRule.LOWEST && status.code() < s.code()) {
-        this._status = status;
+        this.status = status;
         return true;
       }
     }

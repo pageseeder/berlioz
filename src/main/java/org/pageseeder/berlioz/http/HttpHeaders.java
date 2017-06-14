@@ -450,7 +450,7 @@ public final class HttpHeaders { // NO_UCD
    * <p>Examples</p>
    * <pre>
    *   If-Match: "xyzzy"
-   *   If-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
+   *   If-Match: "xyzzy", "r2d2xhyxx", "c3piozw4zz"
    *   If-Match: *
    * </pre>
    *
@@ -485,8 +485,8 @@ public final class HttpHeaders { // NO_UCD
    * <pre>
    *   If-None-Match: "xyzzy"
    *   If-None-Match: W/"xyzzy"
-   *   If-None-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
-   *   If-None-Match: W/"xyzzy", W/"r2d2xxxx", W/"c3piozzzz"
+   *   If-None-Match: "xyzzy", "r2d2xhyxx", "c3piozw4zz"
+   *   If-None-Match: W/"xyzzy", W/"r2d2xhyxx", W/"c3piozw4zz"
    *   If-None-Match: *
    * </pre>
    *

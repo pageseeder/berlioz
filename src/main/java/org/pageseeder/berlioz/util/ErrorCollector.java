@@ -42,12 +42,12 @@ public class ErrorCollector<T extends Throwable>  {
   /**
    * The threshold level for the collect method to throw an exception.
    */
-  private Level _exception = Level.FATAL; // XXX: convention
+  private Level exception = Level.FATAL;
 
   /**
    * The threshold level for the collect method to set the error flag to <code>true</code>.
    */
-  private Level _flag = Level.ERROR; // XXX: convention
+  private Level flag = Level.ERROR;
 
   /**
    * Indicates whether an error has been reported during parsing.
@@ -70,7 +70,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If the threshold argument is <code>null</code>.
    */
   public final void setException(Level threshold) {
-    this._exception = Objects.requireNonNull(threshold, "Specified threshold is null");
+    this.exception = Objects.requireNonNull(threshold, "Specified threshold is null");
   }
 
   /**
@@ -80,7 +80,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If the threshold argument is <code>null</code>.
    */
   public final void setErrorFlag(Level threshold) {
-    this._flag = Objects.requireNonNull(threshold, "Specified threshold is null");;
+    this.flag = Objects.requireNonNull(threshold, "Specified threshold is null");;
   }
 
   /**
@@ -97,10 +97,10 @@ public class ErrorCollector<T extends Throwable>  {
    */
   public final void collect(Level level, T exception) throws T {
     this._collected.add(new CollectedError<>(level, exception));
-    if (this._flag.compareTo(level) <= 0) {
+    if (this.flag.compareTo(level) <= 0) {
       this._hasError = true;
     }
-    if (this._exception.compareTo(level) <= 0) throw exception;
+    if (this.exception.compareTo(level) <= 0) throw exception;
   }
 
   /**
@@ -114,7 +114,7 @@ public class ErrorCollector<T extends Throwable>  {
    */
   public final void collectQuietly(Level level, T exception) {
     this._collected.add(new CollectedError<>(level, exception));
-    if (this._flag.compareTo(level) <= 0) {
+    if (this.flag.compareTo(level) <= 0) {
       this._hasError = true;
     }
   }

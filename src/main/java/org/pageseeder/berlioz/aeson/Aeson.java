@@ -80,7 +80,6 @@ public final class Aeson {
       transformer = factory.newTransformer(xslt);
     } else {
       // This should create a identity transformer
-      // TODO: We could simply SAX parse the xml...
       transformer = factory.newTransformer();
       transformer.setOutputProperty("method", "xml");
       transformer.setOutputProperty("media-type", "application/json");
