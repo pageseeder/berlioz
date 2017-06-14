@@ -109,7 +109,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   @Override
   public final @Nullable String getParameter(String name) {
-    String value = this._parameters.get(name);
+    @Nullable String value = this._parameters.get(name);
     if (value == null) {
       value = this._req.getParameter(name);
     }
@@ -124,7 +124,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   @Override
   public final String @Nullable [] getParameterValues(String name) {
-    String value = this._parameters.get(name);
+    @Nullable String value = this._parameters.get(name);
     if (value != null)
       return new String[]{value};
     else
@@ -249,7 +249,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * @return The session of the HTTP servlet request.
    */
   @Override
-  public final HttpSession getSession() {
+  public final @Nullable HttpSession getSession() {
     return this._req.getSession();
   }
 

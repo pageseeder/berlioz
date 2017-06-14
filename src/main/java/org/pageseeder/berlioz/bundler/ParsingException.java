@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.bundler;
 
+import org.eclipse.jdt.annotation.NonNull;
+
 /**
  * Class of exceptions occurring while parsing content for minimization.
  *
@@ -70,7 +72,7 @@ public class ParsingException extends Exception {
   }
 
   @Override
-  public String getMessage() {
+  public @NonNull String getMessage() {
     return super.getMessage()+" at line "+this._line+" and column "+this._column;
   }
 }

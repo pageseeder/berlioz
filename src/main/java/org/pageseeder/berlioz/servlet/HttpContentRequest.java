@@ -96,8 +96,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    */
   @Override
   public void setStatus(ContentStatus status) {
-    if (status == null)
-      throw new NullPointerException("Cannot set status to null");
+    Objects.requireNonNull(status, "Cannot set status to null");
     if (ContentStatus.isRedirect(status))
       throw new IllegalArgumentException("Unable to use redirect status code:"+status);
     this.status = status;
@@ -113,7 +112,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    */
   @Override
   public void setRedirect(String url, @Nullable ContentStatus status) {
-    if (url == null) throw new NullPointerException("Cannot set URL to null");
+    Objects.requireNonNull(url, "Cannot set URL to null");
     if (status != null) {
       if (!ContentStatus.isRedirect(status)) throw new IllegalArgumentException("Invalid redirect status:"+status);
       this.status = status;

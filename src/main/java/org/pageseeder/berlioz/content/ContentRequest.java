@@ -166,7 +166,7 @@ public interface ContentRequest {
    *
    * @return The session of the HTTP servlet request.
    */
-  HttpSession getSession();
+  @Nullable HttpSession getSession();
 
   /**
    * Returns the environment of the request.

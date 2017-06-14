@@ -81,7 +81,7 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * The content type produced by this transformer.
    */
-  private String contentType = "text/html";
+  private String mediaType = "text/html";
 
   /**
    * The encoding.
@@ -173,7 +173,7 @@ public final class XSLTransformResult implements BerliozOutput {
    */
   @Override
   public String getMediaType() {
-    return this.contentType;
+    return this.mediaType;
   }
 
   /**
@@ -194,7 +194,7 @@ public final class XSLTransformResult implements BerliozOutput {
   protected void setOutputProperties(Templates templates) {
     Properties p = templates.getOutputProperties();
     this.encoding = p.getProperty("encoding", "utf-8");
-    this.contentType = p.getProperty("media-type", "text/html");
+    this.mediaType = p.getProperty("media-type", "text/html");
   }
 
 }
