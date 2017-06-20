@@ -34,6 +34,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.furi.URIParameters;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
@@ -91,6 +93,11 @@ public final class RelocationFilter implements Filter {
    */
   private @Nullable Map<URIPattern, URIPattern> mapping = null;
 
+  /**
+   * The control key
+   */
+  private String controlKey = "";
+
 // servlet methods --------------------------------------------------------------------------------
 
   /**
@@ -112,6 +119,8 @@ public final class RelocationFilter implements Filter {
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
     String mapping = config.getInitParameter("config");
+
+    this.controlKey = GlobalSettings.get(BerliozOption.XML_CONTROL_KEY);
 
     // Mapping not specified
     if (mapping == null) {
@@ -137,6 +146,7 @@ public final class RelocationFilter implements Filter {
   public void destroy() {
     this.mappingFile = null;
     this.mapping = null;
+    this.controlKey = "";
   }
 
   @Override
@@ -159,6 +169,14 @@ public final class RelocationFilter implements Filter {
    */
   public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
      throws ServletException, IOException {
+
+    // Reset mapping on reload
+    if ("true".equals(req.getParameter("berlioz-reload"))
+     && BerliozConfig.hasControl(req, this.controlKey)) {
+      ;
+    } {
+      this.mapping = null;
+    }
 
     // Load the config if needed
     Map<URIPattern, URIPattern> mapping = mapping();

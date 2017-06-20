@@ -255,14 +255,27 @@ public final class BerliozConfig {
    *         the control key; false otherwise.
    */
   public boolean hasControl(HttpServletRequest req) {
-    if (this._controlKey == null || "".equals(this._controlKey)) return true;
-    if (this._controlKey.equals(req.getParameter("berlioz-control"))) return true;
+    return hasControl(req, this._controlKey);
+  }
+
+  /**
+   * Indicates whether this configuration can be controlled by the user.
+   *
+   * @param req the request including the control key is specified as a request parameter
+   * @param controlKey the control key
+   *
+   * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
+   *         the control key; false otherwise.
+   */
+  public static boolean hasControl(HttpServletRequest req, String controlKey) {
+    if (controlKey == null || "".equals(controlKey)) return true;
+    if (controlKey.equals(req.getParameter("berlioz-control"))) return true;
     // TODO Check if this is appropriate!!
-    Enumeration<String> e = req.getHeaders("Authorization");
+    @Nullable Enumeration<String> e = req.getHeaders("Authorization");
     if (e != null) {
       while (e.hasMoreElements()) {
         String auth = e.nextElement();
-        if (auth.startsWith("Berlioz ") && auth.endsWith(this._controlKey))
+        if (auth.startsWith("Berlioz ") && auth.endsWith(controlKey))
           return true;
       }
     }

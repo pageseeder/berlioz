@@ -37,6 +37,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.furi.URIParameters;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
@@ -109,6 +111,11 @@ public final class RedirectFilter implements Filter, Serializable {
    */
   private transient List<URIPattern> permanent = Collections.emptyList();
 
+  /**
+   * The control key
+   */
+  private String controlKey = "";
+
   // servlet methods
   // ---------------------------------------------------------------------------------------------
 
@@ -132,6 +139,8 @@ public final class RedirectFilter implements Filter, Serializable {
     File webinfPath = new File(contextPath, "WEB-INF");
     String mappingConfig = config.getInitParameter("config");
 
+    this.controlKey = GlobalSettings.get(BerliozOption.XML_CONTROL_KEY);
+
     // Mapping not specified
     if (mappingConfig == null) {
       LOGGER.warn("Missing 'config' init-parameter - filter will have no effect");
@@ -153,6 +162,7 @@ public final class RedirectFilter implements Filter, Serializable {
   public void destroy() {
     this.mappingFile = null;
     this.mapping = null;
+    this.controlKey = "";
   }
 
   @Override
@@ -175,6 +185,14 @@ public final class RedirectFilter implements Filter, Serializable {
    */
   public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
       throws ServletException, IOException {
+
+    // Reset mapping on reload
+    if ("true".equals(req.getParameter("berlioz-reload"))
+     && BerliozConfig.hasControl(req, this.controlKey)) {
+      ;
+    } {
+      this.mapping = null;
+    }
 
     // Load the config if needed
     Map<URIPattern, URIPattern> mapping = mapping();
