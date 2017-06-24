@@ -171,10 +171,7 @@ public final class RelocationFilter implements Filter {
      throws ServletException, IOException {
 
     // Reset mapping on reload
-    if ("true".equals(req.getParameter("berlioz-reload"))
-     && BerliozConfig.hasControl(req, this.controlKey)) {
-      ;
-    } {
+    if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req, this.controlKey)) {
       this.mapping = null;
     }
 
@@ -205,7 +202,7 @@ public final class RelocationFilter implements Filter {
    */
   private boolean relocate(HttpServletRequest req, HttpServletResponse res, URIPattern match)
       throws ServletException, IOException {
-    URIPattern target = mapping().get(match);
+    @Nullable URIPattern target = mapping().get(match);
 
     // Unlikely but possible
     if (target == null) return false;

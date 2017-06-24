@@ -187,10 +187,7 @@ public final class RedirectFilter implements Filter, Serializable {
       throws ServletException, IOException {
 
     // Reset mapping on reload
-    if ("true".equals(req.getParameter("berlioz-reload"))
-     && BerliozConfig.hasControl(req, this.controlKey)) {
-      ;
-    } {
+    if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req, this.controlKey)) {
       this.mapping = null;
     }
 
