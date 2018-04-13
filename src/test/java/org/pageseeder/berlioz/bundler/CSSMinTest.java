@@ -47,10 +47,17 @@ public class CSSMinTest {
   @Test public void testContentProperty() {
     Assert.assertEquals("i::before{content:\" \"}", min("i::before { content: \" \" }"));
   }
-  
-  
-  
-  
+
+  @Test public void testPreserveCaseDataURL() {
+    String x = ".x{background:url(data:image/svg+xml,%3Csvg/%3E)}";
+    Assert.assertEquals(x, min(x));
+  }
+
+  @Test public void testPreserveCaseDataURLwithCharset() {
+    String x = ".x{background:url(data:image/svg+xml;charset=utf8,%3Csvg/%3E)}";
+    Assert.assertEquals(x, min(x));
+  }
+
   private final static String min(String css) {
     StringReader r = new StringReader(css);
     StringWriter w = new StringWriter();

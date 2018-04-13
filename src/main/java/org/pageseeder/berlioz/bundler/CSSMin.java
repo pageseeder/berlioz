@@ -559,7 +559,7 @@ public final class CSSMin {
      */
     private Part[] parseValues(String contents) {
       // Make sure we do not split data URIs
-      String[] parts = contents.split("(?<!base64),");
+      String[] parts = contents.indexOf("data:") < 0? contents.split(",") : new String[]{contents};
       Part[] results = new Part[parts.length];
       for (int i = 0; i < parts.length; i++) {
         try {
@@ -619,7 +619,6 @@ public final class CSSMin {
      * Create a new property part by parsing the given string.
      *
      * @param value The value for this part.
-     * @param property The name of the property is part belongs to.
      */
     private Part(String value) {
       this._value = value;
