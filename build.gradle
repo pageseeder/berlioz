@@ -67,9 +67,11 @@ allprojects {
                  'Implementation-Version': "$globalVersion"
     }
   }
-}
 
-wrapper {
-  gradleVersion = '4.9'
-  distributionType = Wrapper.DistributionType.ALL
+
+  wrapper {
+    gradleVersion = '4.9'
+    distributionType = Wrapper.DistributionType.ALL
+  }
+
 }
