@@ -84,7 +84,7 @@ public final class GlobalSettings {
   /**
    * The format of configuration used.
    */
-  private enum Format { XML_CONFIG, PROPERTIES };
+  private enum Format { XML_CONFIG, PROPERTIES }
 
   // constants
   // --------------------------------------------------------------------------
@@ -93,6 +93,7 @@ public final class GlobalSettings {
    * Name of the directory containing the configuration files for Berlioz
    * including the global settings, services, logging, etc...
    */
+  @Deprecated
   public static final String CONFIG_DIRECTORY = "config";
 
   /**
@@ -107,6 +108,14 @@ public final class GlobalSettings {
    */
   public static final String DEFAULT_MODE = "default";
 
+  /**
+   * Default name of the directory containing the configuration files for Berlioz
+   * including the global settings, services, logging, etc...
+   *
+   * This can be overridden using a system property or environment variable
+   */
+  public static final String DEFAULT_CONFIG_DIRECTORY = "config";
+
   // static variables
   // --------------------------------------------------------------------------
 
@@ -119,6 +128,11 @@ public final class GlobalSettings {
   private static volatile @Nullable File webInf;
 
   /**
+   * Config directory.
+   */
+  private static volatile @Nullable File config;
+
+  /**
    * Web application data directory.
    *
    * It can be the same as the Web application directory, but may different in
@@ -126,6 +140,11 @@ public final class GlobalSettings {
    * application itself.
    */
   private static volatile @Nullable File appData;
+
+  /**
+   * The name of the configuration folder.
+   */
+  private static volatile String configFolder = DEFAULT_CONFIG_DIRECTORY;
 
   /**
    * The name of the configuration file to use.
@@ -177,6 +196,15 @@ public final class GlobalSettings {
   }
 
   /**
+   * Returns the config folder or <code>null</code> if the webinf directory has not been setup.
+   *
+   * @return The directory used for the configuration or <code>null</code>.
+   */
+  public static @Nullable File getConfig() {
+    return config;
+  }
+
+  /**
    * Returns the application data folder.
    *
    * It can be the same as the Web application directory (<code>WEB-INF</code>),
@@ -210,9 +238,7 @@ public final class GlobalSettings {
   }
 
   /**
-   * Returns the configuration to use.
-   *
-   * @return The name of the configuration to use.
+   * @return The Berlioz mode in use.
    */
   public static String getMode() {
     return mode;
@@ -224,7 +250,7 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getPropertiesFile() {
-    if (appData == null || webInf == null) return null;
+    if (appData == null || config == null) return null;
     File f = getModeConfigFile();
     if (f == null) {
       f = getDefaultConfigFile();
@@ -238,9 +264,8 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getModeConfigFile() {
-    if (appData == null) return null;
-    File dir = new File(appData, CONFIG_DIRECTORY);
-    File f = getModeConfigFile(dir);
+    if (config == null) return null;
+    File f = getModeConfigFile(config);
     return f;
   }
 
@@ -250,9 +275,8 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getDefaultConfigFile() {
-    if (webInf == null) return null;
-    File dir = new File(webInf, CONFIG_DIRECTORY);
-    File f = getDefaultConfigFile(dir);
+    if (config == null) return null;
+    File f = getDefaultConfigFile(config);
     return f;
   }
 
@@ -570,6 +594,20 @@ public final class GlobalSettings {
   }
 
   /**
+   * Sets the name of the folder containing the configuration to use.
+   *
+   * @param name The name of the folder.
+   *
+   * @throws NullPointerException If the name of the folder is <code>null</code>.
+   */
+  public static void setConfigFolder(String name) {
+    configFolder = Objects.requireNonNull(name, "The config folder name must be specified.");
+    if (webInf != null) {
+      config = new File(webInf, configFolder);
+    }
+  }
+
+  /**
    * Loads the properties.
    *
    * <p>There are several mechanism to load the properties.
@@ -599,7 +637,7 @@ public final class GlobalSettings {
     Map<String, String> properties = new HashMap<>();
 
     try {
-      if (webInf == null) return false;
+      if (config == null) return false;
       // Try to load the default config file
       File defaultConfig = getDefaultConfigFile();
       if (defaultConfig != null) {
@@ -696,6 +734,7 @@ public final class GlobalSettings {
     if (dir == null) return;
     checkDirectoryExists(dir);
     webInf = dir;
+    config = new File(dir, configFolder);
     appData = dir;
   }
 
@@ -720,7 +759,7 @@ public final class GlobalSettings {
    * Loads the specified configuration file into the specific map.
    *
    * @param file The file to load
-   * @param map  The map containing the global settings
+   * @param properties  The map containing the global settings
    *
    * @throws IOException Should an I/O error occur while reading the properties
    */

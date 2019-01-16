@@ -150,8 +150,7 @@ public final class ServiceLoader {
    * @return the list of services files.
    */
   public List<File> listServiceFiles() {
-    File webinf = GlobalSettings.getWebInf();
-    File config = new File(webinf, "config");
+    File config = GlobalSettings.getConfig();
     File xml = new File(config, "services.xml");
     @NonNull File[] subs = config.listFiles(FILE_FILTER);
     List<File> files;
