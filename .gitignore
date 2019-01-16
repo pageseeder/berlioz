@@ -1,9 +1,10 @@
-/target/
-/.project
+/.checkstyle
 /.classpath
+/.factorypath
+/.gradle/
+/.idea
+/.project
 /.settings/
 /bin/
-/.gradle/
 /build/
-/.checkstyle
-/.factorypath
+/target/
