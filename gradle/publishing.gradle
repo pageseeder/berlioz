@@ -88,8 +88,3 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
   description 'Packages up the javadoc in a Jar for Maven publishing'
   from javadoc.destinationDir
 }
-
-task wrapper(type: Wrapper) {
-  gradleVersion = '3.5'
-  description 'Generates the Gradle wrapper scripts'
-}
