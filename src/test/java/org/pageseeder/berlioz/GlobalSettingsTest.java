@@ -33,9 +33,9 @@ public final class GlobalSettingsTest {
 
   @Before
   public void setup() {
-    File repo = new File("src/test/resources/org/pageseeder/berlioz");
-    GlobalSettings.setRepository(repo);
-    GlobalSettings.setMode("default");
+    File webinf = new File(this.getClass().getResource("/org/pageseeder/berlioz").getFile());
+    InitEnvironment env = InitEnvironment.create(webinf).mode("default");
+    GlobalSettings.setup(env);
   }
 
   /**

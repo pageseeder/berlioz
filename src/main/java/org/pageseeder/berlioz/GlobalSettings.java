@@ -71,7 +71,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.11.4
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
@@ -108,14 +108,6 @@ public final class GlobalSettings {
    */
   public static final String DEFAULT_MODE = "default";
 
-  /**
-   * Default name of the directory containing the configuration files for Berlioz
-   * including the global settings, services, logging, etc...
-   *
-   * This can be overridden using a system property or environment variable
-   */
-  public static final String DEFAULT_CONFIG_DIRECTORY = "config";
-
   // static variables
   // --------------------------------------------------------------------------
 
@@ -125,38 +117,7 @@ public final class GlobalSettings {
    * <p>This should always be the <code>WEB-INF</code> folder of the Web
    * application.
    */
-  private static volatile @Nullable File webInf;
-
-  /**
-   * Config directory.
-   */
-  private static volatile @Nullable File config;
-
-  /**
-   * Web application data directory.
-   *
-   * It can be the same as the Web application directory, but may different in
-   * cases where the data needs to be persistent and separate from the
-   * application itself.
-   */
-  private static volatile @Nullable File appData;
-
-  /**
-   * The name of the configuration folder.
-   */
-  private static volatile String configFolder = DEFAULT_CONFIG_DIRECTORY;
-
-  /**
-   * The name of the configuration file to use.
-   */
-  private static volatile String mode;
-  static {
-    String m  = System.getProperty("berlioz.mode");
-    if (m == null) {
-      m = DEFAULT_MODE;
-    }
-    mode = m;
-  }
+  private static volatile InitEnvironment env = null;
 
   /**
    * The global properties.
@@ -192,16 +153,7 @@ public final class GlobalSettings {
    * @return The directory used as a repository or <code>null</code>.
    */
   public static @Nullable File getWebInf() {
-    return webInf;
-  }
-
-  /**
-   * Returns the config folder or <code>null</code> if the webinf directory has not been setup.
-   *
-   * @return The directory used for the configuration or <code>null</code>.
-   */
-  public static @Nullable File getConfig() {
-    return config;
+    return env != null? env.webInf() : null;
   }
 
   /**
@@ -214,7 +166,17 @@ public final class GlobalSettings {
    * @return The Web application data folder or <code>null</code>.
    */
   public static @Nullable File getAppData() {
-    return appData;
+    return env != null? env.appData() : null;
+  }
+
+  /**
+   * @return The configuration directory containing all configuration files for Berlioz.
+   */
+  public static File getConfig() {
+    if (env != null)
+      return env.webInf().toPath().resolve(env.configFolder()).toFile();
+    else
+      return null;
   }
 
   /**
@@ -241,7 +203,7 @@ public final class GlobalSettings {
    * @return The Berlioz mode in use.
    */
   public static String getMode() {
-    return mode;
+    return env != null? env.mode() : InitEnvironment.DEFAULT_MODE;
   }
 
   /**
@@ -250,7 +212,7 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getPropertiesFile() {
-    if (appData == null || config == null) return null;
+    if (env == null) return null;
     File f = getModeConfigFile();
     if (f == null) {
       f = getDefaultConfigFile();
@@ -264,8 +226,8 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getModeConfigFile() {
-    if (config == null) return null;
-    File f = getModeConfigFile(config);
+    if (env == null) return null;
+    File f = getModeConfigFile(getConfig());
     return f;
   }
 
@@ -275,8 +237,8 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getDefaultConfigFile() {
-    if (config == null) return null;
-    File f = getDefaultConfigFile(config);
+    if (env == null) return null;
+    File f = getDefaultConfigFile(getConfig());
     return f;
   }
 
@@ -471,17 +433,17 @@ public final class GlobalSettings {
    */
   public static @Nullable File getFileProperty(String name) throws IllegalStateException {
     @Nullable String filepath = ensureSettings().get(name);
-    if (filepath != null) {
+    if (filepath != null && env != null) {
       // try appData first
-      File file = new File(appData, filepath);
+      File file = new File(env.appData(), filepath);
       try {
         if (file.exists()) return file.getCanonicalFile();
       } catch (IOException ex) {
         LOGGER.warn("Unable to generate canonical file: {}", ex.getMessage());
       }
       // fall back on webinf
-      if (appData != webInf) {
-        file = new File(webInf, filepath);
+      if (env.appData() != env.webInf()) {
+        file = new File(env.webInf(), filepath);
         try {
           if (file.exists()) return file.getCanonicalFile();
         } catch (IOException ex) {
@@ -547,6 +509,25 @@ public final class GlobalSettings {
   // Setup methods
   // -------------------------------------------------------------------------------
 
+
+  /**
+   * Sets the initial environment
+   *
+   * @param environment The environment to use.
+   */
+  public static void setup(InitEnvironment environment) {
+    env = environment;
+  }
+
+  /**
+   * Sets the initial environment
+   *
+   * @param webInf The Web application folder to use.
+   */
+  public static void setup(File webInf) {
+    env = InitEnvironment.create(webInf);
+  }
+
   /**
    * Sets the application directory to the specified file if it exists and is a directory.
    *
@@ -558,12 +539,12 @@ public final class GlobalSettings {
    * @throws NullPointerException If the specified file is <code>null</code>.
    * @throws IllegalArgumentException If the specified file is not a valid repository.
    */
+  @Deprecated
   public static void setWebInf(File dir) {
-    checkDirectoryExists(dir);
-    webInf = dir;
-    // Also set the appdata if not set
-    if (appData == null) {
-      appData = webInf;
+    if (env != null) {
+      env = env.webInf(dir);
+    } else {
+      env = InitEnvironment.create(dir);
     }
   }
 
@@ -577,9 +558,11 @@ public final class GlobalSettings {
    * @throws NullPointerException If the specified file is null.
    * @throws IllegalArgumentException If the specified file is not a valid repository.
    */
+  @Deprecated
   public static void setAppData(File dir) {
-    checkDirectoryExists(dir);
-    appData = dir;
+    if (env != null) {
+      env = env.appData(dir);
+    }
   }
 
   /**
@@ -589,21 +572,10 @@ public final class GlobalSettings {
    *
    * @throws NullPointerException If the name of the mode is <code>null</code>.
    */
+  @Deprecated
   public static void setMode(String name) {
-    mode = Objects.requireNonNull(name, "The configuration mode must be specified.");
-  }
-
-  /**
-   * Sets the name of the folder containing the configuration to use.
-   *
-   * @param name The name of the folder.
-   *
-   * @throws NullPointerException If the name of the folder is <code>null</code>.
-   */
-  public static void setConfigFolder(String name) {
-    configFolder = Objects.requireNonNull(name, "The config folder name must be specified.");
-    if (webInf != null) {
-      config = new File(webInf, configFolder);
+    if (env != null) {
+      env = env.mode(name);
     }
   }
 
@@ -637,7 +609,7 @@ public final class GlobalSettings {
     Map<String, String> properties = new HashMap<>();
 
     try {
-      if (config == null) return false;
+      if (env == null) return false;
       // Try to load the default config file
       File defaultConfig = getDefaultConfigFile();
       if (defaultConfig != null) {
@@ -711,7 +683,7 @@ public final class GlobalSettings {
    */
   @Deprecated
   public static @Nullable File getRepository() {
-    return appData;
+    return env.appData();
   }
 
   /**
@@ -732,10 +704,7 @@ public final class GlobalSettings {
   public static void setRepository(File dir) {
     // ignore the case when this is null
     if (dir == null) return;
-    checkDirectoryExists(dir);
-    webInf = dir;
-    config = new File(dir, configFolder);
-    appData = dir;
+    env = InitEnvironment.create(dir);
   }
 
   /**
@@ -749,7 +718,7 @@ public final class GlobalSettings {
    */
   @Deprecated
   public static File getLibrary() {
-    return new File(appData, LIBRARY_DIRECTORY);
+    return new File(env.appData(), LIBRARY_DIRECTORY);
   }
 
   // private helpers
@@ -818,10 +787,10 @@ public final class GlobalSettings {
   private static @Nullable File getModeConfigFile(File dir) {
     if (dir == null || !dir.isDirectory()) return null;
     // try as an XML file
-    File xml = new File(dir, "config-"+mode+".xml");
+    File xml = new File(dir, "config-"+getMode()+".xml");
     if (xml.canRead()) return xml;
     // otherwise try as a properties file
-    File prp = new File(dir, "config-"+mode+".properties");
+    File prp = new File(dir, "config-"+getMode()+".properties");
     if (prp.canRead()) return prp;
     return null;
   }
@@ -840,22 +809,6 @@ public final class GlobalSettings {
     File prp = new File(dir, "config.properties");
     if (prp.canRead()) return prp;
     return null;
-  }
-
-  /**
-   * Checks that the specified file exists and is a directory.
-   *
-   * @param dir The file directory to check.
-   *
-   * @throws NullPointerException If the file is <code>null</code>
-   * @throws IllegalArgumentException If the file is not a directory or does not exist
-   */
-  private static void checkDirectoryExists(File dir) {
-    Objects.requireNonNull(dir, "The specified file "+dir+" is null");
-    if (!dir.exists())
-      throw new IllegalArgumentException("The specified file "+dir+" does not exist.");
-    else if (!dir.isDirectory())
-      throw new IllegalArgumentException("The specified file "+dir+" is not a directory.");
   }
 
   /**

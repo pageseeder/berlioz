@@ -48,7 +48,7 @@ public final class Main {
     // Try to load the content generators
     if (args.length > 1 && "-load".equals(args[0])) {
       // Set
-      GlobalSettings.setWebInf(new File("."));
+      GlobalSettings.setup(new File("."));
       ServiceLoader.getInstance().load();
     }
   }

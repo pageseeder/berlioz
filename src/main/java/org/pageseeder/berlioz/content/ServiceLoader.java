@@ -53,7 +53,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.11.4
  * @since Berlioz 0.6
  */
 public final class ServiceLoader {
@@ -151,6 +151,7 @@ public final class ServiceLoader {
    */
   public List<File> listServiceFiles() {
     File config = GlobalSettings.getConfig();
+    if (config == null) return Collections.emptyList();
     File xml = new File(config, "services.xml");
     @NonNull File[] subs = config.listFiles(FILE_FILTER);
     List<File> files;

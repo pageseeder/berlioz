@@ -30,6 +30,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.LifecycleListener;
+import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.servlet.Overlays.Overlay;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class initializes a Berlioz application.
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.11.4
  * @since Berlioz 0.11.0
  */
 public abstract class AppInitializer {
@@ -88,36 +89,38 @@ public abstract class AppInitializer {
     // Init message
     console(Phase.INIT, "===============================================================");
     console(Phase.INIT, "Initialing Berlioz "+GlobalSettings.getVersion()+"...");
-    console(Phase.INIT, "Application Base: "+this._webinf.getAbsolutePath());
+    console(Phase.INIT, "Application base: "+this._webinf.getAbsolutePath());
 
     // Set the WEB-INF
-    GlobalSettings.setWebInf(this._webinf);
+    InitEnvironment env = InitEnvironment.create(this._webinf);
 
     // Setup config folder
     String configFolder = setupConfigFolder(this._webinf);
-    GlobalSettings.setConfigFolder(configFolder);
+    env = env.configFolder(configFolder);
 
     // Determine the application data folder
     File appData = configureAppData();
-    if (appData == null) {
-      appData = this._webinf;
+    if (appData != null) {
+      env = env.appData(appData);
     }
-    GlobalSettings.setAppData(appData);
 
     // Determine the mode (dev, production, etc...)
     String mode = configureMode(appData, configFolder);
     if (mode != null) {
-      GlobalSettings.setMode(mode);
+      env = env.mode(mode);
     }
+
+    // Setup the Global settings
+    GlobalSettings.setup(env);
 
     // Check for overlays
     deployOverlays();
 
     // Checking that the 'config/services.xml' is there
-    checkServices(this._webinf, configFolder);
+    checkServices(env);
 
     // Configuring the logger
-    configureLogger(this._webinf, appData, configFolder, mode);
+    configureLogger(env);
 
     // Invoke the lifecycle listener
     registerAndStartListeners();
@@ -240,7 +243,7 @@ public abstract class AppInitializer {
     @Override String getConfigFolder() {
       String config = this._config.getInitParameter("config");
       if (config != null) {
-        console(Phase.INIT, "Config: defined with servlet init-parameter 'config'");
+        console(Phase.INIT, "Config folder: defined with servlet init-parameter 'config'");
         return config;
       }
       // Fall back on context initializer
@@ -302,7 +305,7 @@ public abstract class AppInitializer {
     @Override String getConfigFolder() {
       String config = this._context.getInitParameter("berlioz.config");
       if (config != null) {
-        console(Phase.INIT, "Config: defined with servlet init-parameter 'berlioz.config'");
+        console(Phase.INIT, "Config folder: defined with servlet init-parameter 'berlioz.config'");
         return config;
       }
       // Fallback on system
@@ -364,19 +367,19 @@ public abstract class AppInitializer {
       // JVM property
       String config = System.getProperty("berlioz.config");
       if (config != null) {
-        console(Phase.INIT, "Config: defined with system property 'berlioz.config'");
+        console(Phase.INIT, "Config folder: defined with system property 'berlioz.config'");
         return config;
       }
 
       // Environment variable
       config = System.getenv("BERLIOZ_CONFIG");
       if (config != null) {
-        console(Phase.INIT, "Config: defined with environment variable 'BERLIOZ_CONFIG'");
+        console(Phase.INIT, "Config folder: defined with environment variable 'BERLIOZ_CONFIG'");
         return config;
       }
 
       // No specified config folder
-      return GlobalSettings.DEFAULT_CONFIG_DIRECTORY;
+      return InitEnvironment.DEFAULT_CONFIG_DIRECTORY;
     }
 
     @Override
@@ -444,7 +447,7 @@ public abstract class AppInitializer {
 
       // Sanity check on name
       if (!configFolder.matches("^[0-9a-zA-Z_]+$")) {
-        console(Phase.INIT, "Config: (!) The specified config folder '"+configFolder+"' is not recommended");
+        console(Phase.INIT, "Config folder: (!) The specified config folder '"+configFolder+"' is not recommended");
       }
 
       // Check directory
@@ -455,13 +458,11 @@ public abstract class AppInitializer {
       }
 
       // Report
-      console(Phase.INIT, "Config: Using '/WEB-INF/"+configFolder+"'");
-      console(Phase.INIT, "Config: OK ----------------------------------------------------");
+      console(Phase.INIT, "Config folder: Using '"+configFolder+"'");
 
     } catch (IOException ex) {
       console(Phase.INIT, "(!) Unable to setup application config folder");
       console(Phase.INIT, "(!) "+ex.getMessage());
-      console(Phase.INIT, "Config: FAIL ---------------------------------------------------");
     }
 
     // Set and return application data folder that was set
@@ -527,8 +528,8 @@ public abstract class AppInitializer {
       if (mode != null) {
         console(Phase.INIT, "Mode: auto-detected modes configuration file.");
       } else {
-        console(Phase.INIT, "Mode: defaulting to "+GlobalSettings.DEFAULT_MODE);
-        mode = GlobalSettings.DEFAULT_MODE;
+        console(Phase.INIT, "Mode: defaulting to "+InitEnvironment.DEFAULT_MODE);
+        mode = InitEnvironment.DEFAULT_MODE;
       }
     }
     // Report
@@ -608,16 +609,15 @@ public abstract class AppInitializer {
   /**
    * Checking that the '[config]/services.xml' is there
    *
-   * @param webinf       The Web application direction
-   * @param configFolder The name of the directory containing the configuration files.
+   * @param env The Web application init environment
    */
-  private static void checkServices(File webinf, String configFolder) {
-    Path services = webinf.toPath().resolve(configFolder+"/services.xml");
+  private static void checkServices(InitEnvironment env) {
+    Path services = env.webInf().toPath().resolve(env.configFolder()+"/services.xml");
     if (Files.exists(services)) {
-      console(Phase.INIT, "Services: found "+configFolder+"/services.xml");
+      console(Phase.INIT, "Services: found "+env.configFolder()+"/services.xml");
       console(Phase.INIT, "Services: OK --------------------------------------------------");
     } else {
-      console(Phase.INIT, "(!) Could not find "+configFolder+"/services.xml");
+      console(Phase.INIT, "(!) Could not find "+env.configFolder()+"/services.xml");
       console(Phase.INIT, "Services: FAIL ------------------------------------------------");
     }
   }
@@ -636,22 +636,19 @@ public abstract class AppInitializer {
    *   <li><code>log4j.prp</code></li>
    * </ol>
    *
-   * @param webinf       The Web application direction
-   * @param appData      The Web application data directory.
-   * @param configFolder The name of the directory containing the configuration files.
-   * @param mode         The running mode.
+   * @param env  The initial environment
    */
-  private static void configureLogger(File webinf, File appData, String configFolder, String mode) {
-    File appDataConfig = new File(appData, configFolder);
-    File webInfConfig = new File(webinf, configFolder);
+  private static void configureLogger(InitEnvironment env) {
+    File appDataConfig = new File(env.appData(), env.configFolder());
+    File webInfConfig = new File(env.webInf(), env.configFolder());
     boolean configured = false;
     // Try specific logback first
-    File file = new File(appDataConfig, "logback-" + mode + ".xml");
+    File file = new File(appDataConfig, "logback-" + env.mode() + ".xml");
     configured = configureLogback(file);
     if (configured) return;
     // Try specific logback first in WEB-INF
-    if (webinf != appData) {
-      file = new File(webInfConfig, "logback-" + mode + ".xml");
+    if (env.hasAppData()) {
+      file = new File(webInfConfig, "logback-" + env.mode() + ".xml");
       configured = configureLogback(file);
       if (configured) return;
     }
@@ -660,13 +657,13 @@ public abstract class AppInitializer {
     configured = configureLogback(file);
     if (configured) return;
     // Try specific log4j
-    file = new File(appDataConfig, "log4j-"+mode+".properties");
+    file = new File(appDataConfig, "log4j-"+env.mode()+".properties");
     configured = configureLog4j(file);
     if (configured) return;
     // Try specific log4j in WEB-INF
-    if (webinf != appData) {
+    if (env.hasAppData()) {
       // Try specific log4j
-      file = new File(webInfConfig, "log4j-"+mode+".properties");
+      file = new File(webInfConfig, "log4j-"+env.mode()+".properties");
       configured = configureLog4j(file);
       if (configured) return;
     }
