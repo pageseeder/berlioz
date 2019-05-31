@@ -33,7 +33,8 @@ public final class GlobalSettingsTest {
 
   @Before
   public void setup() {
-    File webinf = new File(this.getClass().getResource("/org/pageseeder/berlioz").getFile());
+    File webinf = new File("src/test/resources/org/pageseeder/berlioz");
+    System.out.println(webinf.getAbsolutePath());
     InitEnvironment env = InitEnvironment.create(webinf).mode("default");
     GlobalSettings.setup(env);
   }
