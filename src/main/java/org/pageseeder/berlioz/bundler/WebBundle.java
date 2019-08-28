@@ -29,7 +29,7 @@ import org.pageseeder.berlioz.util.MD5;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.11.5
  * @since Berlioz 0.9.32
  */
 public final class WebBundle {
@@ -184,7 +184,7 @@ public final class WebBundle {
     filename.append('-');
     filename.append(ISO8601.CALENDAR_DATE.format(getMostRecent(this._files)));
     String etag = getETag(false);
-    filename.append('-').append(etag.substring(etag.length()-4));
+    filename.append('-').append(etag.substring(etag.length()-8));
     String ext = getExtension(this._files.get(0));
     if (this._minimized) {
       filename.append(".min");
