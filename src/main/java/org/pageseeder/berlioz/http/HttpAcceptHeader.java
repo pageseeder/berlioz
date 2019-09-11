@@ -51,8 +51,7 @@ public final class HttpAcceptHeader { // NO_UCD
   /**
    * Accepts headers that have already been processed.
    */
-  private static final Map<String, Map<String, Float>> MAPS =
-    Collections.synchronizedMap(new HashMap<String, Map<String, Float>>());
+  private static final Map<String, Map<String, Float>> MAPS = Collections.synchronizedMap(new HashMap<>());
 
   /**
    * The maximum size of the cache for security, once the internal cache reaches this number of entries,
@@ -121,9 +120,8 @@ public final class HttpAcceptHeader { // NO_UCD
    *         <code>false</code> otherwise.
    */
   public static boolean accepts(Map<String, Float> accept, String value) {
-    Float q = null;
     // look for the value first
-    q = accept.get(value);
+    Float q = accept.get(value);
     if (q != null && q > 0.0f) return true;
     // check if client accepts everything
     q = accept.get("*/*");
