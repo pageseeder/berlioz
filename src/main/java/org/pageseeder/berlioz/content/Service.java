@@ -208,6 +208,7 @@ public final class Service {
    */
   public String name(ContentGenerator generator) {
     String name = this._names.get(generator);
+    // TODO Use snake-case for consistency
     return name != null? name : generator.getClass().getSimpleName();
   }
 
