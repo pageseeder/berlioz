@@ -38,8 +38,8 @@ public final class ServerTimingHeader {
     this._timings.add(timing);
   }
 
-  public String toHeaderValue() {
-    return this._timings.stream().map(t -> t.toHeaderString()).collect(Collectors.joining(","));
+  public String toValue() {
+    return this._timings.stream().map(t -> t.toHeaderString()).collect(Collectors.joining(", "));
   }
 
 }
