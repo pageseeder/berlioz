@@ -114,15 +114,17 @@ public final class ServiceLoader {
   /**
    * Update the patterns based on the current generators.
    *
+   * @return true is the services were reloaded.
+   *
    * @throws BerliozException Should something unexpected happen.
    *
    * @since Berlioz 0.8.2
    */
-  public synchronized void loadIfRequired() throws BerliozException {
-    if (!this.loaded) {
-      load();
-      this.loaded = true;
-    }
+  public synchronized boolean loadIfRequired() throws BerliozException {
+    if (this.loaded) return false;
+    load();
+    this.loaded = true;
+    return true;
   }
 
   /**

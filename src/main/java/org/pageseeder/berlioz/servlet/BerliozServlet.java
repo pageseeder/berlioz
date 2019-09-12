@@ -38,9 +38,7 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
-import org.pageseeder.berlioz.http.HttpHeaderUtils;
-import org.pageseeder.berlioz.http.HttpHeaders;
-import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.http.*;
 import org.pageseeder.berlioz.servlet.XSLTransformResult.Status;
 import org.pageseeder.berlioz.util.CharsetUtils;
 import org.pageseeder.berlioz.util.EntityInfo;
@@ -257,6 +255,7 @@ public final class BerliozServlet extends HttpServlet {
     // Determine the method in use.
     ServiceLoader loader = ServiceLoader.getInstance();
     boolean profile = GlobalSettings.has(BerliozOption.PROFILE);
+    boolean serverTiming = GlobalSettings.has(BerliozOption.HTTP_SERVER_TIMING);;
 
     // Berlioz Control
     if (config.hasControl(req)) {
@@ -285,14 +284,17 @@ public final class BerliozServlet extends HttpServlet {
 
     // Load the services if required
     try {
-      loader.loadIfRequired();
+      long beforeLoad = System.nanoTime();
+      boolean loaded = loader.loadIfRequired();
+      if (loaded && serverTiming) {
+        ServerTimingHeader.addMetricNano(res,"load", "Loading services", System.nanoTime() - beforeLoad);
+      }
     } catch (BerliozException ex) {
       sendError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
       return;
     }
 
     // Start handling XML content
-    long start = System.nanoTime();
     String path = HttpRequestWrapper.getBerliozPath(req);
     MatchingService match = services.get(path, method);
 
@@ -320,6 +322,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Prepare the XML Response
     XMLResponse xml = new XMLResponse(req, res, config, match, profile);
+    if (serverTiming) xml.enableServerTiming();
 
     // Include the service as a header for information
     res.setHeader("X-Berlioz-Service", match.service().id());
@@ -330,6 +333,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Identify the transformer
     XSLTransformer transformer = config.getTransformer(match.service());
+    long start = System.nanoTime();
 
     // Indicate that the representation may vary depending on the encoding
     if (config.enableCompression()) {
@@ -375,6 +379,9 @@ public final class BerliozServlet extends HttpServlet {
     if (profile) {
       LOGGER.info("Content generated in {} ms", ProfileFormat.format(end - start));
     }
+    if (serverTiming) {
+      ServerTimingHeader.addMetricNano(res,"xml", "XML Response", end - start);
+    }
 
     // Examine the status
     ContentStatus status = xml.getStatus();
@@ -406,6 +413,9 @@ public final class BerliozServlet extends HttpServlet {
       XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
       if (profile) {
         LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(xslresult.time()));
+      }
+      if (serverTiming) {
+        ServerTimingHeader.addMetricNano(res, "xslt", "XSLT Transform", xslresult.time());
       }
       result = xslresult;
       if (xslresult.status() == Status.ERROR) {

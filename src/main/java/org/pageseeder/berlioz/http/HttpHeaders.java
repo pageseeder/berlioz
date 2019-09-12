@@ -694,6 +694,13 @@ public final class HttpHeaders { // NO_UCD
   public static final String SERVER = "Server";
 
   /**
+   * 'Server-Timing' response header.
+   *
+   * @see <a href="https://www.w3.org/TR/server-timing/">W3 Server-Timing</a>
+   */
+  public static final String SERVER_TIMING = "Server-Timing";
+
+  /**
    * 'TE' request header.
    *
    * <p>Augmented BNF:</p>

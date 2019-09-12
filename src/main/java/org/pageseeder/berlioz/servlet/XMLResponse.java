@@ -38,6 +38,8 @@ import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceStatusRule;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
+import org.pageseeder.berlioz.http.PerformanceServerTiming;
+import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
@@ -110,6 +112,8 @@ public final class XMLResponse {
    */
   private @Nullable BerliozException exception = null;
 
+  private boolean serverTiming;
+
   /**
    * Creates a new XML response for the specified arguments.
    *
@@ -125,6 +129,10 @@ public final class XMLResponse {
     this._match = match;
     this._requests = configure(this._core, match);
     this._profile = profile;
+  }
+
+  public void enableServerTiming() {
+    this.serverTiming = true;
   }
 
   /**
@@ -224,8 +232,9 @@ public final class XMLResponse {
     header.toXML(xml);
 
     // Call each generator in turn
+    int position = 0;
     for (HttpContentRequest request : this._requests) {
-      toXML(request, service, xml);
+      toXML(request, ++position, service, xml);
     }
 
     // Close 'root' and finalise
@@ -260,12 +269,13 @@ public final class XMLResponse {
    * Generates the XML content for one generator.
    *
    * @param request   The generator request to process.
+   * @param position  The 1-based position of the request in the service
    * @param service   The service it is part of.
    * @param xml       The XML Writer to use.
    *
    * @throws IOException Should an I/O error occur while writing XML.
    */
-  private void toXML(HttpContentRequest request, Service service, XMLWriter xml) throws IOException {
+  private void toXML(HttpContentRequest request, int position, Service service, XMLWriter xml) throws IOException {
     ContentGenerator generator = request.generator();
     // Generate the main element
     xml.openElement("content", true);
@@ -322,6 +332,9 @@ public final class XMLResponse {
       xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));
       xml.attribute("profile-process", ProfileFormat.format(end - start));
       xml.attribute("profile", ProfileFormat.format(request.getProfileEtag() + end - start));
+    }
+    if (this.serverTiming) {
+      ServerTimingHeader.addMetricNano(this._core.response(), "xml"+position, "Source "+name, request.getProfileEtag() + end - start);
     }
 
     // Report if requested

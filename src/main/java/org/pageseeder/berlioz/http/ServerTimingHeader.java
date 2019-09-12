@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.http;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,8 +39,41 @@ public final class ServerTimingHeader {
     this._timings.add(timing);
   }
 
+  public void addMetric(String name) {
+    this._timings.add(new PerformanceServerTiming(name, -1));
+  }
+
+  public void addMetric(String name, double durationMillis) {
+    this._timings.add(new PerformanceServerTiming(name, durationMillis));
+  }
+
+  public void addMetric(String name, String description) {
+    this._timings.add(new PerformanceServerTiming(name, description,-1));
+  }
+
+  public void addMetric(String name, String description, double durationMillis) {
+    this._timings.add(new PerformanceServerTiming(name, description,durationMillis));
+  }
+
+  public void addMetricNano(String name, double durationNano) {
+    this._timings.add(new PerformanceServerTiming(name, durationNano*.000001));
+  }
+
+  public void addMetricNano(String name, String description, long durationNano) {
+    this._timings.add(new PerformanceServerTiming(name, description, durationNano*.000001));
+  }
+
   public String toValue() {
     return this._timings.stream().map(t -> t.toHeaderString()).collect(Collectors.joining(", "));
+  }
+
+  public static void addMetricNano(HttpServletResponse response, String name, String description, long durationNano) {
+    PerformanceServerTiming metric = new PerformanceServerTiming(name, description,durationNano*.000001);
+    response.addHeader(HttpHeaders.SERVER_TIMING, metric.toHeaderString());
+  }
+
+  public void addHeaderTo(HttpServletResponse response) {
+    response.addHeader(HttpHeaders.SERVER_TIMING, this.toValue());
   }
 
 }
