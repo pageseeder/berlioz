@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.http;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -30,6 +32,20 @@ import java.util.regex.Pattern;
  * @since Berlioz 0.11.5
  */
 public final class PerformanceServerTiming {
+
+  /**
+   * A valid <code>token</code> according to https://tools.ietf.org/html/rfc7230#section-3.2.6
+   *
+   * <pre>
+   * token          = 1*tchar
+   * tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+   *                / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+   *                / DIGIT / ALPHA
+   * </pre>
+   *
+   * To be safe we don't allow characters outside ASCII range.
+   */
+  private static final Pattern VALID_TOKEN = Pattern.compile("^[!#$%&'*+\\-.^_`|~0-9a-zA-Z]+$");
 
   /**
    * The metric name.
@@ -64,9 +80,8 @@ public final class PerformanceServerTiming {
    * @throws NullPointerException if name is null
    */
   public PerformanceServerTiming(String name, String description, double duration) {
-    // TODO Check valid strings https://tools.ietf.org/html/rfc7230#section-3.2.6
-    this._name = Objects.requireNonNull(name);
-    this._description = description != null? description : "";
+    this._name = checkName(name);
+    this._description = ensureValidDescription(description);
     this._duration = duration;
   }
 
@@ -85,14 +100,45 @@ public final class PerformanceServerTiming {
   public String toHeaderString() {
     StringBuilder header = new StringBuilder(this._name);
     if (this._description.length() > 0) {
-      if (this._description.indexOf(' ') >= 0) {
+      if (VALID_TOKEN.matcher(this._description).matches()) {
         header.append(";desc=").append(this._description);
       } else {
-        header.append(";desc=\"").append(this._description).append('"');
+        header.append(";desc=\"").append(this._description.replaceAll("([\"\\\\])", "\\\\$1")).append('"');
       }
     }
-    // TODO Use decimal format
-    header.append(";dur=").append(this._duration);
+    if (this._duration >= 0) {
+      DecimalFormat format = new DecimalFormat("#.###");
+      format.setRoundingMode(RoundingMode.CEILING);
+      header.append(";dur=").append(format.format(this._duration));
+    }
     return header.toString();
+  }
+
+  /**
+   * Check that the server timing parameter value is a valid.
+   *
+   * @return A valid name with invalid characters replaced by '_'
+   *
+   * @throws NullPointerException If the name is null
+   * @throws IllegalArgumentException If the name contains illegal characters
+   */
+  private String checkName(String name) {
+    if (name == null) throw new NullPointerException("Name must not be null");
+    if (name.length() == 0) throw new IllegalArgumentException("Name must be at least 1 character long");
+    if (!VALID_TOKEN.matcher(name).matches()) throw new IllegalArgumentException("Invalid name used for server timing");
+    return name;
+  }
+
+  private static Pattern NON_VCHAR = Pattern.compile("[^\\u0009\\u0020!-~]");
+
+  /**
+   * Check that the server timing parameter value is a valid <code>token</code> / <code>quoted-string</code>
+   * according to https://tools.ietf.org/html/rfc7230#section-3.2.6
+   *
+   * @return A valid description with invalid characters replaced by '_'
+   */
+  private String ensureValidDescription(String description) {
+    if (description == null || description.length() == 0) return "";
+    return NON_VCHAR.matcher(description).replaceAll("_");
   }
 }
