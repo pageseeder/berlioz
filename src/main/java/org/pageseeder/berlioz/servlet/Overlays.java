@@ -69,7 +69,7 @@ final class Overlays {
           return name.endsWith(".war") || name.endsWith(".zip") || name.endsWith(".jar");
         }
       });
-      List<Overlay> list = new ArrayList<Overlay>();
+      List<Overlay> list = new ArrayList<>();
       if (files != null) {
         for (File f : files) {
           Overlay overlay = new Overlay(f);

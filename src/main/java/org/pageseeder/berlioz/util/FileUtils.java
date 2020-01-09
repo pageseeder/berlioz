@@ -92,9 +92,7 @@ public final class FileUtils {
     try {
       String prefix = root.getCanonicalPath();
       return file.getCanonicalPath().startsWith(prefix);
-    } catch (IOException ex) {
-      return false;
-    } catch (SecurityException ex) {
+    } catch (IOException | SecurityException ex) {
       return false;
     }
   }

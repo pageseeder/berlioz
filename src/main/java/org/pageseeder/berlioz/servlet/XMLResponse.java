@@ -311,14 +311,11 @@ public final class XMLResponse {
       generator.process(request, ok);
       result = writer.toString();
       status = request.getStatus();
-    } catch (BerliozException ex) {
-      error = handleError(ex, generator);
-      status = ContentStatus.INTERNAL_SERVER_ERROR;
     } catch (Exception ex) {
-      // We wrapping any exception in a Berlioz Exception
       error = handleError(ex, generator);
       status = ContentStatus.INTERNAL_SERVER_ERROR;
-    }
+    }// We wrapping any exception in a Berlioz Exception
+
     long end = System.nanoTime();
 
     // Update Status
@@ -472,7 +469,7 @@ public final class XMLResponse {
    */
   private String getETag(HttpContentRequest request) {
     String etag = null;
-    Integer key = Integer.valueOf(request.order());
+    Integer key = request.order();
     if (this._etags.containsKey(key)) {
       etag = this._etags.get(key);
     } else {

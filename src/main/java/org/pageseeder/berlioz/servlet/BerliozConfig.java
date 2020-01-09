@@ -386,9 +386,7 @@ public final class BerliozConfig {
         etag = etag.replaceAll("[^a-zA-Z0-9-]", "");
         seed = Long.parseLong(etag, 36);
         LOGGER.info("Loading the etag seed {}", etag);
-      } catch (IOException ex) {
-        LOGGER.warn("Unable to load the etag seed", ex);
-      } catch (NumberFormatException ex) {
+      } catch (IOException | NumberFormatException ex) {
         LOGGER.warn("Unable to load the etag seed", ex);
       }
     }
@@ -401,13 +399,13 @@ public final class BerliozConfig {
    */
   private long newEtagSeed() {
     Long seed = RANDOM.nextLong();
-    LOGGER.info("Generating new ETag Seed: {}", Long.toString(seed.longValue(), 36));
+    LOGGER.info("Generating new ETag Seed: {}", Long.toString(seed, 36));
     File f = this._env.getPrivateFile("berlioz.etag");
     File p = f.getParentFile();
     if (f.exists() && f.canWrite() || p != null && p.canWrite()) {
       // NB. We don't care about encoding
       try (FileOutputStream os = new FileOutputStream(f)) {
-        for (char c : Long.toString(seed.longValue(), 36).toCharArray()) {
+        for (char c : Long.toString(seed, 36).toCharArray()) {
           os.write(c);
         }
       } catch (IOException ex) {

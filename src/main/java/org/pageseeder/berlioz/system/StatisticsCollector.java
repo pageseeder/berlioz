@@ -175,7 +175,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
      */
     private BasicStats(String name, ContentStatus status, long etag, long process) {
       this._generator = name;
-      this._status = Collections.synchronizedMap(new EnumMap<ContentStatus, AtomicLong>(ContentStatus.class));
+      this._status = Collections.synchronizedMap(new EnumMap<>(ContentStatus.class));
       this._status.put(status, new AtomicLong(1));
       this._count = new AtomicLong(1);
       long e = etag / 1000;
@@ -274,7 +274,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
       if (times.isEmpty()) return 0;
       long avgLastEtag = 0;
       for (Long t : times) {
-        avgLastEtag += t.longValue();
+        avgLastEtag += t;
       }
       return avgLastEtag / times.size();
     }

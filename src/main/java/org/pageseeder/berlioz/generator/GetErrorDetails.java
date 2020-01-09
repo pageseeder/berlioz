@@ -106,7 +106,7 @@ public final class GetErrorDetails implements ContentGenerator {
 
     // Ensure we have a status code
     if (code == null) {
-      code = Integer.valueOf(HttpServletResponse.SC_OK);
+      code = HttpServletResponse.SC_OK;
     }
 
     xml.openElement("error");

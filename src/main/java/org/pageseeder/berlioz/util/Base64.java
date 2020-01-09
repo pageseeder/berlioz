@@ -1177,9 +1177,7 @@ public final class Base64 {
       }
 
       obj = ois.readObject();
-    } catch (IOException ex) {
-      throw ex;
-    } catch (java.lang.ClassNotFoundException ex) {
+    } catch (IOException | ClassNotFoundException ex) {
       throw ex;
     } finally {
       closeQuietly(bais);

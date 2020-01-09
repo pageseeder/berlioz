@@ -307,7 +307,7 @@ public final class GlobalSettings {
     Objects.requireNonNull(option, "No Berlioz option specified");
     @Nullable String value = ensureSettings().get(option.property());
     Object def = option.defaultTo();
-    if (option.isBoolean()) return value != null? Boolean.parseBoolean(value) : ((Boolean)def).booleanValue();
+    if (option.isBoolean()) return value != null? Boolean.parseBoolean(value) : (Boolean) def;
     else
       throw new IllegalArgumentException("Trying to get non-boolean option '"+option.property()+"' as boolean.");
   }

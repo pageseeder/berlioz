@@ -148,7 +148,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
     BundleConfig css =  getConfig(config, BundleType.CSS, env.getPublicFolder());
     // Ensure that we can use bundles
     if (isWritable == null) {
-      isWritable = Boolean.valueOf(js.store().exists() && js.store().canWrite());
+      isWritable = js.store().exists() && js.store().canWrite();
     }
     boolean doBundle = canBundle(req);
     if (doBundle) {

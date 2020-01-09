@@ -347,10 +347,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     if (supportsComments) {
       try {
         xmlreader.setProperty(LEXICAL_HANDLER_PROPERTY, copier);
-      } catch (SAXNotRecognizedException ex) {
-        supportsComments = false;
-        LOGGER.warn("Unable to copy comments", ex);
-      } catch (SAXNotSupportedException ex) {
+      } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
         supportsComments = false;
         LOGGER.warn("Unable to copy comments", ex);
       }

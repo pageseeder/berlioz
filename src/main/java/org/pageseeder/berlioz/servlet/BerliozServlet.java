@@ -386,7 +386,7 @@ public final class BerliozServlet extends HttpServlet {
     // Examine the status
     ContentStatus status = xml.getStatus();
     if (code != null) {
-      res.setStatus(code.intValue());
+      res.setStatus(code);
     } else {
       res.setStatus(status.code());
     }
@@ -494,7 +494,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Handle internally
     if (error != null || GlobalSettings.has(BerliozOption.ERROR_HANDLER)) {
-      req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, error != null? error.intValue() : code);
+      req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, error != null? error : code);
       req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
       req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
       req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, getBerliozConfig().getName());

@@ -99,7 +99,7 @@ public final class HttpStatusCodes {
    * @return the corresponding title as defined in RFC 2616 or <code>null</code> if the code does not exist.
    */
   public static @Nullable String getTitle(int code) {
-    return HTTP_CODE_TITLE.get(Integer.valueOf(code));
+    return HTTP_CODE_TITLE.get(code);
   }
 
   /**

@@ -77,7 +77,7 @@ abstract class TokenBase implements Token {
     if ((o == null) || (o.getClass() != this.getClass()))
       return false;
     TokenBase t = (TokenBase) o;
-    return (this._exp == t._exp || (this._exp != null && this._exp.equals(t._exp)));
+    return (Objects.equals(this._exp, t._exp));
   }
 
   @Override

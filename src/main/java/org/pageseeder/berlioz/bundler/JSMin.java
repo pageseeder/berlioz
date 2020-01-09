@@ -421,13 +421,7 @@ public final class JSMin {
     try {
       JSMin jsmin = new JSMin(new FileInputStream(arg[0]), System.out);
       jsmin.jsmin();
-    } catch (FileNotFoundException ex) {
-      ex.printStackTrace();
-    } catch (ArrayIndexOutOfBoundsException ex) {
-      ex.printStackTrace();
-    } catch (IOException ex) {
-      ex.printStackTrace();
-    } catch (ParsingException ex) {
+    } catch (ParsingException | IOException | ArrayIndexOutOfBoundsException ex) {
       ex.printStackTrace();
     }
   }

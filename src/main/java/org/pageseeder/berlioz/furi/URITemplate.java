@@ -208,7 +208,7 @@ public class URITemplate implements Expandable {
     if ((o == null) || (o.getClass() != this.getClass()))
       return false;
     URITemplate t = (URITemplate) o;
-    return (this._template == t._template || (this._template != null && this._template.equals(t._template)));
+    return (Objects.equals(this._template, t._template));
   }
 
   @Override

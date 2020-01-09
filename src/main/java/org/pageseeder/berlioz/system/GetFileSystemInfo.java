@@ -68,7 +68,7 @@ public final class GetFileSystemInfo implements ContentGenerator {
    */
   private static void analyze(File dir, String name, XMLWriter xml) throws IOException {
     DirInfo global = new DirInfo(name);
-    List<DirInfo> locals = new ArrayList<DirInfo>();
+    List<DirInfo> locals = new ArrayList<>();
     File[] files = dir.listFiles();
     // TODO Use Files.walkFileTree instead
     if (files != null) {
