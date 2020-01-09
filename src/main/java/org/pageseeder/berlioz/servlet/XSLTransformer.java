@@ -91,7 +91,7 @@ public final class XSLTransformer {
   /**
    * Identity templates for worse case scenario!
    */
-  private static Templates IDENTITY_TEMPLATES = new Templates() {
+  private static final Templates IDENTITY_TEMPLATES = new Templates() {
     @Override
     public @NonNull Transformer newTransformer() throws TransformerConfigurationException {
       return TransformerFactory.newInstance().newTransformer();

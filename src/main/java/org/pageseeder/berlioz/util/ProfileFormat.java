@@ -34,7 +34,7 @@ public final class ProfileFormat {
   /**
    * The format for the nano time.
    */
-  private static NumberFormat format = new DecimalFormat("#,##0.00");
+  private static final NumberFormat format = new DecimalFormat("#,##0.00");
 
   /** Utility class */
   private ProfileFormat() {
