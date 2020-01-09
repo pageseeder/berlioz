@@ -62,12 +62,9 @@ final class Overlays {
     File webinfPath = new File(root, "WEB-INF");
     File overlays = new File(webinfPath, "overlays");
     if (overlays.exists() && overlays.isDirectory()) {
-      File[] files = overlays.listFiles(new FileFilter() {
-        @Override
-        public boolean accept(File f) {
-          String name = f.getName();
-          return name.endsWith(".war") || name.endsWith(".zip") || name.endsWith(".jar");
-        }
+      File[] files = overlays.listFiles(f -> {
+        String name = f.getName();
+        return name.endsWith(".war") || name.endsWith(".zip") || name.endsWith(".jar");
       });
       List<Overlay> list = new ArrayList<>();
       if (files != null) {

@@ -76,13 +76,7 @@ public final class ServiceLoader {
   /**
    * The file filter to
    */
-  private static final FilenameFilter FILE_FILTER = new FilenameFilter() {
-
-    @Override
-    public boolean accept(File dir, String name) {
-      return name.startsWith("services!") && name.endsWith(".xml");
-    }
-  };
+  private static final FilenameFilter FILE_FILTER = (dir, name) -> name.startsWith("services!") && name.endsWith(".xml");
 
   /**
    * Indicates whether the boolean value was loaded.

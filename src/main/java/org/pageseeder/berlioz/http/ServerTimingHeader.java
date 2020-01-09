@@ -64,7 +64,7 @@ public final class ServerTimingHeader {
   }
 
   public String toValue() {
-    return this._timings.stream().map(t -> t.toHeaderString()).collect(Collectors.joining(", "));
+    return this._timings.stream().map(PerformanceServerTiming::toHeaderString).collect(Collectors.joining(", "));
   }
 
   public static void addMetricNano(HttpServletResponse response, String name, String description, long durationNano) {
