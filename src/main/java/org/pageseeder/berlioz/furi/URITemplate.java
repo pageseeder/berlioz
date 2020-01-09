@@ -177,7 +177,7 @@ public class URITemplate implements Expandable {
     }
     // any text left over, including if there were no expansions
     if (start < template.length()) {
-      String text = template.substring(start, template.length());
+      String text = template.substring(start);
       // support for wild cards only at the end of the string.
       if (text.endsWith("*")) {
         tokens.add(new TokenLiteral(text.substring(0, text.length() - 1)));

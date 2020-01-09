@@ -633,7 +633,7 @@ public final class GlobalSettings {
 
     } catch (IOException ex) {
       System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
-      LOGGER.warn("Unable to load the configuration file", ex.getMessage());
+      LOGGER.warn("Unable to load the configuration file: {}", ex.getMessage());
       properties.clear(); // Let's not load dirty properties
 
     } catch (Exception ex) {

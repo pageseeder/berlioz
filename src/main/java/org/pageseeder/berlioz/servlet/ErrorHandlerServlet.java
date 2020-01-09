@@ -19,11 +19,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -157,16 +154,12 @@ public final class ErrorHandlerServlet extends HttpServlet {
     if (preserve == null) {
       preserve = FORWARD_EXTENSIONS;
     }
-    for (String ext : preserve.split(",")) {
-      forwardExtensions.add(ext);
-    }
+    Collections.addAll(forwardExtensions, preserve.split(","));
     String ignore = config.getInitParameter("ignore-extensions");
     if (ignore == null) {
       ignore = IGNORE_EXTENSIONS;
     }
-    for (String ext : ignore.split(",")) {
-      ignoreExtensions.add(ext);
-    }
+    Collections.addAll(ignoreExtensions, ignore.split(","));
     String defExt = config.getInitParameter("forward-default");
     defaultExtension = defExt != null? defExt : DEFAULT_EXTENSION;
   }
@@ -554,7 +547,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static String getOriginalURI(HttpServletRequest req) {
     Object original = req.getAttribute("javax.servlet.error.request_uri");
-    if (original != null && original instanceof String) return (String)original;
+    if (original instanceof String) return (String)original;
     return req.getRequestURI();
   }
 

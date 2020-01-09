@@ -117,7 +117,7 @@ public final class XSLTransformer {
   /**
    * An etag for these templates.
    */
-  private @Nullable String etag = null;
+  private @Nullable String etag;
 
   /**
    * Creates a new XSLT Transformer with no fallback templates.
@@ -151,8 +151,8 @@ public final class XSLTransformer {
    */
   public XSLTransformResult transform(String content, HttpServletRequest req, Service service) {
     StringWriter buffer = new StringWriter();
-    long time = 0;
-    Templates templates = null;
+    long time;
+    Templates templates;
     Map<String, String> parameters = toParameters(req);
 
     try {
@@ -384,7 +384,7 @@ public final class XSLTransformer {
   private static Templates toTemplates(File stylepath, @Nullable URL fallback) throws TransformerException {
     // load the templates from the source file
     InputStream in = null;
-    Templates templates = null;
+    Templates templates;
     try {
       in = new FileInputStream(stylepath);
       Source source = new StreamSource(in);
@@ -524,7 +524,7 @@ public final class XSLTransformer {
   private static Templates toTemplates(@Nullable URL url) {
     if (url == null) return IDENTITY_TEMPLATES;
     // load the templates from the URL
-    Templates templates = null;
+    Templates templates;
     try (InputStream in = url.openStream()) {
       Source source = new StreamSource(in);
       source.setSystemId(url.toString());
@@ -553,7 +553,7 @@ public final class XSLTransformer {
     // No need to process, let's copy directly the output
     if (templates == IDENTITY_TEMPLATES) return xml;
     // Let's try to format it
-    String out = null;
+    String out;
     try {
       Source source = new StreamSource(new StringReader(xml));
       StringWriter html = new StringWriter();
@@ -561,7 +561,7 @@ public final class XSLTransformer {
       templates.newTransformer().transform(source, result);
       out = html.toString();
     } catch (TransformerException disaster) {
-      LOGGER.error("Fail-safe stylesheet failed! - returning error details as XML", disaster.getMessageAndLocation());
+      LOGGER.error("Fail-safe stylesheet failed! - returning error details as XML: {}", disaster.getMessageAndLocation());
       // Fail-safe failed!
       out = xml;
     } catch (Exception catastrophe) {

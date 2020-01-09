@@ -145,7 +145,7 @@ public final class FileUtils {
       LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
       return new FileInputStream(file);
     } else {
-      LOGGER.info("Loading MIME properties from Berlioz JAR", file.getAbsolutePath());
+      LOGGER.info("Loading MIME properties from Berlioz JAR {}", file.getAbsolutePath());
       return FileUtils.class.getResourceAsStream("/mime.properties");
     }
   }

@@ -101,7 +101,7 @@ public final class ParameterTemplate {
       start = m.end();
     }
     if (start < template.length()) {
-      String text = template.substring(start, template.length());
+      String text = template.substring(start);
       tokens.add(new Literal(text));
     }
     return new ParameterTemplate(tokens.toArray(new Token[]{}));

@@ -158,9 +158,7 @@ public final class ServiceLoader {
       if (xml.exists()) {
         files.add(xml);
       }
-      for (File sub : subs) {
-        files.add(sub);
-      }
+      Collections.addAll(files, subs);
     }
 
     // Single `services.xml` file

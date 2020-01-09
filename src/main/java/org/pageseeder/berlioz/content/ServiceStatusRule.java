@@ -78,7 +78,7 @@ import org.pageseeder.berlioz.Beta;
    * The default rule to use when none is specified.
    */
   static final ServiceStatusRule DEFAULT_RULE =
-    new ServiceStatusRule(SelectType.NAME, Collections.<String>emptyList(), CodeRule.HIGHEST);
+    new ServiceStatusRule(SelectType.NAME, Collections.emptyList(), CodeRule.HIGHEST);
 
   /**
    * How the generator should be selected.

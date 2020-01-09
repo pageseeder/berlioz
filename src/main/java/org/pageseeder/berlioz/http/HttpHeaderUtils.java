@@ -57,11 +57,8 @@ public final class HttpHeaderUtils {
    * Date formats using for Date parsing.
    */
   private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-
-  /**
-   * GMT time zone - all HTTP dates are on GMT.
-   */
   static {
+    // GMT time zone - all HTTP dates are on GMT.
     HTTP_DATE_FORMAT.setTimeZone(GMT);
   }
 
