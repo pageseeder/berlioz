@@ -36,7 +36,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public class GetRuntimeInfo implements ContentGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+  public void process(ContentRequest req, XMLWriter xml) throws IOException {
     Runtime runtime = Runtime.getRuntime();
 
     xml.openElement("runtime");

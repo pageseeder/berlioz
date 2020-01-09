@@ -130,12 +130,12 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * The extension to preserve.
    */
-  private static Set<String> forwardExtensions = new HashSet<>();
+  private static final Set<String> forwardExtensions = new HashSet<>();
 
   /**
    * The extension to ignore.
    */
-  private static Set<String> ignoreExtensions = new HashSet<>();
+  private static final Set<String> ignoreExtensions = new HashSet<>();
 
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.

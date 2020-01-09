@@ -67,7 +67,7 @@ public final class ListLibraries implements ContentGenerator {
     extractLibs(context, xml);
   }
 
-  private void extractLibs(ServletContext context, XMLWriter xml) throws BerliozException, IOException {
+  private void extractLibs(ServletContext context, XMLWriter xml) throws IOException {
 
     // TODO: Use Weak cache to avoid having to reopen all libs, reload on Berlioz Reload
     Set<String> paths = context.getResourcePaths("/WEB-INF/lib");
@@ -174,11 +174,7 @@ public final class ListLibraries implements ContentGenerator {
         // Sort the composed manifest attributes
         String category = key.substring(0, dash);
         String value = key.substring(dash+1);
-        List<String> values = keys.get(category);
-        if (values == null) {
-          values = new ArrayList<>();
-          keys.put(category, values);
-        }
+        List<String> values = keys.computeIfAbsent(category, k -> new ArrayList<>());
         values.add(value);
       }
     }

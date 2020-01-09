@@ -36,7 +36,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class GetCPUTime implements ContentGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+  public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
     int interval = req.getIntParameter("interval", 100);
 

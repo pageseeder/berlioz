@@ -309,7 +309,7 @@ public final class CSSMin {
         throw new ParsingException("Warning: Incomplete selector: " + rule, -1, -1);
 
       // Always starts with the selector
-      String selector = parts[0].toString().trim();
+      String selector = parts[0].trim();
       selector = selector.replaceAll("\\s?(\\+|~|,|=|~=|\\^=|\\$=|\\*=|\\|=|>)\\s?", "$1");
       this._selector = selector;
 
@@ -407,7 +407,7 @@ public final class CSSMin {
           j = i + 1;
         }
       }
-      substr = contents.substring(j, contents.length());
+      substr = contents.substring(j);
       if (!("".equals(substr.trim()) || (substr == null))) {
         parts.add(substr);
       }
@@ -480,7 +480,7 @@ public final class CSSMin {
           j = i + 1;
         }
       }
-      substr = property.substring(j, property.length());
+      substr = property.substring(j);
       if (!("".equals(substr.trim()) || (substr == null))) {
         parts.add(substr);
       }

@@ -85,10 +85,9 @@ public final class BerliozEntityResolver implements EntityResolver {
    *
    * @return The entity as an XML input source.
    *
-   * @throws SAXException If the library has not been defined.
    */
   @Override
-  public @Nullable InputSource resolveEntity(@Nullable String publicId, String systemId) throws SAXException {
+  public @Nullable InputSource resolveEntity(@Nullable String publicId, String systemId) {
     InputSource source = null;
     // process only public identifiers that are valid for Berlioz
     String dtd = toFileName(publicId);

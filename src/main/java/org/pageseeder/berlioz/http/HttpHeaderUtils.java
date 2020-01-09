@@ -165,10 +165,8 @@ public final class HttpHeaderUtils {
    * @return <code>true</code> if the resource meets the specified condition;
    *         <code>false</code> if the condition is not satisfied, in which case request processing is stopped.
    *
-   * @throws IOException If thrown while setting the response status code.
    */
-  protected static boolean checkIfModifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
-      throws IOException {
+  protected static boolean checkIfModifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info) {
     try {
       long headerValue = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
       long lastModified = info.getLastModified();

@@ -248,12 +248,9 @@ public final class XMLConfig implements Serializable, XMLWritable {
    *
    * <p>A node is the prefix of a property where the property is <code>[node].[name]</code>
    *
-   * @param xml The XML writer
    * @param map The map to process.
    *
    * @return A set of nodes from the map
-   *
-   * @throws IOException If thrown by the XML Writer.
    */
   private static SortedSet<String> nodes(Map<String, String> map) {
     SortedSet<String> nodes = new TreeSet<>();

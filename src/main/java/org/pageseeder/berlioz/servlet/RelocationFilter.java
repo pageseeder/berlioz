@@ -283,7 +283,7 @@ public final class RelocationFilter implements Filter {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) {
       if ("relocation".equals(localName)) {
         URIPattern from = toPattern(atts.getValue("from"));
         URIPattern to = toPattern(atts.getValue("to"));

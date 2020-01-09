@@ -180,7 +180,7 @@ import org.pageseeder.berlioz.Beta;
     } else if (items.startsWith(TARGET_SELECTOR_PREFIX)) {
       items = items.substring(TARGET_SELECTOR_PREFIX.length());
     }
-    List<String> list = null;
+    List<String> list;
     if ("*".equals(items)) {
       list = Collections.emptyList();
     } else {

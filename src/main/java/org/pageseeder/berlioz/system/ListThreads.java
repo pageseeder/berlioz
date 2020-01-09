@@ -49,7 +49,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class ListThreads implements ContentGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+  public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
     boolean stacktraces = "true".equals(req.getParameter("stacktraces"));
     boolean threadtime = "true".equals(req.getParameter("threadtime"));

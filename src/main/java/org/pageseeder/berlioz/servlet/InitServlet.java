@@ -65,7 +65,7 @@ public final class InitServlet extends HttpServlet implements Servlet {
   /**
    * The lifecycle listener notified when Berlioz starts and stops.
    */
-  private static List<LifecycleListener> listeners = new ArrayList<>();
+  private static final List<LifecycleListener> listeners = new ArrayList<>();
 
   /**
    * The application initializer.

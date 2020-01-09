@@ -74,7 +74,7 @@ public final class Aeson {
 
     // Setup the transformer
     TransformerFactory factory = TransformerFactory.newInstance();
-    Transformer transformer = null;
+    Transformer transformer;
     if (style != null) {
       Source xslt = new StreamSource(style);
       transformer = factory.newTransformer(xslt);

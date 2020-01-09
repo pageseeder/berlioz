@@ -36,7 +36,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class GetThreadInfo implements ContentGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+  public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
     long threadId = req.getLongParameter("id", -1L);
     if (threadId < 0) {

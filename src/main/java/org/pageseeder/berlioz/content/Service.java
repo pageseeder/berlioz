@@ -472,11 +472,7 @@ public final class Service {
     public Builder parameter(@Nullable Parameter p) {
       if (this._generators.size() > 0 && p != null) {
         ContentGenerator generator = this._generators.get(this._generators.size() - 1);
-        List<Parameter> parameters = this._parameters.get(generator);
-        if (parameters == null) {
-          parameters = new ArrayList<>();
-          this._parameters.put(generator, parameters);
-        }
+        List<Parameter> parameters = this._parameters.computeIfAbsent(generator, k -> new ArrayList<>());
         parameters.add(p);
       }
       return this;

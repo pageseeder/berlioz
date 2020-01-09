@@ -132,7 +132,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   }
 
   @Override
-  public void startPrefixMapping(String prefix, String uri) throws SAXException {
+  public void startPrefixMapping(String prefix, String uri) {
     boolean hasPrefix = prefix != null && prefix.length() > 0;
     this.mapping.put((hasPrefix? prefix : ""), uri);
   }
@@ -168,7 +168,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * {@inheritDoc}
    */
   @Override
-  public void startCDATA() throws SAXException {
+  public void startCDATA() {
   }
 
   /**
@@ -177,7 +177,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * {@inheritDoc}
    */
   @Override
-  public void endCDATA() throws SAXException {
+  public void endCDATA() {
   }
 
   /**
@@ -186,7 +186,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * {@inheritDoc}
    */
   @Override
-  public void startDTD(String name, @Nullable String publicId, @Nullable String systemId) throws SAXException {
+  public void startDTD(String name, @Nullable String publicId, @Nullable String systemId) {
   }
 
   /**
@@ -195,7 +195,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * {@inheritDoc}
    */
   @Override
-  public void endDTD() throws SAXException {
+  public void endDTD() {
   }
 
   /**
@@ -204,7 +204,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * {@inheritDoc}
    */
   @Override
-  public void startEntity(String name) throws SAXException {
+  public void startEntity(String name) {
   }
 
   /**
@@ -213,7 +213,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * {@inheritDoc}
    */
   @Override
-  public void endEntity(String name) throws SAXException {
+  public void endEntity(String name) {
   }
 
   // Static helpers

@@ -55,8 +55,8 @@ public final class CharsetUtils {
    * @throws NullPointerException if either argument is <code>null</code>.
    */
   public static int length(CharSequence content, Charset charset) {
-    Objects.requireNonNull("No length for null content");
-    Objects.requireNonNull("Charset is null");
+    Objects.requireNonNull(content, "No length for null content");
+    Objects.requireNonNull(charset, "Charset is null");
     int length;
     try {
       CharsetEncoder encoder = charset.newEncoder();

@@ -215,8 +215,7 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   @Override
-  public void doOptions(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
+  public void doOptions(HttpServletRequest req, HttpServletResponse res) {
     ServiceRegistry services = getServiceRegistry();
     String path = HttpRequestWrapper.getBerliozPath(req);
     List<String> methods = services.allows(path);
@@ -408,7 +407,7 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Produce the output
-    BerliozOutput result = null;
+    BerliozOutput result;
     if (transformer != null) {
       XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
       if (profile) {

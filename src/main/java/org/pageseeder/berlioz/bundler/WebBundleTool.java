@@ -65,7 +65,7 @@ public final class WebBundleTool {
   /**
    * Stores bundles instances to check for freshness.
    */
-  private static Map<String, WebBundle> instances = new Hashtable<>();
+  private static final Map<String, WebBundle> instances = new Hashtable<>();
 
   /**
    * The maximum size for turning the content of an image into a data URI.

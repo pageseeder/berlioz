@@ -53,7 +53,7 @@ public class GetGeneratorStatistics implements ContentGenerator {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+  public void process(ContentRequest req, XMLWriter xml) throws IOException {
     StatisticsCollector collector = StatisticsCollector.getInstance();
 
     if ("true".equals(req.getParameter("reset", "false"))) {

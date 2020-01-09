@@ -128,7 +128,7 @@ public final class PerformanceServerTiming {
     return name;
   }
 
-  private static Pattern NON_VCHAR = Pattern.compile("[^\\u0009\\u0020!-~]");
+  private static final Pattern NON_VCHAR = Pattern.compile("[^\\u0009\\u0020!-~]");
 
   /**
    * Check that the server timing parameter value is a valid <code>token</code> / <code>quoted-string</code>

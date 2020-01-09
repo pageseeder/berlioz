@@ -160,7 +160,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+  public void process(ContentRequest req, XMLWriter xml) throws IOException {
     HttpContentRequest hreq = (HttpContentRequest)req;
     Service service = hreq.getService();
     Environment env = req.getEnvironment();

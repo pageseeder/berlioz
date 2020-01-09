@@ -297,11 +297,10 @@ public final class RedirectFilter implements Filter, Serializable {
    * @param permanent <code>true</code> to use HTTP 301 status;
    *                  <code>false</code> to HTTP 302.
    *
-   * @throws IOException      Should an I/O error be reported by servlet response.
    * @throws ServletException If the a relative URL was used.
    */
   private static void sendRedirect(HttpServletRequest req, HttpServletResponse res, String location, boolean permanent)
-      throws IOException, ServletException {
+      throws ServletException {
     String url = location;
 
     // Must use absolute URI
@@ -346,7 +345,7 @@ public final class RedirectFilter implements Filter, Serializable {
     private final List<URIPattern> permanent = new ArrayList<>();
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) {
       if ("redirect".equals(localName)) {
         URIPattern from = toPattern(atts.getValue("from"));
         URIPattern to = toPattern(atts.getValue("to"));

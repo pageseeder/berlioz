@@ -102,12 +102,12 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   // =============================================================================================
 
   @Override
-  public void startDocument() throws SAXException {
+  public void startDocument() {
     this.state.pushState();
   }
 
   @Override
-  public void endDocument() throws SAXException {
+  public void endDocument() {
     this.state.popState();
     this.json.close();
   }
@@ -192,7 +192,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   }
 
   @Override
-  public void characters(char[] ch, int start, int len) throws SAXException {
+  public void characters(char[] ch, int start, int len) {
     if (this.state.isContext(JSONContext.VALUE)) {
       this.buffer.append(ch, start, len);
     }
