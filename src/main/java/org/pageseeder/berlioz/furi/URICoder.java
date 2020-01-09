@@ -270,19 +270,19 @@ public final class URICoder {
   private static void appendEscape(StringBuilder sb, byte b) {
     sb.append('%');
     sb.append(HEX_DIGITS[(b >> 4) & 0x0f]);
-    sb.append(HEX_DIGITS[(b >> 0) & 0x0f]);
+    sb.append(HEX_DIGITS[(b) & 0x0f]);
   }
 
   /**
    * Appends the escape sequence for the given byte to the specified string buffer.
    *
    * @param sb The string buffer.
-   * @param b The byte to escape.
+   * @param c The char to escape.
    */
   private static void appendEscape(StringBuilder sb, char c) {
     sb.append('%');
     sb.append(HEX_DIGITS[(c >> 4) & 0x0f]);
-    sb.append(HEX_DIGITS[(c >> 0) & 0x0f]);
+    sb.append(HEX_DIGITS[(c) & 0x0f]);
   }
 
   /**
