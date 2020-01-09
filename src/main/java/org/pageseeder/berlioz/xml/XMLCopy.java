@@ -254,19 +254,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
       // an error was reported by the parser
       } catch (BerliozException ex) {
-        String m = ex.getMessage();
-        Throwable cause = ex.getCause();
         LOGGER.warn("An error was reported by the parser while parsing {}", file.toURI());
-        LOGGER.warn("Error details:", ex);
-        xml.openElement("no-data");
-        xml.attribute("error", "parsing");
-        xml.attribute("details", m != null? m : "(No message)");
-        if (cause instanceof SAXParseException) {
-          SAXParseException sax = (SAXParseException)cause;
-          xml.attribute("line", sax.getLineNumber());
-          xml.attribute("column", sax.getColumnNumber());
-        }
-        xml.closeElement();
+        handleError(xml, ex);
       }
     // the file does not exist
     } else {
@@ -310,19 +299,8 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
     // an error was reported by the parser
     } catch (BerliozException ex) {
-      String m = ex.getMessage();
-      Throwable cause = ex.getCause();
       LOGGER.warn("An error was reported by the parser while parsing reader");
-      LOGGER.warn("Error details:", ex);
-      xml.openElement("no-data");
-      xml.attribute("error", "parsing");
-      xml.attribute("details", m != null? m : "(No message)");
-      if (cause instanceof SAXParseException) {
-        SAXParseException sax = (SAXParseException)cause;
-        xml.attribute("line", sax.getLineNumber());
-        xml.attribute("column", sax.getColumnNumber());
-      }
-      xml.closeElement();
+      handleError(xml, ex);
     }
     return ok;
   }
@@ -379,4 +357,18 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
     }
   }
 
+  private static void handleError(XMLWriter xml, Exception ex) throws IOException {
+    String m = ex.getMessage();
+    Throwable cause = ex.getCause();
+    LOGGER.warn("Error details:", ex);
+    xml.openElement("no-data");
+    xml.attribute("error", "parsing");
+    xml.attribute("details", m != null? m : "(No message)");
+    if (cause instanceof SAXParseException) {
+      SAXParseException sax = (SAXParseException)cause;
+      xml.attribute("line", sax.getLineNumber());
+      xml.attribute("column", sax.getColumnNumber());
+    }
+    xml.closeElement();
+  }
 }
