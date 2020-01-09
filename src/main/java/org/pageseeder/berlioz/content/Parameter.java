@@ -56,8 +56,8 @@ public final class Parameter {
   /**
    * Creates a new parameter.
    *
-   * @param name  The name of the parameter.
-   * @param value The value to use to generate the value of the parameter.
+   * @param name     The name of the parameter.
+   * @param template The value to use to generate the value of the parameter.
    */
   public Parameter(String name, String template) {
     this(name, ParameterTemplate.parse(template));
