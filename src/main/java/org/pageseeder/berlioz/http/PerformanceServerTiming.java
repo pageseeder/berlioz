@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.http;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**

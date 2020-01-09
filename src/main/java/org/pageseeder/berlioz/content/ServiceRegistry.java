@@ -197,8 +197,7 @@ public final class ServiceRegistry {
       m = HttpMethod.GET;
     }
     ServiceMap mapping = getMapping(m);
-    MatchingService service = mapping.match(url);
-    return service;
+    return mapping.match(url);
   }
 
   /**

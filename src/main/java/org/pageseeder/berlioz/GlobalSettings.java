@@ -245,8 +245,7 @@ public final class GlobalSettings {
    */
   public static @Nullable File getDefaultConfigFile() {
     if (env == null) return null;
-    File f = getDefaultConfigFile(getConfig());
-    return f;
+    return getDefaultConfigFile(getConfig());
   }
 
   // Properties methods

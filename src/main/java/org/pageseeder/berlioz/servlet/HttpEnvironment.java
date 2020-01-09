@@ -71,14 +71,12 @@ public final class HttpEnvironment implements Environment {
 
   @Override
   public File getPrivateFile(String path) {
-    File f = new File(this._private, path);
-    return f;
+    return new File(this._private, path);
   }
 
   @Override
   public File getPublicFile(String path) {
-    File f = new File(this._public, path);
-    return f;
+    return new File(this._public, path);
   }
 
   @Override
