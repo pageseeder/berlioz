@@ -105,7 +105,7 @@ public abstract class AppInitializer {
     }
 
     // Determine the mode (dev, production, etc...)
-    String mode = configureMode(appData, configFolder);
+    String mode = configureMode(appData != null? appData : this._webinf, configFolder);
     if (mode != null) {
       env = env.mode(mode);
     }
@@ -486,6 +486,7 @@ public abstract class AppInitializer {
         // Check (and create) directory
         if (!appData.exists()) {
           Files.createDirectories(appData.toPath());
+          console(Phase.INIT, "AppData: created specified appdata folder");
         } else if (!appData.isDirectory()) throw new IOException("The specified appdata folder "+appData+" is not a directory.");
 
         // Report
