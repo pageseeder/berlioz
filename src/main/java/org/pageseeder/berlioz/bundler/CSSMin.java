@@ -61,7 +61,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -560,7 +559,7 @@ public final class CSSMin {
      */
     private Part[] parseValues(String contents) {
       // Make sure we do not split data URIs
-      String[] parts = contents.indexOf("data:") < 0? contents.split(",") : new String[]{contents};
+      String[] parts = !contents.contains("data:") ? contents.split(",") : new String[]{contents};
       Part[] results = new Part[parts.length];
       for (int i = 0; i < parts.length; i++) {
         try {

@@ -38,7 +38,6 @@ import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceStatusRule;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
-import org.pageseeder.berlioz.http.PerformanceServerTiming;
 import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.util.CompoundBerliozException;

@@ -590,7 +590,7 @@ public final class WebBundleTool {
     if (closeable == null) return;
     try {
       closeable.close();
-    } catch (IOException ex) {
+    } catch (IOException ignored) {
     }
   }
 
