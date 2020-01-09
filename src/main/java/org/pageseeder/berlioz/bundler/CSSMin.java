@@ -321,7 +321,7 @@ public final class CSSMin {
       // We're dealing with a nested property, eg @-webkit-keyframes or @media
       if (parts.length > 2) {
         subrules = new ArrayList<>();
-        parts = rule.split("\\{|\\}");
+        parts = rule.split("\\{|}");
         for (int i = 1; i < parts.length; i += 2) {
           // sub selector
           parts[i] = parts[i].trim();
@@ -737,7 +737,7 @@ public final class CSSMin {
       } else {
         String[] words = result.split("\\s");
         if (words.length == 1) {
-          result = result.toLowerCase().replaceAll("('|\")?(.*?)\1", "$2");
+          result = result.toLowerCase().replaceAll("(['\"])?(.*?)\1", "$2");
         }
       }
       return result;

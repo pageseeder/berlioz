@@ -448,8 +448,8 @@ public final class BerliozConfig {
    */
   private XSLTransformer newTransformer(Service service) {
     String path = this._stylePath;
-    path = path.replaceAll("\\{GROUP\\}", service.group());
-    path = path.replaceAll("\\{SERVICE\\}", service.id());
+    path = path.replaceAll("\\{GROUP}", service.group());
+    path = path.replaceAll("\\{SERVICE}", service.id());
     File styleSheet = this._env.getPrivateFile(path);
     return new XSLTransformer(styleSheet, toURL(this._fallbackStyleSheet));
   }
