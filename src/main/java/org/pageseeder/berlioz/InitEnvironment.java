@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -143,8 +144,22 @@ public final class InitEnvironment {
    */
   @Beta
   public boolean hasAppData() {
-    // TODO We should compare canonical path instead
-    return this._webInf != this._appData;
+    // Most common case appData set to webInf
+    if (this._webInf == this._appData){
+      return false;
+    }
+    // fallback in case appData is specified but point to same location
+    try {
+      if (this._webInf.getCanonicalFile().equals(this._appData.getCanonicalFile())) {
+        return false;
+      }
+    } catch (IOException ex) {
+      // NB. not as reliable as canonical but sufficient
+      if (this._webInf.getAbsoluteFile().equals(this._appData.getAbsoluteFile())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
