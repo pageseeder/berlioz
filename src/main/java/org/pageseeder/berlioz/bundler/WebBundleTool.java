@@ -30,15 +30,12 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.pageseeder.berlioz.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -374,7 +371,7 @@ public final class WebBundleTool {
    * Copy the contents of the specified file to the specified output stream, and ensure that both streams are
    * closed before returning (even in the face of an exception).
    *
-   * @param file The file to read.
+   * @param reader The file to read.
    * @param out  Where the output goes to.
    *
    * @throws IOException if an input/output error occurs
@@ -510,7 +507,7 @@ public final class WebBundleTool {
       if (isImage && ftarget.exists() && ftarget.length() < threshold) {
         // Replace short images by data uri
         location.append("data:image/").append(path.substring(path.lastIndexOf('.')+1)).append(";base64,");
-        location.append(Base64.encodeFromFile(ftarget));
+        location.append(encodeBase64(ftarget));
       } else {
         String csource = ftarget.getCanonicalPath();
         // Check difference with bundle file
@@ -606,4 +603,19 @@ public final class WebBundleTool {
   private static BufferedReader newBufferedReader(File f) throws FileNotFoundException {
     return new BufferedReader(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8));
   }
+
+  /**
+   * Encodes the file using the Java 8 Base64 method.
+   *
+   * @param file The file to encode
+   * @return file content encoded with Base64
+   *
+   * @throws IOException If thrown while reading file content
+   */
+  private static String encodeBase64(File file) throws IOException {
+    Base64.Encoder encoder = Base64.getEncoder();
+    byte[] bytes = Files.readAllBytes(file.toPath());
+    return encoder.encodeToString(bytes);
+  }
+
 }
