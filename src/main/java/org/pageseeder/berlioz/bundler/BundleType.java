@@ -39,7 +39,7 @@ public enum BundleType {
    *
    * @param ext The extension.
    */
-  private BundleType(String ext) {
+  BundleType(String ext) {
     this._ext = ext;
   }
 

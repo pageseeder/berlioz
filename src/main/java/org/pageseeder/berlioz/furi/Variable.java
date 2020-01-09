@@ -90,7 +90,7 @@ public class Variable {
      *
      * @param symbol The symbol used for this reserved variable name.
      */
-    private Reserved(String symbol) {
+    Reserved(String symbol) {
       this._symbol = symbol;
     }
 
@@ -100,7 +100,7 @@ public class Variable {
     String symbol() {
       return this._symbol;
     }
-  };
+  }
 
   /**
    * Indicate that the variable's value should be processed as a list ("@") or an associative array ("%").
@@ -160,7 +160,7 @@ public class Variable {
     /**
      * Indicate that this variable can be expanded as a list of strings.
      */
-    REMAINDER;
+    REMAINDER
 
   }
 

@@ -80,7 +80,7 @@ public final class BerliozConfig {
 
     /** One transformer per service */
     SERVICE
-  };
+  }
 
   // Class attributes -----------------------------------------------------------------------------
 

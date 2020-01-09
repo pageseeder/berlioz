@@ -345,7 +345,7 @@ public enum BerliozOption {
    * @param property  The name of the property in the global settings.
    * @param defaultTo The default value for this option.
    */
-  private BerliozOption(String property, Object defaultTo) {
+  BerliozOption(String property, Object defaultTo) {
     this._property = property;
     this._default = defaultTo;
   }

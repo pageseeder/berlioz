@@ -255,7 +255,7 @@ public final class BerliozServlet extends HttpServlet {
     // Determine the method in use.
     ServiceLoader loader = ServiceLoader.getInstance();
     boolean profile = GlobalSettings.has(BerliozOption.PROFILE);
-    boolean serverTiming = GlobalSettings.has(BerliozOption.HTTP_SERVER_TIMING);;
+    boolean serverTiming = GlobalSettings.has(BerliozOption.HTTP_SERVER_TIMING);
 
     // Berlioz Control
     if (config.hasControl(req)) {

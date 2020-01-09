@@ -335,7 +335,7 @@ public enum ContentStatus {
    * Creates a new code.
    * @param code the corresponding HTTP response code.
    */
-  private ContentStatus(int code) {
+  ContentStatus(int code) {
    this._code = code;
    this._string = name().toLowerCase().replace('_', '-');
   }

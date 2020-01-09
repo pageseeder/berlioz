@@ -57,7 +57,7 @@ public final class CollectedError<T extends Throwable> implements XMLWritable {
     public String toString() {
       return name().toLowerCase();
     }
-  };
+  }
 
   /**
    * The seriousness of the error.

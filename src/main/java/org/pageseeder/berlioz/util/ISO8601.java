@@ -87,7 +87,7 @@ public enum ISO8601 {
    *
    * @param format The format string to use with a <code>SimpleDateFormat</code>.
    */
-  private ISO8601(String format) {
+  ISO8601(String format) {
     this._format = format;
   }
 

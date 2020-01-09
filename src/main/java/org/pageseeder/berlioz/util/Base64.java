@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import org.eclipse.jdt.annotation.Nullable;
@@ -1370,7 +1371,7 @@ public final class Base64 {
     java.io.OutputStream out = null;
     try {
       out = new java.io.BufferedOutputStream(new java.io.FileOutputStream(outfile));
-      out.write(encoded.getBytes("US-ASCII")); // Strict, 7-bit output.
+      out.write(encoded.getBytes(StandardCharsets.US_ASCII)); // Strict, 7-bit output.
     } catch (IOException ex) {
       throw ex;
     } finally {

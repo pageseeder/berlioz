@@ -62,6 +62,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -126,7 +127,7 @@ public final class CSSMin {
    */
   public static void minimize(String filename, OutputStream out) {
     try {
-      minimize(new InputStreamReader(new FileInputStream(filename), Charset.forName("utf8")), out);
+      minimize(new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8), out);
     } catch (FileNotFoundException ex) {
       LOGGER.debug("Unable to find file", ex);
     }
@@ -139,7 +140,7 @@ public final class CSSMin {
    * @param out   Where to send the result
    */
   public static void minimize(Reader input, OutputStream out) {
-    minimize(input, new PrintWriter(new OutputStreamWriter(out, Charset.forName("utf8"))));
+    minimize(input, new PrintWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
   }
 
   /**
@@ -639,7 +640,7 @@ public final class CSSMin {
     /**
      * Simplifies the part.
      */
-    public static final String simplify(String property, String value) {
+    public static String simplify(String property, String value) {
       // !important doesn't need to be spaced
       String result = value.replaceAll(" !important", "!important");
 

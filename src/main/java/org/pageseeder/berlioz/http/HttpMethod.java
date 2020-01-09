@@ -86,7 +86,7 @@ public enum HttpMethod {
    * Creates a new constant.
    * @param isMappable whether it can be mapped to a Berlioz Service.
    */
-  private HttpMethod(boolean isMappable) {
+  HttpMethod(boolean isMappable) {
     this.mappable = isMappable;
   }
 

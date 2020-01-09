@@ -104,7 +104,7 @@ package org.pageseeder.berlioz;
   @Override
   public final String id() {
     return "berlioz-"+name().toLowerCase().replace('_', '-');
-  };
+  }
 
   /**
    * Returns the same as the <code>id()</code> method.
@@ -114,5 +114,5 @@ package org.pageseeder.berlioz;
   @Override
   public final String toString() {
     return id();
-  };
+  }
 }

@@ -105,7 +105,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   @Override
   public final String getBerliozPath() {
     return this._loc.info().path();
-  };
+  }
 
   @Override
   public final @Nullable String getParameter(String name) {

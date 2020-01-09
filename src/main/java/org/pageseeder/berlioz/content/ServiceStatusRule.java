@@ -59,7 +59,7 @@ import org.pageseeder.berlioz.Beta;
 
     /** The highest code by a selected generator. */
     LOWEST
-  };
+  }
 
   /**
    * How the generator should be selected.
@@ -72,7 +72,7 @@ import org.pageseeder.berlioz.Beta;
 
     /** By name. */
     NAME
-  };
+  }
 
   /**
    * The default rule to use when none is specified.

@@ -97,7 +97,7 @@ final class ServicesHandler10 extends DefaultHandler {
      * Creates a new element using the name of the element is the lower case value of the
      * constant and uses '-' instead of '_' to separated words.
      */
-    private Element() {
+    Element() {
       this._name = name().toLowerCase().replace('_', '-');
     }
 
@@ -119,7 +119,7 @@ final class ServicesHandler10 extends DefaultHandler {
       return this._name;
     }
 
-  };
+  }
 
   /**
    * The list of URI patterns for the current service.

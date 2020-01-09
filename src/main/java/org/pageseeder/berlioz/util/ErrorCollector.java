@@ -80,7 +80,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If the threshold argument is <code>null</code>.
    */
   public final void setErrorFlag(Level threshold) {
-    this.flag = Objects.requireNonNull(threshold, "Specified threshold is null");;
+    this.flag = Objects.requireNonNull(threshold, "Specified threshold is null");
   }
 
   /**

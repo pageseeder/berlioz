@@ -139,7 +139,7 @@ public final class ParameterTemplate {
   // Token
   // ----------------------------------------------------------------------------------------------
 
-  private static interface Token {
+  private interface Token {
 
     /**
      * Return the resolved value of this token.

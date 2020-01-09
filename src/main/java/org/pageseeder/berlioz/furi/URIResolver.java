@@ -70,7 +70,7 @@ public final class URIResolver {
      * Indicates that the best matching pattern should be returned when finding a match in a list
      * of patterns. The best matching patterns is determined by the longest common string.
      */
-    BEST_MATCH;
+    BEST_MATCH
   }
 
   /**

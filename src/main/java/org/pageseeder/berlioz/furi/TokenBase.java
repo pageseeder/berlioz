@@ -101,7 +101,7 @@ abstract class TokenBase implements Token {
    *
    * @return The raw expression (without the curly brackets).
    */
-  protected static final String strip(String exp) {
+  protected static String strip(String exp) {
     if (exp.length() < 2)
       return exp;
     if (exp.charAt(0) == '{' && exp.charAt(exp.length() - 1) == '}')
@@ -119,7 +119,7 @@ abstract class TokenBase implements Token {
    *
    * @throws URITemplateSyntaxException If thrown by the Variable parse method.
    */
-  protected static final List<Variable> toVariables(String exp) throws URITemplateSyntaxException {
+  protected static List<Variable> toVariables(String exp) throws URITemplateSyntaxException {
     String[] exps = exp.split(",");
     List<Variable> vars = new ArrayList<>(exps.length);
     for (String e : exps) {

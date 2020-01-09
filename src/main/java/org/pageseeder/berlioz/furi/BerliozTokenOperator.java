@@ -418,7 +418,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      *
      * @param c The character used to represent this operator.
      */
-    private Operator(char c) {
+    Operator(char c) {
       this._c = c;
     }
 
@@ -504,7 +504,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   public BerliozTokenOperator(Operator op, List<Variable> vars) {
     super(toExpression(op, vars));
-    this._operator = Objects.requireNonNull(op, "The operator is required");;
+    this._operator = Objects.requireNonNull(op, "The operator is required");
     this._vars = vars;
     this._pattern = op.pattern(vars);
   }
