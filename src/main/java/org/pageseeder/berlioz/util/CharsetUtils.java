@@ -57,7 +57,7 @@ public final class CharsetUtils {
   public static int length(CharSequence content, Charset charset) {
     Objects.requireNonNull("No length for null content");
     Objects.requireNonNull("Charset is null");
-    int length = -1;
+    int length;
     try {
       CharsetEncoder encoder = charset.newEncoder();
       ByteBuffer bytes;

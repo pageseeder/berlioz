@@ -184,7 +184,7 @@ public class Variable {
   /**
    * The type of this variable.
    */
-  private Form form = Form.STRING;
+  private Form form;
 
   /**
    * The implementation type of this variable (eg. string, integer, etc... can be user-defined).

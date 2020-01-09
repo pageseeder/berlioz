@@ -161,7 +161,7 @@ public final class XMLUtils {
    */
   public static SAXParser getParser(boolean validating) throws BerliozException {
     SAXParserFactory factory = validating? XMLUtils.vfactory : XMLUtils.nfactory;
-    SAXParser parser = null;
+    SAXParser parser;
     try {
       if (factory == null) {
         // use the SAX parser factory to ensure validation
