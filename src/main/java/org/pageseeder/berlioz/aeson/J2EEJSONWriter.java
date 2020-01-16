@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Allette Systems (Australia)
+ * Copyright 2020 Allette Systems (Australia)
  * http://www.allette.com.au
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.12.0
  * @since Berlioz 0.9.32
  */
 final class J2EEJSONWriter implements JSONWriter {
@@ -89,24 +89,12 @@ final class J2EEJSONWriter implements JSONWriter {
 
   @Override
   public JSONWriter writeNull(String name) {
-    this._json.writeNull(name);
-    return this;
-  }
-
-  @Override
-  public JSONWriter writeNull() {
-    this._json.writeNull();
-    return this;
-  }
-
-  @Override
-  public JSONWriter writeNull2(String name) {
     this._json.write(name, JsonValue.NULL);
     return this;
   }
 
   @Override
-  public JSONWriter writeNull2() {
+  public JSONWriter writeNull() {
     this._json.write(JsonValue.NULL);
     return this;
   }

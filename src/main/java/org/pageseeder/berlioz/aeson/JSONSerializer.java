@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Allette Systems (Australia)
+ * Copyright 2020 Allette Systems (Australia)
  * http://www.allette.com.au
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,7 +38,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.12.0
  * @since Berlioz 0.9.32
  */
 public final class JSONSerializer extends DefaultHandler implements ContentHandler {
@@ -445,9 +445,9 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    */
   private void asNull(@Nullable String name) {
     if (name != null) {
-      this.json.writeNull2(name);
+      this.json.writeNull(name);
     } else {
-      this.json.writeNull2();
+      this.json.writeNull();
     }
   }
 

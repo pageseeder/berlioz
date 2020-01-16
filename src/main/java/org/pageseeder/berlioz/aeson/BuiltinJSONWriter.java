@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Allette Systems (Australia)
+ * Copyright 2020 Allette Systems (Australia)
  * http://www.allette.com.au
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@ import java.io.PrintWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.12.0
  * @since Berlioz 0.9.32
  */
 final class BuiltinJSONWriter implements JSONWriter {
@@ -85,15 +85,6 @@ final class BuiltinJSONWriter implements JSONWriter {
   }
 
   @Override
-  public JSONWriter writeNull(String name) {
-    maybeAppendComma(false);
-    appendJSONString(name);
-    this._json.append(':');
-    this._json.append("null");
-    return this;
-  }
-
-  @Override
   public JSONWriter writeNull() {
     maybeAppendComma(false);
     this._json.append("null");
@@ -101,21 +92,13 @@ final class BuiltinJSONWriter implements JSONWriter {
   }
 
   @Override
-  public JSONWriter writeNull2(String name) {
+  public JSONWriter writeNull(String name) {
     maybeAppendComma(false);
     appendJSONString(name);
     this._json.append(':');
     this._json.append("null");
     return this;
   }
-
-  @Override
-  public JSONWriter writeNull2() {
-    maybeAppendComma(false);
-    this._json.append("null");
-    return this;
-  }
-
 
   @Override
   public JSONWriter value(double number) {

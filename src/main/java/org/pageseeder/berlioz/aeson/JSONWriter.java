@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Allette Systems (Australia)
+ * Copyright 2020 Allette Systems (Australia)
  * http://www.allette.com.au
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ import java.io.Closeable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.12.0
  * @since Berlioz 0.9.32
  */
 public interface JSONWriter extends Closeable {
@@ -83,21 +83,6 @@ public interface JSONWriter extends Closeable {
    * @return this instance.
    */
   JSONWriter writeNull();
-
-  /**
-   * Writes a value-pair which value is <code>null</code>.
-   *
-   * @param name a name in the JSON name/value pair to be written in current JSON object
-   * @return this instance.
-   */
-  JSONWriter writeNull2(String name);
-
-  /**
-   * Writes a <code>null</code> value.
-   *
-   * @return this instance.
-   */
-  JSONWriter writeNull2();
 
   /**
    * Writes the specified value as a JSON value within the current array context.
