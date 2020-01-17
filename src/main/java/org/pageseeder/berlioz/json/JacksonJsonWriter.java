@@ -33,7 +33,15 @@ import com.fasterxml.jackson.core.JsonGenerator;
 final class JacksonJsonWriter implements JsonWriter {
 
   /** The JSON generator */
-  private static JsonFactory factory = new JsonFactory();
+  private static JsonFactory factory;
+  static {
+    try {
+      factory = new JsonFactory();
+    } catch (NoClassDefFoundError error) {
+      System.err.println("To use the JacksonJsonWriter ensure that Jackson is only your classpath!");
+      throw error;
+    }
+  }
 
   /** The JSON generator */
   private final JsonGenerator _json;
@@ -71,7 +79,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endArray() {
     try {
-      this._json.writeEndObject();
+      this._json.writeEndArray();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -81,7 +89,8 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter startObject(String name) {
     try {
-      this._json.writeStartObject(name);
+      this._json.writeFieldName(name);
+      this._json.writeStartObject();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -109,7 +118,7 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull(String name) {
+  public JsonWriter nullValue(String name) {
     try {
       this._json.writeNullField(name);
     } catch (IOException ex) {
@@ -119,7 +128,7 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull() {
+  public JsonWriter nullValue() {
     try {
       this._json.writeNull();
     } catch (IOException ex) {
@@ -151,7 +160,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(String value) {
     try {
-      this._json.writeNumber(value);
+      this._json.writeString(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -212,6 +221,15 @@ final class JacksonJsonWriter implements JsonWriter {
   public void close() {
     try {
       this._json.close();
+    } catch (IOException ex) {
+      throw new JsonWriteFailureException(ex);
+    }
+  }
+
+  @Override
+  public void flush() {
+    try {
+      this._json.flush();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }

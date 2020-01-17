@@ -65,14 +65,14 @@ public final class JsonStringBuilder implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull(String name) {
-    this._json.writeNull();
+  public JsonWriter nullValue(String name) {
+    this._json.nullValue();
     return this;
   }
 
   @Override
-  public JsonWriter writeNull() {
-    this._json.writeNull();
+  public JsonWriter nullValue() {
+    this._json.nullValue();
     return this;
   }
 
@@ -126,6 +126,11 @@ public final class JsonStringBuilder implements JsonWriter {
 
   @Override
   public void close() {
+  }
+
+  @Override
+  public void flush() {
+    this._json.flush();
   }
 
   @Override

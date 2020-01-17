@@ -93,13 +93,13 @@ final class J2eeJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull(String name) {
+  public JsonWriter nullValue(String name) {
     this._json.writeNull(name);
     return this;
   }
 
   @Override
-  public JsonWriter writeNull() {
+  public JsonWriter nullValue() {
     this._json.writeNull();
     return this;
   }
@@ -155,6 +155,11 @@ final class J2eeJsonWriter implements JsonWriter {
   @Override
   public void close() {
     this._json.close();
+  }
+
+  @Override
+  public void flush() {
+    this._json.flush();
   }
 
   /**

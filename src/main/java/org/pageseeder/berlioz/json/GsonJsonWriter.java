@@ -104,7 +104,7 @@ final class GsonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull(String name) {
+  public JsonWriter nullValue(String name) {
     try {
       this._json.name(name).nullValue();
     } catch (IOException ex) {
@@ -114,7 +114,7 @@ final class GsonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull() {
+  public JsonWriter nullValue() {
     try {
       this._json.nullValue();
     } catch (IOException ex) {
@@ -212,8 +212,19 @@ final class GsonJsonWriter implements JsonWriter {
     }
   }
 
+  @Override
+  public void flush() {
+    try {
+      this._json.flush();
+    } catch (IOException ex) {
+      throw new JsonWriteFailureException(ex);
+    }
+  }
+
   /**
    * Always return a JSON Writer.
+   *
+   * <p>This method will force the output encoding to be UTF-8</p>
    *
    * @param out The stream receiving the JSON output.
    *

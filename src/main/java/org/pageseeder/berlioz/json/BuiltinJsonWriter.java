@@ -100,7 +100,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull(String name) {
+  public JsonWriter nullValue(String name) {
     maybeAppendComma(false);
     appendJSONString(name);
     this._json.append(':');
@@ -109,7 +109,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter writeNull() {
+  public JsonWriter nullValue() {
     maybeAppendComma(false);
     this._json.append("null");
     return this;
@@ -182,6 +182,11 @@ final class BuiltinJsonWriter implements JsonWriter {
   @Override
   public void close() {
     this._json.close();
+  }
+
+  @Override
+  public void flush() {
+    this._json.flush();
   }
 
   private void appendJSONString(String s) {

@@ -18,11 +18,13 @@ package org.pageseeder.berlioz.json;
 /**
  * Simple interface used internally to pass JSON events to the actual JSON writer.
  *
- * <p>This class is required in order to handle the case when a <code>JsonGenerator</code>
+ * <p>This class is required in order to handle the case when a JSON generator
  * implementation is not available. Aeson uses this interface so that it is not coupled
  * directly the <code>JsonGenerator</code> and can revert back to its internal JSON writer.
  *
- * <p>The methods are intendedly similar to the <code>JsonGenerator</code> interface.
+ * <p>The methods are similar to the <code>JsonGenerator</code> interface on purpose.
+ *
+ * <p>This class uses a fluent-style API for easy method chaining.</p>
  *
  * @author Christophe Lauret
  *
@@ -55,13 +57,13 @@ public interface JsonWriter extends AutoCloseable {
   /**
    * Start writing a JSON object in the context of an object.
    *
-   * @param name The name of the array
+   * @param name The name of the object
    * @return this instance.
    */
   JsonWriter startObject(String name);
 
   /**
-   * Start writing a JSON object in the context of an array.
+   * Start writing a JSON object in the default context of an array.
    *
    * @return this instance.
    */
@@ -74,19 +76,19 @@ public interface JsonWriter extends AutoCloseable {
   JsonWriter endObject();
 
   /**
-   * Start writing a JSON object in the context of an array.
+   * Write a null value in the context of an object.
    *
    * @param name a name in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
-  JsonWriter writeNull(String name);
+  JsonWriter nullValue(String name);
 
   /**
-   * Start writing a JSON object in the context of an array.
+   * Write a null value.
    *
    * @return this instance.
    */
-  JsonWriter writeNull();
+  JsonWriter nullValue();
 
   /**
    * Writes the specified value as a JSON value within the current array context.
@@ -161,5 +163,10 @@ public interface JsonWriter extends AutoCloseable {
    */
   @Override
   void close();
+
+  /**
+   * Flush any buffered content to itself and the underlying target.
+   */
+  void flush();
 
 }
