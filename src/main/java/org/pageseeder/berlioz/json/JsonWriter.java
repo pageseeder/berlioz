@@ -123,6 +123,17 @@ public interface JsonWriter extends AutoCloseable {
   JsonWriter value(boolean number);
 
   /**
+   * Writes a JSON name value pair in the current object context.
+   *
+   * <p>This method should always be followed by one of the {@link #value(String)} methods, the
+   * {@link #startObject()} method or the {@link #startArray()} method.</p>
+   *
+   * @param name a name in the JSON name/value pair to be written in current JSON object
+   * @return this instance.
+   */
+  JsonWriter name(String name);
+
+  /**
    * Writes a JSON name/boolean value pair in the current object context.
    *
    * @param name a name in the JSON name/value pair to be written in current JSON object

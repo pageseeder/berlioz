@@ -39,7 +39,10 @@ final class BuiltinJsonWriter implements JsonWriter {
    */
   private final char[] c = new char[64];
 
-  private boolean first = true;
+  /**
+   * Indicates whether a comma should be appended at the next opportunity
+   */
+  private boolean needComma = false;
 
   private int level = -1;
 
@@ -69,7 +72,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter endArray() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
     this._json.append(this.c[this.level--]);
-    this.first = false;
+    this.needComma = true;
     return this;
   }
 
@@ -95,7 +98,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter endObject() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
     this._json.append(this.c[this.level--]);
-    this.first = false;
+    this.needComma = true;
     return this;
   }
 
@@ -140,6 +143,15 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter value(boolean value) {
     maybeAppendComma(false);
     appendJsonBoolean(value);
+    return this;
+  }
+
+  @Override
+  public JsonWriter name(String name) {
+    maybeAppendComma(false);
+    appendJSONString(name);
+    this._json.append(':');
+    this.needComma = false;
     return this;
   }
 
@@ -236,12 +248,10 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   private void maybeAppendComma(boolean newContext) {
-    if (this.first) {
-      if (!newContext) {
-        this.first = false;
-      }
-    } else {
+    if (this.needComma) {
       this._json.append(',');
+    } else if (!newContext) {
+      this.needComma = true;
     }
   }
 

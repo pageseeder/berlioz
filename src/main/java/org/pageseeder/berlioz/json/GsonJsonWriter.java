@@ -104,6 +104,16 @@ final class GsonJsonWriter implements JsonWriter {
   }
 
   @Override
+  public JsonWriter name(String name) {
+    try {
+      this._json.name(name);
+    } catch (IOException ex) {
+      throw new JsonWriteFailureException(ex);
+    }
+    return this;
+  }
+
+  @Override
   public JsonWriter nullValue(String name) {
     try {
       this._json.name(name).nullValue();

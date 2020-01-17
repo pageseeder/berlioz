@@ -274,4 +274,20 @@ public abstract class JsonWriterTestBase {
         .flush();
     Assert.assertEquals("{\"abc\":[]}", json.toString());
   }
+
+  @Test
+  public void testObjectWithNames() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json)
+        .startObject()
+        .name("a")
+        .value(1)
+        .name("b")
+        .value(2)
+        .name("c")
+        .value(3)
+        .endObject()
+        .flush();
+    Assert.assertEquals("{\"a\":1,\"b\":2,\"c\":3}", json.toString());
+  }
 }

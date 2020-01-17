@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.json;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.util.Collections;
@@ -89,6 +90,12 @@ final class J2eeJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endObject() {
     this._json.writeEnd();
+    return this;
+  }
+
+  @Override
+  public JsonWriter name(String name) {
+    this._json.writeKey(name);
     return this;
   }
 

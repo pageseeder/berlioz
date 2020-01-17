@@ -118,6 +118,16 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
+  public JsonWriter name(String name) {
+    try {
+      this._json.writeFieldName(name);
+    } catch (IOException ex) {
+      throw new JsonWriteFailureException(ex);
+    }
+    return this;
+  }
+
+  @Override
   public JsonWriter nullValue(String name) {
     try {
       this._json.writeNullField(name);

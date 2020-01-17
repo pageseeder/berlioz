@@ -65,6 +65,12 @@ public final class JsonStringBuilder implements JsonWriter {
   }
 
   @Override
+  public JsonWriter name(String name) {
+    this._json.name(name);
+    return this;
+  }
+
+  @Override
   public JsonWriter nullValue(String name) {
     this._json.nullValue();
     return this;
