@@ -24,6 +24,7 @@ import java.io.StringWriter;
  * A base class to test JsonWriter implementations.
  *
  * @author Christophe Lauret
+ *
  * @version Berlioz 0.12.0
  * @since Berlioz 0.12.0
  */
@@ -39,9 +40,8 @@ public abstract class JsonWriterTestBase {
   // Arrays
   // ------------------------------------------------------------------------------------------------
 
-
   @Test
-  public void testNumber() {
+  public void testNumberLong() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Long.MAX_VALUE).flush();
     Assert.assertEquals("9223372036854775807", json.toString());
@@ -49,11 +49,47 @@ public abstract class JsonWriterTestBase {
     newJsonWriter(json).value(Long.MIN_VALUE).flush();
     Assert.assertEquals("-9223372036854775808", json.toString());
     json = new StringWriter();
+    newJsonWriter(json).value(0L).flush();
+    Assert.assertEquals("0", json.toString());
+  }
+
+  @Test
+  public void testNumberInteger() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json).value(Integer.MAX_VALUE).flush();
+    Assert.assertEquals("2147483647", json.toString());
+    json = new StringWriter();
+    newJsonWriter(json).value(Integer.MIN_VALUE).flush();
+    Assert.assertEquals("-2147483648", json.toString());
+    json = new StringWriter();
+    newJsonWriter(json).value(0).flush();
+    Assert.assertEquals("0", json.toString());
+  }
+
+  @Test
+  public void testNumberDouble() {
+    StringWriter json = new StringWriter();
     newJsonWriter(json).value(Double.MAX_VALUE).flush();
     Assert.assertEquals("1.7976931348623157E308", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(Double.MIN_VALUE).flush();
     Assert.assertEquals("4.9E-324", json.toString());
+    json = new StringWriter();
+    newJsonWriter(json).value(0.0).flush();
+    Assert.assertEquals("0.0", json.toString());
+  }
+
+  @Test
+  public void testNumberFloat() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json).value(Float.MAX_VALUE).flush();
+    Assert.assertEquals("3.4028234663852886E38", json.toString());
+    json = new StringWriter();
+    newJsonWriter(json).value(Float.MIN_VALUE).flush();
+    Assert.assertEquals("1.401298464324817E-45", json.toString());
+    json = new StringWriter();
+    newJsonWriter(json).value(0.0f).flush();
+    Assert.assertEquals("0.0", json.toString());
   }
 
   @Test
@@ -290,4 +326,5 @@ public abstract class JsonWriterTestBase {
         .flush();
     Assert.assertEquals("{\"a\":1,\"b\":2,\"c\":3}", json.toString());
   }
+
 }
