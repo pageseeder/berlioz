@@ -1,7 +1,7 @@
 plugins {
   id 'java-library'
   id 'maven-publish'
-  id 'com.jfrog.bintray' version '1.8.4'
+  id 'com.jfrog.bintray' version '1.8.5'
 }
 
 ext {
@@ -52,7 +52,7 @@ allprojects {
 
 dependencies {
 
-  api('org.pageseeder.xmlwriter:pso-xmlwriter:1.0.2')
+  api('org.pageseeder.xmlwriter:pso-xmlwriter:1.0.3')
 
   implementation('org.slf4j:slf4j-api:1.7.30')
 
