@@ -99,7 +99,7 @@ public abstract class AppInitializer {
     env = env.configFolder(configFolder);
 
     // Determine the application data folder
-    File appData = configureAppData();
+    @Nullable File appData = configureAppData();
     if (appData != null) {
       env = env.appData(appData);
     }
@@ -480,9 +480,9 @@ public abstract class AppInitializer {
    * Configure the AppData directory from the current context.
    */
   private @Nullable File configureAppData() {
-    File appData = null;
+    @Nullable File appData = null;
     try {
-      String appDataPath = getAppDataPath();
+      @Nullable String appDataPath = getAppDataPath();
       if (appDataPath != null) {
         appData = new File(appDataPath);
 
@@ -494,13 +494,12 @@ public abstract class AppInitializer {
 
         // Report
         console(Phase.INIT, "AppData: '"+appData.getAbsolutePath()+"'");
-        console(Phase.INIT, "AppData: OK ---------------------------------------------------");
 
       } else {
         // Fallback on /WEB-INF
         console(Phase.INIT, "AppData: default to Web application /WEB-INF folder");
-        console(Phase.INIT, "AppData: OK ---------------------------------------------------");
       }
+      console(Phase.INIT, "AppData: OK ---------------------------------------------------");
 
     } catch (IOException ex) {
       appData = null;
@@ -526,7 +525,7 @@ public abstract class AppInitializer {
    */
   private String configureMode(File appData, String configFolder) {
     // Determine the mode (dev, production, etc...)
-    String mode = getMode();
+    @Nullable String mode = getMode();
     if (mode == null) {
       mode = autoDetect(new File(appData, configFolder));
       if (mode != null) {
@@ -554,8 +553,8 @@ public abstract class AppInitializer {
    * @return the mode if only one file.
    */
   private static @Nullable String autoDetect(File directory) {
-    String mode = null;
-    String[] filenames = directory.list();
+    @Nullable String mode = null;
+    @Nullable String[] filenames = directory.list();
     if (filenames != null) {
       for (String name : filenames) {
         if (name.startsWith("config-") && name.endsWith(".xml")) {
@@ -589,7 +588,7 @@ public abstract class AppInitializer {
   protected static void checkOverlays(File contextPath) {
     List<Overlay> overlays = Overlays.list(contextPath);
     console(Phase.INIT, "Overlays: found '"+overlays.size()+"' overlay(s)");
-    Overlay previous = null;
+    @Nullable Overlay previous = null;
     // Check if there is already an overlay with the same name
     for (Overlay o : overlays) {
       if (previous != null && previous.name().equals(o.name())) {
@@ -645,7 +644,7 @@ public abstract class AppInitializer {
   private static void configureLogger(InitEnvironment env) {
     File appDataConfig = new File(env.appData(), env.configFolder());
     File webInfConfig = new File(env.webInf(), env.configFolder());
-    boolean configured = false;
+    boolean configured;
     // Try specific logback first
     File file = new File(appDataConfig, "logback-" + env.mode() + ".xml");
     configured = configureLogback(file);
@@ -703,8 +702,8 @@ public abstract class AppInitializer {
         // Reset the context
         try {
           Class<?> loggerContextClass = Class.forName("ch.qos.logback.classic.LoggerContext");
-          Method reset = loggerContextClass.getMethod("reset", new Class<?>[]{});
-          reset.invoke(context, new Object[]{});
+          Method reset = loggerContextClass.getMethod("reset");
+          reset.invoke(context);
           console(Phase.INIT, "Logging: logger context reset successfully");
         } catch (Exception ex) {
           console(Phase.INIT, "(!) Logging: Failed to  logger context - logging messages may appear twice");
@@ -767,12 +766,12 @@ public abstract class AppInitializer {
    * Checking that the global setting are loaded properly.
    */
   private static void loadSettings() {
-    File modeConfigFile = GlobalSettings.getModeConfigFile();
-    File defaultConfigFile = GlobalSettings.getDefaultConfigFile();
+    @Nullable File modeConfigFile = GlobalSettings.getModeConfigFile();
+    @Nullable File defaultConfigFile = GlobalSettings.getDefaultConfigFile();
     String mode = GlobalSettings.getMode();
     if (modeConfigFile != null || defaultConfigFile != null) {
-      File appdata = GlobalSettings.getAppData();
-      File webinf = GlobalSettings.getWebInf();
+      @Nullable File appdata = GlobalSettings.getAppData();
+      @Nullable File webinf = GlobalSettings.getWebInf();
       if (modeConfigFile != null && appdata != null) {
         console(Phase.INIT, "Config: found [appdata]/"+toRelPath(modeConfigFile, appdata));
       }
@@ -800,18 +799,13 @@ public abstract class AppInitializer {
   // Lifecycle listeners
   // ----------------------------------------------------------------------------------------------
 
-  protected void registerAndStartListeners() {
-    addLifecycleListener();
-    startListeners();
-  }
-
   /**
    * Checking that the global setting are loaded properly.
    *
    * @param listenerClass The lifecycle listener class.
    */
   protected void registerListener(String listenerClass) {
-    LifecycleListener listener = null;
+    @Nullable LifecycleListener listener = null;
     // Instantiate
     try {
       Class<?> c = Class.forName(listenerClass);
