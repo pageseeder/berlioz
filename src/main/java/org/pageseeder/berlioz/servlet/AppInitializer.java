@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class initializes a Berlioz application.
  *
- * @version Berlioz 0.11.4
+ * @version Berlioz 0.11.5
  * @since Berlioz 0.11.0
  */
 public abstract class AppInitializer {
@@ -122,11 +122,14 @@ public abstract class AppInitializer {
     // Configuring the logger
     configureLogger(env);
 
-    // Invoke the lifecycle listener
-    registerAndStartListeners();
+    // Add the lifecycle listener
+    addLifecycleListener();
 
     // Load the global settings (last so that listeners can be notified of the load)
     loadSettings();
+
+    // Send 'start' event to lifecycle listener (after the configuration is loaded)
+    startListeners();
 
     // All done
     console(Phase.INIT, "Done!");
