@@ -15,9 +15,9 @@
  */
 package org.pageseeder.berlioz.json;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.Collections;
 
 import javax.json.JsonException;
@@ -45,6 +45,12 @@ final class J2eeJsonWriter implements JsonWriter {
   /** The JSON generator */
   private static @Nullable JsonGeneratorFactory factory = null;
 
+  /** Either true or false for Objects and Array respectively. */
+  private boolean[] inObject = new boolean[64];
+
+  /** Array index is current depth level, 0 is top level Object or Array. */
+  private int level = -1;
+
   /** The JSON generator */
   private final JsonGenerator _json;
 
@@ -59,36 +65,42 @@ final class J2eeJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startArray(String name) {
+    this.inObject[++this.level] = false;
     this._json.writeStartArray(name);
     return this;
   }
 
   @Override
   public JsonWriter startArray() {
+    this.inObject[++this.level] = false;
     this._json.writeStartArray();
     return this;
   }
 
   @Override
   public JsonWriter startObject(String name) {
+    this.inObject[++this.level] = true;
     this._json.writeStartObject(name);
     return this;
   }
 
   @Override
   public JsonWriter startObject() {
+    this.inObject[++this.level] = true;
     this._json.writeStartObject();
     return this;
   }
 
   @Override
   public JsonWriter endArray() {
+    this.level--;
     this._json.writeEnd();
     return this;
   }
 
   @Override
   public JsonWriter endObject() {
+    this.level--;
     this._json.writeEnd();
     return this;
   }
@@ -136,27 +148,32 @@ final class J2eeJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, String value) {
+  public JsonWriter field(String name, String value) {
     this._json.write(name, value);
     return this;
   }
 
   @Override
-  public JsonWriter property(String name, boolean value) {
+  public JsonWriter field(String name, boolean value) {
     this._json.write(name, value);
     return this;
   }
 
   @Override
-  public JsonWriter property(String name, double value) {
+  public JsonWriter field(String name, double value) {
     this._json.write(name, value);
     return this;
   }
 
   @Override
-  public JsonWriter property(String name, long value) {
+  public JsonWriter field(String name, long value) {
     this._json.write(name, value);
     return this;
+  }
+
+  @Override
+  public boolean inObject() {
+    return this.level >= 0 && this.inObject[this.level];
   }
 
   @Override
@@ -239,6 +256,15 @@ final class J2eeJsonWriter implements JsonWriter {
     } catch (JsonException ex) {
       LOGGER.warn("JSON Provider not found: {}", ex.getMessage());
       throw new UnsupportedOperationException("Unable to find suitable provider");
+    }
+  }
+
+  private void push(boolean isObject) {
+    this.level++;
+    if (this.level < this.inObject.length) {
+      this.inObject[this.level] = isObject;
+    } else {
+      this.inObject = Arrays.copyOf(this.inObject, this.inObject.length*2);
     }
   }
 

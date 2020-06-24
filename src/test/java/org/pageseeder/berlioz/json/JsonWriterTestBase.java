@@ -266,7 +266,7 @@ public abstract class JsonWriterTestBase {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
-        .property("a", "b")
+        .field("a", "b")
         .endObject()
         .flush();
     Assert.assertEquals("{\"a\":\"b\"}", json.toString());
@@ -276,11 +276,11 @@ public abstract class JsonWriterTestBase {
   public void testObject() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).startObject()
-        .property("a", "xyz")
-        .property("b", 123L)
-        .property("c", Math.PI)
-        .property("d", true)
-        .property("e", false)
+        .field("a", "xyz")
+        .field("b", 123L)
+        .field("c", Math.PI)
+        .field("d", true)
+        .field("e", false)
         .nullValue("f")
         .endObject()
         .flush();

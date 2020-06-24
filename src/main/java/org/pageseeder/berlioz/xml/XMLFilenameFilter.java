@@ -23,9 +23,9 @@ import java.io.FilenameFilter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
- * @since Berlioz 0.6
+ * @deprecated Use lambda instead
  */
+@Deprecated
 public final class XMLFilenameFilter implements FilenameFilter {
 
   /**

@@ -15,6 +15,9 @@
  */
 package org.pageseeder.berlioz.json;
 
+import java.io.Flushable;
+import java.util.Map;
+
 /**
  * Simple interface used internally to pass JSON events to the actual JSON writer.
  *
@@ -31,7 +34,7 @@ package org.pageseeder.berlioz.json;
  * @version Berlioz 0.12.0
  * @version Berlioz 0.12.0
  */
-public interface JsonWriter extends AutoCloseable {
+public interface JsonWriter extends AutoCloseable, Flushable {
 
   /**
    * Start writing a JSON array in the context of an object.
@@ -140,7 +143,7 @@ public interface JsonWriter extends AutoCloseable {
    * @param value a value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
-  JsonWriter property(String name, String value);
+  JsonWriter field(String name, String value);
 
   /**
    * Writes a JSON name/boolean value pair in the current object context.
@@ -149,7 +152,7 @@ public interface JsonWriter extends AutoCloseable {
    * @param value a value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
-  JsonWriter property(String name, boolean value);
+  JsonWriter field(String name, boolean value);
 
   /**
    * Writes a JSON name/boolean value pair in the current object context.
@@ -158,7 +161,7 @@ public interface JsonWriter extends AutoCloseable {
    * @param value a value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
-  JsonWriter property(String name, double value);
+  JsonWriter field(String name, double value);
 
   /**
    * Writes a JSON name/boolean value pair in the current object context.
@@ -167,7 +170,24 @@ public interface JsonWriter extends AutoCloseable {
    * @param value a value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
-  JsonWriter property(String name, long value);
+  JsonWriter field(String name, long value);
+
+  /**
+   * Writes a map of Object properties.
+   *
+   * @param map  A map of name/value pairs.
+   */
+  default JsonWriter properties(Map<String, String> map) {
+    for (Map.Entry<String, String> field : map.entrySet()) {
+      field(field.getKey(), field.getValue());
+    }
+    return this;
+  }
+
+  /**
+   * @return true if the JsonWriter is within an object in the current context.
+   */
+  boolean inObject();
 
   /**
    * Closes this object and frees any resources associated with it.
@@ -178,6 +198,7 @@ public interface JsonWriter extends AutoCloseable {
   /**
    * Flush any buffered content to itself and the underlying target.
    */
+  @Override
   void flush();
 
 }

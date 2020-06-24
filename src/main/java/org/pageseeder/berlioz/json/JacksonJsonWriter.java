@@ -188,7 +188,7 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, String value) {
+  public JsonWriter field(String name, String value) {
     try {
       this._json.writeStringField(name, value);
     } catch (IOException ex) {
@@ -198,7 +198,7 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, boolean value) {
+  public JsonWriter field(String name, boolean value) {
     try {
       this._json.writeBooleanField(name, value);
     } catch (IOException ex) {
@@ -208,7 +208,7 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, double value) {
+  public JsonWriter field(String name, double value) {
     try {
       this._json.writeNumberField(name, value);
     } catch (IOException ex) {
@@ -218,13 +218,18 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, long value) {
+  public JsonWriter field(String name, long value) {
     try {
       this._json.writeNumberField(name, value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
     return this;
+  }
+
+  @Override
+  public boolean inObject() {
+    return this._json.getOutputContext().inObject();
   }
 
   @Override

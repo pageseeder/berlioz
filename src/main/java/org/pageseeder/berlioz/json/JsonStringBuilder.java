@@ -60,7 +60,7 @@ public final class JsonStringBuilder implements JsonWriter {
 
   @Override
   public JsonWriter endObject() {
-    this.endObject();
+    this._json.endObject();
     return this;
   }
 
@@ -107,27 +107,32 @@ public final class JsonStringBuilder implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, String value) {
-    this._json.property(name, value);
+  public JsonWriter field(String name, String value) {
+    this._json.field(name, value);
     return this;
   }
 
   @Override
-  public JsonWriter property(String name, boolean value) {
-    this._json.property(name, value);
+  public JsonWriter field(String name, boolean value) {
+    this._json.field(name, value);
     return this;
   }
 
   @Override
-  public JsonWriter property(String name, double value) {
-    this._json.property(name, value);
+  public JsonWriter field(String name, double value) {
+    this._json.field(name, value);
     return this;
   }
 
   @Override
-  public JsonWriter property(String name, long value) {
-    this._json.property(name, value);
+  public JsonWriter field(String name, long value) {
+    this._json.field(name, value);
     return this;
+  }
+
+  @Override
+  public boolean inObject() {
+    return this._json.inObject();
   }
 
   @Override
@@ -142,5 +147,5 @@ public final class JsonStringBuilder implements JsonWriter {
   @Override
   public String toString() {
     return this._s.toString();
-  };
+  }
 }

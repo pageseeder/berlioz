@@ -175,6 +175,28 @@ public class Json {
   }
 
   /**
+   * Converts snake-case to came case to use in
+   *
+   * @param name the name in snake-case
+   * @return The camel case equivalent
+   */
+  public static String camelify(String name) {
+    int dash = name.indexOf('-');
+    return dash < 0? name : camelify(name, dash);
+  }
+
+  private static String camelify(String name, int from) {
+    StringBuilder sb = new StringBuilder(name);
+    for (int i = from; i < sb.length()-1; i++) {
+      if (sb.charAt(i) == '-') {
+        sb.deleteCharAt(i);
+        sb.replace(i, i+1, String.valueOf(Character.toUpperCase(sb.charAt(i))));
+      }
+    }
+    return sb.toString();
+  }
+
+  /**
    * Initializes this class.
    */
   public static synchronized void init() {

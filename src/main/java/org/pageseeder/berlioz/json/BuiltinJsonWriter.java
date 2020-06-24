@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.json;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 /**
  * An implementation of a JSON Writer backed by
@@ -34,17 +35,18 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   /**
    * Either '{' or '[' for Objects and Array respectively.
-   *
+   */
+  private char[] closer = new char[64];
+
+  /**
    * Array index is current depth level, 0 is top level Object or Array.
    */
-  private final char[] c = new char[64];
+  private int level = -1;
 
   /**
    * Indicates whether a comma should be appended at the next opportunity
    */
   private boolean needComma = false;
-
-  private int level = -1;
 
   public BuiltinJsonWriter(PrintWriter json) {
     this._json = json;
@@ -52,7 +54,7 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startArray(String name) {
-    this.c[++this.level]=']';
+    push(']');
     maybeAppendComma(true);
     appendJSONString(name);
     this._json.append(':');
@@ -62,7 +64,7 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startArray() {
-    this.c[++this.level]=']';
+    push(']');
     maybeAppendComma(true);
     this._json.append('[');
     return this;
@@ -71,14 +73,14 @@ final class BuiltinJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endArray() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
-    this._json.append(this.c[this.level--]);
+    this._json.append(this.closer[this.level--]);
     this.needComma = true;
     return this;
   }
 
   @Override
   public JsonWriter startObject(String name) {
-    this.c[++this.level]='}';
+    push('}');
     maybeAppendComma(true);
     appendJSONString(name);
     this._json.append(':');
@@ -88,7 +90,7 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startObject() {
-    this.c[++this.level]='}';
+    push('}');
     maybeAppendComma(true);
     this._json.append('{');
     return this;
@@ -97,7 +99,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endObject() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
-    this._json.append(this.c[this.level--]);
+    this._json.append(this.closer[this.level--]);
     this.needComma = true;
     return this;
   }
@@ -156,7 +158,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, String value) {
+  public JsonWriter field(String name, String value) {
     maybeAppendComma(false);
     appendJSONString(name);
     this._json.append(':');
@@ -165,7 +167,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, boolean value) {
+  public JsonWriter field(String name, boolean value) {
     maybeAppendComma(false);
     appendJSONString(name);
     this._json.append(':');
@@ -174,7 +176,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, double value) {
+  public JsonWriter field(String name, double value) {
     maybeAppendComma(false);
     appendJSONString(name);
     this._json.append(':');
@@ -183,12 +185,17 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter property(String name, long value) {
+  public JsonWriter field(String name, long value) {
     maybeAppendComma(false);
     appendJSONString(name);
     this._json.append(':');
     appendJsonLong(value);
     return this;
+  }
+
+  @Override
+  public boolean inObject() {
+    return this.level >= 0 && this.closer[this.level] == '}';
   }
 
   @Override
@@ -252,6 +259,15 @@ final class BuiltinJsonWriter implements JsonWriter {
       this._json.append(',');
     } else if (!newContext) {
       this.needComma = true;
+    }
+  }
+
+  private void push(char c) {
+    this.level++;
+    if (this.level < this.closer.length) {
+      this.closer[this.level] = c;
+    } else {
+      this.closer = Arrays.copyOf(this.closer, this.closer.length*2);
     }
   }
 
