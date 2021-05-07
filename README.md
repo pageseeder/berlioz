@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/pageseeder/maven/berlioz/images/download.svg) ](https://bintray.com/pageseeder/maven/berlioz/_latestVersion)
+[![Maven Central](https://img.shields.io/maven-central/v/org.pageseeder.berlioz/pso-berlioz.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22org.pageseeder.berlioz%22%20AND%20a:%22pso-berlioz%22)
 
 # Berlioz
 A light Web framework built on URI templates and XSLT
