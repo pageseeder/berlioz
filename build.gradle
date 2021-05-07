@@ -1,7 +1,7 @@
 plugins {
   id 'java-library'
   id 'maven-publish'
-  id 'com.jfrog.bintray' version '1.8.5'
+  id 'io.codearte.nexus-staging' version '0.30.0'
 }
 
 ext {
@@ -13,9 +13,7 @@ allprojects {
   version = "$globalVersion"
 
   apply plugin: 'java-library'
-  apply plugin: 'maven-publish'
-  apply plugin: 'com.jfrog.bintray'
-  apply from: "$rootDir/gradle/publishing.gradle"
+  apply from: "$rootDir/gradle/publish-mavencentral.gradle"
 
   java {
     withJavadocJar()
@@ -25,8 +23,9 @@ allprojects {
   }
 
   repositories {
-    maven { url 'https://dl.bintray.com/pageseeder/maven' }
-    jcenter()
+    mavenCentral {
+      url = uri("https://maven-central.storage.googleapis.com/maven2")
+    }
   }
 
   jar {
@@ -84,6 +83,6 @@ dependencies {
 }
 
 wrapper {
-  gradleVersion = '6.1'
+  gradleVersion = '7.0'
   distributionType = Wrapper.DistributionType.ALL
 }
