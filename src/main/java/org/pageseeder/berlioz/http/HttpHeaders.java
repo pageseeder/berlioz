@@ -850,4 +850,83 @@ public final class HttpHeaders { // NO_UCD
    */
   public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 
+  /**
+   * 'x-forwarded-by' request header (HTTP reverse proxy).
+   *
+   * <p>Augmented BNF:</p>
+   * <pre>
+   *   by= IP[:PORT]
+   * </pre>
+   *
+   * <p>Example:</p>
+   * <pre>
+   *   by=192.1968.1.1
+   * </pre>
+   *
+   * or
+   *
+   * <pre>
+   *   by=192.1968.1.1:80
+   * </pre>
+   *
+   * @see <a href="https://datatracker.ietf.org/doc/html/rfc7239#section-5.1">Forwarded HTTP Extension - 5.1 Forwarded By</a>
+   */
+  public static final String X_FORWARDED_BY = "X-Forwarded-By";
+
+  /**
+   * 'x-forwarded-for' request header (HTTP reverse proxy).
+   *
+   * <p>Augmented BNF:</p>
+   * <pre>
+   *   for=[protocol-name]
+   * </pre>
+   *
+   * <p>Example:</p>
+   * <pre>
+   *   for=https
+   * </pre>
+   *
+   * @see <a href="https://datatracker.ietf.org/doc/html/rfc7239#section-5.2">Forwarded HTTP Extension - 5.2 Forwarded For</a>
+   */
+  public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+
+  /**
+   * 'x-forwarded-proto' request header (HTTP reverse proxy).
+   *
+   * <p>Augmented BNF:</p>
+   * <pre>
+   *   host=( host [ ":" port ] )
+   * </pre>
+   *
+   * <p>Example:</p>
+   * <pre>
+   *   host=example.com
+   * </pre>
+   *
+   * or
+   *
+   * <pre>
+   *   host=example.com:443
+   * </pre>
+   *
+   * @see <a href="https://datatracker.ietf.org/doc/html/rfc7239#section-5.3">Forwarded HTTP Extension - 5.3 Forwarded Host</a>
+   */
+  public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
+
+  /**
+   * 'x-forwarded-proto' request header (HTTP reverse proxy).
+   *
+   * <p>Augmented BNF:</p>
+   * <pre>
+   *   proto=[protocol-name]
+   * </pre>
+   *
+   * <p>Example:</p>
+   * <pre>
+   *   proto=https
+   * </pre>
+   *
+   * @see <a href="https://datatracker.ietf.org/doc/html/rfc7239#section-5.4">Forwarded HTTP Extension - 5.4 Forwarded Proto</a>
+   */
+  public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
 }
