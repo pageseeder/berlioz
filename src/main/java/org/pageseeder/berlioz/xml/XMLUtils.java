@@ -117,6 +117,12 @@ public final class XMLUtils {
     try {
       // get the reader
       XMLReader reader = parser.getXMLReader();
+      // Secure reader to prevent XXE
+      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      // This may not be strictly required as DTDs shouldn't be allowed at all, per previous line.
+      reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+      reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+      reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
       // configure the reader
       reader.setContentHandler(handler);
       reader.setEntityResolver(BerliozEntityResolver.getInstance());

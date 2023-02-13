@@ -163,6 +163,13 @@ public final class XMLConfig implements Serializable, XMLWritable {
       factory.setNamespaceAware(true);
       // get the parser
       XMLReader reader = factory.newSAXParser().getXMLReader();
+      // Secure
+      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      // This may not be strictly required as DTDs shouldn't be allowed at all, per previous line.
+      reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+      reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+      reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
       // configure the reader
       Handler handler = new Handler(this._properties);
       reader.setContentHandler(handler);
