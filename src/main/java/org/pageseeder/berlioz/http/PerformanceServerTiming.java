@@ -96,6 +96,13 @@ public final class PerformanceServerTiming {
     return this._duration;
   }
 
+  /**
+   * Generate the header value string for the "Server-Timing" header.
+   *
+   * <p>This method ensure that only valid characters are used to prevent HTTP header attacks such as header splitting.
+   *
+   * @return the header value string.
+   */
   public String toHeaderString() {
     StringBuilder header = new StringBuilder(this._name);
     if (this._description.length() > 0) {
