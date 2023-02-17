@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -71,7 +73,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.4
+ * @version Berlioz 0.12.3
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
@@ -780,7 +782,8 @@ public final class GlobalSettings {
    */
   private static void loadXMLConfig(File file, Map<String, String> map) throws IOException {
     XMLConfig config = new XMLConfig(map);
-    try (InputStream in = new FileInputStream(file)) {
+    Path path = checkPath(file);
+    try (InputStream in = Files.newInputStream(path)) {
       config.load(in);
     }
   }
@@ -832,4 +835,15 @@ public final class GlobalSettings {
     return s != null? s : Collections.emptyMap();
   }
 
+  /**
+   * Prevent path traversal by checking that file is within webinf or appdata.
+   */
+  private static Path checkPath(File file) throws IOException {
+    String path = file.getCanonicalPath();
+    if (path.startsWith(env.appData().getCanonicalPath())
+     || path.startsWith(env.webInf().getCanonicalPath())) {
+      return file.toPath();
+    }
+    throw new IOException("Config file must be located within webinf or appdata folder");
+  }
 }
