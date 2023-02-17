@@ -27,6 +27,32 @@ public final class XMLConfigTest {
     Assert.assertTrue(config.properties().isEmpty());
   }
 
+  @Test(expected = IOException.class)
+  public void testLoad_XXE() throws IOException {
+    XMLConfig config = new XMLConfig();
+    String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
+    config.load(new ByteArrayInputStream(xml.getBytes()));
+  }
+
+  @Test(expected = IOException.class)
+  public void testLoad_XMLBomb() throws IOException {
+    XMLConfig config = new XMLConfig();
+    String xml = "<!DOCTYPE global [\n" +
+        "  <!ELEMENT global ANY >\n" +
+        "  <!ENTITY lol \"lol\">\n" +
+        "  <!ENTITY lol1 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">\n" +
+        "  <!ENTITY lol2 \"&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;\">\n" +
+        "  <!ENTITY lol3 \"&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;\">\n" +
+        "  <!ENTITY lol4 \"&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;\">\n" +
+        "  <!ENTITY lol5 \"&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;\">\n" +
+        "  <!ENTITY lol6 \"&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;\">\n" +
+        "  <!ENTITY lol7 \"&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;\">\n" +
+        "  <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
+        "  <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
+        "]><global>&lol9;</global>";
+    config.load(new ByteArrayInputStream(xml.getBytes()));
+  }
+
   @Test
   public void testLoad_Global() throws IOException {
     XMLConfig config = new XMLConfig();
