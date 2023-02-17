@@ -16,10 +16,9 @@
 package org.pageseeder.berlioz.servlet;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -29,17 +28,27 @@ import java.util.zip.ZipFile;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.util.Versions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A simple war or zip file which can be unpack on top of the existing application.
+ * A simple war or zip file which can be unpacked on top of the existing application.
  *
  * <p>A simple way to modularise aspect of the app.
  *
  * @author Christophe Lauret
- * @version Berlioz 0.9.26 - 17 December 2013
+ * @version Berlioz 0.12.3
  * @since Berlioz 0.9.26
  */
 final class Overlays {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(Overlays.class);
+
+  private static final String[] ILLEGAL_OVERLAY_FILEPATHS = {
+    "/WEB-INF/web.xml",
+    "/WEB-INF/config/config.xml",
+    "/WEB-INF/config/services.xml",
+  };
 
   /**
    * Utility class.
@@ -73,7 +82,6 @@ final class Overlays {
         }
         Collections.sort(list);
       }
-      // TODO Warn that files could not be listed.
       return list;
     } else return Collections.emptyList();
   }
@@ -86,9 +94,6 @@ final class Overlays {
    */
   @Beta
   static final class Overlay implements Comparable<Overlay> {
-
-    /** Buffer when unzipping */
-    private static final int BUFFER = 4096;
 
     /**
      * The war or zip file.
@@ -115,7 +120,7 @@ final class Overlays {
       String filename = source.getName();
       filename = filename.substring(0, filename.length() - 4); // always an extension
       int dash = filename.lastIndexOf('-');
-      this._name    = dash >= 0 ? filename.substring(0, dash) : filename;
+      this._name = dash >= 0 ? filename.substring(0, dash) : filename;
       this._version = dash >= 0 ? filename.substring(dash+1) : "";
     }
 
@@ -150,7 +155,7 @@ final class Overlays {
     }
 
     /**
-     * Unzip the the file at the specified location.
+     * Unzip the file at the specified location.
      *
      * @param root The root of the web application (context path)
      *
@@ -159,6 +164,7 @@ final class Overlays {
      * @throws IOException Should any error occur.
      */
     public int unpack(final File root) throws IOException {
+      String rootPath = root.getCanonicalPath();
       int unpacked = 0;
       long modified = this._source.lastModified();
       try (ZipFile zip = new ZipFile(this._source)) {
@@ -166,31 +172,39 @@ final class Overlays {
         for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements();) {
           entry = e.nextElement();
           String name = entry.getName();
-          // Ignore any file in the META-INF folder
-          if (name.startsWith("META-INF")) {
+          Path path = Paths.get(rootPath, name).normalize();
+          boolean illegal = !path.startsWith(rootPath);
+          for (String illegalPath : ILLEGAL_OVERLAY_FILEPATHS) {
+            if (path.endsWith(illegalPath)) {
+              illegal = true;
+              break;
+            }
+          }
+          if (illegal) {
+            LOGGER.warn("Ignoring illegal entry: {}", name);
+            continue;
+          }
+
+          // Ignore any file in the META-INF folder and any MacOS files
+          if (name.startsWith("META-INF") || name.contains("__MACOSX") || name.endsWith(".DS_Store")) {
             continue;
           }
           // Ensure that the folder exists
           if (name.indexOf('/') > 0) {
-            String folder = name.substring(0, name.lastIndexOf('/'));
-            File dir = new File(root, folder);
+            File dir = path.getParent().toFile();
             if (!dir.exists()) {
-              dir.mkdirs();
+              boolean created = dir.mkdirs();
+              if (!created) {
+                LOGGER.warn("Unable to create parent folder of: {}", name);
+              }
             }
           }
           // Only process files
           if (!entry.isDirectory()) {
-            File f = new File(root, name);
+            File f = path.toFile();
             if (!f.exists() || f.length() != entry.getSize() || f.lastModified() < modified) {
               try (BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry))) {
-                int count;
-                byte[] data = new byte[BUFFER];
-                try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f), BUFFER)){
-                  while ((count = is.read(data, 0, BUFFER)) != -1) {
-                    out.write(data, 0, count);
-                  }
-                  out.flush();
-                }
+                Files.copy(is, path, StandardCopyOption.REPLACE_EXISTING);
                 unpacked++;
               }
             }
