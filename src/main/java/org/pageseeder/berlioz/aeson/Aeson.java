@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.aeson;
 
 import java.io.File;
 
+import javax.xml.XMLConstants;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -31,7 +32,7 @@ import org.eclipse.jdt.annotation.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.12.3
  * @since Berlioz 0.9.32
  */
 public final class Aeson {
@@ -39,7 +40,7 @@ public final class Aeson {
   /**
    * To invoke this library on the command line.
    *
-   * The options are as follows:
+   * <p>The options are as follows:
    * <pre>
    * -s:[source]       File or directory containing files to process (XML)
    * -xsl:[stylesheet] Stylesheet to process the files (XSLT)
@@ -74,6 +75,8 @@ public final class Aeson {
 
     // Setup the transformer
     TransformerFactory factory = TransformerFactory.newInstance();
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
     Transformer transformer;
     if (style != null) {
       Source xslt = new StreamSource(style);

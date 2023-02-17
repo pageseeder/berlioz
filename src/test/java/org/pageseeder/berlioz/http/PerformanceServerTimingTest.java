@@ -57,6 +57,12 @@ public class PerformanceServerTimingTest {
   }
 
   @Test
+  public void testContructor_InvalidDescription3() {
+    PerformanceServerTiming t = new PerformanceServerTiming("x", "A\n\rB", 1.2);
+    Assert.assertEquals("A__B", t.description());
+  }
+
+  @Test
   public void testToHeader1() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", "xyz", 1.2);
     Assert.assertEquals("abc;desc=xyz;dur=1.2", timing.toHeaderString());

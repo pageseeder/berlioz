@@ -19,7 +19,7 @@ package org.pageseeder.berlioz.util;
  * Utility class for versions.
  *
  * @author Christophe Lauret
- * @version 0.9.26 - 16 December 2013
+ * @version 0.9.26
  * @since 0.9.26
  */
 public final class Versions {
@@ -52,7 +52,7 @@ public final class Versions {
     for (int i = 0; i < atomCount; i++) {
       String a = atomsA.length > i? atomsA[i] : "0";
       String b = atomsB.length > i? atomsB[i] : "0";
-      int compare = 0;
+      int compare;
       if (a.matches("[0-9]+") && b.matches("[0-9]+")) {
         try {
           Long al = Long.valueOf(a);

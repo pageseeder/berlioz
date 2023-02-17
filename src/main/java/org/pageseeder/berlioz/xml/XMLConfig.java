@@ -16,13 +16,13 @@
 package org.pageseeder.berlioz.xml;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -41,6 +41,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -78,7 +79,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.11.3
  * @since Berlioz 0.9.7
  */
 public final class XMLConfig implements Serializable, XMLWritable {
@@ -86,19 +87,19 @@ public final class XMLConfig implements Serializable, XMLWritable {
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = 20120123256100001L;
+  private static final long serialVersionUID = 20230216L;
 
   /**
    * Check that it is a valid attribute name in XML.
    *
-   * NB: We disallow ':' to avoid issues with namespaces.
+   * <p>NB: We disallow ':' to avoid issues with namespaces.
    */
   private final static Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
 
   /**
    * Logger.
    */
-  private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(XMLConfig.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(XMLConfig.class);
 
   /**
    * List of properties to load.
@@ -131,7 +132,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
    */
   public static XMLConfig newInstance(File file) throws IOException {
     XMLConfig config = new XMLConfig();
-    try (InputStream in = new FileInputStream(file)) {
+    try (InputStream in = Files.newInputStream(file.toPath())) {
       config.load(in);
     }
     return config;
@@ -163,6 +164,13 @@ public final class XMLConfig implements Serializable, XMLWritable {
       factory.setNamespaceAware(true);
       // get the parser
       XMLReader reader = factory.newSAXParser().getXMLReader();
+      // Disallow Doctype declaration to prevent XXE
+      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      // This may not be strictly required as DTDs shouldn't be allowed at all, per previous line.
+      reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+      reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+      reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
       // configure the reader
       Handler handler = new Handler(this._properties);
       reader.setContentHandler(handler);
@@ -189,8 +197,6 @@ public final class XMLConfig implements Serializable, XMLWritable {
       toXML(xml);
     }
   }
-
-//a handler for the properties file in XML ----------------------------------------------------
 
   @Override
   public void toXML(XMLWriter xml) throws IOException {
@@ -272,8 +278,6 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @param node The node to use for prefixing.
    *
    * @return A set of nodes from the map
-   *
-   * @throws IOException If thrown by the XML Writer.
    */
   private static SortedMap<String, String> sub(SortedMap<String, String> map, String node) {
     String prefix = node+".";
@@ -286,8 +290,6 @@ public final class XMLConfig implements Serializable, XMLWritable {
     }
     return sub;
   }
-
-// a handler for the properties file in XML ----------------------------------------------------
 
   /**
    * Parses the file as XML following the rules for the config.
