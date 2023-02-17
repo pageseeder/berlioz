@@ -71,7 +71,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>All redirects are currently temporary (302) unless the attribute 'permanent' is set to 'yes'
  * in which case the HTTP code will be 301
  *
- * <p>See {@link #init(javax.servlet.ServletConfig)} for details for configuration options.
+ * <p>See {@link #init} for details for configuration options.
  *
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.2">HTTP/1.1 - Moved Permanently</a>
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.3">HTTP/1.1 - Found</a>
