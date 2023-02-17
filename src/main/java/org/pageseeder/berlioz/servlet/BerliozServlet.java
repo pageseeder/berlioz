@@ -324,7 +324,7 @@ public final class BerliozServlet extends HttpServlet {
     if (serverTiming) xml.enableServerTiming();
 
     // Include the service as a header for information
-    res.setHeader("X-Berlioz-Service", match.service().id());
+    res.setHeader("X-Berlioz-Service", toSafeHeader(match.service().id()));
     LOGGER.debug(path+" -> "+match.service());
 
     // Is Berlioz used to handle an error?
@@ -354,7 +354,7 @@ public final class BerliozServlet extends HttpServlet {
         if (cc.isEmpty()) {
           cc = config.getCacheControl();
         }
-        res.setHeader(HttpHeaders.CACHE_CONTROL, cc);
+        res.setHeader(HttpHeaders.CACHE_CONTROL, toSafeHeader(cc));
         res.setHeader(HttpHeaders.ETAG, etag);
 
         // Check if the conditions specified in the optional If headers are satisfied.
@@ -599,4 +599,7 @@ public final class BerliozServlet extends HttpServlet {
 
   }
 
+  private static String toSafeHeader(String value) {
+    return value.replaceAll("[\\r\\n]", " ");
+  }
 }
