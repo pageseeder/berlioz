@@ -1,9 +1,8 @@
 package org.pageseeder.berlioz.http;
 
 import org.junit.Test;
-import org.pageseeder.berlioz.content.ParameterTemplate;
 import org.junit.Assert;
-import org.junit.Test;
+
 public class PerformanceServerTimingTest {
 
   @Test(expected = NullPointerException.class)
