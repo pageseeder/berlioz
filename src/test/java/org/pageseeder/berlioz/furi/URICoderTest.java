@@ -175,7 +175,7 @@ public final class URICoderTest {
    * @param to   The end of the range (inclusive).
    */
   private static String getURange(int from, int to) {
-    StringBuffer out = new StringBuffer(to - from);
+    StringBuilder out = new StringBuilder(to - from);
     for (int i = from; i <= to; i++) {
       out.append((char) i);
     }
