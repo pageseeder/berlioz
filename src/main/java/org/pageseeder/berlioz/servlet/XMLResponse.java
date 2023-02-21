@@ -330,7 +330,8 @@ public final class XMLResponse {
       xml.attribute("profile", ProfileFormat.format(request.getProfileEtag() + end - start));
     }
     if (this.serverTiming) {
-      ServerTimingHeader.addMetricNano(this._core.response(), "xml"+position, "Source "+name, request.getProfileEtag() + end - start);
+      String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
+      ServerTimingHeader.addMetricNano(this._core.response(), "xml"+position, "Source "+safeName, request.getProfileEtag() + end - start);
     }
 
     // Report if requested
