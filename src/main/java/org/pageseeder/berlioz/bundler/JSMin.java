@@ -414,9 +414,12 @@ public final class JSMin {
    * @param args first argument is path to file to minimize
    */
   public static void main(String[] args) throws IOException {
+    if (args.length < 1) {
+      System.out.println("Usage: ");
+      System.out.println("JSMin [filepath]");
+      return;
+    }
     try {
-      if (args.length < 1)
-        throw new IllegalArgumentException("Missing filepath argument");
       File file = new File(args[0]).getCanonicalFile();
       String currentPath = new File(".").getCanonicalPath();
       if (!file.toPath().startsWith(currentPath) || !file.exists() || file.isDirectory())
