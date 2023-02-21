@@ -309,7 +309,7 @@ public final class RedirectFilter implements Filter, Serializable {
       if (location.startsWith("/")) {
         buffer.append(location);
       } else throw new ServletException("Cannot use relative URL to redirect: "+location);
-      url = buffer.toString();
+      url = buffer.toString().replace("[\\n\\r]+", "");
     }
 
     // Reset response and sent new location
