@@ -166,7 +166,7 @@ public final class XSLTransformer {
       String uri = req.getRequestURI();
       int dot = uri.lastIndexOf('.');
       if (dot >= 0) {
-        source.setSystemId(req.getRequestURI().replaceAll(uri.substring(dot), ".src"));
+        source.setSystemId(req.getRequestURI().replaceAll("\\.([a-z]+)$", ".src"));
       }
 
       // Setup the result
