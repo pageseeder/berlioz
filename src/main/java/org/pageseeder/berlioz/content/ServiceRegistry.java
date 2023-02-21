@@ -96,8 +96,8 @@ public final class ServiceRegistry {
    * @return A content generator which URI pattern matches this URL or <code>null</code>.
    */
   public @Nullable MatchingService get(String url) {
-    for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = getMapping(m);
+    for (Entry<HttpMethod, ServiceRegistry.ServiceMap> allMethods : this.registry.entrySet()) {
+      ServiceMap mapping = allMethods.getValue();
       MatchingService service = mapping.match(url);
       if (service != null) return service;
     }
