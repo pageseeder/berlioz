@@ -309,12 +309,12 @@ public final class RedirectFilter implements Filter, Serializable {
       if (location.startsWith("/")) {
         buffer.append(location);
       } else throw new ServletException("Cannot use relative URL to redirect: "+location);
-      url = buffer.toString().replace("[\\n\\r]+", "");
+      url = buffer.toString();
     }
 
     // Reset response and sent new location
     res.reset();
-    res.setHeader(HttpHeaders.LOCATION, url);
+    res.setHeader(HttpHeaders.LOCATION, url.replaceAll("[\\n\\r]+", ""));
     res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=86400, must-revalidate");
     if (permanent) {
       res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
