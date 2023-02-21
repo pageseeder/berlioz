@@ -139,7 +139,7 @@ public final class BerliozConfig {
   /**
    * A seed to use for the calculation of etags (allows them to be reset)
    */
-  private volatile long etagSeed = 0L;
+  private volatile long etagSeed;
 
   /**
    * Create a new Berlioz configuration.
@@ -398,7 +398,7 @@ public final class BerliozConfig {
    * @return One year into the future.
    */
   private long newEtagSeed() {
-    Long seed = RANDOM.nextLong();
+    long seed = RANDOM.nextLong();
     LOGGER.info("Generating new ETag Seed: {}", Long.toString(seed, 36));
     File f = this._env.getPrivateFile("berlioz.etag");
     File p = f.getParentFile();
@@ -471,7 +471,7 @@ public final class BerliozConfig {
   /**
    * Returns the URL instance from the specified path.
    *
-   * If the path starts with "resource:", the XSLT will be loaded from a resource
+   * <p>If the path starts with "resource:", the XSLT will be loaded from a resource
    * using the same class loader as Berlioz.
    *
    * @param path the path to create the URL
