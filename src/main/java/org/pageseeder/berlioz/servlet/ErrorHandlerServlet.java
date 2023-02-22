@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -253,6 +254,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
       // Replace the .auto by the original extension (.html, .xml, .json, etc...)
       String to = replaceAutoURI(uri, ext, req.getContextPath());
+      to = Paths.get(to).normalize().toString();
 
       // If we do not detect a loop we forward the request
       if (!uri.equals(to)) {
