@@ -34,7 +34,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.eclipse.jdt.annotation.Nullable;
@@ -159,17 +161,15 @@ public final class XMLConfig implements Serializable, XMLWritable {
   public synchronized void load(InputStream in) throws IOException {
     try {
       // use the SAX parser factory to ensure validation
-      SAXParserFactory factory = SAXParserFactory.newInstance();
-      factory.setValidating(false);
-      factory.setNamespaceAware(true);
+      SAXParser parser = Xml.newSafeParser();
       // get the parser
-      XMLReader reader = factory.newSAXParser().getXMLReader();
-      // Disallow Doctype declaration to prevent XXE
-      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      // This may not be strictly required as DTDs shouldn't be allowed at all, per previous line.
-      reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-      reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
-      reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+      XMLReader reader = parser.getXMLReader();
+//      // Disallow Doctype declaration to prevent XXE
+//      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+//      // This may not be strictly required as DTDs shouldn't be allowed at all, per previous line.
+//      reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+//      reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+//      reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
 
       // configure the reader
       Handler handler = new Handler(this._properties);

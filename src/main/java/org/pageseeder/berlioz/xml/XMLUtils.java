@@ -20,11 +20,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.validation.Schema;
 
-import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,16 +48,6 @@ public final class XMLUtils {
    * The logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(XMLUtils.class);
-
-  /**
-   * The SAX parser factory to generate non-validating XML readers.
-   */
-  private static @Nullable SAXParserFactory nfactory;
-
-  /**
-   * The SAX parser factory to generate validating XML readers.
-   */
-  private static @Nullable SAXParserFactory vfactory;
 
   /**
    * Prevents creation of instances.
@@ -153,27 +144,20 @@ public final class XMLUtils {
    * @throws BerliozException If one of the features is not recognised or supported by the factory.
    */
   public static SAXParser getParser(boolean validating) throws BerliozException {
-    SAXParserFactory factory = validating? XMLUtils.vfactory : XMLUtils.nfactory;
     SAXParser parser;
     try {
-      if (factory == null) {
-        // use the SAX parser factory to ensure validation
-        factory = SAXParserFactory.newInstance();
-        factory.setValidating(validating);
-        factory.setNamespaceAware(true);
-        // also specify the features
-        factory.setFeature("http://xml.org/sax/features/validation", validating);
-        factory.setFeature("http://xml.org/sax/features/namespaces", true);
-        factory.setFeature("http://xml.org/sax/features/namespace-prefixes", false);
-        // set at the end, do not configure factory directly to avoid synchronisation problems
-        if (validating) {
-          XMLUtils.vfactory = factory;
-        } else {
-          XMLUtils.nfactory = factory;
-        }
-      }
+//      // use the SAX parser factory to ensure validation
+//      SAXParserFactory factory = SAXParserFactory.newInstance();
+//      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+//      factory.setValidating(validating);
+//      factory.setNamespaceAware(true);
+//      factory.setXIncludeAware(false);
+//      // also specify the features
+//      factory.setFeature("http://xml.org/sax/features/validation", validating);
+//      factory.setFeature("http://xml.org/sax/features/namespaces", true);
+//      factory.setFeature("http://xml.org/sax/features/namespace-prefixes", false);
       // get a new parser
-      parser = factory.newSAXParser();
+      parser = Xml.newSafeParser(validating);
     } catch (ParserConfigurationException ex) {
       throw new BerliozException("Could not configure SAX parser.", ex);
     } catch (SAXException ex) {
