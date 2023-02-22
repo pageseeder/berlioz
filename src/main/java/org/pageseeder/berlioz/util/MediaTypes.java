@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.Properties;
 
 /**
@@ -89,11 +90,11 @@ public final class MediaTypes {
     }
   }
 
-  private static @Nullable InputStream getMediaTypesInputStream() throws FileNotFoundException {
+  private static @Nullable InputStream getMediaTypesInputStream() throws IOException {
     File file = new File(GlobalSettings.getWebInf(), "config/mediatypes.properties");
     if (file.exists()) {
       LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
-      return new FileInputStream(file);
+      return Files.newInputStream(file.toPath());
     } else {
       LOGGER.info("Loading MIME properties from Berlioz JAR", file.getAbsolutePath());
       return MediaTypes.class.getResourceAsStream("/mime.properties");
