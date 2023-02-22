@@ -36,9 +36,9 @@ import org.xml.sax.XMLReader;
 /**
  * A utility class to help with some simple XML operations.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.12.4
  * @since Berlioz 0.6
  */
 public final class XMLUtils {
@@ -51,12 +51,12 @@ public final class XMLUtils {
   /**
    * The SAX parser factory to generate non-validating XML readers.
    */
-  private static transient @Nullable SAXParserFactory nfactory;
+  private static @Nullable SAXParserFactory nfactory;
 
   /**
    * The SAX parser factory to generate validating XML readers.
    */
-  private static transient @Nullable SAXParserFactory vfactory;
+  private static @Nullable SAXParserFactory vfactory;
 
   /**
    * Prevents creation of instances.
@@ -128,23 +128,10 @@ public final class XMLUtils {
       reader.setEntityResolver(BerliozEntityResolver.getInstance());
       reader.setErrorHandler(BerliozErrorHandler.getInstance());
       // parse
-      if (xml.isDirectory()) {
-        LOGGER.info("Parsing all XML files in directory {}", xml.toURI());
-        File[] files = xml.listFiles(new XMLFilenameFilter());
-        if (files != null) {
-          for (File f : files) {
-            reader.parse(new InputSource(f.toURI().toString()));
-          }
-          if (files.length == 0) {
-            LOGGER.warn("No XML file to parse in directory {} ", xml.toURI());
-          }
-        } else {
-          LOGGER.warn("Unable to list files in directory {} ", xml.toURI());
-        }
-      } else {
-        LOGGER.info("Parsing file {}", xml.toURI());
-        reader.parse(new InputSource(xml.toURI().toString()));
-      }
+      if (xml.isDirectory())
+       throw new BerliozException("Cannot parse a directory");
+      LOGGER.info("Parsing file {}", xml.toURI());
+      reader.parse(new InputSource(xml.toURI().toString()));
     } catch (SAXException ex) {
       throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
     } catch (FileNotFoundException ex) {
