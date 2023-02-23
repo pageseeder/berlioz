@@ -17,9 +17,7 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.Paths;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -33,20 +31,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
-import org.pageseeder.berlioz.furi.URIParameters;
-import org.pageseeder.berlioz.furi.URIPattern;
-import org.pageseeder.berlioz.furi.URIResolveResult;
-import org.pageseeder.berlioz.furi.URIResolver;
-import org.pageseeder.berlioz.xml.XMLUtils;
+import org.pageseeder.berlioz.config.RelocationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * A basic filter to relocate URI patterns to other URI patterns.
@@ -64,14 +53,14 @@ import org.xml.sax.helpers.DefaultHandler;
  * </relocation-mapping>
  * }</pre>
  *
- * <p>See {@link #init(javax.servlet.ServletConfig)} for details for configuration options.
+ * <p>See {@link #init} for details about configuration options.
  *
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.14">HTTP 1.1 - Content-Location</a>
  *
  * @author Christophe Lauret
  * @author Jean-Baptiste Reure
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.12.4
  * @since Berlioz 0.7
  */
 public final class RelocationFilter implements Filter {
@@ -81,7 +70,10 @@ public final class RelocationFilter implements Filter {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(RelocationFilter.class);
 
-// class attributes -------------------------------------------------------------------------------
+  /**
+   * The control key
+   */
+  private String controlKey = "";
 
   /**
    * Where the relocation config is located.
@@ -89,16 +81,9 @@ public final class RelocationFilter implements Filter {
   private @Nullable File mappingFile;
 
   /**
-   * Maps URI patterns to relocate to URI pattern target.
+   * The actual relocation config.
    */
-  private @Nullable Map<URIPattern, URIPattern> mapping = null;
-
-  /**
-   * The control key
-   */
-  private String controlKey = "";
-
-// servlet methods --------------------------------------------------------------------------------
+  private @Nullable transient RelocationConfig config = null;
 
   /**
    * Initialises the Relocation Servlet.
@@ -145,7 +130,7 @@ public final class RelocationFilter implements Filter {
   @Override
   public void destroy() {
     this.mappingFile = null;
-    this.mapping = null;
+    this.config = null;
     this.controlKey = "";
   }
 
@@ -172,16 +157,27 @@ public final class RelocationFilter implements Filter {
 
     // Reset mapping on reload
     if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req, this.controlKey)) {
-      this.mapping = null;
+      this.config = null;
     }
 
     // Load the config if needed
-    Map<URIPattern, URIPattern> mapping = mapping();
+    RelocationConfig mapping = config();
 
     // Evaluate URI patterns
-    for (URIPattern p : mapping.keySet()) {
-      String uri = req.getRequestURI();
-      if (p.match(uri) && relocate(req, res, p)) return;
+    String from = req.getRequestURI();
+    String to = mapping.relocate(from);
+    if (to != null) {
+      to = ensureSafeTarget(to.replaceAll("[\\n\\r]*", ""));
+      LOGGER.debug("Relocating from {} to {}", from, to);
+
+      // And relocate
+      RequestDispatcher dispatcher = req.getRequestDispatcher(to);
+      if (dispatcher != null) {
+        res.setHeader("Content-Location", to);
+        dispatcher.forward(req, res);
+      } else {
+        LOGGER.debug("Invalid URL, no dispatcher found");
+      }
     }
 
     // Continue
@@ -189,125 +185,18 @@ public final class RelocationFilter implements Filter {
   }
 
   /**
-   * Actually performs the relocate.
-   *
-   * @param req   The HTTP servlet request.
-   * @param res   The HTTP servlet response.
-   * @param match The URI matched pattern.
-   *
-   * @throws ServletException If thrown by the HTTP servlet it was forwarded to.
-   * @throws IOException      If thrown while writing  the HTTP the response.
-   *
-   * @return <code>true</code> to relocate; <code>false</code> otherwise.
+   * @return the config loading the configuration file if necessary.
    */
-  private boolean relocate(HttpServletRequest req, HttpServletResponse res, URIPattern match)
-      throws ServletException, IOException {
-    @Nullable URIPattern target = mapping().get(match);
-
-    // Unlikely but possible
-    if (target == null) return false;
-
-    // Resolve URI variables
-    String from = req.getRequestURI();
-    URIResolver resolver = new URIResolver(from);
-    URIResolveResult result = resolver.resolve(match);
-
-    // Expand the target URI with URI variables
-    Set<String> names = result.names();
-    URIParameters parameters = new URIParameters();
-    for (String name : names) {
-      parameters.set(name, (String)result.get(name));
+  private RelocationConfig config() {
+    RelocationConfig config = this.config;
+    if (config == null) {
+      config = RelocationConfig.newInstance(this.mappingFile);
+      this.config = config;
     }
-    String to = target.expand(parameters);
-    LOGGER.debug("Relocating from {} to {}", from, to);
-
-    // And relocate
-    RequestDispatcher dispatcher = req.getRequestDispatcher(to);
-    if (dispatcher == null) {
-      LOGGER.debug("Invalid URL, no dispatcher found");
-      return false;
-    }
-
-    // set Content-Location header
-    res.setHeader("Content-Location", to);
-    dispatcher.forward(req, res);
-    return true;
+    return config;
   }
 
-  /**
-   * @return the URI pattern mapping loading the configuration file if necessary.
-   */
-  private Map<URIPattern, URIPattern> mapping() {
-    Map<URIPattern, URIPattern> mapping = this.mapping;
-    if (mapping == null) {
-      mapping = loadConfig(this.mappingFile);
-      this.mapping = mapping;
-    }
-    return mapping;
+  private String ensureSafeTarget(String to) {
+    return Paths.get(to.replaceAll("[\\n\\r]*", "")).normalize().toString();
   }
-
-  /**
-   * Load the URI relocation configuration file.
-   *
-   * @return <code>true</code> if loaded correctly;
-   *         <code>false</code> otherwise.
-   */
-  private static Map<URIPattern, URIPattern> loadConfig(@Nullable File file) {
-    Map<URIPattern, URIPattern> mapping = new HashMap<>();
-    if (file != null) {
-      Handler handler = new Handler(mapping);
-      try {
-        XMLUtils.parse(handler, file, false);
-      } catch (BerliozException ex) {
-        LOGGER.error("Unable to load relocation mapping {} : {}", file, ex);
-      }
-    }
-    return mapping;
-  }
-
-  /**
-   * Handles the XML for the URI pattern mapping configuration.
-   */
-  static class Handler extends DefaultHandler implements ContentHandler {
-
-    /**
-     * Maps URI patterns to URI patterns.
-     */
-    private final Map<URIPattern, URIPattern> _mapping;
-
-    /**
-     * @param mapping The mapping to use for relocation.
-     */
-    public Handler(Map<URIPattern, URIPattern> mapping) {
-      this._mapping = mapping;
-    }
-
-    @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) {
-      if ("relocation".equals(localName)) {
-        URIPattern from = toPattern(atts.getValue("from"));
-        URIPattern to = toPattern(atts.getValue("to"));
-        if (from == null || to == null) return;
-        this._mapping.put(from, to);
-      }
-    }
-
-    /**
-     * Parse the specified URI Pattern.
-     *
-     * @param pattern The URI pattern as a string.
-     * @return the <code>URIPattern</code> instance or <code>null</code>.
-     */
-    private @Nullable URIPattern toPattern(@Nullable String pattern) {
-      if (pattern == null) return null;
-      try {
-        return new URIPattern(pattern);
-      } catch (IllegalArgumentException ex) {
-        LOGGER.warn("Unparseable URI pattern: {} - ignored mapping", pattern);
-        return null;
-      }
-    }
-
-  }
-
 }

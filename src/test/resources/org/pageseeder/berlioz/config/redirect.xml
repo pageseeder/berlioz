@@ -1,0 +1,7 @@
+<redirect-mapping>
+  <redirect from="/"             to="/html/home"/>
+  <redirect from="/index.html"   to="/html/home"/>
+  <redirect from="/html"         to="/html/home"/>
+  <redirect from="/xml"          to="/xml/home"/>
+  <redirect from="/{+path}.psml" to="/html/{+path}"/>
+</redirect-mapping>

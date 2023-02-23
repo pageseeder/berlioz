@@ -1,0 +1,2 @@
+<!DOCTYPE redirect-mapping [<!ELEMENT redirect-mapping ANY > <!ENTITY redirect SYSTEM "./redirect.xml" >]>
+<redirect-mapping>&redirect;</redirect-mapping>
