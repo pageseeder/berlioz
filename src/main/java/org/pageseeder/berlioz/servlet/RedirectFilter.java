@@ -90,7 +90,7 @@ public final class RedirectFilter implements Filter, Serializable {
   /**
    * Maps URI patterns to redirect to URI pattern target.
    */
-  private transient RedirectConfig config = null;
+  private @Nullable transient RedirectConfig config = null;
 
   /**
    * The control key
@@ -192,7 +192,7 @@ public final class RedirectFilter implements Filter, Serializable {
   /**
    * @return the URI pattern mapping loading the configuration file if necessary.
    */
-  private RedirectConfig config() {
+  private RedirectConfig config() throws IOException {
     RedirectConfig mapping = this.config;
     if (mapping == null) {
       mapping = RedirectConfig.newInstance(this.configFile);

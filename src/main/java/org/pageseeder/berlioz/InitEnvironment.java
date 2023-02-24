@@ -22,13 +22,13 @@ import java.util.Objects;
 /**
  * Defines an immutable initialization environment for Berlioz.
  *
- * The initialization environment includes:
+ * <p>The initialization environment includes:
  * - the `WEB-INF` folder
  * - the Web application data folder
  * - The name of the berlioz config folder
  * - The Berlioz mode
  *
- * The initialization environment cannot change Berlioz is running.
+ * <p>The initialization environment cannot change Berlioz is running.
  *
  * @version Berlioz 0.11.4
  * @since Berlioz 0.11.4

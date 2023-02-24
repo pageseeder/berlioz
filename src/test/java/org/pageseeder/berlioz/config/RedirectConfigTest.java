@@ -2,7 +2,6 @@ package org.pageseeder.berlioz.config;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.pageseeder.berlioz.BerliozException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -20,27 +19,24 @@ public final class RedirectConfigTest {
 
   @Test
   public void testLoad_Empty() throws IOException {
-    RedirectConfig config = new RedirectConfig();
     String xml = "<redirect-mapping/>";
-    config.load(new ByteArrayInputStream(xml.getBytes()));
+    RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
     Assert.assertTrue(config.isEmpty());
   }
 
-  @Test
+  @Test(expected = IOException.class)
   public void testLoad_XXE() throws IOException {
-    RedirectConfig config = new RedirectConfig();
     String xml = "<!DOCTYPE redirect-mapping [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"/etc/password.xml\" >]><redirect-mapping>&x;</redirect-mapping>";
-    config.load(new ByteArrayInputStream(xml.getBytes()));
+    RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
   }
 
-  @Test(expected = BerliozException.class)
-  public void testLoad_XXE2() throws BerliozException {
-    RedirectConfig config = RedirectConfig.newInstance(new File(this.configFolder, "redirect_xxe.xml"));
+  @Test(expected = IOException.class)
+  public void testLoad_XXE2() throws IOException {
+    RedirectConfig.newInstance(new File(this.configFolder, "redirect_xxe.xml"));
   }
 
   @Test(expected = IOException.class)
   public void testLoad_XMLBomb() throws IOException {
-    RedirectConfig config = new RedirectConfig();
     String xml = "<!DOCTYPE redirect-mapping [\n" +
         "  <!ELEMENT redirect-mapping ANY >\n" +
         "  <!ENTITY lol \"lol\">\n" +
@@ -54,7 +50,7 @@ public final class RedirectConfigTest {
         "  <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
         "  <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
         "]><redirect-mapping><redirect from=\"&lol9;\" to=\"&lol9\"/></redirect-mapping>";
-    config.load(new ByteArrayInputStream(xml.getBytes()));
+    RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
   }
 
   /**
@@ -69,7 +65,7 @@ public final class RedirectConfigTest {
    * }</pre>
    */
   @Test
-  public void testLoad_File() {
+  public void testLoad_File() throws IOException {
     RedirectConfig config = RedirectConfig.newInstance(new File(this.configFolder, "redirect.xml"));
     Assert.assertNull(config.redirect("/index.xml"));
     Assert.assertNull(config.redirect("/example.html"));

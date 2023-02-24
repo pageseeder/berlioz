@@ -16,18 +16,11 @@
 package org.pageseeder.berlioz.config;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.furi.URIPattern;
-import org.pageseeder.berlioz.xml.BerliozEntityResolver;
-import org.pageseeder.berlioz.xml.XMLUtils;
-import org.pageseeder.berlioz.xml.Xml;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.*;
-import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,45 +67,13 @@ public final class RedirectConfig {
 
   /**
    * Load the URI relocation configuration file.
-   *
-   * @return <code>true</code> if loaded correctly;
-   *         <code>false</code> otherwise.
    */
-  public static RedirectConfig newInstance(@Nullable File file) {
-    List<RedirectPattern> patterns = new ArrayList<>();
-    if (file != null) {
-      Handler handler = new Handler(patterns);
-      try {
-        XMLUtils.parse(handler, file, false);
-      } catch (BerliozException ex) {
-        LOGGER.error("Unable to load redirect mapping {} : {}", file, ex);
-      }
-    }
-    return new RedirectConfig(patterns);
+  public static RedirectConfig newInstance(File file) throws IOException {
+    return ConfigLoader.parse(new RedirectConfig.Handler(), file);
   }
 
-  /**
-   * Reads the config from the input stream.
-   *
-   * @param in The XML input stream to parse.
-   *
-   * @throws IOException If an error occurred when reading from the input stream.
-   */
-  public synchronized void load(InputStream in) throws IOException {
-    try {
-      // Get safe SAX parser factory to ensure validation
-      SAXParser parser = Xml.newSafeParser();
-      XMLReader reader = parser.getXMLReader();
-      Handler handler = new Handler(this._patterns);
-      reader.setContentHandler(handler);
-      reader.setEntityResolver(BerliozEntityResolver.getInstance());
-      // parse
-      reader.parse(new InputSource(in));
-    } catch (ParserConfigurationException ex) {
-      throw new IOException("Could not configure SAX parser.");
-    } catch (SAXException ex) {
-      throw new IOException("Error while parsing: "+ex.getMessage());
-    }
+  public static RedirectConfig newInstance(InputStream in) throws IOException {
+    return ConfigLoader.parse(new RedirectConfig.Handler(), in);
   }
 
   public @Nullable RedirectLocation redirect(String from) {
@@ -131,15 +92,17 @@ public final class RedirectConfig {
   /**
    * Handles the XML for the URI pattern mapping configuration.
    */
-  private static class Handler extends DefaultHandler implements ContentHandler {
+  private static class Handler extends ConfigLoader.ConfigHandler<RedirectConfig> {
 
-    /**
-     * Maps URI patterns to target URI templates.
-     */
-    private final List<RedirectPattern> patterns;
+    private List<RedirectPattern> patterns = new ArrayList<>();
 
-    Handler(List<RedirectPattern> patterns) {
-      this.patterns = patterns;
+    /** Used to detect duplicates */
+    private final Set<String> matchingPatterns = new HashSet<>();
+
+    @Override
+    public void startDocument() throws SAXException {
+      this.patterns = new ArrayList<>();
+      this.matchingPatterns.clear();
     }
 
     @Override
@@ -148,6 +111,9 @@ public final class RedirectConfig {
         URIPattern from = toPattern(atts.getValue("from"));
         URIPattern to = toPattern(atts.getValue("to"));
         if (from == null || to == null) return;
+        if (!this.matchingPatterns.add(from.toString())) {
+          LOGGER.warn("URI pattern: {} is mapped twice", from);
+        }
         boolean isPermanent = "yes".equals(atts.getValue("permanent"));
         this.patterns.add(new RedirectPattern(from, to, isPermanent));
       }
@@ -169,15 +135,10 @@ public final class RedirectConfig {
       }
     }
 
-    /**
-     * Return the complete mapping of URI patterns that need be redirected.
-     *
-     * @return The mapping of URI patterns that need be redirected.
-     */
-    public List<RedirectPattern> getPatterns() {
-      return this.patterns;
+    @Override
+    RedirectConfig getConfig() {
+      return new RedirectConfig(this.patterns);
     }
-
   }
 
   private static class RedirectPattern extends MovedLocationPattern {

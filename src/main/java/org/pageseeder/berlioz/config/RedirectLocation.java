@@ -21,12 +21,12 @@ public final class RedirectLocation {
 
   private final String _to;
 
-  private boolean permanent;
+  private final boolean _permanent;
 
-  protected RedirectLocation(String from, String to, boolean permanent) {
+  RedirectLocation(String from, String to, boolean permanent) {
     this._from = from;
     this._to = to;
-    this.permanent = permanent;
+    this._permanent = permanent;
   }
 
   public String from() {
@@ -38,7 +38,7 @@ public final class RedirectLocation {
   }
 
   public boolean isPermanent() {
-    return this.permanent;
+    return this._permanent;
   }
 
 }

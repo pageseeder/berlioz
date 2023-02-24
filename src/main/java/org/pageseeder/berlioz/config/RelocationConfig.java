@@ -16,21 +16,20 @@
 package org.pageseeder.berlioz.config;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.servlet.RelocationFilter;
-import org.pageseeder.berlioz.xml.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Holds the mapping for the relocation filter
@@ -76,44 +75,28 @@ public final class RelocationConfig {
     return null;
   }
 
-  public static RelocationConfig newInstance(@Nullable File file) {
-    return load(file);
+  public static RelocationConfig newInstance(File file) throws IOException {
+    return ConfigLoader.parse(new Handler(), file);
   }
 
-  /**
-   * Load the URI relocation configuration file.
-   *
-   * @return <code>true</code> if loaded correctly;
-   *         <code>false</code> otherwise.
-   */
-  private static RelocationConfig load(@Nullable File file) {
-    List<MovedLocationPattern> mapping = new ArrayList<>();
-    if (file != null) {
-      Handler handler = new Handler(mapping);
-      try {
-        XMLUtils.parse(handler, file, false);
-      } catch (BerliozException ex) {
-        LOGGER.error("Unable to load relocation mapping {} : {}", file, ex);
-      }
-    }
-    return new RelocationConfig(mapping);
+  private static RelocationConfig newInstance(InputStream in) throws IOException {
+    return ConfigLoader.parse(new Handler(), in);
   }
 
   /**
    * Handles the XML for the URI pattern mapping configuration.
    */
-  private static class Handler extends DefaultHandler implements ContentHandler {
+  private static class Handler extends ConfigLoader.ConfigHandler<RelocationConfig> {
 
-    /**
-     * Maps URI patterns to URI patterns.
-     */
-    private final List<MovedLocationPattern> _mapping;
+    private List<MovedLocationPattern> patterns;
 
-    /**
-     * @param mapping The mapping to use for relocation.
-     */
-    public Handler(List<MovedLocationPattern> mapping) {
-      this._mapping = mapping;
+    /** Used to detect duplicates */
+    private final Set<String> matchingPatterns = new HashSet<>();
+
+    @Override
+    public void startDocument() throws SAXException {
+      this.patterns = new ArrayList<>();
+      this.matchingPatterns.clear();
     }
 
     @Override
@@ -122,7 +105,10 @@ public final class RelocationConfig {
         URIPattern from = toPattern(atts.getValue("from"));
         URIPattern to = toPattern(atts.getValue("to"));
         if (from == null || to == null) return;
-        this._mapping.add(new MovedLocationPattern(from, to));
+        if (!this.matchingPatterns.add(from.toString())) {
+          LOGGER.warn("URI pattern: {} is mapped twice", from);
+        }
+        this.patterns.add(new MovedLocationPattern(from, to));
       }
     }
 
@@ -142,6 +128,10 @@ public final class RelocationConfig {
       }
     }
 
+    @Override
+    RelocationConfig getConfig() {
+      return new RelocationConfig(this.patterns);
+    }
   }
 
 }

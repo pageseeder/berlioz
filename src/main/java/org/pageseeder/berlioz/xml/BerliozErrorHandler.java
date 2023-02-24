@@ -21,11 +21,11 @@ import org.xml.sax.SAXParseException;
 /**
  * The default error handler for Berlioz parsers.
  *
- * <p>This implementation treats all errors as fatal and will always throw an exception.
+ * <p>This implementation treats all errors as fatal and always throws an exception.
  *
- * @author Christophe Lauret (Weborganic)
+ * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 24 March 2010
+ * @version Berlioz 0.6.0
  * @since Berlioz 0.6
  */
 public final class BerliozErrorHandler implements ErrorHandler {
@@ -36,7 +36,7 @@ public final class BerliozErrorHandler implements ErrorHandler {
   private static final BerliozErrorHandler SINGLETON = new BerliozErrorHandler();
 
   /**
-   * Creates a new Berlioz error handler.
+   * Creates a new error handler.
    */
   private BerliozErrorHandler() {
   }

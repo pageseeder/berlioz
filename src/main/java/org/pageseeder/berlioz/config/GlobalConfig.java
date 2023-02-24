@@ -16,24 +16,15 @@
 package org.pageseeder.berlioz.config;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.pageseeder.berlioz.xml.BerliozEntityResolver;
-import org.pageseeder.berlioz.xml.Xml;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -120,11 +111,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    * @throws IOException Should any I/O error occur while reading the file.
    */
   public static GlobalConfig newInstance(File file) throws IOException {
-    GlobalConfig config = new GlobalConfig();
-    try (InputStream in = Files.newInputStream(file.toPath())) {
-      config.load(in);
-    }
-    return config;
+    return ConfigLoader.parse(new Handler(), file);
   }
 
   /**
@@ -146,20 +133,8 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    * @throws IOException If an error occurred when reading from the input stream.
    */
   public synchronized void load(InputStream in) throws IOException {
-    try {
-      // Get safe SAX parser factory to ensure validation
-      SAXParser parser = Xml.newSafeParser();
-      XMLReader reader = parser.getXMLReader();
-      Handler handler = new Handler(this._properties);
-      reader.setContentHandler(handler);
-      reader.setEntityResolver(BerliozEntityResolver.getInstance());
-      // parse
-      reader.parse(new InputSource(in));
-    } catch (ParserConfigurationException ex) {
-      throw new IOException("Could not configure SAX parser.");
-    } catch (SAXException ex) {
-      throw new IOException("Error while parsing: "+ex.getMessage());
-    }
+    GlobalConfig copy = ConfigLoader.parse(new Handler(), in);
+    this._properties.putAll(copy.properties());
   }
 
   /**
@@ -274,27 +249,19 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    *
    * @author Christophe Lauret
    */
-  private static final class Handler extends DefaultHandler {
+  private static final class Handler extends ConfigLoader.ConfigHandler<GlobalConfig> {
 
-    /**
-     * The properties to load.
-     */
-    private final Map<String, String> _properties;
+    private Map<String, String> properties;
 
     /**
      * Keeps track of the nodes.
      */
     private @Nullable Stack<String> nodes = null;
 
-    /**
-     * Creates a new handler.
-     *
-     * @param properties The properties to load.
-     *
-     * @throws NullPointerException If the properties are <code>null</code>.
-     */
-    public Handler(Map<String, String> properties) {
-      this._properties = Objects.requireNonNull(properties, "Properties must be specified.");
+    @Override
+    public void startDocument() {
+      this.properties = new HashMap<>();
+      this.nodes = null;
     }
 
     @Override
@@ -309,7 +276,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
             String name = atts.getLocalName(i);
             String value = atts.getValue(i);
             if (value != null) {
-              this._properties.put(prefix+name, value);
+              this.properties.put(prefix+name, value);
             }
           }
         }
@@ -321,7 +288,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
             String name = atts.getLocalName(i);
             String value = atts.getValue(i);
             if (name != null && value != null) {
-              this._properties.put(name, value);
+              this.properties.put(name, value);
             }
           }
         }
@@ -349,6 +316,11 @@ public final class GlobalConfig implements Serializable, XMLWritable {
         prefix.append(node).append('.');
       }
       return prefix.toString();
+    }
+
+    @Override
+    public GlobalConfig getConfig() {
+      return new GlobalConfig(this.properties);
     }
   }
 

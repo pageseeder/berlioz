@@ -187,7 +187,7 @@ public final class RelocationFilter implements Filter {
   /**
    * @return the config loading the configuration file if necessary.
    */
-  private RelocationConfig config() {
+  private RelocationConfig config() throws IOException {
     RelocationConfig config = this.config;
     if (config == null) {
       config = RelocationConfig.newInstance(this.mappingFile);
