@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.xml;
 
+import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.GlobalConfig;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -96,8 +97,13 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @throws IOException Should any I/O error occur while reading the file.
    */
   public static XMLConfig newInstance(File file) throws IOException {
-    GlobalConfig config = GlobalConfig.newInstance(file);
-    return new XMLConfig(config);
+    try {
+      GlobalConfig config = GlobalConfig.newInstance(file);
+      return new XMLConfig(config);
+    } catch(ConfigException ex) {
+      if (ex.getCause() instanceof IOException) throw (IOException)ex.getCause();
+      throw new IOException(ex.getMessage(), ex.getCause());
+    }
   }
 
   /**
@@ -119,7 +125,12 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @throws IOException If an error occurred when reading from the input stream.
    */
   public synchronized void load(InputStream in) throws IOException {
-    this._config.load(in);
+    try {
+      this._config.load(in);
+    } catch(ConfigException ex) {
+      if (ex.getCause() instanceof IOException) throw (IOException)ex.getCause();
+      throw new IOException(ex.getMessage(), ex.getCause());
+    }
   }
 
   /**

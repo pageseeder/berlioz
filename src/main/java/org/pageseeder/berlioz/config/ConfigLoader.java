@@ -60,11 +60,13 @@ abstract class ConfigLoader<T> extends DefaultHandler {
    * @param file The XML input stream to parse.
    * @param <X> The type of config object that the handler generates
    *
-   * @throws IOException If an error occurred when reading from the input stream.
+   * @throws ConfigException If an error occurred when reading the file
    */
-  public static <X> X parse(ConfigHandler<X> handler, File file) throws IOException {
+  public static <X> X parse(ConfigHandler<X> handler, File file) throws ConfigException {
     try (InputStream in = Files.newInputStream(file.toPath())) {
       return parse(handler, in);
+    } catch (IOException ex) {
+      throw new ConfigException("Unable to open config file", ex);
     }
   }
 
@@ -73,15 +75,15 @@ abstract class ConfigLoader<T> extends DefaultHandler {
    *
    * @param in The XML input stream to parse.
    *
-   * @throws IOException If an error occurred when reading from the input stream.
+   * @throws ConfigException If an error occurred when reading from the input stream.
    */
-  public static <X> X parse(ConfigHandler<X> handler, InputStream in) throws IOException {
+  public static <X> X parse(ConfigHandler<X> handler, InputStream in) throws ConfigException {
     try {
       // Get safe SAX parser factory to ensure validation
       SAXParser parser = Xml.newSafeParser();
       XMLReader reader = parser.getXMLReader();
       // Secure reader to prevent XXE
-      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+//      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
       // This may not be strictly required as DTDs shouldn't be allowed at all, per previous line.
       reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
       reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
@@ -94,9 +96,9 @@ abstract class ConfigLoader<T> extends DefaultHandler {
       reader.parse(new InputSource(in));
       return handler.getConfig();
     } catch (ParserConfigurationException ex) {
-      throw new IOException("Could not configure SAX parser.");
-    } catch (SAXException ex) {
-      throw new IOException("Error while parsing: "+ex.getMessage());
+      throw new ConfigException("Could not configure SAX parser.", ex);
+    } catch (SAXException | IOException ex) {
+      throw new ConfigException("Error while parsing: "+ex.getMessage(), ex);
     }
   }
 

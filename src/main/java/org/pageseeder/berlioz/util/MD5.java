@@ -144,7 +144,7 @@ public final class MD5 {
     try {
       return MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException ex) {
-      LoggerFactory.getLogger(MD5.class).warn("MD5 algorithm not available:", ex);
+      // Every implementation of the Java platform is required to support the MD5 algorithm
       throw new UnsupportedOperationException(ex);
     }
   }

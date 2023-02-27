@@ -68,11 +68,11 @@ public final class RedirectConfig {
   /**
    * Load the URI relocation configuration file.
    */
-  public static RedirectConfig newInstance(File file) throws IOException {
+  public static RedirectConfig newInstance(File file) throws ConfigException {
     return ConfigLoader.parse(new RedirectConfig.Handler(), file);
   }
 
-  public static RedirectConfig newInstance(InputStream in) throws IOException {
+  public static RedirectConfig newInstance(InputStream in) throws ConfigException {
     return ConfigLoader.parse(new RedirectConfig.Handler(), in);
   }
 

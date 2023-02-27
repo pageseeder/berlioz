@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.RelocationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,11 +188,15 @@ public final class RelocationFilter implements Filter {
   /**
    * @return the config loading the configuration file if necessary.
    */
-  private RelocationConfig config() throws IOException {
+  private RelocationConfig config() {
     RelocationConfig config = this.config;
     if (config == null) {
-      config = RelocationConfig.newInstance(this.mappingFile);
-      this.config = config;
+      try {
+        config = RelocationConfig.newInstance(this.mappingFile);
+        this.config = config;
+      } catch (ConfigException ex) {
+        LOGGER.warn("Unable to load configuration: {}", ex.getMessage());
+      }
     }
     return config;
   }

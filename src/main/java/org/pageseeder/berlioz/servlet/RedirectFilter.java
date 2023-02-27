@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.RedirectConfig;
 import org.pageseeder.berlioz.config.RedirectLocation;
 import org.pageseeder.berlioz.http.HttpHeaders;
@@ -192,13 +193,17 @@ public final class RedirectFilter implements Filter, Serializable {
   /**
    * @return the URI pattern mapping loading the configuration file if necessary.
    */
-  private RedirectConfig config() throws IOException {
-    RedirectConfig mapping = this.config;
-    if (mapping == null) {
-      mapping = RedirectConfig.newInstance(this.configFile);
-      this.config = mapping;
+  private RedirectConfig config() {
+    RedirectConfig config = this.config;
+    if (config == null) {
+      try {
+        config = RedirectConfig.newInstance(this.configFile);
+        this.config = config;
+      } catch (ConfigException ex) {
+        LOGGER.warn("Unable to load configuration: {}", ex.getMessage());
+      }
     }
-    return mapping;
+    return config;
   }
 
   /**

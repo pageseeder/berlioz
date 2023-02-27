@@ -75,11 +75,11 @@ public final class RelocationConfig {
     return null;
   }
 
-  public static RelocationConfig newInstance(File file) throws IOException {
+  public static RelocationConfig newInstance(File file) throws ConfigException {
     return ConfigLoader.parse(new Handler(), file);
   }
 
-  private static RelocationConfig newInstance(InputStream in) throws IOException {
+  private static RelocationConfig newInstance(InputStream in) throws ConfigException {
     return ConfigLoader.parse(new Handler(), in);
   }
 

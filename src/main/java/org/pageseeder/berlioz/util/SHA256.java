@@ -144,7 +144,7 @@ public final class SHA256 {
     try {
       return MessageDigest.getInstance("SHA-256");
     } catch (NoSuchAlgorithmException ex) {
-      LoggerFactory.getLogger(SHA256.class).warn("SHA-256 algorithm not available:", ex);
+      // Every implementation of the Java platform is required to support the MD5 algorithm
       throw new UnsupportedOperationException(ex);
     }
   }

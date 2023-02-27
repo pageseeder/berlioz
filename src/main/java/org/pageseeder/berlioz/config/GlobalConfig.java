@@ -110,7 +110,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    *
    * @throws IOException Should any I/O error occur while reading the file.
    */
-  public static GlobalConfig newInstance(File file) throws IOException {
+  public static GlobalConfig newInstance(File file) throws ConfigException {
     return ConfigLoader.parse(new Handler(), file);
   }
 
@@ -132,7 +132,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    *
    * @throws IOException If an error occurred when reading from the input stream.
    */
-  public synchronized void load(InputStream in) throws IOException {
+  public synchronized void load(InputStream in) throws ConfigException {
     GlobalConfig copy = ConfigLoader.parse(new Handler(), in);
     this._properties.putAll(copy.properties());
   }
