@@ -21,15 +21,10 @@ import org.pageseeder.berlioz.servlet.RelocationFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Holds the mapping for the relocation filter
@@ -62,7 +57,11 @@ public final class RelocationConfig {
    */
   private final List<MovedLocationPattern> _mapping;
 
-  private RelocationConfig(List<MovedLocationPattern> mapping) {
+  public RelocationConfig() {
+    this._mapping = Collections.emptyList();
+  }
+
+  public RelocationConfig(List<MovedLocationPattern> mapping) {
     this._mapping = mapping;
   }
 
@@ -98,7 +97,7 @@ public final class RelocationConfig {
     }
 
     @Override
-    public void startDocument() throws SAXException {
+    public void startDocument() {
       this.patterns = new ArrayList<>();
       this.matchingPatterns.clear();
     }

@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -57,11 +56,11 @@ public final class RedirectConfig {
    */
   private final List<RedirectPattern> _patterns;
 
-  RedirectConfig() {
-    this._patterns = new ArrayList<>();
+  public RedirectConfig() {
+    this._patterns = Collections.emptyList();
   }
 
-  private RedirectConfig(List<RedirectPattern>  patterns) {
+  public RedirectConfig(List<RedirectPattern>  patterns) {
     this._patterns = patterns;
   }
 
@@ -104,7 +103,7 @@ public final class RedirectConfig {
     }
 
     @Override
-    public void startDocument() throws SAXException {
+    public void startDocument() {
       this.patterns = new ArrayList<>();
       this.matchingPatterns.clear();
     }
