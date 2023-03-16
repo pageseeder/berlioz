@@ -198,10 +198,11 @@ public final class RedirectFilter implements Filter, Serializable {
     if (config == null) {
       try {
         config = RedirectConfig.newInstance(this.configFile);
-        this.config = config;
       } catch (ConfigException ex) {
         LOGGER.warn("Unable to load configuration: {}", ex.getMessage());
+        config = new RedirectConfig();
       }
+      this.config = config;
     }
     return config;
   }

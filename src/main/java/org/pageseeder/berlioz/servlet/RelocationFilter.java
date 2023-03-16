@@ -193,10 +193,11 @@ public final class RelocationFilter implements Filter {
     if (config == null) {
       try {
         config = RelocationConfig.newInstance(this.mappingFile);
-        this.config = config;
       } catch (ConfigException ex) {
         LOGGER.warn("Unable to load configuration: {}", ex.getMessage());
+        config = new RelocationConfig();
       }
+      this.config = config;
     }
     return config;
   }
