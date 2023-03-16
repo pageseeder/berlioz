@@ -69,7 +69,7 @@ public final class RedirectConfigTest {
 
   @Test(expected = ConfigException.class)
   public void testLoad_XXE() throws ConfigException {
-    String xml = "<!DOCTYPE redirect-mapping [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"/etc/password.xml\" >]><redirect-mapping>&x;</redirect-mapping>";
+    String xml = "<!-- XXE --><!DOCTYPE redirect-mapping [<!ELEMENT redirect-mapping ANY > <!ENTITY x SYSTEM \"/etc/password.xml\" >]><redirect-mapping>&x;</redirect-mapping>";
     RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
   }
 

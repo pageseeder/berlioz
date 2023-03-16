@@ -93,6 +93,10 @@ public final class RelocationConfig {
     /** Used to detect duplicates */
     private final Set<String> matchingPatterns = new HashSet<>();
 
+    public String getSchema() {
+      return "relocation-mapping-1.0";
+    }
+
     @Override
     public void startDocument() throws SAXException {
       this.patterns = new ArrayList<>();

@@ -258,6 +258,10 @@ public final class GlobalConfig implements Serializable, XMLWritable {
      */
     private @Nullable Stack<String> nodes = null;
 
+    public String getSchema() {
+      return null;
+    }
+
     @Override
     public void startDocument() {
       this.properties = new HashMap<>();
