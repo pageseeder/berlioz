@@ -287,10 +287,10 @@ public final class HttpHeaders { // NO_UCD
    * 'Content-MD5' entity header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Content-MD5   = "Content-MD5" ":" md5-digest
    *    md5-digest   = <base64 of 128 bit MD5 digest as per RFC 1864>
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.15">HTTP/1.1 - 14.15 Content-MD5</a>
    */
@@ -300,14 +300,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Content-Range' entity header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Content-Range = "Content-Range" ":" content-range-spec
    *
    *   content-range-spec      = byte-content-range-spec
    *   byte-content-range-spec = bytes-unit SP byte-range-resp-spec "/" ( instance-length | "*" )
    *   byte-range-resp-spec    = (first-byte-pos "-" last-byte-pos) | "*"
    *   instance-length         = 1*DIGIT
-   * </pre>
+   * }</pre>
    * <p>Examples:</p>
    * <pre>
    *   Content-Range: bytes 0-499/1234    ; The first 500 bytes
@@ -823,14 +823,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Warning' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Warning    = "Warning" ":" 1#warning-value
    *   warning-value = warn-code SP warn-agent SP warn-text [SP warn-date]
    *   warn-code  = 3DIGIT
    *   warn-agent = ( host [ ":" port ] ) | pseudonym
    *   warn-text  = quoted-string
    *   warn-date  = <"> HTTP-date <">
-   * </pre>
+   * }</pre>
    * <p><i>Note: the <code>warn-agent</code> is the name or pseudonym of the server adding the
    * <code>Warning</code> header, for use in debugging</i></p>
    *

@@ -22,6 +22,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.BerliozOption;
@@ -51,10 +52,10 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * {@link javax.servlet.http.HttpServletRequest#getContextPath()}.
  *
  * <p>The <var>remote host</var> is the result of
- * {@link javax.servlet.http.ServletRequest#getRemoteHost()}.
+ * {@link ServletRequest#getRemoteHost()}.
  *
  * <p>The <var>remote port</var> is the result of
- * {@link javax.servlet.http.ServletRequest#getRemotePort()}.
+ * {@link ServletRequest#getRemotePort()}.
  *
  * @author Christophe Lauret
  *
