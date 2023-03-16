@@ -267,7 +267,7 @@ public final class BerliozConfig {
    * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
    *         the control key; false otherwise.
    */
-  public static boolean hasControl(HttpServletRequest req, String controlKey) {
+  public static boolean hasControl(HttpServletRequest req, @Nullable String controlKey) {
     if (controlKey == null || "".equals(controlKey)) return true;
     if (controlKey.equals(req.getParameter("berlioz-control"))) return true;
     // TODO Check if this is appropriate!!
@@ -424,13 +424,8 @@ public final class BerliozConfig {
    * @param key the key to use to store the transformer.
    * @return the corresponding XSLT transformer.
    */
-  private @Nullable XSLTransformer getTransformer(Service service, String key) {
-    XSLTransformer transformer = this._transformers.get(key);
-    if (transformer == null) {
-      transformer = newTransformer(service);
-      this._transformers.put(key, transformer);
-    }
-    return transformer;
+  private XSLTransformer getTransformer(Service service, String key) {
+    return this._transformers.computeIfAbsent(key, (k) -> newTransformer(service));
   }
 
   /**
