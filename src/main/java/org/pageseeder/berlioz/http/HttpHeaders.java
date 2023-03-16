@@ -174,7 +174,7 @@ public final class HttpHeaders { // NO_UCD
    * 'Cache-Control' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Cache-Control   = "Cache-Control" ":" 1#cache-directive
    *   cache-directive = cache-request-directive | cache-response-directive
    *
@@ -199,7 +199,7 @@ public final class HttpHeaders { // NO_UCD
    *                            | cache-extension
    *
    *   cache-extension = token [ "=" ( token | quoted-string ) ]
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.9">HTTP/1.1 - 14.9 Cache-Control</a>
    */
@@ -652,9 +652,9 @@ public final class HttpHeaders { // NO_UCD
    *   Referer        = "Referer" ":" ( absoluteURI | relativeURI )
    * </pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Referer: http://www.w3.org/hypertext/DataSources/Overview.html
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.36">HTTP/1.1 - 14.36 Referer</a>
    */
