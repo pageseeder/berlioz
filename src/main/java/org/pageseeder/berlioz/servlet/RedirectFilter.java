@@ -184,6 +184,7 @@ public final class RedirectFilter implements Filter, Serializable {
 
       // And redirect
       sendRedirect(req, res, location.to(), location.isPermanent());
+      return;
     }
 
     // Continue
@@ -198,8 +199,9 @@ public final class RedirectFilter implements Filter, Serializable {
     if (config == null) {
       try {
         config = RedirectConfig.newInstance(this.configFile);
+        LOGGER.info("Loaded redirect configuration: {} rules found", config.size());
       } catch (ConfigException ex) {
-        LOGGER.warn("Unable to load configuration: {}", ex.getMessage());
+        LOGGER.error("Unable to load configuration: {}", ex.getMessage());
         config = new RedirectConfig();
       }
       this.config = config;
