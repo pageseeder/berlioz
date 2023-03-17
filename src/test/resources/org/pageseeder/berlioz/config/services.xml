@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE service-config PUBLIC "-//Berlioz//DTD::Services 1.0//EN"
+    "https://pageseeder.org/schema/berlioz/services-1.0.dtd">
+<service-config version="1.0">
+
+  <!-- Data related services -->
+  <services group="default">
+    <service id="home" method="get">
+      <url pattern="/home"/>
+    </service>
+  </services>
+
+</service-config>

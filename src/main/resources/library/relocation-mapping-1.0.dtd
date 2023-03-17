@@ -1,0 +1,19 @@
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+<!--                                                                        -->
+<!-- Title:         Berlioz DTD for redirection mapping                     -->
+<!-- System:        Berlioz                                                 -->
+<!-- Version:       1.0                                                     -->
+<!-- LastModified:  22 February 2023                                        -->
+<!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
+
+<!--
+  Top level element.
+-->
+<!ELEMENT relocation-mapping                                  ( relocation* ) >
+
+<!--
+  Mapping
+-->
+<!ELEMENT relocation                                                    EMPTY >
+<!ATTLIST relocation   from            CDATA                        #REQUIRED
+                       to              CDATA                        #REQUIRED >

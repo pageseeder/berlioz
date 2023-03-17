@@ -315,7 +315,7 @@ public final class BerliozServlet extends HttpServlet {
         }
       }
       sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Unable to find "+req.getRequestURI(), null);
-      LOGGER.debug("No matching service for: " + req.getRequestURI());
+      LOGGER.debug("No matching service for: {}", req.getRequestURI());
       return;
     }
 
@@ -325,7 +325,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Include the service as a header for information
     res.setHeader("X-Berlioz-Service", toSafeHeader(match.service().id()));
-    LOGGER.debug(path+" -> "+match.service());
+    LOGGER.debug("{} -> {}", path, match.service());
 
     // Is Berlioz used to handle an error?
     Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);

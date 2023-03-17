@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.12.4
  * @since Berlioz 0.8
  */
 public final class ServiceRegistry {
@@ -96,8 +96,8 @@ public final class ServiceRegistry {
    * @return A content generator which URI pattern matches this URL or <code>null</code>.
    */
   public @Nullable MatchingService get(String url) {
-    for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = getMapping(m);
+    for (Entry<HttpMethod, ServiceRegistry.ServiceMap> allMethods : this.registry.entrySet()) {
+      ServiceMap mapping = allMethods.getValue();
       MatchingService service = mapping.match(url);
       if (service != null) return service;
     }
@@ -117,8 +117,9 @@ public final class ServiceRegistry {
    */
   public List<String> allows(String url) {
     List<String> methods = new ArrayList<>();
-    for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = getMapping(m);
+    for (Entry<HttpMethod, ServiceMap> e : this.registry.entrySet()) {
+      HttpMethod m = e.getKey();
+      ServiceMap mapping = e.getValue();
       MatchingService service = mapping.match(url);
       if (service != null) {
         methods.add(m.toString());
@@ -139,9 +140,9 @@ public final class ServiceRegistry {
    */
   public @Nullable HttpMethod getMethod(Service service) {
     if (service == null) return null;
-    for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = getMapping(m);
-      if (mapping.isMapped(service)) return m;
+    for (Entry<HttpMethod, ServiceMap> e : this.registry.entrySet()) {
+      ServiceMap mapping = e.getValue();
+      if (mapping.isMapped(service)) return e.getKey();
     }
     return null;
   }
@@ -155,8 +156,7 @@ public final class ServiceRegistry {
    */
   public List<String> matches(Service service) {
     if (service == null) return Collections.emptyList();
-    for (HttpMethod m : this.registry.keySet()) {
-      ServiceMap mapping = getMapping(m);
+    for (ServiceMap mapping : this.registry.values()) {
       boolean mapped = mapping.isMapped(service);
       if (mapped) return mapping.matches(service);
     }
@@ -255,7 +255,7 @@ public final class ServiceRegistry {
   /**
    * Changed the version of this registry.
    */
-  protected void touch() {
+  void touch() {
     this.version = System.currentTimeMillis();
   }
 
@@ -283,7 +283,7 @@ public final class ServiceRegistry {
    * Simply Maps generators to URI patterns.
    *
    * @author Christophe Lauret
-   * @version 9 December 2011
+   * @version Berlioz 0.12.4
    */
   private static class ServiceMap {
 
@@ -313,7 +313,7 @@ public final class ServiceRegistry {
     public boolean put(URIPattern pattern, Service service) {
       Service previous = this.mapping.put(pattern.toString(), service);
       if (previous != null) {
-        this.logger.warn("Service ID={} was already registered to {}", previous, pattern.toString());
+        this.logger.warn("Service ID={} was already registered to {}", previous, pattern);
       }
       this.patterns.add(pattern);
       return true;

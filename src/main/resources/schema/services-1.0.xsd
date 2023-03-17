@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Berlioz Schema for Web Services
+
+  @version 1.0
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <!-- A URI Pattern as defined in the URI Template specifications -->
+  <xs:simpleType name="uri-pattern">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\S+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- The HTTP method for the associated service -->
+  <xs:simpleType name="http-method">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="get"/>
+      <xs:enumeration value="put"/>
+      <xs:enumeration value="delete"/>
+      <xs:enumeration value="post"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- The rule to use to compute the response code -->
+  <xs:simpleType name="code-rule">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="highest"/>
+      <xs:enumeration value="lowest"/>
+      <xs:enumeration value="first"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!--
+    Top level element.
+
+    @attribute version The version of service configuration always "1.0"
+  -->
+  <xs:element name="service-config">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="response-code"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="services"/>
+      </xs:sequence>
+      <xs:attribute name="version" default="1.0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="1.0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    A container for services.
+
+    @attribute group A name to group these services together.
+  -->
+  <xs:element name="services">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="response-code"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="service"/>
+      </xs:sequence>
+      <xs:attribute name="group" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    A service composed of multiple generators and matching at least one URL.
+
+    @attribute id     A unique identifier for this service.
+    @attribute method The HTTP method this service accepts.
+    @attribute flags  A list of values that can be used to qualify the service
+    @attribute cache-control The cache-control header value
+  -->
+  <xs:element name="service">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="url"/>
+        <xs:element minOccurs="0" ref="response-code"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="generator"/>
+      </xs:sequence>
+      <xs:attribute name="id" use="required" type="xs:ID"/>
+      <xs:attribute name="method" use="required" type="http-method"/>
+      <xs:attribute name="flags" type="xs:NMTOKENS"/>
+      <xs:attribute name="cache-control"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    The URL pattern matching this service.
+
+    @attribute pattern The URI Pattern for this URL.
+  -->
+  <xs:element name="url">
+    <xs:complexType>
+      <xs:attribute name="pattern" use="required" type="uri-pattern"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    The content generator.
+
+    The class must implement the ContentGenerator interface defined in Berlioz.
+
+    The name and target are preserved and can be used in the XSLT to determine
+    what to do with the generated content.
+
+    @attribute class  The fully qualified Java class to load for this generator.
+    @attribute name   A name for this generator.
+    @attribute target A target for the content generated in the output.
+  -->
+  <xs:element name="generator">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="parameter"/>
+      </xs:sequence>
+      <xs:attribute name="class"/>
+      <xs:attribute name="name" type="xs:NMTOKEN"/>
+      <xs:attribute name="target" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    A parameter to pass to the content generator.
+
+    @attribute name    The name of the parameter.
+    @attribute value   The value of this parameter.
+  -->
+  <xs:element name="parameter">
+    <xs:complexType>
+      <xs:attribute name="name" use="required"/>
+      <xs:attribute name="value" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    Top level element.
+
+    @version The version of service configuration.
+    @version The version of service configuration.
+  -->
+  <xs:element name="response-code">
+    <xs:complexType>
+      <xs:attribute name="use" use="required"/>
+      <xs:attribute name="rule" type="code-rule"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

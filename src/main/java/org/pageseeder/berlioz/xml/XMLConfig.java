@@ -15,39 +15,13 @@
  */
 package org.pageseeder.berlioz.xml;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.Stack;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.regex.Pattern;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.eclipse.jdt.annotation.Nullable;
+import org.pageseeder.berlioz.config.ConfigException;
+import org.pageseeder.berlioz.config.GlobalConfig;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
-import org.pageseeder.xmlwriter.XMLWriterImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
+
+import java.io.*;
+import java.util.Map;
 
 /**
  * A simpler version of the XML config file to improve readability of Berlioz configuration.
@@ -79,38 +53,26 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.3
+ * @version Berlioz 0.12.4
  * @since Berlioz 0.9.7
+ *
+ * @deprecated Use org.pageseeder.berlioz.config.GlobalConfig instead.
  */
+@Deprecated
 public final class XMLConfig implements Serializable, XMLWritable {
 
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = 20230216L;
+  private static final long serialVersionUID = 20230223L;
 
-  /**
-   * Check that it is a valid attribute name in XML.
-   *
-   * <p>NB: We disallow ':' to avoid issues with namespaces.
-   */
-  private final static Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
-
-  /**
-   * Logger.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(XMLConfig.class);
-
-  /**
-   * List of properties to load.
-   */
-  private final Map<String, String> _properties;
+  private final GlobalConfig _config;
 
   /**
    * Creates an empty property list with no default values.
    */
   public XMLConfig() {
-    this._properties = new HashMap<>();
+    this._config = new GlobalConfig();
   }
 
   /**
@@ -119,7 +81,11 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @param properties The initial properties for this config.
    */
   public XMLConfig(Map<String, String> properties) {
-    this._properties = properties;
+    this._config = new GlobalConfig(properties);
+  }
+
+  private XMLConfig(GlobalConfig config) {
+    this._config = config;
   }
 
   /**
@@ -131,11 +97,13 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @throws IOException Should any I/O error occur while reading the file.
    */
   public static XMLConfig newInstance(File file) throws IOException {
-    XMLConfig config = new XMLConfig();
-    try (InputStream in = Files.newInputStream(file.toPath())) {
-      config.load(in);
+    try {
+      GlobalConfig config = GlobalConfig.newInstance(file);
+      return new XMLConfig(config);
+    } catch(ConfigException ex) {
+      if (ex.getCause() instanceof IOException) throw (IOException)ex.getCause();
+      throw new IOException(ex.getMessage(), ex.getCause());
     }
-    return config;
   }
 
   /**
@@ -146,7 +114,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @return the properties as a map.
    */
   public Map<String, String> properties() {
-    return this._properties;
+    return this._config.properties();
   }
 
   /**
@@ -158,29 +126,10 @@ public final class XMLConfig implements Serializable, XMLWritable {
    */
   public synchronized void load(InputStream in) throws IOException {
     try {
-      // use the SAX parser factory to ensure validation
-      SAXParserFactory factory = SAXParserFactory.newInstance();
-      factory.setValidating(false);
-      factory.setNamespaceAware(true);
-      // get the parser
-      XMLReader reader = factory.newSAXParser().getXMLReader();
-      // Disallow Doctype declaration to prevent XXE
-      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      // This may not be strictly required as DTDs shouldn't be allowed at all, per previous line.
-      reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-      reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
-      reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-
-      // configure the reader
-      Handler handler = new Handler(this._properties);
-      reader.setContentHandler(handler);
-      reader.setEntityResolver(BerliozEntityResolver.getInstance());
-      // parse
-      reader.parse(new InputSource(in));
-    } catch (ParserConfigurationException ex) {
-      throw new IOException("Could not configure SAX parser.");
-    } catch (SAXException ex) {
-      throw new IOException("Error while parsing: "+ex.getMessage());
+      this._config.load(in);
+    } catch(ConfigException ex) {
+      if (ex.getCause() instanceof IOException) throw (IOException)ex.getCause();
+      throw new IOException(ex.getMessage(), ex.getCause());
     }
   }
 
@@ -192,186 +141,12 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @throws IOException If an error occurred when reading from the input stream.
    */
   public void save(OutputStream out) throws IOException {
-    try (OutputStreamWriter w = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
-      XMLWriter xml = new XMLWriterImpl(w, true);
-      toXML(xml);
-    }
+    this._config.save(out);
   }
 
   @Override
   public void toXML(XMLWriter xml) throws IOException {
-    SortedMap<String, String> sorted = new TreeMap<>(this._properties);
-    xml.openElement("global", true);
-    toXML(xml, sorted);
-    xml.closeElement();
-  }
-
-  /**
-   * Recursive function
-   *
-   * @param xml The XML writer
-   * @param map The map to process.
-   *
-   * @throws IOException If thrown by the XML Writer.
-   */
-  private static void toXML(XMLWriter xml, SortedMap<String, String> map) throws IOException {
-    attributes(xml, map);
-    for (String node : nodes(map)) {
-      if (VALID_XML_NAME.matcher(node).matches()) {
-        xml.openElement(node, true);
-        toXML(xml, sub(map, node));
-        xml.closeElement();
-      } else {
-        LOGGER.warn("Unable to write this element as xml (invalid name): {}", node);
-      }
-    }
-  }
-
-  /**
-   * Writes attributes for the current node onto the XML including only properties
-   * without a '.'
-   *
-   * @param xml The XML writer
-   * @param map The map to process.
-   *
-   * @throws IOException If thrown by the XML Writer.
-   */
-  private static void attributes(XMLWriter xml, Map<String, String> map) throws IOException {
-    for (Entry<String, String> x : map.entrySet()) {
-      String property = x.getKey();
-      if (property.indexOf('.') < 0) {
-        if (VALID_XML_NAME.matcher(property).matches()) {
-          xml.attribute(property, x.getValue());
-        } else {
-          LOGGER.warn("Unable to write this attribute as xml (invalid name): {}", property);
-        }
-      }
-    }
-  }
-
-  /**
-   * Returns the set of notes from the map.
-   *
-   * <p>A node is the prefix of a property where the property is <code>[node].[name]</code>
-   *
-   * @param map The map to process.
-   *
-   * @return A set of nodes from the map
-   */
-  private static SortedSet<String> nodes(Map<String, String> map) {
-    SortedSet<String> nodes = new TreeSet<>();
-    for (String property : map.keySet()) {
-      int dot = property.indexOf('.');
-      if (dot >= 0) {
-        nodes.add(property.substring(0, dot));
-      }
-    }
-    return nodes;
-  }
-
-  /**
-   * Returns the subset of the map with the node prefix removed from the key.
-   *
-   * <p>A node is the prefix of a property where the property is <code>[node].[name]</code>
-   *
-   * @param map  The map to process.
-   * @param node The node to use for prefixing.
-   *
-   * @return A set of nodes from the map
-   */
-  private static SortedMap<String, String> sub(SortedMap<String, String> map, String node) {
-    String prefix = node+".";
-    SortedMap<String, String> sub = new TreeMap<>();
-    for (Entry<String, String> e : map.entrySet()) {
-      String property = e.getKey();
-      if (property.startsWith(prefix)) {
-        sub.put(property.substring(prefix.length()), e.getValue());
-      }
-    }
-    return sub;
-  }
-
-  /**
-   * Parses the file as XML following the rules for the config.
-   *
-   * @author Christophe Lauret
-   */
-  private static final class Handler extends DefaultHandler {
-
-    /**
-     * The properties to load.
-     */
-    private final Map<String, String> _properties;
-
-    /**
-     * Keeps track of the nodes.
-     */
-    private @Nullable Stack<String> nodes = null;
-
-    /**
-     * Creates a new handler.
-     *
-     * @param properties The properties to load.
-     *
-     * @throws NullPointerException If the properties are <code>null</code>.
-     */
-    public Handler(Map<String, String> properties) {
-      this._properties = Objects.requireNonNull(properties, "Properties must be specified.");
-    }
-
-    @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) {
-      Stack<String> nodes = this.nodes;
-      if (nodes != null) {
-        nodes.push(localName);
-        int attCount = atts.getLength();
-        if (attCount > 0) {
-          String prefix = getPrefix(nodes);
-          for (int i = 0; i < attCount; i++) {
-            String name = atts.getLocalName(i);
-            String value = atts.getValue(i);
-            if (value != null) {
-              this._properties.put(prefix+name, value);
-            }
-          }
-        }
-      } else {
-        this.nodes = new Stack<>();
-        int attCount = atts.getLength();
-        if (attCount > 0) {
-          for (int i = 0; i < attCount; i++) {
-            String name = atts.getLocalName(i);
-            String value = atts.getValue(i);
-            if (name != null && value != null) {
-              this._properties.put(name, value);
-            }
-          }
-        }
-      }
-    }
-
-    @Override
-    public void endElement(String uri, String localName, String qName) {
-      Stack<String> nodes = this.nodes;
-      if (nodes != null) {
-        if (nodes.size() > 0) {
-          nodes.pop();
-        } else {
-          this.nodes = null;
-        }
-      }
-    }
-
-    /**
-     * @return the prefix from the current stack of nodes.
-     */
-    private static String getPrefix(Stack<String> nodes) {
-      StringBuilder prefix = new StringBuilder();
-      for (String node : nodes) {
-        prefix.append(node).append('.');
-      }
-      return prefix.toString();
-    }
+    this._config.toXML(xml);
   }
 
 }

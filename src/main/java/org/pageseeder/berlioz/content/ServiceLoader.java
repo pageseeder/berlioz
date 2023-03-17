@@ -196,7 +196,7 @@ public final class ServiceLoader {
       reader.setContentHandler(dispatcher);
       reader.setEntityResolver(BerliozEntityResolver.getInstance());
       reader.setErrorHandler(collector);
-      LOGGER.info("Parsing "+xml.toURI().toString());
+      LOGGER.info("Parsing {}", xml.toURI());
       reader.parse(new InputSource(xml.toURI().toString()));
       // if the error threshold was reached, throw an error!
       if (collector.hasError()) {

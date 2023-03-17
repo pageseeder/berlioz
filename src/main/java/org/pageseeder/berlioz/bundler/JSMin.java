@@ -42,11 +42,8 @@
  */
 package org.pageseeder.berlioz.bundler;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PushbackInputStream;
+import java.io.*;
+import java.nio.file.Files;
 
 /**
  * A JavaScript minimiser.
@@ -414,14 +411,24 @@ public final class JSMin {
   /**
    * To invoke the minimizer on the command line.
    *
-   * @param arg name of file to minimize
+   * @param args first argument is path to file to minimize
    */
-  public static void main(String[] arg) {
+  public static void main(String[] args) throws IOException {
+    if (args.length < 1) {
+      System.out.println("Usage: ");
+      System.out.println("JSMin [filepath]");
+      return;
+    }
     try {
-      JSMin jsmin = new JSMin(new FileInputStream(arg[0]), System.out);
+      File file = new File(args[0]).getCanonicalFile();
+      String currentPath = new File(".").getCanonicalPath();
+      if (!file.toPath().startsWith(currentPath) || !file.exists() || file.isDirectory())
+        throw new IllegalArgumentException("Illegal filepath argument");
+      JSMin jsmin = new JSMin(Files.newInputStream(file.toPath()), System.out);
       jsmin.jsmin();
-    } catch (ParsingException | IOException | ArrayIndexOutOfBoundsException ex) {
-      ex.printStackTrace();
+    } catch (ParsingException | IOException | IllegalArgumentException ex) {
+      System.err.println(ex.getMessage());
+      System.exit(1);
     }
   }
 

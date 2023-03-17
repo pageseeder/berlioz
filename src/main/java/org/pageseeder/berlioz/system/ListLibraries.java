@@ -165,11 +165,12 @@ public final class ListLibraries implements ContentGenerator {
    */
   private static void toXML(XMLWriter xml, Map<String, String> attributes) throws IOException {
     Map<String, List<String>> keys = new HashMap<>();
-    for (String key : attributes.keySet()) {
+    for (Entry<String, String> entry : attributes.entrySet()) {
+      String key = entry.getKey();
       int dash = key.indexOf('-');
       if (dash == -1) {
         // Just add as an attribute
-        xml.attribute(key.toLowerCase(), Objects.toString(attributes.get(key), ""));
+        xml.attribute(key.toLowerCase(), Objects.toString(entry.getValue(), ""));
       } else {
         // Sort the composed manifest attributes
         String category = key.substring(0, dash);

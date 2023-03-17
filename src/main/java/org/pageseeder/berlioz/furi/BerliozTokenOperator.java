@@ -54,12 +54,12 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   /**
    * The pattern for the URI defined pchar:
    *
-   * <pre>
+   * <pre>{@code
    * pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
    * pct-encoded = "%" HEXDIG HEXDIG
    * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
    * sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
-   * </pre>
+   * }</pre>
    *
    * To avoid side-effects with the resolvers non-capturing groups are used.
    *

@@ -18,12 +18,6 @@ package org.pageseeder.berlioz.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -36,21 +30,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
-import org.pageseeder.berlioz.furi.URIParameters;
-import org.pageseeder.berlioz.furi.URIPattern;
-import org.pageseeder.berlioz.furi.URIResolveResult;
-import org.pageseeder.berlioz.furi.URIResolver;
+import org.pageseeder.berlioz.config.ConfigException;
+import org.pageseeder.berlioz.config.RedirectConfig;
+import org.pageseeder.berlioz.config.RedirectLocation;
 import org.pageseeder.berlioz.http.HttpHeaders;
-import org.pageseeder.berlioz.xml.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * A basic filter to redirect URI patterns to other URI patterns.
@@ -99,17 +86,12 @@ public final class RedirectFilter implements Filter, Serializable {
   /**
    * Where the redirect config is located.
    */
-  private @Nullable File mappingFile;
+  private @Nullable File configFile;
 
   /**
    * Maps URI patterns to redirect to URI pattern target.
    */
-  private transient @Nullable Map<URIPattern, URIPattern> mapping = null;
-
-  /**
-   * IF a URI pattern is on this list, it indicates that the redirect is permanent (301 instead of 302)
-   */
-  private transient List<URIPattern> permanent = Collections.emptyList();
+  private @Nullable transient RedirectConfig config = null;
 
   /**
    * The control key
@@ -155,13 +137,13 @@ public final class RedirectFilter implements Filter, Serializable {
     }
 
     // Simply set the mapping file, it will be loaded if needed only.
-    this.mappingFile = mappingFile;
+    this.configFile = mappingFile;
   }
 
   @Override
   public void destroy() {
-    this.mappingFile = null;
-    this.mapping = null;
+    this.configFile = null;
+    this.config = null;
     this.controlKey = "";
   }
 
@@ -188,20 +170,21 @@ public final class RedirectFilter implements Filter, Serializable {
 
     // Reset mapping on reload
     if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req, this.controlKey)) {
-      this.mapping = null;
+      this.config = null;
     }
 
     // Load the config if needed
-    Map<URIPattern, URIPattern> mapping = mapping();
-
+    RedirectConfig config = config();
 
     // Evaluate URI patterns
-    for (URIPattern p : mapping.keySet()) {
-      String uri = req.getRequestURI();
-      if (p.match(uri)) {
-        redirect(req, res, p);
-        return;
-      }
+    RedirectLocation location = config.redirect(req.getRequestURI());
+    if (location != null) {
+      res.setCharacterEncoding("utf-8");
+      LOGGER.debug("Redirecting from {} to {}", location.from(), location.to());
+
+      // And redirect
+      sendRedirect(req, res, location.to(), location.isPermanent());
+      return;
     }
 
     // Continue
@@ -209,79 +192,22 @@ public final class RedirectFilter implements Filter, Serializable {
   }
 
   /**
-   * Actually performs the redirect.
-   *
-   * @param req   The HTTP servlet request.
-   * @param res   The HTTP servlet response.
-   * @param match The URI matched pattern.
-   *
-   * @throws IOException If thrown by the HTTP the response.
-   * @throws ServletException If the a relative URL was used.
-   */
-  private boolean redirect(HttpServletRequest req, HttpServletResponse res, URIPattern match)
-      throws IOException, ServletException {
-    URIPattern target = mapping().get(match);
-
-    // Unlikely but possible
-    if (target == null) return false;
-
-    // Resolve URI variables
-    String from = req.getRequestURI();
-    URIResolver resolver = new URIResolver(from);
-    URIResolveResult result = resolver.resolve(match);
-
-    // Expand the target URI with URI variables
-    Set<String> names = result.names();
-    URIParameters parameters = new URIParameters();
-    for (String name : names) {
-      parameters.set(name, (String)result.get(name));
-    }
-    String to = target.expand(parameters);
-
-    // Encode URL
-    res.setCharacterEncoding("utf-8");
-    LOGGER.debug("Redirecting from {} to {}", from, to);
-
-    // And redirect
-    boolean isPermanent = this.permanent.contains(match);
-    sendRedirect(req, res, to, isPermanent);
-    return true;
-  }
-
-  /**
    * @return the URI pattern mapping loading the configuration file if necessary.
    */
-  private Map<URIPattern, URIPattern> mapping() {
-    Map<URIPattern, URIPattern> mapping = this.mapping;
-    if (mapping == null) {
-      mapping = loadConfig(this.mappingFile);
-      this.mapping = mapping;
-    }
-    return mapping;
-  }
-
-  /**
-   * Load the URI relocation configuration file.
-   *
-   * @return <code>true</code> if loaded correctly;
-   *         <code>false</code> otherwise.
-   */
-  private Map<URIPattern, URIPattern> loadConfig(@Nullable File file) {
-    Map<URIPattern, URIPattern> mapping = new HashMap<>();
-    if (file != null) {
-      Handler handler = new Handler();
+  private RedirectConfig config() {
+    RedirectConfig config = this.config;
+    if (config == null) {
       try {
-        XMLUtils.parse(handler, file, false);
-      } catch (BerliozException ex) {
-        LOGGER.error("Unable to load redirect mapping {} : {}", file, ex);
+        config = RedirectConfig.newInstance(this.configFile);
+        LOGGER.info("Loaded redirect configuration: {} rules found", config.size());
+      } catch (ConfigException ex) {
+        LOGGER.error("Unable to load configuration: {}", ex.getMessage());
+        config = new RedirectConfig();
       }
-      mapping = handler.getMapping();
-      this.permanent = handler.getPermanent();
+      this.config = config;
     }
-    return mapping;
+    return config;
   }
-
-  // Utility methods ------------------------------------------------------------------------------
 
   /**
    * Send the redirection.
@@ -314,7 +240,7 @@ public final class RedirectFilter implements Filter, Serializable {
 
     // Reset response and sent new location
     res.reset();
-    res.setHeader(HttpHeaders.LOCATION, url);
+    res.setHeader(HttpHeaders.LOCATION, url.replaceAll("[\\n\\r]+", ""));
     res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=86400, must-revalidate");
     if (permanent) {
       res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
@@ -324,73 +250,4 @@ public final class RedirectFilter implements Filter, Serializable {
     res.setContentLength(0);
   }
 
-  /**
-   * Handles the XML for the URI pattern mapping configuration.
-   */
-  private static class Handler extends DefaultHandler implements ContentHandler {
-
-    /**
-     * Displays debug information.
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(Handler.class);
-
-    /**
-     * Maps URI patterns to URI patterns.
-     */
-    private final Map<URIPattern, URIPattern> mapping = new HashMap<>();
-
-    /**
-     * The list of permanent redirect.
-     */
-    private final List<URIPattern> permanent = new ArrayList<>();
-
-    @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts) {
-      if ("redirect".equals(localName)) {
-        URIPattern from = toPattern(atts.getValue("from"));
-        URIPattern to = toPattern(atts.getValue("to"));
-        if (from == null || to == null) return;
-        boolean isPermanent = "yes".equals(atts.getValue("permanent"));
-        this.mapping.put(from, to);
-        if (isPermanent) {
-          this.permanent.add(from);
-        }
-      }
-    }
-
-    /**
-     * Parse the specified URI Pattern.
-     *
-     * @param pattern The URI pattern as a string.
-     * @return the <code>URIPattern</code> instance or <code>null</code>.
-     */
-    private static @Nullable URIPattern toPattern(@Nullable String pattern) {
-      if (pattern == null) return null;
-      try {
-        return new URIPattern(pattern);
-      } catch (IllegalArgumentException ex) {
-        LOGGER.warn("Unparseable URI pattern: {} - ignored mapping", pattern);
-        return null;
-      }
-    }
-
-    /**
-     * Return the complete mapping of URI patterns that need be redirected.
-     *
-     * @return The mapping of URI patterns that need be redirected.
-     */
-    public Map<URIPattern, URIPattern> getMapping() {
-      return this.mapping;
-    }
-
-    /**
-     * The list of redirected URI patterns which will return a permanent redirect.
-     *
-     * @return The list of redirected URI patterns which will return a permanent redirect.
-     */
-    public List<URIPattern> getPermanent() {
-      return this.permanent;
-    }
-
-  }
 }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Berlioz Schema for redirection mapping
+
+   @version 1.0
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <!-- The HTTP method for the associated service -->
+  <xs:simpleType name="yes-no">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="yes"/>
+      <xs:enumeration value="no"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="redirect-mapping">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="redirect"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Mapping -->
+  <xs:element name="redirect">
+    <xs:complexType>
+      <xs:attribute name="from" use="required"/>
+      <xs:attribute name="to" use="required"/>
+      <xs:attribute name="permanent" type="yes-no"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

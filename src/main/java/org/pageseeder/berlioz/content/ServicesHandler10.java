@@ -255,7 +255,7 @@ final class ServicesHandler10 extends DefaultHandler {
           } else {
             for (URIPattern pattern : this._patterns) {
               this._registry.register(service, pattern, method);
-              LOGGER.debug("Assigning "+pattern+" ["+method+"] to "+service);
+              LOGGER.debug("Assigning {}} [{}}] to {}", pattern, method, service);
             }
           }
         } else {

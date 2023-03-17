@@ -6,7 +6,7 @@ plugins {
 }
 
 ext {
-  globalVersion = file('version.txt').text
+  globalVersion = file('version.txt').text.trim()
 }
 
 allprojects {

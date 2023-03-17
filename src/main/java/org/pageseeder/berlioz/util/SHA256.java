@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.util;
 
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,8 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.slf4j.LoggerFactory;
-
 /**
  * A utility class providing a simple method to generate MD5 hash values for text content.
  *
@@ -33,10 +33,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
- * @since Berlioz 0.6
+ * @version Berlioz 0.12.4
+ * @since Berlioz 0.12.4
  */
-public final class MD5 {
+public final class SHA256 {
 
   /**
    * Stores the hex character for easy retrieval.
@@ -56,7 +56,7 @@ public final class MD5 {
   /**
    * Prevents creation of instance.
    */
-  private MD5() {
+  private SHA256() {
   }
 
   /**
@@ -142,7 +142,7 @@ public final class MD5 {
    */
   private static MessageDigest getAlgorithm() throws UnsupportedOperationException {
     try {
-      return MessageDigest.getInstance("MD5");
+      return MessageDigest.getInstance("SHA-256");
     } catch (NoSuchAlgorithmException ex) {
       // Every implementation of the Java platform is required to support the MD5 algorithm
       throw new UnsupportedOperationException(ex);

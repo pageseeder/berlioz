@@ -153,7 +153,7 @@ public class VariableTest {
   public void testParse_ErrorNull() {
     try {
       Variable.parse(null);
-      Assert.assertTrue("No exception was thrown", false);
+      Assert.fail("No exception was thrown");
     } catch (Exception ex) {
       Assert.assertEquals(NullPointerException.class, ex.getClass());
     }
@@ -166,7 +166,7 @@ public class VariableTest {
   public void testParse_ErrorSyntax() {
     try {
       Variable.parse("=y");
-      Assert.assertTrue("No exception was thrown", false);
+      Assert.fail("No exception was thrown");
     } catch (Exception ex) {
       Assert.assertEquals(URITemplateSyntaxException.class, ex.getClass());
     }

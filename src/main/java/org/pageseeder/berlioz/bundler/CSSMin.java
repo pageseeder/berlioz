@@ -51,16 +51,7 @@
  */
 package org.pageseeder.berlioz.bundler;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -121,12 +112,12 @@ public final class CSSMin {
   /**
    * Process a file from a filename.
    *
-   * @param filename The file name of the CSS file to process.
+   * @param file The file of the CSS file to process.
    * @param out Where to send the result
    */
-  public static void minimize(String filename, OutputStream out) {
+  static void minimize(File file, OutputStream out) {
     try {
-      minimize(new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8), out);
+      minimize(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), out);
     } catch (FileNotFoundException ex) {
       LOGGER.debug("Unable to find file", ex);
     }
@@ -138,7 +129,7 @@ public final class CSSMin {
    * @param input Where to read the CSS from
    * @param out   Where to send the result
    */
-  public static void minimize(Reader input, OutputStream out) {
+  static void minimize(Reader input, OutputStream out) {
     minimize(input, new PrintWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
   }
 
@@ -211,14 +202,15 @@ public final class CSSMin {
    * @throws IOException Should an error occur while reading the file.
    */
    private static StringBuilder toBuffer(Reader input) throws IOException {
-     BufferedReader br = new BufferedReader(input);
      StringBuilder buffer = new StringBuilder();
-     String s;
-     while ((s = br.readLine()) != null) {
-       if (s.trim().length() > 0) {
-         buffer.append(s);
+     try (BufferedReader br = new BufferedReader(input)) {
+       String s;
+       while ((s = br.readLine()) != null) {
+         if (s.trim().length() > 0) {
+           buffer.append(s);
+         }
+         buffer.append('\n');
        }
-       buffer.append('\n');
      }
      return buffer;
    }
@@ -283,7 +275,7 @@ public final class CSSMin {
   /**
    * A CSS rule.
    *
-   * For example, "div { border: solid 1px red; color: blue; }"
+   * <p>For example, "div { border: solid 1px red; color: blue; }"
    */
   private static class Rule {
 
@@ -580,7 +572,7 @@ public final class CSSMin {
      */
     private static String simplifyColours(String contents) {
       StringBuffer newContents = new StringBuffer();
-      StringBuffer hexColour;
+      StringBuilder hexColour;
       String[] rgbColours;
       int colourValue;
 
@@ -588,7 +580,7 @@ public final class CSSMin {
       Matcher matcher = pattern.matcher(contents);
 
       while (matcher.find()) {
-        hexColour = new StringBuffer("#");
+        hexColour = new StringBuilder("#");
         rgbColours = matcher.group(1).split(",");
         for (String rgbColour : rgbColours) {
           colourValue = Integer.parseInt(rgbColour);
@@ -811,21 +803,17 @@ public final class CSSMin {
       return;
     }
 
-    PrintStream out;
-
-    if (args.length > 1) {
-      try {
-        out = new PrintStream(args[1]);
-      } catch (IOException ex) {
-        System.err.println("Error outputting to " + args[1] + "; redirecting to stdout");
-        out = System.out;
-      }
-    } else {
-      out = System.out;
+    try {
+      File file = new File(args[0]).getCanonicalFile();
+      String currentPath = new File(".").getCanonicalPath();
+      if (!file.toPath().startsWith(currentPath) || !file.exists() || file.isDirectory())
+        throw new IllegalArgumentException("Illegal filepath argument");
+      minimize(file, System.out);
+    } catch (IOException | IllegalArgumentException ex) {
+      System.err.println(ex.getMessage());
+      System.exit(1);
     }
-    minimize(args[0], out);
   }
-
 }
 
 /**

@@ -139,7 +139,7 @@ public final class BerliozConfig {
   /**
    * A seed to use for the calculation of etags (allows them to be reset)
    */
-  private volatile long etagSeed = 0L;
+  private volatile long etagSeed;
 
   /**
    * Create a new Berlioz configuration.
@@ -267,7 +267,7 @@ public final class BerliozConfig {
    * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
    *         the control key; false otherwise.
    */
-  public static boolean hasControl(HttpServletRequest req, String controlKey) {
+  public static boolean hasControl(HttpServletRequest req, @Nullable String controlKey) {
     if (controlKey == null || "".equals(controlKey)) return true;
     if (controlKey.equals(req.getParameter("berlioz-control"))) return true;
     // TODO Check if this is appropriate!!
@@ -398,7 +398,7 @@ public final class BerliozConfig {
    * @return One year into the future.
    */
   private long newEtagSeed() {
-    Long seed = RANDOM.nextLong();
+    long seed = RANDOM.nextLong();
     LOGGER.info("Generating new ETag Seed: {}", Long.toString(seed, 36));
     File f = this._env.getPrivateFile("berlioz.etag");
     File p = f.getParentFile();
@@ -424,13 +424,8 @@ public final class BerliozConfig {
    * @param key the key to use to store the transformer.
    * @return the corresponding XSLT transformer.
    */
-  private @Nullable XSLTransformer getTransformer(Service service, String key) {
-    XSLTransformer transformer = this._transformers.get(key);
-    if (transformer == null) {
-      transformer = newTransformer(service);
-      this._transformers.put(key, transformer);
-    }
-    return transformer;
+  private XSLTransformer getTransformer(Service service, String key) {
+    return this._transformers.computeIfAbsent(key, (k) -> newTransformer(service));
   }
 
   /**
@@ -471,7 +466,7 @@ public final class BerliozConfig {
   /**
    * Returns the URL instance from the specified path.
    *
-   * If the path starts with "resource:", the XSLT will be loaded from a resource
+   * <p>If the path starts with "resource:", the XSLT will be loaded from a resource
    * using the same class loader as Berlioz.
    *
    * @param path the path to create the URL
