@@ -84,7 +84,11 @@ public final class RedirectConfig {
     return null;
   }
 
-  boolean isEmpty() {
+  public int size() {
+    return this._patterns.size();
+  }
+
+  public boolean isEmpty() {
     return this._patterns.isEmpty();
   }
 
@@ -118,7 +122,9 @@ public final class RedirectConfig {
           LOGGER.warn("URI pattern: {} is mapped twice", from);
         }
         boolean isPermanent = "yes".equals(atts.getValue("permanent"));
-        this.patterns.add(new RedirectPattern(from, to, isPermanent));
+        RedirectPattern pattern = new RedirectPattern(from, to, isPermanent);
+        this.patterns.add(pattern);
+        LOGGER.debug("Added pattern: {}", pattern);
       }
     }
 
@@ -163,6 +169,10 @@ public final class RedirectConfig {
       return new RedirectLocation(path, target, this.permanent);
     }
 
+    @Override
+    public String toString() {
+      return "redirect: "+from()+" -> "+to()+(this.permanent ? " P" : " T");
+    }
   }
 
 }

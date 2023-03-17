@@ -82,6 +82,14 @@ public final class RelocationConfig {
     return ConfigLoader.parse(new Handler(), in);
   }
 
+  public int size() {
+    return this._mapping.size();
+  }
+
+  public boolean isEmpty() {
+    return this._mapping.isEmpty();
+  }
+
   /**
    * Handles the XML for the URI pattern mapping configuration.
    */
