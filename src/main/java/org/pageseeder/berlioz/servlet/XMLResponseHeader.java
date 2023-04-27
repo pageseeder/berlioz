@@ -31,6 +31,7 @@ import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.content.PathInfo;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.furi.URIResolveResult;
+import org.pageseeder.berlioz.util.Nonce;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 
@@ -238,6 +239,33 @@ public final class XMLResponseHeader implements XMLWritable {
         }
       }
       xml.closeElement();
+    }
+
+    // Nonce for use in CSP
+    if (GlobalSettings.has(BerliozOption.NONCE_ENABLE)) {
+      String attribute = GlobalSettings.get(BerliozOption.NONCE_ATTRIBUTE);
+      boolean useAttribute = attribute.length() > 0;
+      String nonce = null;
+      String source = "header";
+      if (useAttribute && req.getAttribute(attribute) != null) {
+         nonce = req.getAttribute(attribute).toString();
+      }
+      if (nonce == null) {
+        nonce = new Nonce().generate();
+        source = "berlioz";
+        if (useAttribute)
+          req.setAttribute(attribute, nonce);
+      } else if (!nonce.matches("^[A-Za-z0-9+/=]*$")) {
+        nonce = "";
+        xml.writeComment("invalid nonce");
+      }
+      // Only output if nonce is not empty
+      if (nonce.length() > 0) {
+        xml.openElement("security");
+        xml.attribute("nonce", nonce);
+        xml.attribute("source", source);
+        xml.closeElement();
+      }
     }
 
     xml.closeElement(); // close header

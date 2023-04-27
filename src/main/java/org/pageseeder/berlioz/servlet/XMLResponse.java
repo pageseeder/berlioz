@@ -312,9 +312,10 @@ public final class XMLResponse {
       result = writer.toString();
       status = request.getStatus();
     } catch (Exception ex) {
+      // We wrap any exception in a Berlioz Exception
       error = handleError(ex, generator);
       status = ContentStatus.INTERNAL_SERVER_ERROR;
-    }// We wrapping any exception in a Berlioz Exception
+    }
 
     long end = System.nanoTime();
 
