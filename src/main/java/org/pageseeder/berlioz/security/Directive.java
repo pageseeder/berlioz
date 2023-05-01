@@ -7,10 +7,10 @@ package org.pageseeder.berlioz.security;
  * A Content-Security-Policy directive.
  *
  * @author Christophe Lauret
- * @version 6.0004
- * @since 6.0004
+ * @version 0.12.6
+ * @version 0.12.6
  */
-public enum PolicyDirective {
+public enum Directive {
 
   /**
    * The default policy for fetching resources such as JavaScript, Images, CSS, Fonts, AJAX requests,
@@ -110,14 +110,14 @@ public enum PolicyDirective {
   SCRIPT_SRC("script-src"),
 
   /**
-   * `script-src-attr` specifies valid sources for JavaScript inline event handlers.
+   * {@code script-src-attr} specifies valid sources for JavaScript inline event handlers.
    *
    * <p>Falls back to <code>script-src</code>, then <code>default-src</code> directive.
    */
   SCRIPT_SRC_ATTR("script-src-attr"),
 
   /**
-   * `script-src-elem` specifies valid sources for JavaScript <script> elements.
+   * {@code script-src-elem} specifies valid sources for JavaScript {@code <script>} elements.
    *
    * <p>Falls back to <code>script-src</code>, then <code>default-src</code> directive.
    */
@@ -220,7 +220,7 @@ public enum PolicyDirective {
 
   private final String s;
 
-  PolicyDirective(String s){
+  Directive(String s){
     this.s = s;
   }
 
@@ -229,4 +229,3 @@ public enum PolicyDirective {
     return s;
   }
 }
-
