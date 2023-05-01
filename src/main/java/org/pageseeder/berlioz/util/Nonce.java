@@ -10,9 +10,12 @@ import java.util.Base64;
  * <p>This class wraps a SecureRandom instance. It is thread-safe, a single
  * instance can be used to generate many nonce values.
  *
+ * @deprecated Use {@link org.pageseeder.berlioz.security.NonceFactory} instead.
+ *
  * @version 0.12.5
  * @since 0.12.5
  */
+@Deprecated
 public final class Nonce {
 
   private final SecureRandom r = new SecureRandom();

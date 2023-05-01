@@ -31,7 +31,7 @@ import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.content.PathInfo;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.furi.URIResolveResult;
-import org.pageseeder.berlioz.util.Nonce;
+import org.pageseeder.berlioz.security.NonceFactory;
 import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 
@@ -71,6 +71,8 @@ public final class XMLResponseHeader implements XMLWritable {
    * NB: We disallow ':' to avoid issues with namespaces.
    */
   private final static Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
+
+  private final static NonceFactory NONCE_FACTORY = new NonceFactory();
 
   /**
    * The core HTTP details.
@@ -251,7 +253,7 @@ public final class XMLResponseHeader implements XMLWritable {
          nonce = req.getAttribute(attribute).toString();
       }
       if (nonce == null) {
-        nonce = new Nonce().generate();
+        nonce = NONCE_FACTORY.generate();
         source = "berlioz";
         if (useAttribute)
           req.setAttribute(attribute, nonce);

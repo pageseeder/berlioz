@@ -255,6 +255,7 @@ public final class BerliozServlet extends HttpServlet {
     ServiceLoader loader = ServiceLoader.getInstance();
     boolean profile = GlobalSettings.has(BerliozOption.PROFILE);
     boolean serverTiming = GlobalSettings.has(BerliozOption.HTTP_SERVER_TIMING);
+    boolean serviceHeader = GlobalSettings.has(BerliozOption.HTTP_SERVICE_HEADER);
 
     // Berlioz Control
     if (config.hasControl(req)) {
@@ -324,7 +325,9 @@ public final class BerliozServlet extends HttpServlet {
     if (serverTiming) xml.enableServerTiming();
 
     // Include the service as a header for information
-    res.setHeader("X-Berlioz-Service", toSafeHeader(match.service().id()));
+    if (serviceHeader) {
+      res.setHeader("X-Berlioz-Service", toSafeHeader(match.service().id()));
+    }
     LOGGER.debug("{} -> {}", path, match.service());
 
     // Is Berlioz used to handle an error?

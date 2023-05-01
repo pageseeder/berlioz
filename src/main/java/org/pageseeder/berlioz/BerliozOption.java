@@ -143,7 +143,6 @@ public enum BerliozOption {
    */
   HTTP_CACHE_CONTROL("berlioz.http.cache-control", ""),
 
-
   /**
    * A global option to allow server timing information to be to returned using the <code>Server-Timing</code>
    * header.
@@ -154,6 +153,17 @@ public enum BerliozOption {
    * @since Berlioz 0.11.5
    */
   HTTP_SERVER_TIMING("berlioz.http.server-timing", Boolean.FALSE),
+
+  /**
+   * A global option to show the Berlioz service in the <code>X-Berlioz-Service</code>
+   * header.
+   *
+   * <p>It was enabled by default in previous version, from 0.12.6, it is disabled
+   * by default.
+   *
+   * @since Berlioz 0.12.6
+   */
+  HTTP_SERVICE_HEADER("berlioz.http.service-header", Boolean.FALSE),
 
   /**
    * A boolean global option to indicate whether Berlioz should use its own error handler when
