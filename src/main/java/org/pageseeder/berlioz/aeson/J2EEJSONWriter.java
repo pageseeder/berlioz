@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 final class J2EEJSONWriter implements JSONWriter {
@@ -46,7 +46,7 @@ final class J2EEJSONWriter implements JSONWriter {
   private static @Nullable JsonGeneratorFactory factory = null;
 
   /** The JSON generator */
-  private final JsonGenerator _json;
+  private final JsonGenerator json;
 
   /**
    * Creates new JSON writer.
@@ -54,102 +54,102 @@ final class J2EEJSONWriter implements JSONWriter {
    * @param json The generator to use.
    */
   private J2EEJSONWriter(JsonGenerator json) {
-    this._json = json;
+    this.json = json;
   }
 
   @Override
   public JSONWriter startArray(String name) {
-    this._json.writeStartArray(name);
+    this.json.writeStartArray(name);
     return this;
   }
 
   @Override
   public JSONWriter startArray() {
-    this._json.writeStartArray();
+    this.json.writeStartArray();
     return this;
   }
 
   @Override
   public JSONWriter startObject(String name) {
-    this._json.writeStartObject(name);
+    this.json.writeStartObject(name);
     return this;
   }
 
   @Override
   public JSONWriter startObject() {
-    this._json.writeStartObject();
+    this.json.writeStartObject();
     return this;
   }
 
   @Override
   public JSONWriter end() {
-    this._json.writeEnd();
+    this.json.writeEnd();
     return this;
   }
 
   @Override
   public JSONWriter writeNull(String name) {
-    this._json.write(name, JsonValue.NULL);
+    this.json.write(name, JsonValue.NULL);
     return this;
   }
 
   @Override
   public JSONWriter writeNull() {
-    this._json.write(JsonValue.NULL);
+    this.json.write(JsonValue.NULL);
     return this;
   }
 
   @Override
   public JSONWriter value(double number) {
-    this._json.write(number);
+    this.json.write(number);
     return this;
   }
 
   @Override
   public JSONWriter value(long number) {
-    this._json.write(number);
+    this.json.write(number);
     return this;
   }
 
   @Override
   public JSONWriter value(String value) {
-    this._json.write(value);
+    this.json.write(value);
     return this;
   }
 
   @Override
   public JSONWriter value(boolean number) {
-    this._json.write(number);
+    this.json.write(number);
     return this;
   }
 
   @Override
   public JSONWriter property(String name, String value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
   @Override
   public JSONWriter property(String name, boolean value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
   @Override
   public JSONWriter property(String name, double value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
   @Override
   public JSONWriter property(String name, long value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
   @Override
   public void close() {
-    this._json.close();
+    this.json.close();
   }
 
   /**
