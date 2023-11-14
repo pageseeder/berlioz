@@ -29,7 +29,7 @@ import org.pageseeder.berlioz.util.MD5;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.5
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class WebBundle {
@@ -37,32 +37,32 @@ public final class WebBundle {
   /**
    * The name of the bundle.
    */
-  private final String _name;
+  private final String name;
 
   /**
    * The id of this bundle.
    */
-  private final String _id;
+  private final String id;
 
   /**
-   * The list of  of the bundle.
+   * The list of file in the bundle.
    */
-  private final List<File> _files;
+  private final List<File> files;
 
   /**
    * The name of the bundle.
    */
-  private final List<File> _imported;
+  private final List<File> imported;
 
   /**
    * Whether the bundle is minimized.
    */
-  private boolean _minimized;
+  private boolean minimized;
 
   /**
    * The hash values for this bundle.
    */
-  private volatile @Nullable String _etag;
+  private volatile @Nullable String etag;
 
   /**
    * Creates a new bundles of files.
@@ -72,11 +72,11 @@ public final class WebBundle {
    * @param minimized Whether the files are minimized.
    */
   public WebBundle(String name, List<File> files, boolean minimized) {
-    this._name = name;
-    this._files = Collections.unmodifiableList(files);
-    this._id = id(files);
-    this._imported = new ArrayList<>();
-    this._minimized = minimized;
+    this.name = name;
+    this.files = Collections.unmodifiableList(files);
+    this.id = id(files);
+    this.imported = new ArrayList<>();
+    this.minimized = minimized;
   }
 
   /**
@@ -84,7 +84,7 @@ public final class WebBundle {
    * @return the name of this bundle.
    */
   public String name() {
-    return this._name;
+    return this.name;
   }
 
   /**
@@ -92,7 +92,7 @@ public final class WebBundle {
    * @return the list of files to bundle.
    */
   public List<File> files() {
-    return this._files;
+    return this.files;
   }
 
   /**
@@ -103,14 +103,14 @@ public final class WebBundle {
    * @return an ID for that bundle based on the list of files.
    */
   public String id() {
-    return this._id;
+    return this.id;
   }
 
   /**
    * Clears the list of imported files.
    */
   public void clearImport() {
-    this._imported.clear();
+    this.imported.clear();
   }
 
   /**
@@ -118,7 +118,7 @@ public final class WebBundle {
    * @param f the file to import.
    */
   public void addImport(File f) {
-    this._imported.add(f);
+    this.imported.add(f);
   }
 
   /**
@@ -130,12 +130,12 @@ public final class WebBundle {
    * @return the etag for that bundle.
    */
   public String getETag(boolean refresh) {
-    String etag = this._etag;
-    if (etag == null || refresh) {
-      etag = calculateEtag(this._files, this._imported);
-      this._etag = etag;
+    String latestEtag = this.etag;
+    if (latestEtag == null || refresh) {
+      latestEtag = calculateEtag(this.files, this.imported);
+      this.etag = latestEtag;
     }
-    return etag;
+    return latestEtag;
   }
 
   /**
@@ -145,8 +145,8 @@ public final class WebBundle {
    *         <code>false</code> otherwise.
    */
   public boolean isFresh() {
-    String etag = calculateEtag(this._files, this._imported);
-    return etag.equals(this._etag);
+    String computedEtag = calculateEtag(this.files, this.imported);
+    return computedEtag.equals(this.etag);
   }
 
   /**
@@ -155,17 +155,17 @@ public final class WebBundle {
    * @return <code>true</code> if minimized; <code>false</code> otherwise.
    */
   public boolean isMinimized() {
-    return this._minimized;
+    return this.minimized;
   }
 
   /**
    * @return <code>true</code> if it can be safely minimized; <code>false</code> otherwise.
    */
   public boolean isCSSMinimizable() {
-    for (File f : this._files) {
+    for (File f : this.files) {
       if (f.getName().endsWith(".min.css")) return false;
     }
-    for (File f : this._imported) {
+    for (File f : this.imported) {
       if (f.getName().endsWith(".min.css")) return false;
     }
     return true;
@@ -180,13 +180,13 @@ public final class WebBundle {
    * @return the filename of this bundle.
    */
   public String getFileName() {
-    StringBuilder filename = new StringBuilder(this._name);
+    StringBuilder filename = new StringBuilder(this.name);
     filename.append('-');
-    filename.append(ISO8601.CALENDAR_DATE.format(getMostRecent(this._files)));
-    String etag = getETag(false);
-    filename.append('-').append(etag.substring(etag.length()-8));
-    String ext = getExtension(this._files.get(0));
-    if (this._minimized) {
+    filename.append(ISO8601.CALENDAR_DATE.format(getMostRecent(this.files)));
+    String currentEtag = getETag(false);
+    filename.append('-').append(currentEtag.substring(currentEtag.length()-8));
+    String ext = getExtension(this.files.get(0));
+    if (this.minimized) {
       filename.append(".min");
     }
     if (ext != null) {

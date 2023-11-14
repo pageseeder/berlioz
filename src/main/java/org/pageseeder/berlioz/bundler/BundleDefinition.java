@@ -29,28 +29,28 @@ import java.io.Serializable;
  *
  * <p>When a bundle definition is instantiated for a specific service, the tokens are resolved and fixed.
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 final class BundleDefinition implements Serializable {
 
   /** As per requirement for <code>Serializable</code> */
-  private static final long serialVersionUID = -663743071617576797L;
+  private static final long serialVersionUID = -22627776141243802L;
 
   /**
    * The name of the bundle definition.
    */
-  private final String _name;
+  private final String name;
 
   /**
    * The name to use of the filename of the bundle.
    */
-  private final String _filename;
+  private final String filename;
 
   /**
    * The list of paths to include in the bundle.
    */
-  private final String[] _paths;
+  private final String[] paths;
 
   /**
    * @param name     The name of the bundle.
@@ -58,16 +58,16 @@ final class BundleDefinition implements Serializable {
    * @param paths    The list of paths to include in the bundle.
    */
   public BundleDefinition(String name, String filename, String paths) {
-    this._name = name;
-    this._filename = filename;
-    this._paths = paths.split(",");
+    this.name = name;
+    this.filename = filename;
+    this.paths = paths.split(",");
   }
 
   /**
    * @return The name of the bundle.
    */
   public String name() {
-    return this._name;
+    return this.name;
   }
 
   /**
@@ -78,7 +78,7 @@ final class BundleDefinition implements Serializable {
    * @return The name to use of the filename of the bundle.
    */
   public String filename() {
-    return this._filename;
+    return this.filename;
   }
 
   /**
@@ -89,6 +89,6 @@ final class BundleDefinition implements Serializable {
    * @return The list of paths to include in the bundle.
    */
   public String[] paths() {
-    return this._paths;
+    return this.paths;
   }
 }

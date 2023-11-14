@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.bundler;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -75,7 +74,7 @@ public final class WebBundleTool {
   /**
    * Where the bundles should be saved
    */
-  private final File _bundles;
+  private final File bundles;
 
   /**
    * The virtual location of the bundles (to calculate the relative path).
@@ -85,7 +84,7 @@ public final class WebBundleTool {
   /**
    * The maximum size for converting the content of an image in CSS into a data URI.
    */
-  private long _dataURIThreshold = DATA_URI_MAX_SIZE;
+  private long dataURIThreshold = DATA_URI_MAX_SIZE;
 
   /**
    * Creates a new Resource Bundler saving the bundles in the specified location.
@@ -95,7 +94,7 @@ public final class WebBundleTool {
    * @throws IllegalArgumentException If the specified file is <code>null</code>, does not exist or is not a directory.
    */
   public WebBundleTool(File bundles) {
-    this._bundles = checkBundlesFile(bundles);
+    this.bundles = checkBundlesFile(bundles);
     this.virtual = bundles;
   }
 
@@ -122,14 +121,14 @@ public final class WebBundleTool {
    * @param threshold the threshold to set
    */
   public void setDataURIThreshold(long threshold) {
-    this._dataURIThreshold = threshold;
+    this.dataURIThreshold = threshold;
   }
 
   /**
    * @return Where the bundles are being stored.
    */
   public File getBundlesDir() {
-    return this._bundles;
+    return this.bundles;
   }
 
   /**
@@ -144,7 +143,7 @@ public final class WebBundleTool {
   public @Nullable File getBundle(List<File> files, String prefix, boolean minimize) {
     if (files.isEmpty()) return null;
     String filename = new WebBundle(prefix, files, minimize).getFileName();
-    return new File(this._bundles, filename);
+    return new File(this.bundles, filename);
   }
 
   /**
@@ -239,7 +238,7 @@ public final class WebBundleTool {
       stale = true;
     }
     String filename = bundle.getFileName();
-    File file = new File(this._bundles, filename);
+    File file = new File(this.bundles, filename);
 
     // concatenate the content if the file does not already exist
     if (stale || !file.exists()) {
@@ -248,14 +247,14 @@ public final class WebBundleTool {
       // Write to the file
       bundle.clearImport();
       StringWriter writer = new StringWriter();
-      expandStyles(bundle, writer, new File(this.virtual, file.getName()), minimize, this._dataURIThreshold);
+      expandStyles(bundle, writer, new File(this.virtual, file.getName()), minimize, this.dataURIThreshold);
       bundle.getETag(true);
       filename = bundle.getFileName();
       instances.put(key, bundle);
 
       // Write to the file
       StringReader reader = new StringReader(writer.toString());
-      file = new File(this._bundles, filename);
+      file = new File(this.bundles, filename);
       if (minimize && bundle.isCSSMinimizable()) {
         CSSMin.minimize(reader, new FileOutputStream(file));
       } else {
@@ -326,21 +325,18 @@ public final class WebBundleTool {
    * @throws IOException if an input/output error occurs
    */
   private static void minimizeAndCopyTo(File file, OutputStream out) throws IOException {
-    FileInputStream input = new FileInputStream(file);
-    try {
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      JSMin minimizer = new JSMin(input, buffer);
-      minimizer.jsmin();
-      byte[] min = buffer.toByteArray();
-      out.write(min);
-      out.write('\n');
-      out.flush();
-    } catch (ParsingException ex) {
-      LOGGER.warn("Unable to minimize {}: {}", file.getName(),  ex.getMessage());
-      closeQuietly(input);
-      copyTo(file, out);
-    } finally {
-      closeQuietly(input);
+    try (FileInputStream input = new FileInputStream(file)) {
+      try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+        JSMin minimizer = new JSMin(input, buffer);
+        minimizer.jsmin();
+        byte[] min = buffer.toByteArray();
+        out.write(min);
+        out.write('\n');
+        out.flush();
+      } catch (ParsingException ex) {
+        LOGGER.warn("Unable to minimize {}: {}", file.getName(), ex.getMessage());
+        copyTo(file, out);
+      }
     }
   }
 
@@ -387,7 +383,6 @@ public final class WebBundleTool {
       writer.write(buffer, 0, length);
     }
     writer.flush();
-    writer = null;
   }
 
   /**
@@ -556,9 +551,9 @@ public final class WebBundleTool {
     char first = url.charAt(0);
     char last  = url.charAt(url.length()-1);
     if ((first == '\'' && last == '\'') || first == '"' && last == '"') // quoted
-    return url.substring(1, url.length()-1);
+      return url.substring(1, url.length()-1);
     else // unquoted
-    return url;
+      return url;
   }
 
   /**
@@ -575,20 +570,6 @@ public final class WebBundleTool {
           || url.startsWith("data:")
           || url.startsWith("/")
           || url.startsWith("<"));
-  }
-
-  /**
-   * Call the <code>close()</code> method the specified argument if not <code>null</code> without
-   * attracting attention.
-   *
-   * @param closeable The object to close.
-   */
-  private static void closeQuietly(@Nullable Closeable closeable) {
-    if (closeable == null) return;
-    try {
-      closeable.close();
-    } catch (IOException ignored) {
-    }
   }
 
   /**

@@ -32,17 +32,17 @@ public class ParsingException extends Exception {
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = -8753921226709324155L;
+  private static final long serialVersionUID = -6165339719081171607L;
 
   /**
    * The line number.
    */
-  private final int _line;
+  private final int line;
 
   /**
    * The column number.
    */
-  private final int _column;
+  private final int column;
 
   /**
    * Creates a new minimizer exception.
@@ -53,26 +53,26 @@ public class ParsingException extends Exception {
    */
   public ParsingException(String message, int line, int column) {
     super(message);
-    this._line = line;
-    this._column = column;
+    this.line = line;
+    this.column = column;
   }
 
   /**
    * @return The affected column number or -1 if unknown.
    */
   public final int getColumn() {
-    return this._column;
+    return this.column;
   }
 
   /**
    * @return The affected line number or -1 if unknown.
    */
   public final int getLine() {
-    return this._line;
+    return this.line;
   }
 
   @Override
   public @NonNull String getMessage() {
-    return super.getMessage()+" at line "+this._line+" and column "+this._column;
+    return super.getMessage()+" at line "+this.line +" and column "+this.column;
   }
 }

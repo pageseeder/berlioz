@@ -41,6 +41,10 @@ import org.slf4j.LoggerFactory;
  */
 public final class BundleConfig implements Serializable {
 
+  private static final String GLOBAL_LEVEL = "global";
+  private static final String GROUP_LEVEL = "group";
+  private static final String SERVICE_LEVEL = "service";
+
   /** Serializable */
   private static final long serialVersionUID = 5709906856099064344L;
 
@@ -52,16 +56,16 @@ public final class BundleConfig implements Serializable {
   /**
    * The default bundle configuration.
    */
-  private static final @NonNull String[] DEFAULT_BUNDLE_CONFIG = new String[]{ "global", "group", "service" };
+  private static final @NonNull String[] DEFAULT_BUNDLE_CONFIG = new String[]{GLOBAL_LEVEL, GROUP_LEVEL,  };
 
   /**
    * The default JavaScript bundle definitions
    */
   private static final Map<String, BundleDefinition> DEFAULT_JS_BUNDLE = new HashMap<>();
   static {
-    DEFAULT_JS_BUNDLE.put("global",  new BundleDefinition("global",  "global",    "/script/global.js"));
-    DEFAULT_JS_BUNDLE.put("group",   new BundleDefinition("group",   "{GROUP}",   "/script/{GROUP}.js"));
-    DEFAULT_JS_BUNDLE.put("service", new BundleDefinition("service", "{SERVICE}", "/script/{GROUP}/{SERVICE}.js"));
+    DEFAULT_JS_BUNDLE.put(GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/script/global.js"));
+    DEFAULT_JS_BUNDLE.put(GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/script/{GROUP}.js"));
+    DEFAULT_JS_BUNDLE.put(SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/script/{GROUP}/{SERVICE}.js"));
   }
 
   /**
@@ -69,9 +73,9 @@ public final class BundleConfig implements Serializable {
    */
   private static final Map<String, BundleDefinition> DEFAULT_CSS_BUNDLE = new HashMap<>();
   static {
-    DEFAULT_CSS_BUNDLE.put("global",  new BundleDefinition("global",  "global",    "/style/global.css"));
-    DEFAULT_CSS_BUNDLE.put("group",   new BundleDefinition("group",   "{GROUP}",   "/style/{GROUP}.css"));
-    DEFAULT_CSS_BUNDLE.put("service", new BundleDefinition("service", "{SERVICE}", "/style/{GROUP}/{SERVICE}.css"));
+    DEFAULT_CSS_BUNDLE.put(GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/style/global.css"));
+    DEFAULT_CSS_BUNDLE.put(GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/style/{GROUP}.css"));
+    DEFAULT_CSS_BUNDLE.put(SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/style/{GROUP}/{SERVICE}.css"));
   }
 
   /** Where the bundled scripts should be located. */
@@ -86,7 +90,7 @@ public final class BundleConfig implements Serializable {
   /**
    * The list of definitions in this configuration.
    */
-  private final List<BundleDefinition> _definitions;
+  private final List<BundleDefinition> definitions;
 
   /**
    * The list of bundle instances mapped to service IDs.
@@ -96,80 +100,80 @@ public final class BundleConfig implements Serializable {
   /**
    * The type of bundle config.
    */
-  private final BundleType _type;
+  private final BundleType type;
 
   /**
    * Whether the code should be minimized as part of bundling.
    */
-  private final boolean _minimize;
+  private final boolean minimize;
 
   /**
    * Whether the code should be minimized as part of bundling.
    */
-  private final String _location;
+  private final String location;
 
   /**
    * The root of the web application.
    */
-  private final File _root;
+  private final File root;
 
   /**
    * The tool used for bundling JS.
    */
-  private final WebBundleTool _bundler;
+  private final WebBundleTool bundler;
 
   /**
    * Create a new config - use factory method instead.
    */
   private BundleConfig(List<BundleDefinition> definitions, BundleType type, boolean minimize, String location, File root) {
-    this._definitions = definitions;
-    this._type = type;
-    this._minimize = minimize;
-    this._location = location;
-    this._root = root;
-    this._bundler = initBundler();
+    this.definitions = definitions;
+    this.type = type;
+    this.minimize = minimize;
+    this.location = location;
+    this.root = root;
+    this.bundler = initBundler();
   }
 
   /**
    * @return bundle definitions.
    */
   public List<BundleDefinition> definitions() {
-    return this._definitions;
+    return this.definitions;
   }
 
   /**
    * @return the type of bundle.
    */
   public BundleType type() {
-    return this._type;
+    return this.type;
   }
 
   /**
    * @return <code>true</code> to minimize the code; <code>false</code> otherwise.
    */
   public boolean minimize() {
-    return this._minimize;
+    return this.minimize;
   }
 
   /**
    * @return Path to where the bundles should be stored.
    */
   public String location() {
-    return this._location;
+    return this.location;
   }
 
   /**
    * @return The root of the web application.
    */
   public File root() {
-    return this._root;
+    return this.root;
   }
 
   /**
    * @return Where the bundles are stored
    */
   public File store() {
-    return new File(this._root, this._location);
+    return new File(this.root, this.location);
   }
 
 
@@ -177,7 +181,7 @@ public final class BundleConfig implements Serializable {
    * @return The bundler.
    */
   public WebBundleTool bundler() {
-    return this._bundler;
+    return this.bundler;
   }
 
   /**
@@ -254,15 +258,16 @@ public final class BundleConfig implements Serializable {
    * @return the corresponding configuration.
    */
   public static BundleConfig newInstance(String name, BundleType type, File root) {
-    String lctype = type.name().toLowerCase();
-    @NonNull String[] names = getBundleNames("berlioz."+lctype+"bundler.configs."+name);
+    final String berliozPrefix = "berlioz.";
+    String lcType = type.name().toLowerCase();
+    @NonNull String[] names = getBundleNames(berliozPrefix+lcType+"bundler.configs."+name);
     Map<String, BundleDefinition> defaults = BundleType.JS == type? DEFAULT_JS_BUNDLE : DEFAULT_CSS_BUNDLE;
-    List<BundleDefinition> definitions = loadDefinitions(names, "berlioz."+lctype+"bundler.bundles.", defaults);
-    boolean minimize = GlobalSettings.get("berlioz."+lctype+"bundler.minimize", true);
+    List<BundleDefinition> definitions = loadDefinitions(names, "berlioz."+lcType+"bundler.bundles.", defaults);
+    boolean minimize = GlobalSettings.get(berliozPrefix+lcType+"bundler.minimize", true);
 
     // Create the bundle store
     String defaultLocation = getDefaultLocation(type);
-    String location = GlobalSettings.get("berlioz."+lctype+"bundler.location", defaultLocation);
+    String location = GlobalSettings.get(berliozPrefix+lcType+"bundler.location", defaultLocation);
     File store = new File(root, location);
     if (!store.exists()) {
       store.mkdirs();
@@ -282,12 +287,12 @@ public final class BundleConfig implements Serializable {
 
   private WebBundleTool initBundler() {
     // Initialise the bundler
-    WebBundleTool bundler = new WebBundleTool(new File(this._root, this._location));
-    if (this._type == BundleType.CSS) {
+    WebBundleTool tool = new WebBundleTool(new File(this.root, this.location));
+    if (this.type == BundleType.CSS) {
       int threshold = GlobalSettings.get("berlioz.cssbundler.datauris.threshold", 4096);
-      bundler.setDataURIThreshold(threshold);
+      tool.setDataURIThreshold(threshold);
     }
-    return bundler;
+    return tool;
   }
 
   /**
@@ -298,7 +303,7 @@ public final class BundleConfig implements Serializable {
    */
   private List<BundleInstance> instantiate(Service service) {
     List<BundleInstance> instances = new ArrayList<>();
-    for (BundleDefinition def : this._definitions) {
+    for (BundleDefinition def : this.definitions) {
       BundleInstance instance = BundleInstance.instantiate(this, def, service);
       instances.add(instance);
     }
@@ -323,7 +328,7 @@ public final class BundleConfig implements Serializable {
       String filename = GlobalSettings.get(prefix + name + ".filename", name);
       // The value of the property if the 'paths' sub-property isn't defined.
       String paths = GlobalSettings.get(prefix + name + ".include", GlobalSettings.get(prefix + name, ""));
-      if (paths.length() > 0) {
+      if (!paths.isEmpty()) {
         bc = new BundleDefinition(name, filename, paths);
       }
       if (bc != null) {

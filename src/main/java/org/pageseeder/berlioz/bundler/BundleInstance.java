@@ -32,28 +32,28 @@ import org.pageseeder.berlioz.content.Service;
  *
  * @author christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 final class BundleInstance implements Serializable {
 
   /** As per requirement for Serializable. */
-  private static final long serialVersionUID = -4507097239658105026L;
+  private static final long serialVersionUID = -2444096252988163408L;
 
   /**
    * The name of this instance, "global", the name of a group or service.
    */
-  private final String _name;
+  private final String name;
 
   /**
    * The list of paths from the web root for that instance.
    */
-  private final String[] _paths;
+  private final String[] paths;
 
   /**
    * The list of files in that instance.
    */
-  private final File[] _files;
+  private final File[] files;
 
   /**
    * Creates the list of paths
@@ -63,11 +63,11 @@ final class BundleInstance implements Serializable {
    * @param root  The root of the website (paths are relative to the root)
    */
   private BundleInstance(String name, String[] paths, File root) {
-    this._name = name;
-    this._paths = paths;
-    this._files = new File[paths.length];
-    for (int i = 0; i < this._paths.length; i++) {
-      this._files[i] = new File(root, this._paths[i]);
+    this.name = name;
+    this.paths = paths;
+    this.files = new File[paths.length];
+    for (int i = 0; i < this.paths.length; i++) {
+      this.files[i] = new File(root, this.paths[i]);
     }
   }
 
@@ -75,7 +75,7 @@ final class BundleInstance implements Serializable {
    * @return The name of this instance, "global", the name of a group or service id.
    */
   public String name() {
-    return this._name;
+    return this.name;
   }
 
   /**
@@ -85,14 +85,14 @@ final class BundleInstance implements Serializable {
    * @return the corresponding file or <code>null</code> if an error occurred
    */
   public @Nullable File getBundleFile(BundleConfig config) {
-    List<File> files = listExistingFiles();
+    List<File> existingFiles = listExistingFiles();
     WebBundleTool bundler = config.bundler();
     File bundle = null;
     try {
       if (config.type() == BundleType.JS) {
-        bundle = bundler.bundleScripts(files, this._name, config.minimize());
+        bundle = bundler.bundleScripts(existingFiles, this.name, config.minimize());
       } else if (config.type() == BundleType.CSS) {
-        bundle = bundler.bundleStyles(files, this._name, config.minimize());
+        bundle = bundler.bundleStyles(existingFiles, this.name, config.minimize());
       }
     } catch (IOException ex) {
       // TODO Report something!
@@ -108,9 +108,9 @@ final class BundleInstance implements Serializable {
    */
   public void addToExistingPaths(List<String> paths) {
     if (paths == null) return;
-    for (int i = 0; i < this._files.length; i++) {
-      if (this._files[i].exists()) {
-        paths.add(this._paths[i]);
+    for (int i = 0; i < this.files.length; i++) {
+      if (this.files[i].exists()) {
+        paths.add(this.paths[i]);
       }
     }
   }
@@ -121,7 +121,7 @@ final class BundleInstance implements Serializable {
    * @return a list of existing paths
    */
   public List<String> listExistingPaths() {
-    return computePaths(this._paths, this._files);
+    return computePaths(this.paths, this.files);
   }
 
   /**
@@ -130,7 +130,7 @@ final class BundleInstance implements Serializable {
    * @return a list of existing files
    */
   public List<File> listExistingFiles() {
-    return computeFiles(this._files);
+    return computeFiles(this.files);
   }
 
   /**

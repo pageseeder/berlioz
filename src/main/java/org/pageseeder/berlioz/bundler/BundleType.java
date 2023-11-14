@@ -20,7 +20,7 @@ package org.pageseeder.berlioz.bundler;
  *
  * <p>The bundler only supports two types.
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public enum BundleType {
@@ -32,7 +32,7 @@ public enum BundleType {
   CSS(".css");
 
   /** extension corresponding to this type. */
-  private final String _ext;
+  private final String ext;
 
   /**
    * Creates a new type for the specified extension.
@@ -40,7 +40,7 @@ public enum BundleType {
    * @param ext The extension.
    */
   BundleType(String ext) {
-    this._ext = ext;
+    this.ext = ext;
   }
 
   /**
@@ -48,7 +48,7 @@ public enum BundleType {
    * @return <code>true</code> if the argument matches the extension; <code>false</code> otherwise.
    */
   boolean matches(String ext) {
-    return this._ext.equalsIgnoreCase(ext);
+    return this.ext.equalsIgnoreCase(ext);
   }
 
 }
