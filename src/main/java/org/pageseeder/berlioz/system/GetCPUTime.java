@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;

@@ -58,7 +58,7 @@ public final class ListLibraries implements ContentGenerator {
    *
    * We cap the amount of entries to 100 to avoid potential memory leaks.
    */
-  private final Map<String, Map<String, String>> _manifest = createLRUMap(100);
+  private final Map<String, Map<String, String>> manifest = createLRUMap(100);
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
@@ -114,10 +114,10 @@ public final class ListLibraries implements ContentGenerator {
    * @return the attributes
    */
   private Map<String, String> getMainAttributes(String path, ServletContext context) {
-    Map<String, String> attributes = this._manifest.get(path);
+    Map<String, String> attributes = this.manifest.get(path);
     if (attributes == null) {
       attributes = loadMainAttributes(path, context);
-      this._manifest.put(path, attributes);
+      this.manifest.put(path, attributes);
     }
     return attributes;
   }

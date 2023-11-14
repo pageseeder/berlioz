@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.system;
 
 import java.io.IOException;
 
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.GeneratorListener;

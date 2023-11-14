@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.eclipse.jdt.annotation.Nullable;
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;

@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -128,7 +127,7 @@ public final class GetFileSystemInfo implements ContentGenerator {
   private static class DirInfo {
 
     /** Name of the directory */
-    private final String _name;
+    private final String name;
 
     /** Total file size in bytes (incremented for each file found) */
     private long size = 0;
@@ -142,7 +141,7 @@ public final class GetFileSystemInfo implements ContentGenerator {
      * @param name The name of the directory
      */
     public DirInfo(String name) {
-      this._name = name;
+      this.name = name;
     }
 
     /**
@@ -169,7 +168,7 @@ public final class GetFileSystemInfo implements ContentGenerator {
      * @return the name of the directory.
      */
     public String name() {
-      return this._name;
+      return this.name;
     }
 
     /**
