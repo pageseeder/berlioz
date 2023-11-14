@@ -42,7 +42,7 @@ public final class ParameterTemplate {
   /**
    * The template split in tokens.
    */
-  private final Token[] _tokens;
+  private final Token[] tokens;
 
   /**
    * Creates a new parameter template.
@@ -50,7 +50,7 @@ public final class ParameterTemplate {
    * @param tokens The tokens that make up this template.
    */
   private ParameterTemplate(Token... tokens) {
-    this._tokens = tokens;
+    this.tokens = tokens;
   }
 
   /**
@@ -61,7 +61,7 @@ public final class ParameterTemplate {
    */
   public String toString(Map<String, String> map) {
     StringBuilder value = new StringBuilder();
-    for (Token t : this._tokens) {
+    for (Token t : this.tokens) {
       value.append(t.toString(map));
     }
     return value.toString();
@@ -70,7 +70,7 @@ public final class ParameterTemplate {
   @Override
   public String toString() {
     StringBuilder value = new StringBuilder();
-    for (Token t : this._tokens) {
+    for (Token t : this.tokens) {
       value.append(t.toString());
     }
     return value.toString();
@@ -186,7 +186,7 @@ public final class ParameterTemplate {
     /**
      * The token content.
      */
-    private final String _text;
+    private final String text;
 
     /**
      * Creates a new literal token.
@@ -194,17 +194,17 @@ public final class ParameterTemplate {
      * @param text the text value.
      */
     private Literal(String text) {
-      this._text = Objects.requireNonNull(text, "Literal must have a value");
+      this.text = Objects.requireNonNull(text, "Literal must have a value");
     }
 
     @Override
     public String toString(Map<String, String> map) {
-      return this._text;
+      return this.text;
     }
 
     @Override
     public String toString() {
-      return this._text;
+      return this.text;
     }
   }
 
@@ -216,12 +216,12 @@ public final class ParameterTemplate {
     /**
      * The name of the variable.
      */
-    private final String _name;
+    private final String name;
 
     /**
      * The token content.
      */
-    private final String _text;
+    private final String text;
 
     /**
      * Creates a new token.
@@ -230,22 +230,22 @@ public final class ParameterTemplate {
      * @param text the default value.
      */
     public Variable(String name, String text) {
-      this._name = Objects.requireNonNull(name, "Variables require a name");
-      this._text = Objects.toString(text, "");
+      this.name = Objects.requireNonNull(name, "Variables require a name");
+      this.text = Objects.toString(text, "");
     }
 
     @Override
     public String toString(Map<String, String> map) {
-      String value = map.get(this._name);
-      return value != null? value : this._text;
+      String value = map.get(this.name);
+      return value != null? value : this.text;
     }
 
     @Override
     public String toString() {
-      if (this._text.length() > 0)
-        return '{'+this._name+'='+this._text+'}';
+      if (this.text.isEmpty())
+        return '{'+this.name +'}';
       else
-        return '{'+this._name+'}';
+        return '{'+this.name +'='+this.text +'}';
     }
   }
 

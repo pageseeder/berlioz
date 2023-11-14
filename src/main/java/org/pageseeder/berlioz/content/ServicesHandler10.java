@@ -55,12 +55,12 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * Where all the information about services is collected and registered.
    */
-  private final ServiceRegistry _registry;
+  private final ServiceRegistry registry;
 
   /**
    * The error handler to use.
    */
-  private final SAXErrorCollector _collector;
+  private final SAXErrorCollector collector;
 
   /**
    * The elements used recognised by this handler.
@@ -91,14 +91,14 @@ final class ServicesHandler10 extends DefaultHandler {
     /**
      * The name of the element.
      */
-    private final String _name;
+    private final String name;
 
     /**
      * Creates a new element using the name of the element is the lower case value of the
      * constant and uses '-' instead of '_' to separated words.
      */
     Element() {
-      this._name = name().toLowerCase().replace('_', '-');
+      this.name = name().toLowerCase().replace('_', '-');
     }
 
     /**
@@ -109,14 +109,14 @@ final class ServicesHandler10 extends DefaultHandler {
      */
     public static @Nullable Element get(String name) {
       for (Element element : values()) {
-        if (element._name.equals(name)) return element;
+        if (element.name.equals(name)) return element;
       }
       return null;
     }
 
     @Override
     public String toString() {
-      return this._name;
+      return this.name;
     }
 
   }
@@ -124,7 +124,7 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The list of URI patterns for the current service.
    */
-  private final List<URIPattern> _patterns = new ArrayList<>();
+  private final List<URIPattern> patterns = new ArrayList<>();
 
   /**
    * The current HTTP method for the service.
@@ -139,22 +139,22 @@ final class ServicesHandler10 extends DefaultHandler {
   /**
    * The service builder.
    */
-  private final Service.Builder _builder = new Service.Builder();
+  private final Service.Builder builder = new Service.Builder();
 
   /**
    * The rules for the services, this list is used like a stack.
    */
-  private final List<ServiceStatusRule> _rules = new ArrayList<>();
+  private final List<ServiceStatusRule> rules = new ArrayList<>();
 
   /**
    * Used to detect duplicate URI Patterns.
    */
-  private final Set<Pair<HttpMethod, URIPattern>> _patternsToMethod = new HashSet<>();
+  private final Set<Pair<HttpMethod, URIPattern>> patternsToMethod = new HashSet<>();
 
   /**
    * Used to detect duplicate service groups.
    */
-  private final Set<String> _groups = new HashSet<>();
+  private final Set<String> groups = new HashSet<>();
 
   /**
    * Creates a new handler that will update the specified registry and use the given error handler.
@@ -167,8 +167,8 @@ final class ServicesHandler10 extends DefaultHandler {
    * @throws NullPointerException If any of the method arguments is <code>null</code>.
    */
   public ServicesHandler10(ServiceRegistry registry, SAXErrorCollector collector) {
-    this._registry = Objects.requireNonNull(registry, "service registry is required");
-    this._collector = Objects.requireNonNull(collector, "error collector is required");
+    this.registry = Objects.requireNonNull(registry, "service registry is required");
+    this.collector = Objects.requireNonNull(collector, "error collector is required");
   }
 
   @Override
@@ -179,7 +179,7 @@ final class ServicesHandler10 extends DefaultHandler {
   @Override
   public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
     // Do not continue if there is an error
-    if (this._collector.hasError()) return;
+    if (this.collector.hasError()) return;
     // Identify element
     Element element = Element.get(localName);
     if (element == null) {
@@ -188,30 +188,30 @@ final class ServicesHandler10 extends DefaultHandler {
     }
     switch(element) {
       case SERVICE_CONFIG:
-        this._registry.clear();
+        this.registry.clear();
         break;
 
       case SERVICES:
         String group = atts.getValue("group");
-        this._builder.group(group);
-        if (!this._groups.add(this._builder.group())) {
+        this.builder.group(group);
+        if (!this.groups.add(this.builder.group())) {
           warning("Duplicate group of services '"+group+"' - services will belong to the same group");
         }
         // If no rule where defined at the 'service-config' level, we assume the default rule
-        if (this._rules.size() == 0) {
-          this._rules.add(ServiceStatusRule.DEFAULT_RULE);
+        if (this.rules.isEmpty()) {
+          this.rules.add(ServiceStatusRule.DEFAULT_RULE);
         }
         break;
 
       case SERVICE:
         // If no rule where defined at the 'services' level, we assume the default rule
-        if (this._rules.size() == 1) {
-          this._rules.add(ServiceStatusRule.DEFAULT_RULE);
+        if (this.rules.size() == 1) {
+          this.rules.add(ServiceStatusRule.DEFAULT_RULE);
         }
         String id = atts.getValue("id");
-        this._builder.id(id != null? id : "");
-        this._builder.cache(atts.getValue("cache-control"));
-        this._builder.flags(atts.getValue("flags"));
+        this.builder.id(id != null? id : "");
+        this.builder.cache(atts.getValue("cache-control"));
+        this.builder.flags(atts.getValue("flags"));
         handleMethod(atts.getValue("method"));
         break;
 
@@ -220,7 +220,7 @@ final class ServicesHandler10 extends DefaultHandler {
         break;
 
       case PARAMETER:
-        this._builder.parameter(toParameter(atts));
+        this.builder.parameter(toParameter(atts));
         break;
 
       case RESPONSE_CODE:
@@ -238,7 +238,7 @@ final class ServicesHandler10 extends DefaultHandler {
   @Override
   public void endElement(String uri, String localName, String qName) throws SAXException {
     // Do not continue if there is an error
-    if (this._collector.hasError()) return;
+    if (this.collector.hasError()) return;
     // Identify element
     Element element = Element.get(localName);
     // We've already put a warning in the startElement
@@ -247,37 +247,37 @@ final class ServicesHandler10 extends DefaultHandler {
       case SERVICE:
         HttpMethod method = this.method;
         // Assign the latest rule
-        this._builder.rule(this._rules.get(this._rules.size() - 1));
-        if (!"".equals(this._builder.id())) {
-          Service service = this._builder.build();
-          if (this._patterns.isEmpty()) {
+        this.builder.rule(this.rules.get(this.rules.size() - 1));
+        if (!"".equals(this.builder.id())) {
+          Service service = this.builder.build();
+          if (this.patterns.isEmpty()) {
             warning("No URI pattern match service "+service.id()+" - service will be ignored");
           } else {
-            for (URIPattern pattern : this._patterns) {
-              this._registry.register(service, pattern, method);
+            for (URIPattern pattern : this.patterns) {
+              this.registry.register(service, pattern, method);
               LOGGER.debug("Assigning {}} [{}}] to {}", pattern, method, service);
             }
           }
         } else {
           warning("Service cannot be created without an id");
         }
-        this._builder.reset();
-        this._patterns.clear();
+        this.builder.reset();
+        this.patterns.clear();
         // Any rule specific to the 'service'? remove it
-        if (this._rules.size() == 3) {
-          this._rules.remove(2);
+        if (this.rules.size() == 3) {
+          this.rules.remove(2);
         }
         break;
       case SERVICES:
         // Any rule specific to the 'services'? remove it
-        if (this._rules.size() == 2) {
-          this._rules.remove(1);
+        if (this.rules.size() == 2) {
+          this.rules.remove(1);
         }
         break;
       case SERVICE_CONFIG:
         // Any rule specific to the 'service-config'? remove it
-        if (this._rules.size() == 1) {
-          this._rules.remove(0);
+        if (this.rules.size() == 1) {
+          this.rules.remove(0);
         }
         break;
       default:
@@ -291,7 +291,7 @@ final class ServicesHandler10 extends DefaultHandler {
    */
   @Override
   public void warning(SAXParseException ex) throws SAXException {
-    this._collector.warning(ex);
+    this.collector.warning(ex);
   }
 
   /**
@@ -301,7 +301,7 @@ final class ServicesHandler10 extends DefaultHandler {
    */
   @Override
   public void error(SAXParseException ex) throws SAXException {
-    this._collector.error(ex);
+    this.collector.error(ex);
   }
 
   /**
@@ -311,7 +311,7 @@ final class ServicesHandler10 extends DefaultHandler {
    */
   @Override
   public void fatalError(SAXParseException ex) throws SAXException {
-    this._collector.fatalError(ex);
+    this.collector.fatalError(ex);
   }
 
   // non-SAX methods
@@ -350,8 +350,8 @@ final class ServicesHandler10 extends DefaultHandler {
     try {
       URIPattern p = new URIPattern(pattern);
       Pair<HttpMethod, URIPattern> k = new Pair<>(this.method, p);
-      if (this._patternsToMethod.add(k)) {
-        this._patterns.add(p);
+      if (this.patternsToMethod.add(k)) {
+        this.patterns.add(p);
       } else {
         warning("Ignoring duplicate pattern '"+p+"'", null);
       }
@@ -374,7 +374,7 @@ final class ServicesHandler10 extends DefaultHandler {
       return;
     }
     try {
-      this._rules.add(ServiceStatusRule.newInstance(use, rule));
+      this.rules.add(ServiceStatusRule.newInstance(use, rule));
     } catch (IllegalArgumentException ex) {
       warning("Ignoring bad response code definition: "+ex.getMessage(), ex);
     }
@@ -389,13 +389,13 @@ final class ServicesHandler10 extends DefaultHandler {
    */
   private void handleMethod(@Nullable String method) throws SAXException {
     if (method == null) {
-      warning("Ignoring null method for service id "+this._builder.id()+" defaulting to GET");
+      warning("Ignoring null method for service id "+this.builder.id()+" defaulting to GET");
       this.method = HttpMethod.GET;
     } else {
       try {
         this.method = HttpMethod.valueOf(method.toUpperCase());
       } catch (IllegalArgumentException ex) {
-        warning("Ignoring illegal method '"+method+"' for service id "+this._builder.id(), ex);
+        warning("Ignoring illegal method '"+method+"' for service id "+this.builder.id(), ex);
       }
     }
   }
@@ -417,18 +417,18 @@ final class ServicesHandler10 extends DefaultHandler {
       } else {
         generator = (ContentGenerator)Class.forName(className).newInstance();
       }
-      this._builder.add(generator);
-      this._builder.target(atts.getValue("target"));
-      this._builder.name(atts.getValue("name"));
+      this.builder.add(generator);
+      this.builder.target(atts.getValue("target"));
+      this.builder.name(atts.getValue("name"));
     } catch (NoClassDefFoundError error) {
       ClassNotFoundException ex = new ClassNotFoundException("Class definition problem", error);
-      warning("Failed to create generator "+className+" for service "+this._builder.id(), ex);
+      warning("Failed to create generator "+className+" for service "+this.builder.id(), ex);
     } catch (ClassNotFoundException ex) {
-      warning("Failed to find generator "+className+" for service "+this._builder.id(), ex);
+      warning("Failed to find generator "+className+" for service "+this.builder.id(), ex);
     } catch (IllegalAccessException ex) {
-      warning("Failed to access generator "+className+" for service "+this._builder.id(), ex);
+      warning("Failed to access generator "+className+" for service "+this.builder.id(), ex);
     } catch (InstantiationException ex) {
-      warning("Failed to instantiate generator "+className+" for service "+this._builder.id(), ex);
+      warning("Failed to instantiate generator "+className+" for service "+this.builder.id(), ex);
     }
   }
 

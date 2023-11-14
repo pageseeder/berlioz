@@ -25,7 +25,7 @@ import org.eclipse.jdt.annotation.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8.2
  */
 public enum ContentStatus {
@@ -240,7 +240,7 @@ public enum ContentStatus {
   /**
    * The server requires the request to be conditional.
    *
-   * Its typical use is to avoid the "lost update" problem, where a client
+   * <p>Its typical use is to avoid the "lost update" problem, where a client
    * GETs a resource's state, modifies it, and PUTs it back to the server,
    * when meanwhile a third party has modified the state on the server,
    * leading to a conflict.  By requiring requests to be conditional, the
@@ -324,20 +324,20 @@ public enum ContentStatus {
   /**
    * The corresponding HTTP code value.
    */
-  private final int _code;
+  private final int code;
 
   /**
    * The corresponding string value.
    */
-  private final String _string;
+  private final String string;
 
   /**
    * Creates a new code.
    * @param code the corresponding HTTP response code.
    */
   ContentStatus(int code) {
-   this._code = code;
-   this._string = name().toLowerCase().replace('_', '-');
+   this.code = code;
+   this.string = name().toLowerCase().replace('_', '-');
   }
 
   /**
@@ -345,11 +345,11 @@ public enum ContentStatus {
    * @return The HTTP response code for this enum value.
    */
   public int code() {
-    return this._code;
+    return this.code;
   }
 
   /**
-   * Returns the the content status corresponding to the specified HTTP status code.
+   * Returns the content status corresponding to the specified HTTP status code.
    *
    * @param code The HTTP code.
    * @return the corresponding enum constant or <code>null</code>.
@@ -375,7 +375,7 @@ public enum ContentStatus {
    * @since Berlioz 0.9.10
    */
   public static boolean isRedirect(ContentStatus status) {
-    return status._code >= 300 && status._code < 400;
+    return status.code >= 300 && status.code < 400;
   }
 
   /**
@@ -388,6 +388,6 @@ public enum ContentStatus {
    */
   @Override
   public String toString() {
-    return this._string;
+    return this.string;
   }
 }

@@ -236,12 +236,12 @@ public final class ServiceLoader {
     /**
      * Registry for the services to load.
      */
-    private final ServiceRegistry _registry;
+    private final ServiceRegistry registry;
 
     /**
      * The reader in use.
      */
-    private final XMLReader _reader;
+    private final XMLReader reader;
 
     /**
      * The document locator for use when reporting the location of errors and warnings.
@@ -255,8 +255,8 @@ public final class ServiceLoader {
      * @param registry The service registry.
      */
     public HandlingDispatcher(XMLReader reader, ServiceRegistry registry) {
-      this._reader = reader;
-      this._registry = registry;
+      this.reader = reader;
+      this.registry = registry;
     }
 
     @Override
@@ -281,7 +281,7 @@ public final class ServiceLoader {
       // re-trigger events on handler to ensure proper initialisation
       handler.startDocument();
       handler.startElement(uri, localName, qName, atts);
-      this._reader.setContentHandler(handler);
+      this.reader.setContentHandler(handler);
     }
 
     /**
@@ -295,7 +295,7 @@ public final class ServiceLoader {
      * @throws SAXException if the the file being parsed is not a service configuration.
      */
     private ContentHandler getHandler(String name, Attributes atts) throws SAXException {
-      SAXErrorCollector collector = getErrorCollector(this._reader);
+      SAXErrorCollector collector = getErrorCollector(this.reader);
 
       // Service configuration
       if ("service-config".equals(name)) {
@@ -304,18 +304,18 @@ public final class ServiceLoader {
         // Version 1.0
         if ("1.0".equals(version)) {
           LOGGER.info("Service configuration 1.0 detected");
-          return new ServicesHandler10(this._registry, collector);
+          return new ServicesHandler10(this.registry, collector);
 
         // Unknown version (assume 1.0)
         } else {
           LOGGER.info("Service configuration version unavailable, assuming 1.0");
-          return new ServicesHandler10(this._registry, collector);
+          return new ServicesHandler10(this.registry, collector);
         }
 
       } else if ("services".equals(name)) {
 
         LOGGER.info("Services group using 1.0");
-        return new ServicesHandler10(this._registry, collector);
+        return new ServicesHandler10(this.registry, collector);
 
       // Definitely not supported
       } else {

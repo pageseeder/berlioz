@@ -47,52 +47,52 @@ public final class Service {
   /**
    * The ID of this service.
    */
-  private final String _id;
+  private final String id;
 
   /**
    * The group this service is part of.
    */
-  private final String _group;
+  private final String group;
 
   /**
    * Indicates whether this service can be cached.
    */
-  private final boolean _cacheable;
+  private final boolean cacheable;
 
   /**
    * The 'Cache-Control' header for this service.
    */
-  private final String _cache;
+  private final String cache;
 
   /**
    * The flags attached to this service.
    */
-  private final String _flags;
+  private final String flags;
 
   /**
    * How the status code this service is calculated.
    */
-  private final ServiceStatusRule _rule;
+  private final ServiceStatusRule rule;
 
   /**
    * The list of generators associated with this service.
    */
-  private final List<ContentGenerator> _generators;
+  private final List<ContentGenerator> generators;
 
   /**
    * Maps parameter specifications to a given generator instance.
    */
-  private final Map<ContentGenerator, List<Parameter>> _parameters;
+  private final Map<ContentGenerator, List<Parameter>> allParameters;
 
   /**
    * Maps targets to a given generator instance.
    */
-  private final Map<ContentGenerator, String> _targets;
+  private final Map<ContentGenerator, String> targets;
 
   /**
    * Maps names to a given generator instance.
    */
-  private final Map<ContentGenerator, String> _names;
+  private final Map<ContentGenerator, String> names;
 
   /**
    * Creates a new service.
@@ -100,16 +100,16 @@ public final class Service {
    * @param builder The builder used to create this service.
    */
   private Service(Builder builder) {
-    this._id = Objects.requireNonNull(builder.id, "The service must have an id");
-    this._group = Objects.requireNonNull(builder.group, "The service must belong to a collection (group)");
-    this._rule = Objects.requireNonNull(builder.rule, "There must be a rule for this service");
-    this._cache = builder.cache;
-    this._flags = builder.flags;
-    this._generators = immutableList(builder._generators);
-    this._parameters = immutableMap(builder._parameters);
-    this._cacheable = isCacheable(this._generators);
-    this._names = immutable3(builder._names);
-    this._targets = immutable3(builder._targets);
+    this.id = Objects.requireNonNull(builder.id, "The service must have an id");
+    this.group = Objects.requireNonNull(builder.group, "The service must belong to a collection (group)");
+    this.rule = Objects.requireNonNull(builder.rule, "There must be a rule for this service");
+    this.cache = builder.cache;
+    this.flags = builder.flags;
+    this.generators = immutableList(builder.generators);
+    this.allParameters = immutableMap(builder.allParameters);
+    this.cacheable = isCacheable(this.generators);
+    this.names = immutable3(builder.names);
+    this.targets = immutable3(builder.targets);
   }
 
   /**
@@ -118,7 +118,7 @@ public final class Service {
    * @return the ID of this service.
    */
   public String id() {
-    return this._id;
+    return this.id;
   }
 
   /**
@@ -127,7 +127,7 @@ public final class Service {
    * @return the group this service is part of.
    */
   public String group() {
-    return this._group;
+    return this.group;
   }
 
   /**
@@ -136,7 +136,7 @@ public final class Service {
    * @return the value of the 'Cache-Control' for this service.
    */
   public String cache() {
-    return this._cache;
+    return this.cache;
   }
 
   /**
@@ -145,7 +145,7 @@ public final class Service {
    * @return the flags attached to this service.
    */
   public String flags() {
-    return this._flags;
+    return this.flags;
   }
 
   /**
@@ -154,7 +154,7 @@ public final class Service {
    * @return the status rule for this service.
    */
   public ServiceStatusRule rule() {
-    return this._rule;
+    return this.rule;
   }
 
   /**
@@ -166,7 +166,7 @@ public final class Service {
    *         <code>false</code> otherwise.
    */
   public boolean isCacheable() {
-    return this._cacheable;
+    return this.cacheable;
   }
 
   /**
@@ -175,7 +175,7 @@ public final class Service {
    * @return the list of generators for this service.
    */
   public List<ContentGenerator> generators() {
-    return this._generators;
+    return this.generators;
   }
 
   /**
@@ -185,7 +185,7 @@ public final class Service {
    * @return the list of parameter specifications for the given generator.
    */
   public List<Parameter> parameters(ContentGenerator generator) {
-    List<Parameter> parameters = this._parameters.get(generator);
+    List<Parameter> parameters = this.allParameters.get(generator);
     if (parameters == null) return Collections.emptyList();
     return parameters;
   }
@@ -197,7 +197,7 @@ public final class Service {
    * @return the target if any (may be <code>null</code>).
    */
   public @Nullable String target(ContentGenerator generator) {
-    return this._targets.get(generator);
+    return this.targets.get(generator);
   }
 
   /**
@@ -207,7 +207,7 @@ public final class Service {
    * @return the name.
    */
   public String name(ContentGenerator generator) {
-    String name = this._names.get(generator);
+    String name = this.names.get(generator);
     // TODO Use snake-case for consistency
     return name != null? name : generator.getClass().getSimpleName();
   }
@@ -219,18 +219,18 @@ public final class Service {
    *         <code>false</code> otherwise.
    */
   public boolean affectStatus(ContentGenerator generator) {
-    if (this._rule.appliesToAll()) return true;
-    SelectType use = this._rule.use();
+    if (this.rule.appliesToAll()) return true;
+    SelectType use = this.rule.use();
     switch (use) {
-      case NAME:   return this._rule.appliesTo(name(generator));
-      case TARGET: return this._rule.appliesTo(target(generator));
+      case NAME:   return this.rule.appliesTo(name(generator));
+      case TARGET: return this.rule.appliesTo(target(generator));
       default:     return false;
     }
   }
 
   @Override
   public String toString() {
-    return "service:"+this._group+"/"+this._id;
+    return "service:"+this.group +"/"+this.id;
   }
 
   /**
@@ -260,20 +260,20 @@ public final class Service {
   @Beta
   public void toXML(XMLWriter xml, HttpMethod method, List<String> urls, @Nullable String cacheControl) throws IOException {
     xml.openElement("service", true);
-    xml.attribute("id", this._id);
-    xml.attribute("group", this._group);
+    xml.attribute("id", this.id);
+    xml.attribute("group", this.group);
     if (method != null) {
       xml.attribute("method", method.toString().toLowerCase());
     }
-    if (this._flags.length() > 0) {
-      xml.attribute("flags", this._flags);
+    if (this.flags.length() > 0) {
+      xml.attribute("flags", this.flags);
     }
 
     // Caching information
-    xml.attribute("cacheable", Boolean.toString(this._cacheable));
-    if (this._cacheable) {
-      if (this._cache.length()>0) {
-        xml.attribute("cache-control", this._cache.length());
+    xml.attribute("cacheable", Boolean.toString(this.cacheable));
+    if (this.cacheable) {
+      if (this.cache.length()>0) {
+        xml.attribute("cache-control", this.cache.length());
       } else if (cacheControl != null) {
         xml.attribute("cache-control", cacheControl);
       }
@@ -281,8 +281,8 @@ public final class Service {
 
     // How the response code is calculated
     xml.openElement("response-code", true);
-    xml.attribute("use", this._rule.use().toString().toLowerCase());
-    xml.attribute("rule", this._rule.rule().toString().toLowerCase());
+    xml.attribute("use", this.rule.use().toString().toLowerCase());
+    xml.attribute("rule", this.rule.rule().toString().toLowerCase());
     xml.closeElement();
 
     // URI patterns
@@ -295,7 +295,7 @@ public final class Service {
     }
 
     // Generators
-    for (ContentGenerator generator : this._generators) {
+    for (ContentGenerator generator : this.generators) {
       String target = target(generator);
       List<Parameter> parameters = parameters(generator);
       xml.openElement("generator", !parameters.isEmpty());
@@ -369,28 +369,22 @@ public final class Service {
     /**
      * The list of generators associated with this service.
      */
-    private final List<ContentGenerator> _generators = new ArrayList<>();
+    private final List<ContentGenerator> generators = new ArrayList<>();
 
     /**
      * Maps parameter specifications to a given generator instance.
      */
-    private final Map<ContentGenerator, List<Parameter>> _parameters = new HashMap<>();
+    private final Map<ContentGenerator, List<Parameter>> allParameters = new HashMap<>();
 
     /**
      * Maps names to a given generator instance.
      */
-    private final Map<ContentGenerator, String> _names = new HashMap<>();
+    private final Map<ContentGenerator, String> names = new HashMap<>();
 
     /**
      * Maps targets to a given generator instance.
      */
-    private final Map<ContentGenerator, String> _targets = new HashMap<>();
-
-    /**
-     * Creates a new builder.
-     */
-    public Builder() {
-    }
+    private final Map<ContentGenerator, String> targets = new HashMap<>();
 
     /**
      * Returns the ID of the service to build.
@@ -470,9 +464,9 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder parameter(@Nullable Parameter p) {
-      if (this._generators.size() > 0 && p != null) {
-        ContentGenerator generator = this._generators.get(this._generators.size() - 1);
-        List<Parameter> parameters = this._parameters.computeIfAbsent(generator, k -> new ArrayList<>());
+      if (!this.generators.isEmpty() && p != null) {
+        ContentGenerator generator = this.generators.get(this.generators.size() - 1);
+        List<Parameter> parameters = this.allParameters.computeIfAbsent(generator, k -> new ArrayList<>());
         parameters.add(p);
       }
       return this;
@@ -485,7 +479,7 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder add(ContentGenerator g) {
-      this._generators.add(g);
+      this.generators.add(g);
       return this;
     }
 
@@ -496,9 +490,9 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder target(@Nullable String target) {
-      if (this._generators.size() > 0 && target != null) {
-        ContentGenerator generator = this._generators.get(this._generators.size() - 1);
-        this._targets.put(generator, target);
+      if (!this.generators.isEmpty() && target != null) {
+        ContentGenerator generator = this.generators.get(this.generators.size() - 1);
+        this.targets.put(generator, target);
       }
       return this;
     }
@@ -510,9 +504,9 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder name(@Nullable String name) {
-      if (this._generators.size() > 0 && name != null) {
-        ContentGenerator generator = this._generators.get(this._generators.size() - 1);
-        this._names.put(generator, name);
+      if (!this.generators.isEmpty() && name != null) {
+        ContentGenerator generator = this.generators.get(this.generators.size() - 1);
+        this.names.put(generator, name);
       }
       return this;
     }
@@ -526,7 +520,7 @@ public final class Service {
      */
     public Service build() {
       // warn when attempting to use cache control with uncacheable service
-      if (this.cache.length() > 0 && !isCacheable(this._generators)) {
+      if (this.cache.length() > 0 && !isCacheable(this.generators)) {
         Logger logger = LoggerFactory.getLogger(Builder.class);
         logger.warn("Building non-cacheable service {} - cache control ignored.", this.id);
       }
@@ -540,10 +534,10 @@ public final class Service {
       this.id = null;
       this.cache = "";
       this.flags = "";
-      this._generators.clear();
-      this._parameters.clear();
-      this._names.clear();
-      this._targets.clear();
+      this.generators.clear();
+      this.allParameters.clear();
+      this.names.clear();
+      this.targets.clear();
     }
 
   }

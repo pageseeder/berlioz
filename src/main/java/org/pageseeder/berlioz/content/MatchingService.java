@@ -35,17 +35,17 @@ public final class MatchingService {
   /**
    * The matched service.
    */
-  private final Service _service;
+  private final Service service;
 
   /**
    * The URI pattern it matched.
    */
-  private final URIPattern _pattern;
+  private final URIPattern pattern;
 
   /**
    * The resolved URI variables.
    */
-  private final URIResolveResult _result;
+  private final URIResolveResult result;
 
   /**
    * Creates a new matching service.
@@ -57,9 +57,9 @@ public final class MatchingService {
    * @throws NullPointerException If any argument is <code>null</code>
    */
   public MatchingService(Service service, URIPattern pattern, URIResolveResult result) {
-    this._service = Objects.requireNonNull(service, "Cannot match null service");
-    this._pattern = Objects.requireNonNull(pattern, "Pattern must be specified");
-    this._result = Objects.requireNonNull(result, "Resolution results must be specified");
+    this.service = Objects.requireNonNull(service, "Cannot match null service");
+    this.pattern = Objects.requireNonNull(pattern, "Pattern must be specified");
+    this.result = Objects.requireNonNull(result, "Resolution results must be specified");
   }
 
   /**
@@ -72,7 +72,7 @@ public final class MatchingService {
    *         <code>false</code> otherwise.
    */
   public boolean isCacheable() {
-    return this._service.isCacheable();
+    return this.service.isCacheable();
   }
 
   /**
@@ -81,7 +81,7 @@ public final class MatchingService {
    * @return The matched service (never <code>null</code>).
    */
   public Service service() {
-    return this._service;
+    return this.service;
   }
 
   /**
@@ -90,7 +90,7 @@ public final class MatchingService {
    * @return The URI pattern it matched (never <code>null</code>).
    */
   public URIPattern pattern() {
-    return this._pattern;
+    return this.pattern;
   }
 
   /**
@@ -99,7 +99,7 @@ public final class MatchingService {
    * @return The resolved URI variables (never <code>null</code>).
    */
   public URIResolveResult result() {
-    return this._result;
+    return this.result;
   }
 
 }

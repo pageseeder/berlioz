@@ -30,7 +30,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 1 July 2011
+ * @version Berlioz 0.8.3
  * @since Berlioz 0.8
  */
 @Beta public final class ServiceStatusRule {
@@ -83,17 +83,17 @@ import org.pageseeder.berlioz.Beta;
   /**
    * How the generator should be selected.
    */
-  private final SelectType _use;
+  private final SelectType use;
 
   /**
    * The list of generator names or targets (depending on type)
    */
-  private final List<String> _items;
+  private final List<String> items;
 
   /**
    * The code rule.
    */
-  private final CodeRule _rule;
+  private final CodeRule rule;
 
   /**
    * Create a new rule.
@@ -105,23 +105,23 @@ import org.pageseeder.berlioz.Beta;
    * @throws NullPointerException If any argument is <code>null</code>
    */
   ServiceStatusRule(SelectType use, List<String> items, CodeRule rule) {
-    this._use = Objects.requireNonNull(use, "Use is required.");
-    this._items = Objects.requireNonNull(items, "List of generators is required.");
-    this._rule = Objects.requireNonNull(rule, "Code role is required.");
+    this.use = Objects.requireNonNull(use, "Use is required.");
+    this.items = Objects.requireNonNull(items, "List of generators is required.");
+    this.rule = Objects.requireNonNull(rule, "Code role is required.");
   }
 
   /**
    * @return How the generator should be selected.
    */
   public SelectType use() {
-    return this._use;
+    return this.use;
   }
 
   /**
    * @return The names or targets of the generators to select.
    */
   public List<String> items() {
-    return this._items;
+    return this.items;
   }
 
   /**
@@ -131,9 +131,9 @@ import org.pageseeder.berlioz.Beta;
    *         <code>false</code> otherwise.
    */
   public boolean appliesTo(@Nullable String nameOrTarget) {
-    if (this._items.isEmpty()) return true;
+    if (this.items.isEmpty()) return true;
     if (nameOrTarget == null) return false;
-    return this._items.contains(nameOrTarget);
+    return this.items.contains(nameOrTarget);
   }
 
   /**
@@ -142,19 +142,19 @@ import org.pageseeder.berlioz.Beta;
    *         <code>false</code> otherwise.
    */
   public boolean appliesToAll() {
-    return this._items.isEmpty();
+    return this.items.isEmpty();
   }
 
   /**
    * @return How is the status code for the determined.
    */
   public CodeRule rule() {
-    return this._rule;
+    return this.rule;
   }
 
   @Override
   public String toString() {
-    return this._use+":"+(this._items.isEmpty()? "*" : this._items)+" "+this._rule;
+    return this.use +":"+(this.items.isEmpty()? "*" : this.items)+" "+this.rule;
   }
 
   /**
@@ -199,24 +199,13 @@ import org.pageseeder.berlioz.Beta;
    *
    * @throws IllegalArgumentException If the item is empty or contains an illegal character.
    */
-  private static void validate(String item) {
+  static void validate(String item) {
     if (item.isEmpty()) throw new IllegalArgumentException("Named item is empty");
     char c;
     for (int i = 0; i < item.length(); i++) {
       c = item.charAt(i);
-      if (Character.isLetter(c)) {
-        continue;
-      } else if (Character.isDigit(c)) {
-        continue;
-      } else if (c == '-') {
-        continue;
-      } else if (c == '_') {
-        continue;
-      } else if (c == '.') {
-        continue;
-      } else if (c == ':') {
-        continue;
-      } else throw new IllegalArgumentException("Item \""+item+"\" contains an illegal character '"+c+"'");
+      if (!(Character.isLetter(c) || Character.isDigit(c) || c == '-' || c == '_' || c == '.' || c == ':'))
+        throw new IllegalArgumentException("Item \""+item+"\" contains an illegal character '"+c+"'");
     }
   }
 

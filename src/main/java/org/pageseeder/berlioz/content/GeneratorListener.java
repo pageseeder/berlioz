@@ -22,7 +22,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.16 - 6 February 2013
+ * @version Berlioz 0.9.16
  * @since Berlioz 0.9.16
  */
 @Beta

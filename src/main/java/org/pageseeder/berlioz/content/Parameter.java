@@ -35,12 +35,12 @@ public final class Parameter {
   /**
    * The name of this parameter.
    */
-  private final String _name;
+  private final String name;
 
   /**
    * The value of this parameter.
    */
-  private final ParameterTemplate _template;
+  private final ParameterTemplate template;
 
   /**
    * Creates a new parameter.
@@ -49,8 +49,8 @@ public final class Parameter {
    * @param template The template to use to generate the value of the parameter.
    */
   private Parameter(String name, ParameterTemplate template) {
-    this._name = Objects.requireNonNull(name, "Parameter name is required");
-    this._template = Objects.requireNonNull(template, "Parameter value is required");
+    this.name = Objects.requireNonNull(name, "Parameter name is required");
+    this.template = Objects.requireNonNull(template, "Parameter value is required");
   }
 
   /**
@@ -67,14 +67,14 @@ public final class Parameter {
    * @return The name of this parameter.
    */
   public String name() {
-    return this._name;
+    return this.name;
   }
 
   /**
    * @return The unresolved value of this parameter.
    */
   public String value() {
-    return this._template.toString();
+    return this.template.toString();
   }
 
   /**
@@ -84,7 +84,7 @@ public final class Parameter {
    * @return The resolved value of this parameter.
    */
   public String value(Map<String, String> parameters) {
-    return this._template.toString(parameters);
+    return this.template.toString(parameters);
   }
 
 }
