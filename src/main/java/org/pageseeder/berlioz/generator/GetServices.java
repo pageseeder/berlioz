@@ -81,7 +81,7 @@ public final class GetServices implements ContentGenerator, Cacheable {
     List<File> files = ServiceLoader.getInstance().listServiceFiles();
 
     // Display the main file (always comes first)
-    if (files.size() >= 1) {
+    if (!files.isEmpty()) {
       File main = files.get(0);
       if (main.exists()) {
         XMLCopy.copyTo(main, xml);

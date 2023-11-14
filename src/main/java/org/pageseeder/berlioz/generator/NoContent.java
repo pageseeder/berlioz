@@ -77,6 +77,7 @@ public final class NoContent implements ContentGenerator, Cacheable {
    */
   @Override
   public void process(ContentRequest req, XMLWriter xml) {
+    // Does nothing on purpose
   }
 
 }
