@@ -23,7 +23,7 @@ import org.pageseeder.berlioz.ErrorID;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32 - 29 January 2015
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8.1
  */
 public final class CompoundBerliozException extends BerliozException {
@@ -31,12 +31,12 @@ public final class CompoundBerliozException extends BerliozException {
   /**
    * As per requirement for the Serializable interface.
    */
-  private static final long serialVersionUID = 6536134594918706098L;
+  private static final long serialVersionUID = -3429111725694515123L;
 
   /**
    * The error collector.
    */
-  private final ErrorCollector<? extends Throwable> _collector;
+  private final transient ErrorCollector<? extends Throwable> collector;
 
   /**
    * Creates a new compound exception.
@@ -46,7 +46,7 @@ public final class CompoundBerliozException extends BerliozException {
    */
   public CompoundBerliozException(String message, ErrorCollector<? extends Throwable> collector) {
     super(message);
-    this._collector = collector;
+    this.collector = collector;
   }
 
   /**
@@ -58,7 +58,7 @@ public final class CompoundBerliozException extends BerliozException {
    */
   public CompoundBerliozException(String message, Exception ex, ErrorCollector<? extends Throwable> collector) {
     super(message, ex);
-    this._collector = collector;
+    this.collector = collector;
   }
 
   /**
@@ -70,7 +70,7 @@ public final class CompoundBerliozException extends BerliozException {
    */
   public CompoundBerliozException(String message, ErrorID id, ErrorCollector<? extends Throwable> collector) {
     super(message, id);
-    this._collector = collector;
+    this.collector = collector;
   }
 
   /**
@@ -84,7 +84,7 @@ public final class CompoundBerliozException extends BerliozException {
   public CompoundBerliozException(String message, Exception ex, ErrorID id,
       ErrorCollector<? extends Throwable> collector) {
     super(message, ex, id);
-    this._collector = collector;
+    this.collector = collector;
   }
 
   /**
@@ -93,6 +93,6 @@ public final class CompoundBerliozException extends BerliozException {
    * @return The error collector included in this exception.
    */
   public ErrorCollector<? extends Throwable> getCollector() {
-    return this._collector;
+    return this.collector;
   }
 }

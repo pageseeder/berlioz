@@ -34,7 +34,7 @@ public class FileEntityInfo implements EntityInfo {
   /**
    * The file representing the bundle.
    */
-  private final File _file;
+  private final File file;
 
   /**
    * The last modified.
@@ -59,7 +59,7 @@ public class FileEntityInfo implements EntityInfo {
    */
   public FileEntityInfo(File file, String mimeType) {
     boolean ok = file.exists();
-    this._file = file;
+    this.file = file;
     this.modified = ok? file.lastModified() : -1L;
     this.length = ok? file.length() : -1L;
     this.mime = mimeType;
@@ -94,7 +94,7 @@ public class FileEntityInfo implements EntityInfo {
    * @return the file used for this entity.
    */
   public final File getFile() {
-    return this._file;
+    return this.file;
   }
 
 }

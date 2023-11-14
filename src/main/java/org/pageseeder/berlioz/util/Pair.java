@@ -40,10 +40,10 @@ public class Pair<T, V> {
   private static final int PRIME2 = 31;
 
   /** The first constituent of the key */
-  private final T _a;
+  private final T a;
 
   /** The second constituent of the key */
-  private final V _b;
+  private final V b;
 
   /** Precompiled hash code */
   private final int hash;
@@ -55,8 +55,8 @@ public class Pair<T, V> {
    * @param b The second constituent of the key
    */
   public Pair(T a, V b) {
-   this._a = a;
-   this._b = b;
+   this.a = a;
+   this.b = b;
    this.hash = PRIME1
              + (a == null? 0 : PRIME2 * a.hashCode())
              + (b == null? 0 : PRIME2 * b.hashCode());
@@ -68,7 +68,7 @@ public class Pair<T, V> {
     if (o == null || !(o instanceof Pair<?, ?>)) return false;
     Pair<?, ?> k = (Pair<?, ?>)o;
     if (k.hash != this.hash) return false;
-    return equals(this._a, k._a) && equals(this._b, k._b);
+    return equals(this.a, k.a) && equals(this.b, k.b);
   }
 
   @Override
@@ -80,14 +80,14 @@ public class Pair<T, V> {
    * @return The first constituent of the key.
    */
   public final T first() {
-    return this._a;
+    return this.a;
   }
 
   /**
    * @return The second constituent of the key.
    */
   public final V second() {
-    return this._b;
+    return this.b;
   }
 
   /**

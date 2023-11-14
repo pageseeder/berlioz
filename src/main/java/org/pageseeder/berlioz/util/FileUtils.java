@@ -108,8 +108,6 @@ public final class FileUtils {
    * @return The path to the file from the root.
    */
   public static @Nullable String path(File root, File file) {
-    if (root == null || file == null)
-      throw new NullPointerException("Cannot determine the path between the specified files.");
     try {
       String from = root.getCanonicalPath();
       String to = file.getCanonicalPath();

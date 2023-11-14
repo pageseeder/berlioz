@@ -80,7 +80,7 @@ public enum ISO8601 {
   /**
    * The format string to use with a <code>SimpleDateFormat</code>.
    */
-  private final String _format;
+  private final String format;
 
   /**
    * Creates a new ISO 8601 format.
@@ -88,7 +88,7 @@ public enum ISO8601 {
    * @param format The format string to use with a <code>SimpleDateFormat</code>.
    */
   ISO8601(String format) {
-    this._format = format;
+    this.format = format;
   }
 
   /**
@@ -98,10 +98,10 @@ public enum ISO8601 {
    * @return the corresponding date as the specified ISO 8601 format.
    */
   public String format(long date) {
-    DateFormat iso = new SimpleDateFormat(this._format);
+    DateFormat iso = new SimpleDateFormat(this.format);
     // the Time Zone component of Java Simple Date Format does not conform to ISO 8601
     // (it does not include the colon to separate hours from minutes)
-    if (this._format.charAt(this._format.length() - 1) == 'Z') {
+    if (this.format.charAt(this.format.length() - 1) == 'Z') {
       String formatted = iso.format(date);
       return formatted.substring(0, formatted.length() - 2) + ":"
           + formatted.substring(formatted.length() - 2);
@@ -118,10 +118,10 @@ public enum ISO8601 {
    * @throws ParseException Should an error be thrown by the {@link SimpleDateFormat#parse(String)} method.
    */
   public Date parse(String date) throws ParseException {
-    DateFormat iso = new SimpleDateFormat(this._format);
+    DateFormat iso = new SimpleDateFormat(this.format);
     // the Time Zone component of Java Simple Date Format does not conform to ISO 8601
     // (it does not include the colon to separate hours from minutes)
-    boolean hasTimeZone = (this._format.charAt(this._format.length() - 1) == 'Z');
+    boolean hasTimeZone = (this.format.charAt(this.format.length() - 1) == 'Z');
     String parsable = date;
     if (hasTimeZone && date.length() > 2) {
       parsable = date.substring(0, date.length() - 3) + date.substring(date.length() - 2);

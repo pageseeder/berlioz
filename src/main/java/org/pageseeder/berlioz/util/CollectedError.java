@@ -31,7 +31,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32 - 29 January 2015
+ * @version Berlioz 0.9.32
  * @since Berlioz 0.8.1
  */
 public final class CollectedError<T extends Throwable> implements XMLWritable {
@@ -62,12 +62,12 @@ public final class CollectedError<T extends Throwable> implements XMLWritable {
   /**
    * The seriousness of the error.
    */
-  private final Level _level;
+  private final Level level;
 
   /**
-   * The actual error (may be an exception, message as a string, etc...)
+   * The actual error (might be an exception, message as a string, etc...)
    */
-  private final T _error;
+  private final T error;
 
   /**
    * Creates a new collected error.
@@ -78,8 +78,8 @@ public final class CollectedError<T extends Throwable> implements XMLWritable {
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public CollectedError(Level level, T error) {
-    this._level = Objects.requireNonNull(level, "The level is required");
-    this._error = Objects.requireNonNull(error, "The error is required");
+    this.level = Objects.requireNonNull(level, "The level is required");
+    this.error = Objects.requireNonNull(error, "The error is required");
   }
 
   /**
@@ -88,7 +88,7 @@ public final class CollectedError<T extends Throwable> implements XMLWritable {
    * @return The captured error.
    */
   public Level level() {
-    return this._level;
+    return this.level;
   }
 
   /**
@@ -97,7 +97,7 @@ public final class CollectedError<T extends Throwable> implements XMLWritable {
    * @return The captured error.
    */
   public T error() {
-    return this._error;
+    return this.error;
   }
 
   /**
@@ -112,8 +112,8 @@ public final class CollectedError<T extends Throwable> implements XMLWritable {
   @Override
   public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("collected");
-    xml.attribute("level", this._level.toString());
-    Errors.toXML(this._error, xml, false);
+    xml.attribute("level", this.level.toString());
+    Errors.toXML(this.error, xml, false);
     xml.closeElement();
   }
 

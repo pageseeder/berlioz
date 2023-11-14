@@ -24,8 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.slf4j.LoggerFactory;
-
 /**
  * A utility class providing a simple method to generate MD5 hash values for text content.
  *

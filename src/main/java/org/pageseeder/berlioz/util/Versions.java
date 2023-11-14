@@ -53,7 +53,7 @@ public final class Versions {
       String a = atomsA.length > i? atomsA[i] : "0";
       String b = atomsB.length > i? atomsB[i] : "0";
       int compare;
-      if (a.matches("[0-9]+") && b.matches("[0-9]+")) {
+      if (a.matches("\\d+") && b.matches("\\d+")) {
         try {
           Long al = Long.valueOf(a);
           Long bl = Long.valueOf(b);

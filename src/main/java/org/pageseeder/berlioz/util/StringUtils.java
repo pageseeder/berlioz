@@ -15,32 +15,35 @@
  */
 package org.pageseeder.berlioz.util;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * Few utility methods for string.
- * @author Carlos Cabral
- * @since 21 November 2019
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.11.0
  */
-public class StringUtils {
+public final class StringUtils {
+
+  private StringUtils() {
+    // Utility class
+  }
+
   /**
-   *
-   * @param value
    * @return true if the string is empty or null
    */
-  public static boolean isBlank(String value) {
+  public static boolean isBlank(@Nullable String value) {
     return value == null || value.trim().isEmpty();
   }
 
   /**
-   *
-   * @param value
-   * @param delimiter
    * @return substring after the first occurrence of the delimiter
    * If the string does not contain the delimiter it returns the original string value
    */
-  public static String substringAfter (String value, String delimiter) {
+  public static String substringAfter(@Nullable String value, @Nullable String delimiter) {
     String after = "";
     if (!isBlank(value) && delimiter != null) {
-      if (delimiter.length() == 0) {
+      if (delimiter.isEmpty()) {
         after = value;
       } else {
         String[] substring = value.split(delimiter, 2);
@@ -51,15 +54,12 @@ public class StringUtils {
   }
 
   /**
-   *
-   * @param value
-   * @param delimiter
    * @return substring before the first occurrence of the delimiter
    */
-  public static String substringBefore (String value, String delimiter) {
+  public static String substringBefore(@Nullable String value, @Nullable String delimiter) {
     String before = "";
     if (!isBlank(value) && delimiter != null) {
-      if (delimiter.length() == 0) {
+      if (delimiter.isEmpty()) {
         before = value;
       } else {
         String[] substring = value.split(delimiter, 2);

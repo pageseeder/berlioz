@@ -29,7 +29,7 @@ import org.pageseeder.berlioz.util.CollectedError.Level;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32 - 29 January 2015
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8.1
  */
 public class ErrorCollector<T extends Throwable>  {
@@ -37,7 +37,7 @@ public class ErrorCollector<T extends Throwable>  {
   /**
    * Errors are collected here.
    */
-  private final List<CollectedError<T>> _collected = new ArrayList<>();
+  private final List<CollectedError<T>> collected = new ArrayList<>();
 
   /**
    * The threshold level for the collect method to throw an exception.
@@ -55,13 +55,7 @@ public class ErrorCollector<T extends Throwable>  {
    * <p>This flag is used to indicate that there is no point in processing the file any further
    * because they could cause exceptions.
    */
-  private boolean _hasError = false;
-
-  /**
-   * Creates a new error collector.
-   */
-  public ErrorCollector() {
-  }
+  private boolean hasError = false;
 
   /**
    * Set the threshold to throw an exception during the next collect operation.
@@ -96,9 +90,9 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public final void collect(Level level, T exception) throws T {
-    this._collected.add(new CollectedError<>(level, exception));
+    this.collected.add(new CollectedError<>(level, exception));
     if (this.flag.compareTo(level) <= 0) {
-      this._hasError = true;
+      this.hasError = true;
     }
     if (this.exception.compareTo(level) <= 0) throw exception;
   }
@@ -113,9 +107,9 @@ public class ErrorCollector<T extends Throwable>  {
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public final void collectQuietly(Level level, T exception) {
-    this._collected.add(new CollectedError<>(level, exception));
+    this.collected.add(new CollectedError<>(level, exception));
     if (this.flag.compareTo(level) <= 0) {
-      this._hasError = true;
+      this.hasError = true;
     }
   }
 
@@ -125,7 +119,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @return the list of collected errors.
    */
   public final List<CollectedError<T>> getErrors() {
-    return this._collected;
+    return this.collected;
   }
 
   /**
@@ -135,7 +129,7 @@ public class ErrorCollector<T extends Throwable>  {
    *         <code>false</code> otherwise.
    */
   public final boolean hasError() {
-    return this._hasError;
+    return this.hasError;
   }
 
 }

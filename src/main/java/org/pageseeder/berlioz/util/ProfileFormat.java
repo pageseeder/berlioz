@@ -25,7 +25,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
+ * @version Berlioz 0.9.14
  * @since Berlioz 0.9.14
  */
 @Beta
@@ -41,9 +41,9 @@ public final class ProfileFormat {
   }
 
   /**
-   * Formats the time specified in nano seconds as milliseconds with 2 decimals.
+   * Formats the time specified in nanoseconds as milliseconds with 2 decimals.
    *
-   * @param nanotime the time in nano seconds.
+   * @param nanotime the time in nanoseconds.
    * @return the time formatted in milliseconds with 2 decimals.
    */
   public static synchronized String format(long nanotime) {

@@ -27,7 +27,7 @@ import org.eclipse.jdt.annotation.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 31 May 2010
+ * @version Berlioz 0.6.0
  * @since Berlioz 0.6
  */
 public class GenericEntityInfo implements EntityInfo {
@@ -35,17 +35,17 @@ public class GenericEntityInfo implements EntityInfo {
   /**
    * The last modified.
    */
-  private final long _modified;
+  private final long modified;
 
   /**
    * The content type
    */
-  private final String _mime;
+  private final String mime;
 
   /**
    * The entity tag.
    */
-  private final @Nullable String _etag;
+  private final @Nullable String etag;
 
   /**
    * Creates a new entity info.
@@ -55,9 +55,9 @@ public class GenericEntityInfo implements EntityInfo {
    * @param etag        The etag for the entity.
    */
   public GenericEntityInfo(long modified, String contentType, @Nullable String etag) {
-    this._modified = modified;
-    this._mime = contentType;
-    this._etag = etag;
+    this.modified = modified;
+    this.mime = contentType;
+    this.etag = etag;
   }
 
   /**
@@ -73,16 +73,16 @@ public class GenericEntityInfo implements EntityInfo {
 
   @Override
   public final long getLastModified() {
-    return this._modified;
+    return this.modified;
   }
 
   @Override
   public final @NonNull String getMimeType() {
-    return this._mime;
+    return this.mime;
   }
 
   @Override
   public final @Nullable String getETag() {
-    return this._etag;
+    return this.etag;
   }
 }

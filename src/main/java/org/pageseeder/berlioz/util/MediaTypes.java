@@ -96,7 +96,7 @@ public final class MediaTypes {
       LOGGER.info("Loading MIME properties from {}", file.getAbsolutePath());
       return Files.newInputStream(file.toPath());
     } else {
-      LOGGER.info("Loading MIME properties from Berlioz JAR", file.getAbsolutePath());
+      LOGGER.info("Loading MIME properties from Berlioz JAR, could not find {}", file.getAbsolutePath());
       return MediaTypes.class.getResourceAsStream("/mime.properties");
     }
   }

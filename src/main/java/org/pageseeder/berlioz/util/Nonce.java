@@ -25,9 +25,6 @@ public final class Nonce {
    */
   private static final int DEFAULT_LENGTH = 16;
 
-  public Nonce() {
-  }
-
   /**
    * Generate a new nonce.
    *
