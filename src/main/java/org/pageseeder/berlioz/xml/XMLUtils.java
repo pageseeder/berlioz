@@ -89,7 +89,6 @@ public final class XMLUtils {
     } catch (SAXException ex) {
       throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
     } catch (IOException ex) {
-      ex.printStackTrace();
       throw new BerliozException("Could not read file.", ex);
     }
   }

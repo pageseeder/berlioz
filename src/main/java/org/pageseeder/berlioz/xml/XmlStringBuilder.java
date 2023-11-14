@@ -1,5 +1,7 @@
 package org.pageseeder.berlioz.xml;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  *
  * @version Berlioz 0.12.0
@@ -7,7 +9,7 @@ package org.pageseeder.berlioz.xml;
  */
 public final class XmlStringBuilder extends XmlAppendable<StringBuilder> {
 
-  private XmlStringBuilder(StringBuilder xml, String indent) {
+  private XmlStringBuilder(StringBuilder xml, @Nullable String indent) {
     super(xml, indent);
   }
 
@@ -16,7 +18,7 @@ public final class XmlStringBuilder extends XmlAppendable<StringBuilder> {
   }
 
   @Override
-  public XmlStringBuilder withIndent(String chars) {
+  public XmlStringBuilder withIndent(@Nullable String chars) {
     return new XmlStringBuilder(this._xml, chars);
   }
 

@@ -31,10 +31,12 @@ import org.xml.sax.SAXParseException;
  */
 public final class SAXErrorCollector extends ErrorCollector<SAXParseException> implements ErrorHandler {
 
+  private static final String MESSAGE_PATTERN = "{} (line: {})";
+
   /**
    * The logger to use to report errors
    */
-  private final Logger _logger;
+  private final Logger logger;
 
   /**
    * Creates a new Berlioz error handler.
@@ -42,7 +44,7 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    * @param logger A logger to report errors when the SAX methods are called.
    */
   public SAXErrorCollector(Logger logger) {
-    this._logger = logger;
+    this.logger = logger;
   }
 
   /**
@@ -54,7 +56,7 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    */
   @Override
   public void fatalError(SAXParseException exception) throws SAXParseException {
-    this._logger.error("{} (line: {})", exception.getMessage(), exception.getLineNumber());
+    this.logger.error(MESSAGE_PATTERN, exception.getMessage(), exception.getLineNumber());
     collect(Level.FATAL, exception);
   }
 
@@ -67,7 +69,7 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    */
   @Override
   public void error(SAXParseException exception) throws SAXParseException {
-    this._logger.error("{} (line: {})", exception.getMessage(), exception.getLineNumber());
+    this.logger.error(MESSAGE_PATTERN, exception.getMessage(), exception.getLineNumber());
     collect(Level.ERROR, exception);
   }
 
@@ -80,7 +82,7 @@ public final class SAXErrorCollector extends ErrorCollector<SAXParseException> i
    */
   @Override
   public void warning(SAXParseException exception) throws SAXParseException {
-    this._logger.warn("{} (line: {})", exception.getMessage(), exception.getLineNumber());
+    this.logger.warn(MESSAGE_PATTERN, exception.getMessage(), exception.getLineNumber());
     collect(Level.WARNING, exception);
   }
 

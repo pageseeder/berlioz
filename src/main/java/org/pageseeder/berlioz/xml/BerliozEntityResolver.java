@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Resolves the identifiers specific to the Berlioz Web System.
@@ -45,14 +44,14 @@ public final class BerliozEntityResolver implements EntityResolver {
   /**
    * The prefix used by Berlioz for all public identifiers.
    *
-   * Public identifiers starting with any other prefix will be ignored.
+   * <p>Public identifiers starting with any other prefix will be ignored.
    */
   public static final String PUBLIC_ID_PREFIX = "-//Weborganic//DTD::Berlioz ";
 
   /**
    * The prefix used by Berlioz for all public identifiers.
    *
-   * Public identifiers starting with any other prefix will be ignored.
+   * <p>Public identifiers starting with any other prefix will be ignored.
    */
   private static final String ALIAS_ID_PREFIX = "-//Berlioz//DTD::";
 

@@ -61,7 +61,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   /**
    * Encoding of the output xml.
    */
-  final String _encoding = "utf-8";
+  final String encoding = "utf-8";
 
   /**
    * Indicates whether the xml should be indented or not.
@@ -75,12 +75,12 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   /**
    * The default indentation spaces used.
    */
-  private final @Nullable String _indentChars;
+  private final @Nullable String indentChars;
 
   /**
    * A stack of elements to close the elements automatically.
    */
-  private final List<Element> _elements = new ArrayList<>();
+  private final List<Element> elements = new ArrayList<>();
 
   /**
    * Level of the depth of the xml document currently produced.
@@ -107,8 +107,8 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   protected XmlAppendable(T xml, @Nullable String indentChars) throws NullPointerException {
     this._xml = Objects.requireNonNull(xml, "XmlWriter cannot use a null writer.");
     this.indent = indentChars != null;
-    this._indentChars = indentChars;
-    this._elements.add(ROOT);
+    this.indentChars = indentChars;
+    this.elements.add(ROOT);
   }
 
   /**
@@ -136,7 +136,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * @throws IllegalArgumentException If the indent string is not made of spaces.
    * @throws IllegalStateException    If the writer has already been used.
    */
-  public XmlAppendable<T> withIndent(String spaces) {
+  public XmlAppendable<T> withIndent(@Nullable String spaces) {
     // check that this is a valid indentation string
     if (spaces != null) {
       for (int i = 0; i < spaces.length(); i++) {
@@ -181,7 +181,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   public final XmlAppendable<T> text(char[] text, int off, int len) {
     deNude();
     try {
-      char c = ' ';
+      char c;
       for (int i = off; i < off+len; i++) {
         c = text[i];
         // '<' always replace with '&lt;'
@@ -294,7 +294,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
   @Override
   public final void declaration() {
-    append("<?xml version=\"1.0\" encoding=\""+this._encoding+"\"?>");
+    append("<?xml version=\"1.0\" encoding=\""+this.encoding +"\"?>");
     if (this.indent) {
       append('\n');
     }
@@ -441,7 +441,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
     if (peekElement().hasChildren) {
       indent();
     }
-    this._elements.add(new Element(name, hasChildren));
+    this.elements.add(new Element(name, hasChildren));
     append('<');
     append(name);
     this.isNude = true;
@@ -544,7 +544,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * @return The current element.
    */
   private Element peekElement() {
-    return this._elements.get(this._elements.size() - 1);
+    return this.elements.get(this.elements.size() - 1);
   }
 
   /**
@@ -553,7 +553,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * @return The current element.
    */
   private Element popElement() {
-    return this._elements.remove(this._elements.size() - 1);
+    return this.elements.remove(this.elements.size() - 1);
   }
 
   /**
@@ -613,7 +613,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * @throws IOException If thrown by the wrapped writer.
    */
   void indent() {
-    String spaces = this._indentChars;
+    String spaces = this.indentChars;
     if (this.indent && spaces != null) {
       for (int i = 0; i < this.depth; i++) {
         append(spaces);

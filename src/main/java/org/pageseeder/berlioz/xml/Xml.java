@@ -1,6 +1,5 @@
 package org.pageseeder.berlioz.xml;
 
-import org.pageseeder.berlioz.BerliozException;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
