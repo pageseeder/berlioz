@@ -88,7 +88,7 @@ public final class ContentSecurityPolicy {
       if (out.length() > 0) out.append("; ");
       out.append(e.getKey());
       // `upgrade-insecure-requests` has no value
-      if (e.getValue().length() > 0) {
+      if (!e.getValue().isEmpty()) {
         out.append(' ').append(e.getValue());
       }
     }
@@ -210,7 +210,7 @@ public final class ContentSecurityPolicy {
      */
     public Builder add(Directive directive, String source) {
       String current = this.directives.get(directive);
-      set(directive, current != null && current.length() > 0 ? current+" "+source : source);
+      set(directive, current != null && !current.isEmpty() ? current+" "+source : source);
       return this;
     }
 
@@ -248,7 +248,7 @@ public final class ContentSecurityPolicy {
     /**
      * Build the content security policy.
      *
-     * Implementation note: keep this method private, to avoid cloning
+     * <p>Implementation note: keep this method private, to avoid cloning
      * the map, this method reuses
      *
      * @return a new ContentSecurity policy
