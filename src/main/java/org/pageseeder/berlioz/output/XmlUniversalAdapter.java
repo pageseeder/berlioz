@@ -30,12 +30,12 @@ public class XmlUniversalAdapter implements UniversalWriter {
   /**
    * What we use to write XML.
    */
-  private final XmlWriter _xml;
+  private final XmlWriter xml;
 
   /**
    * When true
    */
-  private Deque<ContextOption> ignore = new ArrayDeque<>();
+  private final Deque<ContextOption> ignore = new ArrayDeque<>();
 
   /**
    * Creates a new XML writer to a <code>StringWriter</code>.
@@ -52,7 +52,7 @@ public class XmlUniversalAdapter implements UniversalWriter {
    * @param out Where the XML goes.
    */
   public XmlUniversalAdapter(Writer out) {
-    this._xml = new XmlAppendable<>(out);
+    this.xml = new XmlAppendable<>(out);
   }
 
   /**
@@ -61,7 +61,7 @@ public class XmlUniversalAdapter implements UniversalWriter {
    * @param xml Where the XML goes.
    */
   public XmlUniversalAdapter(XmlWriter xml) {
-    this._xml = xml;
+    this.xml = xml;
   }
 
   /**
@@ -78,13 +78,13 @@ public class XmlUniversalAdapter implements UniversalWriter {
   public final void field(String name, boolean value, FieldOption option) {
     switch (option) {
       case DEFAULT:
-        this._xml.attribute(name, value);
+        this.xml.attribute(name, value);
         return;
       case XML_TEXT:
-        this._xml.xml(Boolean.toString(value));
+        this.xml.xml(Boolean.toString(value));
         return;
       case XML_ELEMENT:
-        this._xml.openElement(name).xml(Boolean.toString(value)).closeElement();
+        this.xml.openElement(name).xml(Boolean.toString(value)).closeElement();
         return;
       case JSON_ONLY:
       default:
@@ -95,13 +95,13 @@ public class XmlUniversalAdapter implements UniversalWriter {
   public final void field(String name, long value, FieldOption option) {
     switch (option) {
       case DEFAULT:
-        this._xml.attribute(name, value);
+        this.xml.attribute(name, value);
         return;
       case XML_TEXT:
-        this._xml.xml(Long.toString(value));
+        this.xml.xml(Long.toString(value));
         return;
       case XML_ELEMENT:
-        this._xml.element(name, value);
+        this.xml.element(name, value);
         return;
       case JSON_ONLY:
       default:
@@ -112,13 +112,13 @@ public class XmlUniversalAdapter implements UniversalWriter {
   public final void field(String name, double value, FieldOption option) {
     switch (option) {
       case DEFAULT:
-        this._xml.attribute(name, value);
+        this.xml.attribute(name, value);
         return;
       case XML_TEXT:
-        this._xml.xml(Double.toString(value));
+        this.xml.xml(Double.toString(value));
         return;
       case XML_ELEMENT:
-        this._xml.element(name, value);
+        this.xml.element(name, value);
         return;
       case JSON_ONLY:
       default:
@@ -129,16 +129,16 @@ public class XmlUniversalAdapter implements UniversalWriter {
   public final void field(String name, String value, FieldOption option) {
     switch (option) {
       case DEFAULT:
-        this._xml.attribute(name, value);
+        this.xml.attribute(name, value);
         return;
       case XML_TEXT:
-        this._xml.text(value);
+        this.xml.text(value);
         return;
       case XML_ELEMENT:
-        this._xml.element(name, value);
+        this.xml.element(name, value);
         return;
       case XML_COPY:
-        this._xml.xml(value);
+        this.xml.xml(value);
         return;
       case JSON_ONLY:
       default:
@@ -148,20 +148,20 @@ public class XmlUniversalAdapter implements UniversalWriter {
   @Override
   public final void startObject(String name, ContextOption option) {
     this.ignore.push(option);
-    this._xml.openElement(name);
+    this.xml.openElement(name);
   }
 
   @Override
   public final void endObject() {
     this.ignore.pop();
-    this._xml.closeElement();
+    this.xml.closeElement();
   }
 
   @Override
   public final void startArray(String name, ContextOption option) {
     this.ignore.push(option);
     if (option != ContextOption.JSON_ONLY) {
-      this._xml.openElement(name);
+      this.xml.openElement(name);
     }
   }
 
@@ -169,18 +169,18 @@ public class XmlUniversalAdapter implements UniversalWriter {
   public final void endArray() {
     ContextOption option = this.ignore.pop();
     if (option != ContextOption.JSON_ONLY) {
-      this._xml.closeElement();
+      this.xml.closeElement();
     }
   }
 
   @Override
   public final void flush() {
-    this._xml.flush();
+    this.xml.flush();
   }
 
   @Override
   public void close() {
-    this._xml.close();
+    this.xml.close();
   }
 
   @Override

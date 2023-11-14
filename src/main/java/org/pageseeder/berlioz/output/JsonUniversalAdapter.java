@@ -28,7 +28,7 @@ public class JsonUniversalAdapter implements UniversalWriter {
   /**
    * The final output.
    */
-  private final JsonWriter _json;
+  private final JsonWriter json;
 
   /**
    * Creates a new JSON writer to a <code>StringWriter</code>.
@@ -43,7 +43,7 @@ public class JsonUniversalAdapter implements UniversalWriter {
    * @param out Where the JSON goes.
    */
   public JsonUniversalAdapter(Writer out) {
-    this._json = Json.newWriter(out);
+    this.json = Json.newWriter(out);
   }
 
   /**
@@ -58,60 +58,60 @@ public class JsonUniversalAdapter implements UniversalWriter {
 
   @Override
   public final void field(String name, boolean value, FieldOption option) {
-    this._json.field(Json.camelify(name), value);
+    this.json.field(Json.camelify(name), value);
   }
 
   @Override
   public final void field(String name, long value, FieldOption option) {
-    this._json.field(Json.camelify(name), value);
+    this.json.field(Json.camelify(name), value);
   }
 
   @Override
   public final void field(String name, double value, FieldOption option) {
-    this._json.field(Json.camelify(name), value);
+    this.json.field(Json.camelify(name), value);
   }
 
   @Override
   public final void field(String name, String value, FieldOption option) {
-    this._json.field(Json.camelify(name), value);
+    this.json.field(Json.camelify(name), value);
   }
 
   @Override
   public void startObject(String name, ContextOption option) {
-    if (this._json.inObject()) {
-      this._json.startObject(Json.camelify(name));
+    if (this.json.inObject()) {
+      this.json.startObject(Json.camelify(name));
     } else {
-      this._json.startObject();
+      this.json.startObject();
     }
   }
 
   @Override
   public void endObject() {
-    this._json.endObject();
+    this.json.endObject();
   }
 
   @Override
   public void startArray(String name, ContextOption option) {
-    if (this._json.inObject()) {
-      this._json.startArray(Json.camelify(name));
+    if (this.json.inObject()) {
+      this.json.startArray(Json.camelify(name));
     } else {
-      this._json.startArray();
+      this.json.startArray();
     }
   }
 
   @Override
   public void endArray() {
-    this._json.endArray();
+    this.json.endArray();
   }
 
   @Override
   public void flush() {
-    this._json.flush();
+    this.json.flush();
   }
 
   @Override
   public void close() {
-    this._json.close();
+    this.json.close();
   }
 
   @Override

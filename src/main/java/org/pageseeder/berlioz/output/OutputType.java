@@ -24,16 +24,16 @@ public enum OutputType {
   /**
    * The mediatype for the format
    */
-  private final String _mediaType;
+  private final String mediaType;
 
   OutputType(String mediaType) {
-    this._mediaType = mediaType;
+    this.mediaType = mediaType;
   }
 
   /**
    * The mediatype for the format.
    */
   public String getMediaType() {
-    return this._mediaType;
+    return this.mediaType;
   }
 }
