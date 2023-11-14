@@ -17,6 +17,8 @@ package org.pageseeder.berlioz.content;
 
 import org.pageseeder.xmlwriter.XMLWritable;
 
+import java.io.Serializable;
+
 /**
  * Returns information about the content path.
  *
@@ -26,7 +28,7 @@ import org.pageseeder.xmlwriter.XMLWritable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.13.0
  */
 public interface PathInfo extends XMLWritable {
 
