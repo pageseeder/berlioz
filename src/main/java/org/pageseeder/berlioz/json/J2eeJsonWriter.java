@@ -259,13 +259,4 @@ final class J2eeJsonWriter implements JsonWriter {
     }
   }
 
-  private void push(boolean isObject) {
-    this.level++;
-    if (this.level < this.inObject.length) {
-      this.inObject[this.level] = isObject;
-    } else {
-      this.inObject = Arrays.copyOf(this.inObject, this.inObject.length*2);
-    }
-  }
-
 }
