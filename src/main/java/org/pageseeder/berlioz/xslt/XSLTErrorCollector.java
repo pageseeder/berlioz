@@ -35,7 +35,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
   /**
    * The logger to use to report errors
    */
-  private final Logger _logger;
+  private final Logger logger;
 
   /**
    * Creates a new error collector.
@@ -43,7 +43,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
    * @param logger A logger to report errors when the listener's methods are called.
    */
   public XSLTErrorCollector(Logger logger) {
-    this._logger = logger;
+    this.logger = logger;
   }
 
   /**
@@ -55,7 +55,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
    */
   @Override
   public void fatalError(TransformerException exception) throws TransformerException {
-    this._logger.error(exception.getMessageAndLocation());
+    this.logger.error(exception.getMessageAndLocation());
     collect(Level.FATAL, exception);
   }
 
@@ -68,7 +68,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
    */
   @Override
   public void error(TransformerException exception) throws TransformerException {
-    this._logger.error(exception.getMessageAndLocation());
+    this.logger.error(exception.getMessageAndLocation());
     collect(Level.ERROR, exception);
   }
 
@@ -81,7 +81,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
    */
   @Override
   public void warning(TransformerException exception) throws TransformerException {
-    this._logger.warn(exception.getMessageAndLocation());
+    this.logger.warn(exception.getMessageAndLocation());
     collect(Level.WARNING, exception);
   }
 
