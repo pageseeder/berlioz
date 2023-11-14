@@ -65,15 +65,13 @@ public final class Aeson {
     }
 
     // Output folder required if source is a folder
-    if (source.isDirectory()) {
-      if (output == null || output.isFile()) {
-        System.err.println("When source is a directory, the output must be specified and be a directory");
-        System.exit(0);
-        return;
-      }
+    if (source.isDirectory() && (output == null || output.isFile())) {
+      System.err.println("When source is a directory, the output must be specified and be a directory");
+      System.exit(0);
+      return;
     }
 
-    // Setup the transformer
+    // Set up the transformer
     TransformerFactory factory = TransformerFactory.newInstance();
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
