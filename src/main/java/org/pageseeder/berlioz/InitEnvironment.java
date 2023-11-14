@@ -44,7 +44,7 @@ public final class InitEnvironment {
    * Default name of the directory containing the configuration files for Berlioz
    * including the global settings, services, logging, etc...
    *
-   * This can be overridden using a system property or environment variable
+   * <p>This can be overridden using a system property or environment variable
    */
   public static final String DEFAULT_CONFIG_DIRECTORY = "config";
 
@@ -57,42 +57,42 @@ public final class InitEnvironment {
    * <p>This should always be the <code>WEB-INF</code> folder of the Web
    * application.
    */
-  private final File _webInf;
+  private final File webInf;
 
   /**
    * Web application data directory.
    *
-   * It can be the same as the Web application directory, but may different in
+   * <p>It can be the same as the Web application directory, but may different in
    * cases where the data needs to be persistent and separate from the
    * application itself.
    */
-  private final File _appData;
+  private final File appData;
 
   /**
    * The name of the configuration folder.
    */
-  private final String _configFolder;
+  private final String configFolder;
 
   /**
    * The name of the configuration file to use.
    */
-  private final String _mode;
+  private final String mode;
 
   /**
    * @throws NullPointerException If any of the parameters is null
    */
   private InitEnvironment(File webInf, File appData, String configFolder, String mode) {
-    this._webInf = Objects.requireNonNull(webInf);
-    this._appData = Objects.requireNonNull(appData);
-    this._configFolder = Objects.requireNonNull(configFolder);
-    this._mode = Objects.requireNonNull(mode);
+    this.webInf = Objects.requireNonNull(webInf);
+    this.appData = Objects.requireNonNull(appData);
+    this.configFolder = Objects.requireNonNull(configFolder);
+    this.mode = Objects.requireNonNull(mode);
   }
 
   private InitEnvironment(File webInf) {
-    this._webInf = Objects.requireNonNull(webInf);
-    this._appData = webInf;
-    this._configFolder = DEFAULT_CONFIG_DIRECTORY;
-    this._mode = DEFAULT_MODE;
+    this.webInf = Objects.requireNonNull(webInf);
+    this.appData = webInf;
+    this.configFolder = DEFAULT_CONFIG_DIRECTORY;
+    this.mode = DEFAULT_MODE;
   }
 
   /**
@@ -106,18 +106,18 @@ public final class InitEnvironment {
    * The Berlioz mode.
    */
   public String mode() {
-    return this._mode;
+    return this.mode;
   }
 
   /**
    * Web application data directory.
    *
-   * It can be the same as the Web application directory, but may different in
+   * <p>It can be the same as the Web application directory, but may different in
    * cases where the data needs to be persistent and separate from the
    * application itself.
    */
   public File appData() {
-    return this._appData;
+    return this.appData;
   }
 
   /**
@@ -127,14 +127,14 @@ public final class InitEnvironment {
    * application.
    */
   public File webInf() {
-    return this._webInf;
+    return this.webInf;
   }
 
   /**
    * The name of the configuration folder.
    */
   public String configFolder() {
-    return this._configFolder;
+    return this.configFolder;
   }
 
   /**
@@ -145,17 +145,17 @@ public final class InitEnvironment {
   @Beta
   public boolean hasAppData() {
     // Most common case appData set to webInf
-    if (this._webInf == this._appData){
+    if (this.webInf == this.appData){
       return false;
     }
     // fallback in case appData is specified but point to same location
     try {
-      if (this._webInf.getCanonicalFile().equals(this._appData.getCanonicalFile())) {
+      if (this.webInf.getCanonicalFile().equals(this.appData.getCanonicalFile())) {
         return false;
       }
     } catch (IOException ex) {
       // NB. not as reliable as canonical but sufficient
-      if (this._webInf.getAbsoluteFile().equals(this._appData.getAbsoluteFile())) {
+      if (this.webInf.getAbsoluteFile().equals(this.appData.getAbsoluteFile())) {
         return false;
       }
     }
@@ -170,7 +170,7 @@ public final class InitEnvironment {
    */
   public InitEnvironment appData(File dir) {
     checkDirectoryExists(dir);
-    return new InitEnvironment(this._webInf, dir, this._configFolder, this._mode);
+    return new InitEnvironment(this.webInf, dir, this.configFolder, this.mode);
   }
 
   /**
@@ -182,8 +182,8 @@ public final class InitEnvironment {
    */
   public InitEnvironment configFolder(String name) {
     Objects.requireNonNull(name, "The config folder name must be specified.");
-    if (this._configFolder.equals(name)) return this;
-    return new InitEnvironment(this._webInf, this._appData, name, this._mode);
+    if (this.configFolder.equals(name)) return this;
+    return new InitEnvironment(this.webInf, this.appData, name, this.mode);
   }
 
   /**
@@ -195,8 +195,8 @@ public final class InitEnvironment {
    */
   public InitEnvironment mode(String mode) {
     Objects.requireNonNull(mode, "The configuration mode must be specified.");
-    if (this._mode.equals(mode)) return this;
-    return new InitEnvironment(this._webInf, this._appData, this._configFolder, mode);
+    if (this.mode.equals(mode)) return this;
+    return new InitEnvironment(this.webInf, this.appData, this.configFolder, mode);
   }
 
   /**
@@ -207,7 +207,7 @@ public final class InitEnvironment {
    */
   public InitEnvironment webInf(File dir) {
     checkDirectoryExists(dir);
-    return new InitEnvironment(dir, this._appData, this._configFolder, this._mode);
+    return new InitEnvironment(dir, this.appData, this.configFolder, this.mode);
   }
 
   /**

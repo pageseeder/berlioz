@@ -388,12 +388,12 @@ public enum BerliozOption {
   /**
    * The name of the property in the global settings.
    */
-  private final String _property;
+  private final String property;
 
   /**
    * The default value for the property.
    */
-  private final Object _default;
+  private final Object defaultValue;
 
   /**
    * Creates a new berlioz option.
@@ -402,8 +402,8 @@ public enum BerliozOption {
    * @param defaultTo The default value for this option.
    */
   BerliozOption(String property, Object defaultTo) {
-    this._property = property;
-    this._default = defaultTo;
+    this.property = property;
+    this.defaultValue = defaultTo;
   }
 
   /**
@@ -412,7 +412,7 @@ public enum BerliozOption {
    * @return The property in the global settings.
    */
   public String property() {
-    return this._property;
+    return this.property;
   }
 
   /**
@@ -421,7 +421,7 @@ public enum BerliozOption {
    * @return The property in the global settings.
    */
   public Object defaultTo() {
-    return this._default;
+    return this.defaultValue;
   }
 
   /**
@@ -433,7 +433,7 @@ public enum BerliozOption {
    *         <code>false</code> otherwise.
    */
   public boolean isBoolean() {
-    return this._default.getClass() == Boolean.class;
+    return this.defaultValue.getClass() == Boolean.class;
   }
 
   /**
@@ -443,6 +443,6 @@ public enum BerliozOption {
    */
   @Override
   public final String toString() {
-    return this._property;
+    return this.property;
   }
 }
