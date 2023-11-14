@@ -26,7 +26,7 @@ import org.pageseeder.berlioz.content.Location;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13 - 21 January 2013
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.13
  */
 final class CoreHttpRequest {
@@ -34,22 +34,22 @@ final class CoreHttpRequest {
   /**
    * The wrapped {@link javax.servlet.ServletRequest}.
    */
-  private final HttpServletRequest _req;
+  private final HttpServletRequest req;
 
   /**
    * The wrapped {@link javax.servlet.ServletResponse}.
    */
-  private final HttpServletResponse _res;
+  private final HttpServletResponse res;
 
   /**
    * The environment.
    */
-  private final Environment _env;
+  private final Environment env;
 
   /**
    * The location of the resource requested.
    */
-  private final Location _loc;
+  private final Location loc;
 
   /**
    * Creates a object containing all the common HTTP information.
@@ -59,37 +59,37 @@ final class CoreHttpRequest {
    * @param env The environment for this request.
    */
   public CoreHttpRequest(HttpServletRequest req, HttpServletResponse res, Environment env) {
-    this._req = req;
-    this._res = res;
-    this._env = env;
-    this._loc = HttpLocation.build(req);
+    this.req = req;
+    this.res = res;
+    this.env = env;
+    this.loc = HttpLocation.build(req);
   }
 
   /**
    * @return the _loc
    */
   public Location location() {
-    return this._loc;
+    return this.loc;
   }
 
   /**
    * @return the _req
    */
   public HttpServletRequest request() {
-    return this._req;
+    return this.req;
   }
 
   /**
    * @return the _env
    */
   public Environment environment() {
-    return this._env;
+    return this.env;
   }
 
   /**
    * @return the _res
    */
   public HttpServletResponse response() {
-    return this._res;
+    return this.res;
   }
 }

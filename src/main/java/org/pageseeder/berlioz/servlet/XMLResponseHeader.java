@@ -70,29 +70,29 @@ public final class XMLResponseHeader implements XMLWritable {
    *
    * NB: We disallow ':' to avoid issues with namespaces.
    */
-  private final static Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
+  private static final Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
 
-  private final static NonceFactory NONCE_FACTORY = new NonceFactory();
+  private static final NonceFactory NONCE_FACTORY = new NonceFactory();
 
   /**
    * The core HTTP details.
    */
-  private final CoreHttpRequest _core;
+  private final CoreHttpRequest core;
 
   /**
    * The name of the service provided.
    */
-  private final String _service;
+  private final String service;
 
   /**
    * The group of the service provided.
    */
-  private final String _group;
+  private final String group;
 
   /**
    * The results of URI resolution.
    */
-  private final URIResolveResult _results;
+  private final URIResolveResult results;
 
   /**
    * Creates a new XML response header.
@@ -102,10 +102,10 @@ public final class XMLResponseHeader implements XMLWritable {
    * @param results  The result of URI resolution.
    */
   protected XMLResponseHeader(CoreHttpRequest core, Service service, URIResolveResult results) {
-    this._core = core;
-    this._service = service.id();
-    this._group = service.group();
-    this._results = results;
+    this.core = core;
+    this.service = service.id();
+    this.group = service.group();
+    this.results = results;
   }
 
   /**
@@ -159,7 +159,7 @@ public final class XMLResponseHeader implements XMLWritable {
    */
   @Override
   public void toXML(XMLWriter xml) throws IOException {
-    HttpServletRequest req = this._core.request();
+    HttpServletRequest req = this.core.request();
 
     boolean compatibility = !"1.0".equals(GlobalSettings.get(BerliozOption.XML_HEADER_VERSION));
 
@@ -167,8 +167,8 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.openElement("header", true);
     if (compatibility) {
       xml.writeComment("Elements below will be deprecated in Berlioz 1.0");
-      xml.element("group", this._group);
-      xml.element("service", this._service);
+      xml.element("group", this.group);
+      xml.element("service", this.service);
       xml.writeComment("Use 'path' instead");
       xml.element("path-info", HttpRequestWrapper.getBerliozPath(req));
       xml.element("context-path", req.getContextPath());
@@ -182,7 +182,7 @@ public final class XMLResponseHeader implements XMLWritable {
     }
 
     // New location info
-    Location location = this._core.location();
+    Location location = this.core.location();
     if (location != null) {
       location.toXML(xml);
       PathInfo path = location.info();
@@ -210,11 +210,11 @@ public final class XMLResponseHeader implements XMLWritable {
     xml.closeElement(); // close http-parameters
 
     // Write the URI parameters
-    if (this._results != null) {
-      Set<String> unames = this._results.names();
+    if (this.results != null) {
+      Set<String> unames = this.results.names();
       xml.openElement("uri-parameters", !unames.isEmpty());
       for (String name : unames) {
-        Object value = this._results.get(name);
+        Object value = this.results.get(name);
         xml.openElement("parameter", false);
         xml.attribute("name", name);
         xml.writeText(value != null? value.toString() : "");

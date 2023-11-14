@@ -91,7 +91,7 @@ public final class RedirectFilter implements Filter, Serializable {
   /**
    * Maps URI patterns to redirect to URI pattern target.
    */
-  private @Nullable transient RedirectConfig config = null;
+  private transient @Nullable RedirectConfig config = null;
 
   /**
    * The control key
@@ -174,10 +174,10 @@ public final class RedirectFilter implements Filter, Serializable {
     }
 
     // Load the config if needed
-    RedirectConfig config = config();
+    RedirectConfig redirectConfig = config();
 
     // Evaluate URI patterns
-    RedirectLocation location = config.redirect(req.getRequestURI());
+    RedirectLocation location = redirectConfig.redirect(req.getRequestURI());
     if (location != null) {
       res.setCharacterEncoding("utf-8");
       LOGGER.debug("Redirecting from {} to {}", location.from(), location.to());
@@ -195,18 +195,18 @@ public final class RedirectFilter implements Filter, Serializable {
    * @return the URI pattern mapping loading the configuration file if necessary.
    */
   private RedirectConfig config() {
-    RedirectConfig config = this.config;
-    if (config == null) {
+    RedirectConfig redirectConfig = this.config;
+    if (redirectConfig == null) {
       try {
-        config = RedirectConfig.newInstance(this.configFile);
-        LOGGER.info("Loaded redirect configuration: {} rules found", config.size());
+        redirectConfig = RedirectConfig.newInstance(this.configFile);
+        LOGGER.info("Loaded redirect configuration: {} rules found", redirectConfig.size());
       } catch (ConfigException ex) {
         LOGGER.error("Unable to load configuration: {}", ex.getMessage());
-        config = new RedirectConfig();
+        redirectConfig = new RedirectConfig();
       }
-      this.config = config;
+      this.config = redirectConfig;
     }
-    return config;
+    return redirectConfig;
   }
 
   /**

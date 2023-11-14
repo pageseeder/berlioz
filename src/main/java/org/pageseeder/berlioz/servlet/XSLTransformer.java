@@ -107,12 +107,12 @@ public final class XSLTransformer {
    *
    * <p>For example, "/WEB-INF/xslt/html/global.xsl"
    */
-  private final File _templates;
+  private final File templatesFile;
 
   /**
    * The URL to a fallback template.
    */
-  private final @Nullable URL _fallback;
+  private final @Nullable URL fallback;
 
   /**
    * An etag for these templates.
@@ -135,8 +135,8 @@ public final class XSLTransformer {
    * @param fallback  The URL to the fallback templates (optional)
    */
   public XSLTransformer(File templates, @Nullable URL fallback) {
-    this._templates = Objects.requireNonNull(templates, "The template file is required");
-    this._fallback = fallback;
+    this.templatesFile = Objects.requireNonNull(templates, "The template file is required");
+    this.fallback = fallback;
     this.etag = computeEtag(templates, fallback);
   }
 
@@ -157,7 +157,7 @@ public final class XSLTransformer {
 
     try {
       // Creates a transformer from the templates
-      templates = getTemplates(this._templates);
+      templates = getTemplates(this.templatesFile);
 
       // Setup the source
       StreamSource source = new StreamSource(new StringReader(content));
@@ -209,7 +209,7 @@ public final class XSLTransformer {
    * @return  the file used by this transformer to produce the templates.
    */
   public File templates() {
-    return this._templates;
+    return this.templatesFile;
   }
 
   /**
@@ -226,7 +226,7 @@ public final class XSLTransformer {
    */
   public synchronized void clearCache() {
     LOGGER.debug("Clearing XSLT cache.");
-    CACHE.remove(this._templates);
+    CACHE.remove(this.templatesFile);
   }
 
   /**
@@ -358,11 +358,11 @@ public final class XSLTransformer {
       LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", stylesheet, store? "enabled" : "disabled");
       // Generate the templates if necessary
       long t0 = System.currentTimeMillis();
-      templates = toTemplates(f, this._fallback);
+      templates = toTemplates(f, this.fallback);
       long t1 = System.currentTimeMillis();
       LOGGER.debug("Templates loaded in {}ms", (t1 - t0));
       // Recalculate the Etag
-      this.etag = computeEtag(f, this._fallback);
+      this.etag = computeEtag(f, this.fallback);
       if (store) {
         CACHE.put(f, templates);
         LOGGER.info("Caching XSLT stylesheet '{}'", stylesheet);
@@ -645,7 +645,7 @@ public final class XSLTransformer {
     private static final long serialVersionUID = -7816677212503520650L;
 
     /** Holds the error details as XML. */
-    private final XSLTErrorCollector _collector;
+    private final transient XSLTErrorCollector collector;
 
     /**
      * Creates a new UI transformation exception wrapping an existing one.
@@ -655,7 +655,7 @@ public final class XSLTransformer {
      */
     public TransformerExceptionWrapper(TransformerException ex, XSLTErrorCollector collector) {
       super(ex);
-      this._collector = collector;
+      this.collector = collector;
     }
 
     /**
@@ -663,7 +663,7 @@ public final class XSLTransformer {
      * @return the errors as XML.
      */
     public XSLTErrorCollector collector() {
-      return this._collector;
+      return this.collector;
     }
 
   }

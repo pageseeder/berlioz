@@ -98,17 +98,17 @@ final class Overlays {
     /**
      * The war or zip file.
      */
-    private final File _source;
+    private final File source;
 
     /**
      * The name of the overlay
      */
-    private final String _name;
+    private final String name;
 
     /**
      * The version of the overlay
      */
-    private final String _version;
+    private final String version;
 
     /**
      * Create a new overlay.
@@ -116,33 +116,33 @@ final class Overlays {
      * @param source The war or zip file.
      */
     private Overlay(File source) {
-      this._source = source;
+      this.source = source;
       String filename = source.getName();
       filename = filename.substring(0, filename.length() - 4); // always an extension
       int dash = filename.lastIndexOf('-');
-      this._name = dash >= 0 ? filename.substring(0, dash) : filename;
-      this._version = dash >= 0 ? filename.substring(dash+1) : "";
+      this.name = dash >= 0 ? filename.substring(0, dash) : filename;
+      this.version = dash >= 0 ? filename.substring(dash+1) : "";
     }
 
     /**
      * @return the name
      */
     public String name() {
-      return this._name;
+      return this.name;
     }
 
     /**
      * @return the version
      */
     public String version() {
-      return this._version;
+      return this.version;
     }
 
     @Override
     public int compareTo(Overlay o) {
-      int compare = this._name.compareTo(o._name);
+      int compare = this.name.compareTo(o.name);
       if (compare == 0) {
-        compare = Versions.compare(this._version, o._version);
+        compare = Versions.compare(this.version, o.version);
       }
       return compare;
     }
@@ -151,7 +151,7 @@ final class Overlays {
      * @return the source file
      */
     public File getSource() {
-      return this._source;
+      return this.source;
     }
 
     /**
@@ -166,8 +166,8 @@ final class Overlays {
     public int unpack(final File root) throws IOException {
       String rootPath = root.getCanonicalPath();
       int unpacked = 0;
-      long modified = this._source.lastModified();
-      try (ZipFile zip = new ZipFile(this._source)) {
+      long modified = this.source.lastModified();
+      try (ZipFile zip = new ZipFile(this.source)) {
         ZipEntry entry;
         for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements();) {
           entry = e.nextElement();
@@ -216,7 +216,7 @@ final class Overlays {
 
     @Override
     public String toString() {
-      return this._name+"["+this._version+"]";
+      return this.name +"["+this.version +"]";
     }
   }
 

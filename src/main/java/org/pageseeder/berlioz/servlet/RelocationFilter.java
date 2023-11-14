@@ -84,7 +84,7 @@ public final class RelocationFilter implements Filter {
   /**
    * The actual relocation config.
    */
-  private @Nullable transient RelocationConfig config = null;
+  private @Nullable RelocationConfig config = null;
 
   /**
    * Initialises the Relocation Servlet.
@@ -189,18 +189,18 @@ public final class RelocationFilter implements Filter {
    * @return the config loading the configuration file if necessary.
    */
   private RelocationConfig config() {
-    RelocationConfig config = this.config;
-    if (config == null) {
+    RelocationConfig relocationConfig = this.config;
+    if (relocationConfig == null) {
       try {
-        config = RelocationConfig.newInstance(this.mappingFile);
-        LOGGER.info("Loaded relocation configuration: {} rules found", config.size());
+        relocationConfig = RelocationConfig.newInstance(this.mappingFile);
+        LOGGER.info("Loaded relocation configuration: {} rules found", relocationConfig.size());
       } catch (ConfigException ex) {
         LOGGER.warn("Unable to load configuration: {}", ex.getMessage());
-        config = new RelocationConfig();
+        relocationConfig = new RelocationConfig();
       }
-      this.config = config;
+      this.config = relocationConfig;
     }
-    return config;
+    return relocationConfig;
   }
 
   private String ensureSafeTarget(String to) {

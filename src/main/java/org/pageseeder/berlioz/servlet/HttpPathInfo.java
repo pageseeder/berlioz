@@ -40,22 +40,22 @@ public final class HttpPathInfo implements PathInfo, Serializable {
   /**
    * The Web application context.
    */
-  private final String _context;
+  private final String context;
 
   /**
-   * The extension (may be <code>null</code>).
+   * The extension (might be <code>null</code>).
    */
-  private final String _extension;
+  private final String extension;
 
   /**
-   * The prefix (may be <code>null</code>).
+   * The prefix (might be <code>null</code>).
    */
-  private final String _prefix;
+  private final String prefix;
 
   /**
    * The berlioz path.
    */
-  private final String _path;
+  private final String path;
 
   /**
    * Creates a new PathInfo for HTTP.
@@ -65,61 +65,61 @@ public final class HttpPathInfo implements PathInfo, Serializable {
    * @throws NullPointerException if the request is <code>null</code>
    */
   protected HttpPathInfo(HttpServletRequest req) {
-    this._context = req.getContextPath();
+    this.context = req.getContextPath();
     if (req.getPathInfo() != null) {
       // Try to get the path info (when mapped to '/prefix/*')
-      String path = req.getPathInfo();
-      this._path = path != null? path : "";
-      this._prefix = req.getServletPath();
-      this._extension = "";
+      String pathInfo = req.getPathInfo();
+      this.path = pathInfo != null? pathInfo : "";
+      this.prefix = req.getServletPath();
+      this.extension = "";
     } else {
       // Otherwise assume that it is mapped to '*.suffix'
-      String path = req.getServletPath();
-      int dot = path.lastIndexOf('.');
-      this._path = (dot != -1)? path.substring(0, dot) : path;
-      this._prefix = "";
-      this._extension = (dot != -1)? path.substring(dot) : "";
+      String servletPath = req.getServletPath();
+      int dot = servletPath.lastIndexOf('.');
+      this.path = (dot != -1)? servletPath.substring(0, dot) : servletPath;
+      this.prefix = "";
+      this.extension = (dot != -1)? servletPath.substring(dot) : "";
     }
   }
 
   @Override
   public String context() {
-    return this._context;
+    return this.context;
   }
 
   @Override
   public String extension() {
-    return this._extension;
+    return this.extension;
   }
 
   @Override
   public String path() {
-    return this._path;
+    return this.path;
   }
 
   @Override
   public String prefix() {
-    return this._prefix;
+    return this.prefix;
   }
 
   @Override
   public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("path");
-    if (this._context.length() > 0) {
-      xml.attribute("context", this._context);
+    if (!this.context.isEmpty()) {
+      xml.attribute("context", this.context);
     }
-    if (this._prefix.length() > 0) {
-      xml.attribute("prefix", this._prefix);
+    if (!this.prefix.isEmpty()) {
+      xml.attribute("prefix", this.prefix);
     }
-    xml.attribute("info", this._path);
-    if (this._extension.length() > 0) {
-      xml.attribute("extension", this._extension);
+    xml.attribute("info", this.path);
+    if (!this.extension.isEmpty()) {
+      xml.attribute("extension", this.extension);
     }
     xml.closeElement();
   }
 
   @Override
   public String toString() {
-    return this._context+this._prefix+this._path+this._extension;
+    return this.context +this.prefix +this.path +this.extension;
   }
 }

@@ -52,22 +52,22 @@ public final class HttpLocation implements Location, Serializable {
   private static final int DEFAULT_PORT_HTTPS = 443;
 
   /** The scheme "http" or "https" */
-  private final String _scheme;
+  private final String scheme;
 
   /** The host */
-  private final String _host;
+  private final String host;
 
   /** The port */
-  private final int _port;
+  private final int port;
 
   /** The path */
-  private final String _path;
+  private final String path;
 
   /** The query path */
-  private final String _query;
+  private final String query;
 
   /** The path info */
-  private final PathInfo _info;
+  private final HttpPathInfo info;
 
   /**
    * Create a new location instance from the specified request.
@@ -75,63 +75,63 @@ public final class HttpLocation implements Location, Serializable {
    * @param req The HTTP servlet request.
    */
   private HttpLocation(HttpServletRequest req) {
-    this._scheme = req.getScheme();
-    this._host = req.getServerName();
-    this._port = req.getServerPort();
-    this._path = req.getRequestURI();
-    String query = req.getQueryString();
-    this._query = query != null? query : "";
-    this._info = new HttpPathInfo(req);
+    this.scheme = req.getScheme();
+    this.host = req.getServerName();
+    this.port = req.getServerPort();
+    this.path = req.getRequestURI();
+    String queryString = req.getQueryString();
+    this.query = queryString != null? queryString : "";
+    this.info = new HttpPathInfo(req);
   }
 
   @Override
   public String scheme() {
-    return this._scheme;
+    return this.scheme;
   }
 
   @Override
   public String host() {
-    return this._host;
+    return this.host;
   }
 
   @Override
   public int port() {
-    return this._port;
+    return this.port;
   }
 
   @Override
   public String path() {
-    return this._path;
+    return this.path;
   }
 
   @Override
   public String query() {
-    return this._query;
+    return this.query;
   }
 
   @Override
   public PathInfo info() {
-    return this._info;
+    return this.info;
   }
 
   @Override
   public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("location");
-    xml.attribute("scheme", this._scheme);
-    xml.attribute("host", this._host);
-    xml.attribute("port", Integer.toString(this._port));
-    xml.attribute("path", this._path);
-    xml.attribute("query", this._query);
+    xml.attribute("scheme", this.scheme);
+    xml.attribute("host", this.host);
+    xml.attribute("port", Integer.toString(this.port));
+    xml.attribute("path", this.path);
+    xml.attribute("query", this.query);
     StringBuilder url = new StringBuilder();
-    url.append(this._scheme).append("://").append(this._host);
-    if (!isDefaultPort(this._scheme, this._port)) {
-      url.append(':').append(this._port);
+    url.append(this.scheme).append("://").append(this.host);
+    if (!isDefaultPort(this.scheme, this.port)) {
+      url.append(':').append(this.port);
     }
     // Include the base (without the path or query)
     xml.attribute("base", url.toString());
-    url.append(this._path);
-    if (this._query.length()>0) {
-      url.append('?').append(this._query);
+    url.append(this.path);
+    if (!this.query.isEmpty()) {
+      url.append('?').append(this.query);
     }
     xml.writeText(url.toString());
     xml.closeElement();
@@ -149,9 +149,9 @@ public final class HttpLocation implements Location, Serializable {
   }
 
   /**
-   * Returns the a base URL as a string builder.
+   * Returns the base URL as a string builder.
    *
-   * <p>This method contruct the base URL using the following methods:
+   * <p>This method construct the base URL using the following methods:
    * <ul>
    *   <li><code>getScheme</code></li>
    *   <li><code>getServerName</code></li>
@@ -178,17 +178,17 @@ public final class HttpLocation implements Location, Serializable {
   /**
    * Returns the scheme (http or https).
    *
-   * Check if this information is in the reverse proxy header otherwise get from expected header
+   * <p>Check if this information is in the reverse proxy header otherwise get from expected header
    *
-   * The reason it tries to get the original scheme is to avoid multiple redirecting. The scenario we found is:
+   * <p>The reason it tries to get the original scheme is to avoid multiple redirecting. The scenario we found is:
    *
    * 1 - User access https
    * 2 - If there is a NGINX reverse proxy, the request will be sent to jetty using http probably
    * 3 - if the berlioz redirect is used, it will redirect over the http
    * 4 - And NGINX may be set to not accept http then it redirects again to https
    *
-   * By getting the original scheme (used in above step 1) the step 3 will redirect to the correct scheme and the step 4
-   * will not happening.
+   * <p>By getting the original scheme (used in above step 1) the step 3 will redirect to the correct scheme and the step 4
+   * will not happen.
    *
    * @param req the HTTP servlet request to use to build the base URL
    * @return the corresponding scheme
@@ -226,7 +226,7 @@ public final class HttpLocation implements Location, Serializable {
       // not been sent.
       port = -1;
       String reverseProxyPort = StringUtils.substringAfter(req.getHeader(HttpHeaders.X_FORWARDED_HOST), ":");
-      if (reverseProxyPort.matches("[0-9]+")) {
+      if (reverseProxyPort.matches("\\d{1,5}")) {
         port = Integer.parseInt(reverseProxyPort);
       }
     }
@@ -252,8 +252,7 @@ public final class HttpLocation implements Location, Serializable {
    */
   private static boolean isDefaultPort(String scheme, int port) {
     if (port < 0) return true;
-    if (DEFAULT_PORT_HTTP == port  && "http".equals(scheme)) return true;
-    if (DEFAULT_PORT_HTTPS == port && "https".equals(scheme)) return true;
-    return false;
+    return (DEFAULT_PORT_HTTP == port  && "http".equals(scheme))
+        || (DEFAULT_PORT_HTTPS == port && "https".equals(scheme));
   }
 }

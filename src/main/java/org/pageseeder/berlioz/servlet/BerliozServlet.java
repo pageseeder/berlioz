@@ -308,7 +308,7 @@ public final class BerliozServlet extends HttpServlet {
       // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
       if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
         List<String> methods = services.allows(path);
-        if (methods.size() > 0) {
+        if (!methods.isEmpty()) {
           res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
           String message = "Only the following are allowed: "+HttpHeaderUtils.allow(methods);
           sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, message, null);
@@ -565,7 +565,7 @@ public final class BerliozServlet extends HttpServlet {
     /**
      * The wrapped ETag
      */
-    private final String _etag;
+    private final String etag;
 
     /**
      * Creates a new service info instance.
@@ -573,7 +573,7 @@ public final class BerliozServlet extends HttpServlet {
      * @param etag The etag.
      */
     public ServiceInfo(String etag) {
-      this._etag = etag;
+      this.etag = etag;
     }
 
     /**
@@ -581,7 +581,7 @@ public final class BerliozServlet extends HttpServlet {
      */
     @Override
     public @NonNull String getETag() {
-      return this._etag;
+      return this.etag;
     }
 
     /**

@@ -58,27 +58,27 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * The wrapped {@link javax.servlet.ServletRequest}.
    */
-  private final HttpServletRequest _req;
+  private final HttpServletRequest req;
 
   /**
    * The wrapped {@link javax.servlet.ServletResponse}.
    */
-  private final HttpServletResponse _res;
+  private final HttpServletResponse res;
 
   /**
    * The environment.
    */
-  private final Environment _env;
+  private final Environment env;
 
   /**
    * The location of the resource requested.
    */
-  private final Location _loc;
+  private final Location location;
 
   /**
    * Maps parameter names to their values.
    */
-  private final Map<String, String> _parameters;
+  private final Map<String, String> parameters;
 
   // Constructors
   // ----------------------------------------------------------------------------------------------
@@ -93,25 +93,25 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    */
   HttpRequestWrapper(CoreHttpRequest core, Map<String, String> parameters) {
     Objects.requireNonNull(core, "Cannot construct wrapper around null request.");
-    this._req = core.request();
-    this._res = core.response();
-    this._env = core.environment();
-    this._loc = core.location();
-    this._parameters = parameters;
+    this.req = core.request();
+    this.res = core.response();
+    this.env = core.environment();
+    this.location = core.location();
+    this.parameters = parameters;
   }
 
 // generic parameter methods ----------------------------------------------------------------------
 
   @Override
   public final String getBerliozPath() {
-    return this._loc.info().path();
+    return this.location.info().path();
   }
 
   @Override
   public final @Nullable String getParameter(String name) {
-    @Nullable String value = this._parameters.get(name);
+    @Nullable String value = this.parameters.get(name);
     if (value == null) {
-      value = this._req.getParameter(name);
+      value = this.req.getParameter(name);
     }
     return ("".equals(value))? null : value;
   }
@@ -119,26 +119,26 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   @Override
   public final String getParameter(String name, String def) {
     String value = getParameter(name);
-    return (value == null || "".equals(value))? def : value;
+    return (value == null || value.isEmpty())? def : value;
   }
 
   @Override
   public final String @Nullable [] getParameterValues(String name) {
-    @Nullable String value = this._parameters.get(name);
+    @Nullable String value = this.parameters.get(name);
     if (value != null)
       return new String[]{value};
     else
-      return this._req.getParameterValues(name);
+      return this.req.getParameterValues(name);
   }
 
   @Override
   public final Enumeration<String> getParameterNames() {
-    return Collections.enumeration(this._parameters.keySet());
+    return Collections.enumeration(this.parameters.keySet());
   }
 
   @Override
   public final Environment getEnvironment() {
-    return this._env;
+    return this.env;
   }
 
 // specific methods ---------------------------------------------------------------------
@@ -146,7 +146,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   @Override
   public final int getIntParameter(String name, int def) {
     String value = getParameter(name);
-    if (value == null || "".equals(value)) return def;
+    if (value == null || value.isEmpty()) return def;
     try {
       return Integer.parseInt(value);
     } catch (NumberFormatException ex) {
@@ -158,7 +158,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   @Override
   public final long getLongParameter(String name, long def) {
     String value = getParameter(name);
-    if (value == null || "".equals(value)) return def;
+    if (value == null || value.isEmpty()) return def;
     try {
       return Long.parseLong(value);
     } catch (NumberFormatException ex) {
@@ -174,30 +174,30 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     try {
       return ISO8601.parseAuto(value);
     } catch (ParseException ex) {
-      LOGGER.warn("The date parameter cannot be parsed :"+this._req.getParameter(name), ex);
+      LOGGER.warn("The date parameter cannot be parsed :"+this.req.getParameter(name), ex);
       return null;
     }
   }
 
   public final @Nullable String getPathInfo() {
-    return this._req.getPathInfo();
+    return this.req.getPathInfo();
   }
 
   @Override
   public final Cookie @Nullable [] getCookies() {
-    return this._req.getCookies();
+    return this.req.getCookies();
   }
 
 // attributes -------------------------------------------------------------------------------------
 
   @Override
   public final @Nullable Object getAttribute(String name) {
-    return this._req.getAttribute(name);
+    return this.req.getAttribute(name);
   }
 
   @Override
   public final void setAttribute(String name, Object o) {
-    this._req.setAttribute(name, o);
+    this.req.setAttribute(name, o);
   }
 
   /**
@@ -209,7 +209,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * @return The wrapped HTTP servlet request.
    */
   public final HttpServletRequest getHttpRequest() {
-    return this._req;
+    return this.req;
   }
 
   /**
@@ -221,12 +221,12 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * @return The attached HTTP servlet response.
    */
   public final HttpServletResponse getHttpResponse() {
-    return this._res;
+    return this.res;
   }
 
   @Override
   public final Location getLocation() {
-    return this._loc;
+    return this.location;
   }
 
   /**
@@ -236,8 +236,8 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    *         <code>false</code> otherwise.
    */
   public final boolean isMultipartContent() {
-    if (!"post".equals(this._req.getMethod().toLowerCase())) return false;
-    String contentType = this._req.getContentType();
+    if (!"post".equals(this.req.getMethod().toLowerCase())) return false;
+    String contentType = this.req.getContentType();
     if (contentType == null) return false;
     if (contentType.toLowerCase().startsWith("multipart/")) return true;
     return false;
@@ -250,7 +250,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    */
   @Override
   public final @Nullable HttpSession getSession() {
-    return this._req.getSession();
+    return this.req.getSession();
   }
 
   // utility methods

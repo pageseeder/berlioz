@@ -26,57 +26,57 @@ import org.pageseeder.berlioz.content.Environment;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9
  */
 public final class HttpEnvironment implements Environment {
 
   /**
-   * The location of the public directory.
+   * The location of the public folder.
    */
-  private final File _public;
+  private final File publicFolder;
 
   /**
-   * The location of the public directory.
+   * The location of the private folder.
    */
-  private final File _private;
+  private final File privateFolder;
 
   /**
    * The cache control directives for the environment (may be overridden by individual services)
    */
-  private final String _cacheControl;
+  private final String cacheControl;
 
   /**
    * Creates a new HTTP environment.
    *
-   * @param publicDir    The public directory.
-   * @param privateDir   The private directory.
+   * @param publicFolder The public directory.
+   * @param privateFolder The private directory.
    * @param cacheControl The default cache control directive.
    */
-  public HttpEnvironment(File publicDir, File privateDir, String cacheControl) {
-    this._public = publicDir;
-    this._private = privateDir;
-    this._cacheControl = cacheControl;
+  public HttpEnvironment(File publicFolder, File privateFolder, String cacheControl) {
+    this.publicFolder = publicFolder;
+    this.privateFolder = privateFolder;
+    this.cacheControl = cacheControl;
   }
 
   @Override
   public File getPublicFolder() {
-    return this._public;
+    return this.publicFolder;
   }
 
   @Override
   public File getPrivateFolder() {
-    return this._private;
+    return this.privateFolder;
   }
 
   @Override
   public File getPrivateFile(String path) {
-    return new File(this._private, path);
+    return new File(this.privateFolder, path);
   }
 
   @Override
   public File getPublicFile(String path) {
-    return new File(this._public, path);
+    return new File(this.publicFolder, path);
   }
 
   @Override
@@ -103,6 +103,6 @@ public final class HttpEnvironment implements Environment {
    * @return The HTTP cache control value.
    */
   public String getCacheControl() {
-    return this._cacheControl;
+    return this.cacheControl;
   }
 }

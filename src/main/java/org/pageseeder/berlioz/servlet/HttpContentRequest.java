@@ -38,17 +38,17 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   /**
    * Generator for which the request is designed for.
    */
-  private final ContentGenerator _generator;
+  private final ContentGenerator generator;
 
   /**
    * Service the generator is part of.
    */
-  private final Service _service;
+  private final Service service;
 
   /**
    * Indicates in which order it is going to be invoked starting with 0.
    */
-  private final int _order;
+  private final int order;
 
   /**
    * The status for this request.
@@ -81,9 +81,9 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   protected HttpContentRequest(CoreHttpRequest core, Map<String, String> parameters,
       ContentGenerator generator, Service service, int order) {
     super(core, parameters);
-    this._generator = Objects.requireNonNull(generator, "The generator is required");
-    this._service = Objects.requireNonNull(service, "The service is required");
-    this._order = order;
+    this.generator = Objects.requireNonNull(generator, "The generator is required");
+    this.service = Objects.requireNonNull(service, "The service is required");
+    this.order = order;
   }
 
   /**
@@ -137,7 +137,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @return the generator for which this request is used for.
    */
   public ContentGenerator generator() {
-    return this._generator;
+    return this.generator;
   }
 
   /**
@@ -146,7 +146,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @return the service the generator is part of.
    */
   public Service getService() {
-    return this._service;
+    return this.service;
   }
 
   /**
@@ -162,7 +162,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @return the order in which it will be invoked.
    */
   protected int order() {
-    return this._order;
+    return this.order;
   }
 
   /**
