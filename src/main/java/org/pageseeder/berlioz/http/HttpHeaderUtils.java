@@ -47,6 +47,8 @@ public final class HttpHeaderUtils {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpHeaderUtils.class);
 
+  private static final String GZIP_ETAG_SUFFIX = "-gzip\"";
+
   /**
    * HTTP date format.
    */
@@ -125,8 +127,7 @@ public final class HttpHeaderUtils {
 
     String eTag = info.getETag();
     String headerValue = req.getHeader(HttpHeaders.IF_MATCH);
-    if (headerValue != null) {
-      if (headerValue.indexOf('*') == -1) {
+    if (headerValue != null && (headerValue.indexOf('*') == -1)) {
 
         StringTokenizer commaTokenizer = new StringTokenizer(headerValue, ",");
         boolean conditionSatisfied = false;
@@ -134,7 +135,7 @@ public final class HttpHeaderUtils {
         while (!conditionSatisfied && commaTokenizer.hasMoreTokens()) {
           String currentToken = commaTokenizer.nextToken().trim();
           // Handle ETags of GZipped resources
-          if (currentToken.endsWith("-gzip\"")) {
+          if (currentToken.endsWith(GZIP_ETAG_SUFFIX)) {
             currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
           }
           if (currentToken.equals(eTag)) {
@@ -148,7 +149,7 @@ public final class HttpHeaderUtils {
           return false;
         }
 
-      }
+
     }
     return true;
   }
@@ -170,20 +171,18 @@ public final class HttpHeaderUtils {
     try {
       long headerValue = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
       long lastModified = info.getLastModified();
-      if (headerValue != -1) {
-        // If an If-None-Match header has been specified, if modified since is ignored.
-        if ((req.getHeader(HttpHeaders.IF_NONE_MATCH) == null) && (lastModified < headerValue + 1000)) {
-          // The entity has not been modified since the date specified by the client. This is not an error case.
-          res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-          String etag = info.getETag();
-          // Use the GZIP ETag for compressible resources
-          if (isCompressible(info.getMimeType()) && acceptsGZipCompression(req)) {
-            etag = getETagForGZip(etag);
-          }
-          res.setHeader(HttpHeaders.ETAG, etag);
-          LOGGER.debug("If-Modified-Since check: NOT MODIFIED, etag={}", etag);
-          return false;
+      // If an If-None-Match header has been specified, if modified since is ignored.
+      if (headerValue != -1 && req.getHeader(HttpHeaders.IF_NONE_MATCH) == null && (lastModified < headerValue + 1000)) {
+        // The entity has not been modified since the date specified by the client. This is not an error case.
+        res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+        String etag = info.getETag();
+        // Use the GZIP ETag for compressible resources
+        if (isCompressible(info.getMimeType()) && acceptsGZipCompression(req)) {
+          etag = getETagForGZip(etag);
         }
+        res.setHeader(HttpHeaders.ETAG, etag);
+        LOGGER.debug("If-Modified-Since check: NOT MODIFIED, etag={}", etag);
+        return false;
       }
     } catch (IllegalArgumentException ex) {
       // If the header value can't be converted to a date
@@ -224,7 +223,7 @@ public final class HttpHeaderUtils {
           String currentToken = commaTokenizer.nextToken().trim();
           // Handle ETags of GZipped resources
           isGZIP = false;
-          if (currentToken.endsWith("-gzip\"")) {
+          if (currentToken.endsWith(GZIP_ETAG_SUFFIX)) {
             currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
             isGZIP = true;
           }
@@ -275,13 +274,12 @@ public final class HttpHeaderUtils {
     try {
       long lastModified = info.getLastModified();
       long headerValue = req.getDateHeader(HttpHeaders.IF_UNMODIFIED_SINCE);
-      if (headerValue != -1) {
-        if (lastModified >= (headerValue + 1000)) {
+      if (headerValue != -1 && (lastModified >= (headerValue + 1000))) {
           // The entity has not been modified since the date specified by the client. This is not an error case.
           res.sendError(HttpServletResponse.SC_PRECONDITION_FAILED);
           LOGGER.debug("If-Unmodified-Since check: PRECONDITION FAILED, last modified: {} >= {}", lastModified, headerValue);
           return false;
-        }
+
       }
     } catch (IllegalArgumentException ex) {
       return true;
@@ -342,7 +340,7 @@ public final class HttpHeaderUtils {
   public static @Nullable String getETagForGZip(@Nullable String etag) {
     if (etag == null) return null;
     int q = etag.lastIndexOf("\"");
-    return (q > 0)? etag.substring(0, q)+"-gzip\"" : etag;
+    return (q > 0)? etag.substring(0, q)+GZIP_ETAG_SUFFIX : etag;
   }
 
   /**
@@ -353,7 +351,7 @@ public final class HttpHeaderUtils {
    */
   public static @Nullable String getETagForUncompressed(@Nullable String etag) {
     if (etag == null) return null;
-    int q = etag.lastIndexOf("-gzip\"");
+    int q = etag.lastIndexOf(GZIP_ETAG_SUFFIX);
     return (q > 0)? etag.substring(0, q-6)+'"' : etag;
   }
 

@@ -75,7 +75,7 @@ public enum HttpMethod {
   /**
    * Set of HTTP methods mappable to a service.
    */
-  private static final EnumSet<HttpMethod> MAPPABLE = EnumSet.of(GET, POST, PUT, PATCH, DELETE);
+  private static final EnumSet<HttpMethod> MAPPABLE_METHODS = EnumSet.of(GET, POST, PUT, PATCH, DELETE);
 
   /**
    * Indicates whether it can be mapped to a content generator.
@@ -106,6 +106,6 @@ public enum HttpMethod {
    * @return Set of HTTP methods mappable to a service.
    */
   public static EnumSet<HttpMethod> mappable() {
-    return MAPPABLE;
+    return MAPPABLE_METHODS;
   }
 }

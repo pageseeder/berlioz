@@ -33,38 +33,38 @@ import java.util.stream.Collectors;
  */
 public final class ServerTimingHeader {
 
-  private final List<PerformanceServerTiming> _timings = new ArrayList<>();
+  private final List<PerformanceServerTiming> timings = new ArrayList<>();
 
   public void add(PerformanceServerTiming timing) {
-    this._timings.add(timing);
+    this.timings.add(timing);
   }
 
   public void addMetric(String name) {
-    this._timings.add(new PerformanceServerTiming(name, -1));
+    this.timings.add(new PerformanceServerTiming(name, -1));
   }
 
   public void addMetric(String name, double durationMillis) {
-    this._timings.add(new PerformanceServerTiming(name, durationMillis));
+    this.timings.add(new PerformanceServerTiming(name, durationMillis));
   }
 
   public void addMetric(String name, String description) {
-    this._timings.add(new PerformanceServerTiming(name, description,-1));
+    this.timings.add(new PerformanceServerTiming(name, description,-1));
   }
 
   public void addMetric(String name, String description, double durationMillis) {
-    this._timings.add(new PerformanceServerTiming(name, description,durationMillis));
+    this.timings.add(new PerformanceServerTiming(name, description,durationMillis));
   }
 
   public void addMetricNano(String name, double durationNano) {
-    this._timings.add(new PerformanceServerTiming(name, durationNano*.000001));
+    this.timings.add(new PerformanceServerTiming(name, durationNano*.000001));
   }
 
   public void addMetricNano(String name, String description, long durationNano) {
-    this._timings.add(new PerformanceServerTiming(name, description, durationNano*.000001));
+    this.timings.add(new PerformanceServerTiming(name, description, durationNano*.000001));
   }
 
   public String toValue() {
-    return this._timings.stream().map(PerformanceServerTiming::toHeaderString).collect(Collectors.joining(", "));
+    return this.timings.stream().map(PerformanceServerTiming::toHeaderString).collect(Collectors.joining(", "));
   }
 
   public static void addMetricNano(HttpServletResponse response, String name, String description, long durationNano) {

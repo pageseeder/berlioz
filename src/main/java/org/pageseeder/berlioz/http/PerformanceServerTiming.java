@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.http;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
@@ -49,17 +51,17 @@ public final class PerformanceServerTiming {
   /**
    * The metric name.
    */
-  private final String _name;
+  private final String name;
 
   /**
    * The server-specified metric description.
    */
-  private final String _description;
+  private final String description;
 
   /**
    * The server-specified metric duration in milliseconds
    */
-  private final double _duration;
+  private final double duration;
 
   /**
    * @param name     The metric name.
@@ -78,22 +80,22 @@ public final class PerformanceServerTiming {
    *
    * @throws NullPointerException if name is null
    */
-  public PerformanceServerTiming(String name, String description, double duration) {
-    this._name = checkName(name);
-    this._description = ensureValidDescription(description);
-    this._duration = duration;
+  public PerformanceServerTiming(String name, @Nullable String description, double duration) {
+    this.name = checkName(name);
+    this.description = ensureValidDescription(description);
+    this.duration = duration;
   }
 
   public String name() {
-    return this._name;
+    return this.name;
   }
 
   public String description() {
-    return this._description;
+    return this.description;
   }
 
   public double duration() {
-    return this._duration;
+    return this.duration;
   }
 
   /**
@@ -104,18 +106,18 @@ public final class PerformanceServerTiming {
    * @return the header value string.
    */
   public String toHeaderString() {
-    StringBuilder header = new StringBuilder(this._name);
-    if (this._description.length() > 0) {
-      if (VALID_TOKEN.matcher(this._description).matches()) {
-        header.append(";desc=").append(this._description);
+    StringBuilder header = new StringBuilder(this.name);
+    if (this.description.length() > 0) {
+      if (VALID_TOKEN.matcher(this.description).matches()) {
+        header.append(";desc=").append(this.description);
       } else {
-        header.append(";desc=\"").append(this._description.replaceAll("([\"\\\\])", "\\\\$1")).append('"');
+        header.append(";desc=\"").append(this.description.replaceAll("([\"\\\\])", "\\\\$1")).append('"');
       }
     }
-    if (this._duration >= 0) {
+    if (this.duration >= 0) {
       DecimalFormat format = new DecimalFormat("#.###");
       format.setRoundingMode(RoundingMode.CEILING);
-      header.append(";dur=").append(format.format(this._duration));
+      header.append(";dur=").append(format.format(this.duration));
     }
     return header.toString();
   }
@@ -129,8 +131,7 @@ public final class PerformanceServerTiming {
    * @throws IllegalArgumentException If the name contains illegal characters
    */
   private String checkName(String name) {
-    if (name == null) throw new NullPointerException("Name must not be null");
-    if (name.length() == 0) throw new IllegalArgumentException("Name must be at least 1 character long");
+    if (name.isEmpty()) throw new IllegalArgumentException("Name must be at least 1 character long");
     if (!VALID_TOKEN.matcher(name).matches()) throw new IllegalArgumentException("Invalid name used for server timing");
     return name;
   }
@@ -143,8 +144,8 @@ public final class PerformanceServerTiming {
    *
    * @return A valid description with invalid characters replaced by '_'
    */
-  private String ensureValidDescription(String description) {
-    if (description == null || description.length() == 0) return "";
+  private String ensureValidDescription(@Nullable String description) {
+    if (description == null || description.isEmpty()) return "";
     return NON_VCHAR.matcher(description).replaceAll("_");
   }
 }

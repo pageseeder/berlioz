@@ -78,7 +78,7 @@ public final class HttpAcceptHeader { // NO_UCD
    */
   public static Map<String, Float> get(@Nullable String accept) {
     // no value, return an empty map
-    if (accept == null || "".equals(accept)) return Collections.emptyMap();
+    if (accept == null || accept.isEmpty()) return Collections.emptyMap();
     // Try to see if this has been processed already
     Map<String, Float> map = MAPS.get(accept);
     // Parse the accept header.
