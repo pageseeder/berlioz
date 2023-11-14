@@ -23,7 +23,7 @@ import java.util.Arrays;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.0
  */
 final class BuiltinJsonWriter implements JsonWriter {
@@ -31,7 +31,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   /**
    * Underlying JSON writer
    */
-  private final PrintWriter _json;
+  private final PrintWriter json;
 
   /**
    * Either '{' or '[' for Objects and Array respectively.
@@ -49,7 +49,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   private boolean needComma = false;
 
   public BuiltinJsonWriter(PrintWriter json) {
-    this._json = json;
+    this.json = json;
   }
 
   @Override
@@ -57,8 +57,8 @@ final class BuiltinJsonWriter implements JsonWriter {
     push(']');
     maybeAppendComma(true);
     appendJSONString(name);
-    this._json.append(':');
-    this._json.append('[');
+    this.json.append(':');
+    this.json.append('[');
     return this;
   }
 
@@ -66,14 +66,14 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter startArray() {
     push(']');
     maybeAppendComma(true);
-    this._json.append('[');
+    this.json.append('[');
     return this;
   }
 
   @Override
   public JsonWriter endArray() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
-    this._json.append(this.closer[this.level--]);
+    this.json.append(this.closer[this.level--]);
     this.needComma = true;
     return this;
   }
@@ -83,8 +83,8 @@ final class BuiltinJsonWriter implements JsonWriter {
     push('}');
     maybeAppendComma(true);
     appendJSONString(name);
-    this._json.append(':');
-    this._json.append('{');
+    this.json.append(':');
+    this.json.append('{');
     return this;
   }
 
@@ -92,14 +92,14 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter startObject() {
     push('}');
     maybeAppendComma(true);
-    this._json.append('{');
+    this.json.append('{');
     return this;
   }
 
   @Override
   public JsonWriter endObject() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
-    this._json.append(this.closer[this.level--]);
+    this.json.append(this.closer[this.level--]);
     this.needComma = true;
     return this;
   }
@@ -108,15 +108,15 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter nullValue(String name) {
     maybeAppendComma(false);
     appendJSONString(name);
-    this._json.append(':');
-    this._json.append("null");
+    this.json.append(':');
+    this.json.append("null");
     return this;
   }
 
   @Override
   public JsonWriter nullValue() {
     maybeAppendComma(false);
-    this._json.append("null");
+    this.json.append("null");
     return this;
   }
 
@@ -152,7 +152,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter name(String name) {
     maybeAppendComma(false);
     appendJSONString(name);
-    this._json.append(':');
+    this.json.append(':');
     this.needComma = false;
     return this;
   }
@@ -161,7 +161,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter field(String name, String value) {
     maybeAppendComma(false);
     appendJSONString(name);
-    this._json.append(':');
+    this.json.append(':');
     appendJSONString(value);
     return this;
   }
@@ -170,7 +170,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter field(String name, boolean value) {
     maybeAppendComma(false);
     appendJSONString(name);
-    this._json.append(':');
+    this.json.append(':');
     appendJsonBoolean(value);
     return this;
   }
@@ -179,7 +179,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter field(String name, double value) {
     maybeAppendComma(false);
     appendJSONString(name);
-    this._json.append(':');
+    this.json.append(':');
     appendJsonDouble(value);
     return this;
   }
@@ -188,7 +188,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   public JsonWriter field(String name, long value) {
     maybeAppendComma(false);
     appendJSONString(name);
-    this._json.append(':');
+    this.json.append(':');
     appendJsonLong(value);
     return this;
   }
@@ -200,63 +200,63 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   @Override
   public void close() {
-    this._json.close();
+    this.json.close();
   }
 
   @Override
   public void flush() {
-    this._json.flush();
+    this.json.flush();
   }
 
   private void appendJSONString(String s) {
-    this._json.append('"');
+    this.json.append('"');
     final int _length = s.length();
     for (int i = 0; i < _length; i++) {
       char c = s.charAt(i);
       switch (c) {
         case '\n':
-          this._json.append('\\').append('n');
+          this.json.append('\\').append('n');
           break;
         case '\r':
-          this._json.append('\\').append('r');
+          this.json.append('\\').append('r');
           break;
         case '\t':
-          this._json.append('\\').append('t');
+          this.json.append('\\').append('t');
           break;
         case '"':
-          this._json.append('\\').append('"');
+          this.json.append('\\').append('"');
           break;
         case '\\':
-          this._json.append('\\').append('\\');
+          this.json.append('\\').append('\\');
           break;
         default:
           if (c < 0x10) {
-            this._json.append("\\u000").append(Integer.toHexString(c));
+            this.json.append("\\u000").append(Integer.toHexString(c));
           } else if (c < 0x20) {
-            this._json.append("\\u00").append(Integer.toHexString(c));
+            this.json.append("\\u00").append(Integer.toHexString(c));
           } else {
-            this._json.append(c);
+            this.json.append(c);
           }
       }
     }
-    this._json.append('"');
+    this.json.append('"');
   }
 
   private void appendJsonLong(long number) {
-    this._json.append(Long.toString(number));
+    this.json.append(Long.toString(number));
   }
 
   private void appendJsonDouble(double number) {
-    this._json.append(Double.toString(number));
+    this.json.append(Double.toString(number));
   }
 
   private void appendJsonBoolean(boolean b) {
-    this._json.append(Boolean.toString(b));
+    this.json.append(Boolean.toString(b));
   }
 
   private void maybeAppendComma(boolean newContext) {
     if (this.needComma) {
-      this._json.append(',');
+      this.json.append(',');
     } else if (!newContext) {
       this.needComma = true;
     }

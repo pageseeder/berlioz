@@ -25,7 +25,6 @@ import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -33,8 +32,8 @@ import java.util.Collections;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
- * @since Berlioz 0.12.0
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.13.0
  */
 final class JakartaJsonWriter implements JsonWriter {
 
@@ -45,13 +44,13 @@ final class JakartaJsonWriter implements JsonWriter {
   private static @Nullable JsonGeneratorFactory factory = null;
 
   /** Either true or false for Objects and Array respectively. */
-  private boolean[] inObject = new boolean[64];
+  private final boolean[] inObject = new boolean[64];
 
   /** Array index is current depth level, 0 is top level Object or Array. */
   private int level = -1;
 
   /** The JSON generator */
-  private final JsonGenerator _json;
+  private final JsonGenerator json;
 
   /**
    * Creates new JSON writer.
@@ -59,114 +58,116 @@ final class JakartaJsonWriter implements JsonWriter {
    * @param json The generator to use.
    */
   private JakartaJsonWriter(JsonGenerator json) {
-    this._json = json;
+    this.json = json;
   }
 
   @Override
   public JsonWriter startArray(String name) {
     this.inObject[++this.level] = false;
-    this._json.writeStartArray(name);
+    this.json.writeStartArray(name);
     return this;
   }
 
   @Override
   public JsonWriter startArray() {
     this.inObject[++this.level] = false;
-    this._json.writeStartArray();
+    this.json.writeStartArray();
     return this;
   }
 
   @Override
   public JsonWriter startObject(String name) {
     this.inObject[++this.level] = true;
-    this._json.writeStartObject(name);
+    this.json.writeStartObject(name);
     return this;
   }
 
   @Override
   public JsonWriter startObject() {
     this.inObject[++this.level] = true;
-    this._json.writeStartObject();
+    this.json.writeStartObject();
     return this;
   }
 
   @Override
   public JsonWriter endArray() {
-    this.level--;
-    this._json.writeEnd();
-    return this;
+    return endItem();
   }
 
   @Override
   public JsonWriter endObject() {
+    return endItem();
+  }
+
+  private JsonWriter endItem() {
     this.level--;
-    this._json.writeEnd();
+    this.json.writeEnd();
     return this;
   }
 
   @Override
   public JsonWriter name(String name) {
-    this._json.writeKey(name);
+    this.json.writeKey(name);
     return this;
   }
 
   @Override
   public JsonWriter nullValue(String name) {
-    this._json.writeNull(name);
+    this.json.writeNull(name);
     return this;
   }
 
   @Override
   public JsonWriter nullValue() {
-    this._json.writeNull();
+    this.json.writeNull();
     return this;
   }
 
   @Override
   public JsonWriter value(double number) {
-    this._json.write(number);
+    this.json.write(number);
     return this;
   }
 
   @Override
   public JsonWriter value(long number) {
-    this._json.write(number);
+    this.json.write(number);
     return this;
   }
 
   @Override
   public JsonWriter value(String value) {
-    this._json.write(value);
+    this.json.write(value);
     return this;
   }
 
   @Override
   public JsonWriter value(boolean number) {
-    this._json.write(number);
+    this.json.write(number);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, String value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, boolean value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, double value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, long value) {
-    this._json.write(name, value);
+    this.json.write(name, value);
     return this;
   }
 
@@ -177,12 +178,12 @@ final class JakartaJsonWriter implements JsonWriter {
 
   @Override
   public void close() {
-    this._json.close();
+    this.json.close();
   }
 
   @Override
   public void flush() {
-    this._json.flush();
+    this.json.flush();
   }
 
   /**

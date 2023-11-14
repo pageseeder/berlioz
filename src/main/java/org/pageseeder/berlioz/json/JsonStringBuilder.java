@@ -19,133 +19,134 @@ import java.io.StringWriter;
 
 public final class JsonStringBuilder implements JsonWriter {
 
-  private final StringWriter _s;
+  private final StringWriter sw;
 
-  private final JsonWriter _json;
+  private final JsonWriter json;
 
   private JsonStringBuilder() {
-    this._s = new StringWriter();
-    this._json = Json.newWriter(this._s);
+    this.sw = new StringWriter();
+    this.json = Json.newWriter(this.sw);
   }
 
   @Override
   public JsonWriter startArray(String name) {
-    this._json.startArray(name);
+    this.json.startArray(name);
     return this;
   }
 
   @Override
   public JsonWriter startArray() {
-    this._json.startArray();
+    this.json.startArray();
     return this;
   }
 
   @Override
   public JsonWriter endArray() {
-    this._json.endArray();
+    this.json.endArray();
     return this;
   }
 
   @Override
   public JsonWriter startObject(String name) {
-    this._json.startObject(name);
+    this.json.startObject(name);
     return this;
   }
 
   @Override
   public JsonWriter startObject() {
-    this._json.startObject();
+    this.json.startObject();
     return this;
   }
 
   @Override
   public JsonWriter endObject() {
-    this._json.endObject();
+    this.json.endObject();
     return this;
   }
 
   @Override
   public JsonWriter name(String name) {
-    this._json.name(name);
+    this.json.name(name);
     return this;
   }
 
   @Override
   public JsonWriter nullValue(String name) {
-    this._json.nullValue();
+    this.json.nullValue();
     return this;
   }
 
   @Override
   public JsonWriter nullValue() {
-    this._json.nullValue();
+    this.json.nullValue();
     return this;
   }
 
   @Override
   public JsonWriter value(double number) {
-    this._json.value(number);
+    this.json.value(number);
     return this;
   }
 
   @Override
   public JsonWriter value(long number) {
-    this._json.value(number);
+    this.json.value(number);
     return this;
   }
 
   @Override
   public JsonWriter value(String number) {
-    this._json.value(number);
+    this.json.value(number);
     return this;
   }
 
   @Override
   public JsonWriter value(boolean number) {
-    this._json.value(number);
+    this.json.value(number);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, String value) {
-    this._json.field(name, value);
+    this.json.field(name, value);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, boolean value) {
-    this._json.field(name, value);
+    this.json.field(name, value);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, double value) {
-    this._json.field(name, value);
+    this.json.field(name, value);
     return this;
   }
 
   @Override
   public JsonWriter field(String name, long value) {
-    this._json.field(name, value);
+    this.json.field(name, value);
     return this;
   }
 
   @Override
   public boolean inObject() {
-    return this._json.inObject();
+    return this.json.inObject();
   }
 
   @Override
   public void close() {
+    // Nothing to do (it's a StringWriter)
   }
 
   @Override
   public void flush() {
-    this._json.flush();
+    this.json.flush();
   }
 
   @Override
   public String toString() {
-    return this._s.toString();
+    return this.sw.toString();
   }
 }

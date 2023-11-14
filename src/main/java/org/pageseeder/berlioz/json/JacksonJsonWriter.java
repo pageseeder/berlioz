@@ -21,30 +21,35 @@ import java.io.Writer;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An implementation of a JSON Writer backed by Jackson library.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.0
  */
 final class JacksonJsonWriter implements JsonWriter {
 
+  /** Displays debug information. */
+  private static final Logger LOGGER = LoggerFactory.getLogger(JacksonJsonWriter.class);
+
   /** The JSON generator */
-  private static JsonFactory factory;
+  private static final JsonFactory factory;
   static {
     try {
       factory = new JsonFactory();
     } catch (NoClassDefFoundError error) {
-      System.err.println("To use the JacksonJsonWriter ensure that Jackson is only your classpath!");
+      LOGGER.error("To use the JacksonJsonWriter ensure that Jackson is only your classpath!");
       throw error;
     }
   }
 
   /** The JSON generator */
-  private final JsonGenerator _json;
+  private final JsonGenerator json;
 
   /**
    * Creates new JSON writer.
@@ -52,14 +57,14 @@ final class JacksonJsonWriter implements JsonWriter {
    * @param json The generator to use.
    */
   private JacksonJsonWriter(JsonGenerator json) {
-    this._json = json;
+    this.json = json;
   }
 
   @Override
   public JsonWriter startArray(String name) {
     try {
-      this._json.writeFieldName(name);
-      this._json.writeStartArray();
+      this.json.writeFieldName(name);
+      this.json.writeStartArray();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -69,7 +74,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter startArray() {
     try {
-      this._json.writeStartArray();
+      this.json.writeStartArray();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -79,7 +84,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endArray() {
     try {
-      this._json.writeEndArray();
+      this.json.writeEndArray();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -89,8 +94,8 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter startObject(String name) {
     try {
-      this._json.writeFieldName(name);
-      this._json.writeStartObject();
+      this.json.writeFieldName(name);
+      this.json.writeStartObject();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -100,7 +105,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter startObject() {
     try {
-      this._json.writeStartObject();
+      this.json.writeStartObject();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -110,7 +115,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endObject() {
     try {
-      this._json.writeEndObject();
+      this.json.writeEndObject();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -120,7 +125,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter name(String name) {
     try {
-      this._json.writeFieldName(name);
+      this.json.writeFieldName(name);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -130,7 +135,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter nullValue(String name) {
     try {
-      this._json.writeNullField(name);
+      this.json.writeNullField(name);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -140,7 +145,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter nullValue() {
     try {
-      this._json.writeNull();
+      this.json.writeNull();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -150,7 +155,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(double number) {
     try {
-      this._json.writeNumber(number);
+      this.json.writeNumber(number);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -160,7 +165,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(long number) {
     try {
-      this._json.writeNumber(number);
+      this.json.writeNumber(number);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -170,7 +175,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(String value) {
     try {
-      this._json.writeString(value);
+      this.json.writeString(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -180,7 +185,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(boolean number) {
     try {
-      this._json.writeBoolean(number);
+      this.json.writeBoolean(number);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -190,7 +195,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, String value) {
     try {
-      this._json.writeStringField(name, value);
+      this.json.writeStringField(name, value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -200,7 +205,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, boolean value) {
     try {
-      this._json.writeBooleanField(name, value);
+      this.json.writeBooleanField(name, value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -210,7 +215,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, double value) {
     try {
-      this._json.writeNumberField(name, value);
+      this.json.writeNumberField(name, value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -220,7 +225,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, long value) {
     try {
-      this._json.writeNumberField(name, value);
+      this.json.writeNumberField(name, value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -229,13 +234,13 @@ final class JacksonJsonWriter implements JsonWriter {
 
   @Override
   public boolean inObject() {
-    return this._json.getOutputContext().inObject();
+    return this.json.getOutputContext().inObject();
   }
 
   @Override
   public void close() {
     try {
-      this._json.close();
+      this.json.close();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -244,7 +249,7 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public void flush() {
     try {
-      this._json.flush();
+      this.json.flush();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }

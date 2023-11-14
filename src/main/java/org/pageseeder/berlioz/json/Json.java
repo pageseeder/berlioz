@@ -109,14 +109,14 @@ public class Json {
     /**
      * Class name to look for
      */
-    private final String _className;
+    private final String className;
 
     JsonProvider(String className) {
-      this._className = className;
+      this.className = className;
     }
 
     public String className() {
-      return this._className;
+      return this.className;
     }
 
     /**

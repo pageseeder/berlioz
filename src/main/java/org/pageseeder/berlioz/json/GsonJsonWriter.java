@@ -20,29 +20,25 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 /**
  * An implementation of a JSON Writer backed by the Google Gson implementation.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.0
  */
 final class GsonJsonWriter implements JsonWriter {
 
   /** The JSON generator */
-  private final com.google.gson.stream.JsonWriter _json;
+  private final com.google.gson.stream.JsonWriter json;
 
   /** Either true or false for Objects and Array respectively. */
-  private boolean[] inObject = new boolean[64];
+  private final boolean[] inObject = new boolean[64];
 
   /** Array index is current depth level, 0 is top level Object or Array. */
   private int level = -1;
-
-  /** Indicates whether a comma should be appended at the next opportunity. */
-  private boolean needComma = false;
 
   /**
    * Creates new JSON writer.
@@ -50,14 +46,14 @@ final class GsonJsonWriter implements JsonWriter {
    * @param json The generator to use.
    */
   private GsonJsonWriter(com.google.gson.stream.JsonWriter json) {
-    this._json = json;
+    this.json = json;
   }
 
   @Override
   public JsonWriter startArray(String name) {
     this.inObject[++this.level] = false;
     try {
-      this._json.name(name).beginArray();
+      this.json.name(name).beginArray();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -68,7 +64,7 @@ final class GsonJsonWriter implements JsonWriter {
   public JsonWriter startArray() {
     this.inObject[++this.level] = false;
     try {
-      this._json.beginArray();
+      this.json.beginArray();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -79,7 +75,7 @@ final class GsonJsonWriter implements JsonWriter {
   public JsonWriter endArray() {
     this.level--;
     try {
-      this._json.endArray();
+      this.json.endArray();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -90,7 +86,7 @@ final class GsonJsonWriter implements JsonWriter {
   public JsonWriter startObject(String name) {
     this.inObject[++this.level] = true;
     try {
-      this._json.name(name).beginObject();
+      this.json.name(name).beginObject();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -101,7 +97,7 @@ final class GsonJsonWriter implements JsonWriter {
   public JsonWriter startObject() {
     this.inObject[++this.level] = true;
     try {
-      this._json.beginObject();
+      this.json.beginObject();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -112,7 +108,7 @@ final class GsonJsonWriter implements JsonWriter {
   public JsonWriter endObject() {
     this.level--;
     try {
-      this._json.endObject();
+      this.json.endObject();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -122,7 +118,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter name(String name) {
     try {
-      this._json.name(name);
+      this.json.name(name);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -132,7 +128,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter nullValue(String name) {
     try {
-      this._json.name(name).nullValue();
+      this.json.name(name).nullValue();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -142,7 +138,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter nullValue() {
     try {
-      this._json.nullValue();
+      this.json.nullValue();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -152,7 +148,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(double number) {
     try {
-    this._json.value(number);
+    this.json.value(number);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -162,7 +158,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(long number) {
     try {
-    this._json.value(number);
+    this.json.value(number);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -172,7 +168,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(String value) {
     try {
-    this._json.value(value);
+    this.json.value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -182,7 +178,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(boolean value) {
     try {
-    this._json.value(value);
+    this.json.value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -192,7 +188,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, String value) {
     try {
-      this._json.name(name).value(value);
+      this.json.name(name).value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -202,7 +198,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, boolean value) {
     try {
-      this._json.name(name).value(value);
+      this.json.name(name).value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -212,7 +208,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, double value) {
     try {
-      this._json.name(name).value(value);
+      this.json.name(name).value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -222,7 +218,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, long value) {
     try {
-      this._json.name(name).value(value);
+      this.json.name(name).value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -237,7 +233,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public void close() {
     try {
-      this._json.close();
+      this.json.close();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -246,7 +242,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public void flush() {
     try {
-      this._json.flush();
+      this.json.flush();
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -275,15 +271,6 @@ final class GsonJsonWriter implements JsonWriter {
    */
   public static GsonJsonWriter newInstance(Writer writer) {
     return new GsonJsonWriter(new com.google.gson.stream.JsonWriter(writer));
-  }
-
-  private void push(boolean isObject) {
-    this.level++;
-    if (this.level < this.inObject.length) {
-      this.inObject[this.level] = isObject;
-    } else {
-      this.inObject = Arrays.copyOf(this.inObject, this.inObject.length*2);
-    }
   }
 
 }
