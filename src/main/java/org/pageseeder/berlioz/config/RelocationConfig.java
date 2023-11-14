@@ -17,13 +17,11 @@ package org.pageseeder.berlioz.config;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.pageseeder.berlioz.furi.URIPattern;
-import org.pageseeder.berlioz.servlet.RelocationFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -50,24 +48,24 @@ public final class RelocationConfig {
   /**
    * Displays debug information.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(RelocationFilter.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RelocationConfig.class);
 
   /**
    * Maps URI patterns to relocate to URI pattern target.
    */
-  private final List<MovedLocationPattern> _mapping;
+  private final List<MovedLocationPattern> mapping;
 
   public RelocationConfig() {
-    this._mapping = Collections.emptyList();
+    this.mapping = Collections.emptyList();
   }
 
   public RelocationConfig(List<MovedLocationPattern> mapping) {
-    this._mapping = mapping;
+    this.mapping = mapping;
   }
 
   public @Nullable String relocate(String from) {
     // Evaluate URI patterns
-    for (MovedLocationPattern pattern : this._mapping) {
+    for (MovedLocationPattern pattern : this.mapping) {
       if (pattern.match(from)) return pattern.getTarget(from);
     }
     // No match
@@ -78,16 +76,12 @@ public final class RelocationConfig {
     return ConfigLoader.parse(new Handler(), file);
   }
 
-  private static RelocationConfig newInstance(InputStream in) throws ConfigException {
-    return ConfigLoader.parse(new Handler(), in);
-  }
-
   public int size() {
-    return this._mapping.size();
+    return this.mapping.size();
   }
 
   public boolean isEmpty() {
-    return this._mapping.isEmpty();
+    return this.mapping.isEmpty();
   }
 
   /**

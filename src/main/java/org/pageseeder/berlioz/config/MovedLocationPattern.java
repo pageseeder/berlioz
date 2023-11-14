@@ -30,7 +30,7 @@ import java.util.Set;
  * @version Berlioz 0.12.4
  * @since  Berlioz 0.12.4
  */
-class MovedLocationPattern {
+public class MovedLocationPattern {
 
   /**
    * URI pattern matching the original path.

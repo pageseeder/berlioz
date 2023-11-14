@@ -109,19 +109,7 @@ abstract class ConfigLoader<T> extends DefaultHandler {
 
       // Validate
       if (handler.getSchema() != null) {
-        try (InputStream is = new ByteArrayInputStream(bytes)) {
-          SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-          factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-          factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-          factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-          InputStream inputStream = ConfigLoader.class.getResourceAsStream("/schema/"+handler.getSchema()+".xsd");
-          Source schemaFile = new StreamSource(inputStream);
-          Schema schema = factory.newSchema(schemaFile);
-          Validator validator =  schema.newValidator();
-          validator.validate(new StreamSource(is));
-        } catch (SAXException ex) {
-          throw new ConfigException("Error during validation", ex);
-        }
+        validate(bytes, handler.getSchema());
       }
 
       XMLReader reader = parser.getXMLReader();
@@ -142,6 +130,22 @@ abstract class ConfigLoader<T> extends DefaultHandler {
       throw new ConfigException("Could not configure SAX parser.", ex);
     } catch (SAXException | IOException ex) {
       throw new ConfigException("Error while parsing: "+ex.getMessage(), ex);
+    }
+  }
+
+  private static void validate(byte[] bytes, String schemaName) throws ConfigException, IOException {
+    try (InputStream is = new ByteArrayInputStream(bytes)) {
+      SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+      factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+      InputStream inputStream = ConfigLoader.class.getResourceAsStream("/schema/"+schemaName+".xsd");
+      Source schemaFile = new StreamSource(inputStream);
+      Schema schema = factory.newSchema(schemaFile);
+      Validator validator =  schema.newValidator();
+      validator.validate(new StreamSource(is));
+    } catch (SAXException ex) {
+      throw new ConfigException("Error during validation", ex);
     }
   }
 
@@ -187,7 +191,7 @@ abstract class ConfigLoader<T> extends DefaultHandler {
     return -1;
   }
 
-  static abstract class ConfigHandler<T> extends DefaultHandler {
+  abstract static class ConfigHandler<T> extends DefaultHandler {
 
     abstract String getSchema();
 

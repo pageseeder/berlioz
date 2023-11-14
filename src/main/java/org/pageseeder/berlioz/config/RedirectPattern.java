@@ -15,30 +15,29 @@
  */
 package org.pageseeder.berlioz.config;
 
-public final class RedirectLocation {
+import org.pageseeder.berlioz.furi.URIPattern;
 
-  private final String from;
+public class RedirectPattern extends MovedLocationPattern {
 
-  private final String to;
+  final boolean permanent;
 
-  private final boolean permanent;
-
-  RedirectLocation(String from, String to, boolean permanent) {
-    this.from = from;
-    this.to = to;
+  public RedirectPattern(URIPattern from, URIPattern to, boolean permanent) {
+    super(from, to);
     this.permanent = permanent;
-  }
-
-  public String from() {
-    return this.from;
-  }
-
-  public String to() {
-    return this.to;
   }
 
   public boolean isPermanent() {
     return this.permanent;
   }
 
+  public RedirectLocation redirect(String path) {
+    if (!this.match(path)) return null;
+    String target = this.getTarget(path);
+    return new RedirectLocation(path, target, this.permanent);
+  }
+
+  @Override
+  public String toString() {
+    return "redirect: "+from()+" -> "+to()+(this.permanent ? " P" : " T");
+  }
 }

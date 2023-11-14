@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.14.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.7
  */
 public final class GlobalConfig implements Serializable, XMLWritable {
@@ -74,7 +74,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    *
    * <p>NB: We disallow ':' to avoid issues with namespaces.
    */
-  private final static Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
+  private static final Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
 
   /**
    * Logger.
@@ -84,13 +84,13 @@ public final class GlobalConfig implements Serializable, XMLWritable {
   /**
    * List of properties to load.
    */
-  private final Map<String, String> _properties;
+  private final Map<String, String> properties;
 
   /**
    * Creates an empty property list with no default values.
    */
   public GlobalConfig() {
-    this._properties = new HashMap<>();
+    this.properties = new HashMap<>();
   }
 
   /**
@@ -99,7 +99,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    * @param properties The initial properties for this config.
    */
   public GlobalConfig(Map<String, String> properties) {
-    this._properties = properties;
+    this.properties = properties;
   }
 
   /**
@@ -108,7 +108,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    * @param file The file to load.
    * @return The XML configuration instance with the values loaded from the file.
    *
-   * @throws IOException Should any I/O error occur while reading the file.
+   * @throws ConfigException Should any I/O error occur while reading the file.
    */
   public static GlobalConfig newInstance(File file) throws ConfigException {
     return ConfigLoader.parse(new Handler(), file);
@@ -122,7 +122,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    * @return the properties as a map.
    */
   public Map<String, String> properties() {
-    return this._properties;
+    return this.properties;
   }
 
   /**
@@ -130,11 +130,11 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    *
    * @param in The XML input stream to parse.
    *
-   * @throws IOException If an error occurred when reading from the input stream.
+   * @throws ConfigException If an error occurred when reading from the input stream.
    */
   public synchronized void load(InputStream in) throws ConfigException {
     GlobalConfig copy = ConfigLoader.parse(new Handler(), in);
-    this._properties.putAll(copy.properties());
+    this.properties.putAll(copy.properties());
   }
 
   /**
@@ -153,7 +153,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
 
   @Override
   public void toXML(XMLWriter xml) throws IOException {
-    SortedMap<String, String> sorted = new TreeMap<>(this._properties);
+    SortedMap<String, String> sorted = new TreeMap<>(this.properties);
     xml.openElement("global", true);
     toXML(xml, sorted);
     xml.closeElement();
@@ -246,8 +246,6 @@ public final class GlobalConfig implements Serializable, XMLWritable {
 
   /**
    * Parses the file as XML following the rules for the config.
-   *
-   * @author Christophe Lauret
    */
   private static final class Handler extends ConfigLoader.ConfigHandler<GlobalConfig> {
 
@@ -303,7 +301,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
     public void endElement(String uri, String localName, String qName) {
       Stack<String> nodes = this.nodes;
       if (nodes != null) {
-        if (nodes.size() > 0) {
+        if (!nodes.isEmpty()) {
           nodes.pop();
         } else {
           this.nodes = null;

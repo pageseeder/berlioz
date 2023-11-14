@@ -54,14 +54,14 @@ public final class RedirectConfig {
   /**
    * Maps URI patterns to redirect to URI pattern target.
    */
-  private final List<RedirectPattern> _patterns;
+  private final List<RedirectPattern> patterns;
 
   public RedirectConfig() {
-    this._patterns = Collections.emptyList();
+    this.patterns = Collections.emptyList();
   }
 
   public RedirectConfig(List<RedirectPattern>  patterns) {
-    this._patterns = patterns;
+    this.patterns = patterns;
   }
 
   /**
@@ -77,7 +77,7 @@ public final class RedirectConfig {
 
   public @Nullable RedirectLocation redirect(String from) {
     // Evaluate URI patterns
-    for (RedirectPattern pattern : this._patterns) {
+    for (RedirectPattern pattern : this.patterns) {
       if (pattern.match(from)) return pattern.redirect(from);
     }
     // No match
@@ -85,11 +85,11 @@ public final class RedirectConfig {
   }
 
   public int size() {
-    return this._patterns.size();
+    return this.patterns.size();
   }
 
   public boolean isEmpty() {
-    return this._patterns.isEmpty();
+    return this.patterns.isEmpty();
   }
 
   /**
@@ -147,31 +147,6 @@ public final class RedirectConfig {
     @Override
     RedirectConfig getConfig() {
       return new RedirectConfig(this.patterns);
-    }
-  }
-
-  private static class RedirectPattern extends MovedLocationPattern {
-
-    final boolean permanent;
-
-    public RedirectPattern(URIPattern from, URIPattern to, boolean permanent) {
-      super(from, to);
-      this.permanent = permanent;
-    }
-
-    public boolean isPermanent() {
-      return this.permanent;
-    }
-
-    public RedirectLocation redirect(String path) {
-      if (!this.match(path)) return null;
-      String target = this.getTarget(path);
-      return new RedirectLocation(path, target, this.permanent);
-    }
-
-    @Override
-    public String toString() {
-      return "redirect: "+from()+" -> "+to()+(this.permanent ? " P" : " T");
     }
   }
 
