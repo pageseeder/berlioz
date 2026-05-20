@@ -1,0 +1,42 @@
+[project]
+name = "berlioz"
+description = "Berlioz framework"
+longDescription = """
+# Berlioz
+
+Berlioz is a lightweight Java web framework built around URI templates and XSLT. It implements
+a three-tier separation of concerns: Java generators produce XML, XSLT transforms XML to the
+desired output format (HTML, JSON, RSS, etc.).
+"""
+tags = ["java", "xslt", "berlioz", "xml", "servlet"]
+authors = ["Christophe Lauret", "Jean-Baptiste Reure", "Carlos Cabral"]
+license = "Apache-2.0"
+vendor = "Allette Systems"
+
+[project.links]
+homepage = "https://berlioz.pageseeder.org"
+documentation = "https://berlioz.pageseeder.org"
+license = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+
+[project.languages.java]
+groupId = "org.pageseeder.berlioz"
+
+[release.github]
+owner = "pageseeder"
+name = "berlioz"
+username = "pageseeder"
+branch = "main"
+skipTag = true
+skipRelease = true
+
+[signing]
+active = "ALWAYS"
+
+[signing.pgp]
+armored = true
+mode = "FILE"
+
+[deploy.maven.mavenCentral.sonatype]
+active = "ALWAYS"
+url = "https://central.sonatype.com/api/v1/publisher"
+stagingRepositories = ["build/staging-deploy"]
