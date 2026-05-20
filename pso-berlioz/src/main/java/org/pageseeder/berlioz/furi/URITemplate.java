@@ -27,10 +27,10 @@ import org.jspecify.annotations.Nullable;
 /**
  * A URI Template for constructing URIs following the same structure.
  *
- * Instances of this class implement the URI templates as defined by the URI Template (Draft 3) by
+ * <p>Instances of this class implement the URI templates as defined by the URI Template (Draft 3) by
  * Joe Gregorio.
  *
- * A URI Template follows the URI syntax and can be expanded given a set of variable values.
+ * <p>A URI Template follows the URI syntax and can be expanded given a set of variable values.
  *
  * @see <a
  *      href="http://bitworking.org/projects/URI-Templates/spec/draft-gregorio-uritemplate-03.html">URI
@@ -38,7 +38,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public class URITemplate implements Expandable {
@@ -51,23 +51,23 @@ public class URITemplate implements Expandable {
   /**
    * The string representation of the URL template.
    */
-  private final String _template;
+  private final String template;
 
   /**
    * The list of tokens corresponding to this URL template.
    */
-  private final List<Token> _tokens;
+  private final List<Token> tokens;
 
   /**
    * Creates a new URI Template instance from an existing instance
    *
-   * @param template The original template URI template syntax.
+   * @param original The original template URI template syntax.
    *
    * @throws NullPointerException If the specified template is <code>null</code>.
    */
   URITemplate(URITemplate original) {
-    this._template = original._template;
-    this._tokens = original._tokens;
+    this.template = original.template;
+    this.tokens = original.tokens;
   }
 
   /**
@@ -79,8 +79,8 @@ public class URITemplate implements Expandable {
    * @throws URITemplateSyntaxException If the string provided does not follow the proper syntax.
    */
   public URITemplate(String template) {
-    this._template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
-    this._tokens = digest(template);
+    this.template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
+    this.tokens = digest(template);
   }
 
   // TODO: method to indicate how many variables are used involved in the template
@@ -97,8 +97,8 @@ public class URITemplate implements Expandable {
    * @throws URITemplateSyntaxException If the string provided does not follow the proper syntax.
    */
   public URITemplate(String template, TokenFactory factory) {
-    this._template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
-    this._tokens = digest(template, factory != null? factory : TokenFactory.getInstance());
+    this.template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
+    this.tokens = digest(template, factory != null? factory : TokenFactory.getInstance());
   }
 
   /**
@@ -109,7 +109,7 @@ public class URITemplate implements Expandable {
   @Override
   public final String expand(Parameters parameters) {
     StringBuilder uri = new StringBuilder();
-    for (Token t : this._tokens) {
+    for (Token t : this.tokens) {
       uri.append(t.expand(parameters));
     }
     return uri.toString();
@@ -118,8 +118,7 @@ public class URITemplate implements Expandable {
   /**
    * Method provided for convenience.
    *
-   * It returns the same as:
-   *
+   * <p>It returns the same as:
    * <pre>
    * return new URITemplate(template).expand(variables);
    * </pre>
@@ -198,7 +197,7 @@ public class URITemplate implements Expandable {
    * @return The underlying list of tokens.
    */
   protected final List<Token> tokens() {
-    return this._tokens;
+    return this.tokens;
   }
 
   @Override
@@ -208,16 +207,16 @@ public class URITemplate implements Expandable {
     if ((o == null) || (o.getClass() != this.getClass()))
       return false;
     URITemplate t = (URITemplate) o;
-    return (Objects.equals(this._template, t._template));
+    return (Objects.equals(this.template, t.template));
   }
 
   @Override
   public int hashCode() {
-    return 127 * this._template.hashCode() + this._template.hashCode();
+    return 127 * this.template.hashCode() + this.template.hashCode();
   }
 
   @Override
   public String toString() {
-    return this._template;
+    return this.template;
   }
 }

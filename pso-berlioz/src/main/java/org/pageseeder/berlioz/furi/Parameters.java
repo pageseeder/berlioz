@@ -48,9 +48,9 @@ public interface Parameters {
   String @Nullable [] getValues(String name);
 
   /**
-   * Indicates whether the parameters for the given name has a value.
+   * Indicates whether the parameters for the given name have a value.
    *
-   * A parameter has a value if: - it is defined in the parameter list - its array of value has at
+   * <p>A parameter has a value if: - it is defined in the parameter list - its array of value has at
    * least one value that is not an empty string
    *
    * @param name The name of the parameter.

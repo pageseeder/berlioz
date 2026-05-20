@@ -23,13 +23,13 @@ import org.jspecify.annotations.Nullable;
 /**
  * A variable in a URL pattern or template.
  *
- * The variables can be typed by prefixing the variable name. Types are not required, if no type is
+ * <p>The variables can be typed by prefixing the variable name. Types are not required, if no type is
  * specified, the variable is considered untyped.
  *
- * Note: there is no predefined list of types as the handling of types is out of scope. The syntax
+ * <p>Note: there is no predefined list of types as the handling of types is out of scope. The syntax
  * simply allows variables to be associated with a type.
  *
- * Examples of variables:
+ * <p>Examples of variables:
  * <pre>
  *   foo         - An untyped variable named 'foo'
  *   bar         - An untyped variable named 'bar'
@@ -38,9 +38,9 @@ import org.jspecify.annotations.Nullable;
  *   foo=pong    - An untyped variable named 'foo' which default value is 'pong'
  * </pre>
  *
- * Variables only appear in the context of the a template expansion.
+ * <p>Variables only appear in the context of the a template expansion.
  *
- * Expansion rule (4.4.1):
+ * <p>Expansion rule (4.4.1):
  *
  * <pre>
  * &quot;In a variable ('var') expansion, if the variable is defined then substitute the value of
@@ -48,7 +48,7 @@ import org.jspecify.annotations.Nullable;
  * If no default value is given then substitute with the empty string.&quot;
  * </pre>
  *
- * Syntax for variables:
+ * <p>Syntax for variables:
  * <pre>
  * var         = [ vartype &quot;:&quot; ]  varname [ &quot;=&quot; vardefault ]
  * vars        = var [ *(&quot;,&quot; var) ]
@@ -65,7 +65,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public class Variable {
@@ -83,7 +83,7 @@ public class Variable {
     /**
      * The symbol for this reserved.
      */
-    private final String _symbol;
+    private final String symbol;
 
     /**
      * Construct a new reserved variable - keep it private.
@@ -91,21 +91,21 @@ public class Variable {
      * @param symbol The symbol used for this reserved variable name.
      */
     Reserved(String symbol) {
-      this._symbol = symbol;
+      this.symbol = symbol;
     }
 
     /**
      * @return the symbol used for this reserved variable name.
      */
     String symbol() {
-      return this._symbol;
+      return this.symbol;
     }
   }
 
   /**
    * Indicate that the variable's value should be processed as a list ("@") or an associative array ("%").
    *
-   * This variable type is an instruction for the template processor.
+   * <p>This variable type is an instruction for the template processor.
    * It is not an indication of language or implementation type.
    */
   public enum Form {
@@ -135,7 +135,7 @@ public class Variable {
      * @return The type of this expression.
      */
     protected static Form getType(String exp) {
-      if (exp.length() == 0) return STRING;
+      if (exp.isEmpty()) return STRING;
       char c = exp.charAt(0);
       if (c == '@') return LIST;
       if (c == '%') return MAP;
@@ -147,7 +147,7 @@ public class Variable {
   /**
    * Indicate that the variable's value should be processed as a list ("@") or an associative array ("%").
    *
-   * This variable type is an instruction for the template processor.
+   * <p>This variable type is an instruction for the template processor.
    * It is not an indication of language or implementation type.
    */
   public enum Modifier {
@@ -197,12 +197,12 @@ public class Variable {
   /**
    * The name of this variable.
    */
-  private final String _name;
+  private final String name;
 
   /**
    * The default value for this variable.
    */
-  private final String _default;
+  private final String defaultValue;
 
   /**
    * Creates a new untyped reserved variable.
@@ -213,8 +213,8 @@ public class Variable {
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
   public Variable(Reserved reserved) {
-    this._name = reserved.symbol();
-    this._default = DEFAULT_VALUE;
+    this.name = reserved.symbol();
+    this.defaultValue = DEFAULT_VALUE;
     this.form = Form.STRING;
     this.type = null;
   }
@@ -255,8 +255,8 @@ public class Variable {
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
   public Variable(String name, @Nullable String def, @Nullable VariableType type) {
-    this._name = Objects.requireNonNull(name, "A variable must have a name, but was null");
-    this._default = Objects.toString(def, DEFAULT_VALUE);
+    this.name = Objects.requireNonNull(name, "A variable must have a name, but was null");
+    this.defaultValue = Objects.toString(def, DEFAULT_VALUE);
     this.type = type;
     this.form = Form.getType(name);
     if (!isValidName(name))
@@ -274,8 +274,8 @@ public class Variable {
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
   public Variable(String name, String def, VariableType type, Form form) {
-    this._name = Objects.requireNonNull(name, "A variable must have a name, but was null");
-    this._default = def != null ? def : DEFAULT_VALUE;
+    this.name = Objects.requireNonNull(name, "A variable must have a name, but was null");
+    this.defaultValue = def != null ? def : DEFAULT_VALUE;
     this.type = type;
     this.form = form != null? form : Form.STRING;
     if (!isValidName(name))
@@ -303,7 +303,7 @@ public class Variable {
    * @return The name of this variable.
    */
   public String name() {
-    return this._name;
+    return this.name;
   }
 
   /**
@@ -314,7 +314,7 @@ public class Variable {
    * @return The default value for this variable.
    */
   public String defaultValue() {
-    return this._default;
+    return this.defaultValue;
   }
 
   /**
@@ -341,18 +341,18 @@ public class Variable {
   public String value(@Nullable Parameters parameters) {
     // No parameters: use the default value
     if (parameters == null)
-      return this._default;
+      return this.defaultValue;
     // Defined and non-empty: return the first value in a list
-    String[] values = parameters.getValues(this._name);
+    String[] values = parameters.getValues(this.name);
     if (values != null && values.length > 0 && values[0] != null) return values[0];
     // Empty or undefined: return the default
-    else return this._default;
+    else return this.defaultValue;
   }
 
   /**
    * Returns the expanded value of this variable.
    *
-   * If no values are specified for this variable, the default value is returned instead.
+   * <p>If no values are specified for this variable, the default value is returned instead.
    *
    * @param parameters The parameters.
    *
@@ -361,12 +361,12 @@ public class Variable {
   public String[] values(@Nullable Parameters parameters) {
     // No parameters: use the default value
     if (parameters == null)
-      return new String[] { this._default };
-    String[] values = parameters.getValues(this._name);
+      return new String[] { this.defaultValue};
+    String[] values = parameters.getValues(this.name);
     // Defined and non-empty: return the values
     if (values != null && values.length > 0 && values[0].length() > 0) return values;
     // Empty or undefined: return the default
-    else return new String[] { this._default };
+    else return new String[] { this.defaultValue};
   }
 
   @Override
@@ -377,20 +377,20 @@ public class Variable {
       return false;
     Variable v = (Variable) o;
     // name and default cannot be null
-    return this._name.equals(v._name) && this._default.equals(v._default);
+    return this.name.equals(v.name) && this.defaultValue.equals(v.defaultValue);
   }
 
   @Override
   public int hashCode() {
-    return this._name.hashCode() + 7 * this._default.hashCode();
+    return this.name.hashCode() + 7 * this.defaultValue.hashCode();
   }
 
   @Override
   public String toString() {
-    if (this._default.length() > 0)
-      return this._name + '=' + this._default;
+    if (this.defaultValue.isEmpty())
+      return this.name;
     else
-      return this._name;
+      return this.name + '=' + this.defaultValue;
   }
 
   // Static helpers
@@ -487,7 +487,7 @@ public class Variable {
    * @return The regex pattern corresponding to this name.
    */
   protected String namePatternString() {
-    return this._name.indexOf('.') < 0 ? this._name : name().replaceAll("\\.", "\\\\.");
+    return this.name.indexOf('.') < 0 ? this.name : name().replaceAll("\\.", "\\\\.");
   }
 
 }

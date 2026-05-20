@@ -23,7 +23,7 @@ import java.text.Normalizer.Form;
 /**
  * An encoder/decoder for use by URI templates.
  *
- * Only unreserved characters according to RFC 3986 do not need to be encoded within a variable:
+ * <p>Only unreserved characters, according to RFC 3986 do not need to be encoded within a variable:
  *
  * <pre>
  * unreserved = ALPHA / DIGIT / '-' / '.' / '_' / '&tilde;';
@@ -42,7 +42,7 @@ import java.text.Normalizer.Form;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class URICoder {
@@ -89,7 +89,7 @@ public final class URICoder {
    * @return The corresponding encoded string.
    */
   public static String encode(String s, char c) {
-    if (s.length() == 0)
+    if (s.isEmpty())
       return s;
     // Check whether we need to use UTF-8 encoder
     boolean ascii = isASCII(s);
@@ -107,7 +107,7 @@ public final class URICoder {
    * @return The corresponding encoded string.
    */
   public static String minimalEncode(String s) {
-    if (s.length() == 0)
+    if (s.isEmpty())
       return s;
     // Check whether we need to use UTF-8 encoder
     boolean ascii = isASCII(s);
@@ -205,7 +205,7 @@ public final class URICoder {
    * @return The corresponding decoded string.
    */
   public static String decode(String s) {
-    if (s.length() == 0 || (s.indexOf('%') < 0 && s.indexOf('+') < 0))
+    if (s.isEmpty() || (s.indexOf('%') < 0 && s.indexOf('+') < 0))
       return s;
     // Check whether we need to convert to UTF-8 encoder
     boolean ascii = isEncodedASCII(s);

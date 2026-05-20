@@ -30,10 +30,10 @@ import org.pageseeder.berlioz.furi.URIResolveResult.Status;
 /**
  * A URI pattern resolver identifies the URI pattern and variables values given a specific URI.
  *
- * This class is typically used as follows:
+ * <p>This class is typically used as follows:
  * <pre>
  *   // Create a resolver instance
- *   URIResolver resolver = new URIResolver("http://www.acme.com/test/home");
+ *   URIResolver resolver = new URIResolver("https://www.example.com/test/home");
  *
  *   // Find the matching pattern amongst a list of precompiled URI patterns
  *   URIPattern pattern = resolver.find(patterns);
@@ -45,7 +45,7 @@ import org.pageseeder.berlioz.furi.URIResolveResult.Status;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class URIResolver {
@@ -76,7 +76,7 @@ public final class URIResolver {
   /**
    * The URI to resolve.
    */
-  private final String _uri;
+  private final String uri;
 
   /**
    * Creates a new resolver for the specified URI.
@@ -84,7 +84,7 @@ public final class URIResolver {
    * @param uri The URI to resolve.
    */
   public URIResolver(String uri) {
-    this._uri = Objects.requireNonNull(uri, "Specified URI cannot be null");
+    this.uri = Objects.requireNonNull(uri, "Specified URI cannot be null");
   }
 
   /**
@@ -93,7 +93,7 @@ public final class URIResolver {
    * @return The URI handled by this resolver.
    */
   public String uri() {
-    return this._uri;
+    return this.uri;
   }
 
   /**
@@ -126,7 +126,7 @@ public final class URIResolver {
   /**
    * Returns all the URI patterns in the list which match the underlying URI.
    *
-   * This methods returns an empty list if there are no matching patterns.
+   * <p>This methods returns an empty list if there are no matching patterns.
    *
    * @param patterns The URI patterns available.
    *
@@ -134,10 +134,10 @@ public final class URIResolver {
    */
   public Collection<URIPattern> findAll(List<URIPattern> patterns) {
     Collection<URIPattern> matches = new ArrayList<>();
-    if (patterns == null || patterns.size() == 0)
+    if (patterns == null || patterns.isEmpty())
       return matches;
     for (URIPattern p : patterns) {
-      if (p.match(this._uri)) {
+      if (p.match(this.uri)) {
         matches.add(p);
       }
     }
@@ -165,7 +165,7 @@ public final class URIResolver {
    */
   public URIResolveResult resolve(URIPattern pattern, VariableBinder binder) {
     URIResolveResult result = new URIResolveResult(pattern);
-    Matcher mx = pattern.pattern().matcher(this._uri);
+    Matcher mx = pattern.pattern().matcher(this.uri);
     boolean match = mx.matches();
     // it is an error condition if there is no match
     // or if the number of capturing groups is not the same as the number of tokens
@@ -192,7 +192,7 @@ public final class URIResolver {
    * Lookup the variable values using the variable resolvers specified in the bindings from the
    * values mapped to the variables.
    *
-   * Set the status of the result accordingly.
+   * <p>Set the status of the result accordingly.
    *
    * @param result Where the results go.
    * @param map    Values mapped to the variables.
@@ -202,8 +202,8 @@ public final class URIResolver {
     Status status = Status.RESOLVED;
     // lookup variable values
     for (Map.Entry<Variable, Object> entry : map.entrySet()) {
-      Variable var = entry.getKey();
-      VariableResolver r = binder.getResolver(var.name(), var.type());
+      Variable variable = entry.getKey();
+      VariableResolver r = binder.getResolver(variable.name(), variable.type());
       Object value = entry.getValue();
 
       // most common case: a string
@@ -236,10 +236,10 @@ public final class URIResolver {
    * @return The first URI pattern that matches or <code>null</code>.
    */
   private @Nullable URIPattern findFirst(List<URIPattern> patterns) {
-    if (patterns == null || patterns.size() == 0)
+    if (patterns == null || patterns.isEmpty())
       return null;
     for (URIPattern p : patterns) {
-      if (p.match(this._uri))
+      if (p.match(this.uri))
         return p;
     }
     return null;
@@ -253,11 +253,11 @@ public final class URIResolver {
    * @return The best URI pattern that matches or <code>null</code>.
    */
   private @Nullable URIPattern findBest(List<URIPattern> patterns) {
-    if (patterns == null || patterns.size() == 0)
+    if (patterns == null || patterns.isEmpty())
       return null;
     URIPattern best = null;
     for (URIPattern p : patterns) {
-      if (p.match(this._uri)) {
+      if (p.match(this.uri)) {
         if (best == null || p.score() > best.score()) {
           best = p;
         }

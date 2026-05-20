@@ -25,12 +25,12 @@ import org.jspecify.annotations.Nullable;
 /**
  * A class to hold a collection of parameters for use during the expansion process.
  *
- * It provides more convenient functions than the underlying map and handles the rules for parameter
+ * <p>It provides more convenient functions than the underlying map and handles the rules for parameter
  * values.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public class URIParameters implements Parameters {
@@ -38,13 +38,13 @@ public class URIParameters implements Parameters {
   /**
    * Maps the parameter names to the values.
    */
-  private final Map<String, String[]> _parameters;
+  private final Map<String, String[]> parameters;
 
   /**
    * Creates a new instance.
    */
   public URIParameters() {
-    this._parameters = new HashMap<>();
+    this.parameters = new HashMap<>();
   }
 
   /**
@@ -53,29 +53,29 @@ public class URIParameters implements Parameters {
    * @param parameters The map of parameters to supply
    */
   public URIParameters(Map<String, String[]> parameters) {
-    this._parameters = new HashMap<>(parameters);
+    this.parameters = new HashMap<>(parameters);
   }
 
   @Override
   public void set(String name, @Nullable String value) {
     if (value == null) return;
-    this._parameters.put(name, new String[] { value });
+    this.parameters.put(name, new String[] { value });
   }
 
   @Override
   public void set(String name, String @Nullable [] values) {
     if (values == null) return;
-    this._parameters.put(name, values);
+    this.parameters.put(name, values);
   }
 
   @Override
   public Set<String> names() {
-    return Collections.unmodifiableSet(this._parameters.keySet());
+    return Collections.unmodifiableSet(this.parameters.keySet());
   }
 
   @Override
   public @Nullable String getValue(String name) {
-    String[] vals = this._parameters.get(name);
+    String[] vals = this.parameters.get(name);
     if (vals == null || vals.length == 0)
       return null;
     else
@@ -84,18 +84,18 @@ public class URIParameters implements Parameters {
 
   @Override
   public String @Nullable [] getValues(String name) {
-    return this._parameters.get(name);
+    return this.parameters.get(name);
   }
 
   @Override
   public boolean exists(String name) {
-    return this._parameters.containsKey(name);
+    return this.parameters.containsKey(name);
   }
 
   @Override
   public boolean hasValue(String name) {
-    String[] values = this._parameters.get(name);
-    return values != null && values.length > 0 && values[0].length() > 0;
+    String[] values = this.parameters.get(name);
+    return values != null && values.length > 0 && !values[0].isEmpty();
   }
 
 }

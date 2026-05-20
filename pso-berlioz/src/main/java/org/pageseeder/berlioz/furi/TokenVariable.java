@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public class TokenVariable extends TokenBase implements Token, Matchable {
@@ -38,7 +38,7 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
   /**
    * The variable for this token.
    */
-  private final Variable _var;
+  private final Variable variable;
 
   /**
    * Creates a new variable token.
@@ -56,13 +56,13 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
   /**
    * Creates a new variable token.
    *
-   * @param var The variable this token corresponds to.
+   * @param variable The variable this token corresponds to.
    *
    * @throws NullPointerException If the specified text is <code>null</code>.
    */
-  public TokenVariable(Variable var) {
-    super('{' + var.toString() + "}");
-    this._var = var;
+  public TokenVariable(Variable variable) {
+    super('{' + variable.toString() + "}");
+    this.variable = variable;
   }
 
   /**
@@ -71,12 +71,12 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
    * @return The variable wrapped by this token.
    */
   public Variable getVariable() {
-    return this._var;
+    return this.variable;
   }
 
   @Override
   public String expand(Parameters variables) {
-    return URICoder.encode(this._var.value(variables));
+    return URICoder.encode(this.variable.value(variables));
   }
 
   @Override
@@ -91,7 +91,7 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
 
   @Override
   public boolean resolve(String expanded, Map<Variable, Object> values) {
-    values.put(this._var, URICoder.decode(expanded));
+    values.put(this.variable, URICoder.decode(expanded));
     return true;
   }
 

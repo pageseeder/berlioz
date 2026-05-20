@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class URITemplateSyntaxException extends IllegalArgumentException {
@@ -40,12 +40,12 @@ public final class URITemplateSyntaxException extends IllegalArgumentException {
   /**
    * The input string.
    */
-  private final String _input;
+  private final String input;
 
   /**
    * The reason string.
    */
-  private final String _reason;
+  private final String reason;
 
   /**
    * Constructs an instance from the given input string, reason.
@@ -57,8 +57,8 @@ public final class URITemplateSyntaxException extends IllegalArgumentException {
    */
   public URITemplateSyntaxException(String input, String reason) {
     super(reason + " : " + input);
-    this._input = Objects.requireNonNull(input);
-    this._reason = Objects.requireNonNull(reason);
+    this.input = Objects.requireNonNull(input);
+    this.reason = Objects.requireNonNull(reason);
   }
 
   /**
@@ -67,7 +67,7 @@ public final class URITemplateSyntaxException extends IllegalArgumentException {
    * @return The input string.
    */
   public String getInput() {
-    return this._input;
+    return this.input;
   }
 
   /**
@@ -76,6 +76,6 @@ public final class URITemplateSyntaxException extends IllegalArgumentException {
    * @return The reason string.
    */
   public String getReason() {
-    return this._reason;
+    return this.reason;
   }
 }

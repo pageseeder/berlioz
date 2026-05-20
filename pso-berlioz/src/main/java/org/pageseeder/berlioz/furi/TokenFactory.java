@@ -27,7 +27,7 @@ import org.pageseeder.berlioz.furi.Variable.Reserved;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class TokenFactory {
@@ -78,7 +78,7 @@ public final class TokenFactory {
   /**
    * The URI template syntax to use for generating tokens.
    */
-  private final Syntax _syntax;
+  private final Syntax syntax;
 
   /**
    * Prevents creation of instances.
@@ -86,7 +86,7 @@ public final class TokenFactory {
    * @param syntax The URI template syntax to use for generating tokens.
    */
   private TokenFactory(Syntax syntax) {
-    this._syntax = syntax;
+    this.syntax = syntax;
   }
 
   /**
@@ -101,7 +101,7 @@ public final class TokenFactory {
    */
   public Token newToken(String exp) {
     // no expression: no token!
-    if (exp.length() == 0)
+    if (exp.isEmpty())
       return TokenLiteral.EMPTY;
     // intercept the wild card
     if ("*".equals(exp))
@@ -112,7 +112,7 @@ public final class TokenFactory {
       return new TokenLiteral(exp);
     // a template expansion token
     if (exp.charAt(0) == '{' && exp.charAt(len - 1) == '}') // defer to the underlying syntax
-    return this._syntax.newExpansion(exp.substring(1, len - 1));
+    return this.syntax.newExpansion(exp.substring(1, len - 1));
     // a literal text token
     return new TokenLiteral(exp);
   }

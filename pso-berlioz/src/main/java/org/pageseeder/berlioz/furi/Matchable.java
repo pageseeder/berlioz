@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 /**
  * A class implementing this interface can be matched.
  *
- * This interface can be used to indicate whether a class can be used for pattern matching.
+ * <p>This interface can be used to indicate whether a class can be used for pattern matching.
  *
  * @author Christophe Lauret
  *

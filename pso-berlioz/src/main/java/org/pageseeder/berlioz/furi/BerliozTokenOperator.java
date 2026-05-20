@@ -46,7 +46,7 @@ import org.pageseeder.berlioz.furi.Variable.Form;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public class BerliozTokenOperator extends TokenBase implements TokenOperator, Matchable {
@@ -76,7 +76,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     /**
      * The '?' operator for query parameters.
      *
-     * Example:
+     * <p>Example:
      *
      * <pre>
      *  undef = null;
@@ -143,24 +143,24 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       }
 
       @Override
-      boolean resolve(List<Variable> vars, String value, Map<Variable, Object> values) {
-        for (Variable var : vars) {
-          Pattern p = Pattern.compile("(?<=[&?]"+var.namePatternString()+"=)([^&#]*)");
+      boolean resolve(List<Variable> variables, String value, Map<Variable, Object> values) {
+        for (Variable variable : variables) {
+          Pattern p = Pattern.compile("(?<=[&?]"+variable.namePatternString()+"=)([^&#]*)");
           Matcher m = p.matcher(value);
           while (m.find()) {
-            values.put(var, m.group());
+            values.put(variable, m.group());
           }
         }
         return true;
       }
 
       @Override
-      Pattern pattern(List<Variable> vars) {
+      Pattern pattern(List<Variable> variables) {
         StringBuilder pattern = new StringBuilder();
         pattern.append("\\?(");
-        for (Variable var : vars) {
+        for (Variable variable : variables) {
           pattern.append('(');
-          pattern.append(var.namePatternString());
+          pattern.append(variable.namePatternString());
           pattern.append("=[^&#]*)|");
         }
         pattern.append("&)*");
@@ -171,7 +171,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     /**
      * The ';' operator for path parameters.
      *
-     * Example:
+     * <p>Example:
      *
      * <pre>
      *  undef = null;
@@ -186,14 +186,14 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      */
     PATH_PARAMETER(';') {
       @Override
-      String expand(List<Variable> vars, Parameters parameters) {
+      String expand(List<Variable> variables, Parameters parameters) {
         if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
-        for (Variable var : vars) {
-          if (parameters.exists(var.name())) {
+        for (Variable variable : variables) {
+          if (parameters.exists(variable.name())) {
             // An associative array: odd index for names, even index for values
-            if (var.form() == Form.MAP) {
-              String[] values = var.values(parameters);
+            if (variable.form() == Form.MAP) {
+              String[] values = variable.values(parameters);
               for (int i = 0; i < values.length; i++) {
                 expansion.append(';').append(URICoder.encode(values[i]));
                 if (values.length > i+1) {
@@ -201,22 +201,22 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
                 }
               }
             // A list
-            } else if (var.form() == Form.LIST) {
+            } else if (variable.form() == Form.LIST) {
               // TODO: what should it be?
-              String[] values = var.values(parameters);
+              String[] values = variable.values(parameters);
               for (String value : values) {
                 expansion.append(';');
-                expansion.append(var.name());
-                if (value.length() > 0) {
+                expansion.append(variable.name());
+                if (!value.isEmpty()) {
                   expansion.append('=').append(URICoder.encode(value));
                 }
               }
             // A string
             } else {
-              String[] values = var.values(parameters);
+              String[] values = variable.values(parameters);
               for (String value : values) {
-                expansion.append(';').append(var.name());
-                if (value.length() > 0) {
+                expansion.append(';').append(variable.name());
+                if (!value.isEmpty()) {
                   expansion.append('=').append(URICoder.encode(value));
                 }
               }
@@ -232,24 +232,24 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       }
 
       @Override
-      boolean resolve(List<Variable> vars, String value, Map<Variable, Object> values) {
-        for (Variable var : vars) {
-          Pattern p = Pattern.compile("(?<=;"+var.namePatternString()+"=)([^;/?#]*)");
+      boolean resolve(List<Variable> variables, String value, Map<Variable, Object> values) {
+        for (Variable variable : variables) {
+          Pattern p = Pattern.compile("(?<=;"+variable.namePatternString()+"=)([^;/?#]*)");
           Matcher m = p.matcher(value);
           while(m.find()) {
-            values.put(var, m.group());
+            values.put(variable, m.group());
           }
         }
         return true;
       }
 
       @Override
-      Pattern pattern(List<Variable> vars) {
+      Pattern pattern(List<Variable> variables) {
         StringBuilder pattern = new StringBuilder();
         pattern.append("(?:");
-        for (Variable var : vars) {
+        for (Variable variable : variables) {
           pattern.append("(?:;");
-          pattern.append(var.namePatternString());
+          pattern.append(variable.namePatternString());
           pattern.append("=[^;/?#]*)|");
         }
         pattern.append(";)*");
@@ -272,12 +272,12 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     PATH_SEGMENT('/') {
 
       @Override
-      String expand(List<Variable> vars, Parameters parameters) {
+      String expand(List<Variable> variables, Parameters parameters) {
         if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
-        for (Variable var : vars) {
-          if (parameters.exists(var.name())) {
-            String[] values = var.values(parameters);
+        for (Variable variable : variables) {
+          if (parameters.exists(variable.name())) {
+            String[] values = variable.values(parameters);
             for (String value : values) {
               expansion.append('/');
               expansion.append(URICoder.encode(value));
@@ -301,7 +301,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       }
 
       @Override
-      Pattern pattern(List<Variable> vars) {
+      Pattern pattern(List<Variable> variables) {
         return Pattern.compile("(?:/[^/?#]*)*");
       }
     },
@@ -309,7 +309,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     /**
      * The '+' operator for URI inserts.
      *
-     * Example:
+     * <p>Example:
      *
      * <pre>
      * empty = &quot;&quot;
@@ -329,9 +329,9 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
         if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
         for (Iterator<Variable> i = vars.iterator(); i.hasNext();) {
-          Variable var = i.next();
-          if (parameters.exists(var.name())) {
-            String[] values = var.values(parameters);
+          Variable variable = i.next();
+          if (parameters.exists(variable.name())) {
+            String[] values = variable.values(parameters);
             for (String value : values) {
               expansion.append(URICoder.minimalEncode(value));
             }
@@ -358,7 +358,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       }
 
       @Override
-      Pattern pattern(List<Variable> vars) {
+      Pattern pattern(List<Variable> variables) {
         return Pattern.compile("[^?#]*");
       }
     },
@@ -373,9 +373,9 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
         if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
         for (Iterator<Variable> i = vars.iterator(); i.hasNext();) {
-          Variable var = i.next();
-          if (parameters.exists(var.name())) {
-            String[] values = var.values(parameters);
+          Variable variable = i.next();
+          if (parameters.exists(variable.name())) {
+            String[] values = variable.values(parameters);
             for (String value : values) {
               expansion.append(URICoder.encode(value));
             }
@@ -403,7 +403,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       }
 
       @Override
-      Pattern pattern(List<Variable> vars) {
+      Pattern pattern(List<Variable> variables) {
         return Pattern.compile("[^;/?#,&]*");
       }
     };
@@ -411,7 +411,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     /**
      * The character used to represent this operator.
      */
-    private final char _c;
+    private final char c;
 
     /**
      * Creates a new operator.
@@ -419,7 +419,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      * @param c The character used to represent this operator.
      */
     Operator(char c) {
-      this._c = c;
+      this.c = c;
     }
 
     /**
@@ -428,7 +428,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      * @return The character used to represent this operator.
      */
     public char character() {
-      return this._c;
+      return this.c;
     }
 
     /**
@@ -450,11 +450,9 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     /**
      * Returns the pattern for this operator given the specified list of variables.
      *
-     * @param vars The variables for the operator.
-     *
-     * @param params The parameters to use.
+     * @param variables The variables for the operator.
      */
-    abstract Pattern pattern(List<Variable> vars);
+    abstract Pattern pattern(List<Variable> variables);
 
     /**
      * Returns the map of the string to values given  the specified data.
@@ -466,47 +464,47 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   /**
    * The operator.
    */
-  private final Operator _operator;
+  private final Operator operator;
 
   /**
    * The variables for this token.
    */
-  private final List<Variable> _vars;
+  private final List<Variable> variables;
 
   /**
    * The pattern for this token.
    */
-  private final Pattern _pattern;
+  private final Pattern pattern;
 
   /**
    * Creates a new operator token for one variable only.
    *
    * @param op  The operator to use.
-   * @param var The variable for this operator.
+   * @param variable The variable for this operator.
    *
    * @throws NullPointerException If any of the argument is <code>null</code>.
    */
-  public BerliozTokenOperator(Operator op, Variable var) {
-    super(toExpression(op, var));
-    this._operator = op;
-    this._vars = new ArrayList<>(1);
-    this._vars.add(var);
-    this._pattern = op.pattern(this._vars);
+  public BerliozTokenOperator(Operator op, Variable variable) {
+    super(toExpression(op, variable));
+    this.operator = op;
+    this.variables = new ArrayList<>(1);
+    this.variables.add(variable);
+    this.pattern = op.pattern(this.variables);
   }
 
   /**
    * Creates a new operator token.
    *
    * @param op The operator to use.
-   * @param vars The variables for this operator.
+   * @param variables The variables for this operator.
    *
    * @throws NullPointerException If any of the argument is <code>null</code>.
    */
-  public BerliozTokenOperator(Operator op, List<Variable> vars) {
-    super(toExpression(op, vars));
-    this._operator = Objects.requireNonNull(op, "The operator is required");
-    this._vars = vars;
-    this._pattern = op.pattern(vars);
+  public BerliozTokenOperator(Operator op, List<Variable> variables) {
+    super(toExpression(op, variables));
+    this.operator = Objects.requireNonNull(op, "The operator is required");
+    this.variables = variables;
+    this.pattern = op.pattern(variables);
   }
 
   /**
@@ -518,7 +516,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   @Override
   public String expand(Parameters parameters) {
-    return this._operator.expand(this._vars, parameters);
+    return this.operator.expand(this.variables, parameters);
   }
 
   /**
@@ -527,7 +525,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    * @return the operator.
    */
   public Operator operator() {
-    return this._operator;
+    return this.operator;
   }
 
   /**
@@ -537,7 +535,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   @Override
   public List<Variable> variables() {
-    return this._vars;
+    return this.variables;
   }
 
   /**
@@ -545,7 +543,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   @Override
   public boolean isResolvable() {
-    return this._operator.isResolvable(this._vars);
+    return this.operator.isResolvable(this.variables);
   }
 
   /**
@@ -554,7 +552,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   @Override
   public boolean resolve(String expanded, Map<Variable, Object> values) {
     if (isResolvable()) {
-      this._operator.resolve(this._vars, expanded, values);
+      this.operator.resolve(this.variables, expanded, values);
       return true;
     } else return false;
   }
@@ -564,7 +562,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   @Override
   public boolean match(String part) {
-    return this._pattern.matcher(part).matches();
+    return this.pattern.matcher(part).matches();
   }
 
   /**
@@ -572,7 +570,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    */
   @Override
   public Pattern pattern() {
-    return this._pattern;
+    return this.pattern;
   }
 
   /**
@@ -594,7 +592,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   /**
    * Parses the specified string and returns the corresponding token.
    *
-   * This method accepts both the raw expression or the expression wrapped in curly brackets.
+   * <p>This method accepts both the raw expression or the expression wrapped in curly brackets.
    *
    * @param exp The expression to parse.
    *
@@ -632,15 +630,14 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    * Generate the expression corresponding to the specified operator, argument and variables.
    *
    * @param op The operator.
-   * @param arg the argument.
-   * @param vars The variables.
+   * @param variables The variables.
    */
-  private static String toExpression(Operator op, List<Variable> vars) {
+  private static String toExpression(Operator op, List<Variable> variables) {
     StringBuilder exp = new StringBuilder();
     exp.append('{');
     exp.append(op.character());
     boolean first = true;
-    for (Variable v : vars) {
+    for (Variable v : variables) {
       if (!first) {
         exp.append(',');
       }

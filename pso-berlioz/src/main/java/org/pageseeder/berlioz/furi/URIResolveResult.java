@@ -27,7 +27,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class URIResolveResult implements ResolvedVariables {
@@ -45,7 +45,7 @@ public final class URIResolveResult implements ResolvedVariables {
   /**
    * The URI Pattern that was used to produce this result.
    */
-  private final URIPattern _pattern;
+  private final URIPattern pattern;
 
   /**
    * The status of this result.
@@ -56,7 +56,7 @@ public final class URIResolveResult implements ResolvedVariables {
    * Constructs an instance of this class with fields initialised to null.
    */
   protected URIResolveResult(URIPattern pattern) {
-    this._pattern = pattern;
+    this.pattern = pattern;
   }
 
   @Override
@@ -84,7 +84,7 @@ public final class URIResolveResult implements ResolvedVariables {
    * @return The URI Pattern that was used to produce this result.
    */
   public URIPattern getURIPattern() {
-    return this._pattern;
+    return this.pattern;
   }
 
 // protected methods --------------------------------------------------------
@@ -95,7 +95,7 @@ public final class URIResolveResult implements ResolvedVariables {
    * @param name The name of the variable.
    * @param o    The corresponding object.
    */
-  protected void put(String name, Object o) {
+  void put(String name, Object o) {
     this.values.put(name, o);
   }
 
@@ -104,7 +104,7 @@ public final class URIResolveResult implements ResolvedVariables {
    *
    * @param status The status of the result.
    */
-  protected void setStatus(Status status) {
+  void setStatus(Status status) {
     this.status = status;
   }
 

@@ -18,17 +18,16 @@ package org.pageseeder.berlioz.furi;
 import java.util.Hashtable;
 import java.util.Map;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
  * A convenience class is to bind variables to resolvers in a set of URI patterns.
  *
- * Variables can be bound to a resolver by type or by name.
+ * <p>Variables can be bound to a resolver by type or by name.
  *
- * To assign a {@link VariableResolver} to variables of a specific type, use {@link #bindType(String, VariableResolver)}.
+ * <p>To assign a {@link VariableResolver} to variables of a specific type, use {@link #bindType(String, VariableResolver)}.
  *
- * The following example will bind all variables typed <code>int</code> to return the corresponding integer value.
+ * <p>The following example will bind all variables typed <code>int</code> to return the corresponding integer value.
  * <pre>
  *   VariableBinder binder = new VariableBinder();
  *   b.bindType("int", new VariableResolver(){
@@ -37,9 +36,9 @@ import org.jspecify.annotations.Nullable;
  *   });
  * </pre>
  *
- * To assign a {@link VariableResolver} to variables of a specific name, use {@link #bindName(String, VariableResolver)}.
+ * <p>To assign a {@link VariableResolver} to variables of a specific name, use {@link #bindName(String, VariableResolver)}.
  *
- * The following example will bind all variables typed <code>int</code> to return the corresponding integer value.
+ * <p>The following example will bind all variables typed <code>int</code> to return the corresponding integer value.
  * <pre>
  *   VariableBinder binder = new VariableBinder();
  *   b.bindName("name", new VariableResolver(){
@@ -59,22 +58,22 @@ public class VariableBinder {
   /**
    * The default resolver accepts everything and resolves all values to themselves.
    */
-  private final static VariableResolver DEFAULT_RESOLVER = new VariableResolver() {
+  private static final VariableResolver DEFAULT_RESOLVER = new VariableResolver() {
     @Override
     public boolean exists(String value) { return true; }
     @Override
-    public @NonNull String resolve(String value) { return value; }
+    public String resolve(String value) { return value; }
   };
 
   /**
    * Maps a variable names to a resolver.
    */
-  private final Map<String,VariableResolver> _byname = new Hashtable<>();
+  private final Map<String,VariableResolver> byName = new Hashtable<>();
 
   /**
    * Maps a variable types to a resolver.
    */
-  private final Map<String,VariableResolver> _bytype = new Hashtable<>();
+  private final Map<String,VariableResolver> byType = new Hashtable<>();
 
   /**
    * Binds the variables with the specified name to the specified resolver.
@@ -86,7 +85,7 @@ public class VariableBinder {
    */
   @Deprecated
   public void bind(String name, VariableResolver resolver) {
-    this._byname.put(name, resolver);
+    this.byName.put(name, resolver);
   }
 
   /**
@@ -96,7 +95,7 @@ public class VariableBinder {
    * @param resolver The resolver to use with these variables.
    */
   public void bindName(String name, VariableResolver resolver) {
-    this._byname.put(name, resolver);
+    this.byName.put(name, resolver);
   }
 
   /**
@@ -106,7 +105,7 @@ public class VariableBinder {
    * @param resolver The resolver to use with these variables.
    */
   public void bindType(String type, VariableResolver resolver) {
-    this._bytype.put(type, resolver);
+    this.byType.put(type, resolver);
   }
 
   /**
@@ -124,10 +123,10 @@ public class VariableBinder {
    * @return the corresponding resolver.
    */
   public VariableResolver getResolver(String name, @Nullable VariableType type) {
-    VariableResolver resolver = this._byname.get(name);
+    VariableResolver resolver = this.byName.get(name);
     // try to find a resolver by type
     if (resolver == null && type != null) {
-      resolver = this._bytype.get(type.getName());
+      resolver = this.byType.get(type.getName());
     }
     // fall back on the default otherwise
     return resolver != null? resolver : DEFAULT_RESOLVER;
@@ -144,7 +143,7 @@ public class VariableBinder {
    * @return the corresponding resolver.
    */
   public VariableResolver getResolver(String name) {
-    VariableResolver resolver = this._byname.get(name);
+    VariableResolver resolver = this.byName.get(name);
     return resolver != null? resolver : DEFAULT_RESOLVER;
   }
 
@@ -160,7 +159,7 @@ public class VariableBinder {
    */
   public VariableResolver getResolver(@Nullable VariableType type) {
     if (type == null) return DEFAULT_RESOLVER;
-    VariableResolver resolver = this._bytype.get(type.getName());
+    VariableResolver resolver = this.byType.get(type.getName());
     return resolver != null? resolver : DEFAULT_RESOLVER;
   }
 
@@ -174,7 +173,7 @@ public class VariableBinder {
    */
   public boolean isNameBound(@Nullable String name) {
     if (name == null) return false;
-    return this._byname.containsKey(name);
+    return this.byName.containsKey(name);
   }
 
   /**
@@ -187,7 +186,7 @@ public class VariableBinder {
    */
   public boolean isTypeBound(@Nullable String type) {
     if (type == null) return false;
-    return this._bytype.containsKey(type);
+    return this.byType.containsKey(type);
   }
 
 }

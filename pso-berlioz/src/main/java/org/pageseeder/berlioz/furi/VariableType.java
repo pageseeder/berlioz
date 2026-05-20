@@ -23,15 +23,15 @@ import org.jspecify.annotations.Nullable;
 /**
  * Defines a variable type.
  *
- * The variable type may be used for any purpose. It is just a mechanism to qualify variables further
+ * <p>The variable type may be used for any purpose. It is just a mechanism to qualify variables further
  * than merely by name.
  *
- * Systems may choose to use a variable type to indicate a particular behaviour for the variable or
+ * <p>Systems may choose to use a variable type to indicate a particular behavior for the variable or
  * to enforce a particular type of value.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class VariableType {
@@ -44,7 +44,7 @@ public final class VariableType {
   /**
    * The name of this variable type.
    */
-  private final String _name;
+  private final String name;
 
   /**
    * Create a new variable type.
@@ -55,7 +55,7 @@ public final class VariableType {
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
   public VariableType(String name) {
-    this._name = Objects.requireNonNull(name, "A variable type must have a name, but was null");
+    this.name = Objects.requireNonNull(name, "A variable type must have a name, but was null");
     if (!isValidName(name))
       throw new IllegalArgumentException("The variable name is not valid: " + name);
   }
@@ -66,7 +66,7 @@ public final class VariableType {
    * @return The name of this variable type.
    */
   public String getName() {
-    return this._name;
+    return this.name;
   }
 
   @Override
@@ -77,17 +77,17 @@ public final class VariableType {
       return false;
     VariableType v = (VariableType) o;
     // name and default cannot be null
-    return this._name.equals(v._name);
+    return this.name.equals(v.name);
   }
 
   @Override
   public int hashCode() {
-    return this._name.hashCode();
+    return this.name.hashCode();
   }
 
   @Override
   public String toString() {
-    return this._name;
+    return this.name;
   }
 
   /**
@@ -97,7 +97,7 @@ public final class VariableType {
    *
    * @return <code>true</code> if the name is valid; <code>false</code> otherwise.
    */
-  protected static boolean isValidName(@Nullable String name) {
+  static boolean isValidName(@Nullable String name) {
     if (name == null)
       return false;
     return VALID_NAME.matcher(name).matches();

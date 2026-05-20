@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 
-
 /**
  * A URI Pattern for matching URI following the same regular structure.
  *
@@ -34,7 +33,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class URIPattern extends URITemplate implements Matchable {
@@ -42,7 +41,7 @@ public final class URIPattern extends URITemplate implements Matchable {
   /**
    * The regular expression pattern for matching URIs to this URI Pattern.
    */
-  private final Pattern _pattern;
+  private final Pattern pattern;
 
   /**
    * The score for this pattern, the length of the literal text.
@@ -60,7 +59,7 @@ public final class URIPattern extends URITemplate implements Matchable {
     super(template);
     if (!isMatchable(this))
       throw new IllegalArgumentException("Cannot create a URL pattern containing non-matchable tokens.");
-    this._pattern = computePattern(tokens());
+    this.pattern = computePattern(tokens());
   }
 
   /**
@@ -74,7 +73,7 @@ public final class URIPattern extends URITemplate implements Matchable {
     super(template);
     if (!isMatchable(template))
       throw new IllegalArgumentException("Cannot create a URL pattern from template containing non-matchable tokens.");
-    this._pattern = computePattern(tokens());
+    this.pattern = computePattern(tokens());
   }
 
   /**
@@ -107,7 +106,7 @@ public final class URIPattern extends URITemplate implements Matchable {
    */
   @Override
   public boolean match(String uri) {
-    return this._pattern.matcher(uri).matches();
+    return this.pattern.matcher(uri).matches();
   }
 
   /**
@@ -117,7 +116,7 @@ public final class URIPattern extends URITemplate implements Matchable {
    */
   @Override
   public Pattern pattern() {
-    return this._pattern;
+    return this.pattern;
   }
 
   @Override
@@ -128,17 +127,17 @@ public final class URIPattern extends URITemplate implements Matchable {
   @Override
   public int hashCode() {
     // use the original regex pattern string because the Pattern object's hashCode
-    return 7 * this._pattern.pattern().hashCode() + 3 * toString().hashCode() + 31;
+    return 7 * this.pattern.pattern().hashCode() + 3 * toString().hashCode() + 31;
   }
 
   /**
    * Returns the score for this URI pattern.
    *
-   * The score corresponds to the length of literal content.
+   * <p>The score corresponds to the length of literal content.
    *
    * @return the score for this URI pattern.
    */
-  protected int score() {
+  int score() {
     if (this.score < 0) {
       this.score = computeScore(tokens());
     }
@@ -150,7 +149,7 @@ public final class URIPattern extends URITemplate implements Matchable {
   /**
    * Compute the Regular Expression pattern for this URI Pattern.
    *
-   * Important note: the regular expression contain the same number of capturing groups as the
+   * <p>Important note: the regular expression contain the same number of capturing groups as the
    * number of token to facilitate the resolve process.
    *
    * @param tokens The list of tokens to compute the pattern.
@@ -172,20 +171,20 @@ public final class URIPattern extends URITemplate implements Matchable {
   /**
    * Compute the score from the specified tokens.
    *
-   * The score is the sum of the length of each literal token.
+   * <p>The score is the sum of the length of each literal token.
    *
    * @param tokens The list of tokens to compute the score.
    *
    * @return The score from the specified tokens.
    */
   private int computeScore(List<Token> tokens) {
-    int score = 0;
+    int s = 0;
     for (Token t : tokens) {
       if (t instanceof TokenLiteral) {
-        score += t.expression().length();
+        s += t.expression().length();
       }
     }
-    return score;
+    return s;
   }
 
 }
