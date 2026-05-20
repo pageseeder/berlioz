@@ -1,5 +1,6 @@
 plugins {
   base
+  alias(libs.plugins.cyclonedx) apply false
   alias(libs.plugins.jreleaser)
   alias(libs.plugins.versions)
 }
@@ -17,6 +18,7 @@ allprojects {
 subprojects {
   apply(plugin = "java-library")
   apply(plugin = "maven-publish")
+  apply(plugin = "org.cyclonedx.bom")
 
   configure<JavaPluginExtension> {
     withJavadocJar()
@@ -42,6 +44,10 @@ subprojects {
     }
   }
 
+  tasks.withType<org.cyclonedx.gradle.CyclonedxDirectTask>().configureEach {
+    xmlOutput.unsetConvention()
+  }
+
   tasks.withType<Javadoc>().configureEach {
     (options as StandardJavadocDocletOptions).apply {
       addStringOption("Xdoclint:none", "-quiet")
@@ -56,6 +62,13 @@ subprojects {
       create<MavenPublication>("maven") {
         from(components["java"])
         artifactId = project.name
+        artifact(
+          tasks.named<org.cyclonedx.gradle.CyclonedxDirectTask>("cyclonedxDirectBom")
+            .flatMap { it.jsonOutput }
+        ) {
+          classifier = "cyclonedx"
+          extension = "json"
+        }
         pom {
           name.set(project.findProperty("title") as? String ?: project.name)
           description.set(project.description)
