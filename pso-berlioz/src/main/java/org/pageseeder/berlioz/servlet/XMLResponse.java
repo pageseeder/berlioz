@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 public final class XMLResponse {
@@ -74,27 +74,27 @@ public final class XMLResponse {
   /**
    * The core HTTP details.
    */
-  private final CoreHttpRequest _core;
+  private final CoreHttpRequest core;
 
   /**
    * The service that was matched for the given request.
    */
-  private final MatchingService _match;
+  private final MatchingService match;
 
   /**
    * The request to send to the generators.
    */
-  private final List<HttpContentRequest> _requests;
+  private final List<HttpContentRequest> requests;
 
   /**
    * Maps the etags to each HTTP request
    */
-  private final Map<Integer, String> _etags = new HashMap<>();
+  private final Map<Integer, String> etags = new HashMap<>();
 
   /**
    * Whether to profile the content generators.
    */
-  private final boolean _profile;
+  private final boolean profile;
 
   /**
    * The request to send to the generators.
@@ -124,10 +124,10 @@ public final class XMLResponse {
    */
   public XMLResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, MatchingService match,
       boolean profile) {
-    this._core = new CoreHttpRequest(req, res, config.getEnvironment());
-    this._match = match;
-    this._requests = configure(this._core, match);
-    this._profile = profile;
+    this.core = new CoreHttpRequest(req, res, config.getEnvironment());
+    this.match = match;
+    this.requests = configure(this.core, match);
+    this.profile = profile;
   }
 
   public void enableServerTiming() {
@@ -140,7 +140,7 @@ public final class XMLResponse {
    * @return the service corresponding to this response.
    */
   public Service getService() {
-    return this._match.service();
+    return this.match.service();
   }
 
   /**
@@ -156,17 +156,17 @@ public final class XMLResponse {
    * @since Berlioz 0.8.0
    */
   public @Nullable String getEtag() {
-    Service service = this._match.service();
+    Service service = this.match.service();
     boolean cacheable = service.isCacheable();
     StringBuilder etag = new StringBuilder();
     if (cacheable) {
-      for (HttpContentRequest request : this._requests) {
+      for (HttpContentRequest request : this.requests) {
         ContentGenerator generator = request.generator();
         // Check if cacheable
         if (generator instanceof Cacheable) {
-          String localtag = getETag(request);
-          if (localtag.isEmpty()) return null;
-          etag.append(localtag).append('/');
+          String localTag = getETag(request);
+          if (localTag.isEmpty()) return null;
+          etag.append(localTag).append('/');
         } else {
           cacheable = false;
           break;
@@ -183,8 +183,8 @@ public final class XMLResponse {
    * @since Berlioz 0.8.2
    */
   public ContentStatus getStatus() {
-    ContentStatus status = this.status;
-    return status == null? ContentStatus.OK : status;
+    ContentStatus s = this.status;
+    return s == null? ContentStatus.OK : s;
   }
 
   /**
@@ -220,19 +220,19 @@ public final class XMLResponse {
     xml.openElement("root", true);
 
     // Get service
-    Service service = this._match.service();
+    Service service = this.match.service();
     xml.attribute("service", service.id());
     xml.attribute("group", service.group());
     if (service.flags() != null) {
       xml.attribute("flags", service.flags());
     }
 
-    XMLResponseHeader header = new XMLResponseHeader(this._core, service, this._match.result());
+    XMLResponseHeader header = new XMLResponseHeader(this.core, service, this.match.result());
     header.toXML(xml);
 
     // Call each generator in turn
     int position = 0;
-    for (HttpContentRequest request : this._requests) {
+    for (HttpContentRequest request : this.requests) {
       toXML(request, ++position, service, xml);
     }
 
@@ -289,7 +289,7 @@ public final class XMLResponse {
     // If cacheable, include etag
     if (generator instanceof Cacheable) {
       String etag = getETag(request);
-      if (etag.length() > 0) {
+      if (!etag.isEmpty()) {
         xml.attribute("etag", etag);
       }
     }
@@ -325,14 +325,14 @@ public final class XMLResponse {
       this.redirect = request.getRedirectURL();
     }
     xml.attribute("status", status.toString());
-    if (this._profile) {
+    if (this.profile) {
       xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));
       xml.attribute("profile-process", ProfileFormat.format(end - start));
       xml.attribute("profile", ProfileFormat.format(request.getProfileEtag() + end - start));
     }
     if (this.serverTiming) {
       String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
-      ServerTimingHeader.addMetricNano(this._core.response(), "xml"+position, "Source "+safeName, request.getProfileEtag() + end - start);
+      ServerTimingHeader.addMetricNano(this.core.response(), "xml"+position, "Source "+safeName, request.getProfileEtag() + end - start);
     }
 
     // Report if requested
@@ -472,8 +472,8 @@ public final class XMLResponse {
   private String getETag(HttpContentRequest request) {
     String etag = null;
     Integer key = request.order();
-    if (this._etags.containsKey(key)) {
-      etag = this._etags.get(key);
+    if (this.etags.containsKey(key)) {
+      etag = this.etags.get(key);
     } else {
       ContentGenerator generator = request.generator();
       if (generator instanceof Cacheable) {
@@ -483,7 +483,7 @@ public final class XMLResponse {
         request.setProfileEtag(end-start);
       }
       // Store for reuse (even if null)
-      this._etags.put(key, etag != null? etag : "");
+      this.etags.put(key, etag != null? etag : "");
     }
     return etag != null? etag : "";
   }
