@@ -53,7 +53,7 @@ import java.util.Map;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.7
  *
  * @deprecated Use org.pageseeder.berlioz.config.GlobalConfig instead.
@@ -66,13 +66,13 @@ public final class XMLConfig implements Serializable, XMLWritable {
    */
   private static final long serialVersionUID = 20230223L;
 
-  private final GlobalConfig _config;
+  private final GlobalConfig config;
 
   /**
    * Creates an empty property list with no default values.
    */
   public XMLConfig() {
-    this._config = new GlobalConfig();
+    this.config = new GlobalConfig();
   }
 
   /**
@@ -81,11 +81,11 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @param properties The initial properties for this config.
    */
   public XMLConfig(Map<String, String> properties) {
-    this._config = new GlobalConfig(properties);
+    this.config = new GlobalConfig(properties);
   }
 
   private XMLConfig(GlobalConfig config) {
-    this._config = config;
+    this.config = config;
   }
 
   /**
@@ -114,7 +114,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @return the properties as a map.
    */
   public Map<String, String> properties() {
-    return this._config.properties();
+    return this.config.properties();
   }
 
   /**
@@ -126,7 +126,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
    */
   public synchronized void load(InputStream in) throws IOException {
     try {
-      this._config.load(in);
+      this.config.load(in);
     } catch(ConfigException ex) {
       if (ex.getCause() instanceof IOException) throw (IOException)ex.getCause();
       throw new IOException(ex.getMessage(), ex.getCause());
@@ -141,12 +141,12 @@ public final class XMLConfig implements Serializable, XMLWritable {
    * @throws IOException If an error occurred when reading from the input stream.
    */
   public void save(OutputStream out) throws IOException {
-    this._config.save(out);
+    this.config.save(out);
   }
 
   @Override
   public void toXML(XMLWriter xml) throws IOException {
-    this._config.toXML(xml);
+    this.config.toXML(xml);
   }
 
 }
