@@ -68,7 +68,7 @@ public final class XMLResponseHeader implements XMLWritable {
   /**
    * Check that it is a valid attribute name in XML.
    *
-   * NB: We disallow ':' to avoid issues with namespaces.
+   * <p>NB: We disallow ':' to avoid issues with namespaces.
    */
   private static final Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
 
@@ -101,7 +101,7 @@ public final class XMLResponseHeader implements XMLWritable {
    * @param service  The service object.
    * @param results  The result of URI resolution.
    */
-  protected XMLResponseHeader(CoreHttpRequest core, Service service, URIResolveResult results) {
+  XMLResponseHeader(CoreHttpRequest core, Service service, URIResolveResult results) {
     this.core = core;
     this.service = service.id();
     this.group = service.group();
@@ -231,7 +231,7 @@ public final class XMLResponseHeader implements XMLWritable {
 
     // Include App info
     Properties app = GlobalSettings.getNode("berlioz.app");
-    if (app != null && app.size() > 0) {
+    if (app != null && !app.isEmpty()) {
       xml.openElement("app");
       for (Entry<Object, Object> p : app.entrySet()) {
         String name = (String)p.getKey();
@@ -246,7 +246,7 @@ public final class XMLResponseHeader implements XMLWritable {
     // Nonce for use in CSP
     if (GlobalSettings.has(BerliozOption.NONCE_ENABLE)) {
       String attribute = GlobalSettings.get(BerliozOption.NONCE_ATTRIBUTE);
-      boolean useAttribute = attribute.length() > 0;
+      boolean useAttribute = !attribute.isEmpty();
       String nonce = null;
       String source = "header";
       if (useAttribute && req.getAttribute(attribute) != null) {
@@ -262,7 +262,7 @@ public final class XMLResponseHeader implements XMLWritable {
         xml.writeComment("invalid nonce");
       }
       // Only output if nonce is not empty
-      if (nonce.length() > 0) {
+      if (!nonce.isEmpty()) {
         xml.openElement("security");
         xml.attribute("nonce", nonce);
         xml.attribute("source", source);
