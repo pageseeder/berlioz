@@ -87,14 +87,12 @@ public final class SHA256 {
   public static String hash(File file) throws IOException, UnsupportedOperationException {
     MessageDigest md = getAlgorithm();
     FileInputStream fis = new FileInputStream(file);
-    FileChannel in = fis.getChannel();
-    try {
+    try (fis) {
+      FileChannel in = fis.getChannel();
       MappedByteBuffer buffer = in.map(FileChannel.MapMode.READ_ONLY, 0, in.size());
       md.update(buffer);
       byte[] bytes = md.digest();
       return toHex(bytes);
-    } finally {
-      fis.close();
     }
   }
 
