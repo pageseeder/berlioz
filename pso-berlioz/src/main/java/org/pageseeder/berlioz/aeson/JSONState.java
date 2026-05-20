@@ -32,7 +32,7 @@ import org.xml.sax.Attributes;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 final class JSONState {
@@ -206,16 +206,15 @@ final class JSONState {
      * @return the updated map or the inherited one if no attributes changed the types.
      */
     public static JSONTypeMap make(JSONTypeMap inherited, Attributes atts) {
-      JSONTypeMap current = inherited;
       String toBoolean = atts.getValue(JSONSerializer.NS_URI, "boolean");
       String toNumber = atts.getValue(JSONSerializer.NS_URI, "number");
       String toString = atts.getValue(JSONSerializer.NS_URI, "string");
       String toNull = atts.getValue(JSONSerializer.NS_URI, "null");
       if (toBoolean == null && toNumber == null && toString == null && toNull == null) // Return the current if no new type mappings defined
-      return current;
+        return inherited;
       else {
         // Update the mapping
-        Map<String, JSONType> updated = new HashMap<>(current.map);
+        Map<String, JSONType> updated = new HashMap<>(inherited.map);
         if (toBoolean != null) {
           for (String name : toBoolean.split(" ")) {
             updated.put(name, JSONType.BOOLEAN);

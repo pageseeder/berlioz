@@ -15,11 +15,7 @@
  */
 package org.pageseeder.berlioz.aeson;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
+import java.io.*;
 import java.net.URI;
 
 import javax.xml.transform.Result;
@@ -36,7 +32,7 @@ import javax.xml.transform.stream.StreamResult;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public class JSONResult extends SAXResult implements Result {
@@ -114,8 +110,7 @@ public class JSONResult extends SAXResult implements Result {
             FileOutputStream o = new FileOutputStream(f);
             json = new JSONResult(o);
           } catch (IOException ex) {
-            // TODO Use more appropriate exception
-            throw new RuntimeException("Unable to write JSON to "+systemId, ex);
+            throw new UncheckedIOException("Unable to write JSON to "+systemId, ex);
           }
         } else {
           // Will output to System.out
