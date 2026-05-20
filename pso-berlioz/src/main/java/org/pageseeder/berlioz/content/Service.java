@@ -419,7 +419,7 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder group(@Nullable String group) {
-      this.group = group != null? group : "default";
+      this.group = group != null ? group : "default";
       return this;
     }
 
@@ -527,7 +527,7 @@ public final class Service {
     }
 
     /**
-     * Resets the all the class attributes (except group).
+     * Resets all the class attributes (except group).
      */
     public void reset() {
       this.id = null;

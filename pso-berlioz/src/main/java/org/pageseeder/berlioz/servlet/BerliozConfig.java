@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.servlet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
@@ -447,6 +448,15 @@ public final class BerliozConfig {
         .replace("{GROUP}", service.group())
         .replace("{SERVICE}", service.id());
     File styleSheet = this.env.getPrivateFile(path);
+    try {
+      Path base = this.env.getPrivateFolder().getCanonicalFile().toPath();
+      Path resolved = styleSheet.getCanonicalFile().toPath();
+      if (!resolved.startsWith(base)) {
+        throw new IllegalStateException("Stylesheet for service '" + service.id() + "' resolves outside the private folder");
+      }
+    } catch (IOException ex) {
+      LOGGER.warn("Unable to verify stylesheet path for service '{}': {}", service.id(), ex.getMessage());
+    }
     return new XSLTransformer(styleSheet, toURL(this.fallbackStyleSheet));
   }
 
