@@ -1,18 +1,17 @@
 package org.pageseeder.berlioz.content;
 
 import org.junit.Test;
-import org.pageseeder.berlioz.BerliozException;
 
 public class ServiceStatusRuleTest {
 
 
   @Test(expected = IllegalArgumentException.class)
-  public void testValidate_empty() throws BerliozException {
+  public void testValidate_empty() {
     ServiceStatusRule.validate("");
   }
 
   @Test
-  public void testValidate_valid() throws BerliozException {
+  public void testValidate_valid() {
     ServiceStatusRule.validate("1");
     ServiceStatusRule.validate("123");
     ServiceStatusRule.validate("abc");
@@ -25,7 +24,7 @@ public class ServiceStatusRuleTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testValidate_invalid() throws BerliozException {
+  public void testValidate_invalid() {
     ServiceStatusRule.validate("&");
   }
 
