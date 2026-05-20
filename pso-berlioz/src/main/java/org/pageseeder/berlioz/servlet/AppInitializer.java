@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class initializes a Berlioz application.
  *
- * @version Berlioz 0.11.5
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.11.0
  */
 public abstract class AppInitializer {
@@ -46,12 +46,12 @@ public abstract class AppInitializer {
   /**
    * The list of lifecycle listeners notified when Berlioz starts and stops.
    */
-  private final List<LifecycleListener> _listeners;
+  private final List<LifecycleListener> listeners;
 
   /**
    * The <code>WEB-INF</code> folder.
    */
-  private final File _webinf;
+  private final File webInf;
 
   /**
    * Used for logging events.
@@ -61,14 +61,14 @@ public abstract class AppInitializer {
   /**
    * Create a new application initializer using the
    *
-   * @param webinf    The application WEB-INF configuration.
+   * @param webInf    The application WEB-INF configuration.
    * @param listeners The list of lifecycle listeners to use
    *
    * @throws NullPointerException If list of lifecycle listeners is <code>null</code>
    */
-  public AppInitializer(File webinf, List<LifecycleListener> listeners) {
-    this._webinf = Objects.requireNonNull(webinf, "Listeners must be specified");
-    this._listeners = Objects.requireNonNull(listeners, "Listeners must be specified");
+  public AppInitializer(File webInf, List<LifecycleListener> listeners) {
+    this.webInf = Objects.requireNonNull(webInf, "Listeners must be specified");
+    this.listeners = Objects.requireNonNull(listeners, "Listeners must be specified");
   }
 
   /**
@@ -89,23 +89,23 @@ public abstract class AppInitializer {
     // Init message
     console(Phase.INIT, "===============================================================");
     console(Phase.INIT, "Initialing Berlioz "+GlobalSettings.getVersion()+"...");
-    console(Phase.INIT, "Application base: "+this._webinf.getAbsolutePath());
+    console(Phase.INIT, "Application base: "+this.webInf.getAbsolutePath());
 
     // Set the WEB-INF
-    InitEnvironment env = InitEnvironment.create(this._webinf);
+    InitEnvironment env = InitEnvironment.create(this.webInf);
 
     // Setup config folder
-    String configFolder = setupConfigFolder(this._webinf);
+    String configFolder = setupConfigFolder(this.webInf);
     env = env.configFolder(configFolder);
 
     // Determine the application data folder
-    @Nullable File appData = configureAppData();
+    File appData = configureAppData();
     if (appData != null) {
       env = env.appData(appData);
     }
 
     // Determine the mode (dev, production, etc...)
-    String mode = configureMode(appData != null? appData : this._webinf, configFolder);
+    String mode = configureMode(appData != null? appData : this.webInf, configFolder);
     if (mode != null) {
       env = env.mode(mode);
     }
@@ -144,17 +144,17 @@ public abstract class AppInitializer {
   public final void destroy() {
     console(Phase.STOP, "===============================================================");
     console(Phase.STOP, "Stopping Berlioz "+GlobalSettings.getVersion()+"...");
-    console(Phase.STOP, "Application Base: "+this._webinf.getAbsolutePath());
-    if (this._listeners.size() > 0) {
+    console(Phase.STOP, "Application Base: "+this.webInf.getAbsolutePath());
+    if (this.listeners.size() > 0) {
       console(Phase.STOP, "Lifecycle: Invoking listeners");
-      for (LifecycleListener listener : this._listeners) {
+      for (LifecycleListener listener : this.listeners) {
         try {
           listener.stop();
         } catch (Exception ex) {
           System.out.println("[BERLIOZ_STOP] (!) Unable to stop Lifecycle listener: "+listener.getClass().getSimpleName());
         }
       }
-      this._listeners.clear();
+      this.listeners.clear();
     } else {
       console(Phase.STOP, "Lifecycle: OK (No listener)");
     }
@@ -525,7 +525,7 @@ public abstract class AppInitializer {
    */
   private String configureMode(File appData, String configFolder) {
     // Determine the mode (dev, production, etc...)
-    @Nullable String mode = getMode();
+    String mode = getMode();
     if (mode == null) {
       mode = autoDetect(new File(appData, configFolder));
       if (mode != null) {
@@ -553,8 +553,8 @@ public abstract class AppInitializer {
    * @return the mode if only one file.
    */
   private static @Nullable String autoDetect(File directory) {
-    @Nullable String mode = null;
-    @Nullable String[] filenames = directory.list();
+    String mode = null;
+    String[] filenames = directory.list();
     if (filenames != null) {
       for (String name : filenames) {
         if (name.startsWith("config-") && name.endsWith(".xml")) {
@@ -588,7 +588,7 @@ public abstract class AppInitializer {
   protected static void checkOverlays(File contextPath) {
     List<Overlay> overlays = Overlays.list(contextPath);
     console(Phase.INIT, "Overlays: found '"+overlays.size()+"' overlay(s)");
-    @Nullable Overlay previous = null;
+    Overlay previous = null;
     // Check if there is already an overlay with the same name
     for (Overlay o : overlays) {
       if (previous != null && previous.name().equals(o.name())) {
@@ -766,12 +766,12 @@ public abstract class AppInitializer {
    * Checking that the global setting are loaded properly.
    */
   private static void loadSettings() {
-    @Nullable File modeConfigFile = GlobalSettings.getModeConfigFile();
-    @Nullable File defaultConfigFile = GlobalSettings.getDefaultConfigFile();
+    File modeConfigFile = GlobalSettings.getModeConfigFile();
+    File defaultConfigFile = GlobalSettings.getDefaultConfigFile();
     String mode = GlobalSettings.getMode();
     if (modeConfigFile != null || defaultConfigFile != null) {
-      @Nullable File appdata = GlobalSettings.getAppData();
-      @Nullable File webinf = GlobalSettings.getWebInf();
+      File appdata = GlobalSettings.getAppData();
+      File webinf = GlobalSettings.getWebInf();
       if (modeConfigFile != null && appdata != null) {
         console(Phase.INIT, "Config: found [appdata]/"+toRelPath(modeConfigFile, appdata));
       }
@@ -805,7 +805,7 @@ public abstract class AppInitializer {
    * @param listenerClass The lifecycle listener class.
    */
   protected void registerListener(String listenerClass) {
-    @Nullable LifecycleListener listener = null;
+    LifecycleListener listener = null;
     // Instantiate
     try {
       Class<?> c = Class.forName(listenerClass);
@@ -825,7 +825,7 @@ public abstract class AppInitializer {
     }
     // Start
     if (listener != null) {
-      this._listeners.add(listener);
+      this.listeners.add(listener);
     }
   }
 
@@ -834,9 +834,9 @@ public abstract class AppInitializer {
    */
   private void startListeners() {
     // Start
-    if (this._listeners.size() > 0) {
+    if (!this.listeners.isEmpty()) {
       boolean ok = true;
-      for (LifecycleListener listener : this._listeners) {
+      for (LifecycleListener listener : this.listeners) {
         try {
           ok = ok && listener.start();
           console(Phase.INIT, "Lifecycle: started "+listener.getClass().getSimpleName());
