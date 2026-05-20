@@ -106,6 +106,15 @@ subprojects {
   }
 }
 
+sonarqube {
+  properties {
+    property("sonar.host.url", "https://sonarcloud.io")
+    property("sonar.organization", "pageseeder")
+    property("sonar.projectKey", "pageseeder_berlioz")
+    property("sonar.token", providers.gradleProperty("sonarcloud.login").getOrElse(""))
+  }
+}
+
 tasks.wrapper {
   gradleVersion = "8.14.4"
   distributionType = Wrapper.DistributionType.ALL
