@@ -273,7 +273,7 @@ public final class BerliozConfig {
     if (controlKey == null || controlKey.isEmpty()) return true;
     if (controlKey.equals(req.getParameter("berlioz-control"))) return true;
     // TODO Check if this is appropriate!!
-    @Nullable Enumeration<String> e = req.getHeaders("Authorization");
+    Enumeration<String> e = req.getHeaders("Authorization");
     if (e != null) {
       while (e.hasMoreElements()) {
         String auth = e.nextElement();
@@ -443,9 +443,9 @@ public final class BerliozConfig {
    * @throws NullPointerException if the service is <code>null</code>.
    */
   private XSLTransformer newTransformer(Service service) {
-    String path = this.stylePath;
-    path = path.replaceAll("\\{GROUP}", service.group());
-    path = path.replaceAll("\\{SERVICE}", service.id());
+    String path = this.stylePath
+        .replace("{GROUP}", service.group())
+        .replace("{SERVICE}", service.id());
     File styleSheet = this.env.getPrivateFile(path);
     return new XSLTransformer(styleSheet, toURL(this.fallbackStyleSheet));
   }
@@ -476,7 +476,7 @@ public final class BerliozConfig {
    * @return the corresponding URL.
    */
   private @Nullable URL toURL(String path) {
-    if (path.length() == 0) return null;
+    if (path.isEmpty()) return null;
     URL url = null;
     if (path.startsWith("resource:")) {
       ClassLoader loader = BerliozConfig.class.getClassLoader();
