@@ -443,7 +443,7 @@ public final class CSSMin {
     /**
      * Creates a new Property using the supplied strings.
      *
-     * Parses out the values of the property selector.
+     * <p>Parses out the values of the property selector.
      *
      * @param property The property;
      * @throws ParsingException If the property is incomplete and cannot be parsed.
@@ -605,7 +605,7 @@ public final class CSSMin {
     /**
      * The property value.
      */
-    private final String _value;
+    private final String value;
 
     /**
      * Create a new property part by parsing the given string.
@@ -613,7 +613,7 @@ public final class CSSMin {
      * @param value The value for this part.
      */
     private Part(String value) {
-      this._value = value;
+      this.value = value;
     }
 
     /**
@@ -633,7 +633,7 @@ public final class CSSMin {
      */
     public static String simplify(String property, String value) {
       // !important doesn't need to be spaced
-      String result = value.replaceAll(" !important", "!important");
+      String result = value.replace(" !important", "!important");
 
       // Replace 0in, 0cm, etc. with just 0
       result = result.replaceAll("(\\s)(0)(px|em|%|in|cm|mm|pc|pt|ex)", "$1$2");
@@ -783,7 +783,7 @@ public final class CSSMin {
      */
     @Override
     public String toString() {
-      return this._value;
+      return this.value;
     }
 
   }
