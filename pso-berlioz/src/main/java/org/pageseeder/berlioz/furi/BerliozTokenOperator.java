@@ -618,12 +618,12 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
    * Generate the expression corresponding to the specified operator and variable.
    *
    * @param op The operator.
-   * @param var The variable.
+   * @param variable The variable.
    *
    * @throws NullPointerException If either argument is <code>null</code>
    */
-  private static String toExpression(Operator op, Variable var) {
-    return "{"+op.character()+var.name()+'}';
+  private static String toExpression(Operator op, Variable variable) {
+    return "{"+op.character()+variable.name()+'}';
   }
 
   /**
