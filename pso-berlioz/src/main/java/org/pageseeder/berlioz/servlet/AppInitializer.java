@@ -243,11 +243,12 @@ public abstract class AppInitializer {
       this.config = Objects.requireNonNull(config, "Servlet config must be specified");
     }
 
-    @Override String getConfigFolder() {
-      String config = this.config.getInitParameter("config");
-      if (config != null) {
+    @Override
+    String getConfigFolder() {
+      String configFolder = this.config.getInitParameter("config");
+      if (configFolder != null) {
         console(Phase.INIT, "Config folder: defined with servlet init-parameter 'config'");
-        return config;
+        return configFolder;
       }
       // Fall back on context initializer
       return super.getConfigFolder();
@@ -771,12 +772,12 @@ public abstract class AppInitializer {
     String mode = GlobalSettings.getMode();
     if (modeConfigFile != null || defaultConfigFile != null) {
       File appdata = GlobalSettings.getAppData();
-      File webinf = GlobalSettings.getWebInf();
+      File webInf = GlobalSettings.getWebInf();
       if (modeConfigFile != null && appdata != null) {
         console(Phase.INIT, "Config: found [appdata]/"+toRelPath(modeConfigFile, appdata));
       }
-      if (defaultConfigFile != null && webinf != null) {
-        console(Phase.INIT, "Config: found [webinf]/"+toRelPath(defaultConfigFile, webinf));
+      if (defaultConfigFile != null && webInf != null) {
+        console(Phase.INIT, "Config: found [webinf]/"+toRelPath(defaultConfigFile, webInf));
       }
       boolean loaded = GlobalSettings.load();
       if (loaded) {
