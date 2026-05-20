@@ -9,3 +9,7 @@
 /build/
 /target/
 /out/
+/.devcontainer/devcontainer.json
+/CLAUDE.md
+/AGENTS.md
+/.claude/
