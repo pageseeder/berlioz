@@ -29,7 +29,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class GetCPUTime implements ContentGenerator {
@@ -100,8 +100,8 @@ public final class GetCPUTime implements ContentGenerator {
   private Sample global(ThreadMXBean bean, long current) {
     long cpu = 0L;
     long user = 0L;
-    final long[] _ids = bean.getAllThreadIds();
-    for (long id : _ids) {
+    final long[] threadIds = bean.getAllThreadIds();
+    for (long id : threadIds) {
       // Exclude this thread
       if (id == current) {
         continue;
@@ -138,21 +138,21 @@ public final class GetCPUTime implements ContentGenerator {
    * Co
    */
   private static class Sample {
-    public final long _time = System.nanoTime();
-    public final long _cpu;
-    public final long _user;
+    public final long time = System.nanoTime();
+    public final long cpu;
+    public final long user;
     public Sample(long cpu, long user) {
-      this._cpu = cpu;
-      this._user = user;
+      this.cpu = cpu;
+      this.user = user;
     }
     public long cpu() {
-      return this._cpu;
+      return this.cpu;
     }
     public long user() {
-      return this._user;
+      return this.user;
     }
     public long time() {
-      return this._time;
+      return this.time;
     }
   }
 
