@@ -42,7 +42,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
@@ -412,7 +412,7 @@ final class ServicesHandler10 extends DefaultHandler {
     ContentGenerator generator;
     try {
       // Allow unspecified class (defaults to no content)
-      if (className == null || className.length() ==0) {
+      if (className == null || className.isEmpty()) {
         generator = new NoContent();
       } else {
         generator = (ContentGenerator)Class.forName(className).newInstance();

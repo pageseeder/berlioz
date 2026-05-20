@@ -25,7 +25,6 @@ import java.util.Objects;
 
 import javax.xml.parsers.SAXParser;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
@@ -53,7 +52,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.6
  */
 public final class ServiceLoader {
@@ -147,9 +146,9 @@ public final class ServiceLoader {
    */
   public List<File> listServiceFiles() {
     File config = GlobalSettings.getConfig();
-    if (config == null) return Collections.emptyList();
+    if (config == null) return List.of();
     File xml = new File(config, "services.xml");
-    @NonNull File[] subs = config.listFiles(FILE_FILTER);
+    File[] subs = config.listFiles(FILE_FILTER);
     List<File> files;
 
     // `services.xml` file and/or at least one module

@@ -17,8 +17,6 @@ package org.pageseeder.berlioz.content;
 
 import org.pageseeder.xmlwriter.XMLWritable;
 
-import java.io.Serializable;
-
 /**
  * Returns information about the content path.
  *

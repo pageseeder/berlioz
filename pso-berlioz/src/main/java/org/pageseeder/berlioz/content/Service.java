@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
@@ -39,7 +38,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 public final class Service {
@@ -265,14 +264,14 @@ public final class Service {
     if (method != null) {
       xml.attribute("method", method.toString().toLowerCase());
     }
-    if (this.flags.length() > 0) {
+    if (!this.flags.isEmpty()) {
       xml.attribute("flags", this.flags);
     }
 
     // Caching information
     xml.attribute("cacheable", Boolean.toString(this.cacheable));
     if (this.cacheable) {
-      if (this.cache.length()>0) {
+      if (!this.cache.isEmpty()) {
         xml.attribute("cache-control", this.cache.length());
       } else if (cacheControl != null) {
         xml.attribute("cache-control", cacheControl);
@@ -520,7 +519,7 @@ public final class Service {
      */
     public Service build() {
       // warn when attempting to use cache control with uncacheable service
-      if (this.cache.length() > 0 && !isCacheable(this.generators)) {
+      if (!this.cache.isEmpty() && !isCacheable(this.generators)) {
         Logger logger = LoggerFactory.getLogger(Builder.class);
         logger.warn("Building non-cacheable service {} - cache control ignored.", this.id);
       }
@@ -548,12 +547,12 @@ public final class Service {
    * @param original the list maintained by the builder.
    * @return a new identical immutable list.
    */
-  private static <T> List<T> immutableList(List<@NonNull T> original) {
+  private static <T> List<T> immutableList(List<T> original) {
     if (original.isEmpty())
-      return Collections.emptyList();
-    else if (original.size() == 1) return Collections.singletonList(original.get(0));
+      return List.of();
+    else if (original.size() == 1) return List.of(original.get(0));
     else
-      return Collections.unmodifiableList(new ArrayList<>(original));
+      return List.copyOf(original);
   }
 
   /**
@@ -585,16 +584,12 @@ public final class Service {
    */
   private static Map<ContentGenerator, String> immutable3(Map<ContentGenerator, String> original) {
     if (original.isEmpty())
-      return Collections.emptyMap();
+      return Map.of();
     else if (original.size() == 1) {
       Entry<ContentGenerator, String> entry = original.entrySet().iterator().next();
-      return Collections.singletonMap(entry.getKey(), entry.getValue());
+      return Map.of(entry.getKey(), entry.getValue());
     } else {
-      Map<ContentGenerator, String> map = new HashMap<>();
-      for (Entry<ContentGenerator, String> entry : original.entrySet()) {
-        map.put(entry.getKey(), entry.getValue());
-      }
-      return Collections.unmodifiableMap(map);
+      return Map.copyOf(original);
     }
   }
 }
