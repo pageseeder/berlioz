@@ -2,6 +2,7 @@ plugins {
   base
   alias(libs.plugins.cyclonedx) apply false
   alias(libs.plugins.jreleaser)
+  alias(libs.plugins.sonarqube)
   alias(libs.plugins.versions)
 }
 
