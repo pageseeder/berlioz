@@ -16,13 +16,14 @@
 package org.pageseeder.berlioz.http;
 
 import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * An enumeration of HTTP methods supported by Berlioz.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8.2
  */
 public enum HttpMethod {
@@ -105,7 +106,7 @@ public enum HttpMethod {
    *
    * @return Set of HTTP methods mappable to a service.
    */
-  public static EnumSet<HttpMethod> mappable() {
+  public static Set<HttpMethod> mappable() {
     return MAPPABLE_METHODS;
   }
 }
