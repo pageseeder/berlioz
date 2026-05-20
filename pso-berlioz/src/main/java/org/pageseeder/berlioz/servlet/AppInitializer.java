@@ -229,22 +229,22 @@ public abstract class AppInitializer {
    * This application initializer configures the application from a servlet
    * config.
    *
-   * It inherits the configuration from the Servlet context.
+   * <p>It inherits the configuration from the Servlet context.
    */
   private static class ServletConfigInitializer extends ServletContextInitializer {
 
     /**
      * The servlet context.
      */
-    private final ServletConfig _config;
+    private final ServletConfig config;
 
     public ServletConfigInitializer(ServletConfig config, List<LifecycleListener> listeners) {
       super(config.getServletContext(), listeners);
-      this._config = Objects.requireNonNull(config, "Servlet config must be specified");
+      this.config = Objects.requireNonNull(config, "Servlet config must be specified");
     }
 
     @Override String getConfigFolder() {
-      String config = this._config.getInitParameter("config");
+      String config = this.config.getInitParameter("config");
       if (config != null) {
         console(Phase.INIT, "Config folder: defined with servlet init-parameter 'config'");
         return config;
@@ -255,7 +255,7 @@ public abstract class AppInitializer {
 
     @Override
     @Nullable String getAppDataPath() {
-      String appdata = this._config.getInitParameter("appdata");
+      String appdata = this.config.getInitParameter("appdata");
       if (appdata != null) {
         console(Phase.INIT, "AppData: defined with servlet init-parameter 'appdata'");
         return appdata;
@@ -266,7 +266,7 @@ public abstract class AppInitializer {
 
     @Override
     @Nullable String getMode() {
-      String mode = this._config.getInitParameter("mode");
+      String mode = this.config.getInitParameter("mode");
       if (mode != null) {
         console(Phase.INIT, "Mode: defined with servlet init-parameter 'mode'");
         return mode;
@@ -277,7 +277,7 @@ public abstract class AppInitializer {
 
     @Override
     void addLifecycleListener() {
-      String listenerClass = this._config.getInitParameter("lifecycle-listener");
+      String listenerClass = this.config.getInitParameter("lifecycle-listener");
       if (listenerClass != null) {
         registerListener(listenerClass);
       }
@@ -289,24 +289,24 @@ public abstract class AppInitializer {
 
   /**
    * This application initializer configures the application from the servlet
-   * context
+   * context.
    *
-   * It inherits the configuration from the system.
+   * <p>It inherits the configuration from the system.
    */
   private static class ServletContextInitializer extends SystemInitializer {
 
     /**
      * The servlet context.
      */
-    private final ServletContext _context;
+    private final ServletContext context;
 
     public ServletContextInitializer(ServletContext context, List<LifecycleListener> listeners) {
       super(new File(context.getRealPath("/")), listeners);
-      this._context = Objects.requireNonNull(context, "Servlet context must be specified");
+      this.context = Objects.requireNonNull(context, "Servlet context must be specified");
     }
 
     @Override String getConfigFolder() {
-      String config = this._context.getInitParameter("berlioz.config");
+      String config = this.context.getInitParameter("berlioz.config");
       if (config != null) {
         console(Phase.INIT, "Config folder: defined with servlet init-parameter 'berlioz.config'");
         return config;
@@ -318,7 +318,7 @@ public abstract class AppInitializer {
     @Override
     @Nullable String getAppDataPath() {
       // Check context level
-      String appdata = this._context.getInitParameter("berlioz.appdata");
+      String appdata = this.context.getInitParameter("berlioz.appdata");
       if (appdata != null) {
         console(Phase.INIT, "AppData: defined with context init-parameter 'berlioz.appdata'");
         return appdata;
@@ -329,7 +329,7 @@ public abstract class AppInitializer {
 
     @Override
     @Nullable String getMode() {
-      String mode = this._context.getInitParameter("berlioz.mode");
+      String mode = this.context.getInitParameter("berlioz.mode");
       if (mode != null) {
         console(Phase.INIT, "Mode: defined with context init-parameter 'berlioz.mode'");
         return mode;
@@ -339,13 +339,13 @@ public abstract class AppInitializer {
 
     @Override
     void deployOverlays() {
-      File contextPath = new File(this._context.getRealPath("/"));
+      File contextPath = new File(this.context.getRealPath("/"));
       checkOverlays(contextPath);
     }
 
     @Override
     void addLifecycleListener() {
-      String listenerClass = this._context.getInitParameter("berlioz.lifecycle-listener");
+      String listenerClass = this.context.getInitParameter("berlioz.lifecycle-listener");
       if (listenerClass != null) {
         registerListener(listenerClass);
       }
@@ -359,11 +359,11 @@ public abstract class AppInitializer {
    */
   private static class SystemInitializer extends AppInitializer {
 
-    private final File _root;
+    private final File root;
 
     public SystemInitializer(File root, List<LifecycleListener> listeners) {
       super(new File(root, "WEB-INF"), listeners);
-      this._root = root;
+      this.root = root;
     }
 
     @Override String getConfigFolder() {
@@ -427,7 +427,7 @@ public abstract class AppInitializer {
 
     @Override
     void deployOverlays() {
-      checkOverlays(this._root);
+      checkOverlays(this.root);
     }
 
     @Override
