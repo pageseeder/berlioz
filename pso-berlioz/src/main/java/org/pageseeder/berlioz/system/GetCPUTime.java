@@ -85,7 +85,9 @@ public final class GetCPUTime implements ContentGenerator {
       xml.closeElement();
 
     } catch (InterruptedException ex) {
-
+      Thread.currentThread().interrupt();
+      req.setStatus(ContentStatus.SERVICE_UNAVAILABLE);
+      xml.writeComment("CPU time sampling was interrupted");
     }
   }
 
@@ -135,12 +137,12 @@ public final class GetCPUTime implements ContentGenerator {
   }
 
   /**
-   * Co
+   *
    */
   private static class Sample {
-    public final long time = System.nanoTime();
-    public final long cpu;
-    public final long user;
+    private final long time = System.nanoTime();
+    private final long cpu;
+    private final long user;
     public Sample(long cpu, long user) {
       this.cpu = cpu;
       this.user = user;
