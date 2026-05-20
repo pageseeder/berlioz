@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.util;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface to define basic information that can be held about a resource to be served via HTTP.

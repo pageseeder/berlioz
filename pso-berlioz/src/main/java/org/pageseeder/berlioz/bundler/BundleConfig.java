@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.eclipse.jdt.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Service;
 import org.slf4j.Logger;

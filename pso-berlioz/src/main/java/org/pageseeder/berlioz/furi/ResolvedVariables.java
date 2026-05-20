@@ -17,7 +17,7 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.Set;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the values of a resolved variables.

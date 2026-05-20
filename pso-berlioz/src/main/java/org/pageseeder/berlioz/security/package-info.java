@@ -16,5 +16,5 @@
 /**
  * Security related classes.
  */
-@org.eclipse.jdt.annotation.NonNullByDefault
+@org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz.security;

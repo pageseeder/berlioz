@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Classes implementing this interface should provide a mechanism to resolve the value of a

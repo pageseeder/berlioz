@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.bundler;
 
-import org.eclipse.jdt.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Class of exceptions occurring while parsing content for minimization.

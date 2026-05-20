@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.URIResolveResult.Status;
 
 

@@ -18,7 +18,7 @@ package org.pageseeder.berlioz.http;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A utility class for HTTP Status codes.

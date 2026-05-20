@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.http;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;

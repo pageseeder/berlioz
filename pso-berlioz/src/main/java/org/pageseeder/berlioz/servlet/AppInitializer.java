@@ -26,7 +26,7 @@ import java.util.Objects;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.LifecycleListener;

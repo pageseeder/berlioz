@@ -23,7 +23,7 @@ import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;

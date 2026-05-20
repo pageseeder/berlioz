@@ -16,5 +16,5 @@
 /**
  * XML related utility classes used by Berlioz.
  */
-@org.eclipse.jdt.annotation.NonNullByDefault
+@org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz.xml;

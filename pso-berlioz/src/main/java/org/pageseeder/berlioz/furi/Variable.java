@@ -18,7 +18,7 @@ package org.pageseeder.berlioz.furi;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A variable in a URL pattern or template.

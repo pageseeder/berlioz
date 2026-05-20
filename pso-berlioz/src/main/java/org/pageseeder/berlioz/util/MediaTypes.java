@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.util;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

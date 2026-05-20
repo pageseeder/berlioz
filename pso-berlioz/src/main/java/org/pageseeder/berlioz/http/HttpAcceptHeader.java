@@ -23,7 +23,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A utility class to help dealing with the HTTP/1.1 request headers such as 'Accept', 'Accept-Language',

@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.system;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A utility class for retrieving information about threads.

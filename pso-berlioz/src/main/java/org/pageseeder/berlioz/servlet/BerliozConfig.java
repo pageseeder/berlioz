@@ -32,7 +32,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.GlobalSettings;

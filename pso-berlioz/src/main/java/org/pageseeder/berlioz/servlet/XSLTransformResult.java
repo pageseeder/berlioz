@@ -19,7 +19,7 @@ import java.util.Properties;
 
 import javax.xml.transform.Templates;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the results of a transformation process.

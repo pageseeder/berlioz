@@ -17,8 +17,8 @@ package org.pageseeder.berlioz.util;
 
 import java.util.Date;
 
-import org.eclipse.jdt.annotation.NonNull;
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A basic implementation of the entity info interface.

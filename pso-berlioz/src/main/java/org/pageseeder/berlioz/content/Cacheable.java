@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.content;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Generators implementing this interface can be cached and must provide a consistent content

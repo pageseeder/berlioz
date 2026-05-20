@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.config;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

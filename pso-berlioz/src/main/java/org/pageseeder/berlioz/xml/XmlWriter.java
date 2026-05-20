@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.xml;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Map;

@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.util;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Few utility methods for string.

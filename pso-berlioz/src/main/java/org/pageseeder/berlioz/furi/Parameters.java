@@ -17,7 +17,7 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.Set;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An interface to hold a collection of parameters for use during the expansion process.

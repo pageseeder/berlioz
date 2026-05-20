@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.content;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An enumeration of status codes supported by Berlioz generators.

@@ -17,7 +17,7 @@ package org.pageseeder.berlioz.content;
 
 import java.io.File;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Returns the environment for the service.

@@ -24,7 +24,7 @@ import java.util.Map.Entry;
 
 import javax.xml.parsers.SAXParser;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;

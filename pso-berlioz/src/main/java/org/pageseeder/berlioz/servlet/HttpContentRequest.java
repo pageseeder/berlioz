@@ -18,7 +18,7 @@ package org.pageseeder.berlioz.servlet;
 import java.util.Map;
 import java.util.Objects;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;

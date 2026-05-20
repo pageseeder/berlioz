@@ -17,7 +17,7 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Environment;
 

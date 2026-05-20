@@ -19,8 +19,8 @@ dependencies {
   compileOnly(libs.jakarta.json.api) {
     because("Optional dependency for JSON output using JSR 374")
   }
-  compileOnly(libs.jdt.annotations) {
-    because("Used for null safety and better Kotlin interop")
+  compileOnly(libs.jspecify) {
+    because("Used for null safety annotations")
   }
 
   testImplementation(libs.junit)

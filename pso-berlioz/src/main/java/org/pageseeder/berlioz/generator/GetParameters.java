@@ -18,7 +18,7 @@ package org.pageseeder.berlioz.generator;
 import java.io.IOException;
 import java.util.Enumeration;
 
-import org.eclipse.jdt.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;

@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.util;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An implementation of an object that can be used as a fast key made of two objects for lookup in

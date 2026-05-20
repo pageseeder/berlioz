@@ -19,7 +19,7 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.util.Objects;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.aeson.JSONState.JSONContext;
 import org.pageseeder.berlioz.aeson.JSONState.JSONType;
 import org.xml.sax.Attributes;

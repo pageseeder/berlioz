@@ -21,5 +21,5 @@
  *
  * @see <a href="http://tools.ietf.org/html/rfc2616">HTTP/1.1</a>
  */
-@org.eclipse.jdt.annotation.NonNullByDefault
+@org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz.http;

@@ -1,6 +1,6 @@
 package org.pageseeder.berlioz.xml;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  *

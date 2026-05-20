@@ -21,7 +21,7 @@ import java.util.Enumeration;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides a generic and uniform mechanism for the content generator to access parameters

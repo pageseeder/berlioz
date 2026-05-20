@@ -18,8 +18,8 @@ package org.pageseeder.berlioz.furi;
 import java.util.Hashtable;
 import java.util.Map;
 
-import org.eclipse.jdt.annotation.NonNull;
-import org.eclipse.jdt.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A convenience class is to bind variables to resolvers in a set of URI patterns.
