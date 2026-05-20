@@ -1,6 +1,5 @@
 plugins {
-  id("java-library")
-  id("maven-publish")
+  base
   alias(libs.plugins.jreleaser)
   alias(libs.plugins.versions)
 }
@@ -13,7 +12,9 @@ val globalVersion = file("version.txt").readText().trim()
 allprojects {
   group   = "org.pageseeder.berlioz"
   version = globalVersion
+}
 
+subprojects {
   apply(plugin = "java-library")
   apply(plugin = "maven-publish")
 
@@ -50,7 +51,7 @@ allprojects {
     }
   }
 
-  publishing {
+  configure<PublishingExtension> {
     publications {
       create<MavenPublication>("maven") {
         from(components["java"])
@@ -89,38 +90,6 @@ allprojects {
       }
     }
   }
-}
-
-dependencies {
-  api(libs.xmlwriter)
-  implementation(libs.slf4j.api)
-
-  compileOnly(libs.servlet.api) {
-    because("This is provided by the Servlet container")
-  }
-  compileOnly(libs.jackson.core) {
-    because("Optional dependency for JSON output using Jackson")
-  }
-  compileOnly(libs.gson) {
-    because("Optional dependency for JSON output using Google JSON library")
-  }
-  compileOnly(libs.javax.json.api) {
-    because("Optional dependency for JSON output using JSR 374")
-  }
-  compileOnly(libs.jakarta.json.api) {
-    because("Optional dependency for JSON output using JSR 374")
-  }
-  compileOnly(libs.jdt.annotations) {
-    because("Used for null safety and better Kotlin interop")
-  }
-
-  testImplementation(libs.junit)
-  testImplementation(libs.slf4j.simple)
-  testImplementation(libs.glassfish.javax.json)
-  testImplementation(libs.glassfish.jakarta.json)
-  testImplementation(libs.parsson)
-  testImplementation(libs.jackson.core)
-  testImplementation(libs.gson)
 }
 
 tasks.wrapper {

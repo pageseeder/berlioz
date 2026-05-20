@@ -1,4 +1,5 @@
 rootProject.name = "pso-berlioz"
 
+include(":pso-berlioz")
 include(":pso-berlioz-kickstart")
 include(":pso-berlioz-mock")

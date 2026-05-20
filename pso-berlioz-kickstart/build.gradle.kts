@@ -2,7 +2,7 @@ description = "Simple jar for Servlet 3.0 to make it easier to configure a Berli
 extra["title"] = "Berlioz Kickstart"
 
 dependencies {
-  api(project(":"))
+  api(project(":pso-berlioz"))
   compileOnly(libs.servlet.api)
 }
 
