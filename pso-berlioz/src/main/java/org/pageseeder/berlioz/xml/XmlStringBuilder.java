@@ -4,7 +4,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  *
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.0
  */
 public final class XmlStringBuilder extends XmlAppendable<StringBuilder> {
@@ -25,5 +25,5 @@ public final class XmlStringBuilder extends XmlAppendable<StringBuilder> {
   @Override
   public String toString() {
     return this._xml.toString();
-  };
+  }
 }
