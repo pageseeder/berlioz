@@ -82,7 +82,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class CSSMin {
@@ -312,7 +312,7 @@ public final class CSSMin {
       // We're dealing with a nested property, eg @-webkit-keyframes or @media
       if (parts.length > 2) {
         subrules = new ArrayList<>();
-        parts = rule.split("\\{|}");
+        parts = rule.split("[{}]");
         for (int i = 1; i < parts.length; i += 2) {
           // sub selector
           parts[i] = parts[i].trim();

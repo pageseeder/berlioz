@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class BundleConfig implements Serializable {
@@ -56,7 +56,7 @@ public final class BundleConfig implements Serializable {
   /**
    * The default bundle configuration.
    */
-  private static final @NonNull String[] DEFAULT_BUNDLE_CONFIG = new String[]{GLOBAL_LEVEL, GROUP_LEVEL,  };
+  private static final String[] DEFAULT_BUNDLE_CONFIG = new String[]{GLOBAL_LEVEL, GROUP_LEVEL,  };
 
   /**
    * The default JavaScript bundle definitions
@@ -320,7 +320,7 @@ public final class BundleConfig implements Serializable {
    *
    * @return The corresponding list.
    */
-  private static List<BundleDefinition> loadDefinitions(@NonNull String[] names, String prefix, Map<String, BundleDefinition> defaults) {
+  private static List<BundleDefinition> loadDefinitions(String[] names, String prefix, Map<String, BundleDefinition> defaults) {
     List<BundleDefinition> bundles = new ArrayList<>();
     for (String name : names) {
       BundleDefinition bc = defaults.get(name);
@@ -347,7 +347,7 @@ public final class BundleConfig implements Serializable {
    *
    * @return The corresponding bundle names.
    */
-  private static @NonNull String[] getBundleNames(String property) {
+  private static String[] getBundleNames(String property) {
     String names = GlobalSettings.get(property);
     return names != null? names.split(",") : DEFAULT_BUNDLE_CONFIG;
   }
