@@ -95,14 +95,14 @@ public final class GlobalSettings {
    * Name of the directory containing the configuration files for Berlioz
    * including the global settings, services, logging, etc...
    */
-  @Deprecated
+  @Deprecated(since = "0.11.4")
   public static final String CONFIG_DIRECTORY = "config";
 
   /**
    * Name of the directory in the repository that contains all the schemas / DTD for the XML files
    * used by Berlioz.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.0")
   public static final String LIBRARY_DIRECTORY = "library";
 
   /**
@@ -307,7 +307,7 @@ public final class GlobalSettings {
    */
   public static boolean has(BerliozOption option) {
     Objects.requireNonNull(option, "No Berlioz option specified");
-    @Nullable String value = ensureSettings().get(option.property());
+    String value = ensureSettings().get(option.property());
     Object def = option.defaultTo();
     if (option.isBoolean()) return value != null? Boolean.parseBoolean(value) : (Boolean) def;
     else
@@ -330,7 +330,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static String get(String name, String def) throws IllegalStateException {
-    @Nullable String value = ensureSettings().get(name);
+    String value = ensureSettings().get(name);
     return value == null? def : value;
   }
 
@@ -345,7 +345,7 @@ public final class GlobalSettings {
    */
   public static int get(String name, int def) throws IllegalStateException {
     try {
-      @Nullable String value = ensureSettings().get(name);
+      String value = ensureSettings().get(name);
       return value == null? def : Integer.parseInt(value);
     } catch (NumberFormatException ex) {
       return def;
@@ -367,7 +367,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static boolean get(String name, boolean def) throws IllegalStateException {
-    @Nullable String value = ensureSettings().get(name);
+    String value = ensureSettings().get(name);
     if (value == null) return def;
     return def? !"false".equals(value) : "true".equals(value);
   }
@@ -440,7 +440,7 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static @Nullable File getFileProperty(String name) throws IllegalStateException {
-    @Nullable String filepath = ensureSettings().get(name);
+    String filepath = ensureSettings().get(name);
     if (filepath != null && env != null) {
       // try appData first
       File file = new File(env.appData(), filepath);
@@ -502,9 +502,9 @@ public final class GlobalSettings {
   }
 
   /**
-   * Returns all the global properties as an ummodifiable map.
+   * Returns all the global properties as an unmodifiable map.
    *
-   * @return An ummodifiable map of the properties.
+   * @return An unmodifiable map of the properties.
    *
    * @throws IllegalStateException If this class has not been setup properly.
    *
@@ -547,7 +547,7 @@ public final class GlobalSettings {
    * @throws NullPointerException If the specified file is <code>null</code>.
    * @throws IllegalArgumentException If the specified file is not a valid repository.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.4")
   public static void setWebInf(File dir) {
     if (env != null) {
       env = env.webInf(dir);
@@ -566,7 +566,7 @@ public final class GlobalSettings {
    * @throws NullPointerException If the specified file is null.
    * @throws IllegalArgumentException If the specified file is not a valid repository.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.4")
   public static void setAppData(File dir) {
     if (env != null) {
       env = env.appData(dir);
@@ -580,7 +580,7 @@ public final class GlobalSettings {
    *
    * @throws NullPointerException If the name of the mode is <code>null</code>.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.4")
   public static void setMode(String name) {
     if (env != null) {
       env = env.mode(name);
@@ -689,7 +689,7 @@ public final class GlobalSettings {
    *
    * @return The directory used as a repository or <code>null</code>.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.0")
   public static @Nullable File getRepository() {
     return env.appData();
   }
@@ -708,7 +708,7 @@ public final class GlobalSettings {
    *
    * @throws IllegalArgumentException If the specified file is not a valid repository.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.0")
   public static void setRepository(File dir) {
     // ignore the case when this is null
     if (dir == null) return;
@@ -724,7 +724,7 @@ public final class GlobalSettings {
    *
    * @return The directory containing the DTDs and schemas for the XML.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.0")
   public static File getLibrary() {
     return new File(env.appData(), LIBRARY_DIRECTORY);
   }

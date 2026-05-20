@@ -132,7 +132,8 @@ public class BerliozException extends Exception implements XMLWritable {
    * @throws IOException Should an error be thrown while writing
    */
   @Override
-  @Deprecated public void toXML(XMLWriter xml) throws IOException {
+  @Deprecated(since = "0.10.7")
+  public void toXML(XMLWriter xml) throws IOException {
     xml.openElement("berlioz-exception", true);
     xml.element("message", super.getMessage());
     Throwable cause = super.getCause();

@@ -58,7 +58,7 @@ import java.util.Map;
  *
  * @deprecated Use org.pageseeder.berlioz.config.GlobalConfig instead.
  */
-@Deprecated
+@Deprecated(since = "0.12.4")
 public final class XMLConfig implements Serializable, XMLWritable {
 
   /**

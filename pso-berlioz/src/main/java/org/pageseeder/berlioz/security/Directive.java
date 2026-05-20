@@ -171,7 +171,7 @@ public enum Directive {
    *
    * <p>To load an <applet> you must specify application/x-java-applet.
    */
-  @Deprecated
+  @Deprecated(since = "0.12.6")
   PLUGIN_TYPES("plugin-types"),
 
   /**

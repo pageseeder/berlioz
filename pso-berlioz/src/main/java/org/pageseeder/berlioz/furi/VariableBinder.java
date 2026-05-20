@@ -83,7 +83,7 @@ public class VariableBinder {
    * @param name     The name of the variable.
    * @param resolver The resolver to use with these variables.
    */
-  @Deprecated
+  @Deprecated(since = "0.11.2")
   public void bind(String name, VariableResolver resolver) {
     this.byName.put(name, resolver);
   }
