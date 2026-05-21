@@ -17,8 +17,6 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Objects;
@@ -404,7 +402,7 @@ public final class BerliozServlet extends HttpServlet {
     // Redirection (Beta)
     if (ContentStatus.isRedirect(status)) {
       String url = xml.getRedirectURL();
-      if (!isSafeRedirectURL(url, req)) {
+      if (!HttpRequests.isSafeRedirectURL(url, req)) {
         LOGGER.warn("Blocked unsafe redirect URL: {}", url);
         sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
         return;
@@ -481,30 +479,6 @@ public final class BerliozServlet extends HttpServlet {
       }
     }
 
-  }
-
-  /**
-   * Returns true only for relative paths and same-origin absolute URLs, blocking open redirects.
-   * Protocol-relative URLs (//host/path) are treated as absolute.
-   */
-  private static boolean isSafeRedirectURL(@Nullable String url, HttpServletRequest req) {
-    if (url == null) return false;
-    try {
-      URI uri = new URI(url);
-      // Relative URL with no authority is safe (e.g. /some/path or ../other)
-      if (!uri.isAbsolute() && uri.getAuthority() == null) return true;
-      // Absolute or protocol-relative: must match the same host and port
-      String host = uri.getHost();
-      if (host == null || !host.equalsIgnoreCase(req.getServerName())) return false;
-      int uriPort = uri.getPort();
-      int reqPort = req.getServerPort();
-      // Treat standard ports as unspecified
-      if (uriPort == 80 || uriPort == 443) uriPort = -1;
-      if (reqPort == 80 || reqPort == 443) reqPort = -1;
-      return uriPort == -1 || uriPort == reqPort;
-    } catch (URISyntaxException e) {
-      return false;
-    }
   }
 
   /**
