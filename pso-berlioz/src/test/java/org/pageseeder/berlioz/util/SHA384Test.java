@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Allette Systems (Australia)
+ * Copyright 2015 Allette Systems (Australia)
  * http://www.allette.com.au
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,49 +25,49 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public final class SHA256Test {
+public final class SHA384Test {
 
   @Test(expected = NullPointerException.class)
   public void testHash_NullString() {
-    SHA256.hash((String) null);
+    SHA384.hash((String) null);
   }
 
   @Test(expected = NullPointerException.class)
   public void testHash_NullBytes() {
-    SHA256.hash((byte[]) null);
+    SHA384.hash((byte[]) null);
   }
 
   @Test(expected = NullPointerException.class)
   public void testHash_NullInputStream() throws IOException {
-    SHA256.hash((InputStream) null);
+    SHA384.hash((InputStream) null);
   }
 
   @Test
   public void testHash_String() {
-    Assert.assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", SHA256.hash(""));
-    Assert.assertEquals("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", SHA256.hash("test"));
-    Assert.assertEquals("55f12528ddd4240e797f6391c80f5cf883e9c281253ad296c30b97dd4810c0a6", SHA256.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"));
+    // NIST FIPS 180-4 test vectors
+    Assert.assertEquals("38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b", SHA384.hash(""));
+    Assert.assertEquals("cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7", SHA384.hash("abc"));
   }
 
   @Test
   public void testHash_Bytes_ConsistentWithString() {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
-    Assert.assertEquals(SHA256.hash("test"), SHA256.hash(bytes));
+    Assert.assertEquals(SHA384.hash("test"), SHA384.hash(bytes));
   }
 
   @Test
   public void testHash_InputStream_ConsistentWithString() throws IOException {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
-    Assert.assertEquals(SHA256.hash("test"), SHA256.hash(new ByteArrayInputStream(bytes)));
+    Assert.assertEquals(SHA384.hash("test"), SHA384.hash(new ByteArrayInputStream(bytes)));
   }
 
   @Test
   public void testHash_Path_ConsistentWithString() throws IOException {
     byte[] content = "test".getBytes(StandardCharsets.UTF_8);
-    Path temp = Files.createTempFile("sha256-test-", ".txt");
+    Path temp = Files.createTempFile("sha384-test-", ".txt");
     try {
       Files.write(temp, content);
-      Assert.assertEquals(SHA256.hash("test"), SHA256.hash(temp));
+      Assert.assertEquals(SHA384.hash("test"), SHA384.hash(temp));
     } finally {
       Files.deleteIfExists(temp);
     }

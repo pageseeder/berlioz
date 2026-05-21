@@ -16,43 +16,27 @@
 package org.pageseeder.berlioz.util;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.io.InputStream;
+import java.nio.file.Path;
 
 /**
- * A utility class providing a simple method to generate MD5 hash values for text content.
+ * A utility class providing simple static methods to generate MD5 hash values.
  *
  * <p>An MD5 hash is typically expressed as a 32-digit hexadecimal number.
+ * MD5 is not suitable for cryptographic security purposes; use SHA-256 or stronger instead.
+ *
+ * <p>Delegates to {@link Hashes} using {@link Hashes.Algorithm#MD5}.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.6
  */
 public final class MD5 {
 
   /**
-   * Stores the hex character for easy retrieval.
-   */
-  private static final char[] HEX = "0123456789abcdef".toCharArray();
-
-  /**
-   * Mask for the high bits of a byte.
-   */
-  private static final int BYTE_MASK_HIGH = 0xF0;
-
-  /**
-   * Mask for the low bits of a byte.
-   */
-  private static final int BYTE_MASK_LOW = 0x0F;
-
-  /**
-   * Prevents creation of instance.
+   * Prevents creation of instances.
    */
   private MD5() {
   }
@@ -62,89 +46,92 @@ public final class MD5 {
    *
    * @param text The text value to hash.
    *
-   * @return The Hash value for the specified test or <code>null</code> if an error occurred.
-   *
-   * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
+   * @return The MD5 hash as a 32-character lowercase hexadecimal string.
    */
-  public static String hash(String text) throws UnsupportedOperationException {
-    MessageDigest md = getAlgorithm();
-    md.update(text.getBytes(StandardCharsets.UTF_8), 0, text.length());
-    byte[] bytes = md.digest();
-    return toHex(bytes);
+  public static String hash(String text) {
+    return Hashes.hash(text, Hashes.Algorithm.MD5);
+  }
+
+  /**
+   * Returns a hash value for the specified bytes.
+   *
+   * @param data The bytes to hash.
+   *
+   * @return The MD5 hash as a 32-character lowercase hexadecimal string.
+   */
+  public static String hash(byte[] data) {
+    return Hashes.hash(data, Hashes.Algorithm.MD5);
+  }
+
+  /**
+   * Returns a hash value for the content of the given input stream.
+   *
+   * <p>The stream is read until EOF but is not closed; the caller retains ownership.
+   *
+   * @param in The input stream to read.
+   *
+   * @return The MD5 hash as a 32-character lowercase hexadecimal string.
+   *
+   * @throws IOException If an error occurred while reading the stream.
+   */
+  public static String hash(InputStream in) throws IOException {
+    return Hashes.hash(in, Hashes.Algorithm.MD5);
   }
 
   /**
    * Returns a hash value for the specified file content.
    *
-   * <p>Implementation note: this method loads the entire file using NIO.
+   * @param file The file to read.
    *
-   * @param file The file to read
-   * @return The MD5 checksum value as a string.
+   * @return The MD5 hash as a 32-character lowercase hexadecimal string.
    *
-   * @throws IOException If the file does not exist or an error occurred while reading the file.
-   * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
+   * @throws IOException If the file does not exist or an error occurred while reading it.
    */
-  public static String hash(File file) throws IOException, UnsupportedOperationException {
-    MessageDigest md = getAlgorithm();
-    FileInputStream fis = new FileInputStream(file);
-    FileChannel in = fis.getChannel();
-    try {
-      MappedByteBuffer buffer = in.map(FileChannel.MapMode.READ_ONLY, 0, in.size());
-      md.update(buffer);
-      byte[] bytes = md.digest();
-      return toHex(bytes);
-    } finally {
-      fis.close();
-    }
+  public static String hash(File file) throws IOException {
+    return Hashes.hash(file, Hashes.Algorithm.MD5);
   }
 
   /**
    * Returns a hash value for the specified file.
    *
-   * @param file The file to read
-   * @param strong <code>true</code> to calculate a strong etag based on the file content;
-   *               <code>false</code> to compute it from the canonical path, date and length.
-   * @return The MD5 checksum value as a string.
-   * @throws IOException If the file does not exist or an error occurred while reading the file.
-   * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
-   */
-  public static String hash(File file, boolean strong) throws IOException, UnsupportedOperationException {
-    if (strong) return hash(file);
-    else
-      return hash(file.getCanonicalPath()+'$'+file.length()+'%'+file.lastModified());
-  }
-
-  // Private helpers
-  // ----------------------------------------------------------------------------------------------
-
-  /**
-   * Converts the byte data into a sequence of hexadecimal characters.
+   * @param file   The file to read.
+   * @param strong {@code true} to hash the file content;
+   *               {@code false} to hash its canonical path, length, and last-modified timestamp.
    *
-   * @param data The byte array to convert.
-   * @return the corresponding sequence of hexadecimal characters.
+   * @return The MD5 hash as a 32-character lowercase hexadecimal string.
+   *
+   * @throws IOException If the file does not exist or an error occurred while reading it.
    */
-  private static String toHex(byte[] data) {
-    final StringBuilder hex = new StringBuilder(2 * data.length);
-    final int shift = 4;
-    for (final byte b : data) {
-      hex.append(HEX[(b & BYTE_MASK_HIGH) >> shift]).append(HEX[(b & BYTE_MASK_LOW)]);
-    }
-    return hex.toString();
+  public static String hash(File file, boolean strong) throws IOException {
+    return Hashes.hash(file, strong, Hashes.Algorithm.MD5);
   }
 
   /**
-   * Returns the MD5 algorithm throwing an unchecked exception if the algorithm is not available.
+   * Returns a hash value for the specified path content.
    *
-   * @return the MD5 algorithm.
-   * @throws UnsupportedOperationException Wrapping any occurring 'NoSuchAlgorithmException'.
+   * @param path The path to read.
+   *
+   * @return The MD5 hash as a 32-character lowercase hexadecimal string.
+   *
+   * @throws IOException If the path does not exist or an error occurred while reading it.
    */
-  private static MessageDigest getAlgorithm() throws UnsupportedOperationException {
-    try {
-      return MessageDigest.getInstance("MD5");
-    } catch (NoSuchAlgorithmException ex) {
-      // Every implementation of the Java platform is required to support the MD5 algorithm
-      throw new UnsupportedOperationException(ex);
-    }
+  public static String hash(Path path) throws IOException {
+    return Hashes.hash(path, Hashes.Algorithm.MD5);
+  }
+
+  /**
+   * Returns a hash value for the specified path.
+   *
+   * @param path   The path to read.
+   * @param strong {@code true} to hash the file content;
+   *               {@code false} to hash its real path, size, and last-modified timestamp.
+   *
+   * @return The MD5 hash as a 32-character lowercase hexadecimal string.
+   *
+   * @throws IOException If the path does not exist or an error occurred while reading it.
+   */
+  public static String hash(Path path, boolean strong) throws IOException {
+    return Hashes.hash(path, strong, Hashes.Algorithm.MD5);
   }
 
 }

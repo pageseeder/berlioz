@@ -18,11 +18,28 @@ package org.pageseeder.berlioz.util;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public final class MD5Test {
 
   @Test(expected = NullPointerException.class)
   public void testHash_NullString() {
-    MD5.hash((String)null);
+    MD5.hash((String) null);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testHash_NullBytes() {
+    MD5.hash((byte[]) null);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testHash_NullInputStream() throws IOException {
+    MD5.hash((InputStream) null);
   }
 
   @Test
@@ -30,6 +47,30 @@ public final class MD5Test {
     Assert.assertEquals("d41d8cd98f00b204e9800998ecf8427e", MD5.hash(""));
     Assert.assertEquals("098f6bcd4621d373cade4e832627b4f6", MD5.hash("test"));
     Assert.assertEquals("942a46d563d50475e73c41765b35cbbf", MD5.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"));
+  }
+
+  @Test
+  public void testHash_Bytes_ConsistentWithString() {
+    byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
+    Assert.assertEquals(MD5.hash("test"), MD5.hash(bytes));
+  }
+
+  @Test
+  public void testHash_InputStream_ConsistentWithString() throws IOException {
+    byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
+    Assert.assertEquals(MD5.hash("test"), MD5.hash(new ByteArrayInputStream(bytes)));
+  }
+
+  @Test
+  public void testHash_Path_ConsistentWithString() throws IOException {
+    byte[] content = "test".getBytes(StandardCharsets.UTF_8);
+    Path temp = Files.createTempFile("md5-test-", ".txt");
+    try {
+      Files.write(temp, content);
+      Assert.assertEquals(MD5.hash("test"), MD5.hash(temp));
+    } finally {
+      Files.deleteIfExists(temp);
+    }
   }
 
 }

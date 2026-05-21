@@ -21,24 +21,24 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 /**
- * A utility class providing simple static methods to generate SHA-256 hash values.
+ * A utility class providing simple static methods to generate SHA-384 hash values.
  *
- * <p>A SHA-256 hash is expressed as a 64-digit hexadecimal number.
- * SHA-256 is required by every Java SE implementation.
+ * <p>A SHA-384 hash is expressed as a 96-digit hexadecimal number.
+ * SHA-384 is available on all common JVM distributions.
  *
- * <p>Delegates to {@link Hashes} using {@link Hashes.Algorithm#SHA_256}.
+ * <p>Delegates to {@link Hashes} using {@link Hashes.Algorithm#SHA_384}.
  *
  * @author Christophe Lauret
  *
  * @version Berlioz 0.13.0
- * @since Berlioz 0.12.4
+ * @since Berlioz 0.13.0
  */
-public final class SHA256 {
+public final class SHA384 {
 
   /**
    * Prevents creation of instances.
    */
-  private SHA256() {
+  private SHA384() {
   }
 
   /**
@@ -46,10 +46,10 @@ public final class SHA256 {
    *
    * @param text The text value to hash.
    *
-   * @return The SHA-256 hash as a 64-character lowercase hexadecimal string.
+   * @return The SHA-384 hash as a 96-character lowercase hexadecimal string.
    */
   public static String hash(String text) {
-    return Hashes.hash(text, Hashes.Algorithm.SHA_256);
+    return Hashes.hash(text, Hashes.Algorithm.SHA_384);
   }
 
   /**
@@ -57,10 +57,10 @@ public final class SHA256 {
    *
    * @param data The bytes to hash.
    *
-   * @return The SHA-256 hash as a 64-character lowercase hexadecimal string.
+   * @return The SHA-384 hash as a 96-character lowercase hexadecimal string.
    */
   public static String hash(byte[] data) {
-    return Hashes.hash(data, Hashes.Algorithm.SHA_256);
+    return Hashes.hash(data, Hashes.Algorithm.SHA_384);
   }
 
   /**
@@ -70,12 +70,12 @@ public final class SHA256 {
    *
    * @param in The input stream to read.
    *
-   * @return The SHA-256 hash as a 64-character lowercase hexadecimal string.
+   * @return The SHA-384 hash as a 96-character lowercase hexadecimal string.
    *
    * @throws IOException If an error occurred while reading the stream.
    */
   public static String hash(InputStream in) throws IOException {
-    return Hashes.hash(in, Hashes.Algorithm.SHA_256);
+    return Hashes.hash(in, Hashes.Algorithm.SHA_384);
   }
 
   /**
@@ -83,12 +83,12 @@ public final class SHA256 {
    *
    * @param file The file to read.
    *
-   * @return The SHA-256 hash as a 64-character lowercase hexadecimal string.
+   * @return The SHA-384 hash as a 96-character lowercase hexadecimal string.
    *
    * @throws IOException If the file does not exist or an error occurred while reading it.
    */
   public static String hash(File file) throws IOException {
-    return Hashes.hash(file, Hashes.Algorithm.SHA_256);
+    return Hashes.hash(file, Hashes.Algorithm.SHA_384);
   }
 
   /**
@@ -98,12 +98,12 @@ public final class SHA256 {
    * @param strong {@code true} to hash the file content;
    *               {@code false} to hash its canonical path, length, and last-modified timestamp.
    *
-   * @return The SHA-256 hash as a 64-character lowercase hexadecimal string.
+   * @return The SHA-384 hash as a 96-character lowercase hexadecimal string.
    *
    * @throws IOException If the file does not exist or an error occurred while reading it.
    */
   public static String hash(File file, boolean strong) throws IOException {
-    return Hashes.hash(file, strong, Hashes.Algorithm.SHA_256);
+    return Hashes.hash(file, strong, Hashes.Algorithm.SHA_384);
   }
 
   /**
@@ -111,12 +111,12 @@ public final class SHA256 {
    *
    * @param path The path to read.
    *
-   * @return The SHA-256 hash as a 64-character lowercase hexadecimal string.
+   * @return The SHA-384 hash as a 96-character lowercase hexadecimal string.
    *
    * @throws IOException If the path does not exist or an error occurred while reading it.
    */
   public static String hash(Path path) throws IOException {
-    return Hashes.hash(path, Hashes.Algorithm.SHA_256);
+    return Hashes.hash(path, Hashes.Algorithm.SHA_384);
   }
 
   /**
@@ -126,12 +126,12 @@ public final class SHA256 {
    * @param strong {@code true} to hash the file content;
    *               {@code false} to hash its real path, size, and last-modified timestamp.
    *
-   * @return The SHA-256 hash as a 64-character lowercase hexadecimal string.
+   * @return The SHA-384 hash as a 96-character lowercase hexadecimal string.
    *
    * @throws IOException If the path does not exist or an error occurred while reading it.
    */
   public static String hash(Path path, boolean strong) throws IOException {
-    return Hashes.hash(path, strong, Hashes.Algorithm.SHA_256);
+    return Hashes.hash(path, strong, Hashes.Algorithm.SHA_384);
   }
 
 }
