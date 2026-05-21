@@ -16,11 +16,10 @@
 package org.pageseeder.berlioz.util;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -31,7 +30,7 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.4
  */
 public final class SHA256 {
@@ -42,14 +41,9 @@ public final class SHA256 {
   private static final char[] HEX = "0123456789abcdef".toCharArray();
 
   /**
-   * Mask for the high bits of a byte.
+   * The SHA-256 algorithm name.
    */
-  private static final int BYTE_MASK_HIGH = 0xF0;
-
-  /**
-   * Mask for the low bits of a byte.
-   */
-  private static final int BYTE_MASK_LOW = 0x0F;
+  private static final String ALGORITHM = "SHA-256";
 
   /**
    * Prevents creation of instance.
@@ -67,10 +61,8 @@ public final class SHA256 {
    * @throws UnsupportedOperationException If the MD5 algorithm is not available for that platform.
    */
   public static String hash(String text) throws UnsupportedOperationException {
-    MessageDigest md = getAlgorithm();
-    md.update(text.getBytes(StandardCharsets.UTF_8), 0, text.length());
-    byte[] bytes = md.digest();
-    return toHex(bytes);
+    byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+    return toHex(getAlgorithm().digest(bytes));
   }
 
   /**
@@ -86,14 +78,15 @@ public final class SHA256 {
    */
   public static String hash(File file) throws IOException, UnsupportedOperationException {
     MessageDigest md = getAlgorithm();
-    FileInputStream fis = new FileInputStream(file);
-    try (fis) {
-      FileChannel in = fis.getChannel();
-      MappedByteBuffer buffer = in.map(FileChannel.MapMode.READ_ONLY, 0, in.size());
-      md.update(buffer);
-      byte[] bytes = md.digest();
-      return toHex(bytes);
+    // Use an 8 KiB buffer as a conventional I/O default that balances throughput and memory use
+    byte[] buffer = new byte[8192];
+    try (InputStream in = Files.newInputStream(file.toPath())) {
+      int read;
+      while ((read = in.read(buffer)) != -1) {
+        md.update(buffer, 0, read);
+      }
     }
+    return toHex(md.digest());
   }
 
   /**
@@ -122,10 +115,10 @@ public final class SHA256 {
    * @return the corresponding sequence of hexadecimal characters.
    */
   private static String toHex(byte[] data) {
-    final StringBuilder hex = new StringBuilder(2 * data.length);
-    final int shift = 4;
-    for (final byte b : data) {
-      hex.append(HEX[(b & BYTE_MASK_HIGH) >> shift]).append(HEX[(b & BYTE_MASK_LOW)]);
+    StringBuilder hex = new StringBuilder(2 * data.length);
+    for (byte b : data) {
+      hex.append(HEX[(b >>> 4) & 0x0f]);
+      hex.append(HEX[b & 0x0f]);
     }
     return hex.toString();
   }
@@ -138,10 +131,10 @@ public final class SHA256 {
    */
   private static MessageDigest getAlgorithm() throws UnsupportedOperationException {
     try {
-      return MessageDigest.getInstance("SHA-256");
+      return MessageDigest.getInstance(ALGORITHM);
     } catch (NoSuchAlgorithmException ex) {
-      // Every implementation of the Java platform is required to support the MD5 algorithm
-      throw new UnsupportedOperationException(ex);
+      // SHA-256 is required by every Java platform implementation.
+      throw new AssertionError(ALGORITHM + " should always be available", ex);
     }
   }
 
