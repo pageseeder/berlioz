@@ -402,15 +402,15 @@ public final class BerliozServlet extends HttpServlet {
     // Redirection (Beta)
     if (ContentStatus.isRedirect(status)) {
       String url = xml.getRedirectURL();
-      if (!HttpRequests.isSafeRedirectURL(url, req)) {
+      if (HttpRequests.isSafeRedirectURL(url, req)) {
+        LOGGER.debug("Redirecting to: {} with {}", url, status.code());
+        res.reset();
+        res.sendRedirect(url);
+        res.setStatus(status.code());
+      } else {
         LOGGER.warn("Blocked unsafe redirect URL: {}", url);
         sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
-        return;
       }
-      LOGGER.debug("Redirecting to: {} with {}", url, status.code());
-      res.reset();
-      res.sendRedirect(url);
-      res.setStatus(status.code());
       return;
     }
 
