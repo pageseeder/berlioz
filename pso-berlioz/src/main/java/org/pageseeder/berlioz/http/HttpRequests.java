@@ -44,6 +44,8 @@ public final class HttpRequests {
    */
   public static boolean isSafeRedirectURL(@Nullable String url, HttpServletRequest req) {
     if (url == null) return false;
+    // Reject CRLF characters to prevent HTTP response splitting
+    if (url.indexOf('\r') >= 0 || url.indexOf('\n') >= 0) return false;
     try {
       URI uri = new URI(url);
       // Relative URL with no authority is safe (e.g. /some/path or ../other)
