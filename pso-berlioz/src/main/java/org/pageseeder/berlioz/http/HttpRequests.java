@@ -24,6 +24,11 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Utility methods for working with HTTP servlet requests.
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.13.0
  */
 public final class HttpRequests {
 
