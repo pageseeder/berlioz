@@ -37,6 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
@@ -44,10 +46,10 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozOption;
@@ -58,12 +60,16 @@ import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ISO8601;
 import org.pageseeder.berlioz.util.MD5;
+import org.pageseeder.berlioz.xml.Xml;
 import org.pageseeder.berlioz.xslt.XSLTErrorCollector;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
 
 /**
  * Performs the XSLT transformation from the generated XML content.
@@ -73,7 +79,7 @@ import org.xml.sax.SAXParseException;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 public final class XSLTransformer {
@@ -94,7 +100,7 @@ public final class XSLTransformer {
   private static final Templates IDENTITY_TEMPLATES = new Templates() {
     @Override
     public Transformer newTransformer() throws TransformerConfigurationException {
-      return TransformerFactory.newInstance().newTransformer();
+      return newTransformerFactory().newTransformer();
     }
     @Override
     public Properties getOutputProperties() {
@@ -160,14 +166,7 @@ public final class XSLTransformer {
       templates = getTemplates(this.templatesFile);
 
       // Setup the source
-      StreamSource source = new StreamSource(new StringReader(content));
-      source.setPublicId("-//Berlioz//Service/XML/"+service.group()+"/"+service.id());
-      // TODO: provide better info (identify the service)
-      String uri = req.getRequestURI();
-      int dot = uri.lastIndexOf('.');
-      if (dot >= 0) {
-        source.setSystemId(req.getRequestURI().replaceAll("\\.([a-z]+)$", ".src"));
-      }
+      Source source = toXMLSource(content, req, service);
 
       // Setup the result
       StreamResult result = new StreamResult(buffer);
@@ -177,7 +176,7 @@ public final class XSLTransformer {
 
     // very likely to be an error in the XML or a dynamic error
     } catch (TransformerException ex) {
-      String error = toXML(ex, content, parameters);
+      String error = toXML(ex, parameters);
       ClassLoader loader = XSLTransformer.class.getClassLoader();
       URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
       Templates failsafe = toTemplates(url);
@@ -308,7 +307,7 @@ public final class XSLTransformer {
    *
    * @throws TransformerException For XSLT Transformation errors or XSLT config errors
    */
-  private static long transform(StreamSource source, StreamResult result, Templates templates, @Nullable Map<String, String> parameters)
+  private static long transform(Source source, StreamResult result, Templates templates, @Nullable Map<String, String> parameters)
     throws TransformerException {
 
     // Create a transformer from the templates
@@ -342,7 +341,7 @@ public final class XSLTransformer {
   /**
    * Returns the templates corresponding to the specified file.
    *
-   * This method uses the caching mechanism.
+   * <p>This method uses the caching mechanism.
    *
    * @param f The path to the XSLT style sheet.
    *
@@ -383,13 +382,11 @@ public final class XSLTransformer {
    */
   private static Templates toTemplates(File stylepath, @Nullable URL fallback) throws TransformerException {
     // load the templates from the source file
-    InputStream in = null;
     Templates templates;
-    try {
-      in = new FileInputStream(stylepath);
+    try (InputStream in = new FileInputStream(stylepath)) {
       Source source = new StreamSource(in);
       source.setSystemId(stylepath.toURI().toString());
-      TransformerFactory factory = TransformerFactory.newInstance();
+      TransformerFactory factory = newTransformerFactory();
       XSLTErrorCollector listener = new XSLTErrorCollector(LOGGER);
       factory.setErrorListener(listener);
       try {
@@ -406,8 +403,8 @@ public final class XSLTransformer {
         LOGGER.warn("Unable to find template file: {}", stylepath);
         throw new TransformerConfigurationException("Unable to find stylesheet: "+toWebPath(stylepath.getPath()), ex);
       }
-    } finally {
-      closeQuietly(in);
+    } catch (IOException ex) {
+      throw new TransformerConfigurationException("Unable to read stylesheet: "+toWebPath(stylepath.getPath()), ex);
     }
     return templates;
   }
@@ -444,11 +441,10 @@ public final class XSLTransformer {
    * Handles transformation errors - to be used in catch blocks.
    *
    * @param ex         An error occurring during an XSLT transformation.
-   * @param source     The XML source being transformed
    * @param parameters The XSLT parameters passed to the transformer
    * @return the error details as XML
    */
-  private static String toXML(TransformerException ex, String source, @Nullable Map<String, String> parameters) {
+  private static String toXML(TransformerException ex, @Nullable Map<String, String> parameters) {
     // Remove all double dash so that it may be inserted in the XML comment
     StringWriter out = new StringWriter();
     try {
@@ -528,7 +524,7 @@ public final class XSLTransformer {
     try (InputStream in = url.openStream()) {
       Source source = new StreamSource(in);
       source.setSystemId(url.toString());
-      TransformerFactory factory = TransformerFactory.newInstance();
+      TransformerFactory factory = newTransformerFactory();
       templates = factory.newTemplates(source);
       // Any error we need to give up...
     } catch (IOException | TransformerException ex) {
@@ -555,7 +551,7 @@ public final class XSLTransformer {
     // Let's try to format it
     String out;
     try {
-      Source source = new StreamSource(new StringReader(xml));
+      Source source = toXMLSource(xml);
       StringWriter html = new StringWriter();
       Result result = new StreamResult(html);
       templates.newTransformer().transform(source, result);
@@ -573,6 +569,65 @@ public final class XSLTransformer {
   }
 
   /**
+   * Creates a hardened TransformerFactory for loading stylesheets and transforming XML.
+   *
+   * @return a configured transformer factory.
+   *
+   * @throws TransformerConfigurationException if the factory cannot enable secure processing.
+   */
+  private static TransformerFactory newTransformerFactory() throws TransformerConfigurationException {
+    TransformerFactory factory = TransformerFactory.newInstance();
+    factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "file");
+    return factory;
+  }
+
+  /**
+   * Creates a SAX source that does not resolve external entities.
+   *
+   * @param xml the XML content.
+   * @return the corresponding source.
+   *
+   * @throws TransformerException if the parser cannot be configured.
+   */
+  private static Source toXMLSource(String xml) throws TransformerException {
+    return toXMLSource(xml, null, null);
+  }
+
+  /**
+   * Creates a SAX source that does not resolve external entities.
+   *
+   * @param xml     the XML content.
+   * @param req     the HTTP request.
+   * @param service the Berlioz service being transformed.
+   * @return the corresponding source.
+   *
+   * @throws TransformerException if the parser cannot be configured.
+   */
+  private static Source toXMLSource(String xml, @Nullable HttpServletRequest req, @Nullable Service service)
+      throws TransformerException {
+    try {
+      XMLReader reader = Xml.newSafeParser(false).getXMLReader();
+      reader.setEntityResolver((publicId, systemId) -> new InputSource(new StringReader("")));
+      InputSource input = new InputSource(new StringReader(xml));
+      if (service != null) {
+        input.setPublicId("-//Berlioz//Service/XML/"+service.group()+"/"+service.id());
+      }
+      if (req != null) {
+        String uri = req.getRequestURI();
+        int dot = uri.lastIndexOf('.');
+        if (dot >= 0) {
+          input.setSystemId(req.getRequestURI().replaceAll("\\.([a-z]+)$", ".src"));
+        }
+      }
+      return new SAXSource(reader, input);
+    } catch (ParserConfigurationException | SAXException ex) {
+      throw new TransformerConfigurationException("Unable to configure XML parser", ex);
+    }
+  }
+
+  /**
    * Displays the path to the file from the web application (for debugging).
    *
    * @param s the file path.
@@ -582,20 +637,6 @@ public final class XSLTransformer {
     String from = "WEB-INF";
     int x = s.indexOf(from);
     return x != -1? s.substring(x+from.length()).replace('\\', '/') : s.replace('\\', '/');
-  }
-
-  /**
-   * Close an input stream ignoring any exception.
-   * @param in the input stream
-   */
-  private static void closeQuietly(@Nullable InputStream in) {
-    if (in != null) {
-      try {
-        in.close();
-      } catch (IOException ex) {
-        LOGGER.debug("Error thrown while trying to quietly close stream - ignored", ex);
-      }
-    }
   }
 
   /**
