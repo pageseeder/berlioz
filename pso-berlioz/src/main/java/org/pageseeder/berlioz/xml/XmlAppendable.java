@@ -20,6 +20,7 @@ import org.jspecify.annotations.Nullable;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ import java.util.Objects;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.0
  */
 public class XmlAppendable<T extends Appendable> implements XmlWriter {
@@ -56,12 +57,12 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   /**
    * Where the XML data goes.
    */
-  final T _xml;
+  private final T xml;
 
   /**
    * Encoding of the output xml.
    */
-  final String encoding = "utf-8";
+  private static final String ENCODING = "utf-8";
 
   /**
    * Indicates whether the xml should be indented or not.
@@ -70,7 +71,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    *
    * <p>The indentation is 2 white-spaces.
    */
-  boolean indent;
+  private final boolean indent;
 
   /**
    * The default indentation spaces used.
@@ -87,12 +88,17 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    *
    * <p>This attribute changes depending on the state of the instance.
    */
-  int depth = 0;
+  private int depth = 0;
 
   /**
    * Flag to indicate that the element open tag is not finished yet.
    */
-  boolean isNude = false;
+  private boolean isNude = false;
+
+  /**
+   * Indicates whether anything has been appended by this writer.
+   */
+  private boolean used = false;
 
   // constructors -------------------------------------------------------------------------
 
@@ -105,7 +111,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * @throws NullPointerException If the writer is <code>null</code>.
    */
   protected XmlAppendable(T xml, @Nullable String indentChars) throws NullPointerException {
-    this._xml = Objects.requireNonNull(xml, "XmlWriter cannot use a null writer.");
+    this.xml = Objects.requireNonNull(xml, "XmlWriter cannot use a null writer.");
     this.indent = indentChars != null;
     this.indentChars = indentChars;
     this.elements.add(ROOT);
@@ -137,14 +143,8 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * @throws IllegalStateException    If the writer has already been used.
    */
   public XmlAppendable<T> withIndent(@Nullable String spaces) {
-    // check that this is a valid indentation string
-    if (spaces != null) {
-      for (int i = 0; i < spaces.length(); i++) {
-        if (!Character.isSpaceChar(spaces.charAt(i)))
-          throw new IllegalArgumentException("Not a valid indentation string.");
-      }
-    }
-    return new XmlAppendable<>(this._xml, spaces);
+    checkCanSetIndent(spaces);
+    return new XmlAppendable<>(this.xml, spaces);
   }
 
   // Write text methods
@@ -152,85 +152,51 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
   @Override
   public final XmlAppendable<T> text(String text) {
-    return text(text.toCharArray(), 0, text.length());
+    Objects.requireNonNull(text, "Text must not be null.");
+    deNude();
+    appendText(text, 0, text.length());
+    return this;
   }
 
   @Override
   public final XmlAppendable<T> text(long number) {
     deNude();
-    try {
-      this._xml.append(Long.toString(number));
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
-    }
+    append(Long.toString(number));
     return this;
   }
 
   @Override
   public final XmlAppendable<T> text(double number) {
     deNude();
-    try {
-      this._xml.append(Double.toString(number));
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
-    }
+    append(Double.toString(number));
     return this;
   }
 
   @Override
   public final XmlAppendable<T> text(char[] text, int off, int len) {
+    Objects.requireNonNull(text, "Text must not be null.");
     deNude();
-    try {
-      char c;
-      for (int i = off; i < off+len; i++) {
-        c = text[i];
-        // '<' always replace with '&lt;'
-        if (c == '<') {
-          this._xml.append("&lt;");
-        } else if (c == '>') {
-          this._xml.append("&gt;");
-        } else if (c == '&') {
-          this._xml.append("&amp;");
-        } else if (c == '\n' || c == '\r' || c == '\t') {
-          this._xml.append(c);
-        } else if (c < 0x20 || c >= 0x7F && c < 0xA0) {
-          // Do nothing
-        } else if (c >= 0xD800 && c <= 0xDFFF) {
-          int codePoint = Character.codePointAt(text, i, len);
-          i += Character.charCount(codePoint) - 1;
-          this._xml.append("&#x");
-          this._xml.append(Integer.toHexString(codePoint));
-          this._xml.append(";");
-        } else {
-          this._xml.append(c);
-        }
-      }
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
-    }
+    appendText(CharBuffer.wrap(text, off, len), 0, len);
     return this;
   }
 
   @Override
   public final XmlAppendable<T> text(char c) {
     deNude();
-    try {
-      // '<' must always be escaped
-      if (c == '<') {
-        this._xml.append("&lt;");
-      } else if (c == '>') {
-        this._xml.append("&gt;");
-      } else if (c == '&') {
-        this._xml.append("&amp;");
-      } else if (c == '\n' || c == '\r' || c == '\t') {
-        this._xml.append(c);
-      } else if (c < 0x20 || c >= 0x7F && c < 0xA0) {
-        // Do nothing
-      } else {
-        this._xml.append(c);
-      }
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
+    appendText(Character.toString(c), 0, 1);
+    return this;
+  }
+
+  /**
+   * Writes the string value of an object.
+   *
+   * <p>Does nothing if the object is <code>null</code>.
+   *
+   * @param o The object that should be written as text.
+   */
+  public XmlAppendable<T> asText(@Nullable Object o) {
+    if (o != null) {
+      this.text(o.toString());
     }
     return this;
   }
@@ -241,25 +207,14 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * <p>Does nothing if the object is <code>null</code>.
    *
    * @param o The object that should be written as text.
-   *
-   * @throws IOException If thrown by the wrapped writer.
-   */
-  public XmlAppendable<T> asText(@Nullable Object o) {
-    this.text(o != null ? o.toString() : "null");
-    return this;
-  }
-
-  /**
-   * Writes the string value of an object.
-   *
-   * <p>Does nothing if the object is <code>null</code>.
-   *
-   * @param o The object that should be written as text.
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   public XmlAppendable<T> asXml(@Nullable Object o) {
-    // FIXME
+    if (o instanceof XmlWritable) {
+      return asXml((XmlWritable)o);
+    }
+    if (o != null) {
+      this.xml(o.toString());
+    }
     return this;
   }
 
@@ -275,10 +230,9 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
   @Override
   public final XmlAppendable<T> xml(char[] xml, int off, int len) {
+    Objects.requireNonNull(xml, "XML must not be null.");
     deNude();
-    for (int i=off; i<off+len; i++) {
-      append(xml[i]);
-    }
+    append(CharBuffer.wrap(xml, off, len));
     return this;
   }
 
@@ -294,15 +248,21 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
   @Override
   public final void declaration() {
-    append("<?xml version=\"1.0\" encoding=\""+this.encoding +"\"?>");
+    if (this.used) {
+      throw new IllegalStateException("Cannot write XML declaration after other content.");
+    }
+    append("<?xml version=\"1.0\" encoding=\""+ENCODING +"\"?>");
     if (this.indent) {
       append('\n');
     }
   }
 
   @Override
-  public final XmlAppendable<T> comment(String comment) throws IllegalArgumentException {
-    if (comment.indexOf("--") >= 0)
+  public final XmlAppendable<T> comment(@Nullable String comment) throws IllegalArgumentException {
+    if (comment == null) {
+      return this;
+    }
+    if (comment.contains("--"))
       throw new IllegalArgumentException("A comment must not contain '--'.");
     deNude();
     append("<!-- ");
@@ -316,35 +276,36 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
   @Override
   public final XmlAppendable<T> processingInstruction(String target, @Nullable String data) {
+    Objects.requireNonNull(target, "Processing instruction target must not be null.");
+    if (data != null && data.contains("?>")) {
+      throw new IllegalArgumentException("Processing instruction data must not contain '?>'.");
+    }
     deNude();
-    try {
-      this._xml.append("<?");
-      this._xml.append(target);
-      this._xml.append(' ');
-      this._xml.append(data);
-      this._xml.append("?>");
-      if (this.indent) {
-        this._xml.append('\n');
-      }
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
+    append("<?");
+    append(target);
+    if (data != null && !data.isEmpty()) {
+      append(' ');
+      append(data);
+    }
+    append("?>");
+    if (this.indent) {
+      append('\n');
     }
     return this;
   }
 
   @Override
-  public final XmlAppendable<T> cdata(String data) {
-    final String end = "]]>";
-    if (data.indexOf(end) >= 0)
-      throw new IllegalArgumentException("CDATA sections must not contain \']]>\'");
-    deNude();
-    try {
-      this._xml.append("<![CDATA[");
-      this._xml.append(data);
-      this._xml.append(end);
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
+  public final XmlAppendable<T> cdata(@Nullable String data) {
+    if (data == null) {
+      return this;
     }
+    final String end = "]]>";
+    if (data.contains(end))
+      throw new IllegalArgumentException("CDATA sections must not contain ']]>'");
+    deNude();
+    append("<![CDATA[");
+    append(data);
+    append(end);
     return this;
   }
 
@@ -362,16 +323,14 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   @Override
   public final XmlAppendable<T> attribute(String name, String value) {
     if (!this.isNude) throw new IllegalStateException("Cannot write attribute: too late!");
-    try {
-      this._xml.append(' ');
-      this._xml.append(name);
-      this._xml.append('=');
-      this._xml.append('"');
-      appendAttrValue(value.toCharArray(), 0, value.length());
-      this._xml.append('"');
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
-    }
+    Objects.requireNonNull(name, "Attribute name must not be null.");
+    Objects.requireNonNull(value, "Attribute value must not be null.");
+    append(' ');
+    append(name);
+    append('=');
+    append('"');
+    appendAttrValue(value, 0, value.length());
+    append('"');
     return this;
   }
 
@@ -390,18 +349,15 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
     return appendRawAttr(name, Boolean.toString(value));
   }
 
-  private final XmlAppendable<T> appendRawAttr(String name, String value) {
+  private XmlAppendable<T> appendRawAttr(String name, String value) {
     if (!this.isNude) throw new IllegalStateException("Cannot write attribute: too late!");
-    try {
-      this._xml.append(' ');
-      this._xml.append(name);
-      this._xml.append('=');
-      this._xml.append('"');
-      this._xml.append(value);
-      this._xml.append('"');
-    } catch (IOException ex) {
-      throw new XmlWriteFailureException(ex);
-    }
+    Objects.requireNonNull(name, "Attribute name must not be null.");
+    append(' ');
+    append(name);
+    append('=');
+    append('"');
+    append(value);
+    append('"');
     return this;
   }
 
@@ -414,8 +370,6 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * <p>It is the same as <code>openElement(null, name, false)</code>
    *
    * @param name The name of the element
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   @Override
   public XmlAppendable<T> openElement(String name) {
@@ -432,8 +386,6 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    *
    * @param name        The name of the element.
    * @param hasChildren <code>true</code> if this element has children.
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   @Override
   public XmlAppendable<T> openElement(String name, boolean hasChildren) {
@@ -452,7 +404,6 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   /**
    * Write the end element tag.
    *
-   * @throws IOException If thrown by the wrapped writer.
    * @throws IllegalCloseElementException If there is no element to close
    */
   @Override
@@ -503,8 +454,6 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * </pre>
    *
    * @param element the name of the element
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   @Override
   public XmlAppendable<T> emptyElement(String element) {
@@ -559,7 +508,6 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   /**
    * Close the writer.
    *
-   * @throws IOException If thrown by the wrapped writer.
    * @throws UnclosedElementException If an element has been left open.
    */
   @Override
@@ -567,9 +515,9 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
     Element open = peekElement();
     if (open != ROOT)
       throw new UnclosedElementException(open.name);
-    if (this._xml instanceof Closeable) {
+    if (this.xml instanceof Closeable) {
       try {
-        ((Closeable)this._xml).close();
+        ((Closeable)this.xml).close();
       } catch (IOException ex) {
         throw new XmlWriteFailureException(ex);
       }
@@ -578,9 +526,9 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
   @Override
   public void flush() {
-    if (this._xml instanceof Flushable) {
+    if (this.xml instanceof Flushable) {
       try {
-        ((Flushable)this._xml).flush();
+        ((Flushable)this.xml).flush();
       } catch (IOException ex) {
         throw new XmlWriteFailureException(ex);
       }
@@ -606,11 +554,26 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
     }
   }
 
+  final T appendable() {
+    return this.xml;
+  }
+
+  final void checkCanSetIndent(@Nullable String spaces) {
+    if (this.used) {
+      throw new IllegalStateException("The writer has already been used.");
+    }
+    if (spaces != null) {
+      for (int i = 0; i < spaces.length(); i++) {
+        if (!Character.isSpaceChar(spaces.charAt(i))) {
+          throw new IllegalArgumentException("Not a valid indentation string.");
+        }
+      }
+    }
+  }
+
   /**
    * Insert the correct amount of space characters depending on the depth and if
    * the <code>indent</code> flag is set to <code>true</code>.
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   void indent() {
     String spaces = this.indentChars;
@@ -621,50 +584,89 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
     }
   }
 
-  private void appendAttrValue(char[] ch, int off, int len) {
-    char c;
-    try {
-      for (int i = off; i < off+len; i++) {
-        c = ch[i];
-        // '<' always replace with '&lt;'
-        if      (c == '<') {
-          this._xml.append("&lt;");
-        } else if (c == '&') {
-          this._xml.append("&amp;");
-        } else if (c == '"') {
-          this._xml.append("&quot;");
-        } else if (c == '\'') {
-          this._xml.append("&#39;");
-        } else if (c == '\n' || c == '\r' || c == '\t') {
-          this._xml.append(c);
-        } else if (c < 0x20 || c >= 0x7F && c < 0xA0) {
-          // Do nothing
-        } else if (c >= 0xD800 && c <= 0xDFFF) {
-          int codePoint = Character.codePointAt(ch, i, len);
-          i += Character.charCount(codePoint) - 1;
-          this._xml.append("&#x");
-          this._xml.append(Integer.toHexString(codePoint));
-          this._xml.append(";");
-        } else {
-          this._xml.append(c);
+  private void appendAttrValue(CharSequence ch, int off, int len) {
+    appendEscaped(ch, off, len, true);
+  }
+
+  private void appendText(CharSequence ch, int off, int len) {
+    appendEscaped(ch, off, len, false);
+  }
+
+  private void appendEscaped(CharSequence ch, int off, int len, boolean attr) {
+    int end = off + len;
+    int segmentStart = off;
+    for (int i = off; i < end; i++) {
+      char c = ch.charAt(i);
+      String replacement = null;
+      if (c == '<') {
+        replacement = "&lt;";
+      } else if (c == '&') {
+        replacement = "&amp;";
+      } else if (!attr && c == '>') {
+        replacement = "&gt;";
+      } else if (attr && c == '"') {
+        replacement = "&quot;";
+      } else if (attr && c == '\'') {
+        replacement = "&#39;";
+      } else if (Character.isHighSurrogate(c)) {
+        if (i + 1 < end && Character.isLowSurrogate(ch.charAt(i + 1))) {
+          if (segmentStart < i) {
+            append(ch, segmentStart, i);
+          }
+          append("&#x");
+          append(Integer.toHexString(Character.toCodePoint(c, ch.charAt(i + 1))));
+          append(';');
+          i++;
+          segmentStart = i + 1;
+          continue;
         }
+        replacement = "";
+      } else if (Character.isLowSurrogate(c) || !isXmlCharacter(c)) {
+        replacement = "";
       }
+      if (replacement != null) {
+        if (segmentStart < i) {
+          append(ch, segmentStart, i);
+        }
+        if (!replacement.isEmpty()) {
+          append(replacement);
+        }
+        segmentStart = i + 1;
+      }
+    }
+    if (segmentStart < end) {
+      append(ch, segmentStart, end);
+    }
+  }
+
+  private static boolean isXmlCharacter(char c) {
+    return c == '\n' || c == '\r' || c == '\t'
+        || (c >= 0x20 && c <= 0xD7FF)
+        || (c >= 0xE000 && c <= 0xFFFD);
+  }
+
+  private Appendable append(CharSequence csq) throws XmlWriteFailureException {
+    try {
+      this.used = true;
+      return this.xml.append(csq);
     } catch (IOException ex) {
       throw new XmlWriteFailureException(ex);
     }
   }
 
-  private final Appendable append(CharSequence csq) throws XmlWriteFailureException {
+  private Appendable append(CharSequence csq, int start, int end) throws XmlWriteFailureException {
     try {
-      return this._xml.append(csq);
+      this.used = true;
+      return this.xml.append(csq, start, end);
     } catch (IOException ex) {
       throw new XmlWriteFailureException(ex);
     }
   }
 
-  private final Appendable append(char c) throws XmlWriteFailureException {
+  private Appendable append(char c) throws XmlWriteFailureException {
     try {
-      return this._xml.append(c);
+      this.used = true;
+      return this.xml.append(c);
     } catch (IOException ex) {
       throw new XmlWriteFailureException(ex);
     }

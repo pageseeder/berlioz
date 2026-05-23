@@ -26,7 +26,7 @@ public class Xml {
    * @return The corresponding XML writer to use.
    */
   public static XmlWriter newWriter(Writer writer) {
-    return new XmlAppendable<Writer>(writer);
+    return new XmlAppendable<>(writer);
   }
 
   /**

@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.xml;
 
 import org.jspecify.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -267,8 +266,6 @@ public interface XmlWriter {
    *
    * @param name The name of the element.
    * @param text The text of the element.
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   XmlWriter element(String name, String text);
 
@@ -284,8 +281,6 @@ public interface XmlWriter {
    *
    * @param name The name of the element.
    * @param text The text of the element.
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   XmlWriter element(String name, long text);
 
@@ -301,8 +296,6 @@ public interface XmlWriter {
    *
    * @param name The name of the element.
    * @param text The text of the element.
-   *
-   * @throws IOException If thrown by the wrapped writer.
    */
   XmlWriter element(String name, double text);
 

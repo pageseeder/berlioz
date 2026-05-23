@@ -19,11 +19,12 @@ public final class XmlStringBuilder extends XmlAppendable<StringBuilder> {
 
   @Override
   public XmlStringBuilder withIndent(@Nullable String chars) {
-    return new XmlStringBuilder(this._xml, chars);
+    checkCanSetIndent(chars);
+    return new XmlStringBuilder(appendable(), chars);
   }
 
   @Override
   public String toString() {
-    return this._xml.toString();
+    return appendable().toString();
   }
 }
