@@ -18,6 +18,7 @@ allprojects {
 
 subprojects {
   apply(plugin = "java-library")
+  apply(plugin = "jacoco")
   apply(plugin = "maven-publish")
   apply(plugin = "org.cyclonedx.bom")
 
@@ -43,6 +44,18 @@ subprojects {
         "Implementation-Version" to globalVersion
       )
     }
+  }
+
+  tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.named("test"))
+    reports {
+      xml.required.set(true)
+      html.required.set(false)
+    }
+  }
+
+  tasks.named("test") {
+    finalizedBy(tasks.named("jacocoTestReport"))
   }
 
   tasks.withType<org.cyclonedx.gradle.CyclonedxDirectTask>().configureEach {
@@ -112,6 +125,10 @@ sonarqube {
     property("sonar.organization", "pageseeder")
     property("sonar.projectKey", "pageseeder_berlioz")
     property("sonar.token", providers.gradleProperty("sonarcloud.login").getOrElse(""))
+    property("sonar.coverage.jacoco.xmlReportPaths",
+      subprojects.map { "${it.layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml" }
+        .joinToString(",")
+    )
   }
 }
 
