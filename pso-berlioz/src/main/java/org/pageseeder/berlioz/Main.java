@@ -25,8 +25,8 @@ import org.pageseeder.berlioz.content.ServiceLoader;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
- * @since Berlioz 0.6
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.6.0
  */
 public final class Main {
 
@@ -58,6 +58,7 @@ public final class Main {
    *
    * @param message Any message (optional)
    */
+  @SuppressWarnings("java:S106")
   public static void usage(@Nullable String message) {
     if (message != null) {
       System.err.println(message);
