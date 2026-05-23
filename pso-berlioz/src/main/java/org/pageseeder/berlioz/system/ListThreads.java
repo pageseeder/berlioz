@@ -16,10 +16,8 @@
 package org.pageseeder.berlioz.system;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
@@ -50,110 +48,74 @@ public final class ListThreads implements ContentGenerator {
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
 
-    boolean stacktraces = "true".equals(req.getParameter("stacktraces"));
-    boolean threadtime = "true".equals(req.getParameter("threadtime"));
+    boolean stackTraces = "true".equals(req.getParameter("stacktraces"));
+    boolean threadTime = "true".equals(req.getParameter("threadtime"));
 
-    ThreadMXBean bean = threadtime? ManagementFactory.getThreadMXBean() : null;
+    ThreadMXBean threadBean = Threads.getThreadMXBean();
+    ThreadMXBean bean = threadTime? threadBean : null;
     if (bean != null && !bean.isThreadCpuTimeSupported()) {
       bean = null;
     }
 
     xml.openElement("threads");
-
-    if (stacktraces) {
-      // Use slow but convenient method to load the threads with their stack traces
-      Map<Thread, StackTraceElement[]> all = Thread.getAllStackTraces();
-      for (Entry<Thread, StackTraceElement[]> e : all.entrySet()) {
-        toXML(e.getKey(), e.getValue(), bean, xml);
+    ThreadInfo[] threads = Threads.getThreadInfo(threadBean, stackTraces? Integer.MAX_VALUE : 0);
+    for (ThreadInfo thread : threads) {
+      if (thread != null) {
+        if (stackTraces) {
+          toXML(thread, thread.getStackTrace(), bean, xml);
+        } else {
+          toXML(thread, bean, xml);
+        }
       }
+    }
+    xml.closeElement();
+  }
 
-    } else {
-      // Use old-school method
-      ThreadGroup root = Threads.getRootThreadGroup();
-      toXML(root, bean, xml);
+  /**
+   * Display the specified thread.
+   *
+   * @param thread The thread to serialise as XML
+   * @param bean  The management bean for CPU time (may be <code>null</code>)
+   * @param xml   The XML Writer
+   *
+   * @throws IOException Should an error occur while writing the XML
+   */
+  private static void toXML(ThreadInfo thread, @Nullable ThreadMXBean bean, XMLWriter xml) throws IOException {
+    xml.openElement("thread", true);
+    writeThreadAttributes(thread, xml);
+
+    if (bean != null) {
+      final long cpu = bean.getThreadCpuTime(thread.getThreadId());
+      final long user = bean.getThreadUserTime(thread.getThreadId());
+      xml.openElement("times");
+      xml.attribute("cpu", Long.toString(cpu));
+      xml.attribute("user", Long.toString(user));
+      xml.attribute("system", Long.toString(cpu - user));
+      xml.closeElement();
     }
 
     xml.closeElement();
   }
 
   /**
-   * Display the specified group thread.
-   *
-   * @param group The group thread to display as a tree
-   * @param bean  The management bean for CPU time (may be <code>null</code>)
-   * @param xml   The XML Writer
-   *
-   * @throws IOException Should an error occur while writing the XML
-   */
-  private static void toXML(ThreadGroup group, @Nullable ThreadMXBean bean, XMLWriter xml) throws IOException {
-
-    // Grab all the threads
-    Thread[] threads = new Thread[group.activeCount()];
-    while (group.enumerate(threads, true) == threads.length) {
-      threads = new Thread[threads.length * 2];
-    }
-
-    // threads
-    for (Thread t : threads) {
-      // Only display the threads part of the current group
-      if (t != null) {
-        xml.openElement("thread", true);
-        xml.attribute("id", Long.toString(t.getId()));
-        xml.attribute("name", t.getName());
-        xml.attribute("priority", t.getPriority());
-        xml.attribute("state", t.getState().name());
-        xml.attribute("alive", Boolean.toString(t.isAlive()));
-        xml.attribute("daemon", Boolean.toString(t.isDaemon()));
-        xml.attribute("group", Threads.toThreadGroupName(t));
-        if (t == Thread.currentThread()) {
-          // Flag the current thread
-          xml.attribute("current", "true");
-        }
-
-        if (bean != null) {
-          final long _cpu = bean.getThreadCpuTime(t.getId());
-          final long _user = bean.getThreadUserTime(t.getId());
-          xml.openElement("times");
-          xml.attribute("cpu", Long.toString(_cpu));
-          xml.attribute("user", Long.toString(_user));
-          xml.attribute("system", Long.toString(_cpu - _user));
-          xml.closeElement();
-        }
-
-        xml.closeElement();
-      }
-    }
-  }
-
-  /**
    * Return all the threads with stack traces
    *
-   * @param thread     The thread to serialise as XML
+   * @param thread     The thread information to serialise as XML
    * @param stacktrace The stack trace (may be <code>null</code>)
    * @param bean       The management bean for CPU time (may be <code>null</code>)
    * @param xml The XML writer
    *
    * @throws IOException If thrown while writing XML.
    */
-  private static void toXML(Thread thread, StackTraceElement[] stacktrace, @Nullable ThreadMXBean bean, XMLWriter xml)
+  private static void toXML(ThreadInfo thread, StackTraceElement[] stacktrace, @Nullable ThreadMXBean bean, XMLWriter xml)
       throws IOException {
     xml.openElement("thread", true);
-    xml.attribute("id", Long.toString(thread.getId()));
-    xml.attribute("name", thread.getName());
-    xml.attribute("priority", thread.getPriority());
-    xml.attribute("state", thread.getState().name());
-    xml.attribute("alive", Boolean.toString(thread.isAlive()));
-    xml.attribute("daemon", Boolean.toString(thread.isDaemon()));
-    xml.attribute("group", Threads.toThreadGroupName(thread));
-    if (thread == Thread.currentThread()) {
-      // Flag the current thread
-      xml.attribute("current", "true");
-    }
+    writeThreadAttributes(thread, xml);
 
     // If the management bean is available include times
     if (bean != null) {
-      final long cpu = bean.getThreadCpuTime(thread.getId());
-      final long user = bean.getThreadUserTime(thread.getId());
+      final long cpu = bean.getThreadCpuTime(thread.getThreadId());
+      final long user = bean.getThreadUserTime(thread.getThreadId());
       xml.openElement("time");
       xml.attribute("cpu", Long.toString(cpu));
       xml.attribute("user", Long.toString(user));
@@ -185,6 +147,20 @@ public final class ListThreads implements ContentGenerator {
     }
 
     xml.closeElement();
+  }
+
+  private static void writeThreadAttributes(ThreadInfo thread, XMLWriter xml) throws IOException {
+    xml.attribute("id", Long.toString(thread.getThreadId()));
+    xml.attribute("name", thread.getThreadName());
+    xml.attribute("priority", thread.getPriority());
+    xml.attribute("state", thread.getThreadState().name());
+    xml.attribute("alive", Boolean.TRUE.toString());
+    xml.attribute("daemon", Boolean.toString(thread.isDaemon()));
+    xml.attribute("group", Threads.threadGroupName());
+    if (thread.getThreadId() == Thread.currentThread().getId()) {
+      // Flag the current thread
+      xml.attribute("current", "true");
+    }
   }
 
 }

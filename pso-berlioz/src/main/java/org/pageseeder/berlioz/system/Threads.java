@@ -15,6 +15,10 @@
  */
 package org.pageseeder.berlioz.system;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -22,56 +26,55 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 final class Threads {
+
+  private static final String NO_THREAD_GROUP = "(No thread group)";
 
   /** Utility class */
   private Threads() {
   }
 
   /**
-   * Get Root group thread.
+   * Returns the thread management bean.
    *
-   * @return The root group thread.
+   * @return The thread management bean.
    */
-  protected static ThreadGroup getRootThreadGroup() {
-    ThreadGroup current = Thread.currentThread().getThreadGroup();
-    if (current == null) throw new IllegalStateException("The current thread has died?");
-    ThreadGroup parent;
-    while ((parent = current.getParent()) != null) {
-      current = parent;
-    }
-    return current;
+  static ThreadMXBean getThreadMXBean() {
+    return ManagementFactory.getThreadMXBean();
   }
 
   /**
-   * Returns a thread by ID.
+   * Returns all live thread information.
    *
-   * @param id the ID of the thread
-   * @return The corresponding thread instance or <code>null</code>.
+   * @param bean      the thread management bean
+   * @param maxDepth  the maximum stack trace depth
+   *
+   * @return Information for all live threads.
    */
-  protected static @Nullable Thread getThread(long id) {
-    ThreadGroup root = getRootThreadGroup();
-    // load the threads in an array
-    Thread[] threads = new Thread[root.activeCount()];
-    while (root.enumerate(threads, true) == threads.length) {
-      threads = new Thread[threads.length * 2];
-    }
-    // Look for the thread in the array
-    for (Thread t : threads) {
-      if (t.getId() == id) return t;
-    }
-    // not found
-    return null;
+  static ThreadInfo[] getThreadInfo(ThreadMXBean bean, int maxDepth) {
+    return bean.getThreadInfo(bean.getAllThreadIds(), maxDepth);
   }
 
-  protected static String toThreadGroupName(Thread thread) {
-    ThreadGroup group = thread.getThreadGroup();
-    if (group == null) return "(No thread group)";
-    String groupName = group.getName();
-    return groupName != null? groupName : "(No thread group Name)";
+  /**
+   * Returns thread information by ID.
+   *
+   * @param id the ID of the thread
+   * @return The corresponding thread information or <code>null</code>.
+   */
+  static @Nullable ThreadInfo getThreadInfo(long id) {
+    return getThreadMXBean().getThreadInfo(id, Integer.MAX_VALUE);
+  }
+
+  /**
+   * Returns the compatibility value for the legacy group attribute.
+   *
+   * @return The thread group name placeholder.
+   */
+  static String threadGroupName() {
+    return NO_THREAD_GROUP;
   }
 
 }

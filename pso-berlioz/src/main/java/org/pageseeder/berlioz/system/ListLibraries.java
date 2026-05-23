@@ -56,7 +56,7 @@ public final class ListLibraries implements ContentGenerator {
   /**
    * Maps the library paths to the main attributes of the manifest.
    *
-   * We cap the amount of entries to 100 to avoid potential memory leaks.
+   * <p>We cap the amount of entries to 100 to avoid potential memory leaks.
    */
   private final Map<String, Map<String, String>> manifest = createLRUMap(100);
 
@@ -192,7 +192,6 @@ public final class ListLibraries implements ContentGenerator {
 
   }
 
-  @SuppressWarnings("serial")
   private static <K, V> Map<K, V> createLRUMap(final int maxEntries) {
     return new LinkedHashMap<K, V>(maxEntries*10/7, 0.7f, true) {
       @Override

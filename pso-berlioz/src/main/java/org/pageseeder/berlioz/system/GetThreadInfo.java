@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.system;
 
 import java.io.IOException;
+import java.lang.management.ThreadInfo;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ContentGenerator;
@@ -46,7 +47,7 @@ public final class GetThreadInfo implements ContentGenerator {
       threadId = Thread.currentThread().getId();
     }
 
-    Thread thread = Threads.getThread(threadId);
+    ThreadInfo thread = Threads.getThreadInfo(threadId);
     if (thread != null) {
       toXML(thread, xml);
     } else {
@@ -59,21 +60,21 @@ public final class GetThreadInfo implements ContentGenerator {
   /**
    * Return all the threads with stack traces
    *
-   * @param thread     The thread to serialise as XML
+   * @param thread     The thread information to serialise as XML
    * @param xml The XML writer
    *
    * @throws IOException If thrown while writing XML.
    */
-  private static void toXML(Thread thread, XMLWriter xml)
+  private static void toXML(ThreadInfo thread, XMLWriter xml)
       throws IOException {
     xml.openElement("thread", true);
-    xml.attribute("id", Long.toString(thread.getId()));
-    xml.attribute("name", thread.getName());
+    xml.attribute("id", Long.toString(thread.getThreadId()));
+    xml.attribute("name", thread.getThreadName());
     xml.attribute("priority", thread.getPriority());
-    xml.attribute("state", thread.getState().name());
-    xml.attribute("alive", Boolean.toString(thread.isAlive()));
+    xml.attribute("state", thread.getThreadState().name());
+    xml.attribute("alive", Boolean.TRUE.toString());
     xml.attribute("daemon", Boolean.toString(thread.isDaemon()));
-    xml.attribute("group", Threads.toThreadGroupName(thread));
+    xml.attribute("group", Threads.threadGroupName());
 
     StackTraceElement[] stacktrace = thread.getStackTrace();
     if (stacktrace != null) {
