@@ -250,6 +250,8 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   private void appendJsonDouble(double number) {
+    if (!Double.isFinite(number))
+      throw new IllegalArgumentException("JSON does not support non-finite double values: " + number);
     this.json.append(Double.toString(number));
   }
 
