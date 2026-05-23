@@ -20,6 +20,8 @@ import java.io.Writer;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.pageseeder.berlioz.aeson.JSONState.JSONContext;
 import org.pageseeder.berlioz.aeson.JSONState.JSONType;
 import org.xml.sax.Attributes;
@@ -42,6 +44,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * @since Berlioz 0.9.32
  */
 public final class JSONSerializer extends DefaultHandler implements ContentHandler {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(JSONSerializer.class);
 
   /**
    * Namespace used for instructions understood by this serializer.
@@ -187,8 +191,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
       message.append("; caused by ").append(ex.getException().getClass().getSimpleName());
       message.append(": ").append(ex.getException().getMessage());
     }
-    // And print on the console by default
-    System.err.println(message);
+    LOGGER.warn("{}", message);
   }
 
   @Override
@@ -390,7 +393,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    */
   private void asNumber(@Nullable String name, String value) {
     try {
-      if (value.indexOf('.') != -1) {
+      if (value.indexOf('.') != -1 || value.indexOf('e') != -1 || value.indexOf('E') != -1) {
         double number = Double.parseDouble(value);
         if (name != null) {
           this.json.property(name, number);

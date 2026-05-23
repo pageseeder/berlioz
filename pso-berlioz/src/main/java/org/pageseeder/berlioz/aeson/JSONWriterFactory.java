@@ -23,76 +23,89 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This factory method will try to find the most suitable <code>JSONEmitter</code> implementation
- * to write JSON.
+ * Factory that selects the most capable available {@link JSONWriter} implementation.
+ *
+ * <p>Discovery order:
+ * <ol>
+ *   <li>Jakarta JSON ({@code jakarta.json}) — preferred; supersedes Java EE</li>
+ *   <li>Java EE JSON ({@code javax.json}) — legacy fallback</li>
+ *   <li>Built-in writer — always available, no extra dependency</li>
+ * </ol>
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public final class JSONWriterFactory {
 
-  /**
-   * Displays debug information.
-   */
   private static final Logger LOGGER = LoggerFactory.getLogger(JSONWriterFactory.class);
 
+  private static final String JAKARTA_API = "jakarta.json.stream.JsonGenerator";
+  private static final String J2EE_API    = "javax.json.stream.JsonGenerator";
+
+  /** Status values */
+  private static final int UNINITIALIZED = 0;
+  private static final int JAKARTA       = 1;
+  private static final int J2EE          = 2;
+  private static final int BUILTIN       = 3;
+
+  private static volatile int status = UNINITIALIZED;
+
+  private JSONWriterFactory() {}
+
   /**
-   * Name of the J2EE API class to look for.
-   */
-  private static final String J2EE_API = "javax.json.stream.JsonGenerator";
-
-  /** Indicates whether we have checked whether Aeson is available. */
-  private static volatile int status = 0;
-
-  /** No public constructor */
-  private JSONWriterFactory() {
-  }
-
-  /**
-   * Always return a JSON Writer.
+   * Returns a {@link JSONWriter} writing to the given stream.
    *
-   * @param out The stream receiving the JSON output.
-   *
-   * @return The JSON writer to use.
+   * @param out the destination stream
+   * @return a ready-to-use JSON writer
    */
   public static JSONWriter newInstance(OutputStream out) {
-    if (status == 0) {
-      init();
-    }
-    if (status == 1) return J2EEJSONWriter.newInstance(out);
-    else return new BuiltinJSONWriter(new PrintWriter(out));
+    if (status == UNINITIALIZED) init();
+    if (status == JAKARTA) return JakartaJSONWriter.newInstance(out);
+    if (status == J2EE)    return J2EEJSONWriter.newInstance(out);
+    return new BuiltinJSONWriter(new PrintWriter(out));
   }
 
   /**
-   * Always return a JSON Writer.
+   * Returns a {@link JSONWriter} writing to the given character stream.
    *
-   * @param writer The writer receiving the JSON output.
-   *
-   * @return The JSON writer to use.
+   * @param writer the destination writer
+   * @return a ready-to-use JSON writer
    */
   public static JSONWriter newInstance(Writer writer) {
-    if (status == 0) {
-      init();
-    }
-    if (status == 1) return J2EEJSONWriter.newInstance(writer);
+    if (status == UNINITIALIZED) init();
+    if (status == JAKARTA) return JakartaJSONWriter.newInstance(writer);
+    if (status == J2EE)    return J2EEJSONWriter.newInstance(writer);
     return new BuiltinJSONWriter(new PrintWriter(writer));
   }
 
   /**
-   * Initializes this class.
+   * Probes the classpath and locks in the best available implementation.
+   * Safe to call multiple times — only the first call does work.
    */
   public static synchronized void init() {
-    LOGGER.debug("Initializing Aeson");
+    if (status != UNINITIALIZED) return;
+    LOGGER.debug("Initializing Aeson JSON writer");
+    if (isAvailable(JAKARTA_API) && JakartaJSONWriter.init()) {
+      LOGGER.info("Using Jakarta JSON API (jakarta.json)");
+      status = JAKARTA;
+    } else if (isAvailable(J2EE_API) && J2EEJSONWriter.init()) {
+      LOGGER.info("Using J2EE JSON API (javax.json)");
+      status = J2EE;
+    } else {
+      LOGGER.info("No JSON API found; using built-in writer");
+      status = BUILTIN;
+    }
+  }
+
+  private static boolean isAvailable(String className) {
     try {
-      Class.forName(J2EE_API);
-      LOGGER.info("JSON API found");
-      boolean hasProvider = J2EEJSONWriter.init();
-      status = hasProvider? 1 : 2;
-    } catch (ClassNotFoundException x) {
-      LOGGER.warn("JSON API not found - ");
-      status = 2;
+      Class.forName(className);
+      return true;
+    } catch (ClassNotFoundException ex) {
+      LOGGER.debug("JSON API class {} not on classpath", className);
+      return false;
     }
   }
 

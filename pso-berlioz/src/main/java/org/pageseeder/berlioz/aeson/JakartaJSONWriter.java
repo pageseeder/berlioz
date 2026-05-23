@@ -19,40 +19,36 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.util.Collections;
 
-import javax.json.JsonException;
-import javax.json.JsonValue;
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
+import jakarta.json.JsonException;
+import jakarta.json.JsonValue;
+import jakarta.json.spi.JsonProvider;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An implementation of a JSON Writer backed by a J2EE JSON API implementation.
+ * An implementation of {@link JSONWriter} backed by a Jakarta JSON API (jakarta.json) implementation.
+ *
+ * <p>This class is preferred over {@link J2EEJSONWriter} when a Jakarta JSON provider is available
+ * on the classpath, as Jakarta EE supersedes the older Java EE (javax.json) namespace.
  *
  * @author Christophe Lauret
  *
  * @version Berlioz 0.13.0
- * @since Berlioz 0.9.32
+ * @since Berlioz 0.13.0
  */
-final class J2EEJSONWriter implements JSONWriter {
+final class JakartaJSONWriter implements JSONWriter {
 
-  /** Displays debug information. */
-  private static final Logger LOGGER = LoggerFactory.getLogger(J2EEJSONWriter.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(JakartaJSONWriter.class);
 
   private static volatile @Nullable JsonGeneratorFactory factory = null;
 
-  /** The JSON generator */
   private final JsonGenerator json;
 
-  /**
-   * Creates new JSON writer.
-   *
-   * @param json The generator to use.
-   */
-  private J2EEJSONWriter(JsonGenerator json) {
+  private JakartaJSONWriter(JsonGenerator json) {
     this.json = json;
   }
 
@@ -117,8 +113,8 @@ final class J2EEJSONWriter implements JSONWriter {
   }
 
   @Override
-  public JSONWriter value(boolean number) {
-    this.json.write(number);
+  public JSONWriter value(boolean value) {
+    this.json.write(value);
     return this;
   }
 
@@ -151,35 +147,14 @@ final class J2EEJSONWriter implements JSONWriter {
     this.json.close();
   }
 
-  /**
-   * Always return a JSON Writer.
-   *
-   * @param out The stream receiving the JSON output.
-   *
-   * @return The JSON writer to use.
-   */
-  public static J2EEJSONWriter newInstance(OutputStream out) {
-    JsonGenerator json = factory().createGenerator(out);
-    return new J2EEJSONWriter(json);
+  public static JakartaJSONWriter newInstance(OutputStream out) {
+    return new JakartaJSONWriter(factory().createGenerator(out));
   }
 
-  /**
-   * Always return a JSON Writer.
-   *
-   * @param writer The stream receiving the JSON output.
-   *
-   * @return The JSON writer to use.
-   */
-  public static J2EEJSONWriter newInstance(Writer writer) {
-    JsonGenerator json = factory().createGenerator(writer);
-    return new J2EEJSONWriter(json);
+  public static JakartaJSONWriter newInstance(Writer writer) {
+    return new JakartaJSONWriter(factory().createGenerator(writer));
   }
 
-  /**
-   * Always return a JSON Writer.
-   *
-   * @return The JSON writer to use.
-   */
   protected static boolean init() {
     try {
       factory();
@@ -192,7 +167,7 @@ final class J2EEJSONWriter implements JSONWriter {
   private static JsonGeneratorFactory factory() {
     JsonGeneratorFactory f = factory;
     if (f == null) {
-      synchronized (J2EEJSONWriter.class) {
+      synchronized (JakartaJSONWriter.class) {
         f = factory;
         if (f == null) {
           factory = f = loadFactory();
@@ -205,11 +180,11 @@ final class J2EEJSONWriter implements JSONWriter {
   private static JsonGeneratorFactory loadFactory() {
     try {
       JsonProvider provider = JsonProvider.provider();
-      LOGGER.debug("javax.json provider: {}", provider.getClass().getName());
+      LOGGER.debug("jakarta.json provider: {}", provider.getClass().getName());
       return provider.createGeneratorFactory(Collections.emptyMap());
     } catch (JsonException ex) {
-      LOGGER.debug("javax.json provider not found: {}", ex.getMessage());
-      throw new UnsupportedOperationException("No javax.json provider found");
+      LOGGER.debug("jakarta.json provider not found: {}", ex.getMessage());
+      throw new UnsupportedOperationException("No jakarta.json provider found");
     }
   }
 
