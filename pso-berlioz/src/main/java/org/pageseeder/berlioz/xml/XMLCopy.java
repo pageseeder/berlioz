@@ -50,7 +50,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 public final class XMLCopy extends DefaultHandler implements ContentHandler, LexicalHandler {
@@ -103,7 +103,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
       // Put the prefix mapping was reported BEFORE the startElement was reported...
       if (!this.mapping.isEmpty()) {
         for (Entry<String, String> e : this.mapping.entrySet()) {
-          boolean hasPrefix = e.getKey() != null && e.getKey().length() > 0;
+          boolean hasPrefix = !e.getKey().isEmpty();
           this.to.attribute("xmlns"+(hasPrefix? ":"+ e.getKey() : e.getKey()), e.getValue());
         }
         this.mapping.clear();
@@ -133,14 +133,13 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   @Override
   public void startPrefixMapping(String prefix, String uri) {
-    boolean hasPrefix = prefix != null && prefix.length() > 0;
-    this.mapping.put((hasPrefix? prefix : ""), uri);
+    this.mapping.put(prefix, uri);
   }
 
   @Override
   public void processingInstruction(String target, @Nullable String data) throws SAXException {
     try {
-      this.to.writePI(target, data);
+      this.to.writePI(target, data != null ? data : "");
     } catch (IOException ex) {
       throw new SAXException(ex);
     }
@@ -150,7 +149,6 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Copy the comment to the output.
-   *
    * {@inheritDoc}
    */
   @Override
@@ -164,56 +162,56 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
 
   /**
    * Does nothing.
-   *
    * {@inheritDoc}
    */
   @Override
   public void startCDATA() {
+    // No-op
   }
 
   /**
    * Does nothing.
-   *
    * {@inheritDoc}
    */
   @Override
   public void endCDATA() {
+    // No-op
   }
 
   /**
    * Does nothing.
-   *
    * {@inheritDoc}
    */
   @Override
   public void startDTD(String name, @Nullable String publicId, @Nullable String systemId) {
+    // No-op
   }
 
   /**
    * Does nothing.
-   *
    * {@inheritDoc}
    */
   @Override
   public void endDTD() {
+    // No-op
   }
 
   /**
    * Does nothing.
-   *
    * {@inheritDoc}
    */
   @Override
   public void startEntity(String name) {
+    // No-op
   }
 
   /**
    * Does nothing.
-   *
    * {@inheritDoc}
    */
   @Override
   public void endEntity(String name) {
+    // No-op
   }
 
   // Static helpers
