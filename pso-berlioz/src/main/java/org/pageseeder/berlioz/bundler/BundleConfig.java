@@ -64,7 +64,7 @@ public final class BundleConfig implements Serializable {
    * The default JavaScript bundle definitions
    */
   private static final Map<String, BundleDefinition> DEFAULT_JS_BUNDLE = Map.of(
-      GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/script/global.js"),
+      GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  GLOBAL_LEVEL,   "/script/global.js"),
       GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/script/{GROUP}.js"),
       SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/script/{GROUP}/{SERVICE}.js"));
 
@@ -72,7 +72,7 @@ public final class BundleConfig implements Serializable {
    * The default CSS bundle definitions
    */
   private static final Map<String, BundleDefinition> DEFAULT_CSS_BUNDLE = Map.of(
-      GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/style/global.css"),
+      GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  GLOBAL_LEVEL,    "/style/global.css"),
       GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/style/{GROUP}.css"),
       SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/style/{GROUP}/{SERVICE}.css"));
 
