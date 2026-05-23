@@ -447,11 +447,16 @@ public abstract class AppInitializer {
   private String setupConfigFolder(File webinf) {
     String configFolder = getConfigFolder();
     try {
+      // Reject names with unsafe characters to prevent path traversal
+      if (!configFolder.matches("^[0-9a-zA-Z_]+$")) {
+        throw new IOException("Config folder name '"+configFolder+"' is invalid; only alphanumerics and underscores are allowed.");
+      }
+
       File config = new File(webinf, configFolder);
 
-      // Sanity check on name
-      if (!configFolder.matches("^[0-9a-zA-Z_]+$")) {
-        console(Phase.INIT, "Config folder: (!) The specified config folder '"+configFolder+"' is not recommended");
+      // Verify the resolved path stays within WEB-INF
+      if (!config.getCanonicalPath().startsWith(webinf.getCanonicalPath() + File.separator)) {
+        throw new IOException("Config folder '"+configFolder+"' resolves outside the WEB-INF directory.");
       }
 
       // Check directory
@@ -485,7 +490,7 @@ public abstract class AppInitializer {
     try {
       @Nullable String appDataPath = getAppDataPath();
       if (appDataPath != null) {
-        appData = new File(appDataPath);
+        appData = new File(appDataPath).getCanonicalFile();
 
         // Check (and create) directory
         if (!appData.exists()) {
@@ -535,6 +540,11 @@ public abstract class AppInitializer {
         console(Phase.INIT, "Mode: defaulting to "+InitEnvironment.DEFAULT_MODE);
         mode = InitEnvironment.DEFAULT_MODE;
       }
+    }
+    // Validate mode is safe for use in file paths
+    if (!mode.matches("^[a-zA-Z0-9_-]+$")) {
+      console(Phase.INIT, "(!) Mode '"+mode+"' contains invalid characters; defaulting to "+InitEnvironment.DEFAULT_MODE);
+      mode = InitEnvironment.DEFAULT_MODE;
     }
     // Report
     console(Phase.INIT, "Mode: '"+mode+"'");
