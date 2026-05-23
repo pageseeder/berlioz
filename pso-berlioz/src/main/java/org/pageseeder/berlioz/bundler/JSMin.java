@@ -75,7 +75,7 @@ public final class JSMin {
   /**
    * The script to read.
    */
-  private final PushbackInputStream _in;
+  private final PushbackInputStream in;
 
   /**
    * The minimised version.
@@ -105,7 +105,7 @@ public final class JSMin {
    * @param out The minimised script.
    */
   public JSMin(InputStream in, OutputStream out) {
-    this._in = new PushbackInputStream(in);
+    this.in = new PushbackInputStream(in);
     this.out = out;
     this.line = 0;
     this.column = 0;
@@ -132,14 +132,14 @@ public final class JSMin {
    * @throws IOException should an error occur while reading the input
    */
   int get() throws IOException {
-    int c = this._in.read();
+    int c = this.in.read();
 
     if (c == EOF) return EOF;
 
     if (c == '\r') {
-      int next = this._in.read();
+      int next = this.in.read();
       if (next != '\n' && next != EOF) {
-        this._in.unread(next);
+        this.in.unread(next);
       }
       this.line++;
       this.column = 0;
@@ -163,9 +163,9 @@ public final class JSMin {
    * @throws IOException should an error occur while reading the input
    */
   int peek() throws IOException {
-    int lookaheadChar = this._in.read();
+    int lookaheadChar = this.in.read();
     if (lookaheadChar != EOF) {
-      this._in.unread(lookaheadChar);
+      this.in.unread(lookaheadChar);
     }
     return lookaheadChar;
   }
@@ -181,37 +181,44 @@ public final class JSMin {
    */
   int next() throws IOException, UnterminatedCommentException {
     int c = get();
-    if (c == '/') {
-      switch (peek()) {
-        case '/':
-          for (;;) {
-            c = get();
-            if (c <= '\n') return c;
-          }
-
-        case '*':
-          get();
-          for (;;) {
-            switch (get()) {
-              case '*':
-                if (peek() == '/') {
-                  get();
-                  return ' ';
-                }
-                break;
-              case EOF:
-                throw new UnterminatedCommentException(this.line, this.column);
-              default:
-            }
-          }
-
-        // fall through
-        default:
-          return c;
-      }
-
+    if (c != '/') {
+      return c;
+    }
+    int next = peek();
+    if (next == '/') {
+      return skipLineComment();
+    }
+    if (next == '*') {
+      return skipBlockComment();
     }
     return c;
+  }
+
+  /**
+   * Skips a JavaScript line comment and returns the line terminator or EOF.
+   */
+  private int skipLineComment() throws IOException {
+    for (;;) {
+      int c = get();
+      if (c <= '\n') return c;
+    }
+  }
+
+  /**
+   * Skips a JavaScript block comment.
+   */
+  private int skipBlockComment() throws IOException, UnterminatedCommentException {
+    get();
+    for (;;) {
+      int c = get();
+      if (c == '*' && peek() == '/') {
+        get();
+        return ' ';
+      }
+      if (c == EOF) {
+        throw new UnterminatedCommentException(this.line, this.column);
+      }
+    }
   }
 
   /**
@@ -235,47 +242,102 @@ public final class JSMin {
    * @throws UnterminatedStringLiteralException Thrown when a string does not terminate properly
    */
   private void process(int action) throws IOException, UnterminatedRegExpLiteralException, UnterminatedCommentException, UnterminatedStringLiteralException {
-    switch (action) {
-      case WRITE:
-        this.out.write(this.theA);
-
-      // fall through
-      case COPY:
-        this.theA = this.theB;
-        if (this.theA == '\'' || this.theA == '"' || this.theA == '`') {
-          writeStringLiteral(this.theA);
-        }
-
-      // fall through
-      case NEXT:
-        this.theB = next();
-        if (this.theB == '/'
-            && (this.theA == '(' || this.theA == ',' || this.theA == '=' || this.theA == ':' || this.theA == '[' || this.theA == '!' || this.theA == '&'
-                || this.theA == '|' || this.theA == '?' || this.theA == '{' || this.theA == '}' || this.theA == ';' || this.theA == '\n')) {
-
-          this.out.write(this.theA);
-          this.out.write(this.theB);
-          boolean inCharacterClass = false;
-          for (;;) {
-            this.theA = get();
-            if (this.theA == '/' && !inCharacterClass) {
-              break;
-            } else if (this.theA == '\\') {
-              this.out.write(this.theA);
-              this.theA = get();
-            } else if (this.theA == '[') {
-              inCharacterClass = true;
-            } else if (this.theA == ']') {
-              inCharacterClass = false;
-            } else if (this.theA <= '\n') throw new UnterminatedRegExpLiteralException(this.line, this.column);
-            this.out.write(this.theA);
-          }
-          this.theB = next();
-        }
-
-      // fall through
-      default:
+    if (action < WRITE || action > NEXT) {
+      return;
     }
+    if (action == WRITE) {
+      this.out.write(this.theA);
+    }
+    if (action <= COPY) {
+      copyBToA();
+    }
+    readNextB();
+  }
+
+  /**
+   * Copies B to A, preserving string-like literals as a single token.
+   */
+  private void copyBToA() throws IOException, UnterminatedStringLiteralException {
+    this.theA = this.theB;
+    if (this.theA == '\'' || this.theA == '"' || this.theA == '`') {
+      writeStringLiteral(this.theA);
+    }
+  }
+
+  /**
+   * Reads the next B token, preserving regular expression literals as a single token.
+   */
+  private void readNextB() throws IOException, UnterminatedRegExpLiteralException, UnterminatedCommentException {
+    this.theB = next();
+    if (isRegExpLiteralStart()) {
+      writeRegExpLiteral();
+    }
+  }
+
+  /**
+   * @return <code>true</code> if the current A/B pair starts a regular expression literal.
+   */
+  private boolean isRegExpLiteralStart() {
+    if (this.theB != '/') {
+      return false;
+    }
+    switch (this.theA) {
+      case '(':
+      case ',':
+      case '=':
+      case ':':
+      case '[':
+      case '!':
+      case '&':
+      case '|':
+      case '?':
+      case '{':
+      case '}':
+      case ';':
+      case '\n':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Writes a regular expression literal as-is, preserving escaped characters and character classes.
+   */
+  private void writeRegExpLiteral() throws IOException, UnterminatedRegExpLiteralException, UnterminatedCommentException {
+    this.out.write(this.theA);
+    this.out.write(this.theB);
+    boolean inCharacterClass = false;
+    for (;;) {
+      this.theA = get();
+      if (this.theA == '/' && !inCharacterClass) {
+        break;
+      }
+      inCharacterClass = processRegExpCharacter(inCharacterClass);
+      this.out.write(this.theA);
+    }
+    this.theB = next();
+  }
+
+  /**
+   * Handles a single character within a regular expression literal.
+   */
+  private boolean processRegExpCharacter(boolean inCharacterClass) throws IOException, UnterminatedRegExpLiteralException {
+    if (this.theA == '\\') {
+      this.out.write(this.theA);
+      this.theA = get();
+      return inCharacterClass;
+    }
+    if (this.theA == '[') {
+      return true;
+    }
+    if (this.theA == ']') {
+      return false;
+    }
+    if (this.theA <= '\n') {
+      throw new UnterminatedRegExpLiteralException(this.line, this.column);
+    }
+    return inCharacterClass;
   }
 
   /**
@@ -319,69 +381,64 @@ public final class JSMin {
     this.theA = '\n';
     process(NEXT);
     while (this.theA != EOF) {
-      switch (this.theA) {
-        case ' ':
-          if (isAlphanum(this.theB)) {
-            process(WRITE);
-          } else {
-            process(COPY);
-          }
-          break;
-        case '\n':
-          switch (this.theB) {
-            case '{':
-            case '[':
-            case '(':
-            case '+':
-            case '-':
-              process(WRITE);
-              break;
-            case ' ':
-              process(NEXT);
-              break;
-            default:
-              if (isAlphanum(this.theB)) {
-                process(WRITE);
-              } else {
-                process(COPY);
-              }
-          }
-          break;
-        default:
-          switch (this.theB) {
-            case ' ':
-              if (isAlphanum(this.theA)) {
-                process(WRITE);
-                break;
-              }
-              process(NEXT);
-              break;
-            case '\n':
-              switch (this.theA) {
-                case '}':
-                case ']':
-                case ')':
-                case '+':
-                case '-':
-                case '"':
-                case '\'':
-                  process(WRITE);
-                  break;
-                default:
-                  if (isAlphanum(this.theA)) {
-                    process(WRITE);
-                  } else {
-                    process(NEXT);
-                  }
-              }
-              break;
-            default:
-              process(WRITE);
-              break;
-          }
-      }
+      process(nextAction());
     }
     this.out.flush();
+  }
+
+  /**
+   * @return the next action to perform for the current A/B pair.
+   */
+  private int nextAction() {
+    if (this.theA == ' ') {
+      return isAlphanum(this.theB) ? WRITE : COPY;
+    }
+    if (this.theA == '\n') {
+      return actionAfterLineBreak();
+    }
+    if (this.theB == ' ') {
+      return isAlphanum(this.theA) ? WRITE : NEXT;
+    }
+    if (this.theB == '\n') {
+      return actionBeforeLineBreak();
+    }
+    return WRITE;
+  }
+
+  /**
+   * @return the next action when A is a line break.
+   */
+  private int actionAfterLineBreak() {
+    switch (this.theB) {
+      case '{':
+      case '[':
+      case '(':
+      case '+':
+      case '-':
+        return WRITE;
+      case ' ':
+        return NEXT;
+      default:
+        return isAlphanum(this.theB) ? WRITE : COPY;
+    }
+  }
+
+  /**
+   * @return the next action when B is a line break.
+   */
+  private int actionBeforeLineBreak() {
+    switch (this.theA) {
+      case '}':
+      case ']':
+      case ')':
+      case '+':
+      case '-':
+      case '"':
+      case '\'':
+        return WRITE;
+      default:
+        return isAlphanum(this.theA) ? WRITE : NEXT;
+    }
   }
 
   // Predefined Exceptions
@@ -390,7 +447,6 @@ public final class JSMin {
   /**
    * A comment that does not terminate properly.
    */
-  @SuppressWarnings("serial")
   public static class UnterminatedCommentException extends ParsingException {
 
     /**
@@ -405,7 +461,6 @@ public final class JSMin {
   /**
    * A string that does not terminate properly.
    */
-  @SuppressWarnings("serial")
   public static class UnterminatedStringLiteralException extends ParsingException {
 
     /**
@@ -420,7 +475,6 @@ public final class JSMin {
   /**
    * A regular expression that does not terminate properly.
    */
-  @SuppressWarnings("serial")
   public static class UnterminatedRegExpLiteralException extends ParsingException {
 
     /**
@@ -437,10 +491,11 @@ public final class JSMin {
    *
    * @param args first argument is path to file to minimize
    */
+  @SuppressWarnings("java:S106")
   public static void main(String[] args) throws IOException {
     if (args.length < 1) {
-      System.out.println("Usage: ");
-      System.out.println("JSMin [filepath]");
+      System.err.println("Usage: ");
+      System.err.println("JSMin [filepath]");
       return;
     }
     try {
