@@ -37,9 +37,12 @@ import java.util.Map;
 public interface JsonWriter extends AutoCloseable, Flushable {
 
   /**
-   * Start writing a JSON array in the context of an object.
+   * Starts writing a JSON array as a named field in the current object context.
    *
-   * @param name The name of the array
+   * <p>Must be called when the writer is inside a JSON object (i.e. {@link #inObject()} is
+   * {@code true}).</p>
+   *
+   * @param name The name of the array field
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
@@ -63,9 +66,12 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   JsonWriter endArray();
 
   /**
-   * Start writing a JSON object in the context of an object.
+   * Starts writing a JSON object as a named field in the current object context.
    *
-   * @param name The name of the object
+   * <p>Must be called when the writer is inside a JSON object (i.e. {@link #inObject()} is
+   * {@code true}).</p>
+   *
+   * @param name The name of the object field
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
