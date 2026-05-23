@@ -41,4 +41,14 @@ public final class BuiltinJsonWriterTest extends JsonWriterTestBase {
     newJsonWriter(new StringWriter()).startObject().field("v", Double.NaN);
   }
 
+  @Test(expected = IllegalStateException.class)
+  public void testEndArrayOnObject() {
+    newJsonWriter(new StringWriter()).startObject().endArray();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testEndObjectOnArray() {
+    newJsonWriter(new StringWriter()).startArray().endObject();
+  }
+
 }

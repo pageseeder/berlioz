@@ -74,6 +74,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endArray() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
+    if (this.closer[this.level] != ']') throw new IllegalStateException("Current context is an object, not an array");
     this.json.append(this.closer[this.level--]);
     this.needComma = true;
     return this;
@@ -100,6 +101,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   @Override
   public JsonWriter endObject() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
+    if (this.closer[this.level] != '}') throw new IllegalStateException("Current context is an array, not an object");
     this.json.append(this.closer[this.level--]);
     this.needComma = true;
     return this;
