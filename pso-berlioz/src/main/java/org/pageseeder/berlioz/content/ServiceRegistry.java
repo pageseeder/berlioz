@@ -15,16 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.URIPattern;
@@ -41,7 +33,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8
  */
 public final class ServiceRegistry {
@@ -138,7 +130,7 @@ public final class ServiceRegistry {
    *
    * @return the list of HTTP methods this Berlioz service is mapped to or <code>null</code>.
    */
-  public @Nullable HttpMethod getMethod(Service service) {
+  public @Nullable HttpMethod getMethod(@Nullable Service service) {
     if (service == null) return null;
     for (Entry<HttpMethod, ServiceMap> e : this.registry.entrySet()) {
       ServiceMap mapping = e.getValue();
@@ -154,13 +146,13 @@ public final class ServiceRegistry {
    *
    * @return the list of URI Patterns that this service matches or an empty list.
    */
-  public List<String> matches(Service service) {
-    if (service == null) return Collections.emptyList();
+  public List<String> matches(@Nullable Service service) {
+    if (service == null) return List.of();
     for (ServiceMap mapping : this.registry.values()) {
       boolean mapped = mapping.isMapped(service);
       if (mapped) return mapping.matches(service);
     }
-    return Collections.emptyList();
+    return List.of();
   }
 
   /**
@@ -173,7 +165,7 @@ public final class ServiceRegistry {
    *
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
-  public @Nullable MatchingService get(String url, String method) {
+  public @Nullable MatchingService get(String url, @Nullable String method) {
     if (method == null) return null;
     HttpMethod m = getHttpMethod(method);
     if (m == null) return null;
@@ -190,7 +182,7 @@ public final class ServiceRegistry {
    *
    * @return A content generator which URI pattern matches this URL and HTTP method or <code>null</code>.
    */
-  public @Nullable MatchingService get(String url, HttpMethod method) {
+  public @Nullable MatchingService get(String url, @Nullable HttpMethod method) {
     if (method == null) return null;
     HttpMethod m = method;
     if (method == HttpMethod.HEAD) {
@@ -212,9 +204,9 @@ public final class ServiceRegistry {
   }
 
   /**
-   * Returns the set of registered services.
+   * Returns the list of registered services.
    *
-   * @return the set of registered services.
+   * @return the list of registered services.
    */
   public List<Service> getServices() {
     List<Service> services = new ArrayList<>();
@@ -290,12 +282,12 @@ public final class ServiceRegistry {
     /**
      * To report errors.
      */
-    private final Logger logger = LoggerFactory.getLogger(ServiceRegistry.class);
+    private final Logger logger = LoggerFactory.getLogger(ServiceMap.class);
 
     /**
      * Maps services to the URI Pattern.
      */
-    private final Map<String, Service> mapping = new Hashtable<>();
+    private final Map<String, Service> mapping = new HashMap<>();
 
     /**
      * List of URI Patterns that match a service.
