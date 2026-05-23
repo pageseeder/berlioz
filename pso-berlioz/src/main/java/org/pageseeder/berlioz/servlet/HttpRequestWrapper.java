@@ -236,11 +236,10 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    *         <code>false</code> otherwise.
    */
   public final boolean isMultipartContent() {
-    if (!"post".equals(this.req.getMethod().toLowerCase())) return false;
+    if (!"post".equalsIgnoreCase(this.req.getMethod())) return false;
     String contentType = this.req.getContentType();
     if (contentType == null) return false;
-    if (contentType.toLowerCase().startsWith("multipart/")) return true;
-    return false;
+    return contentType.toLowerCase().startsWith("multipart/");
   }
 
   /**

@@ -96,7 +96,8 @@ public final class HttpAcceptHeader { // NO_UCD
   /**
    * Indicates whether the given 'Accept' header accepts the specified value.
    *
-   * <p>To be acceptable the value must
+   * <p>To be acceptable, the value must either be listed explicitly, match a wildcard entry,
+   * or match a media-type wildcard with a quality value strictly greater than zero.
    *
    * @param accept The 'Accept' or 'Accept-*' HTTP/1.1 header.
    * @param value  The value to look for.
@@ -111,7 +112,8 @@ public final class HttpAcceptHeader { // NO_UCD
   /**
    * Indicates whether the given 'Accept' header accepts the specified value.
    *
-   * <p>To be acceptable the value must
+   * <p>To be acceptable, the value must either be listed explicitly, match a wildcard entry,
+   * or match a media-type wildcard with a quality value strictly greater than zero.
    *
    * @param accept An accept map produced by this class.
    * @param value  The value to look for.

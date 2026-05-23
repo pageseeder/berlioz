@@ -64,6 +64,8 @@ public final class PerformanceServerTiming {
   private final double duration;
 
   /**
+   * Creates a timing metric with a duration and no description.
+   *
    * @param name     The metric name.
    * @param duration The server-specified metric duration in milliseconds
    *
@@ -74,6 +76,8 @@ public final class PerformanceServerTiming {
   }
 
   /**
+   * Creates a timing metric with a description and duration.
+   *
    * @param name        The metric name.
    * @param description The server-specified metric description.
    * @param duration    The server-specified metric duration in milliseconds
@@ -86,14 +90,29 @@ public final class PerformanceServerTiming {
     this.duration = duration;
   }
 
+  /**
+   * Returns the metric name.
+   *
+   * @return the metric name.
+   */
   public String name() {
     return this.name;
   }
 
+  /**
+   * Returns the metric description, or an empty string when no description was supplied.
+   *
+   * @return the server-specified metric description.
+   */
   public String description() {
     return this.description;
   }
 
+  /**
+   * Returns the metric duration in milliseconds.
+   *
+   * @return the duration in milliseconds, or a negative value when no duration should be emitted.
+   */
   public double duration() {
     return this.duration;
   }
