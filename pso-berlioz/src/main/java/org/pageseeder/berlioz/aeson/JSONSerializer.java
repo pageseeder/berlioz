@@ -246,62 +246,58 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param atts      List of attributes on that element
    */
   private void handleJSONElement(String localName, Attributes atts) {
-    String name = atts.getValue(NS_URI, "name");
-    if (name == null) {
-      // Name must not be null
-      name = localName;
-      // Warn if in object context
-      if (this.state.isContext(JSONContext.OBJECT)) {
-        warning(new SAXParseException("Attribute json:name must be used to specify array/object name", this.locator));
-      }
-    }
-
+    String name = resolveJsonName(localName, atts);
     if ("array".equals(localName)) {
-
-      // A JavaScript array explicitly
-      if (this.state.isContext(JSONContext.OBJECT)) {
-        this.json.startArray(name);
-      } else {
-        this.json.startArray();
-      }
-
-      this.state.pushState(JSONContext.ARRAY, atts, name);
-
+      startJsonArray(name, atts);
     } else if ("object".equals(localName)) {
-
-      // A JavaScript object explicitly
-      if (this.state.isContext(JSONContext.OBJECT)) {
-        this.json.startObject(name);
-      } else {
-        this.json.startObject();
-      }
-
-      this.state.pushState(JSONContext.OBJECT, atts, name);
-
-      // Serialize the attributes as value pairs
-      handleValuePairs(atts);
-
+      startJsonObject(name, atts);
     } else if ("null".equals(localName)) {
-
-      // A JavaScript null explicitly
-      if (this.state.isContext(JSONContext.ROOT)) {
-        // Illegal in root context!
-        warning(new SAXParseException("Illegal null as root, substituting for empty object", this.locator));
-        this.json.startObject();
-        this.json.end();
-      } else if (this.state.isContext(JSONContext.OBJECT)) {
-        this.json.writeNull(name);
-      } else {
-        this.json.writeNull();
-      }
-
-      this.state.pushState(JSONContext.NULL, atts, name);
-
+      writeJsonNull(name, atts);
     } else {
       this.state.pushState(JSONContext.OBJECT, atts, name);
-      // An element we don't understand
-      warning(new SAXParseException("Unknown JSON element:"+localName, this.locator));
+      warning(new SAXParseException("Unknown JSON element:" + localName, this.locator));
     }
+  }
+
+  private String resolveJsonName(String localName, Attributes atts) {
+    String name = atts.getValue(NS_URI, "name");
+    if (name != null) return name;
+    if (this.state.isContext(JSONContext.OBJECT)) {
+      warning(new SAXParseException("Attribute json:name must be used to specify array/object name", this.locator));
+    }
+    return localName;
+  }
+
+  private void startJsonArray(String name, Attributes atts) {
+    if (this.state.isContext(JSONContext.OBJECT)) {
+      this.json.startArray(name);
+    } else {
+      this.json.startArray();
+    }
+    this.state.pushState(JSONContext.ARRAY, atts, name);
+  }
+
+  private void startJsonObject(String name, Attributes atts) {
+    if (this.state.isContext(JSONContext.OBJECT)) {
+      this.json.startObject(name);
+    } else {
+      this.json.startObject();
+    }
+    this.state.pushState(JSONContext.OBJECT, atts, name);
+    handleValuePairs(atts);
+  }
+
+  private void writeJsonNull(String name, Attributes atts) {
+    if (this.state.isContext(JSONContext.ROOT)) {
+      warning(new SAXParseException("Illegal null as root, substituting for empty object", this.locator));
+      this.json.startObject();
+      this.json.end();
+    } else if (this.state.isContext(JSONContext.OBJECT)) {
+      this.json.writeNull(name);
+    } else {
+      this.json.writeNull();
+    }
+    this.state.pushState(JSONContext.NULL, atts, name);
   }
 
   /**

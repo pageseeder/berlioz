@@ -210,32 +210,21 @@ final class JSONState {
       String toNumber = atts.getValue(JSONSerializer.NS_URI, "number");
       String toString = atts.getValue(JSONSerializer.NS_URI, "string");
       String toNull = atts.getValue(JSONSerializer.NS_URI, "null");
-      if (toBoolean == null && toNumber == null && toString == null && toNull == null) // Return the current if no new type mappings defined
+      if (toBoolean == null && toNumber == null && toString == null && toNull == null)
         return inherited;
-      else {
-        // Update the mapping
-        Map<String, JSONType> updated = new HashMap<>(inherited.map);
-        if (toBoolean != null) {
-          for (String name : toBoolean.split(" ")) {
-            updated.put(name, JSONType.BOOLEAN);
-          }
+      Map<String, JSONType> updated = new HashMap<>(inherited.map);
+      applyMapping(updated, toBoolean, JSONType.BOOLEAN);
+      applyMapping(updated, toNumber, JSONType.NUMBER);
+      applyMapping(updated, toString, JSONType.STRING);
+      applyMapping(updated, toNull, JSONType.NULL);
+      return new JSONTypeMap(updated);
+    }
+
+    private static void applyMapping(Map<String, JSONType> map, @Nullable String names, JSONType type) {
+      if (names != null) {
+        for (String name : names.split(" ")) {
+          map.put(name, type);
         }
-        if (toNumber != null) {
-          for (String name : toNumber.split(" ")) {
-            updated.put(name, JSONType.NUMBER);
-          }
-        }
-        if (toString != null) {
-          for (String name : toString.split(" ")) {
-            updated.put(name, JSONType.STRING);
-          }
-        }
-        if (toNull != null) {
-          for (String name : toNull.split(" ")) {
-            updated.put(name, JSONType.NULL);
-          }
-        }
-        return new JSONTypeMap(updated);
       }
     }
 

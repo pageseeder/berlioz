@@ -44,6 +44,7 @@ final class JakartaJSONWriter implements JSONWriter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JakartaJSONWriter.class);
 
+  @SuppressWarnings("java:S3077") // volatile is correct here: write-once DCL on an immutable factory reference
   private static volatile @Nullable JsonGeneratorFactory factory = null;
 
   private final JsonGenerator json;

@@ -42,6 +42,7 @@ final class J2EEJSONWriter implements JSONWriter {
   /** Displays debug information. */
   private static final Logger LOGGER = LoggerFactory.getLogger(J2EEJSONWriter.class);
 
+  @SuppressWarnings("java:S3077") // volatile is correct here: write-once DCL on an immutable factory reference
   private static volatile @Nullable JsonGeneratorFactory factory = null;
 
   /** The JSON generator */

@@ -92,41 +92,33 @@ public class JSONResult extends SAXResult implements Result {
    * @throws NullPointerException If the result is stream is <code>null</code>
    */
   public static JSONResult newInstance(StreamResult result) {
-    // try to set the JSON result using the byte stream from the stream result
-    OutputStream out = result.getOutputStream();
     String systemId = result.getSystemId();
-    JSONResult json = null;
-    if (out != null) {
-      json = new JSONResult(out);
-    } else {
-      // try to set the JSON result using the character stream from the stream result
-      Writer writer = result.getWriter();
-      if (writer != null) {
-        json = new JSONResult(writer);
-      } else {
-        if (systemId != null) {
-          try {
-            // URI.create() and new File(URI) both throw IllegalArgumentException for
-            // non-URI system IDs (e.g. a plain file path like "/tmp/out.json").
-            File f = new File(URI.create(systemId));
-            FileOutputStream o = new FileOutputStream(f);
-            json = new JSONResult(o);
-          } catch (IOException ex) {
-            throw new UncheckedIOException("Unable to write JSON to " + systemId, ex);
-          } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException(
-                "System ID must be a valid file URI (e.g. file:///path/to/out.json), got: " + systemId, ex);
-          }
-        } else {
-          // Will output to System.out
-          json = new JSONResult();
-        }
-      }
-    }
-    if (systemId != null) {
-      json.setSystemId(systemId);
-    }
+    JSONResult json = createJSONResult(result);
+    if (systemId != null) json.setSystemId(systemId);
     return json;
+  }
+
+  private static JSONResult createJSONResult(StreamResult result) {
+    OutputStream out = result.getOutputStream();
+    if (out != null) return new JSONResult(out);
+    Writer writer = result.getWriter();
+    if (writer != null) return new JSONResult(writer);
+    String systemId = result.getSystemId();
+    if (systemId != null) return newInstanceFromSystemId(systemId);
+    return new JSONResult();
+  }
+
+  private static JSONResult newInstanceFromSystemId(String systemId) {
+    try {
+      // URI.create() and new File(URI) both throw IllegalArgumentException for
+      // non-URI system IDs (e.g. a plain file path like "/tmp/out.json").
+      return new JSONResult(new FileOutputStream(new File(URI.create(systemId))));
+    } catch (IOException ex) {
+      throw new UncheckedIOException("Unable to write JSON to " + systemId, ex);
+    } catch (IllegalArgumentException ex) {
+      throw new IllegalArgumentException(
+          "System ID must be a valid file URI (e.g. file:///path/to/out.json), got: " + systemId, ex);
+    }
   }
 
   /**
