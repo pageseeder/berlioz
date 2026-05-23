@@ -395,6 +395,8 @@ public final class Service {
     }
 
     /**
+     * Returns the group of the service to build.
+     *
      * @return the group of the service to build.
      */
     public String group() {

@@ -111,6 +111,8 @@ import org.pageseeder.berlioz.Beta;
   }
 
   /**
+   * Returns how the generator should be selected (by name or by target).
+   *
    * @return How the generator should be selected.
    */
   public SelectType use() {
@@ -118,6 +120,9 @@ import org.pageseeder.berlioz.Beta;
   }
 
   /**
+   * Returns the names or targets of the generators to which this rule applies.
+   * An empty list means the rule applies to all generators.
+   *
    * @return The names or targets of the generators to select.
    */
   public List<String> items() {
@@ -146,7 +151,9 @@ import org.pageseeder.berlioz.Beta;
   }
 
   /**
-   * @return How is the status code for the determined.
+   * Returns the rule that determines which generator's status code is used.
+   *
+   * @return How the status code for this service is determined.
    */
   public CodeRule rule() {
     return this.rule;

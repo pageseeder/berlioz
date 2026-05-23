@@ -27,31 +27,44 @@ import org.pageseeder.xmlwriter.XMLWritable;
 public interface Location extends XMLWritable {
 
   /**
+   * Returns the scheme of the URI (e.g. {@code "http"} or {@code "https"}).
+   *
    * @return the scheme of the URI
    */
   String scheme();
 
   /**
+   * Returns the host of the URI (e.g. {@code "example.org"}).
+   *
    * @return the host of the URI
    */
   String host();
 
   /**
+   * Returns the port used for the URI, or {@code -1} if the default port for the scheme is used.
+   *
    * @return the port used for the URI
    */
   int port();
 
   /**
-   * @return the complete path path of the URI
+   * Returns the complete path of the URI including context, prefix, berlioz path, and extension.
+   *
+   * @return the complete path of the URI
    */
   String path();
 
   /**
+   * Returns the query string of the URI, or an empty string if there is none.
+   *
    * @return the query part of the URI
    */
   String query();
 
   /**
+   * Returns detailed path information broken into its constituent parts (context, prefix, path,
+   * extension).
+   *
    * @return the path information.
    */
   PathInfo info();

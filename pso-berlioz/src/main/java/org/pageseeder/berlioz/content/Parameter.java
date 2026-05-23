@@ -64,6 +64,8 @@ public final class Parameter {
   }
 
   /**
+   * Returns the name of this parameter.
+   *
    * @return The name of this parameter.
    */
   public String name() {
@@ -71,6 +73,8 @@ public final class Parameter {
   }
 
   /**
+   * Returns the unresolved template string for this parameter's value.
+   *
    * @return The unresolved value of this parameter.
    */
   public String value() {
