@@ -31,7 +31,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.13
  */
 public final class HttpLocation implements Location, Serializable {
@@ -181,11 +181,12 @@ public final class HttpLocation implements Location, Serializable {
    * <p>Check if this information is in the reverse proxy header otherwise get from expected header
    *
    * <p>The reason it tries to get the original scheme is to avoid multiple redirecting. The scenario we found is:
-   *
-   * 1 - User access https
-   * 2 - If there is a NGINX reverse proxy, the request will be sent to jetty using http probably
-   * 3 - if the berlioz redirect is used, it will redirect over the http
-   * 4 - And NGINX may be set to not accept http then it redirects again to https
+   * <ol>
+   *   <li>User access https</li>
+   *   <li>If there is a NGINX reverse proxy, the request will be sent to jetty using http probably</li>
+   *   <li>If the berlioz redirect is used, it will redirect over the http</li>
+   *   <li>And NGINX may be set to not accept http then it redirects again to https</li>
+   * </ol>
    *
    * <p>By getting the original scheme (used in above step 1) the step 3 will redirect to the correct scheme and the step 4
    * will not happen.
@@ -207,7 +208,7 @@ public final class HttpLocation implements Location, Serializable {
   /**
    * Returns the port used in this request
    *
-   * Check if this information is in the reverse proxy header otherwise get from expected header
+   * <p>Check if this information is in the reverse proxy header otherwise get from expected header
    *
    * @param req the HTTP servlet request to use to build the base URL
    * @return the corresponding port or -1 if the reverse proxy host does not have the port. Then it should use the
