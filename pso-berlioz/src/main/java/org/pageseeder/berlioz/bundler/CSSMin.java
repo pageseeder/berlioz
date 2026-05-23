@@ -95,15 +95,12 @@ public final class CSSMin {
   /**
    * Font weights
    */
-  private static final Map<String, String> FONT_WEIGHTS = initFontWeights();
-  private static Map<String, String> initFontWeights() {
-    Map<String,String> weights = new HashMap<>();
-    weights.put("normal",  "400");
-    weights.put("bold",    "700");
-    weights.put("bolder",  "700");
-    weights.put("lighter", "100");
-    return Collections.unmodifiableMap(weights);
-  }
+  private static final Map<String, String> FONT_WEIGHTS = Map.of(
+    "normal",  "400",
+    "bold",    "700",
+    "bolder",  "700",
+    "lighter", "100"
+  );
 
   /** Utility class. */
   private CSSMin() {
@@ -162,7 +159,7 @@ public final class CSSMin {
             try {
               rules.add(new Rule(buffer.substring(n, i + 1)));
             } catch (ParsingException ex) {
-              LOGGER.warn(ex.getMessage()+" L:"+line);
+              LOGGER.warn("{} L:{}", ex.getMessage(), line);
             }
             n = i + 1;
           }
@@ -173,9 +170,9 @@ public final class CSSMin {
 
       // Let's write it out
       int countRules = 0;
-      min.println(comment);
+      if (!comment.isEmpty()) min.println(comment);
       for (Rule rule : rules) {
-        if (countRules % 10 == 0 || rule._subrules.size() > 0) {
+        if (countRules % 10 == 0 || !rule.subrules.isEmpty()) {
           min.println();
         }
         min.print(rule.toString());
@@ -187,10 +184,8 @@ public final class CSSMin {
       LOGGER.debug("Process completed successfully.");
 
     } catch (Exception ex) {
-      ex.printStackTrace(System.err);
       LOGGER.error(ex.getMessage());
     }
-
   }
 
   /**
@@ -206,7 +201,7 @@ public final class CSSMin {
      try (BufferedReader br = new BufferedReader(input)) {
        String s;
        while ((s = br.readLine()) != null) {
-         if (s.trim().length() > 0) {
+         if (!s.trim().isEmpty()) {
            buffer.append(s);
          }
          buffer.append('\n');
@@ -242,12 +237,10 @@ public final class CSSMin {
         }
       }
       if (keep) {
-        comments.append(buffer.substring(n, k+2));
+        comments.append(buffer, n, k+2);
       }
       buffer.delete(n, k + 2);
-      for (int i = 0; i < s; i++) {
-        buffer.insert(n, '\n');
-      }
+      if (s > 0) buffer.insert(n, "\n".repeat(s));
       keep = false;
     }
     return cleanComment(comments.toString());
@@ -261,15 +254,7 @@ public final class CSSMin {
    * @return the clean comment.
    */
   private static String cleanComment(String comment) {
-    StringBuilder clean = new StringBuilder(comment);
-    int n = 0;
-    while ((n = clean.indexOf("\n * ", n)) != -1) {
-      clean.delete(n, n+3);
-    }
-    while ((n = clean.indexOf("\n", n)) != -1) {
-      clean.delete(n, n+1);
-    }
-    return clean.toString();
+    return comment.replace("\n * ", " ").replace("\n", "");
   }
 
   /**
@@ -280,13 +265,13 @@ public final class CSSMin {
   private static class Rule {
 
     /** The selector */
-    private final String _selector;
+    private final String selector;
 
     /** Properties inside the selector. */
-    private final Property[] _properties;
+    private final Property[] properties;
 
     /** Properties inside the selector. */
-    private final List<Rule> _subrules;
+    private final List<Rule> subrules;
 
     /**
      * Creates a new Selector using the supplied strings.
@@ -301,26 +286,24 @@ public final class CSSMin {
         throw new ParsingException("Warning: Incomplete selector: " + rule, -1, -1);
 
       // Always starts with the selector
-      String selector = parts[0].trim();
-      selector = selector.replaceAll("\\s?(\\+|~|,|=|~=|\\^=|\\$=|\\*=|\\|=|>)\\s?", "$1");
-      this._selector = selector;
+      this.selector = parts[0].trim().replaceAll("\\s?(\\+|~|,|=|~=|\\^=|\\$=|\\*=|\\|=|>)\\s?", "$1");
 
       // Let's compute properties and subrules (initialise with defaults)
-      Property[] properties = new Property[]{};
-      List<Rule> subrules = Collections.emptyList();
+      Property[] props = new Property[]{};
+      List<Rule> rules = List.of();
 
       // We're dealing with a nested property, eg @-webkit-keyframes or @media
       if (parts.length > 2) {
-        subrules = new ArrayList<>();
+        rules = new ArrayList<>();
         parts = rule.split("[{}]");
         for (int i = 1; i < parts.length; i += 2) {
           // sub selector
           parts[i] = parts[i].trim();
-          if (parts[i].length() > 0 && (i+1) < parts.length) {
+          if (!parts[i].isEmpty() && (i+1) < parts.length) {
             // properties of sub selector
             parts[i + 1] = parts[i + 1].trim();
-            if (parts[i + 1].length() > 0) {
-              subrules.add(new Rule(parts[i] + "{" + parts[i + 1] + "}"));
+            if (!parts[i + 1].isEmpty()) {
+              rules.add(new Rule(parts[i] + "{" + parts[i + 1] + "}"));
             }
           }
         }
@@ -330,13 +313,13 @@ public final class CSSMin {
         // No need to include empty selectors
         if (contents.length() > 1) {
           contents = contents.substring(0, contents.length() - 1);
-          properties = parseProperties(contents);
+          props = parseProperties(contents);
         }
       }
 
       // Updated
-      this._subrules = subrules;
-      this._properties = properties;
+      this.subrules = rules;
+      this.properties = props;
     }
 
     /**
@@ -356,11 +339,11 @@ public final class CSSMin {
      * @return the string bufferer
      */
     public StringBuilder append(StringBuilder min) {
-      min.append(this._selector).append('{');
-      for (Rule s : this._subrules) {
-        min.append(s.toString());
+      min.append(this.selector).append('{');
+      for (Rule s : this.subrules) {
+        min.append(s);
       }
-      for (Property p : this._properties) {
+      for (Property p : this.properties) {
         p.append(min);
       }
       if (min.charAt(min.length() - 1) == ';') {
@@ -393,28 +376,25 @@ public final class CSSMin {
           inbrackets = true;
         } else if (contents.charAt(i) == ';') {
           substr = contents.substring(j, i);
-          if (!("".equals(substr.trim()) || (substr == null))) {
+          if (!(substr.trim().isEmpty())) {
             parts.add(substr);
           }
           j = i + 1;
         }
       }
       substr = contents.substring(j);
-      if (!("".equals(substr.trim()) || (substr == null))) {
+      if (!(substr.trim().isEmpty())) {
         parts.add(substr);
       }
-      Property[] results = new Property[parts.size()];
-
-      for (int i = 0; i < parts.size(); i++) {
+      List<Property> valid = new ArrayList<>(parts.size());
+      for (String part : parts) {
         try {
-          results[i] = new Property(parts.get(i));
+          valid.add(new Property(part));
         } catch (Exception e) {
-          System.out.println(e.getMessage());
-          results[i] = null;
+          LOGGER.warn(e.getMessage());
         }
       }
-
-      return results;
+      return valid.toArray(new Property[0]);
     }
 
   }
@@ -430,15 +410,17 @@ public final class CSSMin {
    */
   private static class Property implements Comparable<Property> {
 
+    private static final Pattern RGB_PATTERN = Pattern.compile("rgb\\s*\\(\\s*([0-9,\\s]+)\\s*\\)");
+
     /**
      * Name of the property
      */
-    private final String _property;
+    private final String name;
 
     /**
      * The various parts of the property.
      */
-    private final Part[] _parts;
+    private final Part[] parts;
 
     /**
      * Creates a new Property using the supplied strings.
@@ -466,26 +448,26 @@ public final class CSSMin {
           inbrackets = true;
         } else if (property.charAt(i) == ':') {
           substr = property.substring(j, i);
-          if (!("".equals(substr.trim()) || (substr == null))) {
+          if (!substr.trim().isEmpty()) {
             parts.add(substr);
           }
           j = i + 1;
         }
       }
       substr = property.substring(j);
-      if (!("".equals(substr.trim()) || (substr == null))) {
+      if (!(substr.trim().isEmpty())) {
         parts.add(substr);
       }
       if (parts.size() < 2) throw new ParsingException("Warning: Incomplete property: "+property, -1, -1);
-      this._property = parts.get(0).trim().toLowerCase();
+      this.name = parts.get(0).trim().toLowerCase();
       Part[] theparts;
       try {
-        theparts = parseValues(simplifyColours(parts.get(1).trim().replaceAll(", ", ",")));
+        theparts = parseValues(simplifyColours(parts.get(1).trim().replace(", ", ",")));
       } catch (PatternSyntaxException ex) {
         // TODO Invalid regular expression used
         theparts = parseValues(parts.get(1).trim());
       }
-      this._parts = theparts;
+      this.parts = theparts;
     }
 
     /**
@@ -504,9 +486,9 @@ public final class CSSMin {
      * @return A string representing this property, minified.
      */
     public StringBuilder append(StringBuilder min) {
-      min.append(this._property).append(":");
-      for (Part p : this._parts) {
-        min.append(p.toString()).append(",");
+      min.append(this.name).append(":");
+      for (Part p : this.parts) {
+        min.append(p).append(",");
       }
       min.deleteCharAt(min.length() - 1); // Delete the trailing comma.
       min.append(";");
@@ -523,8 +505,8 @@ public final class CSSMin {
      */
     @Override
     public int compareTo(Property other) {
-      String thisProp = this._property;
-      String thatProp = other._property;
+      String thisProp = this.name;
+      String thatProp = other.name;
 
       if (thisProp.charAt(0) == '-') {
         thisProp = thisProp.substring(1);
@@ -551,17 +533,16 @@ public final class CSSMin {
      */
     private Part[] parseValues(String contents) {
       // Make sure we do not split data URIs
-      String[] parts = !contents.contains("data:") ? contents.split(",") : new String[]{contents};
-      Part[] results = new Part[parts.length];
-      for (int i = 0; i < parts.length; i++) {
+      String[] rawParts = !contents.contains("data:") ? contents.split(",") : new String[]{contents};
+      List<Part> valid = new ArrayList<>(rawParts.length);
+      for (String raw : rawParts) {
         try {
-          results[i] = Part.newPart(parts[i], this._property);
+          valid.add(Part.newPart(raw, this.name));
         } catch (Exception ex) {
           LOGGER.warn(ex.getMessage());
-          results[i] = null;
         }
       }
-      return results;
+      return valid.toArray(new Part[0]);
     }
 
     /**
@@ -571,28 +552,18 @@ public final class CSSMin {
      * @return the simplified color.
      */
     private static String simplifyColours(String contents) {
-      StringBuffer newContents = new StringBuffer();
-      StringBuilder hexColour;
-      String[] rgbColours;
-      int colourValue;
-
-      Pattern pattern = Pattern.compile("rgb\\s*\\(\\s*([0-9,\\s]+)\\s*\\)");
-      Matcher matcher = pattern.matcher(contents);
-
+      StringBuilder newContents = new StringBuilder();
+      Matcher matcher = RGB_PATTERN.matcher(contents);
       while (matcher.find()) {
-        hexColour = new StringBuilder("#");
-        rgbColours = matcher.group(1).split(",");
-        for (String rgbColour : rgbColours) {
-          colourValue = Integer.parseInt(rgbColour);
-          if (colourValue < 16) {
-            hexColour.append("0");
-          }
+        StringBuilder hexColour = new StringBuilder("#");
+        for (String rgbColour : matcher.group(1).split(",")) {
+          int colourValue = Integer.parseInt(rgbColour.trim());
+          if (colourValue < 16) hexColour.append("0");
           hexColour.append(Integer.toHexString(colourValue));
         }
         matcher.appendReplacement(newContents, hexColour.toString());
       }
       matcher.appendTail(newContents);
-
       return newContents.toString();
     }
   }
@@ -601,6 +572,33 @@ public final class CSSMin {
    * A property part.
    */
   private static class Part {
+
+    private static final Pattern ZERO_UNIT_PATTERN =
+        Pattern.compile("(\\s)(0)(px|em|%|in|cm|mm|pc|pt|ex)");
+    private static final Pattern HEX_COLOR_PATTERN =
+        Pattern.compile("#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])");
+    private static final Pattern URL_PATTERN =
+        Pattern.compile("(?i)url\\((['\"])?(.*?)\\1\\)");
+
+    /** Color name → shorter hex value. */
+    private static final Map<String, String> COLOR_NAME_TO_HEX;
+    /** Hex value → shorter color name. */
+    private static final Map<String, String> COLOR_HEX_TO_NAME;
+
+    static {
+      String[] names = Constants.HTML_COLOR_NAMES;
+      String[] values = Constants.HTML_COLOR_VALUES;
+      Map<String, String> n2h = new HashMap<>();
+      Map<String, String> h2n = new HashMap<>();
+      for (int i = 0; i < names.length; i++) {
+        String name = names[i].trim();
+        String hex = values[i];
+        if (hex.length() < name.length()) n2h.put(name, hex);
+        if (name.length() < hex.length()) h2n.put(hex, name);
+      }
+      COLOR_NAME_TO_HEX = Collections.unmodifiableMap(n2h);
+      COLOR_HEX_TO_NAME = Collections.unmodifiableMap(h2n);
+    }
 
     /**
      * The property value.
@@ -636,17 +634,13 @@ public final class CSSMin {
       String result = value.replace(" !important", "!important");
 
       // Replace 0in, 0cm, etc. with just 0
-      result = result.replaceAll("(\\s)(0)(px|em|%|in|cm|mm|pc|pt|ex)", "$1$2");
+      result = ZERO_UNIT_PATTERN.matcher(result).replaceAll("$1$2");
 
       // Now we can trim
       result = result.trim();
 
       // Simplify multiple zeroes
-      if (result.equals("0 0 0 0")) {
-        result = "0";
-      } else if (result.equals("0 0 0")) {
-        result = "0";
-      } else if (result.equals("0 0")) {
+      if (result.equals("0 0 0 0") || result.equals("0 0 0") || result.equals("0 0")) {
         result = "0";
       }
 
@@ -676,37 +670,23 @@ public final class CSSMin {
       String[] params = value.split(" ");
       if ("\"".equals(params[0]) || "'".equals(params[0])) return value;
 
-      if (params.length == 4) {
-        // We can drop off the fourth item if the second and fourth items match
-        // ie turn 3px 0 3px 0 into 3px 0 3px
-        if (params[1].equalsIgnoreCase(params[3])) {
-          params = Arrays.copyOf(params, 3);
-        }
+      // We can drop off the fourth item if the second and fourth items match
+      // ie turn 3px 0 3px 0 into 3px 0 3px
+      if (params.length == 4 && params[1].equalsIgnoreCase(params[3])) {
+        params = Arrays.copyOf(params, 3);
       }
-      if (params.length == 3) {
-        // We can drop off the third item if the first and third items match
-        // ie turn 3px 0 3px into 3px 0
-        if (params[0].equalsIgnoreCase(params[2])) {
-          params = Arrays.copyOf(params, 2);
-        }
+      // We can drop off the third item if the first and third items match
+      // ie turn 3px 0 3px into 3px 0
+      if (params.length == 3 && params[0].equalsIgnoreCase(params[2])) {
+        params = Arrays.copyOf(params, 2);
       }
-      if (params.length == 2) {
-        // We can drop off the second item if the first and second items match
-        // ie turn 3px 3px into 3px
-        if (params[0].equalsIgnoreCase(params[1])) {
-          params = Arrays.copyOf(params, 1);
-        }
+      // We can drop off the second item if the first and second items match
+      // ie turn 3px 3px into 3px
+      if (params.length == 2 && params[0].equalsIgnoreCase(params[1])) {
+        params = Arrays.copyOf(params, 1);
       }
 
-      StringBuilder min = new StringBuilder();
-      for (String p : params) {
-        if (min.length() > 0) {
-          min.append(' ');
-        }
-        min.append(p);
-      }
-
-      return min.toString();
+      return String.join(" ", params);
     }
 
     /**
@@ -724,7 +704,7 @@ public final class CSSMin {
       String result = value;
       // Strip quotes from URLs
       if ((result.length() > 4) && ("url(".equalsIgnoreCase(result.substring(0, 4)))) {
-        result = result.replaceAll("(?i)url\\(('|\")?(.*?)\\1\\)", "url($2)");
+        result = URL_PATTERN.matcher(result).replaceAll("url($2)");
       } else {
         String[] words = result.split("\\s");
         if (words.length == 1) {
@@ -738,42 +718,30 @@ public final class CSSMin {
      * Simplifies color names.
      */
     protected static String simplifyColourNames(String value) {
-      String lcContents = value.toLowerCase();
-      String result = value;
-
-      for (int i = 0; i < Constants.HTML_COLOR_NAMES.length; i++) {
-        if (lcContents.equals(Constants.HTML_COLOR_NAMES[i])) {
-          if (Constants.HTML_COLOR_VALUES[i].length() < Constants.HTML_COLOR_NAMES[i].length()) {
-            result = Constants.HTML_COLOR_VALUES[i];
-          }
-          break;
-        } else if (lcContents.equals(Constants.HTML_COLOR_VALUES[i])) {
-          if (Constants.HTML_COLOR_NAMES[i].length() < Constants.HTML_COLOR_VALUES[i].length()) {
-            result = Constants.HTML_COLOR_NAMES[i];
-          }
-        }
-      }
-      return result;
+      String lc = value.toLowerCase();
+      String hex = COLOR_NAME_TO_HEX.get(lc);
+      if (hex != null) return hex;
+      String name = COLOR_HEX_TO_NAME.get(lc);
+      return name != null ? name : value;
     }
 
     /**
      * Simplifies color names.
      */
     protected static String simplifyHexColours(String value) {
-      StringBuffer result = new StringBuffer();
-
-      Pattern pattern = Pattern.compile("#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])");
-      Matcher matcher = pattern.matcher(value);
-
+      StringBuilder result = new StringBuilder();
+      Matcher matcher = HEX_COLOR_PATTERN.matcher(value);
       while (matcher.find()) {
-        if (matcher.group(1).equalsIgnoreCase(matcher.group(2)) && matcher.group(3).equalsIgnoreCase(matcher.group(4)) && matcher.group(5).equalsIgnoreCase(matcher.group(6))) {
-          matcher.appendReplacement(result, "#" + matcher.group(1).toLowerCase() + matcher.group(3).toLowerCase() + matcher.group(5).toLowerCase());
+        if (matcher.group(1).equalsIgnoreCase(matcher.group(2))
+            && matcher.group(3).equalsIgnoreCase(matcher.group(4))
+            && matcher.group(5).equalsIgnoreCase(matcher.group(6))) {
+          matcher.appendReplacement(result,
+              "#" + matcher.group(1).toLowerCase() + matcher.group(3).toLowerCase() + matcher.group(5).toLowerCase());
         } else {
           matcher.appendReplacement(result, matcher.group().toLowerCase());
         }
       }
       matcher.appendTail(result);
-
       return result.toString();
     }
 
@@ -791,15 +759,16 @@ public final class CSSMin {
   /**
    * Main entry point for CSSMin from the command-line.
    *
-   * <b>Usage:</b> CSSMin <i>[Input file]</i>, <i>[Output file]</i>
+   * <p><b>Usage:</b> CSSMin <i>[Input file]</i>, <i>[Output file]</i>
    *
    * @param args The command-line arguments
    */
+  @SuppressWarnings("java:S106")
   public static void main(String[] args) {
     if (args.length < 1) {
-      System.out.println("Usage: ");
-      System.out.println("CSSMin [Input file] [Output file]");
-      System.out.println("If no output file is specified, stdout will be used.");
+      System.err.println("Usage: ");
+      System.err.println("CSSMin [Input file] [Output file]");
+      System.err.println("If no output file is specified, stdout will be used.");
       return;
     }
 
@@ -814,322 +783,306 @@ public final class CSSMin {
       System.exit(1);
     }
   }
-}
-
-/**
- * Constants for replacement.
- */
-final class Constants {
 
   /**
-   * Color name - index must match color codes below.
+   * Constants for replacement.
    */
-  static final String[] HTML_COLOR_NAMES = {
-    "aliceblue",
-    "antiquewhite",
-    "aqua",
-    "aquamarine",
-    "azure",
-    "beige",
-    "bisque",
-    "black",
-    "blanchedalmond",
-    "blue",
-    "blueviolet",
-    "brown",
-    "burlywood",
-    "cadetblue",
-    "chartreuse",
-    "chocolate",
-    "coral",
-    "cornflowerblue",
-    "cornsilk",
-    "crimson",
-    "cyan",
-    "darkblue",
-    "darkcyan",
-    "darkgoldenrod",
-    "darkgray",
-    "darkgreen",
-    "darkkhaki",
-    "darkmagenta",
-    "darkolivegreen",
-    "darkorange",
-    "darkorchid",
-    "darkred",
-    "darksalmon",
-    "darkseagreen",
-    "darkslateblue",
-    "darkslategray",
-    "darkturquoise",
-    "darkviolet",
-    "deeppink",
-    "deepskyblue",
-    "dimgray",
-    "dodgerblue",
-    "firebrick",
-    "floralwhite",
-    "forestgreen",
-    "fuchsia",
-    "gainsboro",
-    "ghostwhite",
-    "gold",
-    "goldenrod",
-    "gray",
-    "green",
-    "greenyellow",
-    "honeydew",
-    "hotpink",
-    "indianred ",
-    "indigo ",
-    "ivory",
-    "khaki",
-    "lavender",
-    "lavenderblush",
-    "lawngreen",
-    "lemonchiffon",
-    "lightblue",
-    "lightcoral",
-    "lightcyan",
-    "lightgoldenrodyellow",
-    "lightgrey",
-    "lightgreen",
-    "lightpink",
-    "lightsalmon",
-    "lightseagreen",
-    "lightskyblue",
-    "lightslategray",
-    "lightsteelblue",
-    "lightyellow",
-    "lime",
-    "limegreen",
-    "linen",
-    "magenta",
-    "maroon",
-    "mediumaquamarine",
-    "mediumblue",
-    "mediumorchid",
-    "mediumpurple",
-    "mediumseagreen",
-    "mediumslateblue",
-    "mediumspringgreen",
-    "mediumturquoise",
-    "mediumvioletred",
-    "midnightblue",
-    "mintcream",
-    "mistyrose",
-    "moccasin",
-    "navajowhite",
-    "navy",
-    "oldlace",
-    "olive",
-    "olivedrab",
-    "orange",
-    "orangered",
-    "orchid",
-    "palegoldenrod",
-    "palegreen",
-    "paleturquoise",
-    "palevioletred",
-    "papayawhip",
-    "peachpuff",
-    "peru",
-    "pink",
-    "plum",
-    "powderblue",
-    "purple",
-    "red",
-    "rosybrown",
-    "royalblue",
-    "saddlebrown",
-    "salmon",
-    "sandybrown",
-    "seagreen",
-    "seashell",
-    "sienna",
-    "silver",
-    "skyblue",
-    "slateblue",
-    "slategray",
-    "snow",
-    "springgreen",
-    "steelblue",
-    "tan",
-    "teal",
-    "thistle",
-    "tomato",
-    "turquoise",
-    "violet",
-    "wheat",
-    "white",
-    "whitesmoke",
-    "yellow",
-    "yellowgreen"
-  };
+  private static final class Constants {
 
-  /**
-   * Color hex codes - index must match color names.
-   */
-  static final String[] HTML_COLOR_VALUES = {
-    "#f0f8ff",
-    "#faebd7",
-    "#00ffff",
-    "#7fffd4",
-    "#f0ffff",
-    "#f5f5dc",
-    "#ffe4c4",
-    "#000",
-    "#ffebcd",
-    "#00f",
-    "#8a2be2",
-    "#a52a2a",
-    "#deb887",
-    "#5f9ea0",
-    "#7fff00",
-    "#d2691e",
-    "#ff7f50",
-    "#6495ed",
-    "#fff8dc",
-    "#dc143c",
-    "#0ff",
-    "#00008b",
-    "#008b8b",
-    "#b8860b",
-    "#a9a9a9",
-    "#006400",
-    "#bdb76b",
-    "#8b008b",
-    "#556b2f",
-    "#ff8c00",
-    "#9932cc",
-    "#8b0000",
-    "#e9967a",
-    "#8fbc8f",
-    "#483d8b",
-    "#2f4f4f",
-    "#00ced1",
-    "#9400d3",
-    "#ff1493",
-    "#00bfff",
-    "#696969",
-    "#1e90ff",
-    "#b22222",
-    "#fffaf0",
-    "#228b22",
-    "#f0f",
-    "#dcdcdc",
-    "#f8f8ff",
-    "#ffd700",
-    "#daa520",
-    "#808080",
-    "#008000",
-    "#adff2f",
-    "#f0fff0",
-    "#ff69b4",
-    "#cd5c5c",
-    "#4b0082",
-    "#fffff0",
-    "#f0e68c",
-    "#e6e6fa",
-    "#fff0f5",
-    "#7cfc00",
-    "#fffacd",
-    "#add8e6",
-    "#f08080",
-    "#e0ffff",
-    "#fafad2",
-    "#d3d3d3",
-    "#90ee90",
-    "#ffb6c1",
-    "#ffa07a",
-    "#20b2aa",
-    "#87cefa",
-    "#789",
-    "#b0c4de",
-    "#ffffe0",
-    "#0f0",
-    "#32cd32",
-    "#faf0e6",
-    "#f0f",
-    "#800000",
-    "#66cdaa",
-    "#0000cd",
-    "#ba55d3",
-    "#9370d8",
-    "#3cb371",
-    "#7b68ee",
-    "#00fa9a",
-    "#48d1cc",
-    "#c71585",
-    "#191970",
-    "#f5fffa",
-    "#ffe4e1",
-    "#ffe4b5",
-    "#ffdead",
-    "#000080",
-    "#fdf5e6",
-    "#808000",
-    "#6b8e23",
-    "#ffa500",
-    "#ff4500",
-    "#da70d6",
-    "#eee8aa",
-    "#98fb98",
-    "#afeeee",
-    "#d87093",
-    "#ffefd5",
-    "#ffdab9",
-    "#cd853f",
-    "#ffc0cb",
-    "#dda0dd",
-    "#b0e0e6",
-    "#800080",
-    "#f00",
-    "#bc8f8f",
-    "#4169e1",
-    "#8b4513",
-    "#fa8072",
-    "#f4a460",
-    "#2e8b57",
-    "#fff5ee",
-    "#a0522d",
-    "#c0c0c0",
-    "#87ceeb",
-    "#6a5acd",
-    "#708090",
-    "#fffafa",
-    "#00ff7f",
-    "#4682b4",
-    "#d2b48c",
-    "#008080",
-    "#d8bfd8",
-    "#ff6347",
-    "#40e0d0",
-    "#ee82ee",
-    "#f5deb3",
-    "#fff",
-    "#f5f5f5",
-    "#ff0",
-    "#9acd32"
-  };
+    private Constants() {}
 
-  /**
-   * Font weight names - index must match font weight values below.
-   */
-  static final String[] FONT_WEIGHT_NAMES = {
-    "normal",
-    "bold",
-    "bolder",
-    "lighter"
-  };
+    /**
+     * Color name - index must match color codes below.
+     */
+    static final String[] HTML_COLOR_NAMES = {
+        "aliceblue",
+        "antiquewhite",
+        "aqua",
+        "aquamarine",
+        "azure",
+        "beige",
+        "bisque",
+        "black",
+        "blanchedalmond",
+        "blue",
+        "blueviolet",
+        "brown",
+        "burlywood",
+        "cadetblue",
+        "chartreuse",
+        "chocolate",
+        "coral",
+        "cornflowerblue",
+        "cornsilk",
+        "crimson",
+        "cyan",
+        "darkblue",
+        "darkcyan",
+        "darkgoldenrod",
+        "darkgray",
+        "darkgreen",
+        "darkkhaki",
+        "darkmagenta",
+        "darkolivegreen",
+        "darkorange",
+        "darkorchid",
+        "darkred",
+        "darksalmon",
+        "darkseagreen",
+        "darkslateblue",
+        "darkslategray",
+        "darkturquoise",
+        "darkviolet",
+        "deeppink",
+        "deepskyblue",
+        "dimgray",
+        "dodgerblue",
+        "firebrick",
+        "floralwhite",
+        "forestgreen",
+        "fuchsia",
+        "gainsboro",
+        "ghostwhite",
+        "gold",
+        "goldenrod",
+        "gray",
+        "green",
+        "greenyellow",
+        "honeydew",
+        "hotpink",
+        "indianred ",
+        "indigo ",
+        "ivory",
+        "khaki",
+        "lavender",
+        "lavenderblush",
+        "lawngreen",
+        "lemonchiffon",
+        "lightblue",
+        "lightcoral",
+        "lightcyan",
+        "lightgoldenrodyellow",
+        "lightgrey",
+        "lightgreen",
+        "lightpink",
+        "lightsalmon",
+        "lightseagreen",
+        "lightskyblue",
+        "lightslategray",
+        "lightsteelblue",
+        "lightyellow",
+        "lime",
+        "limegreen",
+        "linen",
+        "magenta",
+        "maroon",
+        "mediumaquamarine",
+        "mediumblue",
+        "mediumorchid",
+        "mediumpurple",
+        "mediumseagreen",
+        "mediumslateblue",
+        "mediumspringgreen",
+        "mediumturquoise",
+        "mediumvioletred",
+        "midnightblue",
+        "mintcream",
+        "mistyrose",
+        "moccasin",
+        "navajowhite",
+        "navy",
+        "oldlace",
+        "olive",
+        "olivedrab",
+        "orange",
+        "orangered",
+        "orchid",
+        "palegoldenrod",
+        "palegreen",
+        "paleturquoise",
+        "palevioletred",
+        "papayawhip",
+        "peachpuff",
+        "peru",
+        "pink",
+        "plum",
+        "powderblue",
+        "purple",
+        "red",
+        "rosybrown",
+        "royalblue",
+        "saddlebrown",
+        "salmon",
+        "sandybrown",
+        "seagreen",
+        "seashell",
+        "sienna",
+        "silver",
+        "skyblue",
+        "slateblue",
+        "slategray",
+        "snow",
+        "springgreen",
+        "steelblue",
+        "tan",
+        "teal",
+        "thistle",
+        "tomato",
+        "turquoise",
+        "violet",
+        "wheat",
+        "white",
+        "whitesmoke",
+        "yellow",
+        "yellowgreen"
+    };
 
-  /**
-   * Font weight value - index must match font weight names below.
-   */
-  static final String[] FONT_WEIGHT_VALUES = {
-    "400",
-    "700",
-    "900",
-    "100"
-  };
+    /**
+     * Color hex codes - index must match color names.
+     */
+    static final String[] HTML_COLOR_VALUES = {
+        "#f0f8ff",
+        "#faebd7",
+        "#00ffff",
+        "#7fffd4",
+        "#f0ffff",
+        "#f5f5dc",
+        "#ffe4c4",
+        "#000",
+        "#ffebcd",
+        "#00f",
+        "#8a2be2",
+        "#a52a2a",
+        "#deb887",
+        "#5f9ea0",
+        "#7fff00",
+        "#d2691e",
+        "#ff7f50",
+        "#6495ed",
+        "#fff8dc",
+        "#dc143c",
+        "#0ff",
+        "#00008b",
+        "#008b8b",
+        "#b8860b",
+        "#a9a9a9",
+        "#006400",
+        "#bdb76b",
+        "#8b008b",
+        "#556b2f",
+        "#ff8c00",
+        "#9932cc",
+        "#8b0000",
+        "#e9967a",
+        "#8fbc8f",
+        "#483d8b",
+        "#2f4f4f",
+        "#00ced1",
+        "#9400d3",
+        "#ff1493",
+        "#00bfff",
+        "#696969",
+        "#1e90ff",
+        "#b22222",
+        "#fffaf0",
+        "#228b22",
+        "#f0f",
+        "#dcdcdc",
+        "#f8f8ff",
+        "#ffd700",
+        "#daa520",
+        "#808080",
+        "#008000",
+        "#adff2f",
+        "#f0fff0",
+        "#ff69b4",
+        "#cd5c5c",
+        "#4b0082",
+        "#fffff0",
+        "#f0e68c",
+        "#e6e6fa",
+        "#fff0f5",
+        "#7cfc00",
+        "#fffacd",
+        "#add8e6",
+        "#f08080",
+        "#e0ffff",
+        "#fafad2",
+        "#d3d3d3",
+        "#90ee90",
+        "#ffb6c1",
+        "#ffa07a",
+        "#20b2aa",
+        "#87cefa",
+        "#789",
+        "#b0c4de",
+        "#ffffe0",
+        "#0f0",
+        "#32cd32",
+        "#faf0e6",
+        "#f0f",
+        "#800000",
+        "#66cdaa",
+        "#0000cd",
+        "#ba55d3",
+        "#9370d8",
+        "#3cb371",
+        "#7b68ee",
+        "#00fa9a",
+        "#48d1cc",
+        "#c71585",
+        "#191970",
+        "#f5fffa",
+        "#ffe4e1",
+        "#ffe4b5",
+        "#ffdead",
+        "#000080",
+        "#fdf5e6",
+        "#808000",
+        "#6b8e23",
+        "#ffa500",
+        "#ff4500",
+        "#da70d6",
+        "#eee8aa",
+        "#98fb98",
+        "#afeeee",
+        "#d87093",
+        "#ffefd5",
+        "#ffdab9",
+        "#cd853f",
+        "#ffc0cb",
+        "#dda0dd",
+        "#b0e0e6",
+        "#800080",
+        "#f00",
+        "#bc8f8f",
+        "#4169e1",
+        "#8b4513",
+        "#fa8072",
+        "#f4a460",
+        "#2e8b57",
+        "#fff5ee",
+        "#a0522d",
+        "#c0c0c0",
+        "#87ceeb",
+        "#6a5acd",
+        "#708090",
+        "#fffafa",
+        "#00ff7f",
+        "#4682b4",
+        "#d2b48c",
+        "#008080",
+        "#d8bfd8",
+        "#ff6347",
+        "#40e0d0",
+        "#ee82ee",
+        "#f5deb3",
+        "#fff",
+        "#f5f5f5",
+        "#ff0",
+        "#9acd32"
+    };
+
+  }
+
 }
