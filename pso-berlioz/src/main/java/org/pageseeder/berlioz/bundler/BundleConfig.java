@@ -23,9 +23,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Service;
 import org.slf4j.Logger;
@@ -118,17 +120,17 @@ public final class BundleConfig implements Serializable {
   /**
    * The tool used for bundling JS.
    */
-  private transient volatile WebBundleTool bundler;
+  private transient @Nullable WebBundleTool bundler;
 
   /**
    * Create a new config - use factory method instead.
    */
   private BundleConfig(List<BundleDefinition> definitions, BundleType type, boolean minimize, String location, File root) {
-    this.definitions = List.copyOf(definitions);
-    this.type = type;
+    this.definitions = List.copyOf(Objects.requireNonNull(definitions, "definitions"));
+    this.type = Objects.requireNonNull(type, "type");
     this.minimize = minimize;
-    this.location = location;
-    this.root = root;
+    this.location = Objects.requireNonNull(location, "location");
+    this.root = Objects.requireNonNull(root, "root");
     this.bundler = initBundler();
   }
 
@@ -178,16 +180,11 @@ public final class BundleConfig implements Serializable {
   /**
    * @return The bundler.
    */
-  public WebBundleTool bundler() {
+  public synchronized WebBundleTool bundler() {
     WebBundleTool tool = this.bundler;
     if (tool == null) {
-      synchronized (this) {
-        tool = this.bundler;
-        if (tool == null) {
-          tool = initBundler();
-          this.bundler = tool;
-        }
-      }
+      tool = initBundler();
+      this.bundler = tool;
     }
     return tool;
   }
