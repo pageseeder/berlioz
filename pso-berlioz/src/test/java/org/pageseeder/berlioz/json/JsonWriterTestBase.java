@@ -145,6 +145,20 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
+  public void testValueNullString() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json).value((String) null).flush();
+    Assert.assertEquals("null", json.toString());
+  }
+
+  @Test
+  public void testFieldNullStringValue() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json).startObject().field("k", (String) null).endObject().flush();
+    Assert.assertEquals("{\"k\":null}", json.toString());
+  }
+
+  @Test
   public void testEmptyArray() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)

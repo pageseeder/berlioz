@@ -11,16 +11,6 @@ public final class BuiltinJsonWriterTest extends JsonWriterTestBase {
     return new BuiltinJsonWriter(new PrintWriter(json));
   }
 
-  @Test(expected = NullPointerException.class)
-  public void testValueStringNull() {
-    newJsonWriter(new StringWriter()).value((String) null);
-  }
-
-  @Test(expected = NullPointerException.class)
-  public void testFieldStringNull() {
-    newJsonWriter(new StringWriter()).startObject().field("k", (String) null);
-  }
-
   @Test(expected = IllegalArgumentException.class)
   public void testValueDoubleNaN() {
     newJsonWriter(new StringWriter()).value(Double.NaN);

@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.json;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.Flushable;
 import java.util.Map;
 
@@ -133,12 +135,13 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes the specified value as a JSON string within the current array context.
    *
-   * @param value the value to write.
+   * <p>If value is {@code null}, writes the JSON {@code null} literal.</p>
+   *
+   * @param value the value to write; {@code null} writes JSON {@code null}.
    * @return this instance.
-   * @throws NullPointerException      if value is null.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
-  JsonWriter value(String value);
+  JsonWriter value(@Nullable String value);
 
   /**
    * Writes the specified value as a JSON boolean within the current array context.
@@ -164,13 +167,14 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes a JSON name/string value pair in the current object context.
    *
+   * <p>If value is {@code null}, writes a JSON {@code null} for the field value.</p>
+   *
    * @param name  the name in the JSON name/value pair to be written in current JSON object
-   * @param value the value in the JSON name/value pair to be written in current JSON object
+   * @param value the value in the JSON name/value pair; {@code null} writes JSON {@code null}.
    * @return this instance.
-   * @throws NullPointerException      if value is null.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
-  JsonWriter field(String name, String value);
+  JsonWriter field(String name, @Nullable String value);
 
   /**
    * Writes a JSON name/boolean value pair in the current object context.

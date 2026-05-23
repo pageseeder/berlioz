@@ -15,9 +15,10 @@
  */
 package org.pageseeder.berlioz.json;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * An implementation of a JSON Writer backed by
@@ -138,10 +139,13 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter value(String value) {
-    Objects.requireNonNull(value, "value must not be null");
+  public JsonWriter value(@Nullable String value) {
     maybeAppendComma(false);
-    appendJSONString(value);
+    if (value == null) {
+      this.json.append("null");
+    } else {
+      appendJSONString(value);
+    }
     return this;
   }
 
@@ -162,12 +166,15 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter field(String name, String value) {
-    Objects.requireNonNull(value, "value must not be null");
+  public JsonWriter field(String name, @Nullable String value) {
     maybeAppendComma(false);
     appendJSONString(name);
     this.json.append(':');
-    appendJSONString(value);
+    if (value == null) {
+      this.json.append("null");
+    } else {
+      appendJSONString(value);
+    }
     return this;
   }
 

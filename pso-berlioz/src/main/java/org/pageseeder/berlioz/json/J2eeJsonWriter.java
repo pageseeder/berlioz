@@ -137,8 +137,12 @@ final class J2eeJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter value(String value) {
-    this.json.write(value);
+  public JsonWriter value(@Nullable String value) {
+    if (value == null) {
+      this.json.writeNull();
+    } else {
+      this.json.write(value);
+    }
     return this;
   }
 
@@ -149,8 +153,12 @@ final class J2eeJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter field(String name, String value) {
-    this.json.write(name, value);
+  public JsonWriter field(String name, @Nullable String value) {
+    if (value == null) {
+      this.json.writeNull(name);
+    } else {
+      this.json.write(name, value);
+    }
     return this;
   }
 

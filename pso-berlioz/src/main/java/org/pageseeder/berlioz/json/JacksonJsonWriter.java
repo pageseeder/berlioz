@@ -21,6 +21,7 @@ import java.io.Writer;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,7 +174,7 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter value(String value) {
+  public JsonWriter value(@Nullable String value) {
     try {
       this.json.writeString(value);
     } catch (IOException ex) {
@@ -193,7 +194,7 @@ final class JacksonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter field(String name, String value) {
+  public JsonWriter field(String name, @Nullable String value) {
     try {
       this.json.writeStringField(name, value);
     } catch (IOException ex) {
