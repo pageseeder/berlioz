@@ -29,7 +29,7 @@ import java.util.Properties;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.6
  */
 public final class MediaTypes {
@@ -42,7 +42,7 @@ public final class MediaTypes {
   /**
    * The MIME properties mapping file extensions to MIME types.
    */
-  private static final Properties MEDIATYPES = new Properties();
+  private static final Properties MEDIA_TYPES = new Properties();
 
   /** Utility classes need no constructor. */
   private MediaTypes() {
@@ -64,13 +64,13 @@ public final class MediaTypes {
    */
   public static @Nullable String getMediaType(File f) {
     // Load if empty
-    if (MEDIATYPES.isEmpty()) {
+    if (MEDIA_TYPES.isEmpty()) {
       loadMediaTypes();
     }
     // Lookup extension in properties file
     String name = f.getName();
     int dot = name.lastIndexOf(".");
-    if (dot >= 0) return MEDIATYPES.getProperty(name.substring(dot+1));
+    if (dot >= 0) return MEDIA_TYPES.getProperty(name.substring(dot+1));
     else
       return null;
   }
@@ -83,7 +83,7 @@ public final class MediaTypes {
   private static synchronized void loadMediaTypes() {
     try (InputStream in = getMediaTypesInputStream()) {
       if (in != null) {
-        MEDIATYPES.load(in);
+        MEDIA_TYPES.load(in);
       }
     } catch (IOException ex) {
       LOGGER.warn("Unable to load MIME properties", ex);
