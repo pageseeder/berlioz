@@ -196,6 +196,28 @@ public enum Directive {
   UPGRADE_INSECURE_REQUESTS("upgrade-insecure-requests"),
 
   /**
+   * {@code require-trusted-types-for} restricts the types of values that can be passed to
+   * DOM XSS sink functions such as {@code Element.innerHTML}.
+   *
+   * <p>Currently only {@code 'script'} is a valid value, which prevents strings from being
+   * passed to sinks that expect a {@code TrustedScript} or {@code TrustedHTML}.
+   *
+   * @see <a href="https://w3c.github.io/trusted-types/dist/spec/">Trusted Types</a>
+   */
+  REQUIRE_TRUSTED_TYPES_FOR("require-trusted-types-for"),
+
+  /**
+   * {@code trusted-types} restricts the creation of Trusted Types policies — functions used
+   * to create typed values intended for use in DOM XSS sinks.
+   *
+   * <p>Accepts a list of policy names, {@code 'none'} (disallows all policies), or
+   * {@code 'allow-duplicates'} (allows policies with the same name to be created more than once).
+   *
+   * @see <a href="https://w3c.github.io/trusted-types/dist/spec/">Trusted Types</a>
+   */
+  TRUSTED_TYPES("trusted-types"),
+
+  /**
    * {@code report-to} instructs the user agent to store reporting endpoints for an origin.
    *
    * <p>The directive has no effect unless the <code>Report-To</code> or <code>Reporting-Endpoints</code> HTTP
