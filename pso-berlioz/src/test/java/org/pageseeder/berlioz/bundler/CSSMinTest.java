@@ -130,6 +130,11 @@ public class CSSMinTest {
   }
 
   @Test
+  public void testUrlCaseInsensitive() {
+    Assert.assertEquals("a{background:url(image.png)}", min("a { background: URL(\"image.png\") }"));
+  }
+
+  @Test
   public void testPreserveCaseDataURL() {
     String x = ".x{background:url(data:image/svg+xml,%3Csvg/%3E)}";
     Assert.assertEquals(x, min(x));
@@ -189,6 +194,11 @@ public class CSSMinTest {
   @Test
   public void testMultipleSelectors() {
     Assert.assertEquals("h1,h2,h3{color:#fff}", min("h1, h2, h3 { color: white }"));
+  }
+
+  @Test
+  public void testAttributeSelectorOperator() {
+    Assert.assertEquals("a[href=\"/A B\"]{color:#fff}", min("a[href = \"/A B\"] { color: white }"));
   }
 
   @Test

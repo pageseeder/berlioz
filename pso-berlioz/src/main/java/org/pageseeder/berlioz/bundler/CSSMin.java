@@ -61,6 +61,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,6 +100,9 @@ public final class CSSMin {
     "bolder",  "700",
     "lighter", "100"
   );
+
+  /** CSS priority marker. */
+  private static final String IMPORTANT = "!important";
 
   /** Utility class. */
   private CSSMin() {
@@ -201,12 +205,14 @@ public final class CSSMin {
     *
     * @throws ParsingException Should an error occur while reading the file.
     */
+  @SuppressWarnings("java:S3776")
   private static String stripComments(StringBuilder buffer) throws ParsingException {
     StringBuilder css = new StringBuilder(buffer.length());
     StringBuilder comments = new StringBuilder();
     char quote = 0;
     boolean escaped = false;
-    for (int i = 0; i < buffer.length(); i++) {
+    int i = 0;
+    while (i < buffer.length()) {
       char c = buffer.charAt(i);
       if (quote != 0) {
         css.append(c);
@@ -217,6 +223,7 @@ public final class CSSMin {
         } else if (c == quote) {
           quote = 0;
         }
+        i++;
         continue;
       }
 
@@ -229,19 +236,28 @@ public final class CSSMin {
         if (i + 2 < buffer.length() && (buffer.charAt(i + 2) == '*' || buffer.charAt(i + 2) == '!')) {
           comments.append(buffer, i, end + 2);
         }
-        for (int j = i; j < end; j++) {
-          if (buffer.charAt(j) == '\n') {
-            css.append('\n');
-          }
-        }
-        i = end + 1;
+        appendNewLines(buffer, i, end, css);
+        i = end + 2;
+        continue;
       } else {
         css.append(c);
       }
+      i++;
     }
     buffer.setLength(0);
     buffer.append(css);
     return cleanComment(comments.toString());
+  }
+
+  /**
+   * Appends new lines found in a removed section so downstream line numbers remain useful.
+   */
+  private static void appendNewLines(CharSequence source, int from, int to, StringBuilder target) {
+    for (int i = from; i < to; i++) {
+      if (source.charAt(i) == '\n') {
+        target.append('\n');
+      }
+    }
   }
 
   /**
@@ -258,17 +274,20 @@ public final class CSSMin {
   /**
    * Parses CSS rules from the specified input.
    */
+  @SuppressWarnings("java:S3776") // Splitting this method would help
   private static List<Rule> parseRules(CharSequence css) throws ParsingException {
     List<Rule> rules = new ArrayList<>();
     int start = 0;
     int line = 0;
     ScanState state = new ScanState();
-    for (int i = 0; i < css.length(); i++) {
+    int i = 0;
+    while (i < css.length()) {
       char c = css.charAt(i);
       if (c == '\n') {
         line++;
       }
       if (state.accept(c)) {
+        i++;
         continue;
       }
       if (c == '}') throw new ParsingException("Unbalanced braces!", line, -1);
@@ -282,15 +301,31 @@ public final class CSSMin {
             LOGGER.warn("{} L:{}", ex.getMessage(), line);
           }
         }
-        i = end;
+        line += countNewLines(css, i + 1, end);
+        i = end + 1;
         start = end + 1;
         state.reset();
+        continue;
       }
+      i++;
     }
     if (!css.subSequence(start, css.length()).toString().trim().isEmpty()) {
       LOGGER.debug("Ignoring CSS text without a rule block.");
     }
     return rules;
+  }
+
+  /**
+   * Counts new line characters in the given source range.
+   */
+  private static int countNewLines(CharSequence source, int from, int to) {
+    int count = 0;
+    for (int i = from; i < to; i++) {
+      if (source.charAt(i) == '\n') {
+        count++;
+      }
+    }
+    return count;
   }
 
   /**
@@ -425,7 +460,63 @@ public final class CSSMin {
      * Minifies selectors without touching strings in attribute selectors.
      */
     private static String minifySelector(String selector) {
-      return selector.trim().replaceAll("\\s?(\\+|~|,|=|~=|\\^=|\\$=|\\*=|\\|=|>)\\s?", "$1");
+      String trimmed = selector.trim();
+      StringBuilder minified = new StringBuilder(trimmed.length());
+      ScanState state = new ScanState();
+      int i = 0;
+      while (i < trimmed.length()) {
+        char c = trimmed.charAt(i);
+        if (state.accept(c)) {
+          minified.append(c);
+          i++;
+          continue;
+        }
+        String operator = selectorOperatorAt(trimmed, i);
+        if (operator != null) {
+          trimTrailingWhitespace(minified);
+          minified.append(operator);
+          i = skipWhitespace(trimmed, i + operator.length());
+        } else {
+          minified.append(c);
+          i++;
+        }
+      }
+      return minified.toString();
+    }
+
+    /**
+     * Returns the selector operator at the specified position.
+     */
+    private static @Nullable String selectorOperatorAt(String selector, int offset) {
+      if (offset + 1 < selector.length()) {
+        String pair = selector.substring(offset, offset + 2);
+        if ("~=".equals(pair) || "^=".equals(pair) || "$=".equals(pair)
+            || "*=".equals(pair) || "|=".equals(pair)) {
+          return pair;
+        }
+      }
+      char c = selector.charAt(offset);
+      return c == '+' || c == '~' || c == ',' || c == '=' || c == '>' ? String.valueOf(c) : null;
+    }
+
+    /**
+     * Removes whitespace from the end of the builder.
+     */
+    private static void trimTrailingWhitespace(StringBuilder builder) {
+      while (builder.length() > 0 && Character.isWhitespace(builder.charAt(builder.length() - 1))) {
+        builder.deleteCharAt(builder.length() - 1);
+      }
+    }
+
+    /**
+     * Skips whitespace from the specified position.
+     */
+    private static int skipWhitespace(String value, int offset) {
+      int i = offset;
+      while (i < value.length() && Character.isWhitespace(value.charAt(i))) {
+        i++;
+      }
+      return i;
     }
 
     /**
@@ -492,7 +583,9 @@ public final class CSSMin {
    */
   private static class Property implements Comparable<Property> {
 
-    private static final Pattern RGB_PATTERN = Pattern.compile("rgb\\s*\\(\\s*([0-9,\\s]+)\\s*\\)");
+    private static final Pattern RGB_PATTERN = Pattern.compile(
+        "rgb\\s*+\\(\\s*+(\\d++\\s*+,\\s*+\\d++\\s*+,\\s*+\\d++)\\s*+\\)",
+        Pattern.CASE_INSENSITIVE);
 
     /**
      * Name of the property
@@ -642,8 +735,6 @@ public final class CSSMin {
         Pattern.compile("(\\s)(0)(px|em|%|in|cm|mm|pc|pt|ex)", Pattern.CASE_INSENSITIVE);
     private static final Pattern HEX_COLOR_PATTERN =
         Pattern.compile("#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])");
-    private static final Pattern URL_PATTERN =
-        Pattern.compile("(?i)url\\(\\s*(['\"]?)(.*?)\\1\\s*\\)");
     private static final Pattern CSS_IDENTIFIER_PATTERN = Pattern.compile("-?[_a-zA-Z][_a-zA-Z0-9-]*");
 
     /** Color name → shorter hex value. */
@@ -697,7 +788,7 @@ public final class CSSMin {
      */
     public static String simplify(String property, String value) {
       // !important doesn't need to be spaced
-      String result = value.replace(" !important", "!important");
+      String result = value.replace(" " + IMPORTANT, IMPORTANT);
 
       // Replace 0in, 0cm, etc. with just 0
       result = ZERO_UNIT_PATTERN.matcher(result).replaceAll("$1$2");
@@ -770,14 +861,10 @@ public final class CSSMin {
       String result = value.trim();
       // Strip quotes from URLs
       if ((result.length() > 4) && ("url(".equalsIgnoreCase(result.substring(0, 4)))) {
-        Matcher matcher = URL_PATTERN.matcher(result);
-        if (matcher.matches()) {
-          String url = matcher.group(2);
-          String quote = matcher.group(1);
-          if (quote == null || quote.isEmpty()) {
-            quote = "\"";
-          }
-          result = isSafeUnquotedUrl(url) ? "url(" + url + ")" : "url(" + quote + url + quote + ")";
+        UrlValue urlValue = parseUrlFunction(result);
+        if (urlValue != null) {
+          result = isSafeUnquotedUrl(urlValue.value) ?
+              "url(" + urlValue.value + ")" : "url(" + urlValue.quote + urlValue.value + urlValue.quote + ")";
         }
       } else {
         List<String> words = splitWhitespace(result);
@@ -796,8 +883,8 @@ public final class CSSMin {
     protected static String simplifyColourNames(String value) {
       String important = "";
       String core = value.trim();
-      if (core.toLowerCase().endsWith("!important")) {
-        important = "!important";
+      if (core.toLowerCase().endsWith(IMPORTANT)) {
+        important = IMPORTANT;
         core = core.substring(0, core.length() - important.length());
       }
       String lc = core.toLowerCase();
@@ -830,6 +917,7 @@ public final class CSSMin {
     /**
      * Splits a value on whitespace outside quoted sections.
      */
+    @SuppressWarnings("java:S3776") // Splitting this method would help
     private static List<String> splitWhitespace(String value) {
       List<String> words = new ArrayList<>();
       StringBuilder word = new StringBuilder();
@@ -874,6 +962,67 @@ public final class CSSMin {
     }
 
     /**
+     * Parses a complete CSS url(...) value.
+     */
+    private static @Nullable UrlValue parseUrlFunction(String value) {
+      if (value.length() < 5
+          || !startsWithIgnoreCase(value, "url(")
+          || value.charAt(value.length() - 1) != ')') {
+        return null;
+      }
+      String content = value.substring(4, value.length() - 1).trim();
+      if (content.isEmpty()) {
+        return new UrlValue("", "\"");
+      }
+      char first = content.charAt(0);
+      if (first == '\'' || first == '"') {
+        int end = findStringEnd(content, first);
+        if (end > 0 && isBlank(content, end + 1, content.length())) {
+          return new UrlValue(content.substring(1, end), String.valueOf(first));
+        }
+        return null;
+      }
+      return new UrlValue(content, "\"");
+    }
+
+    /**
+     * @return the index of the end quote or <code>-1</code> if the string is unterminated.
+     */
+    private static int findStringEnd(String value, char quote) {
+      boolean escaped = false;
+      for (int i = 1; i < value.length(); i++) {
+        char c = value.charAt(i);
+        if (escaped) {
+          escaped = false;
+        } else if (c == '\\') {
+          escaped = true;
+        } else if (c == quote) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    /**
+     * @return <code>true</code> if the range only contains whitespace.
+     */
+    private static boolean isBlank(String value, int from, int to) {
+      for (int i = from; i < to; i++) {
+        if (!Character.isWhitespace(value.charAt(i))) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    /**
+     * Case-insensitive prefix check.
+     */
+    private static boolean startsWithIgnoreCase(String value, String prefix) {
+      return value.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
+    /**
      * Lower-cases a single token when doing so cannot alter a string literal.
      */
     private static String lowercaseIfUnquoted(String value) {
@@ -907,6 +1056,20 @@ public final class CSSMin {
     @Override
     public String toString() {
       return this.value;
+    }
+
+    /**
+     * Parsed url(...) content.
+     */
+    private static final class UrlValue {
+
+      private final String value;
+      private final String quote;
+
+      private UrlValue(String value, String quote) {
+        this.value = value;
+        this.quote = quote;
+      }
     }
 
   }
