@@ -55,4 +55,16 @@ public class JsonTest {
     Assert.assertEquals("hello-world", Json.camelify("hello--world"));
   }
 
+  @Test
+  public void testProviderNameIsKnown() {
+    String name = Json.providerName();
+    Assert.assertNotNull(name);
+    Assert.assertNotEquals("UNKNOWN", name);
+  }
+
+  @Test
+  public void testProviderNameIsStable() {
+    Assert.assertEquals(Json.providerName(), Json.providerName());
+  }
+
 }

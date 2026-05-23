@@ -214,6 +214,22 @@ public class Json {
   }
 
   /**
+   * Returns the name of the active JSON provider.
+   *
+   * <p>Calls {@link #init()} if the provider has not been detected yet. Returns one of
+   * {@code "JACKSON"}, {@code "GSON"}, {@code "JSONP"}, {@code "JAKARTA_JSONP"},
+   * {@code "BUILTIN"}, or {@code "UNKNOWN"}.</p>
+   *
+   * @return the provider name.
+   */
+  public static String providerName() {
+    if (provider == JsonProvider.UNKNOWN) {
+      init();
+    }
+    return provider.name();
+  }
+
+  /**
    * Detects and initializes the first available JSON provider.
    *
    * <p>Provider priority (highest to lowest): Jackson, Gson, JSONP (javax.json),
