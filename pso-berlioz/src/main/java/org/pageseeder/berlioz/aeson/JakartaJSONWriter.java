@@ -155,7 +155,7 @@ final class JakartaJSONWriter implements JSONWriter {
     return new JakartaJSONWriter(factory().createGenerator(writer));
   }
 
-  protected static boolean init() {
+  static boolean init() {
     try {
       factory();
       return true;

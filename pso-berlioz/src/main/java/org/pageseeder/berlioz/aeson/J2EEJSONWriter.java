@@ -180,7 +180,7 @@ final class J2EEJSONWriter implements JSONWriter {
    *
    * @return The JSON writer to use.
    */
-  protected static boolean init() {
+  static boolean init() {
     try {
       factory();
       return true;
