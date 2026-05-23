@@ -15,11 +15,12 @@
  */
 package org.pageseeder.berlioz.config;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.URIPattern;
 
 public class RedirectPattern extends MovedLocationPattern {
 
-  final boolean permanent;
+  private final boolean permanent;
 
   public RedirectPattern(URIPattern from, URIPattern to, boolean permanent) {
     super(from, to);
@@ -30,7 +31,7 @@ public class RedirectPattern extends MovedLocationPattern {
     return this.permanent;
   }
 
-  public RedirectLocation redirect(String path) {
+  public @Nullable RedirectLocation redirect(String path) {
     if (!this.match(path)) return null;
     String target = this.getTarget(path);
     return new RedirectLocation(path, target, this.permanent);

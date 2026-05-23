@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<relocation-mapping>
+  <relocation from="/"             to="/html/home"/>
+  <relocation from="/index.html"   to="/html/home"/>
+  <relocation from="/html"         to="/html/home"/>
+  <relocation from="/xml"          to="/xml/home"/>
+  <relocation from="/{+path}.psml" to="/html/{+path}"/>
+</relocation-mapping>

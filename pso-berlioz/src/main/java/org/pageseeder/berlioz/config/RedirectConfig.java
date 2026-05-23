@@ -41,7 +41,7 @@ import java.util.*;
  * </redirect-mapping>
  * }</pre>
  *
- * @version Berlioz 0.12.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.4
  */
 public final class RedirectConfig {
@@ -56,38 +56,71 @@ public final class RedirectConfig {
    */
   private final List<RedirectPattern> patterns;
 
+  /**
+   * Creates an empty redirect configuration with no patterns.
+   */
   public RedirectConfig() {
     this.patterns = Collections.emptyList();
   }
 
-  public RedirectConfig(List<RedirectPattern>  patterns) {
+  /**
+   * Creates a redirect configuration with the given list of patterns.
+   *
+   * @param patterns The redirect patterns; must not be {@code null}.
+   */
+  public RedirectConfig(List<RedirectPattern> patterns) {
     this.patterns = patterns;
   }
 
   /**
-   * Load the URI relocation configuration file.
+   * Load the redirect configuration from a file.
+   *
+   * @param file The XML file to load.
+   * @return A new {@code RedirectConfig} populated from the file.
+   * @throws ConfigException If the file cannot be read or is invalid.
    */
   public static RedirectConfig newInstance(File file) throws ConfigException {
     return ConfigLoader.parse(new RedirectConfig.Handler(), file);
   }
 
+  /**
+   * Load the redirect configuration from an input stream.
+   *
+   * @param in The XML input stream to parse.
+   * @return A new {@code RedirectConfig} populated from the stream.
+   * @throws ConfigException If the stream cannot be read or is invalid.
+   */
   public static RedirectConfig newInstance(InputStream in) throws ConfigException {
     return ConfigLoader.parse(new RedirectConfig.Handler(), in);
   }
 
+  /**
+   * Returns the redirect location for the given path, or {@code null} if no pattern matches.
+   *
+   * @param from The incoming request path.
+   * @return The matching {@link RedirectLocation}, or {@code null} if none matches.
+   */
   public @Nullable RedirectLocation redirect(String from) {
-    // Evaluate URI patterns
     for (RedirectPattern pattern : this.patterns) {
       if (pattern.match(from)) return pattern.redirect(from);
     }
-    // No match
     return null;
   }
 
+  /**
+   * Returns the number of redirect patterns in this configuration.
+   *
+   * @return The pattern count.
+   */
   public int size() {
     return this.patterns.size();
   }
 
+  /**
+   * Returns {@code true} if this configuration contains no redirect patterns.
+   *
+   * @return {@code true} if empty.
+   */
   public boolean isEmpty() {
     return this.patterns.isEmpty();
   }

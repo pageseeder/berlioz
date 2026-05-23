@@ -15,6 +15,14 @@
  */
 package org.pageseeder.berlioz.config;
 
+/**
+ * The result of evaluating a redirect rule against a request path.
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.12.4
+ */
 public final class RedirectLocation {
 
   private final String from;
@@ -29,14 +37,29 @@ public final class RedirectLocation {
     this.permanent = permanent;
   }
 
+  /**
+   * Returns the original request path that matched the redirect rule.
+   *
+   * @return The source path.
+   */
   public String from() {
     return this.from;
   }
 
+  /**
+   * Returns the target path to redirect to.
+   *
+   * @return The target path.
+   */
   public String to() {
     return this.to;
   }
 
+  /**
+   * Returns {@code true} if this is a permanent (301) redirect; {@code false} for temporary (302).
+   *
+   * @return {@code true} if permanent.
+   */
   public boolean isPermanent() {
     return this.permanent;
   }

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -40,7 +41,7 @@ import java.util.*;
  * </relocation-mapping>
  * }</pre>
  *
- * @version Berlioz 0.12.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.4
  */
 public final class RelocationConfig {
@@ -55,31 +56,71 @@ public final class RelocationConfig {
    */
   private final List<MovedLocationPattern> mapping;
 
+  /**
+   * Creates an empty relocation configuration with no patterns.
+   */
   public RelocationConfig() {
     this.mapping = Collections.emptyList();
   }
 
+  /**
+   * Creates a relocation configuration with the given list of patterns.
+   *
+   * @param mapping The relocation patterns; must not be {@code null}.
+   */
   public RelocationConfig(List<MovedLocationPattern> mapping) {
     this.mapping = mapping;
   }
 
+  /**
+   * Returns the target path for the given path, or {@code null} if no pattern matches.
+   *
+   * @param from The incoming request path.
+   * @return The resolved target path, or {@code null} if none matches.
+   */
   public @Nullable String relocate(String from) {
-    // Evaluate URI patterns
     for (MovedLocationPattern pattern : this.mapping) {
       if (pattern.match(from)) return pattern.getTarget(from);
     }
-    // No match
     return null;
   }
 
+  /**
+   * Loads the relocation configuration from a file.
+   *
+   * @param file The XML file to load.
+   * @return A new {@code RelocationConfig} populated from the file.
+   * @throws ConfigException If the file cannot be read or is invalid.
+   */
   public static RelocationConfig newInstance(File file) throws ConfigException {
     return ConfigLoader.parse(new Handler(), file);
   }
 
+  /**
+   * Loads the relocation configuration from an input stream.
+   *
+   * @param in The XML input stream to parse.
+   * @return A new {@code RelocationConfig} populated from the stream.
+   * @throws ConfigException If the stream cannot be read or is invalid.
+   */
+  public static RelocationConfig newInstance(InputStream in) throws ConfigException {
+    return ConfigLoader.parse(new Handler(), in);
+  }
+
+  /**
+   * Returns the number of relocation patterns in this configuration.
+   *
+   * @return The pattern count.
+   */
   public int size() {
     return this.mapping.size();
   }
 
+  /**
+   * Returns {@code true} if this configuration contains no relocation patterns.
+   *
+   * @return {@code true} if empty.
+   */
   public boolean isEmpty() {
     return this.mapping.isEmpty();
   }
@@ -123,7 +164,7 @@ public final class RelocationConfig {
      * @param pattern The URI pattern as a string.
      * @return the <code>URIPattern</code> instance or <code>null</code>.
      */
-    private @Nullable URIPattern toPattern(@Nullable String pattern) {
+    private static @Nullable URIPattern toPattern(@Nullable String pattern) {
       if (pattern == null) return null;
       try {
         return new URIPattern(pattern);
