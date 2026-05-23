@@ -24,6 +24,7 @@ dependencies {
   }
 
   testImplementation(libs.junit)
+  testImplementation(libs.servlet.api)
   testImplementation(libs.slf4j.simple)
   testImplementation(libs.glassfish.javax.json)
   testImplementation(libs.glassfish.jakarta.json)
