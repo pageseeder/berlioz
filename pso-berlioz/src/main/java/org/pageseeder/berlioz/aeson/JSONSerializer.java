@@ -107,6 +107,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
 
   @Override
   public void startDocument() {
+    this.buffer.setLength(0);
     this.state.pushState();
   }
 

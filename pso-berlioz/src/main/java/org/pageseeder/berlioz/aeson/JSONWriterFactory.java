@@ -101,7 +101,11 @@ public final class JSONWriterFactory {
 
   private static boolean isAvailable(String className) {
     try {
-      Class.forName(className);
+      // Use the thread context class loader so that API jars in the web-app classloader
+      // are found when Berlioz itself is loaded by the container classloader.
+      // initialize=false: we only probe for presence — no need to run static initializers.
+      ClassLoader cl = Thread.currentThread().getContextClassLoader();
+      Class.forName(className, false, cl != null ? cl : JSONWriterFactory.class.getClassLoader());
       return true;
     } catch (ClassNotFoundException ex) {
       LOGGER.debug("JSON API class {} not on classpath", className);

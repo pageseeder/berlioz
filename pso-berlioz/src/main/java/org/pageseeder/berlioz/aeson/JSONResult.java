@@ -106,11 +106,16 @@ public class JSONResult extends SAXResult implements Result {
       } else {
         if (systemId != null) {
           try {
+            // URI.create() and new File(URI) both throw IllegalArgumentException for
+            // non-URI system IDs (e.g. a plain file path like "/tmp/out.json").
             File f = new File(URI.create(systemId));
             FileOutputStream o = new FileOutputStream(f);
             json = new JSONResult(o);
           } catch (IOException ex) {
-            throw new UncheckedIOException("Unable to write JSON to "+systemId, ex);
+            throw new UncheckedIOException("Unable to write JSON to " + systemId, ex);
+          } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                "System ID must be a valid file URI (e.g. file:///path/to/out.json), got: " + systemId, ex);
           }
         } else {
           // Will output to System.out
