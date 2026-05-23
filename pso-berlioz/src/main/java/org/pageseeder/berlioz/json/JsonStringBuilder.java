@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.json;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.StringWriter;
 
 /**
@@ -114,8 +116,8 @@ public final class JsonStringBuilder implements JsonWriter {
   }
 
   @Override
-  public JsonWriter value(String number) {
-    this.json.value(number);
+  public JsonWriter value(@Nullable String value) {
+    this.json.value(value);
     return this;
   }
 
@@ -126,7 +128,7 @@ public final class JsonStringBuilder implements JsonWriter {
   }
 
   @Override
-  public JsonWriter field(String name, String value) {
+  public JsonWriter field(String name, @Nullable String value) {
     this.json.field(name, value);
     return this;
   }

@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.json;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -166,7 +168,7 @@ final class GsonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter value(String value) {
+  public JsonWriter value(@Nullable String value) {
     try {
     this.json.value(value);
     } catch (IOException ex) {
@@ -186,7 +188,7 @@ final class GsonJsonWriter implements JsonWriter {
   }
 
   @Override
-  public JsonWriter field(String name, String value) {
+  public JsonWriter field(String name, @Nullable String value) {
     try {
       this.json.name(name).value(value);
     } catch (IOException ex) {
