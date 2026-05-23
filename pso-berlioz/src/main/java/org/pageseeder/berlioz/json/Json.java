@@ -195,6 +195,7 @@ public class Json {
    *
    * @param name the hyphenated name to convert
    * @return the camelCase equivalent
+   * @throws NullPointerException if name is null
    */
   public static String camelify(String name) {
     int dash = name.indexOf('-');
