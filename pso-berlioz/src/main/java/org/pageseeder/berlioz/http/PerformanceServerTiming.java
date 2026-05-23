@@ -107,7 +107,7 @@ public final class PerformanceServerTiming {
    */
   public String toHeaderString() {
     StringBuilder header = new StringBuilder(this.name);
-    if (this.description.length() > 0) {
+    if (!this.description.isEmpty()) {
       if (VALID_TOKEN.matcher(this.description).matches()) {
         header.append(";desc=").append(this.description);
       } else {
