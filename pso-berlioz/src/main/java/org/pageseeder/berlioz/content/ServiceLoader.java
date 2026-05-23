@@ -55,7 +55,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * @version Berlioz 0.13.0
  * @since Berlioz 0.6
  */
-public final class ServiceLoader {
+@SuppressWarnings("java:S6548")
+public enum ServiceLoader {
+
+  INSTANCE;
 
   /**
    * Displays debug information.
@@ -63,9 +66,9 @@ public final class ServiceLoader {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServiceLoader.class);
 
   /**
-   * The singleton instance.
+   * The file filter to
    */
-  private static final ServiceLoader singleton = new ServiceLoader();
+  private static final FilenameFilter FILE_FILTER = (dir, name) -> name.startsWith("services!") && name.endsWith(".xml");
 
   /**
    * Maps content generators URL patterns to their content generator instance.
@@ -73,26 +76,15 @@ public final class ServiceLoader {
   private final ServiceRegistry services = new ServiceRegistry();
 
   /**
-   * The file filter to
-   */
-  private static final FilenameFilter FILE_FILTER = (dir, name) -> name.startsWith("services!") && name.endsWith(".xml");
-
-  /**
    * Indicates whether the boolean value was loaded.
    */
   private volatile boolean loaded = false;
 
   /**
-   * Singleton constructor.
-   */
-  private ServiceLoader() {
-  }
-
-  /**
    * @return The service loader
    */
   public static ServiceLoader getInstance() {
-    return singleton;
+    return INSTANCE;
   }
 
   /**
