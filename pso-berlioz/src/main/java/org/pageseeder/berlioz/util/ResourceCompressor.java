@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.8 - 8 October 2012
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8.2
  */
 public final class ResourceCompressor {
@@ -56,31 +56,14 @@ public final class ResourceCompressor {
    */
   public static byte[] compress(CharSequence content, Charset charset) {
     ByteArrayOutputStream os = new ByteArrayOutputStream(content.length());
-    byte[] compressed = null;
-    GZIPOutputStream compressor = null;
-    try {
-      compressor = new GZIPOutputStream(os);
-      Writer w = new OutputStreamWriter(compressor, charset);
+    try (GZIPOutputStream compressor = new GZIPOutputStream(os);
+         Writer w = new OutputStreamWriter(compressor, charset)) {
       w.write(content.toString());
-      w.close();
-      compressor.finish();
-      compressed = os.toByteArray();
     } catch (IOException ex) {
-      // If an error occurs, we return a empty array
-      compressed = new byte[]{};
-    } finally {
-      // clean up and make sure the resources are released as soon as possible
-      try {
-        if (compressor != null) {
-          compressor.close();
-        }
-      } catch (IOException ex) {
-        LOGGER.error("Unable to close GZIPOutputStream stream", ex);
-      }
-      os = null;
-      compressor = null;
+      LOGGER.error("Unable to compress content", ex);
+      return new byte[]{};
     }
-    return compressed;
+    return os.toByteArray();
   }
 
 }
