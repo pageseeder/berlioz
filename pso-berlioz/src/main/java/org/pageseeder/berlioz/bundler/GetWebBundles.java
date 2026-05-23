@@ -174,20 +174,12 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
       List<File> bundles = js.getBundles(service);
       String location = js.location();
       for (File bundle :  bundles) {
-        xml.openElement("script", false);
-        xml.attribute("src", location+bundle.getName());
-        xml.attribute("bundled", "true");
-        xml.attribute("minimized", Boolean.toString(js.minimize()));
-        xml.closeElement();
+        writeBundled(xml, "script", location+bundle.getName(), js.minimize());
       }
     } else {
       List<String> paths = js.getPaths(service);
       for (String path : paths) {
-        xml.openElement("script", false);
-        xml.attribute("src", path);
-        xml.attribute("bundled", "false");
-        xml.attribute("minimized", "false");
-        xml.closeElement();
+        writeUnbundled(xml, "script", path);
       }
     }
 
@@ -197,20 +189,12 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
       List<File> bundles = css.getBundles(service);
       String location = css.location();
       for (File bundle :  bundles) {
-        xml.openElement("style", false);
-        xml.attribute("src", location+bundle.getName());
-        xml.attribute("bundled", "true");
-        xml.attribute("minimized", Boolean.toString(css.minimize()));
-        xml.closeElement();
+        writeBundled(xml, "style", location+bundle.getName(), css.minimize());
       }
     } else {
       List<String> paths = css.getPaths(service);
       for (String path : paths) {
-        xml.openElement("style", false);
-        xml.attribute("src", path);
-        xml.attribute("bundled", "false");
-        xml.attribute("minimized", "false");
-        xml.closeElement();
+        writeUnbundled(xml, "style", path);
       }
     }
   }
@@ -229,6 +213,22 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
   private static boolean canBundle(ContentRequest req) {
     return isWritable == Boolean.TRUE
         && !"false".equals(req.getParameter("berlioz-bundle", "true"));
+  }
+
+  private static void writeBundled(XMLWriter xml, String element, String src, boolean minimized) throws IOException {
+    writeAsset(xml, element, src, true, minimized);
+  }
+
+  private static void writeUnbundled(XMLWriter xml, String element, String src) throws IOException {
+    writeAsset(xml, element, src, false, false);
+  }
+
+  private static void writeAsset(XMLWriter xml, String element, String src, boolean bundled, boolean minimized) throws IOException {
+    xml.openElement(element, false);
+    xml.attribute("src", src);
+    xml.attribute("bundled", Boolean.toString(bundled));
+    xml.attribute("minimized", Boolean.toString(minimized));
+    xml.closeElement();
   }
 
   /**
