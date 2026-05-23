@@ -117,7 +117,7 @@ public final class BerliozEntityResolver implements EntityResolver {
    * @param publicId the public identifier.
    * @return The corresponding filename.
    */
-  protected static @Nullable String toFileName(@Nullable String publicId) {
+  static @Nullable String toFileName(@Nullable String publicId) {
     if (publicId == null) return null;
     if (!publicId.endsWith(PUBLIC_ID_SUFFIX)) return null;
     int length = publicId.length() - PUBLIC_ID_SUFFIX.length();
