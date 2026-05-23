@@ -31,8 +31,8 @@ import java.util.Map;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.12.0
  */
 public interface JsonWriter extends AutoCloseable, Flushable {
 
@@ -112,18 +112,18 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes the specified value as a JSON value within the current array context.
    *
-   * @param number the value to write.
+   * @param value the value to write.
    * @return this instance.
    */
-  JsonWriter value(String number);
+  JsonWriter value(String value);
 
   /**
    * Writes the specified value as a JSON value within the current array context.
    *
-   * @param number the value to write.
+   * @param value the value to write.
    * @return this instance.
    */
-  JsonWriter value(boolean number);
+  JsonWriter value(boolean value);
 
   /**
    * Writes a JSON name value pair in the current object context.
@@ -137,10 +137,10 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   JsonWriter name(String name);
 
   /**
-   * Writes a JSON name/boolean value pair in the current object context.
+   * Writes a JSON name/string value pair in the current object context.
    *
-   * @param name a name in the JSON name/value pair to be written in current JSON object
-   * @param value a value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in current JSON object
+   * @param value the value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
   JsonWriter field(String name, String value);
@@ -148,26 +148,26 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes a JSON name/boolean value pair in the current object context.
    *
-   * @param name a name in the JSON name/value pair to be written in current JSON object
-   * @param value a value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in current JSON object
+   * @param value the value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
   JsonWriter field(String name, boolean value);
 
   /**
-   * Writes a JSON name/boolean value pair in the current object context.
+   * Writes a JSON name/double value pair in the current object context.
    *
-   * @param name a name in the JSON name/value pair to be written in current JSON object
-   * @param value a value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in current JSON object
+   * @param value the value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
   JsonWriter field(String name, double value);
 
   /**
-   * Writes a JSON name/boolean value pair in the current object context.
+   * Writes a JSON name/long value pair in the current object context.
    *
-   * @param name a name in the JSON name/value pair to be written in current JSON object
-   * @param value a value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in current JSON object
+   * @param value the value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
    */
   JsonWriter field(String name, long value);
@@ -185,7 +185,10 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   }
 
   /**
-   * @return true if the JsonWriter is within an object in the current context.
+   * Indicates whether the writer is currently within a JSON object context.
+   *
+   * @return {@code true} if the current context is a JSON object; {@code false} if it is an array
+   *         or no context has been started.
    */
   boolean inObject();
 

@@ -16,20 +16,22 @@
 package org.pageseeder.berlioz.json;
 
 /**
- * <p>An Object which implements this interface can be written as XML using a
- * {@link JsonWriter} instance.
+ * Implemented by objects that can serialize themselves as JSON via a {@link JsonWriter}.
  *
  * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.12.0
  */
 public interface JsonWritable {
 
   /**
-   * Writes the XML representation of the implementing instance using the specified
+   * Writes the JSON representation of the implementing instance using the specified
    * {@link JsonWriter}.
    *
    * @param json The JSON writer to use.
    *
-   * @return The JSON writer for easy chaining
+   * @return The JSON writer for easy chaining.
    */
   JsonWriter toJson(JsonWriter json);
 

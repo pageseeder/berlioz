@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.0
  */
 public class Json {
@@ -68,7 +68,7 @@ public class Json {
     },
 
     /**
-     * Oracle's JSONP implementation.
+     * Oracle's JSONP implementation (javax.json).
      */
     JSONP("javax.json.stream.JsonGenerator") {
       @Override
@@ -82,7 +82,21 @@ public class Json {
     },
 
     /**
-     * Builtin (buggy implementation)
+     * Jakarta JSON API implementation (jakarta.json).
+     */
+    JAKARTA_JSONP("jakarta.json.stream.JsonGenerator") {
+      @Override
+      public JsonWriter newWriter(OutputStream out) {
+        return JakartaJsonWriter.newInstance(out);
+      }
+      @Override
+      public JsonWriter newWriter(Writer writer) {
+        return JakartaJsonWriter.newInstance(writer);
+      }
+    },
+
+    /**
+     * Builtin fallback implementation.
      */
     BUILTIN("org.pageseeder.berlioz.json.BuiltinJsonWriter") {
       @Override
@@ -175,10 +189,12 @@ public class Json {
   }
 
   /**
-   * Converts snake-case to came case to use in
+   * Converts a hyphen-separated name to camelCase.
    *
-   * @param name the name in snake-case
-   * @return The camel case equivalent
+   * <p>For example, {@code "hello-world"} becomes {@code "helloWorld"}.</p>
+   *
+   * @param name the hyphenated name to convert
+   * @return the camelCase equivalent
    */
   public static String camelify(String name) {
     int dash = name.indexOf('-');
@@ -197,17 +213,23 @@ public class Json {
   }
 
   /**
-   * Initializes this class.
+   * Detects and initializes the first available JSON provider.
+   *
+   * <p>Provider priority (highest to lowest): Jackson, Gson, JSONP (javax.json),
+   * Jakarta JSON (jakarta.json), builtin. Only the first detected provider is used.</p>
    */
   public static synchronized void init() {
     LOGGER.debug("Identifying Json provider");
     for (JsonProvider p : JsonProvider.values()) {
+      if (p == JsonProvider.UNKNOWN) continue;
       if (hasClass(p.className())) {
-        LOGGER.info("Using {} as JSON provider", p.className());
         Json.provider = p;
         if (p == JsonProvider.BUILTIN) {
           LOGGER.warn("No JSON implementation found - falling back on builtin implementation");
+        } else {
+          LOGGER.info("Using {} as JSON provider", p.className());
         }
+        return;
       }
     }
   }

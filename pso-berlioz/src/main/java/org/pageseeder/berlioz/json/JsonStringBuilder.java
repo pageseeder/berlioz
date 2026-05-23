@@ -17,6 +17,16 @@ package org.pageseeder.berlioz.json;
 
 import java.io.StringWriter;
 
+/**
+ * A {@link JsonWriter} that accumulates JSON output into a {@link String}.
+ *
+ * <p>Create an instance with {@link #create()} and retrieve the result via {@link #toString()}.</p>
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.12.0
+ */
 public final class JsonStringBuilder implements JsonWriter {
 
   private final StringWriter sw;
@@ -26,6 +36,15 @@ public final class JsonStringBuilder implements JsonWriter {
   private JsonStringBuilder() {
     this.sw = new StringWriter();
     this.json = Json.newWriter(this.sw);
+  }
+
+  /**
+   * Creates a new {@code JsonStringBuilder}.
+   *
+   * @return a fresh instance backed by the available JSON provider.
+   */
+  public static JsonStringBuilder create() {
+    return new JsonStringBuilder();
   }
 
   @Override
@@ -72,7 +91,7 @@ public final class JsonStringBuilder implements JsonWriter {
 
   @Override
   public JsonWriter nullValue(String name) {
-    this.json.nullValue();
+    this.json.nullValue(name);
     return this;
   }
 
