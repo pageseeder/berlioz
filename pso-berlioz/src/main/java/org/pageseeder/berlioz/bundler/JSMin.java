@@ -80,7 +80,7 @@ public final class JSMin {
   /**
    * The minimised version.
    */
-  private OutputStream out;
+  private final OutputStream out;
 
   /** What to do with byte A. */
   private int theA;
@@ -134,6 +134,18 @@ public final class JSMin {
   int get() throws IOException {
     int c = this._in.read();
 
+    if (c == EOF) return EOF;
+
+    if (c == '\r') {
+      int next = this._in.read();
+      if (next != '\n' && next != EOF) {
+        this._in.unread(next);
+      }
+      this.line++;
+      this.column = 0;
+      return '\n';
+    }
+
     if (c == '\n') {
       this.line++;
       this.column = 0;
@@ -141,14 +153,7 @@ public final class JSMin {
       this.column++;
     }
 
-    if (c >= ' ' || c == '\n' || c == EOF) return c;
-
-    if (c == '\r') {
-      this.column = 0;
-      return '\n';
-    }
-
-    return ' ';
+    return c >= ' ' || c == '\n' ? c : ' ';
   }
 
   /**
@@ -159,7 +164,9 @@ public final class JSMin {
    */
   int peek() throws IOException {
     int lookaheadChar = this._in.read();
-    this._in.unread(lookaheadChar);
+    if (lookaheadChar != EOF) {
+      this._in.unread(lookaheadChar);
+    }
     return lookaheadChar;
   }
 
@@ -235,19 +242,8 @@ public final class JSMin {
       // fall through
       case COPY:
         this.theA = this.theB;
-        if (this.theA == '\'' || this.theA == '"') {
-          for (;;) {
-            this.out.write(this.theA);
-            this.theA = get();
-            if (this.theA == this.theB) {
-              break;
-            }
-            if (this.theA <= '\n') throw new UnterminatedStringLiteralException(this.line, this.column);
-            if (this.theA == '\\') {
-              this.out.write(this.theA);
-              this.theA = get();
-            }
-          }
+        if (this.theA == '\'' || this.theA == '"' || this.theA == '`') {
+          writeStringLiteral(this.theA);
         }
 
       // fall through
@@ -259,13 +255,18 @@ public final class JSMin {
 
           this.out.write(this.theA);
           this.out.write(this.theB);
+          boolean inCharacterClass = false;
           for (;;) {
             this.theA = get();
-            if (this.theA == '/') {
+            if (this.theA == '/' && !inCharacterClass) {
               break;
             } else if (this.theA == '\\') {
               this.out.write(this.theA);
               this.theA = get();
+            } else if (this.theA == '[') {
+              inCharacterClass = true;
+            } else if (this.theA == ']') {
+              inCharacterClass = false;
             } else if (this.theA <= '\n') throw new UnterminatedRegExpLiteralException(this.line, this.column);
             this.out.write(this.theA);
           }
@@ -274,6 +275,29 @@ public final class JSMin {
 
       // fall through
       default:
+    }
+  }
+
+  /**
+   * Writes a string-like literal as-is, preserving escaped characters and template literal newlines.
+   */
+  private void writeStringLiteral(int delimiter) throws IOException, UnterminatedStringLiteralException {
+    for (;;) {
+      this.out.write(this.theA);
+      this.theA = get();
+      if (this.theA == delimiter) {
+        break;
+      }
+      if (this.theA == EOF || (delimiter != '`' && this.theA <= '\n')) {
+        throw new UnterminatedStringLiteralException(this.line, this.column);
+      }
+      if (this.theA == '\\') {
+        this.out.write(this.theA);
+        this.theA = get();
+        if (this.theA == EOF) {
+          throw new UnterminatedStringLiteralException(this.line, this.column);
+        }
+      }
     }
   }
 

@@ -141,6 +141,11 @@ public class CSSMinTest {
     Assert.assertEquals(x, min(x));
   }
 
+  @Test
+  public void testPreserveUrlQuotesWhenRequired() {
+    Assert.assertEquals("a{background:url(\"image 1.png\")}", min("a { background: url(\"image 1.png\") }"));
+  }
+
   // --- !important ---
 
   @Test
@@ -151,8 +156,7 @@ public class CSSMinTest {
 
   @Test
   public void testImportantWithNamedColor() {
-    // named color + !important: the name lookup fails because !important is already merged
-    Assert.assertEquals("a{color:white!important}", min("a { color: white !important }"));
+    Assert.assertEquals("a{color:#fff!important}", min("a { color: white !important }"));
   }
 
   // --- Selectors ---
@@ -192,6 +196,16 @@ public class CSSMinTest {
     Assert.assertEquals("i::before{content:\" \"}", min("i::before { content: \" \" }"));
   }
 
+  @Test
+  public void testContentWithSemicolon() {
+    Assert.assertEquals("i::before{content:\"a;b\"}", min("i::before { content: \"a;b\" }"));
+  }
+
+  @Test
+  public void testContentWithBraces() {
+    Assert.assertEquals("i::before{content:\"{}\"}", min("i::before { content: \"{}\" }"));
+  }
+
   // --- Comments ---
 
   @Test
@@ -202,6 +216,11 @@ public class CSSMinTest {
   @Test
   public void testInlineCommentStripped() {
     Assert.assertEquals("a{color:#fff}", min("a { /* inline */ color: white }"));
+  }
+
+  @Test
+  public void testCommentSyntaxInStringPreserved() {
+    Assert.assertEquals("a{content:\"/* not a comment */\"}", min("a { content: \"/* not a comment */\" }"));
   }
 
   @Test
@@ -226,6 +245,11 @@ public class CSSMinTest {
   @Test
   public void testKeyframes() {
     Assert.assertEquals("@keyframes fade{from{opacity:1}to{opacity:0}}", min("@keyframes fade { from { opacity: 1; } to { opacity: 0; } }"));
+  }
+
+  @Test
+  public void testNestedRuleWithQuotedBrace() {
+    Assert.assertEquals("@media screen{a::before{content:\"{\"}}", min("@media screen { a::before { content: \"{\"; } }"));
   }
 
   // --- At-rules ---

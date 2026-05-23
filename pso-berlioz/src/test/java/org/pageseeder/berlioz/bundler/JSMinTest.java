@@ -96,6 +96,11 @@ public class JSMinTest {
     Assert.assertEquals("var x=1;", min("var\tx\t=\t1;"));
   }
 
+  @Test
+  public void testWindowsNewlines() throws Exception {
+    Assert.assertEquals("var a=1;var b=2;", min("var a = 1;\r\nvar b = 2;"));
+  }
+
   // --- String literal preservation ---
 
   @Test
@@ -126,6 +131,11 @@ public class JSMinTest {
   @Test
   public void testEmptyString() throws Exception {
     Assert.assertEquals("var s=\"\";", min("var s = \"\";"));
+  }
+
+  @Test
+  public void testTemplateLiteralContainingCommentSyntax() throws Exception {
+    Assert.assertEquals("const s=`/* not a comment */`;", min("const s = `/* not a comment */`;"));
   }
 
   // --- Operators and punctuation ---
@@ -162,6 +172,11 @@ public class JSMinTest {
     Assert.assertEquals("var r=/pattern/gi;", min("var r = /pattern/gi;"));
   }
 
+  @Test
+  public void testRegexWithSlashInCharacterClass() throws Exception {
+    Assert.assertEquals("var r=/[/]/;", min("var r = /[/]/;"));
+  }
+
   // --- Functions and blocks ---
 
   @Test
@@ -177,6 +192,11 @@ public class JSMinTest {
   @Test
   public void testArrayLiteral() throws Exception {
     Assert.assertEquals("var a=[1,2,3];", min("var a = [1, 2, 3];"));
+  }
+
+  @Test
+  public void testDivisionExpression() throws Exception {
+    Assert.assertEquals("var x=a/b;", min("var x = a / b;"));
   }
 
   // --- Real-world snippets ---

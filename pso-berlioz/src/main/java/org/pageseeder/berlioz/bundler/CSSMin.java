@@ -54,14 +54,12 @@ package org.pageseeder.berlioz.bundler;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,10 +111,10 @@ public final class CSSMin {
    * @param out Where to send the result
    */
   static void minimize(File file, OutputStream out) {
-    try {
-      minimize(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), out);
-    } catch (FileNotFoundException ex) {
-      LOGGER.debug("Unable to find file", ex);
+    try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
+      minimize(reader, out);
+    } catch (IOException ex) {
+      LOGGER.debug("Unable to read file", ex);
     }
   }
 
@@ -127,7 +125,9 @@ public final class CSSMin {
    * @param out   Where to send the result
    */
   static void minimize(Reader input, OutputStream out) {
-    minimize(input, new PrintWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
+    try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
+      minimize(input, writer);
+    }
   }
 
   /**
@@ -137,54 +137,37 @@ public final class CSSMin {
    * @param min   Where to write the result to
    */
   public static void minimize(Reader input, PrintWriter min) {
+    String original = "";
     try {
       StringBuilder buffer = toBuffer(input);
+      original = buffer.toString();
       String comment = stripComments(buffer);
       LOGGER.debug("Parsing and processing selectors.");
 
-      // Reset for selector
-      List<Rule> rules = new ArrayList<>();
-      int line = 0;
-      int n = 0; // Current position in stream
-      int j = 0; // Number of open braces
-      char c;    // Character being read
-      for (int i = 0; i < buffer.length(); i++) {
-        c = buffer.charAt(i);
-        if (j < 0) throw new ParsingException("Unbalanced braces!", -1, -1);
-        if (c == '{') {
-          j++;
-        } else if (c == '}') {
-          j--;
-          if (j == 0) {
-            try {
-              rules.add(new Rule(buffer.substring(n, i + 1)));
-            } catch (ParsingException ex) {
-              LOGGER.warn("{} L:{}", ex.getMessage(), line);
-            }
-            n = i + 1;
-          }
-        } else if (c == '\n') {
-          line++;
-        }
-      }
+      List<Rule> rules = parseRules(buffer);
 
-      // Let's write it out
+      StringBuilder minified = new StringBuilder(buffer.length());
+      if (!comment.isEmpty()) minified.append(comment).append('\n');
       int countRules = 0;
-      if (!comment.isEmpty()) min.println(comment);
       for (Rule rule : rules) {
         if (countRules % 10 == 0 || !rule.subrules.isEmpty()) {
-          min.println();
+          minified.append('\n');
         }
-        min.print(rule.toString());
+        rule.append(minified);
         countRules++;
       }
-      min.println();
-      min.close();
+      minified.append('\n');
+      min.print(minified);
+      min.flush();
 
       LOGGER.debug("Process completed successfully.");
 
-    } catch (Exception ex) {
-      LOGGER.error(ex.getMessage());
+    } catch (IOException ex) {
+      LOGGER.error("Unable to minimize CSS", ex);
+    } catch (ParsingException | RuntimeException ex) {
+      LOGGER.warn("Unable to minimize CSS, writing original content", ex);
+      min.write(original);
+      min.flush();
     }
   }
 
@@ -219,30 +202,45 @@ public final class CSSMin {
     * @throws ParsingException Should an error occur while reading the file.
     */
   private static String stripComments(StringBuilder buffer) throws ParsingException {
-    int n = 0;
-    int k = 0;
-    boolean keep = false;
+    StringBuilder css = new StringBuilder(buffer.length());
     StringBuilder comments = new StringBuilder();
-    // Find the start of the comment
-    while ((n = buffer.indexOf("/*", n)) != -1) {
-      if (buffer.charAt(n + 2) == '*') { // Retain special comments
-        keep = true;
-      }
-      k = buffer.indexOf("*/", n + 2);
-      if (k == -1) throw new ParsingException("Unterminated comment. Aborting.", -1, -1);
-      int s = 0;
-      for (int i = n; i < k; i++) {
-        if (buffer.charAt(i) == '\n') {
-          s++;
+    char quote = 0;
+    boolean escaped = false;
+    for (int i = 0; i < buffer.length(); i++) {
+      char c = buffer.charAt(i);
+      if (quote != 0) {
+        css.append(c);
+        if (escaped) {
+          escaped = false;
+        } else if (c == '\\') {
+          escaped = true;
+        } else if (c == quote) {
+          quote = 0;
         }
+        continue;
       }
-      if (keep) {
-        comments.append(buffer, n, k+2);
+
+      if (c == '\'' || c == '"') {
+        quote = c;
+        css.append(c);
+      } else if (c == '/' && i + 1 < buffer.length() && buffer.charAt(i + 1) == '*') {
+        int end = buffer.indexOf("*/", i + 2);
+        if (end == -1) throw new ParsingException("Unterminated comment. Aborting.", -1, -1);
+        if (i + 2 < buffer.length() && (buffer.charAt(i + 2) == '*' || buffer.charAt(i + 2) == '!')) {
+          comments.append(buffer, i, end + 2);
+        }
+        for (int j = i; j < end; j++) {
+          if (buffer.charAt(j) == '\n') {
+            css.append('\n');
+          }
+        }
+        i = end + 1;
+      } else {
+        css.append(c);
       }
-      buffer.delete(n, k + 2);
-      if (s > 0) buffer.insert(n, "\n".repeat(s));
-      keep = false;
     }
+    buffer.setLength(0);
+    buffer.append(css);
     return cleanComment(comments.toString());
   }
 
@@ -255,6 +253,161 @@ public final class CSSMin {
    */
   private static String cleanComment(String comment) {
     return comment.replace("\n * ", " ").replace("\n", "");
+  }
+
+  /**
+   * Parses CSS rules from the specified input.
+   */
+  private static List<Rule> parseRules(CharSequence css) throws ParsingException {
+    List<Rule> rules = new ArrayList<>();
+    int start = 0;
+    int line = 0;
+    ScanState state = new ScanState();
+    for (int i = 0; i < css.length(); i++) {
+      char c = css.charAt(i);
+      if (c == '\n') {
+        line++;
+      }
+      if (state.accept(c)) {
+        continue;
+      }
+      if (c == '}') throw new ParsingException("Unbalanced braces!", line, -1);
+      if (c == '{') {
+        String selector = css.subSequence(start, i).toString().trim();
+        int end = findMatchingBrace(css, i, line);
+        if (!selector.isEmpty()) {
+          try {
+            rules.add(new Rule(selector, css.subSequence(i + 1, end).toString()));
+          } catch (ParsingException ex) {
+            LOGGER.warn("{} L:{}", ex.getMessage(), line);
+          }
+        }
+        i = end;
+        start = end + 1;
+        state.reset();
+      }
+    }
+    if (!css.subSequence(start, css.length()).toString().trim().isEmpty()) {
+      LOGGER.debug("Ignoring CSS text without a rule block.");
+    }
+    return rules;
+  }
+
+  /**
+   * Finds the closing brace matching the opening brace at the specified position.
+   */
+  private static int findMatchingBrace(CharSequence css, int open, int line) throws ParsingException {
+    int depth = 1;
+    ScanState state = new ScanState();
+    for (int i = open + 1; i < css.length(); i++) {
+      char c = css.charAt(i);
+      if (c == '\n') {
+        line++;
+      }
+      if (state.accept(c)) {
+        continue;
+      }
+      if (c == '{') {
+        depth++;
+      } else if (c == '}') {
+        depth--;
+        if (depth == 0) return i;
+      }
+    }
+    throw new ParsingException("Unbalanced braces!", line, -1);
+  }
+
+  /**
+   * Splits a CSS fragment on the specified delimiter, ignoring delimiters inside strings and functions.
+   */
+  private static List<String> splitTopLevel(String css, char delimiter) {
+    List<String> parts = new ArrayList<>();
+    int start = 0;
+    ScanState state = new ScanState();
+    for (int i = 0; i < css.length(); i++) {
+      char c = css.charAt(i);
+      if (state.accept(c)) {
+        continue;
+      }
+      if (c == delimiter) {
+        parts.add(css.substring(start, i));
+        start = i + 1;
+      }
+    }
+    parts.add(css.substring(start));
+    return parts;
+  }
+
+  /**
+   * Finds a delimiter outside strings and functions.
+   */
+  private static int indexOfTopLevel(String css, char delimiter) {
+    ScanState state = new ScanState();
+    for (int i = 0; i < css.length(); i++) {
+      char c = css.charAt(i);
+      if (state.accept(c)) {
+        continue;
+      }
+      if (c == delimiter) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * Returns <code>true</code> if the CSS fragment includes a nested rule.
+   */
+  private static boolean containsTopLevelRule(String css) {
+    ScanState state = new ScanState();
+    for (int i = 0; i < css.length(); i++) {
+      char c = css.charAt(i);
+      if (state.accept(c)) {
+        continue;
+      }
+      if (c == '{') return true;
+    }
+    return false;
+  }
+
+  /**
+   * Tracks quote and function state while scanning CSS.
+   */
+  private static final class ScanState {
+
+    private char quote = 0;
+    private boolean escaped = false;
+    private int parentheses = 0;
+
+    void reset() {
+      this.quote = 0;
+      this.escaped = false;
+      this.parentheses = 0;
+    }
+
+    boolean accept(char c) {
+      if (this.quote != 0) {
+        if (this.escaped) {
+          this.escaped = false;
+        } else if (c == '\\') {
+          this.escaped = true;
+        } else if (c == this.quote) {
+          this.quote = 0;
+        }
+        return true;
+      }
+      if (c == '\'' || c == '"') {
+        this.quote = c;
+        return true;
+      }
+      if (c == '(') {
+        this.parentheses++;
+        return true;
+      }
+      if (c == ')' && this.parentheses > 0) {
+        this.parentheses--;
+        return true;
+      }
+      return this.parentheses > 0;
+    }
   }
 
   /**
@@ -274,52 +427,20 @@ public final class CSSMin {
     private final List<Rule> subrules;
 
     /**
-     * Creates a new Selector using the supplied strings.
-     *
-     * @param rule The entire rule starting with the selector
-     *
-     * @throws ParsingException If the selector is incomplete and cannot be parsed.
+     * Creates a rule from an already separated selector and body.
      */
-    public Rule(String rule) throws ParsingException {
-      String[] parts = rule.split("\\{");
-      if (parts.length < 2) // TODO detect line and column
-        throw new ParsingException("Warning: Incomplete selector: " + rule, -1, -1);
+    private Rule(String selector, String contents) throws ParsingException {
+      this.selector = minifySelector(selector);
+      String body = contents.trim();
+      this.subrules = containsTopLevelRule(body) ? parseRules(body) : List.of();
+      this.properties = this.subrules.isEmpty() && !body.isEmpty() ? parseProperties(body) : new Property[]{};
+    }
 
-      // Always starts with the selector
-      this.selector = parts[0].trim().replaceAll("\\s?(\\+|~|,|=|~=|\\^=|\\$=|\\*=|\\|=|>)\\s?", "$1");
-
-      // Let's compute properties and subrules (initialise with defaults)
-      Property[] props = new Property[]{};
-      List<Rule> rules = List.of();
-
-      // We're dealing with a nested property, eg @-webkit-keyframes or @media
-      if (parts.length > 2) {
-        rules = new ArrayList<>();
-        parts = rule.split("[{}]");
-        for (int i = 1; i < parts.length; i += 2) {
-          // sub selector
-          parts[i] = parts[i].trim();
-          if (!parts[i].isEmpty() && (i+1) < parts.length) {
-            // properties of sub selector
-            parts[i + 1] = parts[i + 1].trim();
-            if (!parts[i + 1].isEmpty()) {
-              rules.add(new Rule(parts[i] + "{" + parts[i + 1] + "}"));
-            }
-          }
-        }
-      } else {
-        String contents = parts[parts.length - 1].trim();
-        if (contents.charAt(contents.length() - 1) != '}') throw new ParsingException("Unterminated selector: " +rule, -1, -1);
-        // No need to include empty selectors
-        if (contents.length() > 1) {
-          contents = contents.substring(0, contents.length() - 1);
-          props = parseProperties(contents);
-        }
-      }
-
-      // Updated
-      this.subrules = rules;
-      this.properties = props;
+    /**
+     * Minifies selectors without touching strings in attribute selectors.
+     */
+    private static String minifySelector(String selector) {
+      return selector.trim().replaceAll("\\s?(\\+|~|,|=|~=|\\^=|\\$=|\\*=|\\|=|>)\\s?", "$1");
     }
 
     /**
@@ -341,7 +462,7 @@ public final class CSSMin {
     public StringBuilder append(StringBuilder min) {
       min.append(this.selector).append('{');
       for (Rule s : this.subrules) {
-        min.append(s);
+        s.append(min);
       }
       for (Property p : this.properties) {
         p.append(min);
@@ -360,34 +481,10 @@ public final class CSSMin {
      * @return An array of properties parsed from this selector.
      */
     private Property[] parseProperties(String contents) {
-      List<String> parts = new ArrayList<>();
-      boolean inquotes = false;
-      boolean inbrackets = false;
-      int j = 0;
-      String substr;
-      for (int i = 0; i < contents.length(); i++) {
-        if (inquotes) { // If we're inside a string
-          inquotes = contents.charAt(i) != '"';
-        } else if (inbrackets) {
-          inbrackets = contents.charAt(i) != ')';
-        } else if (contents.charAt(i) == '"') {
-          inquotes = true;
-        } else if (contents.charAt(i) == '(') {
-          inbrackets = true;
-        } else if (contents.charAt(i) == ';') {
-          substr = contents.substring(j, i);
-          if (!(substr.trim().isEmpty())) {
-            parts.add(substr);
-          }
-          j = i + 1;
-        }
-      }
-      substr = contents.substring(j);
-      if (!(substr.trim().isEmpty())) {
-        parts.add(substr);
-      }
+      List<String> parts = splitTopLevel(contents, ';');
       List<Property> valid = new ArrayList<>(parts.size());
       for (String part : parts) {
+        if (part.trim().isEmpty()) continue;
         try {
           valid.add(new Property(part));
         } catch (Exception e) {
@@ -431,43 +528,11 @@ public final class CSSMin {
      * @throws ParsingException If the property is incomplete and cannot be parsed.
      */
     public Property(String property) throws ParsingException {
-      // Parse the property.
-      List<String> parts = new ArrayList<>();
-      boolean inquotes = false;   // If we're inside a string
-      boolean inbrackets = false; // If we're inside brackets
-      int j = 0;
-      String substr;
-      for (int i = 0; i < property.length(); i++) {
-        if (inquotes) {
-          inquotes = (property.charAt(i) != '"');
-        } else if (inbrackets) {
-          inbrackets = (property.charAt(i) != ')');
-        } else if (property.charAt(i) == '"') {
-          inquotes = true;
-        } else if (property.charAt(i) == '(') {
-          inbrackets = true;
-        } else if (property.charAt(i) == ':') {
-          substr = property.substring(j, i);
-          if (!substr.trim().isEmpty()) {
-            parts.add(substr);
-          }
-          j = i + 1;
-        }
-      }
-      substr = property.substring(j);
-      if (!(substr.trim().isEmpty())) {
-        parts.add(substr);
-      }
-      if (parts.size() < 2) throw new ParsingException("Warning: Incomplete property: "+property, -1, -1);
-      this.name = parts.get(0).trim().toLowerCase();
-      Part[] theparts;
-      try {
-        theparts = parseValues(simplifyColours(parts.get(1).trim().replace(", ", ",")));
-      } catch (PatternSyntaxException ex) {
-        // TODO Invalid regular expression used
-        theparts = parseValues(parts.get(1).trim());
-      }
-      this.parts = theparts;
+      int colon = indexOfTopLevel(property, ':');
+      if (colon == -1) throw new ParsingException("Warning: Incomplete property: "+property, -1, -1);
+      this.name = property.substring(0, colon).trim().toLowerCase();
+      this.parts = parseValues(simplifyColours(property.substring(colon + 1).trim()));
+      if (this.parts.length == 0) throw new ParsingException("Warning: Incomplete property: "+property, -1, -1);
     }
 
     /**
@@ -532,10 +597,10 @@ public final class CSSMin {
      * @return An array of Parts
      */
     private Part[] parseValues(String contents) {
-      // Make sure we do not split data URIs
-      String[] rawParts = !contents.contains("data:") ? contents.split(",") : new String[]{contents};
-      List<Part> valid = new ArrayList<>(rawParts.length);
+      List<String> rawParts = splitTopLevel(contents, ',');
+      List<Part> valid = new ArrayList<>(rawParts.size());
       for (String raw : rawParts) {
+        if (raw.trim().isEmpty()) continue;
         try {
           valid.add(Part.newPart(raw, this.name));
         } catch (Exception ex) {
@@ -574,11 +639,12 @@ public final class CSSMin {
   private static class Part {
 
     private static final Pattern ZERO_UNIT_PATTERN =
-        Pattern.compile("(\\s)(0)(px|em|%|in|cm|mm|pc|pt|ex)");
+        Pattern.compile("(\\s)(0)(px|em|%|in|cm|mm|pc|pt|ex)", Pattern.CASE_INSENSITIVE);
     private static final Pattern HEX_COLOR_PATTERN =
         Pattern.compile("#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])");
     private static final Pattern URL_PATTERN =
-        Pattern.compile("(?i)url\\((['\"])?(.*?)\\1\\)");
+        Pattern.compile("(?i)url\\(\\s*(['\"]?)(.*?)\\1\\s*\\)");
+    private static final Pattern CSS_IDENTIFIER_PATTERN = Pattern.compile("-?[_a-zA-Z][_a-zA-Z0-9-]*");
 
     /** Color name → shorter hex value. */
     private static final Map<String, String> COLOR_NAME_TO_HEX;
@@ -667,23 +733,23 @@ public final class CSSMin {
      * Simplifies multiple-parameter properties.
      */
     protected static String simplifyParameters(String value) {
-      String[] params = value.split(" ");
-      if ("\"".equals(params[0]) || "'".equals(params[0])) return value;
+      List<String> params = splitWhitespace(value);
+      if (params.isEmpty() || isQuoted(params.get(0))) return value;
 
       // We can drop off the fourth item if the second and fourth items match
       // ie turn 3px 0 3px 0 into 3px 0 3px
-      if (params.length == 4 && params[1].equalsIgnoreCase(params[3])) {
-        params = Arrays.copyOf(params, 3);
+      if (params.size() == 4 && params.get(1).equalsIgnoreCase(params.get(3))) {
+        params = new ArrayList<>(params.subList(0, 3));
       }
       // We can drop off the third item if the first and third items match
       // ie turn 3px 0 3px into 3px 0
-      if (params.length == 3 && params[0].equalsIgnoreCase(params[2])) {
-        params = Arrays.copyOf(params, 2);
+      if (params.size() == 3 && params.get(0).equalsIgnoreCase(params.get(2))) {
+        params = new ArrayList<>(params.subList(0, 2));
       }
       // We can drop off the second item if the first and second items match
       // ie turn 3px 3px into 3px
-      if (params.length == 2 && params[0].equalsIgnoreCase(params[1])) {
-        params = Arrays.copyOf(params, 1);
+      if (params.size() == 2 && params.get(0).equalsIgnoreCase(params.get(1))) {
+        params = new ArrayList<>(params.subList(0, 1));
       }
 
       return String.join(" ", params);
@@ -701,14 +767,24 @@ public final class CSSMin {
      * Simplifies quotes and caps.
      */
     protected static String simplifyQuotesAndCaps(String value) {
-      String result = value;
+      String result = value.trim();
       // Strip quotes from URLs
       if ((result.length() > 4) && ("url(".equalsIgnoreCase(result.substring(0, 4)))) {
-        result = URL_PATTERN.matcher(result).replaceAll("url($2)");
+        Matcher matcher = URL_PATTERN.matcher(result);
+        if (matcher.matches()) {
+          String url = matcher.group(2);
+          String quote = matcher.group(1);
+          if (quote == null || quote.isEmpty()) {
+            quote = "\"";
+          }
+          result = isSafeUnquotedUrl(url) ? "url(" + url + ")" : "url(" + quote + url + quote + ")";
+        }
       } else {
-        String[] words = result.split("\\s");
-        if (words.length == 1) {
-          result = result.toLowerCase().replaceAll("(['\"])?(.*?)\1", "$2");
+        List<String> words = splitWhitespace(result);
+        if (words.size() == 1) {
+          String word = words.get(0);
+          result = isQuoted(word) && isCssIdentifier(word.substring(1, word.length() - 1)) ?
+              word.substring(1, word.length() - 1).toLowerCase() : lowercaseIfUnquoted(word);
         }
       }
       return result;
@@ -718,11 +794,17 @@ public final class CSSMin {
      * Simplifies color names.
      */
     protected static String simplifyColourNames(String value) {
-      String lc = value.toLowerCase();
+      String important = "";
+      String core = value.trim();
+      if (core.toLowerCase().endsWith("!important")) {
+        important = "!important";
+        core = core.substring(0, core.length() - important.length());
+      }
+      String lc = core.toLowerCase();
       String hex = COLOR_NAME_TO_HEX.get(lc);
-      if (hex != null) return hex;
+      if (hex != null) return hex + important;
       String name = COLOR_HEX_TO_NAME.get(lc);
-      return name != null ? name : value;
+      return name != null ? name + important : value;
     }
 
     /**
@@ -736,13 +818,86 @@ public final class CSSMin {
             && matcher.group(3).equalsIgnoreCase(matcher.group(4))
             && matcher.group(5).equalsIgnoreCase(matcher.group(6))) {
           matcher.appendReplacement(result,
-              "#" + matcher.group(1).toLowerCase() + matcher.group(3).toLowerCase() + matcher.group(5).toLowerCase());
+              Matcher.quoteReplacement("#" + matcher.group(1).toLowerCase() + matcher.group(3).toLowerCase() + matcher.group(5).toLowerCase()));
         } else {
-          matcher.appendReplacement(result, matcher.group().toLowerCase());
+          matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group().toLowerCase()));
         }
       }
       matcher.appendTail(result);
       return result.toString();
+    }
+
+    /**
+     * Splits a value on whitespace outside quoted sections.
+     */
+    private static List<String> splitWhitespace(String value) {
+      List<String> words = new ArrayList<>();
+      StringBuilder word = new StringBuilder();
+      char quote = 0;
+      boolean escaped = false;
+      for (int i = 0; i < value.length(); i++) {
+        char c = value.charAt(i);
+        if (quote != 0) {
+          word.append(c);
+          if (escaped) {
+            escaped = false;
+          } else if (c == '\\') {
+            escaped = true;
+          } else if (c == quote) {
+            quote = 0;
+          }
+        } else if (c == '\'' || c == '"') {
+          quote = c;
+          word.append(c);
+        } else if (Character.isWhitespace(c)) {
+          if (word.length() > 0) {
+            words.add(word.toString());
+            word.setLength(0);
+          }
+        } else {
+          word.append(c);
+        }
+      }
+      if (word.length() > 0) {
+        words.add(word.toString());
+      }
+      return words;
+    }
+
+    /**
+     * @return <code>true</code> if the supplied value is a quoted CSS string.
+     */
+    private static boolean isQuoted(String value) {
+      return value.length() >= 2
+          && ((value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"')
+          || (value.charAt(0) == '\'' && value.charAt(value.length() - 1) == '\''));
+    }
+
+    /**
+     * Lower-cases a single token when doing so cannot alter a string literal.
+     */
+    private static String lowercaseIfUnquoted(String value) {
+      return isQuoted(value) ? value : value.toLowerCase();
+    }
+
+    /**
+     * @return <code>true</code> if the value can be represented as an unquoted CSS identifier.
+     */
+    private static boolean isCssIdentifier(String value) {
+      return CSS_IDENTIFIER_PATTERN.matcher(value).matches();
+    }
+
+    /**
+     * @return <code>true</code> if a URL can safely lose its quotes.
+     */
+    private static boolean isSafeUnquotedUrl(String url) {
+      for (int i = 0; i < url.length(); i++) {
+        char c = url.charAt(i);
+        if (Character.isWhitespace(c) || c == '"' || c == '\'' || c == '(' || c == ')' || c == '\\') {
+          return false;
+        }
+      }
+      return true;
     }
 
     /**
