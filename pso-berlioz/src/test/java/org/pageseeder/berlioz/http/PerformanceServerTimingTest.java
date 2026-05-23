@@ -25,6 +25,7 @@ public class PerformanceServerTimingTest {
   public void testContructor_ValidName() {
     PerformanceServerTiming a =new PerformanceServerTiming("a.b!C$D", 0);
     Assert.assertEquals("a.b!C$D", a.name());
+    Assert.assertEquals(0, a.duration(), 0);
   }
 
   @Test
