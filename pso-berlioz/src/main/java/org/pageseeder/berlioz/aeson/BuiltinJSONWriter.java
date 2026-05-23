@@ -15,7 +15,9 @@
  */
 package org.pageseeder.berlioz.aeson;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 
 /**
@@ -177,6 +179,11 @@ final class BuiltinJSONWriter implements JSONWriter {
   @Override
   public void close() {
     this.json.close();
+    // PrintWriter swallows IOExceptions silently; checkError() reads the internal trouble flag
+    // so that a broken pipe or full-disk error is not silently ignored by the caller.
+    if (this.json.checkError()) {
+      throw new UncheckedIOException(new IOException("Write error on underlying stream"));
+    }
   }
 
   private void appendJSONString(String s) {
