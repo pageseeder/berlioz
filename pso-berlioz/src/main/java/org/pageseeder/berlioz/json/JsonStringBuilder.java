@@ -156,7 +156,7 @@ public final class JsonStringBuilder implements JsonWriter {
 
   @Override
   public void close() {
-    // Nothing to do (it's a StringWriter)
+    this.json.close();
   }
 
   @Override

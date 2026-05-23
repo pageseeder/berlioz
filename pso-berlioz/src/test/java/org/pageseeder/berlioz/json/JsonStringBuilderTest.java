@@ -61,4 +61,12 @@ public class JsonStringBuilderTest {
     builder.endObject().flush();
   }
 
+  @Test
+  public void testCloseFlushesContent() {
+    JsonStringBuilder builder = JsonStringBuilder.create();
+    builder.startObject().field("x", 1L).endObject();
+    builder.close();
+    Assert.assertEquals("{\"x\":1}", builder.toString());
+  }
+
 }
