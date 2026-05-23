@@ -349,8 +349,8 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    */
   private void handleValuePairs(Attributes atts) {
     // Serialize the name value pairs from the attributes
-    final int _upto = atts.getLength();
-    for (int i = 0; i < _upto; i++) {
+    final int upto = atts.getLength();
+    for (int i = 0; i < upto; i++) {
       if (filterNamespace(atts.getURI(i))) {
         String name = Objects.requireNonNull(atts.getLocalName(i));
         String value = Objects.requireNonNull(atts.getValue(i));

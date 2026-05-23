@@ -171,4 +171,96 @@ public class JSONSerializerTest {
         json.contains("\"whatever\""));
   }
 
+  // ---------------------------------------------------------------------------
+  // json:null element — in object, array, and root contexts
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void testJsonNullElementInObjectContext() throws Exception {
+    String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
+        + "<json:null json:name=\"missing\"/>"
+        + "</root>";
+    String json = toJSON(xml);
+    Assert.assertTrue("named null element in object context must emit \"missing\":null",
+        json.contains("\"missing\":null"));
+  }
+
+  @Test
+  public void testJsonNullElementInArrayContext() throws Exception {
+    String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
+        + "<json:array json:name=\"items\">"
+        + "<json:null/>"
+        + "</json:array>"
+        + "</root>";
+    String json = toJSON(xml);
+    Assert.assertTrue("null element in array context must emit null value", json.contains("null"));
+    Assert.assertTrue("array must be present", json.contains("\"items\""));
+  }
+
+  @Test
+  public void testJsonNullElementInRootContextEmitsEmptyObject() throws Exception {
+    // json:null at root is illegal; the serializer substitutes an empty object
+    String xml = "<json:null xmlns:json=\"" + JSON_NS + "\"/>";
+    String json = toJSON(xml);
+    Assert.assertEquals("root null must be replaced by empty object", "{}", json);
+  }
+
+  // ---------------------------------------------------------------------------
+  // json:array and json:object in array context (no name required)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void testJsonArrayInArrayContext() throws Exception {
+    String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
+        + "<json:array json:name=\"outer\">"
+        + "<json:array/>"
+        + "</json:array>"
+        + "</root>";
+    String json = toJSON(xml);
+    Assert.assertTrue("nested array must be emitted", json.contains("[[]]"));
+  }
+
+  @Test
+  public void testJsonObjectInArrayContext() throws Exception {
+    String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
+        + "<json:array json:name=\"list\">"
+        + "<json:object/>"
+        + "</json:array>"
+        + "</root>";
+    String json = toJSON(xml);
+    Assert.assertTrue("object in array context must produce [{}]", json.contains("[{}]"));
+  }
+
+  // ---------------------------------------------------------------------------
+  // characters() outside VALUE context are ignored
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void testCharactersOutsideValueContextAreIgnored() throws Exception {
+    // Whitespace between elements in OBJECT context must not appear in output
+    String xml = "<root xmlns:json=\"" + JSON_NS + "\">\n"
+        + "  <item id=\"1\"/>\n"
+        + "</root>";
+    String json = toJSON(xml);
+    // The output should be valid JSON with no stray text tokens
+    Assert.assertTrue("Output must start with {", json.startsWith("{"));
+    Assert.assertFalse("Whitespace text must not appear as a string value in output",
+        json.contains("\"\\n\"") || json.contains("\"  \""));
+  }
+
+  // ---------------------------------------------------------------------------
+  // json:object with attributes serialized as properties
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void testJsonObjectWithAttributes() throws Exception {
+    String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
+        + "<json:object json:name=\"meta\" version=\"2\" label=\"test\"/>"
+        + "</root>";
+    String json = toJSON(xml);
+    Assert.assertTrue("version attribute must be a property", json.contains("\"version\""));
+    Assert.assertTrue("label attribute must be a property", json.contains("\"label\""));
+    Assert.assertTrue("label value must be serialized", json.contains("\"test\""));
+  }
+
 }
