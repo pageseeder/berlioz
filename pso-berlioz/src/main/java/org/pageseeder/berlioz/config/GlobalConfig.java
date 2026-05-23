@@ -140,9 +140,9 @@ public final class GlobalConfig implements Serializable, XMLWritable {
   /**
    * Saves the XML properties to the specified stream as UTF-8.
    *
-   * @param out The XML output stream to parse.
+   * @param out The output stream to write to.
    *
-   * @throws IOException If an error occurred when reading from the input stream.
+   * @throws IOException If an error occurred when writing to the output stream.
    */
   public void save(OutputStream out) throws IOException {
     try (OutputStreamWriter w = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
@@ -203,13 +203,13 @@ public final class GlobalConfig implements Serializable, XMLWritable {
   }
 
   /**
-   * Returns the set of notes from the map.
+   * Returns the set of nodes from the map.
    *
    * <p>A node is the prefix of a property where the property is <code>[node].[name]</code>
    *
    * @param map The map to process.
    *
-   * @return A set of nodes from the map
+   * @return A sorted set of node prefixes found in the map keys.
    */
   private static SortedSet<String> nodes(Map<String, String> map) {
     SortedSet<String> nodes = new TreeSet<>();
@@ -249,14 +249,15 @@ public final class GlobalConfig implements Serializable, XMLWritable {
    */
   private static final class Handler extends ConfigLoader.ConfigHandler<GlobalConfig> {
 
-    private Map<String, String> properties;
+    private Map<String, String> properties = new HashMap<>();
 
     /**
-     * Keeps track of the nodes.
+     * Tracks ancestor element names during parsing; {@code null} until the root element is seen.
      */
-    private @Nullable Stack<String> nodes = null;
+    private @Nullable Deque<String> nodes = null;
 
-    public String getSchema() {
+    @Override
+    public @Nullable String getSchema() {
       return null;
     }
 
@@ -268,12 +269,12 @@ public final class GlobalConfig implements Serializable, XMLWritable {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) {
-      Stack<String> nodes = this.nodes;
-      if (nodes != null) {
-        nodes.push(localName);
+      Deque<String> current = this.nodes;
+      if (current != null) {
+        current.addLast(localName);
         int attCount = atts.getLength();
         if (attCount > 0) {
-          String prefix = getPrefix(nodes);
+          String prefix = getPrefix(current);
           for (int i = 0; i < attCount; i++) {
             String name = atts.getLocalName(i);
             String value = atts.getValue(i);
@@ -283,26 +284,28 @@ public final class GlobalConfig implements Serializable, XMLWritable {
           }
         }
       } else {
-        this.nodes = new Stack<>();
-        int attCount = atts.getLength();
-        if (attCount > 0) {
-          for (int i = 0; i < attCount; i++) {
-            String name = atts.getLocalName(i);
-            String value = atts.getValue(i);
-            if (name != null && value != null) {
-              this.properties.put(name, value);
-            }
-          }
+        this.nodes = new ArrayDeque<>();
+        loadRootAttributes(atts);
+      }
+    }
+
+    private void loadRootAttributes(Attributes atts) {
+      int attCount = atts.getLength();
+      for (int i = 0; i < attCount; i++) {
+        String name = atts.getLocalName(i);
+        String value = atts.getValue(i);
+        if (name != null && value != null) {
+          this.properties.put(name, value);
         }
       }
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) {
-      Stack<String> nodes = this.nodes;
-      if (nodes != null) {
-        if (!nodes.isEmpty()) {
-          nodes.pop();
+      Deque<String> current = this.nodes;
+      if (current != null) {
+        if (!current.isEmpty()) {
+          current.removeLast();
         } else {
           this.nodes = null;
         }
@@ -310,9 +313,12 @@ public final class GlobalConfig implements Serializable, XMLWritable {
     }
 
     /**
-     * @return the prefix from the current stack of nodes.
+     * Builds the dot-separated property key prefix from the current element ancestry.
+     *
+     * @param nodes the deque of ancestor element names, from outermost to innermost.
+     * @return the prefix string ending with '.', e.g. {@code "a.b."}.
      */
-    private static String getPrefix(Stack<String> nodes) {
+    private static String getPrefix(Deque<String> nodes) {
       StringBuilder prefix = new StringBuilder();
       for (String node : nodes) {
         prefix.append(node).append('.');
