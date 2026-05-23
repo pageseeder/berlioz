@@ -162,10 +162,10 @@ public final class ServiceTest {
   // --- Name and Target ---
 
   @Test
-  public void testName_defaultIsSimpleClassName() {
+  public void testName_defaultIsKebabCase() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    Assert.assertEquals("NoContent", s.name(g));
+    Assert.assertEquals("no-content", s.name(g));
   }
 
   @Test

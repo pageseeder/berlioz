@@ -28,6 +28,7 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.util.StringUtils;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,8 +208,7 @@ public final class Service {
    */
   public String name(ContentGenerator generator) {
     String name = this.names.get(generator);
-    // TODO Use snake-case for consistency
-    return name != null? name : generator.getClass().getSimpleName();
+    return name != null ? name : StringUtils.toKebabCase(generator.getClass().getSimpleName(), "generator");
   }
 
   /**
