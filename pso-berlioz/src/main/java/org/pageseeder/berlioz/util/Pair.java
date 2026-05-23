@@ -15,11 +15,12 @@
  */
 package org.pageseeder.berlioz.util;
 
+import java.util.Objects;
+
 import org.jspecify.annotations.Nullable;
 
 /**
- * An implementation of an object that can be used as a fast key made of two objects for lookup in
- * sets and map.
+ * A fast immutable key made of two objects for lookup in sets and maps.
  *
  * <p>This is an immutable object.
  *
@@ -31,78 +32,74 @@ import org.jspecify.annotations.Nullable;
  * @version Berlioz 0.8.2 - 29 June 2011
  * @since Berlioz 0.8.2
  */
-public class Pair<T, V> {
+public final class Pair<T, V> {
 
-  /** Used to calculate the hashcode */
-  private static final int PRIME1 = 17;
+  /** Used to calculate the hash code. */
+  private static final int INITIAL_HASH = 17;
 
-  /** Used to calculate the hashcode */
-  private static final int PRIME2 = 31;
+  /** Used to calculate the hash code. */
+  private static final int HASH_MULTIPLIER = 31;
 
-  /** The first constituent of the key */
-  private final T a;
+  /** The first constituent of the key. */
+  private final @Nullable T first;
 
-  /** The second constituent of the key */
-  private final V b;
+  /** The second constituent of the key. */
+  private final @Nullable V second;
 
-  /** Precompiled hash code */
+  /** Precomputed hash code. */
   private final int hash;
 
   /**
-   * Creates a new scoped path.
+   * Creates a new pair.
    *
-   * @param a The first constituent of the key
-   * @param b The second constituent of the key
+   * @param first  The first constituent of the key.
+   * @param second The second constituent of the key.
    */
-  public Pair(T a, V b) {
-   this.a = a;
-   this.b = b;
-   this.hash = PRIME1
-             + (a == null? 0 : PRIME2 * a.hashCode())
-             + (b == null? 0 : PRIME2 * b.hashCode());
+  public Pair(@Nullable T first, @Nullable V second) {
+    this.first = first;
+    this.second = second;
+    this.hash = hash(first, second);
   }
 
   @Override
-  public final boolean equals(@Nullable Object o) {
+  public boolean equals(@Nullable Object o) {
     if (o == this) return true;
-    if (o == null || !(o instanceof Pair<?, ?>)) return false;
-    Pair<?, ?> k = (Pair<?, ?>)o;
-    if (k.hash != this.hash) return false;
-    return equals(this.a, k.a) && equals(this.b, k.b);
+    if (!(o instanceof Pair<?, ?>)) return false;
+    Pair<?, ?> pair = (Pair<?, ?>)o;
+    if (this.hash != pair.hash) return false;
+    return Objects.equals(this.first, pair.first) && Objects.equals(this.second, pair.second);
   }
 
   @Override
-  public final int hashCode() {
+  public int hashCode() {
     return this.hash;
   }
 
   /**
    * @return The first constituent of the key.
    */
-  public final T first() {
-    return this.a;
+  public @Nullable T first() {
+    return this.first;
   }
 
   /**
    * @return The second constituent of the key.
    */
-  public final V second() {
-    return this.b;
+  public @Nullable V second() {
+    return this.second;
   }
 
   /**
-   * Compare two objects for equality.
+   * Computes the pair hash without allocating the varargs array used by {@link Objects#hash(Object...)}.
    *
-   * @param o1 The first object to compare.
-   * @param o2 The second object to compare.
-   * @return <code>true</code> if both are equals (including <code>null</code>);
-   *         <code>false</code> otherwise.
+   * @param first  The first constituent of the key.
+   * @param second The second constituent of the key.
+   * @return The hash code for the pair.
    */
-  private static boolean equals(@Nullable Object o1, @Nullable Object o2) {
-    // if they are both null, they are both equal
-    if (o1 == o2) return true;
-    // if one of them is null return false
-    if (o1 == null || o2 == null) return false;
-    return o1.equals(o2);
+  private static int hash(@Nullable Object first, @Nullable Object second) {
+    int result = INITIAL_HASH;
+    result = HASH_MULTIPLIER * result + Objects.hashCode(first);
+    result = HASH_MULTIPLIER * result + Objects.hashCode(second);
+    return result;
   }
 }
