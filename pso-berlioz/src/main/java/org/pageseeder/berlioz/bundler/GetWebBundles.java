@@ -240,12 +240,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
    */
   private BundleConfig getConfig(String name, BundleType type, File root) {
     Map<String, BundleConfig> configs = type == BundleType.JS? JS_CONFIGS : CSS_CONFIGS;
-    BundleConfig config = configs.get(name);
-    if (config == null) {
-      config = BundleConfig.newInstance(name, type, root);
-      configs.put(name, config);
-    }
-    return config;
+    return configs.computeIfAbsent(name, key -> BundleConfig.newInstance(key, type, root));
   }
 
 }
