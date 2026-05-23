@@ -210,8 +210,8 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   private void appendJSONString(String s) {
     this.json.append('"');
-    final int _length = s.length();
-    for (int i = 0; i < _length; i++) {
+    int length = s.length();
+    for (int i = 0; i < length; i++) {
       char c = s.charAt(i);
       switch (c) {
         case '\n':

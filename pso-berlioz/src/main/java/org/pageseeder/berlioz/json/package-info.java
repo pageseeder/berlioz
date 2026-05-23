@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 /**
- * Json classes
+ * JSON writer abstraction with provider-detected implementations (Jackson, Gson, JSONP, builtin).
  *
- * @see <a href="http://tools.ietf.org/html/rfc2616">HTTP/1.1</a>
+ * <p>Use {@link org.pageseeder.berlioz.json.Json#newWriter} to obtain a {@link org.pageseeder.berlioz.json.JsonWriter}
+ * backed by the first JSON library found on the classpath.</p>
+ *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259 – The JSON Data Interchange Format</a>
  */
 @org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz.json;

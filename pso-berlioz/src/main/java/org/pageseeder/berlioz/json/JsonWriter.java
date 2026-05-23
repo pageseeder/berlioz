@@ -173,9 +173,10 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   JsonWriter field(String name, long value);
 
   /**
-   * Writes a map of Object properties.
+   * Writes a map of string name/value pairs into the current object context.
    *
-   * @param map  A map of name/value pairs.
+   * @param map  a map of name/value pairs.
+   * @return this instance.
    */
   default JsonWriter properties(Map<String, String> map) {
     for (Map.Entry<String, String> field : map.entrySet()) {
