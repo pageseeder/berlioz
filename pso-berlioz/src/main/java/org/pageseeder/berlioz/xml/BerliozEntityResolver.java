@@ -36,10 +36,13 @@ import org.xml.sax.InputSource;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.6
  */
-public final class BerliozEntityResolver implements EntityResolver {
+@SuppressWarnings("java:S6548")
+public enum BerliozEntityResolver implements EntityResolver {
+
+  INSTANCE;
 
   /**
    * The prefix used by Berlioz for all public identifiers.
@@ -61,20 +64,9 @@ public final class BerliozEntityResolver implements EntityResolver {
   private static final String PUBLIC_ID_SUFFIX = "//EN";
 
   /**
-   * A single instance.
-   */
-  private static final BerliozEntityResolver SINGLETON = new BerliozEntityResolver();
-
-  /**
    * A logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(BerliozEntityResolver.class);
-
-  /**
-   * Creates a new Berlioz Entity resolver.
-   */
-  private BerliozEntityResolver() {
-  }
 
   /**
    * @see org.xml.sax.EntityResolver#resolveEntity(String, String)
@@ -108,7 +100,7 @@ public final class BerliozEntityResolver implements EntityResolver {
    * @return an entity resolver instance.
    */
   public static BerliozEntityResolver getInstance() {
-    return SINGLETON;
+    return INSTANCE;
   }
 
   /**

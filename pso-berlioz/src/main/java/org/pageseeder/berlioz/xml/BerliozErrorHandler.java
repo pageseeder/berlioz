@@ -25,21 +25,13 @@ import org.xml.sax.SAXParseException;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0
- * @since Berlioz 0.6
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.6.0
  */
-public final class BerliozErrorHandler implements ErrorHandler {
+@SuppressWarnings("java:S6548")
+public enum BerliozErrorHandler implements ErrorHandler {
 
-  /**
-   * A single instance.
-   */
-  private static final BerliozErrorHandler SINGLETON = new BerliozErrorHandler();
-
-  /**
-   * Creates a new error handler.
-   */
-  private BerliozErrorHandler() {
-  }
+  INSTANCE;
 
   /**
    * @see org.xml.sax.ErrorHandler#fatalError(org.xml.sax.SAXParseException)
@@ -83,6 +75,6 @@ public final class BerliozErrorHandler implements ErrorHandler {
    * @return an error handler instance.
    */
   public static BerliozErrorHandler getInstance() {
-    return SINGLETON;
+    return INSTANCE;
   }
 }
