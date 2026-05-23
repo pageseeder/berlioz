@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.content;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -237,56 +238,52 @@ final class ServicesHandler10 extends DefaultHandler {
 
   @Override
   public void endElement(String uri, String localName, String qName) throws SAXException {
-    // Do not continue if there is an error
     if (this.collector.hasError()) return;
-    // Identify element
     Element element = Element.get(localName);
-    // We've already put a warning in the startElement
     if (element == null) return;
     switch(element) {
       case SERVICE:
-        HttpMethod method = this.method;
-        // Assign the latest rule
-        this.builder.rule(this.rules.get(this.rules.size() - 1));
-        if (!"".equals(this.builder.id())) {
-          Service service = this.builder.build();
-          if (this.patterns.isEmpty()) {
-            warning("No URI pattern match service "+service.id()+" - service will be ignored");
-          } else {
-            for (URIPattern pattern : this.patterns) {
-              this.registry.register(service, pattern, method);
-              LOGGER.debug("Assigning {}} [{}}] to {}", pattern, method, service);
-            }
-          }
-        } else {
-          warning("Service cannot be created without an id");
-        }
-        this.builder.reset();
-        this.patterns.clear();
-        // Any rule specific to the 'service'? remove it
-        if (this.rules.size() == 3) {
-          this.rules.remove(2);
-        }
+        registerCurrentService();
+        popRuleIfAdded(3);
         break;
       case SERVICES:
-        // Any rule specific to the 'services'? remove it
-        if (this.rules.size() == 2) {
-          this.rules.remove(1);
-        }
+        popRuleIfAdded(2);
         break;
       case SERVICE_CONFIG:
-        // Any rule specific to the 'service-config'? remove it
-        if (this.rules.size() == 1) {
-          this.rules.remove(0);
-        }
+        popRuleIfAdded(1);
         break;
       default:
     }
   }
 
+  private void registerCurrentService() throws SAXException {
+    this.builder.rule(this.rules.get(this.rules.size() - 1));
+    if ("".equals(this.builder.id())) {
+      warning("Service cannot be created without an id");
+    } else {
+      Service service = this.builder.build();
+      HttpMethod httpMethod = this.method;
+      if (this.patterns.isEmpty()) {
+        warning("No URI pattern match service "+service.id()+" - service will be ignored");
+      } else {
+        for (URIPattern pattern : this.patterns) {
+          this.registry.register(service, pattern, httpMethod);
+          LOGGER.debug("Assigning {}} [{}}] to {}", pattern, httpMethod, service);
+        }
+      }
+    }
+    this.builder.reset();
+    this.patterns.clear();
+  }
+
+  private void popRuleIfAdded(int expectedSize) {
+    if (this.rules.size() == expectedSize) {
+      this.rules.remove(expectedSize - 1);
+    }
+  }
+
   /**
    * Ensure that we use the correct error handler so that warnings and errors can be collected.
-   *
    * {@inheritDoc}
    */
   @Override
@@ -296,7 +293,6 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Ensure that we use the correct error handler so that warnings and errors can be collected.
-   *
    * {@inheritDoc}
    */
   @Override
@@ -306,7 +302,6 @@ final class ServicesHandler10 extends DefaultHandler {
 
   /**
    * Ensure that we use the correct error handler so that warnings and errors can be collected.
-   *
    * {@inheritDoc}
    */
   @Override
@@ -407,6 +402,7 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @throws SAXException Only if thrown by underlying error handler.
    */
+  @SuppressWarnings("java:S1192") //No need to create a constant for parts of the warning message
   private void handleGenerator(Attributes atts) throws SAXException {
     String className = atts.getValue("class");
     ContentGenerator generator;
@@ -415,7 +411,7 @@ final class ServicesHandler10 extends DefaultHandler {
       if (className == null || className.isEmpty()) {
         generator = new NoContent();
       } else {
-        generator = (ContentGenerator)Class.forName(className).newInstance();
+        generator = (ContentGenerator)Class.forName(className).getDeclaredConstructor().newInstance();
       }
       this.builder.add(generator);
       this.builder.target(atts.getValue("target"));
@@ -425,10 +421,14 @@ final class ServicesHandler10 extends DefaultHandler {
       warning("Failed to create generator "+className+" for service "+this.builder.id(), ex);
     } catch (ClassNotFoundException ex) {
       warning("Failed to find generator "+className+" for service "+this.builder.id(), ex);
+    } catch (NoSuchMethodException ex) {
+      warning("Failed to find no-arg constructor for generator "+className+" for service "+this.builder.id(), ex);
     } catch (IllegalAccessException ex) {
       warning("Failed to access generator "+className+" for service "+this.builder.id(), ex);
     } catch (InstantiationException ex) {
       warning("Failed to instantiate generator "+className+" for service "+this.builder.id(), ex);
+    } catch (InvocationTargetException ex) {
+      warning("Constructor of generator "+className+" threw an exception for service "+this.builder.id(), ex);
     }
   }
 
