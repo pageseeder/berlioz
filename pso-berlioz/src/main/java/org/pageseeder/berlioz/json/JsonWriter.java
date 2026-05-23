@@ -198,6 +198,33 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   JsonWriter field(String name, long value);
 
   /**
+   * Writes the specified int value as a JSON number within the current array context.
+   *
+   * <p>Delegates to {@link #value(long)}.</p>
+   *
+   * @param value the value to write.
+   * @return this instance.
+   * @throws JsonWriteFailureException if an I/O error occurs.
+   */
+  default JsonWriter value(int value) {
+    return value((long) value);
+  }
+
+  /**
+   * Writes a JSON name/int value pair in the current object context.
+   *
+   * <p>Delegates to {@link #field(String, long)}.</p>
+   *
+   * @param name  the name in the JSON name/value pair to be written in current JSON object
+   * @param value the value in the JSON name/value pair to be written in current JSON object
+   * @return this instance.
+   * @throws JsonWriteFailureException if an I/O error occurs.
+   */
+  default JsonWriter field(String name, int value) {
+    return field(name, (long) value);
+  }
+
+  /**
    * Writes a map of string name/value pairs into the current object context.
    *
    * @param map  a map of name/value pairs.

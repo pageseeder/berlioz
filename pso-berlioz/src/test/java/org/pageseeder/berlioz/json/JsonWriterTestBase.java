@@ -373,6 +373,24 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
+  public void testValueInt() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json).value(42).flush();
+    Assert.assertEquals("42", json.toString());
+  }
+
+  @Test
+  public void testFieldInt() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json)
+        .startObject()
+        .field("count", 42)
+        .endObject()
+        .flush();
+    Assert.assertEquals("{\"count\":42}", json.toString());
+  }
+
+  @Test
   public void testInObjectAtTopLevel() {
     StringWriter json = new StringWriter();
     JsonWriter w = newJsonWriter(json);
