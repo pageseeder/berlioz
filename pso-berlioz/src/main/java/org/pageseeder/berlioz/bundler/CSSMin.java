@@ -339,36 +339,6 @@ public final class CSSMin {
   }
 
   /**
-   * Finds a delimiter outside strings and functions.
-   */
-  private static int indexOfTopLevel(String css, char delimiter) {
-    ScanState state = new ScanState();
-    for (int i = 0; i < css.length(); i++) {
-      char c = css.charAt(i);
-      if (state.accept(c)) {
-        continue;
-      }
-      if (c == delimiter) return i;
-    }
-    return -1;
-  }
-
-  /**
-   * Returns <code>true</code> if the CSS fragment includes a nested rule.
-   */
-  private static boolean containsTopLevelRule(String css) {
-    ScanState state = new ScanState();
-    for (int i = 0; i < css.length(); i++) {
-      char c = css.charAt(i);
-      if (state.accept(c)) {
-        continue;
-      }
-      if (c == '{') return true;
-    }
-    return false;
-  }
-
-  /**
    * Tracks quote and function state while scanning CSS.
    */
   private static final class ScanState {
@@ -434,6 +404,21 @@ public final class CSSMin {
       String body = contents.trim();
       this.subrules = containsTopLevelRule(body) ? parseRules(body) : List.of();
       this.properties = this.subrules.isEmpty() && !body.isEmpty() ? parseProperties(body) : new Property[]{};
+    }
+
+    /**
+     * Returns <code>true</code> if the CSS fragment includes a nested rule.
+     */
+    private static boolean containsTopLevelRule(String css) {
+      ScanState state = new ScanState();
+      for (int i = 0; i < css.length(); i++) {
+        char c = css.charAt(i);
+        if (state.accept(c)) {
+          continue;
+        }
+        if (c == '{') return true;
+      }
+      return false;
     }
 
     /**
@@ -588,6 +573,21 @@ public final class CSSMin {
       }
 
       return thisProp.compareTo(thatProp);
+    }
+
+    /**
+     * Finds a delimiter outside strings and functions.
+     */
+    private static int indexOfTopLevel(String css, char delimiter) {
+      ScanState state = new ScanState();
+      for (int i = 0; i < css.length(); i++) {
+        char c = css.charAt(i);
+        if (state.accept(c)) {
+          continue;
+        }
+        if (c == delimiter) return i;
+      }
+      return -1;
     }
 
     /**
