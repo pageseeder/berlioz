@@ -16,12 +16,12 @@
 package org.pageseeder.berlioz.http;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -50,19 +50,12 @@ public final class HttpHeaderUtils {
   private static final String GZIP_ETAG_SUFFIX = "-gzip\"";
 
   /**
-   * HTTP date format.
+   * HTTP date formatter for the RFC 1123 date format (e.g. {@code Sat, 01 Jan 2000 00:00:00 GMT}).
+   * {@link DateTimeFormatter} is immutable and thread-safe; no synchronization is needed.
    */
-  private static final SimpleDateFormat HTTP_DATE_FORMAT =
-    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
-
-  /**
-   * Date formats using for Date parsing.
-   */
-  private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-  static {
-    // GMT time zone - all HTTP dates are on GMT.
-    HTTP_DATE_FORMAT.setTimeZone(GMT);
-  }
+  private static final DateTimeFormatter HTTP_DATE_FORMATTER =
+      DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US)
+          .withZone(ZoneId.of("GMT"));
 
   /**
    * Utility class.
@@ -207,52 +200,49 @@ public final class HttpHeaderUtils {
    */
   protected static boolean checkIfNoneMatch(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
       throws IOException {
-
     String eTag = info.getETag();
     String headerValue = req.getHeader(HttpHeaders.IF_NONE_MATCH);
-    if (headerValue != null) {
+    if (headerValue == null) return true;
 
-      boolean conditionSatisfied = false;
-      boolean isGZIP = false;
+    Boolean gzipMatch = findETagMatch(headerValue, eTag);
+    if (gzipMatch == null) return true;
 
-      if (!"*".equals(headerValue)) {
+    // For GET and HEAD respond with 304 Not Modified; for all other methods 412 Precondition Failed.
+    if ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod())) {
+      String responseETag = Boolean.TRUE.equals(gzipMatch) ? getETagForGZip(eTag) : eTag;
+      res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+      res.setHeader(HttpHeaders.ETAG, responseETag);
+      LOGGER.debug("If-None-Match check: match etag={}", responseETag);
+    } else {
+      LOGGER.debug("If-None-Match check: PRECONDITION FAILED, method={}", req.getMethod());
+      res.sendError(HttpServletResponse.SC_PRECONDITION_FAILED);
+    }
+    return false;
+  }
 
-        StringTokenizer commaTokenizer = new StringTokenizer(headerValue, ",");
-
-        while (!conditionSatisfied && commaTokenizer.hasMoreTokens()) {
-          String currentToken = commaTokenizer.nextToken().trim();
-          // Handle ETags of GZipped resources
-          isGZIP = false;
-          if (currentToken.endsWith(GZIP_ETAG_SUFFIX)) {
-            currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
-            isGZIP = true;
-          }
-          if (currentToken.equals(eTag)) {
-            conditionSatisfied = true;
-          }
-        }
-
-      } else {
-        conditionSatisfied = true;
-      }
-
-      if (conditionSatisfied) {
-        // For GET and HEAD, we should respond with 304 Not Modified.
-        // For every other method, 412 Precondition Failed is sent back.
-        if (("GET".equals(req.getMethod())) || ("HEAD".equals(req.getMethod()))) {
-          eTag = isGZIP? getETagForGZip(eTag) : eTag;
-          res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-          res.setHeader(HttpHeaders.ETAG, eTag);
-          LOGGER.debug("If-None-Match check: match etag={}", eTag);
-          return false;
-        } else {
-          LOGGER.debug("If-None-Match check: PRECONDITION FAILED, method={}", req.getMethod());
-          res.sendError(HttpServletResponse.SC_PRECONDITION_FAILED);
-          return false;
-        }
+  /**
+   * Searches the {@code If-None-Match} header value for a token matching the given ETag.
+   *
+   * @param headerValue the {@code If-None-Match} header value (non-null)
+   * @param eTag        the ETag to match against
+   *
+   * @return {@link Boolean#TRUE} if a GZip-suffixed ETag token matched,
+   *         {@link Boolean#FALSE} if a wildcard ({@code *}) or plain ETag token matched,
+   *         {@code null} if no token matched.
+   */
+  private static @Nullable Boolean findETagMatch(String headerValue, @Nullable String eTag) {
+    if ("*".equals(headerValue)) return Boolean.FALSE;
+    StringTokenizer tokenizer = new StringTokenizer(headerValue, ",");
+    while (tokenizer.hasMoreTokens()) {
+      String token = tokenizer.nextToken().trim();
+      if (token.endsWith(GZIP_ETAG_SUFFIX)) {
+        String baseToken = token.substring(0, token.length() - GZIP_ETAG_SUFFIX.length()) + '"';
+        if (baseToken.equals(eTag)) return Boolean.TRUE;
+      } else if (token.equals(eTag)) {
+        return Boolean.FALSE;
       }
     }
-    return true;
+    return null;
   }
 
   /**
@@ -344,34 +334,36 @@ public final class HttpHeaderUtils {
   }
 
   /**
-   * Returns the entity tag for an uncompressed response.
+   * Returns the entity tag for an uncompressed response by stripping the GZip suffix.
    *
-   * @param etag the entity tag.
-   * @return the entity tag of the uncompressed response.
+   * <p>For example, {@code "abc-gzip"} becomes {@code "abc"}.
+   * If the ETag does not carry the GZip suffix it is returned unchanged.
+   *
+   * @param etag the entity tag, possibly carrying the GZip suffix.
+   * @return the base entity tag without the GZip suffix, or the original ETag unchanged.
    */
   public static @Nullable String getETagForUncompressed(@Nullable String etag) {
     if (etag == null) return null;
     int q = etag.lastIndexOf(GZIP_ETAG_SUFFIX);
-    return (q > 0)? etag.substring(0, q-6)+'"' : etag;
+    return (q > 0) ? etag.substring(0, q) + '"' : etag;
   }
 
   /**
-   * Returns a correctly formatted HTTP last modified header value.
+   * Returns an HTTP date string for the given epoch-millisecond timestamp,
+   * formatted according to RFC 1123 (e.g. {@code Sat, 01 Jan 2000 00:00:00 GMT}).
    *
-   * @param modified the last modified date.
-   * @return Last modified value as specified by HTTP.
+   * @param modified the last-modified time in milliseconds since the Unix epoch.
+   * @return the timestamp formatted as an HTTP date string.
    */
   public static String toLastModified(long modified) {
-    synchronized (HTTP_DATE_FORMAT) {
-      return HTTP_DATE_FORMAT.format(new Date(modified));
-    }
+    return HTTP_DATE_FORMATTER.format(Instant.ofEpochMilli(modified));
   }
 
   /**
-   * Returns a correctly formatted HTTP last modified header value.
+   * Returns a value suitable for the {@code Allow} response header listing the given HTTP methods.
    *
-   * @param methods the list of allowed methods
-   * @return Last modified value as specified by HTTP.
+   * @param methods the list of allowed HTTP methods (e.g. {@code ["GET", "HEAD", "POST"]})
+   * @return a comma-separated list of the allowed methods.
    */
   @Beta public static String allow(List<String> methods) {
     StringBuilder allow = new StringBuilder();
