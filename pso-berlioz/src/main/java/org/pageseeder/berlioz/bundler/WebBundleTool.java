@@ -540,7 +540,7 @@ public final class WebBundleTool {
    */
   private static String rewriteStyleUrls(File file, File virtual, String line, Matcher matcher, long threshold) {
     matcher.reset();
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     while (matcher.find()) {
       String url = unquote(matcher.group(1));
       String query = "";
