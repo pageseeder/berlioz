@@ -80,6 +80,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    *
    * <p>Parsed output will go to <code>System.out</code>.
    */
+  @SuppressWarnings("java:S106") // System.out is the intentional default output target, not a log statement
   public JSONSerializer() {
     this.json = JSONWriterFactory.newInstance(System.out);
   }

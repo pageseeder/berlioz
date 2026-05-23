@@ -18,9 +18,9 @@ package org.pageseeder.berlioz.aeson;
 import java.io.File;
 
 import javax.xml.XMLConstants;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -35,6 +35,7 @@ import org.jspecify.annotations.Nullable;
  * @version Berlioz 0.12.3
  * @since Berlioz 0.9.32
  */
+@SuppressWarnings("java:S106") // CLI entry point — System.out/err are correct here
 public final class Aeson {
 
   /**
@@ -48,80 +49,63 @@ public final class Aeson {
    * </pre>
    *
    * @param args command-line arguments
-   * @throws Exception should anything go wrong.
+   * @throws TransformerException should anything go wrong.
    */
-  public static void main(String[] args) throws Exception {
-
-    // Grab arguments
+  public static void main(String[] args) throws TransformerException {
     File source = getFile(args, "-s:");
-    File style = getFile(args, "-xsl:");
+    File style  = getFile(args, "-xsl:");
     File output = getFile(args, "-o:");
 
-    // Source is required
     if (source == null || !source.exists()) {
-      System.err.println("Unable to process source: "+source);
+      System.err.println("Unable to process source: " + source);
       System.exit(0);
       return;
     }
-
-    // Output folder required if source is a folder
     if (source.isDirectory() && (output == null || output.isFile())) {
       System.err.println("When source is a directory, the output must be specified and be a directory");
       System.exit(0);
       return;
     }
 
-    // Set up the transformer
+    Transformer transformer = setupTransformer(style);
+    if (source.isDirectory()) processDirectory(source, output, transformer);
+    else                      processFile(source, output, transformer);
+  }
+
+  private static Transformer setupTransformer(@Nullable File style) throws TransformerConfigurationException {
     TransformerFactory factory = TransformerFactory.newInstance();
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-    Transformer transformer;
     if (style != null) {
-      Source xslt = new StreamSource(style);
-      transformer = factory.newTransformer(xslt);
-    } else {
-      // This should create a identity transformer
-      transformer = factory.newTransformer();
-      transformer.setOutputProperty("method", "xml");
-      transformer.setOutputProperty("media-type", "application/json");
+      return factory.newTransformer(new StreamSource(style));
     }
+    Transformer transformer = factory.newTransformer();
+    transformer.setOutputProperty("method", "xml");
+    transformer.setOutputProperty("media-type", "application/json");
+    return transformer;
+  }
 
-    // Process
-    if (source.isDirectory()) {
-
-      // Let's ensure the output dir exists
-      if (output != null && !output.exists()) {
-        output.mkdirs();
-      }
-
-      // Iterate over files in directory
-      File[] files = source.listFiles();
-      if (files != null) {
-        for (File f : files) {
-          StreamSource s = new StreamSource(f);
-          StreamResult r = new StreamResult(new File(output, toOutputName(f.getName(), transformer)));
-          Result result = JSONResult.newInstanceIfSupported(transformer, r);
-          transformer.transform(s, result);
-        }
-      } else {
-        System.err.println("Unable to list source files");
-        System.exit(0);
-      }
-
-    } else {
-
-      // Process individual file
-      StreamSource s = new StreamSource(source);
-      StreamResult r;
-      if (output != null) {
-        r = new StreamResult(output);
-      } else {
-        r = new StreamResult(System.out);
-      }
-      Result result = JSONResult.newInstanceIfSupported(transformer, r);
-      transformer.transform(s, result);
+  private static void processDirectory(File source, @Nullable File output, Transformer transformer) throws TransformerException {
+    if (output != null && !output.exists() && !output.mkdirs()) {
+      System.err.println("Unable to create output directory: " + output);
+      System.exit(0);
+      return;
     }
+    File[] files = source.listFiles(); // listFiles() returns null only if source is not a directory or an I/O error occurs
+    if (files == null) {
+      System.err.println("Unable to list source files");
+      System.exit(0);
+      return;
+    }
+    for (File f : files) {
+      StreamResult r = new StreamResult(new File(output, toOutputName(f.getName(), transformer)));
+      transformer.transform(new StreamSource(f), JSONResult.newInstanceIfSupported(transformer, r));
+    }
+  }
 
+  private static void processFile(File source, @Nullable File output, Transformer transformer) throws TransformerException {
+    StreamResult r = output != null ? new StreamResult(output) : new StreamResult(System.out);
+    transformer.transform(new StreamSource(source), JSONResult.newInstanceIfSupported(transformer, r));
   }
 
   /**
