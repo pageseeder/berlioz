@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.json;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * An implementation of a JSON Writer backed by
@@ -136,6 +137,7 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter value(String value) {
+    Objects.requireNonNull(value, "value must not be null");
     maybeAppendComma(false);
     appendJSONString(value);
     return this;
@@ -159,6 +161,7 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter field(String name, String value) {
+    Objects.requireNonNull(value, "value must not be null");
     maybeAppendComma(false);
     appendJSONString(name);
     this.json.append(':');
