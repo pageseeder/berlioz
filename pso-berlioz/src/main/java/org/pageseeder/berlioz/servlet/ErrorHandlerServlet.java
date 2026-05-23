@@ -564,8 +564,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     Object o = req.getAttribute(ERROR_STATUS_CODE);
     if (o == null) return HttpServletResponse.SC_OK;
     else if (o instanceof Integer) {
-      Integer code  = (Integer)o;
-      return code;
+      return (Integer)o;
     } else {
       LOGGER.error("The 'javax.servlet.error.status_code' must contain an Integer, but was of type: {}", o.getClass().getSimpleName());
       return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
