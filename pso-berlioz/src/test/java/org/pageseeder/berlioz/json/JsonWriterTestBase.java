@@ -19,6 +19,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.StringWriter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * A base class to test JsonWriter implementations.
@@ -325,6 +327,82 @@ public abstract class JsonWriterTestBase {
         .endObject()
         .flush();
     Assert.assertEquals("{\"a\":1,\"b\":2,\"c\":3}", json.toString());
+  }
+
+  @Test
+  public void testNameFollowedByArray() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json)
+        .startObject()
+        .name("items")
+        .startArray()
+        .value(1L)
+        .value(2L)
+        .endArray()
+        .endObject()
+        .flush();
+    Assert.assertEquals("{\"items\":[1,2]}", json.toString());
+  }
+
+  @Test
+  public void testNameFollowedByObject() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json)
+        .startObject()
+        .name("inner")
+        .startObject()
+        .field("x", "y")
+        .endObject()
+        .endObject()
+        .flush();
+    Assert.assertEquals("{\"inner\":{\"x\":\"y\"}}", json.toString());
+  }
+
+  @Test
+  public void testProperties() {
+    Map<String, String> map = new LinkedHashMap<>();
+    map.put("a", "1");
+    map.put("b", "2");
+    StringWriter json = new StringWriter();
+    newJsonWriter(json)
+        .startObject()
+        .properties(map)
+        .endObject()
+        .flush();
+    Assert.assertEquals("{\"a\":\"1\",\"b\":\"2\"}", json.toString());
+  }
+
+  @Test
+  public void testInObjectAtTopLevel() {
+    StringWriter json = new StringWriter();
+    JsonWriter w = newJsonWriter(json);
+    Assert.assertFalse(w.inObject());
+  }
+
+  @Test
+  public void testInObjectInsideObject() {
+    StringWriter json = new StringWriter();
+    JsonWriter w = newJsonWriter(json).startObject();
+    Assert.assertTrue(w.inObject());
+    w.endObject().flush();
+  }
+
+  @Test
+  public void testInObjectInsideArray() {
+    StringWriter json = new StringWriter();
+    JsonWriter w = newJsonWriter(json).startArray();
+    Assert.assertFalse(w.inObject());
+    w.endArray().flush();
+  }
+
+  @Test
+  public void testInObjectNested() {
+    StringWriter json = new StringWriter();
+    JsonWriter w = newJsonWriter(json).startObject().startArray("items");
+    Assert.assertFalse(w.inObject());
+    w.endArray();
+    Assert.assertTrue(w.inObject());
+    w.endObject().flush();
   }
 
 }
