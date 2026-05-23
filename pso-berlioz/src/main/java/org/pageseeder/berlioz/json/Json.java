@@ -219,6 +219,7 @@ public class Json {
    * Jakarta JSON (jakarta.json), builtin. Only the first detected provider is used.</p>
    */
   public static synchronized void init() {
+    if (provider != JsonProvider.UNKNOWN) return;
     LOGGER.debug("Identifying Json provider");
     for (JsonProvider p : JsonProvider.values()) {
       if (p == JsonProvider.UNKNOWN) continue;
