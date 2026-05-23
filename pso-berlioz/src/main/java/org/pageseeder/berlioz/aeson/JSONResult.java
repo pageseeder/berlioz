@@ -125,9 +125,9 @@ public class JSONResult extends SAXResult implements Result {
   }
 
   /**
-   * Indicates whether the specified transformer based on its output properties.
+   * Indicates whether the specified transformer is supported based on its output properties.
    *
-   * <p>the transformer is considered to support this Result type if it uses the "xml" method and
+   * <p>The transformer is considered to support this Result type if it uses the "xml" method and
    * specifies the media type as "application/json".
    *
    * @param t the XSLT transformer implementation

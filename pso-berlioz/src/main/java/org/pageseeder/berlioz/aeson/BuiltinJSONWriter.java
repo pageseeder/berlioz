@@ -19,7 +19,8 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 
 /**
- * An implementation of a JSON Writer backed by
+ * A {@link JSONWriter} implementation backed by a {@link PrintWriter}, requiring no external
+ * dependencies. Used as the fallback when no Jakarta or Java EE JSON provider is available.
  *
  * @author Christophe Lauret
  *

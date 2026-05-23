@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 /**
- * Aeson classes
+ * Aeson — XML-to-JSON serialization for Berlioz.
  *
- * @see <a href="http://tools.ietf.org/html/rfc2616">HTTP/1.1</a>
+ * <p>The central entry point is {@link org.pageseeder.berlioz.aeson.JSONResult}, which is a
+ * {@code SAXResult} that converts SAX events into JSON output.  The conversion is driven by
+ * {@link org.pageseeder.berlioz.aeson.JSONSerializer} and uses a pluggable
+ * {@link org.pageseeder.berlioz.aeson.JSONWriter} back-end selected at runtime by
+ * {@link org.pageseeder.berlioz.aeson.JSONWriterFactory}: Jakarta JSON API (preferred),
+ * Java EE JSON API (legacy fallback), or a built-in writer with no extra dependencies.
+ *
+ * <p>JSON type hints ({@code json:boolean}, {@code json:number}, {@code json:null}) are
+ * controlled via namespace-qualified attributes using the namespace URI
+ * {@value org.pageseeder.berlioz.aeson.JSONSerializer#NS_URI}.
+ *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259 — The JavaScript Object Notation (JSON) Data Interchange Format</a>
  */
 @org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz.aeson;

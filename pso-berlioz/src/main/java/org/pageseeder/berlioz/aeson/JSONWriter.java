@@ -51,7 +51,7 @@ public interface JSONWriter extends Closeable {
   /**
    * Start writing a JSON object in the context of an object.
    *
-   * @param name The name of the array
+   * @param name The name of the object
    * @return this instance.
    */
   JSONWriter startObject(String name);
@@ -70,7 +70,7 @@ public interface JSONWriter extends Closeable {
   JSONWriter end();
 
   /**
-   * Start writing a JSON object in the context of an array.
+   * Writes a JSON null value with the given name in the current object context.
    *
    * @param name a name in the JSON name/value pair to be written in current JSON object
    * @return this instance.
@@ -78,7 +78,7 @@ public interface JSONWriter extends Closeable {
   JSONWriter writeNull(String name);
 
   /**
-   * Start writing a JSON object in the context of an array.
+   * Writes a JSON null value in the current array context.
    *
    * @return this instance.
    */
@@ -89,6 +89,7 @@ public interface JSONWriter extends Closeable {
    *
    * @param number the value to write.
    * @return this instance.
+   * @throws IllegalArgumentException if {@code number} is NaN or infinite.
    */
   JSONWriter value(double number);
 
@@ -103,18 +104,18 @@ public interface JSONWriter extends Closeable {
   /**
    * Writes the specified value as a JSON value within the current array context.
    *
-   * @param number the value to write.
+   * @param value the value to write.
    * @return this instance.
    */
-  JSONWriter value(String number);
+  JSONWriter value(String value);
 
   /**
    * Writes the specified value as a JSON value within the current array context.
    *
-   * @param number the value to write.
+   * @param value the value to write.
    * @return this instance.
    */
-  JSONWriter value(boolean number);
+  JSONWriter value(boolean value);
 
   /**
    * Writes a JSON name/boolean value pair in the current object context.
@@ -140,6 +141,7 @@ public interface JSONWriter extends Closeable {
    * @param name a name in the JSON name/value pair to be written in current JSON object
    * @param value a value in the JSON name/value pair to be written in current JSON object
    * @return this instance.
+   * @throws IllegalArgumentException if {@code value} is NaN or infinite.
    */
   JSONWriter property(String name, double value);
 
