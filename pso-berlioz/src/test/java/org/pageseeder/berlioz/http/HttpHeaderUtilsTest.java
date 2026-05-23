@@ -2,10 +2,14 @@ package org.pageseeder.berlioz.http;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.pageseeder.berlioz.util.GenericEntityInfo;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class HttpHeaderUtilsTest {
 
@@ -165,5 +169,119 @@ public class HttpHeaderUtilsTest {
     String result = HttpHeaderUtils.allow(Arrays.asList("GET", "POST"));
     Assert.assertFalse("Allow header must not end with a comma", result.endsWith(","));
     Assert.assertFalse("Allow header must not start with a comma", result.startsWith(","));
+  }
+
+  // ---------------------------------------------------------------------------
+  // acceptsGZipCompression
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void testAcceptsGZipCompression() {
+    HttpServletRequest accepted = HttpTestSupport.request()
+        .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate")
+        .build();
+    HttpServletRequest rejected = HttpTestSupport.request()
+        .header(HttpHeaders.ACCEPT_ENCODING, "gzip;q=0")
+        .build();
+    HttpServletRequest absent = HttpTestSupport.request().build();
+
+    Assert.assertTrue(HttpHeaderUtils.acceptsGZipCompression(accepted));
+    Assert.assertFalse(HttpHeaderUtils.acceptsGZipCompression(rejected));
+    Assert.assertFalse(HttpHeaderUtils.acceptsGZipCompression(absent));
+  }
+
+  // ---------------------------------------------------------------------------
+  // setContentLength
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void testSetContentLength_IntValue() {
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+
+    HttpHeaderUtils.setContentLength(response, 1024);
+
+    Assert.assertEquals(1024, recorder.contentLength());
+    Assert.assertNull(recorder.header(HttpHeaders.CONTENT_LENGTH));
+  }
+
+  @Test
+  public void testSetContentLength_LongValue() {
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+
+    HttpHeaderUtils.setContentLength(response, (long) Integer.MAX_VALUE + 1);
+
+    Assert.assertEquals(-1, recorder.contentLength());
+    Assert.assertEquals("2147483648", recorder.header(HttpHeaders.CONTENT_LENGTH));
+  }
+
+  // ---------------------------------------------------------------------------
+  // checkIfHeaders
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void testCheckIfHeaders_NoConditions() throws Exception {
+    HttpServletRequest request = HttpTestSupport.request().build();
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+
+    Assert.assertTrue(HttpHeaderUtils.checkIfHeaders(request, response, new GenericEntityInfo(1000, "text/plain", "\"abc\"")));
+    Assert.assertEquals(HttpServletResponse.SC_OK, recorder.status());
+  }
+
+  @Test
+  public void testCheckIfHeaders_IfNoneMatchGet() throws Exception {
+    HttpServletRequest request = HttpTestSupport.request()
+        .method("GET")
+        .header(HttpHeaders.IF_NONE_MATCH, "\"abc\"")
+        .build();
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+
+    Assert.assertFalse(HttpHeaderUtils.checkIfHeaders(request, response, new GenericEntityInfo(1000, "text/plain", "\"abc\"")));
+    Assert.assertEquals(HttpServletResponse.SC_NOT_MODIFIED, recorder.status());
+    Assert.assertEquals("\"abc\"", recorder.header(HttpHeaders.ETAG));
+    Assert.assertFalse(recorder.errorSent());
+  }
+
+  @Test
+  public void testCheckIfHeaders_IfNoneMatchPost() throws Exception {
+    HttpServletRequest request = HttpTestSupport.request()
+        .method("POST")
+        .header(HttpHeaders.IF_NONE_MATCH, "\"abc\"")
+        .build();
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+
+    Assert.assertFalse(HttpHeaderUtils.checkIfHeaders(request, response, new GenericEntityInfo(1000, "text/plain", "\"abc\"")));
+    Assert.assertEquals(HttpServletResponse.SC_PRECONDITION_FAILED, recorder.status());
+    Assert.assertTrue(recorder.errorSent());
+  }
+
+  @Test
+  public void testCheckIfHeaders_IfMatchMismatch() throws Exception {
+    HttpServletRequest request = HttpTestSupport.request()
+        .header(HttpHeaders.IF_MATCH, "\"other\"")
+        .build();
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+
+    Assert.assertFalse(HttpHeaderUtils.checkIfHeaders(request, response, new GenericEntityInfo(1000, "text/plain", "\"abc\"")));
+    Assert.assertEquals(HttpServletResponse.SC_PRECONDITION_FAILED, recorder.status());
+    Assert.assertTrue(recorder.errorSent());
+  }
+
+  @Test
+  public void testCheckIfHeaders_IfModifiedSince() throws Exception {
+    HttpServletRequest request = HttpTestSupport.request()
+        .dateHeader(HttpHeaders.IF_MODIFIED_SINCE, 1000)
+        .build();
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+
+    Assert.assertFalse(HttpHeaderUtils.checkIfHeaders(request, response, new GenericEntityInfo(1500, "text/plain", "\"abc\"")));
+    Assert.assertEquals(HttpServletResponse.SC_NOT_MODIFIED, recorder.status());
+    Assert.assertEquals("\"abc\"", recorder.header(HttpHeaders.ETAG));
   }
 }
