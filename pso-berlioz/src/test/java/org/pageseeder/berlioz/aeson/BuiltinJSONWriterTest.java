@@ -227,8 +227,162 @@ public final class BuiltinJSONWriterTest {
   @Test
   public void testString() {
     StringWriter json = new StringWriter();
-    newJSON(json).value("Caf\u00e9\n \"Test\" \t\\");
-    Assert.assertEquals("\"Caf\u00e9\\n \\\"Test\\\" \\t\\\\\"", json.toString());
+    newJSON(json).value("Café\n \"Test\" \t\\");
+    Assert.assertEquals("\"Café\\n \\\"Test\\\" \\t\\\\\"", json.toString());
+  }
+
+  // appendJSONString - named escapes (RFC 8259 section 7)
+
+  @Test
+  public void testStringEmpty() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("");
+    Assert.assertEquals("\"\"", json.toString());
+  }
+
+  @Test
+  public void testStringQuote() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\"");
+    Assert.assertEquals("\"\\\"\"", json.toString());
+  }
+
+  @Test
+  public void testStringBackslash() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\\");
+    Assert.assertEquals("\"\\\\\"", json.toString());
+  }
+
+  @Test
+  public void testStringNewline() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\n");
+    Assert.assertEquals("\"\\n\"", json.toString());
+  }
+
+  @Test
+  public void testStringCarriageReturn() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\r");
+    Assert.assertEquals("\"\\r\"", json.toString());
+  }
+
+  @Test
+  public void testStringTab() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\t");
+    Assert.assertEquals("\"\\t\"", json.toString());
+  }
+
+  @Test
+  public void testStringBackspace() {
+    // U+0008 uses the short \b named escape
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\b");
+    Assert.assertEquals("\"\\b\"", json.toString());
+  }
+
+  @Test
+  public void testStringFormFeed() {
+    // U+000C uses the short \f named escape
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\f");
+    Assert.assertEquals("\"\\f\"", json.toString());
+  }
+
+  // appendJSONString - control character hex escape (U+0000-U+001F, except the 7 named ones)
+
+  @Test
+  public void testStringControlNull() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\u0000");
+    Assert.assertEquals("\"\\u0000\"", json.toString());
+  }
+
+  @Test
+  public void testStringControlUnit() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\u0001");
+    Assert.assertEquals("\"\\u0001\"", json.toString());
+  }
+
+  @Test
+  public void testStringControlEsc() {
+    // U+001B (ESC) - uses hex form, not a named escape
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\u001b");
+    Assert.assertEquals("\"\\u001b\"", json.toString());
+  }
+
+  @Test
+  public void testStringControlMaxControl() {
+    // U+001F - last control character before the printable range
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\u001f");
+    Assert.assertEquals("\"\\u001f\"", json.toString());
+  }
+
+  // appendJSONString - segment flush positions (exercises the bulk-copy path)
+
+  @Test
+  public void testStringSpecialAtStart() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\"hello");
+    Assert.assertEquals("\"\\\"hello\"", json.toString());
+  }
+
+  @Test
+  public void testStringSpecialAtEnd() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("hello\"");
+    Assert.assertEquals("\"hello\\\"\"", json.toString());
+  }
+
+  @Test
+  public void testStringSpecialInMiddle() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("hello\nworld");
+    Assert.assertEquals("\"hello\\nworld\"", json.toString());
+  }
+
+  @Test
+  public void testStringBackslashAtStart() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\\hello");
+    Assert.assertEquals("\"\\\\hello\"", json.toString());
+  }
+
+  @Test
+  public void testStringOnlySpecialChars() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\"\\");
+    Assert.assertEquals("\"\\\"\\\\\"", json.toString());
+  }
+
+  @Test
+  public void testStringConsecutiveSpecialChars() {
+    StringWriter json = new StringWriter();
+    newJSON(json).value("\n\r\t");
+    Assert.assertEquals("\"\\n\\r\\t\"", json.toString());
+  }
+
+  // appendJSONString - bulk clean-run copy and non-ASCII passthrough
+
+  @Test
+  public void testStringLongClean() {
+    StringWriter json = new StringWriter();
+    String s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    newJSON(json).value(s);
+    Assert.assertEquals("\"" + s + "\"", json.toString());
+  }
+
+  @Test
+  public void testStringNonAsciiPassthrough() {
+    // Characters above U+001F that are not " or \ pass through unchanged
+    StringWriter json = new StringWriter();
+    newJSON(json).value("café 中文");
+    Assert.assertEquals("\"café 中文\"", json.toString());
   }
 
   @Test

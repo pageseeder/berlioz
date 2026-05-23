@@ -180,37 +180,35 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   private void appendJSONString(String s) {
     this.json.append('"');
-    final int _length = s.length();
-    for (int i = 0; i < _length; i++) {
+    final int length = s.length();
+    int start = 0;
+    for (int i = 0; i < length; i++) {
       char c = s.charAt(i);
+      // Fast path: printable ASCII that needs no escaping — just accumulate.
+      if (c >= 0x20 && c != '"' && c != '\\') continue;
+      // Flush the clean run accumulated since 'start'.
+      if (i > start) this.json.write(s, start, i - start);
       switch (c) {
-        case '\n':
-          this.json.append('\\').append('n');
-          break;
-        case '\r':
-          this.json.append('\\').append('r');
-          break;
-        case '\t':
-          this.json.append('\\').append('t');
-          break;
-        case '"':
-          this.json.append('\\').append('"');
-          break;
-        case '\\':
-          this.json.append('\\').append('\\');
-          break;
-        default:
-          if (c < 0x10) {
-            this.json.append("\\u000").append(Integer.toHexString(c));
-          } else if (c < 0x20) {
-            this.json.append("\\u00").append(Integer.toHexString(c));
-          } else {
-            this.json.append(c);
-          }
+        case '"':  this.json.write("\\\""); break;
+        case '\\': this.json.write("\\\\"); break;
+        case '\n': this.json.write("\\n");  break;
+        case '\r': this.json.write("\\r");  break;
+        case '\t': this.json.write("\\t");  break;
+        case '\b': this.json.write("\\b");  break;
+        case '\f': this.json.write("\\f");  break;
+        default:   // remaining control characters (U+0000–U+001F)
+          this.json.write("\\u00");
+          this.json.append(HEX[(c >> 4) & 0xF]);
+          this.json.append(HEX[c & 0xF]);
       }
+      start = i + 1;
     }
+    // Flush any remaining clean tail.
+    if (start < length) this.json.write(s, start, length - start);
     this.json.append('"');
   }
+
+  private static final char[] HEX = "0123456789abcdef".toCharArray();
 
   private void appendJSONLong(long number) {
     this.json.append(Long.toString(number));
