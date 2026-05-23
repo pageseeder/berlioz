@@ -16,14 +16,16 @@
 package org.pageseeder.berlioz.bundler;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
-import org.jspecify.annotations.NonNull;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Service;
 import org.slf4j.Logger;
@@ -56,27 +58,23 @@ public final class BundleConfig implements Serializable {
   /**
    * The default bundle configuration.
    */
-  private static final String[] DEFAULT_BUNDLE_CONFIG = new String[]{GLOBAL_LEVEL, GROUP_LEVEL,  };
+  private static final List<String> DEFAULT_BUNDLE_CONFIG = List.of(GLOBAL_LEVEL, GROUP_LEVEL, SERVICE_LEVEL);
 
   /**
    * The default JavaScript bundle definitions
    */
-  private static final Map<String, BundleDefinition> DEFAULT_JS_BUNDLE = new HashMap<>();
-  static {
-    DEFAULT_JS_BUNDLE.put(GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/script/global.js"));
-    DEFAULT_JS_BUNDLE.put(GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/script/{GROUP}.js"));
-    DEFAULT_JS_BUNDLE.put(SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/script/{GROUP}/{SERVICE}.js"));
-  }
+  private static final Map<String, BundleDefinition> DEFAULT_JS_BUNDLE = Map.of(
+      GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/script/global.js"),
+      GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/script/{GROUP}.js"),
+      SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/script/{GROUP}/{SERVICE}.js"));
 
   /**
    * The default CSS bundle definitions
    */
-  private static final Map<String, BundleDefinition> DEFAULT_CSS_BUNDLE = new HashMap<>();
-  static {
-    DEFAULT_CSS_BUNDLE.put(GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/style/global.css"));
-    DEFAULT_CSS_BUNDLE.put(GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/style/{GROUP}.css"));
-    DEFAULT_CSS_BUNDLE.put(SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/style/{GROUP}/{SERVICE}.css"));
-  }
+  private static final Map<String, BundleDefinition> DEFAULT_CSS_BUNDLE = Map.of(
+      GLOBAL_LEVEL,  new BundleDefinition(GLOBAL_LEVEL,  "global",    "/style/global.css"),
+      GROUP_LEVEL,   new BundleDefinition(GROUP_LEVEL,   "{GROUP}",   "/style/{GROUP}.css"),
+      SERVICE_LEVEL, new BundleDefinition(SERVICE_LEVEL, "{SERVICE}", "/style/{GROUP}/{SERVICE}.css"));
 
   /** Where the bundled scripts should be located. */
   private static final String DEFAULT_BUNDLED_SCRIPTS = "/script/_/";
@@ -95,7 +93,7 @@ public final class BundleConfig implements Serializable {
   /**
    * The list of bundle instances mapped to service IDs.
    */
-  private final Map<String, List<BundleInstance>> _instances = new WeakHashMap<>();
+  private final Map<String, List<BundleInstance>> instances = new ConcurrentHashMap<>();
 
   /**
    * The type of bundle config.
@@ -108,7 +106,7 @@ public final class BundleConfig implements Serializable {
   private final boolean minimize;
 
   /**
-   * Whether the code should be minimized as part of bundling.
+   * Where the bundled code should be stored.
    */
   private final String location;
 
@@ -120,13 +118,13 @@ public final class BundleConfig implements Serializable {
   /**
    * The tool used for bundling JS.
    */
-  private final WebBundleTool bundler;
+  private transient volatile WebBundleTool bundler;
 
   /**
    * Create a new config - use factory method instead.
    */
   private BundleConfig(List<BundleDefinition> definitions, BundleType type, boolean minimize, String location, File root) {
-    this.definitions = definitions;
+    this.definitions = List.copyOf(definitions);
     this.type = type;
     this.minimize = minimize;
     this.location = location;
@@ -137,7 +135,7 @@ public final class BundleConfig implements Serializable {
   /**
    * @return bundle definitions.
    */
-  public List<BundleDefinition> definitions() {
+  List<BundleDefinition> definitions() {
     return this.definitions;
   }
 
@@ -181,7 +179,17 @@ public final class BundleConfig implements Serializable {
    * @return The bundler.
    */
   public WebBundleTool bundler() {
-    return this.bundler;
+    WebBundleTool tool = this.bundler;
+    if (tool == null) {
+      synchronized (this) {
+        tool = this.bundler;
+        if (tool == null) {
+          tool = initBundler();
+          this.bundler = tool;
+        }
+      }
+    }
+    return tool;
   }
 
   /**
@@ -189,9 +197,9 @@ public final class BundleConfig implements Serializable {
    * @return the list of bundles for this service
    */
   public List<File> getBundles(Service service) {
-    List<BundleInstance> instances = getInstances(service);
-    List<File> files = new ArrayList<>(instances.size());
-    for (BundleInstance instance : instances) {
+    List<BundleInstance> bundles = getInstances(service);
+    List<File> files = new ArrayList<>(bundles.size());
+    for (BundleInstance instance : bundles) {
       File b = instance.getBundleFile(this);
       if (b != null) {
         files.add(b);
@@ -205,9 +213,9 @@ public final class BundleConfig implements Serializable {
    * @return the last modified bundle file for this service
    */
   public long getLastModifiedBundle(Service service) {
-    List<BundleInstance> instances = getInstances(service);
+    List<BundleInstance> bundles = getInstances(service);
     long lastModified = 0L;
-    for (BundleInstance instance : instances) {
+    for (BundleInstance instance : bundles) {
       File bundle = instance.getBundleFile(this);
       if (bundle != null && bundle.lastModified() > lastModified) {
         lastModified = bundle.lastModified();
@@ -221,9 +229,9 @@ public final class BundleConfig implements Serializable {
    * @return the list of paths for this service
    */
   public List<String> getPaths(Service service) {
-    List<BundleInstance> instances = getInstances(service);
+    List<BundleInstance> bundles = getInstances(service);
     List<String> paths = new ArrayList<>();
-    for (BundleInstance instance : instances) {
+    for (BundleInstance instance : bundles) {
       instance.addToExistingPaths(paths);
     }
     return paths;
@@ -236,13 +244,8 @@ public final class BundleConfig implements Serializable {
    *
    * @return the corresponding configuration.
    */
-  public List<BundleInstance> getInstances(Service service) {
-    List<BundleInstance> instances = this._instances.get(service.id());
-    if (instances == null) {
-      instances = instantiate(service);
-      this._instances.put(service.id(), instances);
-    }
-    return instances;
+  private List<BundleInstance> getInstances(Service service) {
+    return this.instances.computeIfAbsent(service.id(), id -> instantiate(service));
   }
 
   // static helpers
@@ -260,7 +263,7 @@ public final class BundleConfig implements Serializable {
   public static BundleConfig newInstance(String name, BundleType type, File root) {
     final String berliozPrefix = "berlioz.";
     String lcType = type.name().toLowerCase();
-    @NonNull String[] names = getBundleNames(berliozPrefix+lcType+"bundler.configs."+name);
+    List<String> names = getBundleNames(berliozPrefix+lcType+"bundler.configs."+name);
     Map<String, BundleDefinition> defaults = BundleType.JS == type? DEFAULT_JS_BUNDLE : DEFAULT_CSS_BUNDLE;
     List<BundleDefinition> definitions = loadDefinitions(names, "berlioz."+lcType+"bundler.bundles.", defaults);
     boolean minimize = GlobalSettings.get(berliozPrefix+lcType+"bundler.minimize", true);
@@ -269,8 +272,10 @@ public final class BundleConfig implements Serializable {
     String defaultLocation = getDefaultLocation(type);
     String location = GlobalSettings.get(berliozPrefix+lcType+"bundler.location", defaultLocation);
     File store = new File(root, location);
-    if (!store.exists()) {
-      store.mkdirs();
+    try {
+      Files.createDirectories(store.toPath());
+    } catch (IOException ex) {
+      throw new IllegalStateException("Unable to create bundle location: " + store, ex);
     }
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Loading bundle config:{} ({}) => {}", name, type, names);
@@ -302,12 +307,11 @@ public final class BundleConfig implements Serializable {
    * @return the corresponding list of instances.
    */
   private List<BundleInstance> instantiate(Service service) {
-    List<BundleInstance> instances = new ArrayList<>();
+    List<BundleInstance> bundles = new ArrayList<>(this.definitions.size());
     for (BundleDefinition def : this.definitions) {
-      BundleInstance instance = BundleInstance.instantiate(this, def, service);
-      instances.add(instance);
+      bundles.add(BundleInstance.instantiate(this, def, service));
     }
-    return instances;
+    return bundles;
   }
 
   /**
@@ -320,15 +324,15 @@ public final class BundleConfig implements Serializable {
    *
    * @return The corresponding list.
    */
-  private static List<BundleDefinition> loadDefinitions(String[] names, String prefix, Map<String, BundleDefinition> defaults) {
+  private static List<BundleDefinition> loadDefinitions(List<String> names, String prefix, Map<String, BundleDefinition> defaults) {
     List<BundleDefinition> bundles = new ArrayList<>();
     for (String name : names) {
       BundleDefinition bc = defaults.get(name);
       // Same as the name if the 'filename' sub-property isn't defined
-      String filename = GlobalSettings.get(prefix + name + ".filename", name);
+      String filename = GlobalSettings.get(prefix + name + ".filename", bc != null? bc.filename() : name);
       // The value of the property if the 'paths' sub-property isn't defined.
       String paths = GlobalSettings.get(prefix + name + ".include", GlobalSettings.get(prefix + name, ""));
-      if (!paths.isEmpty()) {
+      if (!paths.trim().isEmpty()) {
         bc = new BundleDefinition(name, filename, paths);
       }
       if (bc != null) {
@@ -347,9 +351,23 @@ public final class BundleConfig implements Serializable {
    *
    * @return The corresponding bundle names.
    */
-  private static String[] getBundleNames(String property) {
+  private static List<String> getBundleNames(String property) {
     String names = GlobalSettings.get(property);
-    return names != null? names.split(",") : DEFAULT_BUNDLE_CONFIG;
+    return names != null? parseCSV(names) : DEFAULT_BUNDLE_CONFIG;
+  }
+
+  /**
+   * Parses a comma-separated property and ignores incidental whitespace.
+   *
+   * @param value the comma-separated property.
+   *
+   * @return the list of configured names.
+   */
+  private static List<String> parseCSV(String value) {
+    return Arrays.stream(value.split(","))
+        .map(String::trim)
+        .filter(name -> !name.isEmpty())
+        .collect(Collectors.toList());
   }
 
   /**
