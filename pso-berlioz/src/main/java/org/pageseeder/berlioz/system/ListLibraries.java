@@ -17,27 +17,33 @@ package org.pageseeder.berlioz.system;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.WeakHashMap;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.servlet.HttpContentRequest;
 import org.pageseeder.xmlwriter.XMLWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * List the Java libraries in use in the application.
@@ -54,11 +60,33 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class ListLibraries implements ContentGenerator {
 
   /**
-   * Maps the library paths to the main attributes of the manifest.
-   *
-   * <p>We cap the amount of entries to 100 to avoid potential memory leaks.
+   * Logger for this generator.
    */
-  private final Map<String, Map<String, String>> manifest = createLRUMap(100);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ListLibraries.class);
+
+  /**
+   * Path to the web application libraries.
+   */
+  private static final String LIBRARIES_PATH = "/WEB-INF/lib/";
+
+  /**
+   * Maximum number of manifests to retain per servlet context.
+   */
+  private static final int MAX_CACHED_MANIFESTS = 100;
+
+  /**
+   * Maps each servlet context to its cached manifest attributes.
+   *
+   * <p>Servlet containers may keep generator instances around for a long time, so the outer map
+   * uses weak keys to avoid retaining undeployed applications. Each context cache is still capped
+   * to prevent unbounded growth when a web application contains many or changing libraries.
+   */
+  private static final Map<ServletContext, Map<String, Map<String, String>>> MANIFESTS =
+      new WeakHashMap<>();
+
+  static {
+    GlobalSettings.registerListener(ListLibraries::clearCache);
+  }
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
@@ -67,40 +95,40 @@ public final class ListLibraries implements ContentGenerator {
     extractLibs(context, xml);
   }
 
-  private void extractLibs(ServletContext context, XMLWriter xml) throws IOException {
+  /**
+   * Extracts the libraries from the servlet context as XML.
+   *
+   * @param context The servlet context to inspect.
+   * @param xml     The XML output.
+   *
+   * @throws IOException If an error occurs while writing the XML.
+   */
+  void extractLibs(ServletContext context, XMLWriter xml) throws IOException {
 
-    // TODO: Use Weak cache to avoid having to reopen all libs, reload on Berlioz Reload
-    Set<String> paths = context.getResourcePaths("/WEB-INF/lib");
+    List<String> paths = getLibraryPaths(context);
 
     xml.openElement("libraries");
-    if (paths != null) {
+    for (String path : paths) {
 
-      // List all the jars
-      for (String path : paths) {
+      String filename = filename(path);
+      String base = filename.substring(0, filename.length() - ".jar".length());
+      int dash = base.lastIndexOf('-');
+      String name = dash > 0 && dash < base.length() - 1 ? base.substring(0, dash) : base;
+      String version = dash > 0 && dash < base.length() - 1 ? base.substring(dash+1) : null;
 
-        String filename = path.indexOf('/')>=0? path.substring(path.lastIndexOf('/')) : path;
-
-        // Get the name and version from the file name
-        int dot = filename.lastIndexOf('.');
-        int dash = filename.lastIndexOf('-');
-        String name = dash != -1? filename.substring(0, dash) : filename.substring(0, dot);
-        String version = dash != -1? filename.substring(dash+1, dot) : null;
-
-        // Start writing out the XML
-        xml.openElement("library");
-        xml.attribute("file", filename);
-        xml.attribute("name", name);
-        if (version != null) {
-          xml.attribute("version", version);
-        }
-
-        // Get attributes
-        Map<String, String> attributes = getMainAttributes(path, context);
-        toXML(xml, attributes);
-
-        xml.closeElement();
+      // Start writing out the XML
+      xml.openElement("library");
+      xml.attribute("file", filename);
+      xml.attribute("name", name);
+      if (version != null) {
+        xml.attribute("version", version);
       }
 
+      // Get attributes
+      Map<String, String> attributes = getMainAttributes(path, context);
+      toXML(xml, attributes);
+
+      xml.closeElement();
     }
     xml.closeElement();
   }
@@ -113,17 +141,28 @@ public final class ListLibraries implements ContentGenerator {
    *
    * @return the attributes
    */
-  private Map<String, String> getMainAttributes(String path, ServletContext context) {
-    Map<String, String> attributes = this.manifest.get(path);
-    if (attributes == null) {
-      attributes = loadMainAttributes(path, context);
-      this.manifest.put(path, attributes);
+  private static Map<String, String> getMainAttributes(String path, ServletContext context) {
+    Map<String, Map<String, String>> cache = cache(context);
+    synchronized (cache) {
+      Map<String, String> attributes = cache.get(path);
+      if (attributes != null) {
+        return attributes;
+      }
     }
-    return attributes;
+
+    Map<String, String> loaded = loadMainAttributes(path, context);
+    synchronized (cache) {
+      Map<String, String> attributes = cache.get(path);
+      if (attributes != null) {
+        return attributes;
+      }
+      cache.put(path, loaded);
+      return loaded;
+    }
   }
 
   /**
-   * Loads the main attributes from the manifest of the jat corresponding to the specified path
+   * Loads the main attributes from the manifest of the jar corresponding to the specified path.
    *
    * @param path    The path to the Jar
    * @param context The servlet context
@@ -131,7 +170,7 @@ public final class ListLibraries implements ContentGenerator {
    * @return Always a Map.
    */
   private static Map<String, String> loadMainAttributes(String path, ServletContext context) {
-    Map<String, String> m = new HashMap<>();
+    Map<String, String> m = new TreeMap<>();
     try (InputStream in = context.getResourceAsStream(path)) {
       if (in != null) {
         try (JarInputStream jar = new JarInputStream(in)) {
@@ -139,7 +178,7 @@ public final class ListLibraries implements ContentGenerator {
           if (manifest != null) {
             Attributes attributes = manifest.getMainAttributes();
             for (Entry<Object, Object> e : attributes.entrySet()) {
-              String key = e.getKey().toString().toLowerCase();
+              String key = e.getKey().toString().toLowerCase(Locale.ROOT);
               Object o = e.getValue();
               if (o != null) {
                 m.put(key, o.toString());
@@ -147,11 +186,13 @@ public final class ListLibraries implements ContentGenerator {
             }
           }
         }
+      } else {
+        LOGGER.debug("Unable to open library {} from servlet context", path);
       }
     } catch (IOException ex) {
-      // TODO We should log this
+      LOGGER.warn("Unable to read manifest attributes from {}", path, ex);
     }
-    return m;
+    return Collections.unmodifiableMap(m);
   }
 
 
@@ -164,32 +205,79 @@ public final class ListLibraries implements ContentGenerator {
    * @throws IOException If an error occurs while writing the XML.
    */
   private static void toXML(XMLWriter xml, Map<String, String> attributes) throws IOException {
-    Map<String, List<String>> keys = new HashMap<>();
+    Map<String, String> xmlAttributes = new TreeMap<>();
+    Map<String, Map<String, String>> elements = new TreeMap<>();
     for (Entry<String, String> entry : attributes.entrySet()) {
       String key = entry.getKey();
       int dash = key.indexOf('-');
       if (dash == -1) {
-        // Just add as an attribute
-        xml.attribute(key.toLowerCase(), Objects.toString(entry.getValue(), ""));
+        xmlAttributes.put(key.toLowerCase(Locale.ROOT), Objects.toString(entry.getValue(), ""));
       } else {
-        // Sort the composed manifest attributes
         String category = key.substring(0, dash);
         String value = key.substring(dash+1);
-        List<String> values = keys.computeIfAbsent(category, k -> new ArrayList<>());
-        values.add(value);
+        Map<String, String> values = elements.computeIfAbsent(category, k -> new TreeMap<>());
+        values.put(value, Objects.toString(entry.getValue(), ""));
       }
     }
 
+    // Attributes must be written before any child element.
+    for (Entry<String, String> e : xmlAttributes.entrySet()) {
+      xml.attribute(e.getKey(), e.getValue());
+    }
+
     // Elements
-    for (Entry<String, List<String>> e : keys.entrySet()) {
-      xml.openElement(e.getKey().toLowerCase());
-      for (String key :  e.getValue()) {
-        String value = attributes.get(e.getKey()+'-'+key);
-        xml.attribute(key.toLowerCase(), Objects.toString(value, ""));
+    for (Entry<String, Map<String, String>> e : elements.entrySet()) {
+      xml.openElement(e.getKey().toLowerCase(Locale.ROOT));
+      for (Entry<String, String> attribute : e.getValue().entrySet()) {
+        xml.attribute(attribute.getKey().toLowerCase(Locale.ROOT), attribute.getValue());
       }
       xml.closeElement();
     }
 
+  }
+
+  /**
+   * Clears all cached manifests.
+   *
+   * <p>This method is registered as a {@link GlobalSettings} listener so Berlioz reloads also
+   * force the next request to re-read library manifests.
+   */
+  static void clearCache() {
+    synchronized (MANIFESTS) {
+      MANIFESTS.clear();
+    }
+  }
+
+  private static Map<String, Map<String, String>> cache(ServletContext context) {
+    synchronized (MANIFESTS) {
+      Map<String, Map<String, String>> cache = MANIFESTS.get(context);
+      if (cache == null) {
+        cache = createLRUMap(MAX_CACHED_MANIFESTS);
+        MANIFESTS.put(context, cache);
+      }
+      return cache;
+    }
+  }
+
+  private static List<String> getLibraryPaths(ServletContext context) {
+    Set<String> resources = context.getResourcePaths(LIBRARIES_PATH);
+    if (resources == null) {
+      resources = context.getResourcePaths("/WEB-INF/lib");
+    }
+    if (resources == null || resources.isEmpty()) return List.of();
+    return resources.stream()
+        .filter(ListLibraries::isJar)
+        .sorted()
+        .collect(Collectors.toList());
+  }
+
+  private static boolean isJar(String path) {
+    return !path.endsWith("/") && path.toLowerCase(Locale.ROOT).endsWith(".jar");
+  }
+
+  private static String filename(String path) {
+    int slash = path.lastIndexOf('/');
+    return slash >= 0 ? path.substring(slash+1) : path;
   }
 
   private static <K, V> Map<K, V> createLRUMap(final int maxEntries) {
