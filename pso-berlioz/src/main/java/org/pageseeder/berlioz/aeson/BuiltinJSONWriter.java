@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.aeson;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 /**
  * An implementation of a JSON Writer backed by
@@ -32,7 +33,7 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   private boolean first = true;
 
-  private final char[] itemStack = new char[32];
+  private char[] itemStack = new char[32];
 
   private int level = -1;
 
@@ -42,37 +43,45 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   @Override
   public JSONWriter startArray(String name) {
-    this.itemStack[++this.level]=']';
-    maybeAppendComma(true);
+    ensureCapacity();
+    this.itemStack[++this.level] = ']';
+    maybeAppendComma();
     appendJSONString(name);
     this.json.append(':');
     this.json.append('[');
+    this.first = true;
     return this;
   }
 
   @Override
   public JSONWriter startArray() {
-    this.itemStack[++this.level]=']';
-    maybeAppendComma(true);
+    ensureCapacity();
+    this.itemStack[++this.level] = ']';
+    maybeAppendComma();
     this.json.append('[');
+    this.first = true;
     return this;
   }
 
   @Override
   public JSONWriter startObject(String name) {
-    this.itemStack[++this.level]='}';
-    maybeAppendComma(true);
+    ensureCapacity();
+    this.itemStack[++this.level] = '}';
+    maybeAppendComma();
     appendJSONString(name);
     this.json.append(':');
     this.json.append('{');
+    this.first = true;
     return this;
   }
 
   @Override
   public JSONWriter startObject() {
-    this.itemStack[++this.level]='}';
-    maybeAppendComma(true);
+    ensureCapacity();
+    this.itemStack[++this.level] = '}';
+    maybeAppendComma();
     this.json.append('{');
+    this.first = true;
     return this;
   }
 
@@ -86,14 +95,14 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   @Override
   public JSONWriter writeNull() {
-    maybeAppendComma(false);
+    maybeAppendComma();
     this.json.append("null");
     return this;
   }
 
   @Override
   public JSONWriter writeNull(String name) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONString(name);
     this.json.append(':');
     this.json.append("null");
@@ -102,35 +111,35 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   @Override
   public JSONWriter value(double number) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONDouble(number);
     return this;
   }
 
   @Override
   public JSONWriter value(long number) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONLong(number);
     return this;
   }
 
   @Override
   public JSONWriter value(String value) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONString(value);
     return this;
   }
 
   @Override
   public JSONWriter value(boolean value) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONBoolean(value);
     return this;
   }
 
   @Override
   public JSONWriter property(String name, String value) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONString(name);
     this.json.append(':');
     appendJSONString(value);
@@ -139,7 +148,7 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   @Override
   public JSONWriter property(String name, boolean value) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONString(name);
     this.json.append(':');
     appendJSONBoolean(value);
@@ -148,7 +157,7 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   @Override
   public JSONWriter property(String name, double value) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONString(name);
     this.json.append(':');
     appendJSONDouble(value);
@@ -157,7 +166,7 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   @Override
   public JSONWriter property(String name, long value) {
-    maybeAppendComma(false);
+    maybeAppendComma();
     appendJSONString(name);
     this.json.append(':');
     appendJSONLong(value);
@@ -208,6 +217,8 @@ final class BuiltinJSONWriter implements JSONWriter {
   }
 
   private void appendJSONDouble(double number) {
+    if (Double.isNaN(number) || Double.isInfinite(number))
+      throw new IllegalArgumentException("JSON does not support NaN or Infinite values: " + number);
     this.json.append(Double.toString(number));
   }
 
@@ -215,13 +226,17 @@ final class BuiltinJSONWriter implements JSONWriter {
     this.json.append(Boolean.toString(b));
   }
 
-  private void maybeAppendComma(boolean newcontext) {
+  private void maybeAppendComma() {
     if (this.first) {
-      if (!newcontext) {
-        this.first = false;
-      }
+      this.first = false;
     } else {
       this.json.append(',');
+    }
+  }
+
+  private void ensureCapacity() {
+    if (this.level + 1 >= this.itemStack.length) {
+      this.itemStack = Arrays.copyOf(this.itemStack, this.itemStack.length * 2);
     }
   }
 

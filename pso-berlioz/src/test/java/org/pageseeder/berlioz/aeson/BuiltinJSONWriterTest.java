@@ -95,6 +95,119 @@ public final class BuiltinJSONWriterTest {
     Assert.assertEquals("{\"abc\":{}}", json.toString());
   }
 
+  // Nested container as non-first item (regression for maybeAppendComma bug)
+
+  @Test
+  public void testObjectNestedObjectAfterProperty() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startObject()
+        .property("a", "1")
+        .startObject("inner")
+            .property("x", "y")
+        .end()
+    .end();
+    Assert.assertEquals("{\"a\":\"1\",\"inner\":{\"x\":\"y\"}}", json.toString());
+  }
+
+  @Test
+  public void testObjectNestedArrayAfterProperty() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startObject()
+        .property("a", "1")
+        .startArray("items")
+            .value("x")
+            .value("y")
+        .end()
+        .property("b", "2")
+    .end();
+    Assert.assertEquals("{\"a\":\"1\",\"items\":[\"x\",\"y\"],\"b\":\"2\"}", json.toString());
+  }
+
+  @Test
+  public void testArrayNestedArrayAfterValue() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startArray()
+        .value("a")
+        .startArray()
+            .value("b")
+        .end()
+    .end();
+    Assert.assertEquals("[\"a\",[\"b\"]]", json.toString());
+  }
+
+  @Test
+  public void testArrayNestedObjectAfterValue() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startArray()
+        .value(1L)
+        .startObject()
+            .property("k", "v")
+        .end()
+    .end();
+    Assert.assertEquals("[1,{\"k\":\"v\"}]", json.toString());
+  }
+
+  @Test
+  public void testMultipleSequentialNestedObjects() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startObject()
+        .startObject("a").property("x", "1").end()
+        .startObject("b").property("y", "2").end()
+    .end();
+    Assert.assertEquals("{\"a\":{\"x\":\"1\"},\"b\":{\"y\":\"2\"}}", json.toString());
+  }
+
+  @Test
+  public void testPropertyAfterNestedObject() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startObject()
+        .startObject("inner").end()
+        .property("after", "value")
+    .end();
+    Assert.assertEquals("{\"inner\":{},\"after\":\"value\"}", json.toString());
+  }
+
+  @Test
+  public void testDeepNesting() {
+    StringWriter json = new StringWriter();
+    BuiltinJSONWriter w = newJSON(json);
+    int depth = 40;
+    for (int i = 0; i < depth; i++) w.startArray();
+    for (int i = 0; i < depth; i++) w.end();
+    String expected = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[" +
+                      "]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]";
+    Assert.assertEquals(expected, json.toString());
+  }
+
+  // NaN and Infinity are not valid JSON
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueNaNThrows() {
+    newJSON(new StringWriter()).value(Double.NaN);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValuePositiveInfinityThrows() {
+    newJSON(new StringWriter()).value(Double.POSITIVE_INFINITY);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueNegativeInfinityThrows() {
+    newJSON(new StringWriter()).value(Double.NEGATIVE_INFINITY);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testPropertyNaNThrows() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startObject().property("x", Double.NaN).end();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testPropertyInfinityThrows() {
+    StringWriter json = new StringWriter();
+    newJSON(json).startObject().property("x", Double.POSITIVE_INFINITY).end();
+  }
+
   @Test
   public void testNumber() {
     StringWriter json = new StringWriter();
