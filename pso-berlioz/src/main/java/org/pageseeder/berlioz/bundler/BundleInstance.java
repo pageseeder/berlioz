@@ -19,11 +19,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents an actual instance of a bundle.
@@ -39,6 +40,11 @@ final class BundleInstance implements Serializable {
 
   /** As per requirement for Serializable. */
   private static final long serialVersionUID = -2444096252988163408L;
+
+  /**
+   * Logger.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(BundleInstance.class);
 
   /**
    * The name of this instance, "global", the name of a group or service.
@@ -95,7 +101,7 @@ final class BundleInstance implements Serializable {
         bundle = bundler.bundleStyles(existingFiles, this.name, config.minimize());
       }
     } catch (IOException ex) {
-      // TODO Report something!
+      LOGGER.warn("Unable to generate {} bundle '{}' from {}", config.type(), this.name, existingFiles, ex);
     }
     return bundle;
   }
@@ -107,7 +113,6 @@ final class BundleInstance implements Serializable {
    * @param paths the list of paths to update.
    */
   public void addToExistingPaths(List<String> paths) {
-    if (paths == null) return;
     for (int i = 0; i < this.files.length; i++) {
       if (this.files[i].exists()) {
         paths.add(this.paths[i]);
@@ -161,7 +166,6 @@ final class BundleInstance implements Serializable {
    * @return the list of paths to the files to bundles.
    */
   private static List<String> computePaths(String[] paths, File[] files) {
-    if (paths == null) return Collections.emptyList();
     if (paths.length > 1) {
       // multiple paths specified
       List<String> existing = new ArrayList<>(paths.length);
@@ -171,11 +175,9 @@ final class BundleInstance implements Serializable {
         }
       }
       return existing;
-    } else if (paths.length == 1) {
-      // only one path
-      if (files[0].exists()) return Collections.singletonList(paths[0]);
     }
-    return Collections.emptyList();
+    if (paths.length == 1 && files[0].exists()) return List.of(paths[0]);
+    return List.of();
   }
 
   /**
@@ -186,7 +188,6 @@ final class BundleInstance implements Serializable {
    * @return the list of files to bundle.
    */
   private static List<File> computeFiles(File[] files) {
-    if (files == null) return Collections.emptyList();
     if (files.length > 1) {
       // multiple paths specified
       List<File> existing = new ArrayList<>(files.length);
@@ -196,11 +197,10 @@ final class BundleInstance implements Serializable {
         }
       }
       return existing;
-    } else if (files.length == 1) {
-      // only one paths
-      if (files[0].exists()) return Collections.singletonList(files[0]);
     }
-    return Collections.emptyList();
+    // only one path
+    if (files.length == 1 && files[0].exists()) return List.of(files[0]);
+    return List.of();
   }
 
   /**
@@ -222,18 +222,4 @@ final class BundleInstance implements Serializable {
     return out;
   }
 
-  /**
-   * Returns the date of the most recent file.
-   * @param files the list of files.
-   * @return the date of the most recent.
-   */
-  private static long getMostRecent(List<File> files) {
-    long mostRecent = 0;
-    for (File f : files) {
-      if (f.lastModified() > mostRecent) {
-        mostRecent = f.lastModified();
-      }
-    }
-    return mostRecent;
-  }
 }
