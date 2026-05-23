@@ -93,11 +93,11 @@ public final class XSLTransformer {
    */
   private static final Templates IDENTITY_TEMPLATES = new Templates() {
     @Override
-    public @NonNull Transformer newTransformer() throws TransformerConfigurationException {
+    public Transformer newTransformer() throws TransformerConfigurationException {
       return TransformerFactory.newInstance().newTransformer();
     }
     @Override
-    public @NonNull Properties getOutputProperties() {
+    public Properties getOutputProperties() {
       return new Properties();
     }
   };
@@ -308,7 +308,7 @@ public final class XSLTransformer {
    *
    * @throws TransformerException For XSLT Transformation errors or XSLT config errors
    */
-  private static long transform(StreamSource source, StreamResult result, Templates templates, Map<String, String> parameters)
+  private static long transform(StreamSource source, StreamResult result, Templates templates, @Nullable Map<String, String> parameters)
     throws TransformerException {
 
     // Create a transformer from the templates
@@ -448,7 +448,7 @@ public final class XSLTransformer {
    * @param parameters The XSLT parameters passed to the transformer
    * @return the error details as XML
    */
-  private static String toXML(TransformerException ex, String source, Map<String, String> parameters) {
+  private static String toXML(TransformerException ex, String source, @Nullable Map<String, String> parameters) {
     // Remove all double dash so that it may be inserted in the XML comment
     StringWriter out = new StringWriter();
     try {
