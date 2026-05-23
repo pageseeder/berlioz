@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.aeson;
 
-import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import org.junit.Assert;
@@ -403,7 +402,7 @@ public final class BuiltinJSONWriterTest {
   }
 
   private BuiltinJSONWriter newJSON(StringWriter json) {
-    return new BuiltinJSONWriter(new PrintWriter(json));
+    return new BuiltinJSONWriter(json);
   }
 
 }

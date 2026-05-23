@@ -15,9 +15,11 @@
  */
 package org.pageseeder.berlioz.aeson;
 
+import java.io.BufferedWriter;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +66,7 @@ public final class JSONWriterFactory {
     if (status == UNINITIALIZED) init();
     if (status == JAKARTA) return JakartaJSONWriter.newInstance(out);
     if (status == J2EE)    return J2EEJSONWriter.newInstance(out);
-    return new BuiltinJSONWriter(new PrintWriter(out));
+    return new BuiltinJSONWriter(new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
   }
 
   /**
@@ -77,7 +79,7 @@ public final class JSONWriterFactory {
     if (status == UNINITIALIZED) init();
     if (status == JAKARTA) return JakartaJSONWriter.newInstance(writer);
     if (status == J2EE)    return J2EEJSONWriter.newInstance(writer);
-    return new BuiltinJSONWriter(new PrintWriter(writer));
+    return new BuiltinJSONWriter(writer);
   }
 
   /**

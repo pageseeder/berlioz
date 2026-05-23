@@ -16,13 +16,16 @@
 package org.pageseeder.berlioz.aeson;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.util.Arrays;
 
 /**
- * A {@link JSONWriter} implementation backed by a {@link PrintWriter}, requiring no external
+ * A {@link JSONWriter} implementation backed by a {@link Writer}, requiring no external
  * dependencies. Used as the fallback when no Jakarta or Java EE JSON provider is available.
+ *
+ * <p>Any {@link IOException} thrown by the underlying writer is rethrown as an
+ * {@link UncheckedIOException} so that the {@link JSONWriter} interface stays exception-free.
  *
  * @author Christophe Lauret
  *
@@ -31,8 +34,7 @@ import java.util.Arrays;
  */
 final class BuiltinJSONWriter implements JSONWriter {
 
-
-  private final PrintWriter json;
+  private final Writer json;
 
   private boolean first = true;
 
@@ -40,7 +42,7 @@ final class BuiltinJSONWriter implements JSONWriter {
 
   private int level = -1;
 
-  public BuiltinJSONWriter(PrintWriter json) {
+  BuiltinJSONWriter(Writer json) {
     this.json = json;
   }
 
@@ -50,8 +52,8 @@ final class BuiltinJSONWriter implements JSONWriter {
     this.itemStack[++this.level] = ']';
     maybeAppendComma();
     appendJSONString(name);
-    this.json.append(':');
-    this.json.append('[');
+    write(':');
+    write('[');
     this.first = true;
     return this;
   }
@@ -61,7 +63,7 @@ final class BuiltinJSONWriter implements JSONWriter {
     ensureCapacity();
     this.itemStack[++this.level] = ']';
     maybeAppendComma();
-    this.json.append('[');
+    write('[');
     this.first = true;
     return this;
   }
@@ -72,8 +74,8 @@ final class BuiltinJSONWriter implements JSONWriter {
     this.itemStack[++this.level] = '}';
     maybeAppendComma();
     appendJSONString(name);
-    this.json.append(':');
-    this.json.append('{');
+    write(':');
+    write('{');
     this.first = true;
     return this;
   }
@@ -83,7 +85,7 @@ final class BuiltinJSONWriter implements JSONWriter {
     ensureCapacity();
     this.itemStack[++this.level] = '}';
     maybeAppendComma();
-    this.json.append('{');
+    write('{');
     this.first = true;
     return this;
   }
@@ -91,7 +93,7 @@ final class BuiltinJSONWriter implements JSONWriter {
   @Override
   public JSONWriter end() {
     if (this.level < 0) throw new IllegalStateException("Nothing to end!");
-    this.json.append(this.itemStack[this.level--]);
+    write(this.itemStack[this.level--]);
     this.first = false;
     return this;
   }
@@ -99,7 +101,7 @@ final class BuiltinJSONWriter implements JSONWriter {
   @Override
   public JSONWriter writeNull() {
     maybeAppendComma();
-    this.json.append("null");
+    write("null");
     return this;
   }
 
@@ -107,8 +109,8 @@ final class BuiltinJSONWriter implements JSONWriter {
   public JSONWriter writeNull(String name) {
     maybeAppendComma();
     appendJSONString(name);
-    this.json.append(':');
-    this.json.append("null");
+    write(':');
+    write("null");
     return this;
   }
 
@@ -144,7 +146,7 @@ final class BuiltinJSONWriter implements JSONWriter {
   public JSONWriter property(String name, String value) {
     maybeAppendComma();
     appendJSONString(name);
-    this.json.append(':');
+    write(':');
     appendJSONString(value);
     return this;
   }
@@ -153,7 +155,7 @@ final class BuiltinJSONWriter implements JSONWriter {
   public JSONWriter property(String name, boolean value) {
     maybeAppendComma();
     appendJSONString(name);
-    this.json.append(':');
+    write(':');
     appendJSONBoolean(value);
     return this;
   }
@@ -162,7 +164,7 @@ final class BuiltinJSONWriter implements JSONWriter {
   public JSONWriter property(String name, double value) {
     maybeAppendComma();
     appendJSONString(name);
-    this.json.append(':');
+    write(':');
     appendJSONDouble(value);
     return this;
   }
@@ -171,23 +173,25 @@ final class BuiltinJSONWriter implements JSONWriter {
   public JSONWriter property(String name, long value) {
     maybeAppendComma();
     appendJSONString(name);
-    this.json.append(':');
+    write(':');
     appendJSONLong(value);
     return this;
   }
 
   @Override
   public void close() {
-    this.json.close();
-    // PrintWriter swallows IOExceptions silently; checkError() reads the internal trouble flag
-    // so that a broken pipe or full-disk error is not silently ignored by the caller.
-    if (this.json.checkError()) {
-      throw new UncheckedIOException(new IOException("Write error on underlying stream"));
+    try {
+      this.json.close();
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
     }
   }
 
+  // Private helpers
+  // =============================================================================================
+
   private void appendJSONString(String s) {
-    this.json.append('"');
+    write('"');
     final int length = s.length();
     int start = 0;
     for (int i = 0; i < length; i++) {
@@ -195,48 +199,48 @@ final class BuiltinJSONWriter implements JSONWriter {
       // Fast path: printable ASCII that needs no escaping — just accumulate.
       if (c >= 0x20 && c != '"' && c != '\\') continue;
       // Flush the clean run accumulated since 'start'.
-      if (i > start) this.json.write(s, start, i - start);
+      if (i > start) write(s, start, i - start);
       switch (c) {
-        case '"':  this.json.write("\\\""); break;
-        case '\\': this.json.write("\\\\"); break;
-        case '\n': this.json.write("\\n");  break;
-        case '\r': this.json.write("\\r");  break;
-        case '\t': this.json.write("\\t");  break;
-        case '\b': this.json.write("\\b");  break;
-        case '\f': this.json.write("\\f");  break;
+        case '"':  write("\\\""); break;
+        case '\\': write("\\\\"); break;
+        case '\n': write("\\n");  break;
+        case '\r': write("\\r");  break;
+        case '\t': write("\\t");  break;
+        case '\b': write("\\b");  break;
+        case '\f': write("\\f");  break;
         default:   // remaining control characters (U+0000–U+001F)
-          this.json.write("\\u00");
-          this.json.append(HEX[(c >> 4) & 0xF]);
-          this.json.append(HEX[c & 0xF]);
+          write("\\u00");
+          write(HEX[(c >> 4) & 0xF]);
+          write(HEX[c & 0xF]);
       }
       start = i + 1;
     }
     // Flush any remaining clean tail.
-    if (start < length) this.json.write(s, start, length - start);
-    this.json.append('"');
+    if (start < length) write(s, start, length - start);
+    write('"');
   }
 
   private static final char[] HEX = "0123456789abcdef".toCharArray();
 
   private void appendJSONLong(long number) {
-    this.json.append(Long.toString(number));
+    write(Long.toString(number));
   }
 
   private void appendJSONDouble(double number) {
     if (Double.isNaN(number) || Double.isInfinite(number))
       throw new IllegalArgumentException("JSON does not support NaN or Infinite values: " + number);
-    this.json.append(Double.toString(number));
+    write(Double.toString(number));
   }
 
   private void appendJSONBoolean(boolean b) {
-    this.json.append(Boolean.toString(b));
+    write(b ? "true" : "false");
   }
 
   private void maybeAppendComma() {
     if (this.first) {
       this.first = false;
     } else {
-      this.json.append(',');
+      write(',');
     }
   }
 
@@ -244,6 +248,18 @@ final class BuiltinJSONWriter implements JSONWriter {
     if (this.level + 1 >= this.itemStack.length) {
       this.itemStack = Arrays.copyOf(this.itemStack, this.itemStack.length * 2);
     }
+  }
+
+  private void write(char c) {
+    try { this.json.write(c); } catch (IOException ex) { throw new UncheckedIOException(ex); }
+  }
+
+  private void write(String s) {
+    try { this.json.write(s); } catch (IOException ex) { throw new UncheckedIOException(ex); }
+  }
+
+  private void write(String s, int off, int len) {
+    try { this.json.write(s, off, len); } catch (IOException ex) { throw new UncheckedIOException(ex); }
   }
 
 }
