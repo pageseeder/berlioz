@@ -1,3 +1,18 @@
+/*
+ * Copyright 2015 Allette Systems (Australia)
+ * http://www.allette.com.au
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.pageseeder.berlioz.config;
 
 import org.pageseeder.berlioz.xml.BerliozErrorHandler;
@@ -26,7 +41,7 @@ import java.util.Objects;
  *
  * @param <T> The type of object config the handler should create.
  *
- * @version Berlioz 0.12.4
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.12.4
  */
 abstract class ConfigLoader<T> extends DefaultHandler {
@@ -69,7 +84,7 @@ abstract class ConfigLoader<T> extends DefaultHandler {
    */
   public static <X> X parse(ConfigHandler<X> handler, File file) throws ConfigException {
     if (file.length() > 1_000_000)
-      throw new ConfigException("Configuration files must should not exceed 1MB", new IllegalArgumentException());
+      throw new ConfigException("Configuration files must not exceed 1MB", new IllegalArgumentException());
     try (InputStream in = Files.newInputStream(file.toPath())) {
       return parse(handler, in);
     } catch (IOException ex) {
@@ -85,7 +100,12 @@ abstract class ConfigLoader<T> extends DefaultHandler {
    * @throws ConfigException If an error occurred when reading from the input stream.
    */
   public static <X> X parse(ConfigHandler<X> handler, InputStream in) throws ConfigException {
-    byte[] bytes = toByteArray(in);
+    byte[] bytes;
+    try {
+      bytes = in.readAllBytes();
+    } catch (IOException ex) {
+      throw new ConfigException(ex.getMessage(), ex);
+    }
     try {
       // Get safe SAX parser factory
       SAXParser parser = Xml.newSafeParser(false);
@@ -94,14 +114,15 @@ abstract class ConfigLoader<T> extends DefaultHandler {
       int start = find(bytes, "<!DOCTYPE ".getBytes());
       if (start != -1) {
         int end = find(bytes, ">".getBytes()[0], start+10)+1;
-        if (end != -1) {
+        if (end > start) {
           LoggerFactory.getLogger(ConfigLoader.class).warn("Doctype declaration found in config file");
           String doctype = new String(Arrays.copyOfRange(bytes, start, end));
           // We remove the doctype from our config
           if (doctype.contains("-//Berlioz") || doctype.contains("//Weborganic")) {
-            byte[] clean = new byte[bytes.length-(end+start)];
+            int doctypeLength = end - start;
+            byte[] clean = new byte[bytes.length - doctypeLength];
             System.arraycopy(bytes, 0, clean, 0, start);
-            System.arraycopy(bytes, end, clean, end - (end + start), bytes.length - end);
+            System.arraycopy(bytes, end, clean, start, bytes.length - end);
             bytes = clean;
           }
         }
@@ -146,22 +167,6 @@ abstract class ConfigLoader<T> extends DefaultHandler {
       validator.validate(new StreamSource(is));
     } catch (SAXException ex) {
       throw new ConfigException("Error during validation", ex);
-    }
-  }
-
-  private static byte[] toByteArray(InputStream in)
-      throws ConfigException {
-    try {
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      int nRead;
-      byte[] data = new byte[1024];
-      while ((nRead = in.read(data, 0, data.length)) != -1) {
-        buffer.write(data, 0, nRead);
-      }
-      buffer.flush();
-      return buffer.toByteArray();
-    } catch (IOException ex) {
-      throw new ConfigException(ex.getMessage(), ex);
     }
   }
 
