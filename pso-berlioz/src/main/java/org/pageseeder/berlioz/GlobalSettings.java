@@ -177,7 +177,7 @@ public final class GlobalSettings {
    *
    * @return The configuration directory containing all configuration files for Berlioz.
    */
-  public static File getConfig() {
+  public static @Nullable File getConfig() {
     if (env != null)
       return env.webInf().toPath().resolve(env.configFolder()).toFile();
     else
