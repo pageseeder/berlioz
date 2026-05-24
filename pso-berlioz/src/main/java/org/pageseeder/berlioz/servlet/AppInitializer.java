@@ -145,7 +145,7 @@ public abstract class AppInitializer {
     console(Phase.STOP, "===============================================================");
     console(Phase.STOP, "Stopping Berlioz "+GlobalSettings.getVersion()+"...");
     console(Phase.STOP, "Application Base: "+this.webInf.getAbsolutePath());
-    if (this.listeners.size() > 0) {
+    if (!this.listeners.isEmpty()) {
       console(Phase.STOP, "Lifecycle: Invoking listeners");
       for (LifecycleListener listener : this.listeners) {
         try {
