@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -705,7 +706,7 @@ public abstract class AppInitializer {
       try {
         Class<?> joranClass = Class.forName("ch.qos.logback.classic.joran.JoranConfigurator");
         Class<?> contextClass = Class.forName("ch.qos.logback.core.Context");
-        Object configurator = joranClass.newInstance();
+        Object configurator = joranClass.getDeclaredConstructor().newInstance();
         // Set the context
         ILoggerFactory context = LoggerFactory.getILoggerFactory();
         Method setContext = joranClass.getMethod("setContext", contextClass);
@@ -819,8 +820,8 @@ public abstract class AppInitializer {
     LifecycleListener listener = null;
     // Instantiate
     try {
-      Class<?> c = Class.forName(listenerClass);
-      listener = (LifecycleListener)c.newInstance();
+      Class<? extends LifecycleListener> c = Class.forName(listenerClass).asSubclass(LifecycleListener.class);
+      listener = c.getDeclaredConstructor().newInstance();
     } catch (ClassNotFoundException ex) {
       console(Phase.INIT, "Lifecycle: (!) Unable to find class for listener:");
       console(Phase.INIT, "  "+listenerClass);
@@ -833,6 +834,13 @@ public abstract class AppInitializer {
     } catch (InstantiationException ex) {
       console(Phase.INIT, "Lifecycle: (!) Unable to instantiate lifecycle listener:");
       console(Phase.INIT, "  "+ex.getMessage());
+    } catch (NoSuchMethodException ex) {
+      console(Phase.INIT, "Lifecycle: (!) Unable to find no-arg constructor for lifecycle listener:");
+      console(Phase.INIT, "  "+ex.getMessage());
+    } catch (InvocationTargetException ex) {
+      console(Phase.INIT, "Lifecycle: (!) Unable to instantiate lifecycle listener:");
+      Throwable cause = ex.getCause();
+      console(Phase.INIT, "  "+(cause != null ? cause.getMessage() : ex.getMessage()));
     }
     // Start
     if (listener != null) {
