@@ -272,15 +272,13 @@ public final class BerliozConfig {
    */
   public static boolean hasControl(HttpServletRequest req, @Nullable String controlKey) {
     if (controlKey == null || controlKey.isEmpty()) return true;
+    // NB: query parameters may be logged by servers/proxies — prefer the Authorization header for non-dev use
     if (controlKey.equals(req.getParameter("berlioz-control"))) return true;
-    // TODO Check if this is appropriate!!
-    Enumeration<String> e = req.getHeaders("Authorization");
-    if (e != null) {
-      while (e.hasMoreElements()) {
-        String auth = e.nextElement();
-        if (auth.startsWith("Berlioz ") && auth.endsWith(controlKey))
-          return true;
-      }
+    // Accept a custom "Berlioz <key>" Authorization header as an alternative to the query parameter
+    // NB: use equals (not endsWith) to prevent a suffix like "Berlioz xyzSECRET" from matching "SECRET"
+    Enumeration<String> headers = req.getHeaders("Authorization");
+    while (headers.hasMoreElements()) {
+      if (headers.nextElement().equals("Berlioz " + controlKey)) return true;
     }
     return false;
   }
