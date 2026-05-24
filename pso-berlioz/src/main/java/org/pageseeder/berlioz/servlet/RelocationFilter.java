@@ -115,14 +115,14 @@ public final class RelocationFilter implements Filter {
     }
 
     // The mapping file does not exist
-    File mappingFile = new File(webinfPath, mapping);
-    if (!mappingFile.exists()) {
+    File file = new File(webinfPath, mapping);
+    if (!file.exists()) {
       LOGGER.warn("'config' init-parameter points to non existing file {} - filter will have no effect",
-      mappingFile.getAbsolutePath());
+      file.getAbsolutePath());
     }
 
     // Store the mapping file
-    this.mappingFile = mappingFile;
+    this.mappingFile = file;
   }
 
   /**
