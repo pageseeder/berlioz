@@ -66,11 +66,6 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Since Berlioz 0.10, the <code>berlioz.repository</code> is no longer supported.
  *
- * @see #load
- * @see #setWebInf(File)
- * @see #setAppData(File)
- * @see #setMode(String)
- *
  * @author Christophe Lauret
  *
  * @version Berlioz 0.12.3
@@ -97,13 +92,6 @@ public final class GlobalSettings {
    */
   @Deprecated(since = "0.11.4")
   public static final String CONFIG_DIRECTORY = "config";
-
-  /**
-   * Name of the directory in the repository that contains all the schemas / DTD for the XML files
-   * used by Berlioz.
-   */
-  @Deprecated(since = "0.11.0")
-  public static final String LIBRARY_DIRECTORY = "library";
 
   /**
    * Name of the default configuration to use.
@@ -679,54 +667,6 @@ public final class GlobalSettings {
   @Beta
   public static void removeAllListeners() {
     LISTENERS.clear();
-  }
-
-  // Deprecated in 0.11.x
-  // --------------------------------------------------------------------------
-
-  /**
-   * Returns the main repository or <code>null</code> if it has not been setup.
-   *
-   * @return The directory used as a repository or <code>null</code>.
-   */
-  @Deprecated(since = "0.11.0")
-  public static @Nullable File getRepository() {
-    return env.appData();
-  }
-
-  /**
-   * Sets the repository to the specified file if it exists and is a directory.
-   *
-   * <p>Does nothing if the specified file is <code>null</code>.
-   *
-   * <p>If the specified file does not exist or is not a directory, the repository will
-   * remain unchanged.
-   *
-   * @deprecated Use {@link #setWebInf(File)} or {@link #setAppData(File)} instead
-   *
-   * @param dir The directory to use as the main repository.
-   *
-   * @throws IllegalArgumentException If the specified file is not a valid repository.
-   */
-  @Deprecated(since = "0.11.0")
-  public static void setRepository(File dir) {
-    // ignore the case when this is null
-    if (dir == null) return;
-    env = InitEnvironment.create(dir);
-  }
-
-  /**
-   * Returns the directory containing the DTDs and schemas for the XML in use in the
-   * system.
-   *
-   * <p>This method will return a file only if the repository has been properly set,
-   * and will be the directory defined by {@link #LIBRARY_DIRECTORY} in the repository.
-   *
-   * @return The directory containing the DTDs and schemas for the XML.
-   */
-  @Deprecated(since = "0.11.0")
-  public static File getLibrary() {
-    return new File(env.appData(), LIBRARY_DIRECTORY);
   }
 
   // private helpers
