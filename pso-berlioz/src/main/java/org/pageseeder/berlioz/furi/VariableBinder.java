@@ -78,19 +78,6 @@ public class VariableBinder {
   /**
    * Binds the variables with the specified name to the specified resolver.
    *
-   * @deprecated use #bindName() or #bindType() instead
-   *
-   * @param name     The name of the variable.
-   * @param resolver The resolver to use with these variables.
-   */
-  @Deprecated(since = "0.11.2")
-  public void bind(String name, VariableResolver resolver) {
-    this.byName.put(name, resolver);
-  }
-
-  /**
-   * Binds the variables with the specified name to the specified resolver.
-   *
    * @param name     The name of the variable.
    * @param resolver The resolver to use with these variables.
    */
