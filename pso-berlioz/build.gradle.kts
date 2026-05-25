@@ -32,3 +32,29 @@ dependencies {
   testImplementation(libs.jackson.core)
   testImplementation(libs.gson)
 }
+
+publishing {
+  publications {
+    named<MavenPublication>("maven") {
+      pom {
+        withXml {
+          val dependenciesNode = asNode().appendNode("dependencies")
+          listOf(
+            libs.jackson.core.get(),
+            libs.gson.get(),
+            libs.javax.json.api.get(),
+            libs.jakarta.json.api.get()
+          ).forEach { dep ->
+            dependenciesNode.appendNode("dependency").apply {
+              appendNode("groupId", dep.group)
+              appendNode("artifactId", dep.name)
+              appendNode("version", dep.versionConstraint.requiredVersion)
+              appendNode("scope", "compile")
+              appendNode("optional", "true")
+            }
+          }
+        }
+      }
+    }
+  }
+}
