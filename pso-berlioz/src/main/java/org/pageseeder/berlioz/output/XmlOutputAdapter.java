@@ -61,9 +61,10 @@ public class XmlOutputAdapter implements OutputWriter {
   private int suppressedDepth = 0;
 
   /**
-   * Creates a new XML writer to a <code>StringWriter</code>.
+   * Creates a new XML writer.
    *
-   * <p>The generated XML can be retrieved from the {@link #toString()} method.</p>
+   * <p>To capture the output as a string, supply a {@link java.io.StringWriter} via
+   * {@link #XmlOutputAdapter(Writer)} and call {@link java.io.StringWriter#toString()} on it.</p>
    */
   public XmlOutputAdapter() {
     this(new StringWriter());
@@ -188,7 +189,6 @@ public class XmlOutputAdapter implements OutputWriter {
     field(name, String.join(",", values), option);
   }
 
-
   @Override
   public final void startObject(String name, ContextOption option) {
     if (this.suppressedDepth > 0 || option == ContextOption.JSON_ONLY) {
@@ -245,8 +245,7 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public String toString() {
-    this.flush();
-    return super.toString();
+    flush();
+    return this.xml.toString();
   }
-
 }

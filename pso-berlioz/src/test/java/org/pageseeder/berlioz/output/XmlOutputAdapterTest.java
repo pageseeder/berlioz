@@ -29,13 +29,9 @@ import static org.pageseeder.berlioz.output.OutputWriter.FieldOption;
  * Tests for {@link XmlOutputAdapter}, covering all {@link OutputWriter.FieldOption} and
  * {@link OutputWriter.ContextOption} combinations.
  *
- * <p>Tests marked {@link Ignore @Ignore} expose incomplete behaviour in the current
- * implementation. Each such test documents the correct expected output so that fixing
- * the implementation makes it pass without further changes to the test.</p>
  *
- * <p>All tests capture output via an explicit {@link StringWriter} rather than
- * {@link XmlOutputAdapter#toString()}, which currently returns {@code Object.toString()}
- * (a known incomplete feature).</p>
+ * <p>All tests capture output via an explicit {@link StringWriter} passed to the
+ * {@link XmlOutputAdapter#XmlOutputAdapter(java.io.Writer)} constructor.</p>
  */
 public class XmlOutputAdapterTest {
 

@@ -29,9 +29,8 @@ import static org.pageseeder.berlioz.output.OutputWriter.FieldOption;
  * Tests for {@link JsonOutputAdapter}, covering all {@link OutputWriter.FieldOption} and
  * {@link OutputWriter.ContextOption} combinations.
  *
- * <p>All tests capture output via an explicit {@link StringWriter} rather than
- * {@link JsonOutputAdapter#toString()}, which currently returns {@code Object.toString()}
- * (a known incomplete feature).</p>
+ * <p>All tests capture output via an explicit {@link StringWriter} passed to the
+ * {@link JsonOutputAdapter#JsonOutputAdapter(java.io.Writer)} constructor.</p>
  */
 public class JsonOutputAdapterTest {
 

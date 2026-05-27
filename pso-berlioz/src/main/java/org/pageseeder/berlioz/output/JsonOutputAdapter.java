@@ -52,7 +52,10 @@ public class JsonOutputAdapter implements OutputWriter {
   private int suppressedDepth = 0;
 
   /**
-   * Creates a new JSON writer to a <code>StringWriter</code>.
+   * Creates a new JSON writer.
+   *
+   * <p>To capture the output as a string, supply a {@link java.io.StringWriter} via
+   * {@link #JsonOutputAdapter(Writer)} and call {@link java.io.StringWriter#toString()} on it.</p>
    */
   public JsonOutputAdapter() {
     this(new StringWriter());
@@ -65,6 +68,13 @@ public class JsonOutputAdapter implements OutputWriter {
    */
   public JsonOutputAdapter(Writer out) {
     this.json = Json.newWriter(out);
+  }
+
+  /**
+   * Creates a new JSON writer with a custom writer.
+   */
+  public JsonOutputAdapter(JsonWriter json) {
+    this.json = json;
   }
 
   /**
@@ -174,7 +184,6 @@ public class JsonOutputAdapter implements OutputWriter {
   @Override
   public String toString() {
     flush();
-    return super.toString();
+    return this.json.toString();
   }
-
 }
