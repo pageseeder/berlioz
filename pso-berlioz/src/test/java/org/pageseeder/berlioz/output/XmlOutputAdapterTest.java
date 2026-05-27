@@ -72,7 +72,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void startObject_jsonOnly_elementIsSuppressed() {
+  public void startObject_jsonOnly_suppressesWrapperElementOnly() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -81,7 +81,7 @@ public class XmlOutputAdapterTest {
     out.endObject();
     out.endObject();
     out.flush();
-    assertEquals("<root/>", sw.toString());
+    assertEquals("<root version=\"1.0\"/>", sw.toString());
   }
 
   // ---------------------------------------------------------------------------
@@ -184,6 +184,43 @@ public class XmlOutputAdapterTest {
     out.endObject();
     out.flush();
     assertEquals("<root active=\"true\"/>", sw.toString());
+  }
+
+  // ---------------------------------------------------------------------------
+  // field(String, int, FieldOption)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void field_int_default_writesAttribute() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.field("count", 7, FieldOption.DEFAULT);
+    out.endObject();
+    out.flush();
+    assertEquals("<root count=\"7\"/>", sw.toString());
+  }
+
+  @Test
+  public void field_int_xmlElement_writesChildElement() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.field("count", 7, FieldOption.XML_ELEMENT);
+    out.endObject();
+    out.flush();
+    assertEquals("<root><count>7</count></root>", sw.toString());
+  }
+
+  @Test
+  public void field_int_noOption_writesAttribute() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.field("count", 7);
+    out.endObject();
+    out.flush();
+    assertEquals("<root count=\"7\"/>", sw.toString());
   }
 
   // ---------------------------------------------------------------------------

@@ -103,6 +103,43 @@ public class JsonOutputAdapterTest {
   }
 
   // ---------------------------------------------------------------------------
+  // field(String, int, FieldOption)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void field_int_default_isWritten() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.field("count", 7, FieldOption.DEFAULT);
+    out.endObject();
+    out.flush();
+    assertEquals("{\"count\":7}", sw.toString());
+  }
+
+  @Test
+  public void field_int_xmlOnly_isSkipped() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.field("count", 7, FieldOption.XML_ONLY);
+    out.endObject();
+    out.flush();
+    assertEquals("{}", sw.toString());
+  }
+
+  @Test
+  public void field_int_noOption_isWritten() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.field("count", 7);
+    out.endObject();
+    out.flush();
+    assertEquals("{\"count\":7}", sw.toString());
+  }
+
+  // ---------------------------------------------------------------------------
   // field(String, long, FieldOption)
   // ---------------------------------------------------------------------------
 

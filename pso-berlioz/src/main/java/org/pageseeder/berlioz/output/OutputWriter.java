@@ -61,6 +61,14 @@ public interface OutputWriter extends AutoCloseable, Flushable {
     JSON_ONLY,
 
     /**
+     * The field should only be written for XML output and ignored in JSON.
+     *
+     * <p>Use this for edge cases where the XML and JSON representations diverge and a value
+     * is only meaningful in the XML form.</p>
+     */
+    XML_ONLY,
+
+    /**
      * The field should be represented as a JSON property or a text node in XML.
      */
     XML_TEXT,
@@ -73,15 +81,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
     /**
      * The field should be represented as a JSON property or copied as XML content in XML.
      */
-    XML_COPY,
-
-    /**
-     * The field should only be written for XML output and ignored in JSON.
-     *
-     * <p>Use this for edge cases where the XML and JSON representations diverge and a value
-     * is only meaningful in the XML form.</p>
-     */
-    XML_ONLY
+    XML_COPY
   }
 
   /**
@@ -95,10 +95,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
     DEFAULT,
 
     /**
-     * The field should be represented as a JSON object/array only and ignored in XML.
+     * In JSON, the object or array is written normally.
+     * In XML, the wrapper element is omitted but its children are still written at the enclosing level.
      *
-     * <p>Use this for edge cases where the XML and JSON representations diverge and an object
-     * or array is only meaningful in the JSON form.</p>
+     * <p>Use this when a JSON object or array is used for structural grouping and has no
+     * meaningful XML counterpart as a distinct element.</p>
      */
     JSON_ONLY,
 
@@ -322,6 +323,37 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    */
   default void field(String name, double value) {
     field(name, value, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with an integer value based on the specified field option.
+   *
+   * <ul>
+   *   <li>JSON, write a numeric property on the object</li>
+   *   <li>XML, write an attribute, element, text or copy the XML depending on the option</li>
+   * </ul>
+   *
+   * @param name   The name of the field
+   * @param value  The value of the field
+   * @param option How to write the field for the output.
+   */
+  default void field(String name, int value, FieldOption option) {
+    field(name, (long) value, option);
+  }
+
+  /**
+   * Write a field with an integer value using the default option.
+   *
+   * <ul>
+   *   <li>JSON, write a numeric property on the object</li>
+   *   <li>XML, write an attribute</li>
+   * </ul>
+   *
+   * @param name   The name of the field
+   * @param value  The value of the field
+   */
+  default void field(String name, int value) {
+    field(name, (long) value, FieldOption.DEFAULT);
   }
 
   /**

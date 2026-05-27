@@ -29,7 +29,9 @@ import java.util.Deque;
  *
  * <p>Each object or array maps to an XML element; fields map to attributes, text nodes,
  * child elements, or raw XML content depending on the {@link FieldOption}.
- * Fields and contexts flagged as {@link FieldOption#JSON_ONLY} are silently skipped.</p>
+ * Fields flagged as {@link FieldOption#JSON_ONLY} are silently skipped.
+ * Contexts (objects/arrays) flagged as {@link ContextOption#JSON_ONLY} have their wrapper
+ * element omitted but their children are still written at the enclosing level.</p>
  *
  * <p>By default output is buffered in an internal {@link java.io.StringWriter} and can be
  * retrieved via {@link #toString()}. Supply a {@link java.io.Writer} or an existing
@@ -49,16 +51,10 @@ public class XmlOutputAdapter implements OutputWriter {
   private final XmlWriter xml;
 
   /**
-   * Stack tracking the {@link ContextOption} of each open non-suppressed object or array.
-   * Used by {@link #endArray()} to decide whether to close the wrapper element.
+   * Stack tracking the {@link ContextOption} of each open object or array.
+   * Used by {@link #endObject()} and {@link #endArray()} to decide whether to close the element.
    */
   private final Deque<ContextOption> ignore = new ArrayDeque<>();
-
-  /**
-   * Depth counter for suppressed {@link ContextOption#JSON_ONLY} object contexts.
-   * When positive, all output is suppressed until the matching end call unwinds to zero.
-   */
-  private int suppressedDepth = 0;
 
   /**
    * Creates a new XML writer.
@@ -100,7 +96,6 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, boolean value, FieldOption option) {
-    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
@@ -119,7 +114,6 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, long value, FieldOption option) {
-    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
@@ -138,7 +132,6 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, double value, FieldOption option) {
-    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
@@ -157,7 +150,6 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, String value, FieldOption option) {
-    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
@@ -191,46 +183,22 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void startObject(String name, ContextOption option) {
-    if (this.suppressedDepth > 0 || option == ContextOption.JSON_ONLY) {
-      this.suppressedDepth++;
-      return;
-    }
-    this.ignore.push(option);
-    this.xml.openElement(name);
+    startElementIfXml(name, option);
   }
 
   @Override
   public final void endObject() {
-    if (this.suppressedDepth > 0) {
-      this.suppressedDepth--;
-      return;
-    }
-    this.ignore.pop();
-    this.xml.closeElement();
+    endElementIfXml();
   }
 
   @Override
   public final void startArray(String name, ContextOption option) {
-    if (this.suppressedDepth > 0) {
-      this.suppressedDepth++;
-      return;
-    }
-    this.ignore.push(option);
-    if (option != ContextOption.JSON_ONLY) {
-      this.xml.openElement(name);
-    }
+    startElementIfXml(name, option);
   }
 
   @Override
   public final void endArray() {
-    if (this.suppressedDepth > 0) {
-      this.suppressedDepth--;
-      return;
-    }
-    ContextOption option = this.ignore.pop();
-    if (option != ContextOption.JSON_ONLY) {
-      this.xml.closeElement();
-    }
+    endElementIfXml();
   }
 
   @Override
@@ -248,4 +216,19 @@ public class XmlOutputAdapter implements OutputWriter {
     flush();
     return this.xml.toString();
   }
+
+  private void startElementIfXml(String name, ContextOption option) {
+    this.ignore.push(option);
+    if (option != ContextOption.JSON_ONLY) {
+      this.xml.openElement(name);
+    }
+  }
+
+  private void endElementIfXml() {
+    ContextOption option = this.ignore.pop();
+    if (option != ContextOption.JSON_ONLY) {
+      this.xml.closeElement();
+    }
+  }
+
 }
