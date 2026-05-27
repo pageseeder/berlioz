@@ -49,10 +49,16 @@ public class XmlOutputAdapter implements OutputWriter {
   private final XmlWriter xml;
 
   /**
-   * Stack tracking the {@link ContextOption} of each open object or array, used to suppress
-   * XML output for {@link ContextOption#JSON_ONLY} contexts.
+   * Stack tracking the {@link ContextOption} of each open non-suppressed object or array.
+   * Used by {@link #endArray()} to decide whether to close the wrapper element.
    */
   private final Deque<ContextOption> ignore = new ArrayDeque<>();
+
+  /**
+   * Depth counter for suppressed {@link ContextOption#JSON_ONLY} object contexts.
+   * When positive, all output is suppressed until the matching end call unwinds to zero.
+   */
+  private int suppressedDepth = 0;
 
   /**
    * Creates a new XML writer to a <code>StringWriter</code>.
@@ -93,8 +99,10 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, boolean value, FieldOption option) {
+    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
+      case XML_ONLY:
         this.xml.attribute(name, value);
         return;
       case XML_TEXT:
@@ -110,8 +118,10 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, long value, FieldOption option) {
+    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
+      case XML_ONLY:
         this.xml.attribute(name, value);
         return;
       case XML_TEXT:
@@ -127,8 +137,10 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, double value, FieldOption option) {
+    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
+      case XML_ONLY:
         this.xml.attribute(name, value);
         return;
       case XML_TEXT:
@@ -144,8 +156,10 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void field(String name, String value, FieldOption option) {
+    if (this.suppressedDepth > 0) return;
     switch (option) {
       case DEFAULT:
+      case XML_ONLY:
         this.xml.attribute(name, value);
         return;
       case XML_TEXT:
@@ -177,18 +191,30 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void startObject(String name, ContextOption option) {
+    if (this.suppressedDepth > 0 || option == ContextOption.JSON_ONLY) {
+      this.suppressedDepth++;
+      return;
+    }
     this.ignore.push(option);
     this.xml.openElement(name);
   }
 
   @Override
   public final void endObject() {
+    if (this.suppressedDepth > 0) {
+      this.suppressedDepth--;
+      return;
+    }
     this.ignore.pop();
     this.xml.closeElement();
   }
 
   @Override
   public final void startArray(String name, ContextOption option) {
+    if (this.suppressedDepth > 0) {
+      this.suppressedDepth++;
+      return;
+    }
     this.ignore.push(option);
     if (option != ContextOption.JSON_ONLY) {
       this.xml.openElement(name);
@@ -197,6 +223,10 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final void endArray() {
+    if (this.suppressedDepth > 0) {
+      this.suppressedDepth--;
+      return;
+    }
     ContextOption option = this.ignore.pop();
     if (option != ContextOption.JSON_ONLY) {
       this.xml.closeElement();
