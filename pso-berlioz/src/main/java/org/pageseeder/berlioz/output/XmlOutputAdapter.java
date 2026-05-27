@@ -24,8 +24,24 @@ import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+/**
+ * An {@link OutputWriter} that produces XML output.
+ *
+ * <p>Each object or array maps to an XML element; fields map to attributes, text nodes,
+ * child elements, or raw XML content depending on the {@link FieldOption}.
+ * Fields and contexts flagged as {@link FieldOption#JSON_ONLY} are silently skipped.</p>
+ *
+ * <p>By default output is buffered in an internal {@link java.io.StringWriter} and can be
+ * retrieved via {@link #toString()}. Supply a {@link java.io.Writer} or an existing
+ * {@link XmlWriter} to direct output elsewhere.</p>
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.13.0
+ */
 @Beta
-public class XmlUniversalAdapter implements UniversalWriter {
+public class XmlOutputAdapter implements OutputWriter {
 
   /**
    * What we use to write XML.
@@ -33,7 +49,8 @@ public class XmlUniversalAdapter implements UniversalWriter {
   private final XmlWriter xml;
 
   /**
-   * When true
+   * Stack tracking the {@link ContextOption} of each open object or array, used to suppress
+   * XML output for {@link ContextOption#JSON_ONLY} contexts.
    */
   private final Deque<ContextOption> ignore = new ArrayDeque<>();
 
@@ -42,7 +59,7 @@ public class XmlUniversalAdapter implements UniversalWriter {
    *
    * <p>The generated XML can be retrieved from the {@link #toString()} method.</p>
    */
-  public XmlUniversalAdapter() {
+  public XmlOutputAdapter() {
     this(new StringWriter());
   }
 
@@ -51,7 +68,7 @@ public class XmlUniversalAdapter implements UniversalWriter {
    *
    * @param out Where the XML goes.
    */
-  public XmlUniversalAdapter(Writer out) {
+  public XmlOutputAdapter(Writer out) {
     this.xml = new XmlAppendable<>(out);
   }
 
@@ -60,7 +77,7 @@ public class XmlUniversalAdapter implements UniversalWriter {
    *
    * @param xml Where the XML goes.
    */
-  public XmlUniversalAdapter(XmlWriter xml) {
+  public XmlOutputAdapter(XmlWriter xml) {
     this.xml = xml;
   }
 
@@ -146,6 +163,19 @@ public class XmlUniversalAdapter implements UniversalWriter {
   }
 
   @Override
+  public void field(String name, String[] values, FieldOption option) {
+    // TODO escape
+    field(name, String.join(",", values), option);
+  }
+
+  @Override
+  public void field(String name, Iterable<String> values, FieldOption option) {
+    // TODO escape
+    field(name, String.join(",", values), option);
+  }
+
+
+  @Override
   public final void startObject(String name, ContextOption option) {
     this.ignore.push(option);
     this.xml.openElement(name);
@@ -186,9 +216,6 @@ public class XmlUniversalAdapter implements UniversalWriter {
   @Override
   public String toString() {
     this.flush();
-    // TODO
-//    if (this._out instanceof StringWriter) return this._out.toString();
-//    if (this._xml instanceof XMLStringWriter) return this._xml.toString();
     return super.toString();
   }
 

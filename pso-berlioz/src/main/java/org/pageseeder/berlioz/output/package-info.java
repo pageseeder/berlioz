@@ -13,5 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Provides a format-agnostic output API for writing structured data as either XML or JSON.
+ *
+ * <p>The central abstraction is {@link org.pageseeder.berlioz.output.OutputWriter}, a unified
+ * writer interface whose methods map to structured constructs (objects, arrays, fields).
+ * Two concrete adapters handle format-specific encoding:</p>
+ *
+ * <ul>
+ *   <li>{@link org.pageseeder.berlioz.output.JsonOutputAdapter} — writes JSON via the
+ *       {@code org.pageseeder.berlioz.json} layer.</li>
+ *   <li>{@link org.pageseeder.berlioz.output.XmlOutputAdapter} — writes XML via the
+ *       {@code org.pageseeder.berlioz.xml} layer.</li>
+ * </ul>
+ *
+ * <p>Objects that know how to serialise themselves implement
+ * {@link org.pageseeder.berlioz.output.OutputWritable}.</p>
+ */
 @org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz.output;

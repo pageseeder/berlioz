@@ -6,7 +6,15 @@ package org.pageseeder.berlioz.output;
 import org.pageseeder.berlioz.Beta;
 
 /**
- * Predefined the output for the universal printers.
+ * The output format produced by an {@link OutputWriter}.
+ *
+ * <p>Each constant carries the corresponding IANA media type string, accessible via
+ * {@link #getMediaType()}.</p>
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.13.0
  */
 @Beta
 public enum OutputType {

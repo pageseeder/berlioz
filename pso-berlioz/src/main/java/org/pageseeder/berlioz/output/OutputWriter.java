@@ -15,9 +15,32 @@
  */
 package org.pageseeder.berlioz.output;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.Flushable;
 
-public interface UniversalWriter extends AutoCloseable, Flushable {
+/**
+ * A format-agnostic writer that produces structured data as either XML or JSON.
+ *
+ * <p>The interface models structured output in terms of three concepts:</p>
+ * <ul>
+ *   <li><b>Objects</b> — key/value containers ({@link #startObject}/{@link #endObject}).
+ *       In JSON these become JSON objects; in XML they become elements.</li>
+ *   <li><b>Arrays</b> — ordered collections ({@link #startArray}/{@link #endArray}).
+ *       In JSON these become JSON arrays; in XML they become wrapper elements.</li>
+ *   <li><b>Fields</b> — leaf values ({@link #field(String, String, FieldOption) field}).
+ *       In JSON these become properties; in XML they become attributes, text nodes, or child
+ *       elements depending on the {@link FieldOption}.</li>
+ * </ul>
+ *
+ * <p>Use {@link JsonOutputAdapter} or {@link XmlOutputAdapter} to get a concrete instance.</p>
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.13.0
+ */
+public interface OutputWriter extends AutoCloseable, Flushable {
 
   /**
    * Formatting options applicable to fields.
@@ -31,6 +54,9 @@ public interface UniversalWriter extends AutoCloseable, Flushable {
 
     /**
      * The field should be represented as a JSON property only and ignored in XML.
+     *
+     * <p>Use this for edge cases where the XML and JSON representations diverge and a value
+     * is only meaningful in the JSON form.</p>
      */
     JSON_ONLY,
 
@@ -47,7 +73,15 @@ public interface UniversalWriter extends AutoCloseable, Flushable {
     /**
      * The field should be represented as a JSON property or copied as XML content in XML.
      */
-    XML_COPY
+    XML_COPY,
+
+    /**
+     * The field should only be written for XML output and ignored in JSON.
+     *
+     * <p>Use this for edge cases where the XML and JSON representations diverge and a value
+     * is only meaningful in the XML form.</p>
+     */
+    XML_ONLY
   }
 
   /**
@@ -62,13 +96,26 @@ public interface UniversalWriter extends AutoCloseable, Flushable {
 
     /**
      * The field should be represented as a JSON object/array only and ignored in XML.
+     *
+     * <p>Use this for edge cases where the XML and JSON representations diverge and an object
+     * or array is only meaningful in the JSON form.</p>
      */
-    JSON_ONLY
+    JSON_ONLY,
+
+    /**
+     * The context should only be rendered for XML output and ignored in JSON.
+     *
+     * <p>Use this for edge cases where the XML and JSON representations diverge and an object
+     * or array is only meaningful in the XML form.</p>
+     */
+    XML_ONLY
 
   }
 
   /**
-   * @return The output type returned by this writer.
+   * Returns the output format produced by this writer.
+   *
+   * @return the output type ({@link OutputType#XML} or {@link OutputType#JSON})
    */
   OutputType getType();
 
@@ -108,10 +155,10 @@ public interface UniversalWriter extends AutoCloseable, Flushable {
   void startArray(String name, ContextOption option);
 
   /**
-   * Ends the current object
+   * Ends the current array.
    *
    * <ul>
-   *   <li>JSON, end the current JSON object</li>
+   *   <li>JSON, end the current JSON array</li>
    *   <li>XML, end the current element</li>
    * </ul>
    */
@@ -172,6 +219,34 @@ public interface UniversalWriter extends AutoCloseable, Flushable {
    * @param option How to write the field for the output.
    */
   void field(String name, String value, FieldOption option);
+
+  /**
+   * Write a field with multiple string values based on the specified field option.
+   *
+   * <ul>
+   *   <li>JSON, write a property with a string array on the object</li>
+   *   <li>XML, write an attribute, element, or text using comma-separated values</li>
+   * </ul>
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @param option How to write the field for the output.
+   */
+  void field(String name, String[] values, FieldOption option);
+
+  /**
+   * Write a field with multiple string values based on the specified field option.
+   *
+   * <ul>
+   *   <li>JSON, write a property with a string array on the object</li>
+   *   <li>XML, write an attribute, element, or text using comma-separated values</li>
+   * </ul>
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @param option How to write the field for the output.
+   */
+  void field(String name, Iterable<String> values, FieldOption option);
 
   // Short-hand methods
   // ----------------------------------------------------------------------------------------------
@@ -262,6 +337,47 @@ public interface UniversalWriter extends AutoCloseable, Flushable {
    */
   default void field(String name, String value) {
     field(name, value, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with multiple string values using the default option.
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   */
+  default void field(String name, String[] values) {
+    field(name, values, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with multiple string values using the default option.
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   */
+  default void field(String name, Iterable<String> values) {
+    field(name, values, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with a string value only if the value is non-null.
+   *
+   * @param name   The name of the field
+   * @param value  The value of the field, or {@code null} to skip the field entirely
+   * @param option How to write the field for the output.
+   */
+  default void optionalField(String name, @Nullable String value, FieldOption option) {
+    if (value != null) field(name, value, option);
+  }
+
+  /**
+   * Write a field with a string value only if the value is non-null, using the default option.
+   *
+   * @param name  The name of the field
+   * @param value The value of the field, or {@code null} to skip the field entirely
+   */
+  default void optionalField(String name, @Nullable String value) {
+    if (value != null) field(name, value, FieldOption.DEFAULT);
   }
 
 }

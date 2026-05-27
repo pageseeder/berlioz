@@ -22,8 +22,23 @@ import org.pageseeder.berlioz.json.JsonWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 
+/**
+ * An {@link OutputWriter} that produces JSON output.
+ *
+ * <p>Field names are automatically converted to camelCase via {@link Json#camelify(String)}.
+ * Fields and contexts flagged as {@link FieldOption#XML_ONLY} are silently skipped.</p>
+ *
+ * <p>By default output is buffered in an internal {@link java.io.StringWriter} and can be
+ * retrieved via {@link #toString()}. Supply a custom {@link java.io.Writer} to direct output
+ * elsewhere.</p>
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.13.0
+ * @since Berlioz 0.13.0
+ */
 @Beta
-public class JsonUniversalAdapter implements UniversalWriter {
+public class JsonOutputAdapter implements OutputWriter {
 
   /**
    * The final output.
@@ -31,9 +46,15 @@ public class JsonUniversalAdapter implements UniversalWriter {
   private final JsonWriter json;
 
   /**
+   * Depth counter for suppressed {@link ContextOption#XML_ONLY} contexts.
+   * When positive, all output is suppressed until the matching end call unwinds to zero.
+   */
+  private int suppressedDepth = 0;
+
+  /**
    * Creates a new JSON writer to a <code>StringWriter</code>.
    */
-  public JsonUniversalAdapter() {
+  public JsonOutputAdapter() {
     this(new StringWriter());
   }
 
@@ -42,7 +63,7 @@ public class JsonUniversalAdapter implements UniversalWriter {
    *
    * @param out Where the JSON goes.
    */
-  public JsonUniversalAdapter(Writer out) {
+  public JsonOutputAdapter(Writer out) {
     this.json = Json.newWriter(out);
   }
 
@@ -58,26 +79,50 @@ public class JsonUniversalAdapter implements UniversalWriter {
 
   @Override
   public final void field(String name, boolean value, FieldOption option) {
+    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
     this.json.field(Json.camelify(name), value);
   }
 
   @Override
   public final void field(String name, long value, FieldOption option) {
+    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
     this.json.field(Json.camelify(name), value);
   }
 
   @Override
   public final void field(String name, double value, FieldOption option) {
+    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
     this.json.field(Json.camelify(name), value);
   }
 
   @Override
   public final void field(String name, String value, FieldOption option) {
+    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
     this.json.field(Json.camelify(name), value);
   }
 
   @Override
+  public void field(String name, String[] values, FieldOption option) {
+    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
+    this.startArray(name);
+    for (String value : values) this.json.value(value);
+    this.json.endArray();
+  }
+
+  @Override
+  public void field(String name, Iterable<String> values, FieldOption option) {
+    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
+    this.startArray(name);
+    for (String value : values) this.json.value(value);
+    this.json.endArray();
+  }
+
+  @Override
   public void startObject(String name, ContextOption option) {
+    if (option == ContextOption.XML_ONLY || this.suppressedDepth > 0) {
+      this.suppressedDepth++;
+      return;
+    }
     if (this.json.inObject()) {
       this.json.startObject(Json.camelify(name));
     } else {
@@ -87,11 +132,19 @@ public class JsonUniversalAdapter implements UniversalWriter {
 
   @Override
   public void endObject() {
+    if (this.suppressedDepth > 0) {
+      this.suppressedDepth--;
+      return;
+    }
     this.json.endObject();
   }
 
   @Override
   public void startArray(String name, ContextOption option) {
+    if (option == ContextOption.XML_ONLY || this.suppressedDepth > 0) {
+      this.suppressedDepth++;
+      return;
+    }
     if (this.json.inObject()) {
       this.json.startArray(Json.camelify(name));
     } else {
@@ -101,6 +154,10 @@ public class JsonUniversalAdapter implements UniversalWriter {
 
   @Override
   public void endArray() {
+    if (this.suppressedDepth > 0) {
+      this.suppressedDepth--;
+      return;
+    }
     this.json.endArray();
   }
 
