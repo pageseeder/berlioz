@@ -33,6 +33,8 @@ import java.io.Flushable;
  *       elements depending on the {@link FieldOption}.</li>
  * </ul>
  *
+ * <p>All methods return {@code this} to allow call chaining.</p>
+ *
  * <p>Use {@link JsonOutputAdapter} or {@link XmlOutputAdapter} to get a concrete instance.</p>
  *
  * @author Christophe Lauret
@@ -130,18 +132,21 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *
    * @param name   The name of the XML element or JSON property if context is a JSON object
    * @param option How this object should be serialized
+   * @return this writer
    */
-  void startObject(String name, ContextOption option);
+  OutputWriter startObject(String name, ContextOption option);
 
   /**
-   * Ends the current object
+   * Ends the current object.
    *
    * <ul>
    *   <li>JSON, end the current JSON object</li>
    *   <li>XML, end the current element</li>
    * </ul>
+   *
+   * @return this writer
    */
-  void endObject();
+  OutputWriter endObject();
 
   /**
    * Starts a collection of objects in the output.
@@ -152,8 +157,10 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * </ul>
    *
    * @param name   The name of the XML element or JSON property if context is a JSON object
+   * @param option How this array should be serialized
+   * @return this writer
    */
-  void startArray(String name, ContextOption option);
+  OutputWriter startArray(String name, ContextOption option);
 
   /**
    * Ends the current array.
@@ -162,8 +169,10 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *   <li>JSON, end the current JSON array</li>
    *   <li>XML, end the current element</li>
    * </ul>
+   *
+   * @return this writer
    */
-  void endArray();
+  OutputWriter endArray();
 
   /**
    * Write a field with a boolean value based on the specified field option.
@@ -176,8 +185,9 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @param name   The name of the field
    * @param value  The value of the field
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  void field(String name, boolean value, FieldOption option);
+  OutputWriter field(String name, boolean value, FieldOption option);
 
   /**
    * Write a field with a numeric value based on the specified field option.
@@ -188,10 +198,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * </ul>
    *
    * @param name   The name of the field
-   * @param value  The long of the field
+   * @param value  The value of the field
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  void field(String name, long value, FieldOption option);
+  OutputWriter field(String name, long value, FieldOption option);
 
   /**
    * Write a field with a numeric value based on the specified field option.
@@ -202,10 +213,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * </ul>
    *
    * @param name   The name of the field
-   * @param value  The long of the field
+   * @param value  The value of the field
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  void field(String name, double value, FieldOption option);
+  OutputWriter field(String name, double value, FieldOption option);
 
   /**
    * Write a field with a string value based on the specified field option.
@@ -218,8 +230,9 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @param name   The name of the field
    * @param value  The value of the field
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  void field(String name, String value, FieldOption option);
+  OutputWriter field(String name, String value, FieldOption option);
 
   /**
    * Write a field with multiple string values based on the specified field option.
@@ -232,8 +245,9 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @param name   The name of the field
    * @param values The values of the field
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  void field(String name, String[] values, FieldOption option);
+  OutputWriter field(String name, String[] values, FieldOption option);
 
   /**
    * Write a field with multiple string values based on the specified field option.
@@ -246,8 +260,9 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @param name   The name of the field
    * @param values The values of the field
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  void field(String name, Iterable<String> values, FieldOption option);
+  OutputWriter field(String name, Iterable<String> values, FieldOption option);
 
   // Short-hand methods
   // ----------------------------------------------------------------------------------------------
@@ -261,9 +276,10 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * </ul>
    *
    * @param name The name of the XML element or JSON property if context is a JSON object
+   * @return this writer
    */
-  default void startObject(String name){
-    startObject(name, ContextOption.DEFAULT);
+  default OutputWriter startObject(String name) {
+    return startObject(name, ContextOption.DEFAULT);
   }
 
   /**
@@ -274,25 +290,27 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *   <li>XML, start a new element</li>
    * </ul>
    *
-   * @param name   The name of the XML element or JSON property if context is a JSON object
+   * @param name The name of the XML element or JSON property if context is a JSON object
+   * @return this writer
    */
-  default void startArray(String name) {
-    startArray(name, ContextOption.DEFAULT);
+  default OutputWriter startArray(String name) {
+    return startArray(name, ContextOption.DEFAULT);
   }
 
   /**
-   * Write a field with a string value using the default option.
+   * Write a field with a boolean value using the default option.
    *
    * <ul>
-   *   <li>JSON, write a string property on the object</li>
-   *   <li>XML, write an attribute</li>
+   *   <li>JSON, write a boolean property on the object</li>
+   *   <li>XML, write an attribute with value "true" or "false"</li>
    * </ul>
    *
-   * @param name   The name of the field
-   * @param value  The value of the field
+   * @param name  The name of the field
+   * @param value The value of the field
+   * @return this writer
    */
-  default void field(String name, boolean value) {
-    field(name, value, FieldOption.DEFAULT);
+  default OutputWriter field(String name, boolean value) {
+    return field(name, value, FieldOption.DEFAULT);
   }
 
   /**
@@ -303,11 +321,12 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *   <li>XML, write an attribute</li>
    * </ul>
    *
-   * @param name   The name of the field
-   * @param value  The value of the field
+   * @param name  The name of the field
+   * @param value The value of the field
+   * @return this writer
    */
-  default void field(String name, long value) {
-    field(name, value, FieldOption.DEFAULT);
+  default OutputWriter field(String name, long value) {
+    return field(name, value, FieldOption.DEFAULT);
   }
 
   /**
@@ -318,11 +337,12 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *   <li>XML, write an attribute</li>
    * </ul>
    *
-   * @param name   The name of the field
-   * @param value  The value of the field
+   * @param name  The name of the field
+   * @param value The value of the field
+   * @return this writer
    */
-  default void field(String name, double value) {
-    field(name, value, FieldOption.DEFAULT);
+  default OutputWriter field(String name, double value) {
+    return field(name, value, FieldOption.DEFAULT);
   }
 
   /**
@@ -336,9 +356,10 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @param name   The name of the field
    * @param value  The value of the field
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  default void field(String name, int value, FieldOption option) {
-    field(name, (long) value, option);
+  default OutputWriter field(String name, int value, FieldOption option) {
+    return field(name, (long) value, option);
   }
 
   /**
@@ -349,26 +370,28 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *   <li>XML, write an attribute</li>
    * </ul>
    *
-   * @param name   The name of the field
-   * @param value  The value of the field
+   * @param name  The name of the field
+   * @param value The value of the field
+   * @return this writer
    */
-  default void field(String name, int value) {
-    field(name, (long) value, FieldOption.DEFAULT);
+  default OutputWriter field(String name, int value) {
+    return field(name, (long) value, FieldOption.DEFAULT);
   }
 
   /**
-   * Write a field with a boolean value using the default option.
+   * Write a field with a string value using the default option.
    *
    * <ul>
-   *   <li>JSON, write a boolean property on the object</li>
-   *   <li>XML, write an attribute with value "true" or "false"</li>
+   *   <li>JSON, write a string property on the object</li>
+   *   <li>XML, write an attribute</li>
    * </ul>
    *
-   * @param name   The name of the field
-   * @param value  The value of the field
+   * @param name  The name of the field
+   * @param value The value of the field
+   * @return this writer
    */
-  default void field(String name, String value) {
-    field(name, value, FieldOption.DEFAULT);
+  default OutputWriter field(String name, String value) {
+    return field(name, value, FieldOption.DEFAULT);
   }
 
   /**
@@ -376,9 +399,10 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *
    * @param name   The name of the field
    * @param values The values of the field
+   * @return this writer
    */
-  default void field(String name, String[] values) {
-    field(name, values, FieldOption.DEFAULT);
+  default OutputWriter field(String name, String[] values) {
+    return field(name, values, FieldOption.DEFAULT);
   }
 
   /**
@@ -386,9 +410,10 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *
    * @param name   The name of the field
    * @param values The values of the field
+   * @return this writer
    */
-  default void field(String name, Iterable<String> values) {
-    field(name, values, FieldOption.DEFAULT);
+  default OutputWriter field(String name, Iterable<String> values) {
+    return field(name, values, FieldOption.DEFAULT);
   }
 
   /**
@@ -397,9 +422,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @param name   The name of the field
    * @param value  The value of the field, or {@code null} to skip the field entirely
    * @param option How to write the field for the output.
+   * @return this writer
    */
-  default void optionalField(String name, @Nullable String value, FieldOption option) {
+  default OutputWriter optionalField(String name, @Nullable String value, FieldOption option) {
     if (value != null) field(name, value, option);
+    return this;
   }
 
   /**
@@ -407,9 +434,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *
    * @param name  The name of the field
    * @param value The value of the field, or {@code null} to skip the field entirely
+   * @return this writer
    */
-  default void optionalField(String name, @Nullable String value) {
+  default OutputWriter optionalField(String name, @Nullable String value) {
     if (value != null) field(name, value, FieldOption.DEFAULT);
+    return this;
   }
 
 }

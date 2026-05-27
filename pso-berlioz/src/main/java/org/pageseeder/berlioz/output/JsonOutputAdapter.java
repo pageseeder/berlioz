@@ -88,87 +88,99 @@ public class JsonOutputAdapter implements OutputWriter {
   }
 
   @Override
-  public final void field(String name, boolean value, FieldOption option) {
-    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
-    this.json.field(Json.camelify(name), value);
+  public final OutputWriter field(String name, boolean value, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      this.json.field(Json.camelify(name), value);
+    }
+    return this;
   }
 
   @Override
-  public final void field(String name, long value, FieldOption option) {
-    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
-    this.json.field(Json.camelify(name), value);
+  public final OutputWriter field(String name, long value, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      this.json.field(Json.camelify(name), value);
+    }
+    return this;
   }
 
   @Override
-  public final void field(String name, double value, FieldOption option) {
-    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
-    this.json.field(Json.camelify(name), value);
+  public final OutputWriter field(String name, double value, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      this.json.field(Json.camelify(name), value);
+    }
+    return this;
   }
 
   @Override
-  public final void field(String name, String value, FieldOption option) {
-    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
-    this.json.field(Json.camelify(name), value);
+  public final OutputWriter field(String name, String value, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      this.json.field(Json.camelify(name), value);
+    }
+    return this;
   }
 
   @Override
-  public void field(String name, String[] values, FieldOption option) {
-    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
-    this.startArray(name);
-    for (String value : values) this.json.value(value);
-    this.json.endArray();
+  public OutputWriter field(String name, String[] values, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      startArray(name);
+      for (String value : values) this.json.value(value);
+      this.json.endArray();
+    }
+    return this;
   }
 
   @Override
-  public void field(String name, Iterable<String> values, FieldOption option) {
-    if (option == FieldOption.XML_ONLY || this.suppressedDepth > 0) return;
-    this.startArray(name);
-    for (String value : values) this.json.value(value);
-    this.json.endArray();
+  public OutputWriter field(String name, Iterable<String> values, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      startArray(name);
+      for (String value : values) this.json.value(value);
+      this.json.endArray();
+    }
+    return this;
   }
 
   @Override
-  public void startObject(String name, ContextOption option) {
+  public OutputWriter startObject(String name, ContextOption option) {
     if (option == ContextOption.XML_ONLY || this.suppressedDepth > 0) {
       this.suppressedDepth++;
-      return;
-    }
-    if (this.json.inObject()) {
+    } else if (this.json.inObject()) {
       this.json.startObject(Json.camelify(name));
     } else {
       this.json.startObject();
     }
+    return this;
   }
 
   @Override
-  public void endObject() {
+  public OutputWriter endObject() {
     if (this.suppressedDepth > 0) {
       this.suppressedDepth--;
-      return;
+    } else {
+      this.json.endObject();
     }
-    this.json.endObject();
+    return this;
   }
 
   @Override
-  public void startArray(String name, ContextOption option) {
+  public OutputWriter startArray(String name, ContextOption option) {
     if (option == ContextOption.XML_ONLY || this.suppressedDepth > 0) {
       this.suppressedDepth++;
-      return;
-    }
-    if (this.json.inObject()) {
+    } else if (this.json.inObject()) {
       this.json.startArray(Json.camelify(name));
     } else {
       this.json.startArray();
     }
+    return this;
   }
 
   @Override
-  public void endArray() {
+  public OutputWriter endArray() {
     if (this.suppressedDepth > 0) {
       this.suppressedDepth--;
-      return;
+    } else {
+      this.json.endArray();
     }
-    this.json.endArray();
+    return this;
   }
 
   @Override

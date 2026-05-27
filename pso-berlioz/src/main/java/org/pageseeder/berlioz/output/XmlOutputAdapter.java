@@ -95,110 +95,118 @@ public class XmlOutputAdapter implements OutputWriter {
   }
 
   @Override
-  public final void field(String name, boolean value, FieldOption option) {
+  public final OutputWriter field(String name, boolean value, FieldOption option) {
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
         this.xml.attribute(name, value);
-        return;
+        break;
       case XML_TEXT:
         this.xml.xml(Boolean.toString(value));
-        return;
+        break;
       case XML_ELEMENT:
         this.xml.openElement(name).xml(Boolean.toString(value)).closeElement();
-        return;
+        break;
       case JSON_ONLY:
       default:
     }
+    return this;
   }
 
   @Override
-  public final void field(String name, long value, FieldOption option) {
+  public final OutputWriter field(String name, long value, FieldOption option) {
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
         this.xml.attribute(name, value);
-        return;
+        break;
       case XML_TEXT:
         this.xml.xml(Long.toString(value));
-        return;
+        break;
       case XML_ELEMENT:
         this.xml.element(name, value);
-        return;
+        break;
       case JSON_ONLY:
       default:
     }
+    return this;
   }
 
   @Override
-  public final void field(String name, double value, FieldOption option) {
+  public final OutputWriter field(String name, double value, FieldOption option) {
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
         this.xml.attribute(name, value);
-        return;
+        break;
       case XML_TEXT:
         this.xml.xml(Double.toString(value));
-        return;
+        break;
       case XML_ELEMENT:
         this.xml.element(name, value);
-        return;
+        break;
       case JSON_ONLY:
       default:
     }
+    return this;
   }
 
   @Override
-  public final void field(String name, String value, FieldOption option) {
+  public final OutputWriter field(String name, String value, FieldOption option) {
     switch (option) {
       case DEFAULT:
       case XML_ONLY:
         this.xml.attribute(name, value);
-        return;
+        break;
       case XML_TEXT:
         this.xml.text(value);
-        return;
+        break;
       case XML_ELEMENT:
         this.xml.element(name, value);
-        return;
+        break;
       case XML_COPY:
         this.xml.xml(value);
-        return;
+        break;
       case JSON_ONLY:
       default:
     }
+    return this;
   }
 
   @Override
-  public void field(String name, String[] values, FieldOption option) {
+  public OutputWriter field(String name, String[] values, FieldOption option) {
     // TODO escape
-    field(name, String.join(",", values), option);
+    return field(name, String.join(",", values), option);
   }
 
   @Override
-  public void field(String name, Iterable<String> values, FieldOption option) {
+  public OutputWriter field(String name, Iterable<String> values, FieldOption option) {
     // TODO escape
-    field(name, String.join(",", values), option);
+    return field(name, String.join(",", values), option);
   }
 
   @Override
-  public final void startObject(String name, ContextOption option) {
+  public final OutputWriter startObject(String name, ContextOption option) {
     startElementIfXml(name, option);
+    return this;
   }
 
   @Override
-  public final void endObject() {
+  public final OutputWriter endObject() {
     endElementIfXml();
+    return this;
   }
 
   @Override
-  public final void startArray(String name, ContextOption option) {
+  public final OutputWriter startArray(String name, ContextOption option) {
     startElementIfXml(name, option);
+    return this;
   }
 
   @Override
-  public final void endArray() {
+  public final OutputWriter endArray() {
     endElementIfXml();
+    return this;
   }
 
   @Override
