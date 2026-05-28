@@ -140,6 +140,16 @@ public class JsonOutputAdapter implements OutputWriter {
   }
 
   @Override
+  public OutputWriter field(String name, int[] values, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      startArray(name);
+      for (int value : values) this.json.value(value);
+      endArray();
+    }
+    return this;
+  }
+
+  @Override
   public OutputWriter field(String name, long[] values, FieldOption option) {
     if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
       startArray(name);

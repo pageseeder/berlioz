@@ -215,6 +215,29 @@ public class XmlOutputAdapter implements OutputWriter {
   }
 
   @Override
+  public OutputWriter field(String name, int[] values, FieldOption option) {
+    switch (option) {
+      case XML_ELEMENT:
+        for (int value : values) this.xml.element(name, value);
+        break;
+      case DEFAULT:
+      case XML_ONLY:
+      case XML_TEXT: {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+          if (i > 0) sb.append(',');
+          sb.append(values[i]);
+        }
+        return field(name, sb.toString(), option);
+      }
+      case XML_COPY: // meaningless for primitives; skip like JSON_ONLY
+      case JSON_ONLY:
+      default:
+    }
+    return this;
+  }
+
+  @Override
   public OutputWriter field(String name, long[] values, FieldOption option) {
     switch (option) {
       case XML_ELEMENT:
