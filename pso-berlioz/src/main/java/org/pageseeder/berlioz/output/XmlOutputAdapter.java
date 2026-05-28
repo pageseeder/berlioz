@@ -54,7 +54,7 @@ public class XmlOutputAdapter implements OutputWriter {
    * Stack tracking the {@link ContextOption} of each open object or array.
    * Used by {@link #endObject()} and {@link #endArray()} to decide whether to close the element.
    */
-  private final Deque<ContextOption> ignore = new ArrayDeque<>();
+  private final Deque<ContextOption> contextStack = new ArrayDeque<>();
 
   /**
    * Creates a new XML writer.
@@ -188,8 +188,7 @@ public class XmlOutputAdapter implements OutputWriter {
       case DEFAULT:
       case XML_ONLY:
       case XML_TEXT:
-        field(name, String.join(",", values), option);
-        break;
+        return field(name, String.join(",", values), option);
       case JSON_ONLY:
       default:
     }
@@ -208,8 +207,7 @@ public class XmlOutputAdapter implements OutputWriter {
       case DEFAULT:
       case XML_ONLY:
       case XML_TEXT:
-        field(name, String.join(",", values), option);
-        break;
+        return field(name, String.join(",", values), option);
       case JSON_ONLY:
       default:
     }
@@ -230,8 +228,7 @@ public class XmlOutputAdapter implements OutputWriter {
           if (i > 0) sb.append(',');
           sb.append(values[i]);
         }
-        field(name, sb.toString(), option);
-        break;
+        return field(name, sb.toString(), option);
       }
       case XML_COPY: // meaningless for primitives; skip like JSON_ONLY
       case JSON_ONLY:
@@ -254,8 +251,7 @@ public class XmlOutputAdapter implements OutputWriter {
           if (i > 0) sb.append(',');
           sb.append(values[i]);
         }
-        field(name, sb.toString(), option);
-        break;
+        return field(name, sb.toString(), option);
       }
       case XML_COPY: // meaningless for primitives; skip like JSON_ONLY
       case JSON_ONLY:
@@ -267,11 +263,11 @@ public class XmlOutputAdapter implements OutputWriter {
   @Override
   public final OutputWriter nullField(String name, FieldOption option) {
     switch (option) {
-      case DEFAULT:
       case XML_ONLY:
       case XML_ELEMENT:
         this.xml.openElement(name).closeElement();
         break;
+      case DEFAULT: // attributes have no null representation; skip
       case XML_TEXT:
       case XML_COPY:
       case JSON_ONLY:
@@ -282,26 +278,22 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public final OutputWriter startObject(String name, ContextOption option) {
-    startElementIfXml(name, option);
-    return this;
+    return startElementIfXml(name, option);
   }
 
   @Override
   public final OutputWriter endObject() {
-    endElementIfXml();
-    return this;
+    return endElementIfXml();
   }
 
   @Override
   public final OutputWriter startArray(String name, ContextOption option) {
-    startElementIfXml(name, option);
-    return this;
+    return startElementIfXml(name, option);
   }
 
   @Override
   public final OutputWriter endArray() {
-    endElementIfXml();
-    return this;
+    return endElementIfXml();
   }
 
   @Override
@@ -320,18 +312,20 @@ public class XmlOutputAdapter implements OutputWriter {
     return this.xml.toString();
   }
 
-  private void startElementIfXml(String name, ContextOption option) {
-    this.ignore.push(option);
+  private OutputWriter startElementIfXml(String name, ContextOption option) {
+    this.contextStack.push(option);
     if (option != ContextOption.JSON_ONLY) {
       this.xml.openElement(name);
     }
+    return this;
   }
 
-  private void endElementIfXml() {
-    ContextOption option = this.ignore.pop();
+  private OutputWriter endElementIfXml() {
+    ContextOption option = this.contextStack.pop();
     if (option != ContextOption.JSON_ONLY) {
       this.xml.closeElement();
     }
+    return this;
   }
 
 }

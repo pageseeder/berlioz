@@ -317,14 +317,16 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *
    * <ul>
    *   <li>JSON: writes {@code "name": null}</li>
-   *   <li>XML: writes a self-closing element {@code <name/>} for {@link FieldOption#DEFAULT},
-   *       {@link FieldOption#XML_ONLY}, and {@link FieldOption#XML_ELEMENT};
-   *       skipped for {@link FieldOption#XML_TEXT} and {@link FieldOption#XML_COPY}
-   *       (no meaningful null representation as text or raw markup);
-   *       skipped entirely for {@link FieldOption#JSON_ONLY}.</li>
+   *   <li>XML: writes a self-closing element {@code <name/>} for {@link FieldOption#XML_ONLY}
+   *       and {@link FieldOption#XML_ELEMENT};
+   *       skipped for {@link FieldOption#DEFAULT} (XML attributes have no null representation),
+   *       {@link FieldOption#XML_TEXT}, {@link FieldOption#XML_COPY}
+   *       (no meaningful null representation as text or raw markup),
+   *       and {@link FieldOption#JSON_ONLY}.</li>
    * </ul>
    *
    * <p>Use this when you need to distinguish {@code null} from an absent field.
+   * In XML, use {@link FieldOption#XML_ELEMENT} to emit a self-closing {@code <name/>} marker.
    * To omit the field entirely for a nullable value, use
    * {@link #optionalField(String, String)} instead.</p>
    *
@@ -339,7 +341,9 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *
    * <ul>
    *   <li>JSON: writes {@code "name": null}</li>
-   *   <li>XML: writes a self-closing element {@code <name/>}</li>
+   *   <li>XML: skipped (attributes have no null representation;
+   *       use {@link #nullField(String, FieldOption)} with {@link FieldOption#XML_ELEMENT}
+   *       to emit a self-closing {@code <name/>} marker)</li>
    * </ul>
    *
    * @param name The name of the field

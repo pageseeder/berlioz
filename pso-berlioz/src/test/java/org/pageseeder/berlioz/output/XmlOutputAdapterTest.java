@@ -535,6 +535,54 @@ public class XmlOutputAdapterTest {
   }
 
   // ---------------------------------------------------------------------------
+  // nullField
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void nullField_default_isSkipped() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name");
+    out.endObject();
+    out.flush();
+    assertEquals("<root/>", sw.toString());
+  }
+
+  @Test
+  public void nullField_xmlElement_writesSelfClosingElement() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name", FieldOption.XML_ELEMENT);
+    out.endObject();
+    out.flush();
+    assertEquals("<root><name/></root>", sw.toString());
+  }
+
+  @Test
+  public void nullField_xmlOnly_writesSelfClosingElement() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name", FieldOption.XML_ONLY);
+    out.endObject();
+    out.flush();
+    assertEquals("<root><name/></root>", sw.toString());
+  }
+
+  @Test
+  public void nullField_jsonOnly_isSkipped() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name", FieldOption.JSON_ONLY);
+    out.endObject();
+    out.flush();
+    assertEquals("<root/>", sw.toString());
+  }
+
+  // ---------------------------------------------------------------------------
   // Multiple fields
   // ---------------------------------------------------------------------------
 

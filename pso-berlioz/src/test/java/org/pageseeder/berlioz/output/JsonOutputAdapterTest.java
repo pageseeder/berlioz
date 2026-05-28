@@ -531,6 +531,54 @@ public class JsonOutputAdapterTest {
   }
 
   // ---------------------------------------------------------------------------
+  // nullField
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void nullField_default_writesNullProperty() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name");
+    out.endObject();
+    out.flush();
+    assertEquals("{\"name\":null}", sw.toString());
+  }
+
+  @Test
+  public void nullField_xmlElement_writesNullProperty() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name", FieldOption.XML_ELEMENT);
+    out.endObject();
+    out.flush();
+    assertEquals("{\"name\":null}", sw.toString());
+  }
+
+  @Test
+  public void nullField_xmlOnly_isSkipped() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name", FieldOption.XML_ONLY);
+    out.endObject();
+    out.flush();
+    assertEquals("{}", sw.toString());
+  }
+
+  @Test
+  public void nullField_jsonOnly_writesNullProperty() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.nullField("name", FieldOption.JSON_ONLY);
+    out.endObject();
+    out.flush();
+    assertEquals("{\"name\":null}", sw.toString());
+  }
+
+  // ---------------------------------------------------------------------------
   // camelCase field name conversion
   // ---------------------------------------------------------------------------
 

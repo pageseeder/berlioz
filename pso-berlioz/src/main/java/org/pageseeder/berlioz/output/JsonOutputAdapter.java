@@ -124,7 +124,7 @@ public class JsonOutputAdapter implements OutputWriter {
     if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
       startArray(name);
       for (String value : values) this.json.value(value);
-      this.json.endArray();
+      endArray();
     }
     return this;
   }
@@ -134,7 +134,7 @@ public class JsonOutputAdapter implements OutputWriter {
     if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
       startArray(name);
       for (String value : values) this.json.value(value);
-      this.json.endArray();
+      endArray();
     }
     return this;
   }
@@ -144,7 +144,7 @@ public class JsonOutputAdapter implements OutputWriter {
     if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
       startArray(name);
       for (long value : values) this.json.value(value);
-      this.json.endArray();
+      endArray();
     }
     return this;
   }
@@ -154,7 +154,7 @@ public class JsonOutputAdapter implements OutputWriter {
     if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
       startArray(name);
       for (boolean value : values) this.json.value(value);
-      this.json.endArray();
+      endArray();
     }
     return this;
   }
