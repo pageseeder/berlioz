@@ -67,6 +67,7 @@ public final class ListLibraries implements ContentGenerator {
   /**
    * Path to the web application libraries.
    */
+  @SuppressWarnings("java:S1075") // Servlet spec-defined path, not a configurable URI
   private static final String LIBRARIES_PATH = "/WEB-INF/lib/";
 
   /**
@@ -261,9 +262,6 @@ public final class ListLibraries implements ContentGenerator {
 
   private static List<String> getLibraryPaths(ServletContext context) {
     Set<String> resources = context.getResourcePaths(LIBRARIES_PATH);
-    if (resources == null) {
-      resources = context.getResourcePaths("/WEB-INF/lib");
-    }
     if (resources == null || resources.isEmpty()) return List.of();
     return resources.stream()
         .filter(ListLibraries::isJar)
