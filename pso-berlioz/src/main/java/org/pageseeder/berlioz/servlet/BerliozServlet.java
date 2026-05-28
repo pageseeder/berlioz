@@ -179,7 +179,7 @@ public final class BerliozServlet extends HttpServlet {
     } catch (IllegalArgumentException ex) {
       sendError(req, res, HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported HTTP method", null);
     } catch (IOException ex) {
-      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+      logIOError(req, ex);
     }
   }
 
@@ -188,7 +188,7 @@ public final class BerliozServlet extends HttpServlet {
     try {
       process(req, res, HttpMethod.HEAD, false);
     } catch (IOException ex) {
-      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+      logIOError(req, ex);
     }
   }
 
@@ -197,7 +197,7 @@ public final class BerliozServlet extends HttpServlet {
     try {
       process(req, res, HttpMethod.GET, true);
     } catch (IOException ex) {
-      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+      logIOError(req, ex);
     }
   }
 
@@ -206,7 +206,7 @@ public final class BerliozServlet extends HttpServlet {
     try {
       process(req, res, HttpMethod.POST, true);
     } catch (IOException ex) {
-      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+      logIOError(req, ex);
     }
   }
 
@@ -215,7 +215,7 @@ public final class BerliozServlet extends HttpServlet {
     try {
       process(req, res, HttpMethod.PUT, true);
     } catch (IOException ex) {
-      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+      logIOError(req, ex);
     }
   }
 
@@ -224,7 +224,7 @@ public final class BerliozServlet extends HttpServlet {
     try {
       process(req, res, HttpMethod.DELETE, true);
     } catch (IOException ex) {
-      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+      logIOError(req, ex);
     }
   }
 
@@ -566,6 +566,10 @@ public final class BerliozServlet extends HttpServlet {
    */
   private boolean isTrue(@Nullable String parameter) {
     return "true".equals(parameter);
+  }
+
+  private void logIOError(HttpServletRequest req, IOException ex) {
+    LOGGER.debug("I/O error processing {} {} - likely a client disconnect", req.getMethod(), req.getRequestURI(), ex);
   }
 
   private BerliozConfig getBerliozConfig() {
