@@ -48,8 +48,6 @@ public class GetParametersTest {
         .multiParameter("color", "red", "blue", "green")
         .build();
     String out = process(req);
-    long count = out.chars().filter(c -> c == '<').count()
-        - out.chars().filter(c -> c == '/').count();
     // 3 <parameter> elements inside <parameters>
     Assert.assertTrue("Should contain 3 parameter elements", out.contains("red"));
     Assert.assertTrue(out.contains("blue"));

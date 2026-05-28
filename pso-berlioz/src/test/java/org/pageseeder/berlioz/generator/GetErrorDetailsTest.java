@@ -2,7 +2,6 @@ package org.pageseeder.berlioz.generator;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.servlet.ErrorHandlerServlet;

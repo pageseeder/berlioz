@@ -50,7 +50,7 @@ public class GetServicesTest {
   }
 
   @Test
-  public void testETagIsStableForUnchangedFiles() throws Exception {
+  public void testETagIsStableForUnchangedFiles() {
     GlobalSettings.setup(WEB_INF);
     GetServices gen = new GetServices();
     ContentRequest req = GeneratorTestSupport.request().build();
