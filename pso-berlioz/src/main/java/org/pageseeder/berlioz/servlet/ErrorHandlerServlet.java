@@ -56,18 +56,18 @@ import org.slf4j.LoggerFactory;
  * <p>
  * This servlet should be configured as:
  *
- * <pre>
- * &lt;!-- Handler for errors (this servlet does not need to be mapped to anything) --&gt;
- * &lt;servlet&gt;
- *   &lt;servlet-name&gt;ErrorHandlerServlet&lt;/servlet-name&gt;
- *   &lt;servlet-class&gt;org.pageseeder.berlioz.servlet.ErrorHandlerServlet&lt;/servlet-class&gt;
- *   &lt;load-on-startup&gt;2&lt;/load-on-startup&gt;
- * &lt;/servlet&gt;
- * </pre>
+ * <pre>{@code
+ * <!-- Handler for errors (this servlet does not need to be mapped to anything) --&gt;
+ * <servlet>
+ *   <servlet-name>ErrorHandlerServlet</servlet-name>
+ *   <servlet-class>org.pageseeder.berlioz.servlet.ErrorHandlerServlet</servlet-class>
+ *   <load-on-startup>2</load-on-startup>
+ * </servlet>
+ * }</pre>
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32 - 29 January 2015
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -292,7 +292,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
       out.print(xml);
       out.flush();
     }
-
   }
 
   /**
@@ -403,122 +402,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return out.toString();
   }
 
-
-  /**
-   * Handles HTTP error using the error requests attributes.
-   *
-   * @param req The HTTP servlet request will cause the error.
-   *
-   * @return the error details as JSON
-   */
-  private static String toJSON(HttpServletRequest req) {
-
-    // Grab data from attributes
-    String message = (String)req.getAttribute(ERROR_MESSAGE);
-    int code = getErrorCode(req);
-    String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
-    Throwable throwable = getErrorException(req);
-    String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
-    String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
-
-    // Write the JSON
-    StringBuilder json = new StringBuilder();
-    json.append('{');
-    appendJSONProperty(json, "http-code", code).append(',');
-    appendJSONProperty(json, "datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME)).append(',');
-
-    // If it has a Berlioz ID
-    ErrorID eid = throwable instanceof BerliozException? ((BerliozException)throwable).id() : null;
-    if (eid != null) {
-      appendJSONProperty(json, "id", eid.id()).append(',');
-    } else {
-      appendJSONProperty(json, "id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString()).append(',');
-    }
-
-    // Berlioz info
-    appendJSONName(json, "berlioz");
-    json.append('{');
-    appendJSONProperty(json, "version", GlobalSettings.getVersion());
-    json.append('}');
-    json.append(',');
-
-    // Other informational elements
-    String title = HttpStatusCodes.getTitle(code);
-    appendJSONProperty(json, "title",   title != null? title : "Berlioz Status").append(',');
-    appendJSONProperty(json, "message", message).append(',');
-    appendJSONProperty(json, "request-uri", requestURI != null? requestURI : req.getRequestURI()).append(',');
-    appendJSONProperty(json, "servlet",  servlet != null? servlet : "null").append(',');
-
-    // TODO: display error in json format
-//      if (throwable != null) {
-//        Errors.toXML(throwable, xml, true);
-//
-//        // If some errors were collected, let's include them
-//        if (throwable instanceof CompoundBerliozException) {
-//          xml.openElement("collected-errors");
-//          ErrorCollector<? extends Exception> collector = ((CompoundBerliozException)throwable).getCollector();
-//          for (CollectedError<? extends Exception> collected : collector.getErrors()) {
-//            collected.toXML(xml);
-//          }
-//          xml.closeElement();
-//        }
-//
-//      }
-
-    // HTTP Headers
-    appendJSONName(json, "http-headers");
-    json.append('[');
-    Enumeration<?> names = req.getHeaderNames();
-    while (names.hasMoreElements()) {
-      String name = names.nextElement().toString();
-      Enumeration<?> values = req.getHeaders(name);
-      if (values != null) {
-        while (values.hasMoreElements()) {
-          String value = values.nextElement().toString();
-          json.append('{');
-          appendJSONProperty(json, "name", name);
-          json.append(',');
-          appendJSONProperty(json, "value", value);
-          json.append('}');
-        }
-      }
-    }
-    json.append(']');
-    json.append(',');
-
-    // HTTP parameters
-    appendJSONName(json, "http-parameters");
-    json.append('[');
-    Map<?, ?> parameters = req.getParameterMap();
-    for (Entry<?, ?> entry : parameters.entrySet()) {
-      String name = entry.getKey().toString();
-      // Must be an array according to Servlet Specifications
-      String[] values = (String[])entry.getValue();
-      if (values != null) {
-        for (String value : values) {
-          json.append('{');
-          appendJSONProperty(json, "name", name);
-          json.append(',');
-          appendJSONProperty(json, "value", value);
-          json.append('}');
-        }
-      }
-    }
-    json.append(']');
-    json.append('}');
-
-    return json.toString();
-  }
-
-// TODO Find a mechanism to automate that process
-//  /**
-//   * Allows Berlioz to automatically add the extensions.
-//   * @param ext the extension to add.
-//   */
-//  static void addForwardExtension(String ext) {
-//    forwardExtensions.add(ext);
-//  }
-
   /**
    * Return the root element name based on the status code.
    *
@@ -548,7 +431,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @return The original URI or this URI if it is the original.
    */
   private static String getOriginalURI(HttpServletRequest req) {
-    Object original = req.getAttribute("javax.servlet.error.request_uri");
+    Object original = req.getAttribute(ERROR_REQUEST_URI);
     if (original instanceof String) return (String)original;
     return req.getRequestURI();
   }
@@ -588,7 +471,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
     }
   }
 
-
   /**
    * Replace the .auto by the original extension (.html, .xml, .json, etc...)
    *
@@ -608,18 +490,4 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return  to;
   }
 
-
-  private static StringBuilder appendJSONName(StringBuilder json, String name) {
-    return json.append('"').append(name).append('"').append(':');
-  }
-
-  private static StringBuilder appendJSONProperty(StringBuilder json, String name, String value) {
-    json.append('"').append(name).append('"').append(':');
-    json.append('"').append(value).append('"');
-    return json;
-  }
-
-  private static StringBuilder appendJSONProperty(StringBuilder json, String name, int value) {
-    return json;
-  }
 }
