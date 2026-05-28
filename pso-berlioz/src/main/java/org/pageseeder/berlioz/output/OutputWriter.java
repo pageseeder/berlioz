@@ -425,7 +425,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable String value, FieldOption option) {
-    if (value != null) field(name, value, option);
+    if (value != null) return field(name, value, option);
     return this;
   }
 
@@ -437,7 +437,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable String value) {
-    if (value != null) field(name, value, FieldOption.DEFAULT);
+    if (value != null) return field(name, value, FieldOption.DEFAULT);
     return this;
   }
 
