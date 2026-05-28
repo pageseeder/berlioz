@@ -9,6 +9,7 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
+@SuppressWarnings({"deprecated", "java:S1874"})
 public final class XMLConfigTest {
 
   @Test

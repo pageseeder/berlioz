@@ -25,7 +25,7 @@ public class NoContentTest {
   }
 
   @Test
-  public void testProcessWritesNothing() throws Exception {
+  public void testProcessWritesNothing() {
     NoContent gen = new NoContent();
     ContentRequest req = GeneratorTestSupport.request().build();
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);

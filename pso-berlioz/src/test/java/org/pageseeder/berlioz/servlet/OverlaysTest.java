@@ -14,7 +14,7 @@ public class OverlaysTest {
   @Test
   public void testList() {
     List<Overlays.Overlay> overlays = Overlays.list(root);
-    Assert.assertTrue(overlays.size() > 0);
+    Assert.assertFalse(overlays.isEmpty());
   }
 
   @Test

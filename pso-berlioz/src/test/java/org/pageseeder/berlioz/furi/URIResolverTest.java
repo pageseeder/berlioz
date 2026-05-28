@@ -95,7 +95,7 @@ public class URIResolverTest {
       @Override
       public boolean exists(String v) {return v.matches("\\d+");}
       @Override
-      public Integer resolve(String v) {return exists(v)? Integer.valueOf(v) : null;};
+      public Integer resolve(String v) {return exists(v)? Integer.valueOf(v) : null;}
     });
     URIResolveResult r = resolver.resolve(p, b);
     Assert.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());

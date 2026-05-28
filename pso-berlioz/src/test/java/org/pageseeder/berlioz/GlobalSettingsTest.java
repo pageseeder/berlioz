@@ -29,6 +29,7 @@ import org.junit.Test;
  * @version Berlioz 0.10.3
  * @since Berlioz 0.10.3
  */
+@SuppressWarnings({"deprecated", "java:S1874"})
 public final class GlobalSettingsTest {
 
   @Before
@@ -157,7 +158,7 @@ public final class GlobalSettingsTest {
   @Test
   public void testLoad_Errors() {
     Assert.assertTrue(GlobalSettings.load());
-    Assert.assertFalse(GlobalSettings.countProperties() == 0);
+    Assert.assertNotEquals(0, GlobalSettings.countProperties());
 
     GlobalSettings.setMode("empty");
     Assert.assertFalse(GlobalSettings.load());
@@ -175,7 +176,7 @@ public final class GlobalSettingsTest {
       @Override public void load() {
         this.notifications++;
       }
-    };
+    }
 
     // Listener that behaves properly
     final NotifiableConfigListener good = new NotifiableConfigListener();
