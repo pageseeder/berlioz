@@ -165,40 +165,22 @@ public final class ErrorHandlerServlet extends HttpServlet {
     defaultExtension = defExt != null? defExt : DEFAULT_EXTENSION;
   }
 
-  /**
-   * Handles a GET request.
-   *
-   * <p>
-   * No parameter required.
-   *
-   * @param req The servlet request.
-   * @param res The servlet response.
-   *
-   * @throws ServletException Should a servlet exception occur.
-   * @throws IOException Should an I/O error occur.
-   */
   @Override
-  public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-    // Handle the request
-    handle(req, res);
+  public void doGet(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      handle(req, res);
+    } catch (IOException | ServletException ex) {
+      LOGGER.error("Failed to handle error for {}", req.getRequestURI(), ex);
+    }
   }
 
-  /**
-   * Handles a POST request.
-   *
-   * <p>
-   * No parameter required.
-   *
-   * @param req The servlet request.
-   * @param res The servlet response.
-   *
-   * @throws ServletException Should a servlet exception occur.
-   * @throws IOException Should an I/O error occur.
-   */
   @Override
-  public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-    // Handle the request
-    handle(req, res);
+  public void doPost(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      handle(req, res);
+    } catch (IOException | ServletException ex) {
+      LOGGER.error("Failed to handle error for {}", req.getRequestURI(), ex);
+    }
   }
 
   /**
