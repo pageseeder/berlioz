@@ -364,7 +364,7 @@ public class Variable {
       return new String[] { this.defaultValue};
     String[] values = parameters.getValues(this.name);
     // Defined and non-empty: return the values
-    if (values != null && values.length > 0 && values[0].length() > 0) return values;
+    if (values != null && values.length > 0 && !values[0].isEmpty()) return values;
     // Empty or undefined: return the default
     else return new String[] { this.defaultValue};
   }
@@ -487,7 +487,7 @@ public class Variable {
    * @return The regex pattern corresponding to this name.
    */
   protected String namePatternString() {
-    return this.name.indexOf('.') < 0 ? this.name : name().replaceAll("\\.", "\\\\.");
+    return this.name.indexOf('.') < 0 ? this.name : this.name.replace(".", "\\.");
   }
 
 }
