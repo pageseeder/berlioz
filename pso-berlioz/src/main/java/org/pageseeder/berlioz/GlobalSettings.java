@@ -574,7 +574,7 @@ public final class GlobalSettings {
    *
    * @throws NullPointerException If the name of the mode is <code>null</code>.
    *
-   * @deprecated since 0.11.4, use {@link InitEnvironment#mode(File)} instead
+   * @deprecated since 0.11.4, use {@link InitEnvironment#mode(String)} instead
    */
   @Deprecated(since = "0.11.4")
   public static void setMode(String name) {
