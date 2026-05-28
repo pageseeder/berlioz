@@ -19,23 +19,7 @@ we want to keep, and the integration points that may make Berlioz easier to use 
 
 ## Candidate Development Themes
 
-### 1. Jakarta Servlet Support
-
-Move Berlioz to the Jakarta Servlet namespace for modern servlet containers.
-
-Topics to resolve:
-
-- Whether Jakarta support should be a breaking major release.
-- Whether to maintain a legacy `javax.servlet` line for existing applications.
-- Whether servlet-specific code should be isolated enough to support parallel `javax` and `jakarta` artifacts.
-- How the mock and kickstart modules should track the migration.
-
-Likely outcome:
-
-- A Jakarta-based Berlioz line for current containers.
-- Clear migration notes for applications moving from `javax.servlet` to `jakarta.servlet`.
-
-### 2. Output-Aware Generators
+### 1. Output-Aware Generators
 
 Allow generators to write through a higher-level output abstraction so the same service can produce XML or JSON depending on the request format.
 
@@ -57,7 +41,7 @@ void process(ContentRequest request, OutputWriter output);
 
 The `OutputWriter` should keep XML efficient and natural while making direct JSON output possible where appropriate.
 
-### 3. Typed and Validating Request Parameters
+### 2. Typed and Validating Request Parameters
 
 Add a smarter request API for reading parameters with constraints and predictable `400 Bad Request` handling.
 
@@ -87,7 +71,7 @@ This could borrow from Spring's conversion and validation concepts, but the Berl
 
 The API should prefer simple nullable scalar values over `Optional<T>` for ordinary request access. When used with clear nullness annotations, `@Nullable` keeps the API direct and avoids unnecessary temporary objects.
 
-### 4. Service and Page Metadata
+### 3. Service and Page Metadata
 
 Expose service and page metadata consistently.
 
@@ -112,7 +96,7 @@ Potential output channels:
 
 This should make services easier to inspect, document, test, and debug without adding heavy machinery to the runtime.
 
-### 5. Error Handling and Problem Responses
+### 4. Error Handling and Problem Responses
 
 Define clearer conventions for framework-generated errors.
 
@@ -123,7 +107,7 @@ Areas to consider:
 - `405 Method Not Allowed` when a URI matches but the method does not.
 - `406 Not Acceptable` when the requested output format is unsupported.
 - `500 Internal Server Error` for unexpected generator failures.
-- RFC 9457 Problem Details as the standard shape for machine-readable error responses.
+- Explore RFC 9457 Problem Details as the standard shape for machine-readable error responses.
 
 The same error model should be representable as XML, JSON, or transformed HTML.
 
@@ -140,7 +124,7 @@ For request validation, Berlioz could add an extension member such as `errors` t
 
 Spring and JAX-RS both have useful ideas here, especially exception mapping and structured problem responses. Berlioz can adopt the small useful parts without adopting their programming models.
 
-### 6. Authentication and Authorization Guards
+### 5. Authentication and Authorization Guards
 
 Make it easy for applications to guard services and generators without making Berlioz responsible for authentication itself.
 
@@ -171,7 +155,7 @@ The core model should not require Berlioz to choose between role-based access co
 
 This keeps policy decisions in application code while giving Berlioz consistent early-return behavior, response status handling, and XML/JSON/HTML problem output.
 
-### 7. Interceptors and Observability
+### 6. Interceptors and Observability
 
 Introduce lightweight hooks around request processing.
 
@@ -187,7 +171,7 @@ Possible hooks:
 Potential uses:
 
 - Logging.
-- Timing.
+- Timing, including XSLT transformation performance.
 - Metrics.
 - Tracing.
 - Security checks.
@@ -199,7 +183,7 @@ Natural optional integrations:
 - OpenTelemetry.
 - Application-specific audit logging.
 
-### 8. Optional Integration Modules
+### 7. Optional Integration Modules
 
 Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
 
@@ -214,11 +198,29 @@ Possible modules:
 
 These integrations should support Berlioz rather than replace its URI template, generator, and XSLT model.
 
+### 8. Jakarta Servlet Support
+
+Move Berlioz to the Jakarta Servlet namespace for modern servlet containers.
+
+**Note**: This migration is intentionally deferred while many existing applications remain on `javax.servlet`. The `javax` line will continue as the active release until a migration window is identified.
+
+Topics to resolve:
+
+- Whether Jakarta support should be a breaking major release.
+- Whether to maintain a legacy `javax.servlet` line for existing applications.
+- Whether servlet-specific code should be isolated enough to support parallel `javax` and `jakarta` artifacts.
+- How the mock and kickstart modules should track the migration.
+
+Likely outcome:
+
+- A Jakarta-based Berlioz line for current containers.
+- Clear migration notes for applications moving from `javax.servlet` to `jakarta.servlet`.
+
 ## Possible Milestones
 
 ### Milestone 1: Foundations
 
-- Decide Jakarta migration strategy.
+- Defer Jakarta migration; document compatibility policy for existing `javax.servlet` applications.
 - Define compatibility policy for existing applications.
 - Document the desired request/output lifecycle.
 - Identify which APIs must remain source-compatible.
@@ -260,10 +262,16 @@ These integrations should support Berlioz rather than replace its URI template, 
 - Add optional metrics/tracing integration.
 - Keep integration modules separate from the core runtime.
 
+### Milestone 7: Jakarta Migration
+
+- Decide final Jakarta migration strategy.
+- Release Jakarta-based line with migration notes.
+- Determine whether `javax.servlet` line continues as maintenance-only.
+
 ## Open Questions
 
 - Should the Jakarta migration be released as Berlioz 1.0?
-- Should the `javax.servlet` line continue as maintenance-only?
+- Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
 - What is the smallest useful `OutputWriter` API?
 - Should output negotiation prefer URI extension over the `Accept` header?
 - How should XML aggregation work when some generators can write JSON directly?
