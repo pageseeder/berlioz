@@ -28,7 +28,7 @@ import org.pageseeder.berlioz.furi.Variable.Form;
 /**
  * A token based on the operators defined in the latest draft.
  *
- * <pre>
+ * <pre>{@code
  *  instruction   = &quot;{&quot; [ operator ] variable-list &quot;}&quot;
  *  operator      = &quot;/&quot; / &quot;+&quot; / &quot;;&quot; / &quot;?&quot; / op-reserve
  *  variable-list =  varspec *( &quot;,&quot; varspec )
@@ -39,7 +39,7 @@ import org.pageseeder.berlioz.furi.Variable.Form;
  *  default       = *( unreserved / reserved )
  *  op-reserve    = &lt;anything else that isn't ALPHA or operator&gt;
  *  type-reserve  = &lt;anything else that isn't ALPHA, &quot;,&quot;, or operator&gt;
- * </pre>
+ * }</pre>
  *
  * @see <a href="http://code.google.com/p/uri-templates/source/browse/trunk/spec/draft-gregorio-uritemplate.xml">URI
  * Template Library draft specifications at Google Code</a>
@@ -52,23 +52,6 @@ import org.pageseeder.berlioz.furi.Variable.Form;
 public class BerliozTokenOperator extends TokenBase implements TokenOperator, Matchable {
 
   /**
-   * The pattern for the URI defined pchar:
-   *
-   * <pre>{@code
-   * pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
-   * pct-encoded = "%" HEXDIG HEXDIG
-   * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
-   * sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
-   * }</pre>
-   *
-   * To avoid side-effects with the resolvers non-capturing groups are used.
-   *
-   * @see <a href="http://www.ietf.org/rfc/rfc3986.txt">Uniform Resource Identifier (URI): Generic
-   *      Syntax</a>
-   */
-  protected static final Pattern PCHAR = Pattern.compile("(?:[\\w-_.~!$&'()*+,;=:@]|(?:%[0-9A-F]{2}))");
-
-  /**
    * The list of operators currently supported.
    */
   public enum Operator {
@@ -77,8 +60,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      * The '?' operator for query parameters.
      *
      * <p>Example:
-     *
-     * <pre>
+     * <pre>{@code
      *  undef = null;
      *  empty = &quot;&quot;;
      *  x     = &quot;1024&quot;;
@@ -87,19 +69,18 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      * {?x,y}                    ?x=1024&amp;y=768
      * {?x,y,empty}              ?x=1024&amp;y=768&amp;empty=
      * {?x,y,undef}              ?x=1024&amp;y=768
-     * </pre>
+     * }</pre>
      */
     QUERY_PARAMETER('?') {
       @Override
-      public String expand(List<Variable> vars, Parameters parameters) {
-        if (parameters == null) return "";
+      public String expand(List<Variable> variables, Parameters parameters) {
         StringBuilder expansion = new StringBuilder();
         boolean first = true;
-        for (Variable var : vars) {
-          if (parameters.exists(var.name())) {
-            String[] values = var.values(parameters);
+        for (Variable variable : variables) {
+          if (parameters.exists(variable.name())) {
+            String[] values = variable.values(parameters);
             // Associative Array: odd indexed values are names, even are values
-            if (var.form() == Form.MAP) {
+            if (variable.form() == Form.MAP) {
               for (int i = 0; i < values.length; i++) {
                 expansion.append(first ? '?' : '&');
                 expansion.append(URICoder.encode(values[i])).append('=');
@@ -109,10 +90,10 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
                 first = false;
               }
             // List: names, automatically number the names
-            } else if (var.form() == Form.LIST) {
+            } else if (variable.form() == Form.LIST) {
               for (int i = 0; i < values.length; i++) {
                 expansion.append(first ? '?' : '&');
-                expansion.append(var.name());
+                expansion.append(variable.name());
                 if (i > 0) {
                   expansion.append(i+1);
                 }
@@ -122,7 +103,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
             // String: join the values with a comma
             } else {
               expansion.append(first? '?' : '&');
-              expansion.append(var.name()).append('=');
+              expansion.append(variable.name()).append('=');
               for (int i = 0; i < values.length; i++) {
                 if (i > 0) {
                   expansion.append(',');
@@ -138,7 +119,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       }
 
       @Override
-      boolean isResolvable(List<Variable> arg0) {
+      boolean isResolvable(List<Variable> variables) {
         return true;
       }
 
@@ -172,8 +153,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      * The ';' operator for path parameters.
      *
      * <p>Example:
-     *
-     * <pre>
+     * <pre>{@code
      *  undef = null;
      *  empty = &quot;&quot;;
      *  x     = &quot;1024&quot;;
@@ -182,12 +162,11 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      * {;x,y}                    ;x=1024;y=768
      * {;x,y,empty}              ;x=1024;y=768;empty
      * {;x,y,undef}              ;x=1024;y=768
-     * </pre>
+     * }</pre>
      */
     PATH_PARAMETER(';') {
       @Override
       String expand(List<Variable> variables, Parameters parameters) {
-        if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
         for (Variable variable : variables) {
           if (parameters.exists(variable.name())) {
@@ -260,20 +239,18 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     /**
      * The '/' operator for path segments.
      *
-     * Example:
-     *
-     * <pre>
+     * <p>Example:
+     * <pre>{@code
      *  list  = [ &quot;val1&quot;, &quot;val2&quot;, &quot;val3&quot; ];
      *  x     = &quot;1024&quot;;
      *
      *  {/list,x}                 /val1/val2/val3/1024
-     * </pre>
+     * }</pre>
      */
     PATH_SEGMENT('/') {
 
       @Override
       String expand(List<Variable> variables, Parameters parameters) {
-        if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
         for (Variable variable : variables) {
           if (parameters.exists(variable.name())) {
@@ -310,8 +287,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      * The '+' operator for URI inserts.
      *
      * <p>Example:
-     *
-     * <pre>
+     * <pre>{@code
      * empty = &quot;&quot;
      * path  = &quot;/foo/bar&quot;
      * x     = &quot;1024&quot;
@@ -320,13 +296,12 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
      *  {+path,x}/here            /foo/bar,1024/here
      *  {+path}{x}/here           /foo/bar1024/here
      *  {+empty}/here             /here
-     * </pre>
+     * }</pre>
      */
     URI_INSERT('+') {
 
       @Override
       String expand(List<Variable> vars, Parameters parameters) {
-        if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
         for (Iterator<Variable> i = vars.iterator(); i.hasNext();) {
           Variable variable = i.next();
@@ -370,7 +345,6 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
 
       @Override
       String expand(List<Variable> vars, Parameters parameters) {
-        if (parameters == null) return "";
         StringBuilder expansion = new StringBuilder();
         for (Iterator<Variable> i = vars.iterator(); i.hasNext();) {
           Variable variable = i.next();
@@ -606,8 +580,6 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       throw new URITemplateSyntaxException(exp, "Cannot produce a valid token operator.");
     char c = sexp.charAt(0);
     Operator operator = BerliozTokenOperator.toOperator(c);
-    if (operator == null)
-      throw new URITemplateSyntaxException(String.valueOf(c), "This operator is not supported");
     List<Variable> variables = toVariables(operator == Operator.SUBSTITUTION? sexp : sexp.substring(1));
     return new BerliozTokenOperator(operator, variables);
   }
@@ -641,7 +613,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
       if (!first) {
         exp.append(',');
       }
-      exp.append(v.toString());
+      exp.append(v);
       first = false;
     }
     exp.append('}');
