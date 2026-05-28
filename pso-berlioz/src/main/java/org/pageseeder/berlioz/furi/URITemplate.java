@@ -96,7 +96,7 @@ public class URITemplate implements Expandable {
    * @throws NullPointerException If the specified template is <code>null</code>.
    * @throws URITemplateSyntaxException If the string provided does not follow the proper syntax.
    */
-  public URITemplate(String template, TokenFactory factory) {
+  public URITemplate(String template, @Nullable TokenFactory factory) {
     this.template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
     this.tokens = digest(template, factory != null? factory : TokenFactory.getInstance());
   }

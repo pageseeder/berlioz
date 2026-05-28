@@ -273,7 +273,7 @@ public class Variable {
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.
    */
-  public Variable(String name, String def, VariableType type, @Nullable Form form) {
+  public Variable(String name, @Nullable String def, VariableType type, @Nullable Form form) {
     this.name = Objects.requireNonNull(name, "A variable must have a name, but was null");
     this.defaultValue = def != null ? def : DEFAULT_VALUE;
     this.type = type;
