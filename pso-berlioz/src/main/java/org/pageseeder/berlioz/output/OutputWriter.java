@@ -720,8 +720,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter write(OutputWritable writable) {
-    writable.writeTo(this);
-    return this;
+    return writable.writeTo(this);
   }
 
   /**
