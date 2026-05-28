@@ -123,8 +123,20 @@ Areas to consider:
 - `405 Method Not Allowed` when a URI matches but the method does not.
 - `406 Not Acceptable` when the requested output format is unsupported.
 - `500 Internal Server Error` for unexpected generator failures.
+- RFC 9457 Problem Details as the standard shape for machine-readable error responses.
 
 The same error model should be representable as XML, JSON, or transformed HTML.
+
+RFC 9457 defines the Problem Details model for HTTP APIs, replacing RFC 7807. It provides a common structure for error responses using fields such as `type`, `title`, `status`, `detail`, and `instance`, while allowing extension members for framework-specific or application-specific details.
+
+Berlioz could use this model for its own generated errors and expose them through the existing output pipeline:
+
+- `application/problem+json` for JSON requests.
+- `application/problem+xml` for XML requests.
+- Problem XML transformed with XSLT for HTML requests.
+- Source or diagnostic views when development diagnostics are enabled.
+
+For request validation, Berlioz could add an extension member such as `errors` to report individual parameter failures, while keeping the top-level HTTP status code authoritative.
 
 Spring and JAX-RS both have useful ideas here, especially exception mapping and structured problem responses. Berlioz can adopt the small useful parts without adopting their programming models.
 
@@ -182,6 +194,7 @@ These integrations should support Berlioz rather than replace its URI template, 
 
 - Add typed parameter access.
 - Add constraint failures and structured `400` responses.
+- Define RFC 9457 Problem Details support for framework-generated errors.
 - Define framework error response structure.
 - Add focused tests for request parsing and failed constraints.
 
@@ -213,5 +226,6 @@ These integrations should support Berlioz rather than replace its URI template, 
 - Should output negotiation prefer URI extension over the `Accept` header?
 - How should XML aggregation work when some generators can write JSON directly?
 - Should request validation fail immediately or collect all parameter errors first?
+- Which Problem Details `type` URIs should Berlioz define, and should they resolve to public documentation?
 - What metadata belongs in core, and what belongs in diagnostics only?
 - Which integrations are valuable enough to maintain as official modules?
