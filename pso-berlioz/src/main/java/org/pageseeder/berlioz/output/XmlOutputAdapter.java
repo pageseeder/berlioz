@@ -178,14 +178,90 @@ public class XmlOutputAdapter implements OutputWriter {
 
   @Override
   public OutputWriter field(String name, String[] values, FieldOption option) {
-    // TODO escape
-    return field(name, String.join(",", values), option);
+    switch (option) {
+      case XML_ELEMENT:
+        for (String value : values) this.xml.element(name, value);
+        break;
+      case XML_COPY:
+        for (String value : values) this.xml.xml(value);
+        break;
+      case DEFAULT:
+      case XML_ONLY:
+      case XML_TEXT:
+        field(name, String.join(",", values), option);
+        break;
+      case JSON_ONLY:
+      default:
+    }
+    return this;
   }
 
   @Override
   public OutputWriter field(String name, Iterable<String> values, FieldOption option) {
-    // TODO escape
-    return field(name, String.join(",", values), option);
+    switch (option) {
+      case XML_ELEMENT:
+        for (String value : values) this.xml.element(name, value);
+        break;
+      case XML_COPY:
+        for (String value : values) this.xml.xml(value);
+        break;
+      case DEFAULT:
+      case XML_ONLY:
+      case XML_TEXT:
+        field(name, String.join(",", values), option);
+        break;
+      case JSON_ONLY:
+      default:
+    }
+    return this;
+  }
+
+  @Override
+  public OutputWriter field(String name, long[] values, FieldOption option) {
+    switch (option) {
+      case XML_ELEMENT:
+        for (long value : values) this.xml.element(name, value);
+        break;
+      case DEFAULT:
+      case XML_ONLY:
+      case XML_TEXT: {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+          if (i > 0) sb.append(',');
+          sb.append(values[i]);
+        }
+        field(name, sb.toString(), option);
+        break;
+      }
+      case XML_COPY: // meaningless for primitives; skip like JSON_ONLY
+      case JSON_ONLY:
+      default:
+    }
+    return this;
+  }
+
+  @Override
+  public OutputWriter field(String name, boolean[] values, FieldOption option) {
+    switch (option) {
+      case XML_ELEMENT:
+        for (boolean value : values) this.xml.openElement(name).xml(Boolean.toString(value)).closeElement();
+        break;
+      case DEFAULT:
+      case XML_ONLY:
+      case XML_TEXT: {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+          if (i > 0) sb.append(',');
+          sb.append(values[i]);
+        }
+        field(name, sb.toString(), option);
+        break;
+      }
+      case XML_COPY: // meaningless for primitives; skip like JSON_ONLY
+      case JSON_ONLY:
+      default:
+    }
+    return this;
   }
 
   @Override

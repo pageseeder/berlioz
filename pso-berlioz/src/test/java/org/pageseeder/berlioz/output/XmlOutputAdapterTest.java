@@ -438,14 +438,14 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_stringArray_xmlElement_writesCommaSeparatedChildElement() {
+  public void field_stringArray_xmlElement_writesOneElementPerValue() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
     out.field("tags", new String[]{"a", "b"}, FieldOption.XML_ELEMENT);
     out.endObject();
     out.flush();
-    assertEquals("<root><tags>a,b</tags></root>", sw.toString());
+    assertEquals("<root><tags>a</tags><tags>b</tags></root>", sw.toString());
   }
 
   @Test

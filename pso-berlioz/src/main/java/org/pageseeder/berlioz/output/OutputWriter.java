@@ -248,8 +248,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * Write a field with multiple string values based on the specified field option.
    *
    * <ul>
-   *   <li>JSON, write a property with a string array on the object</li>
-   *   <li>XML, write an attribute, element, or text using comma-separated values</li>
+   *   <li>JSON, write a property with a JSON string array</li>
+   *   <li>XML with {@link FieldOption#XML_ELEMENT}: write one child element per value</li>
+   *   <li>XML with {@link FieldOption#XML_COPY}: write each value as raw XML content</li>
+   *   <li>XML otherwise: write a comma-separated attribute or text node;
+   *       values must not contain commas</li>
    * </ul>
    *
    * @param name   The name of the field
@@ -263,8 +266,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * Write a field with multiple string values based on the specified field option.
    *
    * <ul>
-   *   <li>JSON, write a property with a string array on the object</li>
-   *   <li>XML, write an attribute, element, or text using comma-separated values</li>
+   *   <li>JSON, write a property with a JSON string array</li>
+   *   <li>XML with {@link FieldOption#XML_ELEMENT}: write one child element per value</li>
+   *   <li>XML with {@link FieldOption#XML_COPY}: write each value as raw XML content</li>
+   *   <li>XML otherwise: write a comma-separated attribute or text node;
+   *       values must not contain commas</li>
    * </ul>
    *
    * @param name   The name of the field
@@ -273,6 +279,38 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   OutputWriter field(String name, Iterable<String> values, FieldOption option);
+
+  /**
+   * Write a field with multiple long values based on the specified field option.
+   *
+   * <ul>
+   *   <li>JSON, write a property with a JSON number array</li>
+   *   <li>XML with {@link FieldOption#XML_ELEMENT}: write one child element per value</li>
+   *   <li>XML otherwise: write a comma-separated attribute or text node</li>
+   * </ul>
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  OutputWriter field(String name, long[] values, FieldOption option);
+
+  /**
+   * Write a field with multiple boolean values based on the specified field option.
+   *
+   * <ul>
+   *   <li>JSON, write a property with a JSON boolean array</li>
+   *   <li>XML with {@link FieldOption#XML_ELEMENT}: write one child element per value</li>
+   *   <li>XML otherwise: write a comma-separated attribute or text node</li>
+   * </ul>
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  OutputWriter field(String name, boolean[] values, FieldOption option);
 
   /**
    * Write an explicit null field based on the specified field option.
@@ -462,6 +500,55 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter field(String name, Iterable<String> values) {
+    return field(name, values, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with multiple long values using the default option.
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @return this writer
+   */
+  default OutputWriter field(String name, long[] values) {
+    return field(name, values, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with multiple int values based on the specified field option.
+   *
+   * <p>Delegates to {@link #field(String, long[], FieldOption)}.</p>
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  default OutputWriter field(String name, int[] values, FieldOption option) {
+    long[] longs = new long[values.length];
+    for (int i = 0; i < values.length; i++) longs[i] = values[i];
+    return field(name, longs, option);
+  }
+
+  /**
+   * Write a field with multiple int values using the default option.
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @return this writer
+   */
+  default OutputWriter field(String name, int[] values) {
+    return field(name, values, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with multiple boolean values using the default option.
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @return this writer
+   */
+  default OutputWriter field(String name, boolean[] values) {
     return field(name, values, FieldOption.DEFAULT);
   }
 
