@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.5
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.11.5
  */
 public final class ServerTimingHeader {
@@ -39,6 +39,7 @@ public final class ServerTimingHeader {
    * Creates an empty {@code Server-Timing} header.
    */
   public ServerTimingHeader() {
+    // timings field is initialized inline
   }
 
   /**
