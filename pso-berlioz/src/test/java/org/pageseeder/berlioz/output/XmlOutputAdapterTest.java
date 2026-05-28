@@ -495,7 +495,7 @@ public class XmlOutputAdapterTest {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
-    out.optionalField("name", null);
+    out.optionalField("name", (String) null);
     out.endObject();
     out.flush();
     assertEquals("<root/>", sw.toString());
@@ -517,7 +517,7 @@ public class XmlOutputAdapterTest {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
-    out.optionalField("name", null, FieldOption.DEFAULT);
+    out.optionalField("name", (String) null, FieldOption.DEFAULT);
     out.endObject();
     out.flush();
     assertEquals("<root/>", sw.toString());

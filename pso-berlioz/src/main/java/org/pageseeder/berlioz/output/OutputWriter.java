@@ -490,6 +490,106 @@ public interface OutputWriter extends AutoCloseable, Flushable {
     return this;
   }
 
+  /**
+   * Write a field with a long value only if the value is non-null.
+   *
+   * @param name   The name of the field
+   * @param value  The value of the field, or {@code null} to skip the field entirely
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Long value, FieldOption option) {
+    if (value != null) return field(name, (long) value, option);
+    return this;
+  }
+
+  /**
+   * Write a field with a long value only if the value is non-null, using the default option.
+   *
+   * @param name  The name of the field
+   * @param value The value of the field, or {@code null} to skip the field entirely
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Long value) {
+    if (value != null) return field(name, (long) value, FieldOption.DEFAULT);
+    return this;
+  }
+
+  /**
+   * Write a field with an integer value only if the value is non-null.
+   *
+   * @param name   The name of the field
+   * @param value  The value of the field, or {@code null} to skip the field entirely
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Integer value, FieldOption option) {
+    if (value != null) return field(name, (long) value, option);
+    return this;
+  }
+
+  /**
+   * Write a field with an integer value only if the value is non-null, using the default option.
+   *
+   * @param name  The name of the field
+   * @param value The value of the field, or {@code null} to skip the field entirely
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Integer value) {
+    if (value != null) return field(name, (long) value, FieldOption.DEFAULT);
+    return this;
+  }
+
+  /**
+   * Write a field with a double value only if the value is non-null.
+   *
+   * @param name   The name of the field
+   * @param value  The value of the field, or {@code null} to skip the field entirely
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Double value, FieldOption option) {
+    if (value != null) return field(name, (double) value, option);
+    return this;
+  }
+
+  /**
+   * Write a field with a double value only if the value is non-null, using the default option.
+   *
+   * @param name  The name of the field
+   * @param value The value of the field, or {@code null} to skip the field entirely
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Double value) {
+    if (value != null) return field(name, (double) value, FieldOption.DEFAULT);
+    return this;
+  }
+
+  /**
+   * Write a field with a boolean value only if the value is non-null.
+   *
+   * @param name   The name of the field
+   * @param value  The value of the field, or {@code null} to skip the field entirely
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Boolean value, FieldOption option) {
+    if (value != null) return field(name, (boolean) value, option);
+    return this;
+  }
+
+  /**
+   * Write a field with a boolean value only if the value is non-null, using the default option.
+   *
+   * @param name  The name of the field
+   * @param value The value of the field, or {@code null} to skip the field entirely
+   * @return this writer
+   */
+  default OutputWriter optionalField(String name, @Nullable Boolean value) {
+    if (value != null) return field(name, (boolean) value, FieldOption.DEFAULT);
+    return this;
+  }
+
   // Composing OutputWritable instances
   // ----------------------------------------------------------------------------------------------
 

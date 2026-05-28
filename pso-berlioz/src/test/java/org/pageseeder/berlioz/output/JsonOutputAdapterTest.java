@@ -502,7 +502,7 @@ public class JsonOutputAdapterTest {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
-    out.optionalField("name", null);
+    out.optionalField("name", (String) null);
     out.endObject();
     out.flush();
     assertEquals("{}", sw.toString());
@@ -524,7 +524,7 @@ public class JsonOutputAdapterTest {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
-    out.optionalField("name", null, FieldOption.DEFAULT);
+    out.optionalField("name", (String) null, FieldOption.DEFAULT);
     out.endObject();
     out.flush();
     assertEquals("{}", sw.toString());
