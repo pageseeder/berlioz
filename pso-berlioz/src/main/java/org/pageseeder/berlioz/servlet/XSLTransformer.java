@@ -389,11 +389,7 @@ public final class XSLTransformer {
       TransformerFactory factory = newTransformerFactory();
       XSLTErrorCollector listener = new XSLTErrorCollector(LOGGER);
       factory.setErrorListener(listener);
-      try {
-        templates = factory.newTemplates(source);
-      } catch (TransformerConfigurationException ex) {
-        throw new TransformerExceptionWrapper(ex, listener);
-      }
+      templates = newTemplates(factory, source, listener);
     } catch (FileNotFoundException ex) {
       // The file does not exist
       if (fallback != null) {
@@ -407,6 +403,15 @@ public final class XSLTransformer {
       throw new TransformerConfigurationException("Unable to read stylesheet: "+toWebPath(stylepath.getPath()), ex);
     }
     return templates;
+  }
+
+  private static Templates newTemplates(TransformerFactory factory, Source source, XSLTErrorCollector listener)
+      throws TransformerException {
+    try {
+      return factory.newTemplates(source);
+    } catch (TransformerConfigurationException ex) {
+      throw new TransformerExceptionWrapper(ex, listener);
+    }
   }
 
   /**
