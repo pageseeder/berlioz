@@ -312,8 +312,9 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * Starts an object in the output.
    *
    * <ul>
-   *   <li>JSON, start a JSON object</li>
-   *   <li>XML, start a new element</li>
+   *   <li>JSON, start a JSON object; {@code name} is used as the property key only when already
+   *       inside a JSON object — at the root or inside an array it is ignored</li>
+   *   <li>XML, start a new element named {@code name}</li>
    * </ul>
    *
    * @param name The name of the XML element or JSON property if context is a JSON object
@@ -327,8 +328,9 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * Starts a collection of objects in the output.
    *
    * <ul>
-   *   <li>JSON, start a JSON array</li>
-   *   <li>XML, start a new element</li>
+   *   <li>JSON, start a JSON array; {@code name} is used as the property key only when already
+   *       inside a JSON object — at the root or inside an array it is ignored</li>
+   *   <li>XML, start a new element named {@code name}</li>
    * </ul>
    *
    * @param name The name of the XML element or JSON property if context is a JSON object
