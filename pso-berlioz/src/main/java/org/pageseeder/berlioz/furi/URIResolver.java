@@ -26,12 +26,11 @@ import java.util.regex.Matcher;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.URIResolveResult.Status;
 
-
 /**
  * A URI pattern resolver identifies the URI pattern and variables values given a specific URI.
  *
  * <p>This class is typically used as follows:
- * <pre>
+ * <pre>{@code
  *   // Create a resolver instance
  *   URIResolver resolver = new URIResolver("https://www.example.com/test/home");
  *
@@ -40,7 +39,7 @@ import org.pageseeder.berlioz.furi.URIResolveResult.Status;
  *
  *   // Resolve the URI for the specified pattern, the result holds all the matching info
  *   URIResolveResult result = resolver.resolve(p);
- * </pre>
+ * }</pre>
  *
  *
  * @author Christophe Lauret
@@ -134,7 +133,7 @@ public final class URIResolver {
    */
   public Collection<URIPattern> findAll(List<URIPattern> patterns) {
     Collection<URIPattern> matches = new ArrayList<>();
-    if (patterns == null || patterns.isEmpty())
+    if (patterns.isEmpty())
       return matches;
     for (URIPattern p : patterns) {
       if (p.match(this.uri)) {
@@ -236,7 +235,7 @@ public final class URIResolver {
    * @return The first URI pattern that matches or <code>null</code>.
    */
   private @Nullable URIPattern findFirst(List<URIPattern> patterns) {
-    if (patterns == null || patterns.isEmpty())
+    if (patterns.isEmpty())
       return null;
     for (URIPattern p : patterns) {
       if (p.match(this.uri))
@@ -253,14 +252,12 @@ public final class URIResolver {
    * @return The best URI pattern that matches or <code>null</code>.
    */
   private @Nullable URIPattern findBest(List<URIPattern> patterns) {
-    if (patterns == null || patterns.isEmpty())
+    if (patterns.isEmpty())
       return null;
     URIPattern best = null;
     for (URIPattern p : patterns) {
-      if (p.match(this.uri)) {
-        if (best == null || p.score() > best.score()) {
+      if (p.match(this.uri) && (best == null || p.score() > best.score())) {
           best = p;
-        }
       }
     }
     return best;
