@@ -189,6 +189,22 @@ public class XmlOutputAdapter implements OutputWriter {
   }
 
   @Override
+  public final OutputWriter nullField(String name, FieldOption option) {
+    switch (option) {
+      case DEFAULT:
+      case XML_ONLY:
+      case XML_ELEMENT:
+        this.xml.openElement(name).closeElement();
+        break;
+      case XML_TEXT:
+      case XML_COPY:
+      case JSON_ONLY:
+      default:
+    }
+    return this;
+  }
+
+  @Override
   public final OutputWriter startObject(String name, ContextOption option) {
     startElementIfXml(name, option);
     return this;

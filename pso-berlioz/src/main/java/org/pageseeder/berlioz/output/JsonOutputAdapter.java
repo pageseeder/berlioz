@@ -140,6 +140,18 @@ public class JsonOutputAdapter implements OutputWriter {
   }
 
   @Override
+  public final OutputWriter nullField(String name, FieldOption option) {
+    if (option != FieldOption.XML_ONLY && this.suppressedDepth == 0) {
+      if (this.json.inObject()) {
+        this.json.nullValue(Json.camelify(name));
+      } else {
+        this.json.nullValue();
+      }
+    }
+    return this;
+  }
+
+  @Override
   public OutputWriter startObject(String name, ContextOption option) {
     if (option == ContextOption.XML_ONLY || this.suppressedDepth > 0) {
       this.suppressedDepth++;

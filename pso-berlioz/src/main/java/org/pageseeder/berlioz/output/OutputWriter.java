@@ -268,6 +268,43 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    */
   OutputWriter field(String name, Iterable<String> values, FieldOption option);
 
+  /**
+   * Write an explicit null field based on the specified field option.
+   *
+   * <ul>
+   *   <li>JSON: writes {@code "name": null}</li>
+   *   <li>XML: writes a self-closing element {@code <name/>} for {@link FieldOption#DEFAULT},
+   *       {@link FieldOption#XML_ONLY}, and {@link FieldOption#XML_ELEMENT};
+   *       skipped for {@link FieldOption#XML_TEXT} and {@link FieldOption#XML_COPY}
+   *       (no meaningful null representation as text or raw markup);
+   *       skipped entirely for {@link FieldOption#JSON_ONLY}.</li>
+   * </ul>
+   *
+   * <p>Use this when you need to distinguish {@code null} from an absent field.
+   * To omit the field entirely for a nullable value, use
+   * {@link #optionalField(String, String)} instead.</p>
+   *
+   * @param name   The name of the field
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  OutputWriter nullField(String name, FieldOption option);
+
+  /**
+   * Write an explicit null field using the default option.
+   *
+   * <ul>
+   *   <li>JSON: writes {@code "name": null}</li>
+   *   <li>XML: writes a self-closing element {@code <name/>}</li>
+   * </ul>
+   *
+   * @param name The name of the field
+   * @return this writer
+   */
+  default OutputWriter nullField(String name) {
+    return nullField(name, FieldOption.DEFAULT);
+  }
+
   // Short-hand methods
   // ----------------------------------------------------------------------------------------------
 
