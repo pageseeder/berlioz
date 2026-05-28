@@ -93,11 +93,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
   @Override
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
-    if (config != null) {
-      AppInitializer init = AppInitializer.newInstance(config, listeners);
-      init.init();
-      this.initializer = init;
-    }
+    AppInitializer init = AppInitializer.newInstance(config, listeners);
+    init.init();
+    this.initializer = init;
   }
 
   /**
