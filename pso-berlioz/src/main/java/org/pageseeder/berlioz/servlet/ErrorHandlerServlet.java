@@ -131,17 +131,17 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * The extension to preserve.
    */
-  private static final Set<String> forwardExtensions = new HashSet<>();
+  private final Set<String> forwardExtensions = new HashSet<>();
 
   /**
    * The extension to ignore.
    */
-  private static final Set<String> ignoreExtensions = new HashSet<>();
+  private final Set<String> ignoreExtensions = new HashSet<>();
 
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.
    */
-  private static String autoExtension = AUTO_EXTENSION;
+  private String autoExtension = AUTO_EXTENSION;
 
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.
@@ -192,7 +192,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException Should an I/O error occur.
    */
-  public static void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+  public void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
     // Grab the status code (Default to 200 OK)
     int code  = getErrorCode(req);
@@ -284,8 +284,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @return the error details as XML
    */
   private static String toXML(HttpServletRequest req) {
-
-    // Grab data from attributes
     String message = (String)req.getAttribute(ERROR_MESSAGE);
     int code = getErrorCode(req);
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
@@ -322,66 +320,71 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
       xml.element("servlet", servlet != null? servlet : "null");
 
-      if (throwable != null) {
-        Errors.toXML(throwable, xml, true);
-
-        // If some errors were collected, let's include them
-        if (throwable instanceof CompoundBerliozException) {
-          xml.openElement("collected-errors");
-          ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)throwable).getCollector();
-          for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
-            collected.toXML(xml);
-          }
-          xml.closeElement();
-        }
-
-      }
-
-      // HTTP Headers
-      xml.openElement("http-headers");
-      Enumeration<?> names = req.getHeaderNames();
-      while (names.hasMoreElements()) {
-        String name = names.nextElement().toString();
-        Enumeration<?> values = req.getHeaders(name);
-        if (values != null) {
-          while (values.hasMoreElements()) {
-            String value = values.nextElement().toString();
-            xml.openElement("header");
-            xml.attribute("name", name);
-            xml.attribute("value", value);
-            xml.closeElement();
-          }
-        }
-      }
-      xml.closeElement();
-
-      // HTTP parameters
-      xml.openElement("http-parameters");
-      Map<?, ?> parameters = req.getParameterMap();
-      for (Entry<?, ?> entry : parameters.entrySet()) {
-        String name = entry.getKey().toString();
-        // Must be an array according to Servlet Specifications
-        String[] values = (String[])entry.getValue();
-        if (values != null) {
-          for (String value : values) {
-            xml.openElement("parameters");
-            xml.attribute("name", name);
-            xml.attribute("value", value);
-            xml.closeElement();
-          }
-        }
-      }
-      xml.closeElement();
+      writeThrowable(xml, throwable);
+      writeHttpHeaders(xml, req);
+      writeHttpParameters(xml, req);
 
       xml.closeElement();
       xml.flush();
-
     } catch (IOException io) {
       LOGGER.warn("Unable to produce error details for error below:");
       LOGGER.error("An error occurred while transforming content", throwable);
     }
 
     return out.toString();
+  }
+
+  private static void writeThrowable(XMLWriterImpl xml, @Nullable Throwable throwable) throws IOException {
+    if (throwable == null) return;
+    Errors.toXML(throwable, xml, true);
+
+    // If some errors were collected, let's include them
+    if (throwable instanceof CompoundBerliozException) {
+      xml.openElement("collected-errors");
+      ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)throwable).getCollector();
+      for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
+        collected.toXML(xml);
+      }
+      xml.closeElement();
+    }
+  }
+
+  private static void writeHttpHeaders(XMLWriterImpl xml, HttpServletRequest req) throws IOException {
+    xml.openElement("http-headers");
+    Enumeration<?> names = req.getHeaderNames();
+    while (names.hasMoreElements()) {
+      String name = names.nextElement().toString();
+      Enumeration<?> values = req.getHeaders(name);
+      if (values != null) {
+        while (values.hasMoreElements()) {
+          String value = values.nextElement().toString();
+          xml.openElement("header");
+          xml.attribute("name", name);
+          xml.attribute("value", value);
+          xml.closeElement();
+        }
+      }
+    }
+    xml.closeElement();
+  }
+
+  private static void writeHttpParameters(XMLWriterImpl xml, HttpServletRequest req) throws IOException {
+    xml.openElement("http-parameters");
+    Map<?, ?> parameters = req.getParameterMap();
+    for (Entry<?, ?> entry : parameters.entrySet()) {
+      String name = entry.getKey().toString();
+      // Must be an array according to Servlet Specifications
+      String[] values = (String[])entry.getValue();
+      if (values != null) {
+        for (String value : values) {
+          xml.openElement("parameters");
+          xml.attribute("name", name);
+          xml.attribute("value", value);
+          xml.closeElement();
+        }
+      }
+    }
+    xml.closeElement();
   }
 
   /**
