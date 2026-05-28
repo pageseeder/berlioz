@@ -575,6 +575,7 @@ public final class XSLTransformer {
    *
    * @throws TransformerConfigurationException if the factory cannot enable secure processing.
    */
+  @SuppressWarnings("java:S2755") // file-only access needed for xsl:import/include
   private static TransformerFactory newTransformerFactory() throws TransformerConfigurationException {
     TransformerFactory factory = TransformerFactory.newInstance();
     factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
