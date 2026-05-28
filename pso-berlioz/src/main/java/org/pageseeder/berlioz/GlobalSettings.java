@@ -89,6 +89,8 @@ public final class GlobalSettings {
   /**
    * Name of the directory containing the configuration files for Berlioz
    * including the global settings, services, logging, etc...
+   *
+   * @deprecated since 0.11.4, use {@link InitEnvironment#DEFAULT_CONFIG_DIRECTORY} instead
    */
   @Deprecated(since = "0.11.4")
   public static final String CONFIG_DIRECTORY = "config";
@@ -534,6 +536,8 @@ public final class GlobalSettings {
    *
    * @throws NullPointerException If the specified file is <code>null</code>.
    * @throws IllegalArgumentException If the specified file is not a valid repository.
+   *
+   * @deprecated since 0.11.4, use {@link InitEnvironment#webInf(File)} instead
    */
   @Deprecated(since = "0.11.4")
   public static void setWebInf(File dir) {
@@ -553,6 +557,8 @@ public final class GlobalSettings {
    *
    * @throws NullPointerException If the specified file is null.
    * @throws IllegalArgumentException If the specified file is not a valid repository.
+   *
+   * @deprecated since 0.11.4, use {@link InitEnvironment#appData(File)} instead
    */
   @Deprecated(since = "0.11.4")
   public static void setAppData(File dir) {
@@ -567,6 +573,8 @@ public final class GlobalSettings {
    * @param name The name of the mode to use.
    *
    * @throws NullPointerException If the name of the mode is <code>null</code>.
+   *
+   * @deprecated since 0.11.4, use {@link InitEnvironment#mode(File)} instead
    */
   @Deprecated(since = "0.11.4")
   public static void setMode(String name) {
