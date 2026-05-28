@@ -251,9 +251,13 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *   <li>JSON, write a property with a JSON string array</li>
    *   <li>XML with {@link FieldOption#XML_ELEMENT}: write one child element per value</li>
    *   <li>XML with {@link FieldOption#XML_COPY}: write each value as raw XML content</li>
-   *   <li>XML otherwise: write a comma-separated attribute or text node;
-   *       values must not contain commas</li>
+   *   <li>XML otherwise: write a space-separated attribute or text node (consistent with
+   *       NMTOKENS and common XML conventions such as SVG and HTML {@code class});
+   *       values must not contain spaces</li>
    * </ul>
+   *
+   * <p>To use a custom separator, join the values manually and call
+   * {@link #field(String, String, FieldOption)} with the resulting string.</p>
    *
    * @param name   The name of the field
    * @param values The values of the field
@@ -269,9 +273,13 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    *   <li>JSON, write a property with a JSON string array</li>
    *   <li>XML with {@link FieldOption#XML_ELEMENT}: write one child element per value</li>
    *   <li>XML with {@link FieldOption#XML_COPY}: write each value as raw XML content</li>
-   *   <li>XML otherwise: write a comma-separated attribute or text node;
-   *       values must not contain commas</li>
+   *   <li>XML otherwise: write a space-separated attribute or text node (consistent with
+   *       NMTOKENS and common XML conventions such as SVG and HTML {@code class});
+   *       values must not contain spaces</li>
    * </ul>
+   *
+   * <p>To use a custom separator, join the values manually and call
+   * {@link #field(String, String, FieldOption)} with the resulting string.</p>
    *
    * @param name   The name of the field
    * @param values The values of the field
@@ -482,7 +490,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter field(String name, int value) {
-    return field(name, (long) value, FieldOption.DEFAULT);
+    return field(name, value, FieldOption.DEFAULT);
   }
 
   /**
@@ -617,7 +625,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable Long value, FieldOption option) {
-    if (value != null) return field(name, (long) value, option);
+    if (value != null) return field(name, value, option);
     return this;
   }
 
@@ -629,7 +637,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable Long value) {
-    if (value != null) return field(name, (long) value, FieldOption.DEFAULT);
+    if (value != null) return field(name, value, FieldOption.DEFAULT);
     return this;
   }
 
@@ -654,7 +662,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable Integer value) {
-    if (value != null) return field(name, (long) value, FieldOption.DEFAULT);
+    if (value != null) return field(name, value, FieldOption.DEFAULT);
     return this;
   }
 
@@ -667,7 +675,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable Double value, FieldOption option) {
-    if (value != null) return field(name, (double) value, option);
+    if (value != null) return field(name, value, option);
     return this;
   }
 
@@ -679,7 +687,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable Double value) {
-    if (value != null) return field(name, (double) value, FieldOption.DEFAULT);
+    if (value != null) return field(name, value, FieldOption.DEFAULT);
     return this;
   }
 
@@ -692,7 +700,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable Boolean value, FieldOption option) {
-    if (value != null) return field(name, (boolean) value, option);
+    if (value != null) return field(name, value, option);
     return this;
   }
 
@@ -704,7 +712,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter optionalField(String name, @Nullable Boolean value) {
-    if (value != null) return field(name, (boolean) value, FieldOption.DEFAULT);
+    if (value != null) return field(name, value, FieldOption.DEFAULT);
     return this;
   }
 

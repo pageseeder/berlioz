@@ -427,14 +427,14 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_stringArray_default_writesCommaSeparatedAttribute() {
+  public void field_stringArray_default_writesSpaceSeparatedAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
     out.field("tags", new String[]{"a", "b", "c"}, FieldOption.DEFAULT);
     out.endObject();
     out.flush();
-    assertEquals("<root tags=\"a,b,c\"/>", sw.toString());
+    assertEquals("<root tags=\"a b c\"/>", sw.toString());
   }
 
   @Test
@@ -464,14 +464,14 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_iterable_default_writesCommaSeparatedAttribute() {
+  public void field_iterable_default_writesSpaceSeparatedAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
     out.field("tags", Arrays.asList("x", "y"), FieldOption.DEFAULT);
     out.endObject();
     out.flush();
-    assertEquals("<root tags=\"x,y\"/>", sw.toString());
+    assertEquals("<root tags=\"x y\"/>", sw.toString());
   }
 
   @Test

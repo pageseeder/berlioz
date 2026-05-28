@@ -188,7 +188,7 @@ public class XmlOutputAdapter implements OutputWriter {
       case DEFAULT:
       case XML_ONLY:
       case XML_TEXT:
-        return field(name, String.join(",", values), option);
+        return field(name, String.join(" ", values), option);
       case JSON_ONLY:
       default:
     }
@@ -207,7 +207,7 @@ public class XmlOutputAdapter implements OutputWriter {
       case DEFAULT:
       case XML_ONLY:
       case XML_TEXT:
-        return field(name, String.join(",", values), option);
+        return field(name, String.join(" ", values), option);
       case JSON_ONLY:
       default:
     }
