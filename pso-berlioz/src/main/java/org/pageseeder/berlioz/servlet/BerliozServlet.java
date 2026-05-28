@@ -29,7 +29,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
@@ -92,7 +91,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -179,7 +178,7 @@ public final class BerliozServlet extends HttpServlet {
       }
     } catch (IllegalArgumentException ex) {
       sendError(req, res, HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported HTTP method", null);
-    } catch (IOException | ServletException ex) {
+    } catch (IOException ex) {
       sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
     }
   }
@@ -188,7 +187,7 @@ public final class BerliozServlet extends HttpServlet {
   public void doHead(HttpServletRequest req, HttpServletResponse res) {
     try {
       process(req, res, HttpMethod.HEAD, false);
-    } catch (IOException | ServletException ex) {
+    } catch (IOException ex) {
       sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
     }
   }
@@ -197,7 +196,7 @@ public final class BerliozServlet extends HttpServlet {
   public void doGet(HttpServletRequest req, HttpServletResponse res) {
     try {
       process(req, res, HttpMethod.GET, true);
-    } catch (IOException | ServletException ex) {
+    } catch (IOException ex) {
       sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
     }
   }
@@ -206,7 +205,7 @@ public final class BerliozServlet extends HttpServlet {
   public void doPost(HttpServletRequest req, HttpServletResponse res) {
     try {
       process(req, res, HttpMethod.POST, true);
-    } catch (IOException | ServletException ex) {
+    } catch (IOException ex) {
       sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
     }
   }
@@ -215,7 +214,7 @@ public final class BerliozServlet extends HttpServlet {
   public void doPut(HttpServletRequest req, HttpServletResponse res) {
     try {
       process(req, res, HttpMethod.PUT, true);
-    } catch (IOException | ServletException ex) {
+    } catch (IOException ex) {
       sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
     }
   }
@@ -224,7 +223,7 @@ public final class BerliozServlet extends HttpServlet {
   public void doDelete(HttpServletRequest req, HttpServletResponse res) {
     try {
       process(req, res, HttpMethod.DELETE, true);
-    } catch (IOException | ServletException ex) {
+    } catch (IOException ex) {
       sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
     }
   }
@@ -247,11 +246,10 @@ public final class BerliozServlet extends HttpServlet {
    * @param res            The HTTP servlet response.
    * @param includeContent Whether to include the content in the response.
    *
-   * @throws ServletException To wrap any non IO exception.
    * @throws IOException For any IO exception.
    */
   private void process(HttpServletRequest req, HttpServletResponse res, HttpMethod method, boolean includeContent)
-      throws ServletException, IOException {
+      throws IOException {
 
     // Use Berlioz config locally
     BerliozConfig config = getBerliozConfig();
@@ -504,9 +502,6 @@ public final class BerliozServlet extends HttpServlet {
    * @param code    The HTTP status response code.
    * @param message The message for the message.
    * @param ex      Any caught exception (may be <code>null</code>).
-   *
-   * @throws IOException      The HTTP Servlet Request.
-   * @throws ServletException Should any error occur at this point.
    */
   private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex) {
 
@@ -615,7 +610,7 @@ public final class BerliozServlet extends HttpServlet {
      * @return Always "text/html".
      */
     @Override
-    public @NonNull String getMimeType() {
+    public String getMimeType() {
       return "text/html";
     }
 
