@@ -142,16 +142,6 @@ public final class XMLUtils {
   public static SAXParser getParser(boolean validating) throws BerliozException {
     SAXParser parser;
     try {
-//      // use the SAX parser factory to ensure validation
-//      SAXParserFactory factory = SAXParserFactory.newInstance();
-//      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-//      factory.setValidating(validating);
-//      factory.setNamespaceAware(true);
-//      factory.setXIncludeAware(false);
-//      // also specify the features
-//      factory.setFeature("http://xml.org/sax/features/validation", validating);
-//      factory.setFeature("http://xml.org/sax/features/namespaces", true);
-//      factory.setFeature("http://xml.org/sax/features/namespace-prefixes", false);
       // get a new parser
       parser = Xml.newSafeParser(validating);
     } catch (ParserConfigurationException ex) {
