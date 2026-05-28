@@ -22,6 +22,6 @@ public interface OutputWritable {
    * @param out the writer to write to
    * @return the same writer, to allow chaining
    */
-  OutputWriter toOutput(OutputWriter out);
+  OutputWriter writeTo(OutputWriter out);
 
 }

@@ -496,13 +496,13 @@ public interface OutputWriter extends AutoCloseable, Flushable {
   /**
    * Writes an {@link OutputWritable} to this writer.
    *
-   * <p>Equivalent to calling {@code writable.toOutput(this)} but keeps the fluent chain intact.</p>
+   * <p>Equivalent to calling {@code writable.writeTo(this)} but keeps the fluent chain intact.</p>
    *
    * @param writable the object to write
    * @return this writer
    */
   default OutputWriter write(OutputWritable writable) {
-    writable.toOutput(this);
+    writable.writeTo(this);
     return this;
   }
 
@@ -513,7 +513,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter writeIfPresent(@Nullable OutputWritable writable) {
-    if (writable != null) writable.toOutput(this);
+    if (writable != null) writable.writeTo(this);
     return this;
   }
 
