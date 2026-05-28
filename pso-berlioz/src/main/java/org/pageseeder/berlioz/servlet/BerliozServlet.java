@@ -169,8 +169,7 @@ public final class BerliozServlet extends HttpServlet {
   // ----------------------------------------------------------------------------------------------
 
   @Override
-  protected void service(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
+  protected void service(HttpServletRequest req, HttpServletResponse res) {
     try {
       HttpMethod method = HttpMethod.valueOf(req.getMethod());
       if (method == HttpMethod.OPTIONS) {
@@ -178,40 +177,56 @@ public final class BerliozServlet extends HttpServlet {
       } else {
         process(req, res, method, method != HttpMethod.HEAD);
       }
-
     } catch (IllegalArgumentException ex) {
       sendError(req, res, HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported HTTP method", null);
+    } catch (IOException | ServletException ex) {
+      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
     }
   }
 
   @Override
-  public void doHead(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
-    process(req, res, HttpMethod.HEAD, false);
+  public void doHead(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      process(req, res, HttpMethod.HEAD, false);
+    } catch (IOException | ServletException ex) {
+      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+    }
   }
 
   @Override
-  public void doGet(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
-    process(req, res, HttpMethod.GET, true);
+  public void doGet(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      process(req, res, HttpMethod.GET, true);
+    } catch (IOException | ServletException ex) {
+      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+    }
   }
 
   @Override
-  public void doPost(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
-    process(req, res, HttpMethod.POST, true);
+  public void doPost(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      process(req, res, HttpMethod.POST, true);
+    } catch (IOException | ServletException ex) {
+      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+    }
   }
 
   @Override
-  public void doPut(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
-    process(req, res, HttpMethod.PUT, true);
+  public void doPut(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      process(req, res, HttpMethod.PUT, true);
+    } catch (IOException | ServletException ex) {
+      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+    }
   }
 
   @Override
-  public void doDelete(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
-    process(req, res, HttpMethod.DELETE, true);
+  public void doDelete(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      process(req, res, HttpMethod.DELETE, true);
+    } catch (IOException | ServletException ex) {
+      sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected processing error", ex);
+    }
   }
 
   @Override
@@ -493,8 +508,7 @@ public final class BerliozServlet extends HttpServlet {
    * @throws IOException      The HTTP Servlet Request.
    * @throws ServletException Should any error occur at this point.
    */
-  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex)
-      throws IOException, ServletException {
+  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex) {
 
     // Is Berlioz already handling an error?
     Integer error = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
@@ -514,22 +528,26 @@ public final class BerliozServlet extends HttpServlet {
       }
       // Use the error handler if defined, otherwise use the default error handling options
       RequestDispatcher handler = this.errorHandler;
-      if (handler != null) {
-        String format = "Berlioz forwarding error {} [{}] to handler";
-        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
-          LOGGER.error(format, message, code, ex);
+      try {
+        if (handler != null) {
+          String format = "Berlioz forwarding error {} [{}] to handler";
+          if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
+            LOGGER.error(format, message, code, ex);
+          } else {
+            LOGGER.warn(format, message, code, ex);
+          }
+          handler.forward(req, res);
         } else {
-          LOGGER.warn(format, message, code, ex);
+          String format = "Berlioz handling error {} [{}] to handler";
+          if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
+            LOGGER.error(format, message, code, ex);
+          } else {
+            LOGGER.warn(format, message, code, ex);
+          }
+          ErrorHandlerServlet.handle(req, res);
         }
-        handler.forward(req, res);
-      } else {
-        String format = "Berlioz handling error {} [{}] to handler";
-        if (code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR) {
-          LOGGER.error(format, message, code, ex);
-        } else {
-          LOGGER.warn(format, message, code, ex);
-        }
-        ErrorHandlerServlet.handle(req, res);
+      } catch (IOException | ServletException e) {
+        LOGGER.error("Failed to dispatch error response {} [{}]", message, code, e);
       }
     } else {
       String format = "Berlioz sending error to Web container {} [{}] to handler";
@@ -538,7 +556,11 @@ public final class BerliozServlet extends HttpServlet {
       } else {
         LOGGER.warn(format, message, code, ex);
       }
-      res.sendError(code, message);
+      try {
+        res.sendError(code, message);
+      } catch (IOException e) {
+        LOGGER.error("Failed to send error {} [{}] to client", message, code, e);
+      }
     }
   }
 
