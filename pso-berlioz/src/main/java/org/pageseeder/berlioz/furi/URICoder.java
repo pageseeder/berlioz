@@ -198,7 +198,7 @@ public final class URICoder {
   // ==========================================================================
 
   /**
-   * Decode the string as valid URI fragment.
+   * Decode the string as a valid URI fragment.
    *
    * @param s The string to decode.
    *
@@ -293,14 +293,8 @@ public final class URICoder {
    * @return <code>true</code> if it is unreserved; <code>false</code> otherwise.
    */
   private static boolean isUnreserved(int c) {
-    // ALPHA (lower)
-    if (c >= 'a' && c <= 'z') return true;
-    // ALPHA (UPPER)
-    else if (c >= 'A' && c <= 'Z') return true;
-    // DIGIT
-    else if (c >= '0' && c <= '9') return true;
-    else if (c == '.' || c == '_' || c == '-' || c == '~') return true;
-    return false;
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+        || c == '.' || c == '_' || c == '-' || c == '~';
   }
 
   /**
@@ -311,13 +305,9 @@ public final class URICoder {
    * @return <code>true</code> if it is unreserved; <code>false</code> otherwise.
    */
   private static boolean isLegal(int c) {
-    // Filter out [<26]
-    if (c < '&' && c != '!' && c != '#' && c != '$') return false;
-    // Filter out [>7A]
-    else if (c >= '{' && c != '~') return false;
-    // Handle [26-7A] and '!', '#', '$', '~'
-    else if (c == '`' || c == '<' || c == '>' || c == '\\' || c == '^') return false;
-    return true;
+    if (c < '&') return c == '!' || c == '#' || c == '$';
+    if (c >= '{') return c == '~';
+    return c != '`' && c != '<' && c != '>' && c != '\\' && c != '^';
   }
 
   /**
