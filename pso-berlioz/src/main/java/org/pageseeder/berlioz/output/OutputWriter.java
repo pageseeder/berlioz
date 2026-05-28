@@ -126,6 +126,12 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    */
   OutputType getType();
 
+  /** @return {@code true} if this writer produces XML output. */
+  default boolean isXml() { return getType() == OutputType.XML; }
+
+  /** @return {@code true} if this writer produces JSON output. */
+  default boolean isJson() { return getType() == OutputType.JSON; }
+
   /**
    * Starts an object in the output.
    *
