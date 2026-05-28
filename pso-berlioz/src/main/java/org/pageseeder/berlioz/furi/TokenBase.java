@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 abstract class TokenBase implements Token {
@@ -37,7 +37,7 @@ abstract class TokenBase implements Token {
   /**
    * The expression for this token.
    */
-  private final String _exp;
+  private final String exp;
 
   /**
    * Creates a new expansion token.
@@ -46,8 +46,8 @@ abstract class TokenBase implements Token {
    *
    * @throws NullPointerException If the specified expression is <code>null</code>.
    */
-  public TokenBase(String exp) {
-    this._exp = Objects.requireNonNull(exp, "Cannot create a token with a null value.");
+  protected TokenBase(String exp) {
+    this.exp = Objects.requireNonNull(exp, "Cannot create a token with a null value.");
   }
 
   /**
@@ -62,7 +62,7 @@ abstract class TokenBase implements Token {
 
   @Override
   public String expression() {
-    return this._exp;
+    return this.exp;
   }
 
   /**
@@ -77,17 +77,17 @@ abstract class TokenBase implements Token {
     if ((o == null) || (o.getClass() != this.getClass()))
       return false;
     TokenBase t = (TokenBase) o;
-    return (Objects.equals(this._exp, t._exp));
+    return (Objects.equals(this.exp, t.exp));
   }
 
   @Override
   public int hashCode() {
-    return 31 * this._exp.hashCode() + this._exp.hashCode();
+    return 31 * this.exp.hashCode() + this.exp.hashCode();
   }
 
   @Override
   public String toString() {
-    return this._exp;
+    return this.exp;
   }
 
   // functions provided for convenience ---------------------------------------
@@ -123,9 +123,7 @@ abstract class TokenBase implements Token {
     String[] exps = exp.split(",");
     List<Variable> vars = new ArrayList<>(exps.length);
     for (String e : exps) {
-      if (e != null) {
-        vars.add(Variable.parse(e));
-      }
+      vars.add(Variable.parse(e));
     }
     return vars;
   }
