@@ -112,7 +112,7 @@ public final class TokenFactory {
       return new TokenLiteral(exp);
     // a template expansion token
     if (exp.charAt(0) == '{' && exp.charAt(len - 1) == '}') // defer to the underlying syntax
-    return this.syntax.newExpansion(exp.substring(1, len - 1));
+      return this.syntax.newExpansion(exp.substring(1, len - 1));
     // a literal text token
     return new TokenLiteral(exp);
   }
