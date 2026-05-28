@@ -18,6 +18,8 @@ package org.pageseeder.berlioz.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
 import java.util.Objects;
 
@@ -446,10 +448,19 @@ public final class BerliozServlet extends HttpServlet {
       result = new XMLContent(content);
     }
 
+    // Resolve and validate encoding from XSLT output; canonical name is safe for HTTP headers
+    Charset charset;
+    try {
+      charset = Charset.forName(result.getEncoding());
+    } catch (UnsupportedCharsetException ex) {
+      LOGGER.warn("Unsupported encoding '{}' from XSLT output, falling back to UTF-8", result.getEncoding());
+      charset = StandardCharsets.UTF_8;
+    }
+
     // Update content type from XSLT transform result (MUST be specified before the output is requested)
-    String ctype = result.getMediaType()+";charset="+result.getEncoding();
+    String ctype = result.getMediaType()+";charset="+charset.name();
     res.setContentType(ctype);
-    res.setCharacterEncoding(result.getEncoding()); // TODO check with different encoding
+    res.setCharacterEncoding(charset.name());
     if (!config.getContentType().equals(ctype)) {
       LOGGER.info("Updating content type to {}", ctype);
       config.setContentType(ctype);
@@ -460,7 +471,7 @@ public final class BerliozServlet extends HttpServlet {
     if (isCompressed) {
 
       if (HttpHeaderUtils.acceptsGZipCompression(req)) {
-        byte[] compressed = ResourceCompressor.compress(result.content(), Charset.forName(result.getEncoding()));
+        byte[] compressed = ResourceCompressor.compress(result.content(), charset);
         if (compressed.length > 0) {
           res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
           res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
@@ -488,7 +499,7 @@ public final class BerliozServlet extends HttpServlet {
         out.flush();
       } else {
         // We need to calculate when we don't include the content
-        res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), Charset.forName(result.getEncoding())));
+        res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), charset));
       }
     }
 
