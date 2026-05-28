@@ -391,7 +391,7 @@ public final class BerliozServlet extends HttpServlet {
     // Generate the XML content
     String content = xml.generate();
     long end = System.nanoTime();
-    if (profile) {
+    if (profile && LOGGER.isInfoEnabled()) {
       LOGGER.info("Content generated in {} ms", ProfileFormat.format(end - start));
     }
     if (serverTiming) {
@@ -431,7 +431,7 @@ public final class BerliozServlet extends HttpServlet {
     BerliozOutput result;
     if (transformer != null) {
       XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
-      if (profile) {
+      if (profile && LOGGER.isInfoEnabled()) {
         LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(xslresult.time()));
       }
       if (serverTiming) {
