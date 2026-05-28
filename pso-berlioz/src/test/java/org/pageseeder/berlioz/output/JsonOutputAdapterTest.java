@@ -531,6 +531,43 @@ public class JsonOutputAdapterTest {
   }
 
   // ---------------------------------------------------------------------------
+  // field(String, double[], FieldOption)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void field_doubleArray_default_isWrittenAsArray() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.field("values", new double[]{1.5, 2.5, 3.0}, FieldOption.DEFAULT);
+    out.endObject();
+    out.flush();
+    assertEquals("{\"values\":[1.5,2.5,3.0]}", sw.toString());
+  }
+
+  @Test
+  public void field_doubleArray_xmlOnly_isSkipped() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.field("values", new double[]{1.5, 2.5}, FieldOption.XML_ONLY);
+    out.endObject();
+    out.flush();
+    assertEquals("{}", sw.toString());
+  }
+
+  @Test
+  public void field_doubleArray_empty_isWrittenAsEmptyArray() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startObject("root");
+    out.field("values", new double[0], FieldOption.DEFAULT);
+    out.endObject();
+    out.flush();
+    assertEquals("{\"values\":[]}", sw.toString());
+  }
+
+  // ---------------------------------------------------------------------------
   // nullField
   // ---------------------------------------------------------------------------
 

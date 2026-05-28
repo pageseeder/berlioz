@@ -313,6 +313,22 @@ public interface OutputWriter extends AutoCloseable, Flushable {
   OutputWriter field(String name, boolean[] values, FieldOption option);
 
   /**
+   * Write a field with multiple double values based on the specified field option.
+   *
+   * <ul>
+   *   <li>JSON, write a property with a JSON number array</li>
+   *   <li>XML with {@link FieldOption#XML_ELEMENT}: write one child element per value</li>
+   *   <li>XML otherwise: write a comma-separated attribute or text node</li>
+   * </ul>
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @param option How to write the field for the output.
+   * @return this writer
+   */
+  OutputWriter field(String name, double[] values, FieldOption option);
+
+  /**
    * Write an explicit null field based on the specified field option.
    *
    * <ul>
@@ -553,6 +569,17 @@ public interface OutputWriter extends AutoCloseable, Flushable {
    * @return this writer
    */
   default OutputWriter field(String name, boolean[] values) {
+    return field(name, values, FieldOption.DEFAULT);
+  }
+
+  /**
+   * Write a field with multiple double values using the default option.
+   *
+   * @param name   The name of the field
+   * @param values The values of the field
+   * @return this writer
+   */
+  default OutputWriter field(String name, double[] values) {
     return field(name, values, FieldOption.DEFAULT);
   }
 

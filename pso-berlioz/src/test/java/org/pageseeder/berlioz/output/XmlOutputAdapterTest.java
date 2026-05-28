@@ -535,6 +535,43 @@ public class XmlOutputAdapterTest {
   }
 
   // ---------------------------------------------------------------------------
+  // field(String, double[], FieldOption)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void field_doubleArray_default_writesCommaSeparatedAttribute() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.field("values", new double[]{1.5, 2.5, 3.0}, FieldOption.DEFAULT);
+    out.endObject();
+    out.flush();
+    assertEquals("<root values=\"1.5,2.5,3.0\"/>", sw.toString());
+  }
+
+  @Test
+  public void field_doubleArray_xmlElement_writesOneElementPerValue() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.field("values", new double[]{1.5, 2.5}, FieldOption.XML_ELEMENT);
+    out.endObject();
+    out.flush();
+    assertEquals("<root><values>1.5</values><values>2.5</values></root>", sw.toString());
+  }
+
+  @Test
+  public void field_doubleArray_jsonOnly_isSkipped() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    out.startObject("root");
+    out.field("values", new double[]{1.5, 2.5}, FieldOption.JSON_ONLY);
+    out.endObject();
+    out.flush();
+    assertEquals("<root/>", sw.toString());
+  }
+
+  // ---------------------------------------------------------------------------
   // nullField
   // ---------------------------------------------------------------------------
 
