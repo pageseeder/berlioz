@@ -77,6 +77,39 @@ public final class RedirectConfigTest {
     RedirectConfig.newInstance(new File(this.configFolder, "redirect_xxe.xml"));
   }
 
+  @Test
+  public void testLoad_PermanentRedirect() throws ConfigException {
+    String xml = "<redirect-mapping>" +
+        "<redirect from=\"/old\" to=\"/new\" permanent=\"yes\"/>" +
+        "</redirect-mapping>";
+    RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
+    RedirectLocation loc = config.redirect("/old");
+    Assert.assertNotNull(loc);
+    Assert.assertEquals("/new", loc.to());
+    Assert.assertTrue("isPermanent() should be true for permanent=\"yes\"", loc.isPermanent());
+  }
+
+  @Test
+  public void testLoad_TemporaryRedirectIsNotPermanent() throws ConfigException {
+    String xml = "<redirect-mapping>" +
+        "<redirect from=\"/old\" to=\"/new\"/>" +
+        "</redirect-mapping>";
+    RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
+    RedirectLocation loc = config.redirect("/old");
+    Assert.assertNotNull(loc);
+    Assert.assertFalse("isPermanent() should be false when permanent attribute is absent", loc.isPermanent());
+  }
+
+  @Test
+  public void testLoadFile_WeboorganicDTD() throws ConfigException {
+    String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+        "<!DOCTYPE redirect-mapping PUBLIC \"-//Weborganic//DTD::Redirect Mapping 1.0//EN\" \"\">" +
+        "<redirect-mapping><redirect from=\"/\" to=\"/home\"/></redirect-mapping>";
+    RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
+    Assert.assertNotNull(config.redirect("/"));
+    Assert.assertEquals("/home", config.redirect("/").to());
+  }
+
   @Test(expected = ConfigException.class)
   public void testLoad_XMLBomb() throws ConfigException {
     String xml = "<!DOCTYPE redirect-mapping [\n" +
