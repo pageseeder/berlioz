@@ -76,6 +76,7 @@ Capabilities to consider:
 - Required parameters.
 - Default values.
 - Type conversion for strings, numbers, booleans, dates, times, and enums.
+- Nullable scalar access using JSpecify `@Nullable` where absence is expected.
 - Range checks for numbers and dates.
 - Allowed-value checks.
 - Multi-value parameters.
@@ -83,6 +84,8 @@ Capabilities to consider:
 - Automatic `400 Bad Request` responses when constraints fail.
 
 This could borrow from Spring's conversion and validation concepts, but the Berlioz API should stay explicit and local to the request object.
+
+The API should prefer simple nullable scalar values over `Optional<T>` for ordinary request access. When used with clear nullness annotations, `@Nullable` keeps the API direct and avoids unnecessary temporary objects.
 
 ### 4. Service and Page Metadata
 
@@ -212,4 +215,3 @@ These integrations should support Berlioz rather than replace its URI template, 
 - Should request validation fail immediately or collect all parameter errors first?
 - What metadata belongs in core, and what belongs in diagnostics only?
 - Which integrations are valuable enough to maintain as official modules?
-
