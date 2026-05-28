@@ -81,7 +81,11 @@ public interface OutputWriter extends AutoCloseable, Flushable {
     XML_ELEMENT,
 
     /**
-     * The field should be represented as a JSON property or copied as XML content in XML.
+     * The field should be represented as a JSON property or copied as raw XML content in XML.
+     *
+     * <p>This option is only meaningful for {@code String} fields whose value is already
+     * well-formed XML markup. For {@code boolean}, {@code int}, {@code long}, and {@code double}
+     * fields it falls back to {@link #DEFAULT} (attribute) behaviour.</p>
      */
     XML_COPY
   }

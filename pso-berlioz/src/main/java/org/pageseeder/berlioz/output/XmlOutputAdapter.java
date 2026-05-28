@@ -97,6 +97,7 @@ public class XmlOutputAdapter implements OutputWriter {
   @Override
   public final OutputWriter field(String name, boolean value, FieldOption option) {
     switch (option) {
+      case XML_COPY: // XML_COPY is only meaningful for String; fall back to attribute
       case DEFAULT:
       case XML_ONLY:
         this.xml.attribute(name, value);
@@ -116,6 +117,7 @@ public class XmlOutputAdapter implements OutputWriter {
   @Override
   public final OutputWriter field(String name, long value, FieldOption option) {
     switch (option) {
+      case XML_COPY: // XML_COPY is only meaningful for String; fall back to attribute
       case DEFAULT:
       case XML_ONLY:
         this.xml.attribute(name, value);
@@ -135,6 +137,7 @@ public class XmlOutputAdapter implements OutputWriter {
   @Override
   public final OutputWriter field(String name, double value, FieldOption option) {
     switch (option) {
+      case XML_COPY: // XML_COPY is only meaningful for String; fall back to attribute
       case DEFAULT:
       case XML_ONLY:
         this.xml.attribute(name, value);
