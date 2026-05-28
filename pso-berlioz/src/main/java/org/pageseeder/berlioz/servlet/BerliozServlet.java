@@ -554,7 +554,7 @@ public final class BerliozServlet extends HttpServlet {
         handler.forward(req, res);
       } else {
         logError(code, message, ex, "Berlioz handling error {} [{}] internally");
-        ErrorHandlerServlet.handle(req, res);
+        new ErrorHandlerServlet().handle(req, res);
       }
     } catch (IOException | ServletException e) {
       LOGGER.error("Failed to dispatch error response {} [{}]", message, code, e);
