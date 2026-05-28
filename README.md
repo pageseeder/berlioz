@@ -29,3 +29,7 @@ Let us know if there is anything that we can do to help you use Berlioz. We want
 ## API Documentation
 
 The Java API documentation can be found [here](http://pageseeder.org/apidocs/berlioz/latest/index.html)
+
+## Roadmap
+
+The current development roadmap is available in [ROADMAP.md](ROADMAP.md).

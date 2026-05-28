@@ -1,0 +1,215 @@
+# Berlioz Roadmap
+
+Berlioz is a lightweight Java web framework built around URI templates, XML content generation, and XSLT rendering. 
+The next development cycle should strengthen those core ideas rather than turn Berlioz into a general-purpose 
+application framework.
+
+This roadmap is intentionally public and directional. It describes the capabilities we want to explore, the constraints
+we want to keep, and the integration points that may make Berlioz easier to use in modern Java applications.
+
+## Guiding Principles
+
+- Keep Berlioz simple, explicit, and easy to reason about.
+- Keep the core annotation-free. Annotation-based programming can be useful, but it should live in optional modules.
+- Preserve URI templates as the primary request matching model.
+- Preserve XML and XSLT as first-class mechanisms for generating XML and HTML responses.
+- Make JSON and other output formats easier to support without weakening the XML/XSLT pipeline.
+- Prefer small extension points over large framework dependencies.
+- Keep optional integrations optional.
+
+## Candidate Development Themes
+
+### 1. Jakarta Servlet Support
+
+Move Berlioz to the Jakarta Servlet namespace for modern servlet containers.
+
+Topics to resolve:
+
+- Whether Jakarta support should be a breaking major release.
+- Whether to maintain a legacy `javax.servlet` line for existing applications.
+- Whether servlet-specific code should be isolated enough to support parallel `javax` and `jakarta` artifacts.
+- How the mock and kickstart modules should track the migration.
+
+Likely outcome:
+
+- A Jakarta-based Berlioz line for current containers.
+- Clear migration notes for applications moving from `javax.servlet` to `jakarta.servlet`.
+
+### 2. Output-Aware Generators
+
+Allow generators to write through a higher-level output abstraction so the same service can produce XML or JSON depending on the request format.
+
+The current XML-first model should remain the default. The goal is to make output negotiation clearer and more capable, not to remove the XML writer model.
+
+Areas to explore:
+
+- A generator interface based on an `OutputWriter` or similar abstraction.
+- Backward-compatible support for existing `ContentGenerator` implementations.
+- Request format detection from URI extensions such as `.html`, `.xml`, `.json`, and `.src`.
+- Rules for when output should be transformed by XSLT and when it should be written directly.
+- A simple model for services that support only specific output formats.
+
+Possible shape:
+
+```java
+void process(ContentRequest request, OutputWriter output);
+```
+
+The `OutputWriter` should keep XML efficient and natural while making direct JSON output possible where appropriate.
+
+### 3. Typed and Validating Request Parameters
+
+Add a smarter request API for reading parameters with constraints and predictable `400 Bad Request` handling.
+
+The API should support common cases without annotations or reflection.
+
+Examples of the kind of usage to consider:
+
+```java
+int page = request.parameter("page").asInt().defaultValue(1);
+LocalDate from = request.parameter("from").asDate().required();
+String sort = request.parameter("sort").oneOf("name", "date", "title").defaultValue("name");
+```
+
+Capabilities to consider:
+
+- Required parameters.
+- Default values.
+- Type conversion for strings, numbers, booleans, dates, times, and enums.
+- Range checks for numbers and dates.
+- Allowed-value checks.
+- Multi-value parameters.
+- Structured error reporting.
+- Automatic `400 Bad Request` responses when constraints fail.
+
+This could borrow from Spring's conversion and validation concepts, but the Berlioz API should stay explicit and local to the request object.
+
+### 4. Service and Page Metadata
+
+Expose service and page metadata consistently.
+
+Potential metadata:
+
+- Service name or identifier.
+- Matched URI template.
+- HTTP method.
+- Supported output formats.
+- Cache policy.
+- Page title or description.
+- Generator list.
+- Diagnostic information for development mode.
+
+Potential output channels:
+
+- HTTP headers.
+- XML metadata nodes.
+- JSON metadata properties.
+- XSLT-accessible values or simple functions.
+- Source or diagnostic views.
+
+This should make services easier to inspect, document, test, and debug without adding heavy machinery to the runtime.
+
+### 5. Error Handling and Problem Responses
+
+Define clearer conventions for framework-generated errors.
+
+Areas to consider:
+
+- `400 Bad Request` for invalid parameters.
+- `404 Not Found` for unmatched services.
+- `405 Method Not Allowed` when a URI matches but the method does not.
+- `406 Not Acceptable` when the requested output format is unsupported.
+- `500 Internal Server Error` for unexpected generator failures.
+
+The same error model should be representable as XML, JSON, or transformed HTML.
+
+Spring and JAX-RS both have useful ideas here, especially exception mapping and structured problem responses. Berlioz can adopt the small useful parts without adopting their programming models.
+
+### 6. Interceptors and Observability
+
+Introduce lightweight hooks around request processing.
+
+Possible hooks:
+
+- Before service execution.
+- After successful service execution.
+- Around individual generator execution.
+- On errors.
+- Around XSLT transformation.
+
+Potential uses:
+
+- Logging.
+- Timing.
+- Metrics.
+- Tracing.
+- Security checks.
+- Development diagnostics.
+
+Natural optional integrations:
+
+- Micrometer.
+- OpenTelemetry.
+- Application-specific audit logging.
+
+### 7. Optional Integration Modules
+
+Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
+
+Possible modules:
+
+- Spring integration for resolving generators from an `ApplicationContext`.
+- Spring integration for using `ConversionService` or `Validator`.
+- Jakarta CDI integration for resolving generators as CDI beans.
+- Optional annotation-based routing or metadata module.
+- Optional JSON integration modules for Jackson, Gson, or Jakarta JSON-P.
+
+These integrations should support Berlioz rather than replace its URI template, generator, and XSLT model.
+
+## Possible Milestones
+
+### Milestone 1: Foundations
+
+- Decide Jakarta migration strategy.
+- Define compatibility policy for existing applications.
+- Document the desired request/output lifecycle.
+- Identify which APIs must remain source-compatible.
+
+### Milestone 2: Request and Error Model
+
+- Add typed parameter access.
+- Add constraint failures and structured `400` responses.
+- Define framework error response structure.
+- Add focused tests for request parsing and failed constraints.
+
+### Milestone 3: Output Model
+
+- Introduce an output-aware generator API.
+- Preserve compatibility for existing XML generators.
+- Define output format negotiation rules.
+- Support direct JSON output for services that opt in.
+
+### Milestone 4: Metadata and Diagnostics
+
+- Add service/page metadata APIs.
+- Expose metadata through headers and generated output.
+- Improve source or diagnostic output for development mode.
+
+### Milestone 5: Integration and Instrumentation
+
+- Add lightweight interceptor hooks.
+- Add optional Spring or CDI generator resolution.
+- Add optional metrics/tracing integration.
+- Keep integration modules separate from the core runtime.
+
+## Open Questions
+
+- Should the Jakarta migration be released as Berlioz 1.0?
+- Should the `javax.servlet` line continue as maintenance-only?
+- What is the smallest useful `OutputWriter` API?
+- Should output negotiation prefer URI extension over the `Accept` header?
+- How should XML aggregation work when some generators can write JSON directly?
+- Should request validation fail immediately or collect all parameter errors first?
+- What metadata belongs in core, and what belongs in diagnostics only?
+- Which integrations are valuable enough to maintain as official modules?
+
