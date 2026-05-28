@@ -140,7 +140,38 @@ For request validation, Berlioz could add an extension member such as `errors` t
 
 Spring and JAX-RS both have useful ideas here, especially exception mapping and structured problem responses. Berlioz can adopt the small useful parts without adopting their programming models.
 
-### 6. Interceptors and Observability
+### 6. Authentication and Authorization Guards
+
+Make it easy for applications to guard services and generators without making Berlioz responsible for authentication itself.
+
+Authentication should remain a separate concern. Applications, servlet containers, filters, reverse proxies, session systems, or identity providers can establish the current user or principal before Berlioz executes a service. Berlioz can then provide simple authorization hooks to decide whether a service or generator is allowed to run.
+
+Expected behavior:
+
+- Return `401 Unauthorized` when authentication is required but no authenticated user is available.
+- Return `403 Forbidden` when the user is authenticated but lacks the required permission, role, or capability.
+- Use RFC 9457 Problem Details for machine-readable authorization failures.
+- Include `WWW-Authenticate` headers for authentication schemes that require them.
+
+Possible guard models:
+
+- Programmatic generator guards, for example `Guard.authenticated().and(canWrite(document))`.
+- Generator interfaces such as `GuardedGenerator`, `RequiresAuthorization`, or `PermissionCheck`.
+- Service-level requirements in `services.xml`, with application-defined meanings for roles and permissions.
+- An application-provided `AuthorizationManager` that evaluates declared requirements.
+- Lightweight interceptors that can run before services or generators.
+- Optional annotation support in a separate module, for example `@RequiresRole` or `@RequiresPermission`.
+
+The core model should not require Berlioz to choose between role-based access control, permission-based access control, attribute-based checks, or application-specific predicates. Instead, Berlioz should provide a small result model such as:
+
+- Allowed.
+- Authentication required.
+- Forbidden.
+- Custom problem response.
+
+This keeps policy decisions in application code while giving Berlioz consistent early-return behavior, response status handling, and XML/JSON/HTML problem output.
+
+### 7. Interceptors and Observability
 
 Introduce lightweight hooks around request processing.
 
@@ -151,6 +182,7 @@ Possible hooks:
 - Around individual generator execution.
 - On errors.
 - Around XSLT transformation.
+- Around authorization checks.
 
 Potential uses:
 
@@ -167,7 +199,7 @@ Natural optional integrations:
 - OpenTelemetry.
 - Application-specific audit logging.
 
-### 7. Optional Integration Modules
+### 8. Optional Integration Modules
 
 Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
 
@@ -175,8 +207,9 @@ Possible modules:
 
 - Spring integration for resolving generators from an `ApplicationContext`.
 - Spring integration for using `ConversionService` or `Validator`.
+- Spring Security integration for evaluating authorization requirements where applications already use it.
 - Jakarta CDI integration for resolving generators as CDI beans.
-- Optional annotation-based routing or metadata module.
+- Optional annotation-based routing, metadata, or authorization module.
 - Optional JSON integration modules for Jackson, Gson, or Jakarta JSON-P.
 
 These integrations should support Berlioz rather than replace its URI template, generator, and XSLT model.
@@ -211,10 +244,19 @@ These integrations should support Berlioz rather than replace its URI template, 
 - Expose metadata through headers and generated output.
 - Improve source or diagnostic output for development mode.
 
-### Milestone 5: Integration and Instrumentation
+### Milestone 5: Authorization and Guarding
+
+- Define a small authorization result model for allowed, authentication required, forbidden, and custom problem responses.
+- Add programmatic guard support for services or generators.
+- Consider service-level authorization requirements in `services.xml`.
+- Define how authorization failures are represented using RFC 9457 Problem Details.
+- Add tests for `401` and `403` early-return behavior.
+
+### Milestone 6: Integration and Instrumentation
 
 - Add lightweight interceptor hooks.
 - Add optional Spring or CDI generator resolution.
+- Add optional Spring Security or application authorization adapters.
 - Add optional metrics/tracing integration.
 - Keep integration modules separate from the core runtime.
 
@@ -227,5 +269,8 @@ These integrations should support Berlioz rather than replace its URI template, 
 - How should XML aggregation work when some generators can write JSON directly?
 - Should request validation fail immediately or collect all parameter errors first?
 - Which Problem Details `type` URIs should Berlioz define, and should they resolve to public documentation?
+- Should authorization requirements be declared primarily by generator interfaces, service configuration, or both?
+- What minimum user/principal abstraction should Berlioz expose without taking ownership of authentication?
+- Should authorization checks run at service level, generator level, or both?
 - What metadata belongs in core, and what belongs in diagnostics only?
 - Which integrations are valuable enough to maintain as official modules?
