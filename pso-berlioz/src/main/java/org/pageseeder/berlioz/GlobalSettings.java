@@ -226,7 +226,8 @@ public final class GlobalSettings {
     File appDataConfigDirectory = env.appData().toPath().resolve(env.configFolder()).toFile();
     File f = getModeConfigFile(appDataConfigDirectory);
     if (f == null || !f.exists()) {
-      f = getModeConfigFile(getConfig());
+      File webInfConfigDirectory = env.webInf().toPath().resolve(env.configFolder()).toFile();
+      f = getModeConfigFile(webInfConfigDirectory);
     }
     return f;
   }
@@ -238,7 +239,7 @@ public final class GlobalSettings {
    */
   public static @Nullable File getDefaultConfigFile() {
     if (env == null) return null;
-    return getDefaultConfigFile(getConfig());
+    return getDefaultConfigFile(env.webInf().toPath().resolve(env.configFolder()).toFile());
   }
 
   // Properties methods
@@ -740,7 +741,7 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   private static @Nullable File getModeConfigFile(File dir) {
-    if (dir == null || !dir.isDirectory()) return null;
+    if (!dir.isDirectory()) return null;
     // try as an XML file
     File xml = new File(dir, "config-"+getMode()+".xml");
     if (xml.canRead()) return xml;
@@ -756,7 +757,7 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   private static @Nullable File getDefaultConfigFile(File dir) {
-    if (dir == null || !dir.isDirectory()) return null;
+    if (!dir.isDirectory()) return null;
     // try as an XML file
     File xml = new File(dir, "config.xml");
     if (xml.canRead()) return xml;
