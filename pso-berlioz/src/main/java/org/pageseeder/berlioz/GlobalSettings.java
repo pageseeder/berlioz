@@ -33,8 +33,8 @@ import java.util.Objects;
 import java.util.Properties;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.servlet.AppInitializer;
-import org.pageseeder.berlioz.xml.XMLConfig;
+import org.pageseeder.berlioz.config.ConfigException;
+import org.pageseeder.berlioz.config.GlobalConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -630,11 +630,6 @@ public final class GlobalSettings {
       // Considered loaded if any file was loaded without error
       loaded = defaultConfig != null || modeConfig != null;
 
-    } catch (IOException ex) {
-      console("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
-      LOGGER.warn("Unable to load the configuration file: {}", ex.getMessage());
-      properties.clear(); // Let's not load dirty properties
-
     } catch (Exception ex) {
       console("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
       LOGGER.warn("Unable to load the configuration file", ex);
@@ -687,9 +682,10 @@ public final class GlobalSettings {
    * @param file The file to load
    * @param properties  The map containing the global settings
    *
-   * @throws IOException Should an I/O error occur while reading the properties
+   * @throws IOException Should an I/O error occur while reading the properties.
+   * @throws ConfigException Should a parse error occur while reading the properties.
    */
-  private static void loadInto(File file, Map<String, String> properties) throws IOException{
+  private static void loadInto(File file, Map<String, String> properties) throws IOException, ConfigException {
     Format format = file.getName().endsWith(".xml")? Format.XML_CONFIG : Format.PROPERTIES;
     LOGGER.debug("Loading Berlioz config {} as {}", file.getName(), format);
     switch (format) {
@@ -727,10 +723,11 @@ public final class GlobalSettings {
    * @param file The XML config file to load.
    * @param map  The properties to load into
    *
-   * @throws IOException Should an error be reported by the parser.
+   * @throws IOException If an I/O error occur while reading the file.
+   * @throws ConfigException If a parse error occur while reading the file.
    */
-  private static void loadXMLConfig(File file, Map<String, String> map) throws IOException {
-    XMLConfig config = new XMLConfig(map);
+  private static void loadXMLConfig(File file, Map<String, String> map) throws IOException, ConfigException {
+    GlobalConfig config = new GlobalConfig(map);
     Path path = checkPath(file);
     try (InputStream in = Files.newInputStream(path)) {
       config.load(in);
@@ -781,7 +778,7 @@ public final class GlobalSettings {
       load();
     }
     Map<String, String> s = settings;
-    return s != null? s : Collections.emptyMap();
+    return s != null? s : Map.of();
   }
 
   /**
