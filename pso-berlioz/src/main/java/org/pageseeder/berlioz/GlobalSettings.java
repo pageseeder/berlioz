@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.servlet.AppInitializer;
 import org.pageseeder.berlioz.xml.XMLConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -630,12 +631,12 @@ public final class GlobalSettings {
       loaded = defaultConfig != null || modeConfig != null;
 
     } catch (IOException ex) {
-      System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
+      console("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
       LOGGER.warn("Unable to load the configuration file: {}", ex.getMessage());
       properties.clear(); // Let's not load dirty properties
 
     } catch (Exception ex) {
-      System.err.println("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
+      console("[BERLIOZ_CONFIG] (!) An error occurred whilst trying to read the properties file.");
       LOGGER.warn("Unable to load the configuration file", ex);
       properties.clear(); // Let's not load dirty properties
     } finally {
@@ -794,4 +795,15 @@ public final class GlobalSettings {
     }
     throw new IOException("Config file must be located within webinf or appdata folder");
   }
+
+  /**
+   * Log any global config error on the error console.
+   *
+   * @param message the message to log.
+   */
+  @SuppressWarnings("java:S106") // Writing to System.out is intentional here, logging isn't configured yet!
+  private static void console(String message) {
+    System.err.println("[BERLIOZ_CONFIG] "+message);
+  }
+
 }
