@@ -719,7 +719,7 @@ public abstract class AppInitializer {
           console(Phase.INIT, "Logging: logger context reset successfully");
         } catch (Exception ex) {
           console(Phase.INIT, "(!) Logging: Failed to  logger context - logging messages may appear twice");
-          ex.printStackTrace();
+          consoleException(Phase.INIT, ex);
         }
         // Invoke the configuration
         Method doConfigure = joranClass.getMethod("doConfigure", String.class);
@@ -732,7 +732,7 @@ public abstract class AppInitializer {
         console(Phase.INIT, "(!) Logging: logback could not be found on classpath!");
       } catch (Exception ex) {
         console(Phase.INIT, "(!) Logging: attempt to load Logback configuration failed!");
-        ex.printStackTrace();
+        consoleException(Phase.INIT, ex);
       }
     } else {
       console(Phase.INIT, "Logging: config/"+configuration.getName()+" not found");
@@ -763,7 +763,7 @@ public abstract class AppInitializer {
         console(Phase.INIT, "(!) Logging: Log4j could not be found on classpath!");
       } catch (Exception ex) {
         console(Phase.INIT, "(!) Logging: attempt to load Log4j configuration failed!");
-        ex.printStackTrace();
+        consoleException(Phase.INIT, ex);
       }
     } else {
       console(Phase.INIT, "Logging: config/"+configuration.getName()+" not found");
@@ -861,7 +861,7 @@ public abstract class AppInitializer {
           console(Phase.INIT, "Lifecycle: started "+listener.getClass().getSimpleName());
         } catch (Exception ex) {
           ok = false;
-          ex.printStackTrace();
+          consoleException(Phase.INIT, ex);
         }
       }
       if (ok) {
@@ -900,6 +900,17 @@ public abstract class AppInitializer {
   @SuppressWarnings("java:S106") // Writing to System.out is intentional here, logging isn't configured yet!
   private static void console(Phase phase, String message) {
     System.out.println("[BERLIOZ_"+phase+"] "+message);
+  }
+
+  private static void consoleException(Phase phase, Exception ex) {
+    console(phase, ex.toString());
+    for (StackTraceElement el : ex.getStackTrace()) {
+      console(phase, "    at " + el);
+    }
+    Throwable cause = ex.getCause();
+    if (cause != null) {
+      console(phase, "Caused by: " + cause);
+    }
   }
 
 }
