@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.ConfigException;
@@ -69,7 +70,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.3
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.6
  */
 public final class GlobalSettings {
@@ -110,17 +111,17 @@ public final class GlobalSettings {
    * <p>This should always be the <code>WEB-INF</code> folder of the Web
    * application.
    */
-  private static volatile InitEnvironment env = null;
+  private static final AtomicReference<@Nullable InitEnvironment> ENV = new AtomicReference<>();
 
   /**
    * The global properties.
    */
-  private static volatile @Nullable Map<String, String> settings;
+  private static final AtomicReference<@Nullable Map<String, String>> SETTINGS = new AtomicReference<>();
 
   /**
    * Maps properties to nodes that have been processed.
    */
-  private static volatile @Nullable Map<String, Properties> nodes;
+  private static final AtomicReference<@Nullable Map<String, Properties>> NODES = new AtomicReference<>();
 
   /**
    * The list of listeners to invoke when the global settings have been reloaded.
@@ -137,6 +138,14 @@ public final class GlobalSettings {
     // empty constructor
   }
 
+  private static @Nullable InitEnvironment env() { return ENV.get(); }
+
+  private static InitEnvironment requireEnv() {
+    InitEnvironment e = ENV.get();
+    if (e == null) throw new IllegalStateException("GlobalSettings has not been set up");
+    return e;
+  }
+
   // General static methods
   // --------------------------------------------------------------------------
 
@@ -146,20 +155,22 @@ public final class GlobalSettings {
    * @return The directory used as a repository or <code>null</code>.
    */
   public static @Nullable File getWebInf() {
-    return env != null? env.webInf() : null;
+    InitEnvironment e = env();
+    return e != null ? e.webInf() : null;
   }
 
   /**
    * Returns the application data folder.
    *
-   * It can be the same as the Web application directory (<code>WEB-INF</code>),
+   * <p>It can be the same as the Web application directory (<code>WEB-INF</code>),
    * but may different in cases where the data needs to be persistent and
    * separate from the application itself.
    *
    * @return The Web application data folder or <code>null</code>.
    */
   public static @Nullable File getAppData() {
-    return env != null? env.appData() : null;
+    InitEnvironment e = env();
+    return e != null ? e.appData() : null;
   }
 
   /**
@@ -169,10 +180,8 @@ public final class GlobalSettings {
    * @return The configuration directory containing all configuration files for Berlioz.
    */
   public static @Nullable File getConfig() {
-    if (env != null)
-      return env.webInf().toPath().resolve(env.configFolder()).toFile();
-    else
-      return null;
+    InitEnvironment e = env();
+    return e != null ? e.webInf().toPath().resolve(e.configFolder()).toFile() : null;
   }
 
   /**
@@ -199,7 +208,8 @@ public final class GlobalSettings {
    * @return The Berlioz mode in use.
    */
   public static String getMode() {
-    return env != null? env.mode() : InitEnvironment.DEFAULT_MODE;
+    InitEnvironment e = env();
+    return e != null ? e.mode() : InitEnvironment.DEFAULT_MODE;
   }
 
   /**
@@ -208,7 +218,7 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getPropertiesFile() {
-    if (env == null) return null;
+    if (env() == null) return null;
     File f = getModeConfigFile();
     if (f == null) {
       f = getDefaultConfigFile();
@@ -222,11 +232,12 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getModeConfigFile() {
-    if (env == null) return null;
-    File appDataConfigDirectory = env.appData().toPath().resolve(env.configFolder()).toFile();
+    InitEnvironment e = env();
+    if (e == null) return null;
+    File appDataConfigDirectory = e.appData().toPath().resolve(e.configFolder()).toFile();
     File f = getModeConfigFile(appDataConfigDirectory);
     if (f == null || !f.exists()) {
-      File webInfConfigDirectory = env.webInf().toPath().resolve(env.configFolder()).toFile();
+      File webInfConfigDirectory = e.webInf().toPath().resolve(e.configFolder()).toFile();
       f = getModeConfigFile(webInfConfigDirectory);
     }
     return f;
@@ -238,8 +249,9 @@ public final class GlobalSettings {
    * @return The properties file to load or <code>null</code>.
    */
   public static @Nullable File getDefaultConfigFile() {
-    if (env == null) return null;
-    return getDefaultConfigFile(env.webInf().toPath().resolve(env.configFolder()).toFile());
+    InitEnvironment e = env();
+    if (e == null) return null;
+    return getDefaultConfigFile(e.webInf().toPath().resolve(e.configFolder()).toFile());
   }
 
   // Properties methods
@@ -433,17 +445,18 @@ public final class GlobalSettings {
    */
   public static @Nullable File getFileProperty(String name) throws IllegalStateException {
     String filepath = ensureSettings().get(name);
-    if (filepath != null && env != null) {
+    if (filepath != null) {
+      InitEnvironment e = requireEnv();
       // try appData first
-      File file = new File(env.appData(), filepath);
+      File file = new File(e.appData(), filepath);
       try {
         if (file.exists()) return file.getCanonicalFile();
       } catch (IOException ex) {
         LOGGER.warn("Unable to generate canonical file: {}", ex.getMessage());
       }
       // fall back on webinf
-      if (env.appData() != env.webInf()) {
-        file = new File(env.webInf(), filepath);
+      if (e.appData() != e.webInf()) {
+        file = new File(e.webInf(), filepath);
         try {
           if (file.exists()) return file.getCanonicalFile();
         } catch (IOException ex) {
@@ -464,7 +477,8 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   public static @Nullable Properties getNode(String name) {
-    Map<String, Properties> all = nodes;
+    Map<String, String> s = ensureSettings();
+    Map<String, Properties> all = NODES.get();
     if (all == null) return null;
     // return the node if already processed.
     if (all.containsKey(name))
@@ -472,7 +486,7 @@ public final class GlobalSettings {
     // other process and store
     Properties node = new Properties();
     String prefix = name+'.';
-    for (Entry<String, String> e : ensureSettings().entrySet()) {
+    for (Entry<String, String> e : s.entrySet()) {
       String key = e.getKey();
       if (key.startsWith(prefix) && key.indexOf('.', prefix.length()) < 0) {
         node.setProperty(key.substring(prefix.length()), e.getValue());
@@ -516,7 +530,9 @@ public final class GlobalSettings {
    * @param environment The environment to use.
    */
   public static void setup(InitEnvironment environment) {
-    env = environment;
+    ENV.set(environment);
+    SETTINGS.set(null);
+    NODES.set(null);
   }
 
   /**
@@ -525,7 +541,9 @@ public final class GlobalSettings {
    * @param webInf The Web application folder to use.
    */
   public static void setup(File webInf) {
-    env = InitEnvironment.create(webInf);
+    ENV.set(InitEnvironment.create(webInf));
+    SETTINGS.set(null);
+    NODES.set(null);
   }
 
   /**
@@ -543,11 +561,9 @@ public final class GlobalSettings {
    */
   @Deprecated(since = "0.11.4")
   public static void setWebInf(File dir) {
-    if (env != null) {
-      env = env.webInf(dir);
-    } else {
-      env = InitEnvironment.create(dir);
-    }
+    ENV.updateAndGet(e -> e != null ? e.webInf(dir) : InitEnvironment.create(dir));
+    SETTINGS.set(null);
+    NODES.set(null);
   }
 
   /**
@@ -564,9 +580,7 @@ public final class GlobalSettings {
    */
   @Deprecated(since = "0.11.4")
   public static void setAppData(File dir) {
-    if (env != null) {
-      env = env.appData(dir);
-    }
+    ENV.updateAndGet(e -> e != null ? e.appData(dir) : e);
   }
 
   /**
@@ -580,9 +594,7 @@ public final class GlobalSettings {
    */
   @Deprecated(since = "0.11.4")
   public static void setMode(String name) {
-    if (env != null) {
-      env = env.mode(name);
-    }
+    ENV.updateAndGet(e -> e != null ? e.mode(name) : e);
   }
 
   /**
@@ -606,7 +618,7 @@ public final class GlobalSettings {
    *
    * @return <code>true</code> if the properties were loaded; <code>false</code> otherwise.
    *
-   * @throws IllegalStateException If this class has not been setup properly.
+   * @throws IllegalStateException If this class has not been set up properly.
    */
   public static synchronized boolean load() throws IllegalStateException {
     boolean loaded = false;
@@ -615,7 +627,7 @@ public final class GlobalSettings {
     Map<String, String> properties = new HashMap<>();
 
     try {
-      if (env == null) return false;
+      requireEnv();
       // Try to load the default config file
       File defaultConfig = getDefaultConfigFile();
       if (defaultConfig != null) {
@@ -637,8 +649,8 @@ public final class GlobalSettings {
       properties.clear(); // Let's not load dirty properties
     } finally {
       // Reset after loading
-      settings = properties;
-      nodes = new Hashtable<>();
+      SETTINGS.set(properties);
+      NODES.set(new Hashtable<>());
     }
 
     // Notify the listeners
@@ -775,11 +787,11 @@ public final class GlobalSettings {
    * @throws IllegalStateException If this class has not been setup properly.
    */
   private static Map<String, String> ensureSettings() throws IllegalStateException {
-    if (settings == null) {
+    if (SETTINGS.get() == null) {
       load();
     }
-    Map<String, String> s = settings;
-    return s != null? s : Map.of();
+    Map<String, String> s = SETTINGS.get();
+    return s != null ? s : Map.of();
   }
 
   /**
@@ -787,8 +799,9 @@ public final class GlobalSettings {
    */
   private static Path checkPath(File file) throws IOException {
     String path = file.getCanonicalPath();
-    if (path.startsWith(env.appData().getCanonicalPath())
-     || path.startsWith(env.webInf().getCanonicalPath())) {
+    InitEnvironment e = requireEnv();
+    if (path.startsWith(e.appData().getCanonicalPath())
+     || path.startsWith(e.webInf().getCanonicalPath())) {
       return file.toPath();
     }
     throw new IOException("Config file must be located within webinf or appdata folder");
