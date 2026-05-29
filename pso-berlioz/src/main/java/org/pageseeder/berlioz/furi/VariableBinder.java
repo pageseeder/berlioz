@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
@@ -50,7 +50,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
 public class VariableBinder {
@@ -68,12 +68,12 @@ public class VariableBinder {
   /**
    * Maps a variable names to a resolver.
    */
-  private final Map<String,VariableResolver> byName = new Hashtable<>();
+  private final Map<String,VariableResolver> byName = new HashMap<>();
 
   /**
    * Maps a variable types to a resolver.
    */
-  private final Map<String,VariableResolver> byType = new Hashtable<>();
+  private final Map<String,VariableResolver> byType = new HashMap<>();
 
   /**
    * Binds the variables with the specified name to the specified resolver.
