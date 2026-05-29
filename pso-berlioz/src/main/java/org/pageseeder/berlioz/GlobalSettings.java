@@ -473,7 +473,7 @@ public final class GlobalSettings {
     String prefix = name+'.';
     for (Entry<String, String> e : ensureSettings().entrySet()) {
       String key = e.getKey();
-      if (key.startsWith(prefix) && key.substring(prefix.length()).indexOf('.') < 0) {
+      if (key.startsWith(prefix) && key.indexOf('.', prefix.length()) < 0) {
         node.setProperty(key.substring(prefix.length()), e.getValue());
       }
     }
