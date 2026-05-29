@@ -16,19 +16,18 @@
 package org.pageseeder.berlioz.servlet;
 
 import java.io.IOException;
-import java.util.Enumeration;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Location;
-import org.pageseeder.berlioz.content.PathInfo;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.security.NonceFactory;
@@ -53,14 +52,14 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * {@link javax.servlet.http.HttpServletRequest#getContextPath()}.
  *
  * <p>The <var>remote host</var> is the result of
- * {@link ServletRequest#getRemoteHost()}.
+ * {@link javax.servlet.ServletRequest#getRemoteHost()}.
  *
  * <p>The <var>remote port</var> is the result of
- * {@link ServletRequest#getRemotePort()}.
+ * {@link javax.servlet.ServletRequest#getRemotePort()}.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.6.0
  */
 public final class XMLResponseHeader implements XMLWritable {
@@ -102,10 +101,10 @@ public final class XMLResponseHeader implements XMLWritable {
    * @param results  The result of URI resolution.
    */
   XMLResponseHeader(CoreHttpRequest core, Service service, URIResolveResult results) {
-    this.core = core;
+    this.core = Objects.requireNonNull(core, "core HTTP info cannot be null");
     this.service = service.id();
     this.group = service.group();
-    this.results = results;
+    this.results = Objects.requireNonNull(results, "URI resolution results cannot be null");
   }
 
   /**
@@ -160,117 +159,106 @@ public final class XMLResponseHeader implements XMLWritable {
   @Override
   public void toXML(XMLWriter xml) throws IOException {
     HttpServletRequest req = this.core.request();
-
-    boolean compatibility = !"1.0".equals(GlobalSettings.get(BerliozOption.XML_HEADER_VERSION));
-
-    // start serialising
     xml.openElement("header", true);
-    if (compatibility) {
-      xml.writeComment("Elements below will be deprecated in Berlioz 1.0");
-      xml.element("group", this.group);
-      xml.element("service", this.service);
-      xml.writeComment("Use 'path' instead");
-      xml.element("path-info", HttpRequestWrapper.getBerliozPath(req));
-      xml.element("context-path", req.getContextPath());
-      xml.writeComment("Use 'location' instead");
-      xml.element("scheme", req.getScheme());
-      xml.element("host", req.getServerName());
-      xml.element("port", Integer.toString(req.getServerPort()));
-      xml.element("url", req.getRequestURL().toString());
-      xml.element("query-string", req.getQueryString());
-      xml.writeComment("End deprecated elements");
+    if (!"1.0".equals(GlobalSettings.get(BerliozOption.XML_HEADER_VERSION))) {
+      writeCompatibilityElements(xml, req);
     }
-
-    // New location info
     Location location = this.core.location();
-    if (location != null) {
-      location.toXML(xml);
-      PathInfo path = location.info();
-      path.toXML(xml);
-    }
+    location.toXML(xml);
+    location.info().toXML(xml);
 
-    // Write the http parameters
+    writeHttpParameters(xml, req);
+    writeUriParameters(xml);
+    writeBerliozInfo(xml);
+    writeSecurityNonce(xml, req);
+    xml.closeElement(); // close header
+  }
+
+  private void writeCompatibilityElements(XMLWriter xml, HttpServletRequest req) throws IOException {
+    xml.writeComment("Elements below will be deprecated in Berlioz 1.0");
+    xml.element("group", this.group);
+    xml.element("service", this.service);
+    xml.writeComment("Use 'path' instead");
+    xml.element("path-info", HttpRequestWrapper.getBerliozPath(req));
+    xml.element("context-path", req.getContextPath());
+    xml.writeComment("Use 'location' instead");
+    xml.element("scheme", req.getScheme());
+    xml.element("host", req.getServerName());
+    xml.element("port", Integer.toString(req.getServerPort()));
+    xml.element("url", req.getRequestURL().toString());
+    xml.element("query-string", req.getQueryString());
+    xml.writeComment("End deprecated elements");
+  }
+
+  private static void writeHttpParameters(XMLWriter xml, HttpServletRequest req) throws IOException {
     xml.openElement("http-parameters", true);
-    // TODO Use getParameterMap
-    Enumeration<?> names = req.getParameterNames();
-    while (names.hasMoreElements()) {
-      String name = (String)names.nextElement();
-      if (name != null) {
-        String[] values = req.getParameterValues(name);
-        if (values != null) {
-          for (String value : values) {
-            xml.openElement("parameter", false);
-            xml.attribute("name", name);
-            xml.writeText(value);
-            xml.closeElement();
-          }
-        }
-      }
-    }
-    xml.closeElement(); // close http-parameters
-
-    // Write the URI parameters
-    if (this.results != null) {
-      Set<String> unames = this.results.names();
-      xml.openElement("uri-parameters", !unames.isEmpty());
-      for (String name : unames) {
-        Object value = this.results.get(name);
+    for (Map.Entry<String, String[]> entry : req.getParameterMap().entrySet()) {
+      String name = entry.getKey();
+      for (String value : entry.getValue()) {
         xml.openElement("parameter", false);
         xml.attribute("name", name);
-        xml.writeText(value != null? value.toString() : "");
+        xml.writeText(value);
         xml.closeElement();
       }
+    }
+    xml.closeElement();
+  }
+
+  private void writeUriParameters(XMLWriter xml) throws IOException {
+    Set<String> names = this.results.names();
+    xml.openElement("uri-parameters", !names.isEmpty());
+    for (String name : names) {
+      Object value = this.results.get(name);
+      xml.openElement("parameter", false);
+      xml.attribute("name", name);
+      xml.writeText(value != null ? value.toString() : "");
       xml.closeElement();
     }
+    xml.closeElement();
+  }
 
-    // Include Berlioz version and mode
+  private static void writeBerliozInfo(XMLWriter xml) throws IOException {
     xml.openElement("berlioz");
     xml.attribute("version", GlobalSettings.getVersion());
     xml.attribute("mode", GlobalSettings.getMode());
     xml.closeElement();
-
-    // Include App info
     Properties app = GlobalSettings.getNode("berlioz.app");
     if (app != null && !app.isEmpty()) {
       xml.openElement("app");
       for (Entry<Object, Object> p : app.entrySet()) {
-        String name = (String)p.getKey();
-        String value = (String)p.getValue();
+        String name = (String) p.getKey();
+        String value = (String) p.getValue();
         if (VALID_XML_NAME.matcher(name).matches()) {
           xml.attribute(name, value);
         }
       }
       xml.closeElement();
     }
+  }
 
-    // Nonce for use in CSP
-    if (GlobalSettings.has(BerliozOption.NONCE_ENABLE)) {
-      String attribute = GlobalSettings.get(BerliozOption.NONCE_ATTRIBUTE);
-      boolean useAttribute = !attribute.isEmpty();
-      String nonce = null;
-      String source = "header";
-      if (useAttribute && req.getAttribute(attribute) != null) {
-         nonce = req.getAttribute(attribute).toString();
-      }
-      if (nonce == null) {
-        nonce = NONCE_FACTORY.generate();
-        source = "berlioz";
-        if (useAttribute)
-          req.setAttribute(attribute, nonce);
-      } else if (!nonce.matches("^[A-Za-z0-9+/=]*$")) {
-        nonce = "";
-        xml.writeComment("invalid nonce");
-      }
-      // Only output if nonce is not empty
-      if (!nonce.isEmpty()) {
-        xml.openElement("security");
-        xml.attribute("nonce", nonce);
-        xml.attribute("source", source);
-        xml.closeElement();
-      }
+  private static void writeSecurityNonce(XMLWriter xml, HttpServletRequest req) throws IOException {
+    if (!GlobalSettings.has(BerliozOption.NONCE_ENABLE)) return;
+    String attribute = GlobalSettings.get(BerliozOption.NONCE_ATTRIBUTE);
+    boolean useAttribute = !attribute.isEmpty();
+    String nonce = null;
+    String source = "header";
+    if (useAttribute && req.getAttribute(attribute) != null) {
+      nonce = req.getAttribute(attribute).toString();
     }
-
-    xml.closeElement(); // close header
+    if (nonce == null) {
+      nonce = NONCE_FACTORY.generate();
+      source = "berlioz";
+      if (useAttribute) req.setAttribute(attribute, nonce);
+    } else if (!nonce.matches("^[A-Za-z0-9+/=]*$")) {
+      nonce = "";
+      xml.writeComment("invalid nonce");
+    }
+    if (!nonce.isEmpty()) {
+      xml.openElement("security");
+      xml.attribute("nonce", nonce);
+      xml.attribute("source", source);
+      xml.closeElement();
+    }
   }
 
 }
