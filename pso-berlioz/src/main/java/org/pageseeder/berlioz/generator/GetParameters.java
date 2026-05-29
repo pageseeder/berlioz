@@ -18,11 +18,10 @@ package org.pageseeder.berlioz.generator;
 import java.io.IOException;
 import java.util.Enumeration;
 
-import org.jspecify.annotations.NonNull;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.berlioz.util.MD5;
+import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -44,20 +43,14 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 public final class GetParameters implements ContentGenerator, Cacheable {
 
-  /**
-   * Returns an MD5 Value of the query string.
-   *
-   * {@inheritDoc}
-   */
   @Override
-  public @NonNull String getETag(ContentRequest req) {
+  public String getETag(ContentRequest req) {
     StringBuilder hash = new StringBuilder("?");
-    // TODO Use parameter map
     Enumeration<String> names = req.getParameterNames();
     while (names.hasMoreElements()) {
       String name = names.nextElement();
@@ -69,7 +62,7 @@ public final class GetParameters implements ContentGenerator, Cacheable {
       }
     }
     // Returns a hash of the query string
-    return MD5.hash(hash.toString());
+    return SHA256.hash(hash.toString());
   }
 
   @Override
