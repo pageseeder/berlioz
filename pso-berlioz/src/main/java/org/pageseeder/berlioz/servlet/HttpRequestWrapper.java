@@ -109,7 +109,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   @Override
   public final @Nullable String getParameter(String name) {
-    @Nullable String value = this.parameters.get(name);
+    String value = this.parameters.get(name);
     if (value == null) {
       value = this.req.getParameter(name);
     }
@@ -124,7 +124,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
 
   @Override
   public final String @Nullable [] getParameterValues(String name) {
-    @Nullable String value = this.parameters.get(name);
+    String value = this.parameters.get(name);
     if (value != null)
       return new String[]{value};
     else
