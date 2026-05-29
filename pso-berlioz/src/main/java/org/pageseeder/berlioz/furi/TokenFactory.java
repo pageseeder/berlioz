@@ -34,9 +34,6 @@ public final class TokenFactory {
 
   /**
    * A syntax to use for creating tokens.
-   *
-   * @author Christophe Lauret
-   * @version 6 November 2009
    */
   public enum Syntax {
 

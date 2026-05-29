@@ -49,13 +49,13 @@ import org.jspecify.annotations.Nullable;
  * </pre>
  *
  * <p>Syntax for variables:
- * <pre>
+ * <pre>{@code
  * var         = [ vartype &quot;:&quot; ]  varname [ &quot;=&quot; vardefault ]
  * vars        = var [ *(&quot;,&quot; var) ]
  * vartype     = (ALPHA / DIGIT)* (ALPHA / DIGIT / &quot;.&quot; / &quot;_&quot; / &quot;-&quot; )
  * varname     = (ALPHA / DIGIT)* (ALPHA / DIGIT / &quot;.&quot; / &quot;_&quot; / &quot;-&quot; )
  * vardefault  = *(unreserved / pct-encoded)
- * </pre>
+ * }</pre>
  *
  * @see <a
  *      href="http://bitworking.org/projects/URI-Templates/spec/draft-gregorio-uritemplate-03.html">URI
@@ -134,7 +134,7 @@ public class Variable {
      * @param exp The expression.
      * @return The type of this expression.
      */
-    protected static Form getType(String exp) {
+    static Form getType(String exp) {
       if (exp.isEmpty()) return STRING;
       char c = exp.charAt(0);
       if (c == '@') return LIST;
@@ -332,7 +332,7 @@ public class Variable {
   /**
    * Returns the expanded value of this variable.
    *
-   * If no value is specified for this variable, the default value is returned instead.
+   * <p>If no value is specified for this variable, the default value is returned instead.
    *
    * @param parameters The parameters.
    *

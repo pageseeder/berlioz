@@ -125,14 +125,14 @@ public final class URIResolver {
   /**
    * Returns all the URI patterns in the list which match the underlying URI.
    *
-   * <p>This methods returns an empty list if there are no matching patterns.
+   * <p>This method returns an empty list if there are no matching patterns.
    *
-   * @param patterns The URI patterns available.
+   * @param patterns The URI patterns to check
    *
-   * @return A collection of matching URI patterns.
+   * @return The list of matching URI patterns in the order of the supplied patterns
    */
-  public Collection<URIPattern> findAll(List<URIPattern> patterns) {
-    Collection<URIPattern> matches = new ArrayList<>();
+  public List<URIPattern> findAll(List<URIPattern> patterns) {
+    List<URIPattern> matches = new ArrayList<>();
     if (patterns.isEmpty())
       return matches;
     for (URIPattern p : patterns) {

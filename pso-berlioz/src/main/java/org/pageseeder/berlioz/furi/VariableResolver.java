@@ -31,7 +31,7 @@ public interface VariableResolver {
   /**
    * Indicates whether the given value exists.
    *
-   * This method should return <code>true</code> only if the value can be resolved, that is
+   * <p>This method should return <code>true</code> only if the value can be resolved, that is
    * <code>resolve(value) != null</code>.
    *
    * @param value The value to check for existence.
@@ -44,13 +44,13 @@ public interface VariableResolver {
   /**
    * Resolves the variable and returns the associated object.
    *
-   * This method allows implementations to provide a lookup mechanism for variables if bound to
+   * <p>This method allows implementations to provide a lookup mechanism for variables if bound to
    * particular objects.
    *
-   * It must not return <code>null</code> if the value a value exists, but should return
+   * <p>It must not return <code>null</code> if the value a value exists, but should return
    * <code>null</code>, if the value cannot be resolved.
    *
-   * If the implementation does not bind values to objects, this method should return the value if
+   * <p>If the implementation does not bind values to objects, this method should return the value if
    * it can be resolved otherwise, it should return <code>null</code>.
    *
    * @param value The value to resolve.

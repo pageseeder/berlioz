@@ -22,11 +22,11 @@ import java.util.regex.Pattern;
  * A URI token wrapping a variable.
  *
  * <p>Variables follow the following expression:
- * <pre>
+ * <pre>{@code
  * var         = varname [ &quot;=&quot; vardefault ]
  * varname     = (ALPHA / DIGIT)*(ALPHA / DIGIT / &quot;.&quot; / &quot;_&quot; / &quot;-&quot; )
  * vardefault  = *(unreserved / pct-encoded)
- * </pre>
+ * }</pre>
  *
  * @author Christophe Lauret
  *

@@ -67,7 +67,6 @@ abstract class TokenBase implements Token {
 
   /**
    * Two tokens are equals if and only if their string expression is equal.
-   *
    * {@inheritDoc}
    */
   @Override
@@ -95,7 +94,7 @@ abstract class TokenBase implements Token {
   /**
    * Removes the curly brackets from the specified expression.
    *
-   * If the expression is already stripped, this method returns the same string.
+   * <p>If the expression is already stripped, this method returns the same string.
    *
    * @param exp The expression to 'strip'.
    *
@@ -113,7 +112,7 @@ abstract class TokenBase implements Token {
   /**
    * Returns the variables for a given expression containing a list of variables.
    *
-   * @param exp An expression containing a comma separated list of variables.
+   * @param exp An expression containing a comma-separated list of variables.
    *
    * @return A list of variables.
    *

@@ -55,7 +55,7 @@ public final class URIResolveResult implements ResolvedVariables {
   /**
    * Constructs an instance of this class with fields initialised to null.
    */
-  protected URIResolveResult(URIPattern pattern) {
+  URIResolveResult(URIPattern pattern) {
     this.pattern = pattern;
   }
 

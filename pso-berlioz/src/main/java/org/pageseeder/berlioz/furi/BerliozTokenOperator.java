@@ -520,9 +520,6 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     return this.operator.isResolvable(this.variables);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public boolean resolve(String expanded, Map<Variable, Object> values) {
     if (isResolvable()) {
@@ -531,17 +528,11 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     } else return false;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public boolean match(String part) {
     return this.pattern.matcher(part).matches();
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public Pattern pattern() {
     return this.pattern;
