@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -68,7 +69,7 @@ public final class XMLResponse {
   /**
    * May be used to collect information about how generators perform.
    */
-  private static volatile @Nullable GeneratorListener listener = null;
+  private static final AtomicReference<@Nullable GeneratorListener> listener = new AtomicReference<>(null);
 
   /**
    * The core HTTP details.
@@ -248,16 +249,16 @@ public final class XMLResponse {
    * @param listener the listener to set
    */
   @Beta
-  static synchronized void setListener(GeneratorListener listener) {
-    XMLResponse.listener = listener;
+  static void setListener(@Nullable GeneratorListener listener) {
+    XMLResponse.listener.set(listener);
   }
 
   /**
    * @return the listener currently in use.
    */
   @Beta
-  static synchronized @Nullable GeneratorListener getListener() {
-    return listener;
+  static @Nullable GeneratorListener getListener() {
+    return listener.get();
   }
 
   // Private helpers
@@ -335,7 +336,7 @@ public final class XMLResponse {
     }
 
     // Report if requested
-    GeneratorListener l = listener;
+    GeneratorListener l = listener.get();
     if (l != null) {
       l.generate(service, generator, status, request.getProfileEtag(), end - start);
     }
