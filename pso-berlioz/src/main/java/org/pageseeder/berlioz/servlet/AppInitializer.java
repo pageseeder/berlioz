@@ -44,6 +44,8 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AppInitializer {
 
+  private static final String CONSOLE_RULE = "===============================================================";
+
   /**
    * The list of lifecycle listeners notified when Berlioz starts and stops.
    */
@@ -88,7 +90,7 @@ public abstract class AppInitializer {
    */
   public final void init() {
     // Init message
-    console(Phase.INIT, "===============================================================");
+    console(Phase.INIT, CONSOLE_RULE);
     console(Phase.INIT, "Initialing Berlioz "+GlobalSettings.getVersion()+"...");
     console(Phase.INIT, "Application base: "+this.webInf.getAbsolutePath());
 
@@ -134,7 +136,7 @@ public abstract class AppInitializer {
 
     // All done
     console(Phase.INIT, "Done!");
-    console(Phase.INIT, "===============================================================");
+    console(Phase.INIT, CONSOLE_RULE);
   }
 
   /**
@@ -143,7 +145,7 @@ public abstract class AppInitializer {
    * <p>The lifecycle listener are stopped with {@link LifecycleListener#stop()}.
    */
   public final void destroy() {
-    console(Phase.STOP, "===============================================================");
+    console(Phase.STOP, CONSOLE_RULE);
     console(Phase.STOP, "Stopping Berlioz "+GlobalSettings.getVersion()+"...");
     console(Phase.STOP, "Application Base: "+this.webInf.getAbsolutePath());
     if (!this.listeners.isEmpty()) {
@@ -152,7 +154,7 @@ public abstract class AppInitializer {
         try {
           listener.stop();
         } catch (Exception ex) {
-          System.out.println("[BERLIOZ_STOP] (!) Unable to stop Lifecycle listener: "+listener.getClass().getSimpleName());
+          console(Phase.STOP, "(!) Unable to stop Lifecycle listener: "+listener.getClass().getSimpleName());
         }
       }
       this.listeners.clear();
@@ -161,7 +163,7 @@ public abstract class AppInitializer {
     }
 
     console(Phase.STOP, "Bye now!");
-    console(Phase.STOP, "===============================================================");
+    console(Phase.STOP, CONSOLE_RULE);
   }
 
   // Abstract initialization methods to implement
