@@ -396,38 +396,38 @@ public final class XMLResponse {
    */
   private BerliozException handleError(Exception exception, ContentGenerator generator) {
     LOGGER.warn("Handling {} thrown by {}", exception.getClass().getName(), generator.getClass().getName());
-    // Ensure we have a berlioz exception we can deal with
-    BerliozException bex;
-    if (exception instanceof BerliozException) {
-      bex = (BerliozException)exception;
-      if (bex.id() == null) {
-        bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
-      }
-    } else {
-      bex = new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
-    }
-    // Maintain the state of this Response
-    BerliozException ex = this.exception;
-    if (ex == null) {
-      this.exception = ex = bex;
-
-    // In less frequent case when multiple errors are thrown...
-    } else {
-      CompoundBerliozException compound = ex instanceof CompoundBerliozException? (CompoundBerliozException)ex : null;
-      ErrorCollector<Throwable> collector;
-      if (compound != null) {
-        collector = compound.getCollector();
-      } else {
-        collector = new ErrorCollector<>();
-        compound = new CompoundBerliozException("Multiple errors thrown by generators", BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
-        Throwable t = ex.getCause();
-        collector.collectQuietly(Level.ERROR, t != null? t : ex);
-        ex = compound;
-      }
-      collector.collectQuietly(Level.ERROR, exception);
-    }
-
+    BerliozException bex = toBerliozException(exception);
+    accumulateError(bex);
     return bex;
+  }
+
+  private static BerliozException toBerliozException(Exception exception) {
+    if (exception instanceof BerliozException) {
+      BerliozException bex = (BerliozException) exception;
+      if (bex.id() == null) bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
+      return bex;
+    }
+    return new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
+  }
+
+  private void accumulateError(BerliozException bex) {
+    if (this.exception == null) {
+      this.exception = bex;
+    } else if (this.exception instanceof CompoundBerliozException) {
+      collectCause(((CompoundBerliozException) this.exception).getCollector(), bex);
+    } else {
+      ErrorCollector<Throwable> collector = new ErrorCollector<>();
+      BerliozException first = this.exception;
+      this.exception = new CompoundBerliozException(
+          "Multiple errors thrown by generators", BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
+      collectCause(collector, first);
+      collectCause(collector, bex);
+    }
+  }
+
+  private static void collectCause(ErrorCollector<Throwable> collector, BerliozException bex) {
+    Throwable cause = bex.getCause();
+    collector.collectQuietly(Level.ERROR, cause != null ? cause : bex);
   }
 
   /**

@@ -37,7 +37,6 @@ public final class CompoundBerliozException extends BerliozException {
    * The error collector.
    */
   private final transient ErrorCollector<Throwable> collector;
-
   /**
    * Creates a new compound exception.
    *
