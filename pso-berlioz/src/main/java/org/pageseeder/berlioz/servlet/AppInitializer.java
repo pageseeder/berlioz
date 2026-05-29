@@ -109,9 +109,7 @@ public abstract class AppInitializer {
 
     // Determine the mode (dev, production, etc...)
     String mode = configureMode(appData != null? appData : this.webInf, configFolder);
-    if (mode != null) {
-      env = env.mode(mode);
-    }
+    env = env.mode(mode);
 
     // Setup the Global settings
     GlobalSettings.setup(env);
@@ -489,9 +487,9 @@ public abstract class AppInitializer {
    * Configure the AppData directory from the current context.
    */
   private @Nullable File configureAppData() {
-    @Nullable File appData = null;
+    File appData = null;
     try {
-      @Nullable String appDataPath = getAppDataPath();
+      String appDataPath = getAppDataPath();
       if (appDataPath != null) {
         appData = new File(appDataPath).getCanonicalFile();
 
