@@ -36,10 +36,12 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8.1
  */
 public final class Errors {
+
+  private static final String EXCEPTION_ELEMENT = "exception";
 
   /**
    * Utility class.
@@ -299,7 +301,7 @@ public final class Errors {
    */
   private static void asExceptionXML(Exception ex, XMLWriter xml, boolean wrap) throws IOException {
     if (wrap) {
-      xml.openElement("exception");
+      xml.openElement(EXCEPTION_ELEMENT);
     }
     xml.attribute("class", ex.getClass().getName());
     xml.element("message", cleanMessage(ex));
@@ -353,7 +355,7 @@ public final class Errors {
    */
   private static void asSAXParseExceptionXML(SAXParseException ex, XMLWriter xml, boolean wrap) throws IOException {
     if (wrap) {
-      xml.openElement("exception");
+      xml.openElement(EXCEPTION_ELEMENT);
     }
     xml.attribute("type", "SAXParseException");
     asExceptionXML(ex, xml, false);
@@ -376,7 +378,7 @@ public final class Errors {
   private static void asTransformerExceptionXML(TransformerException ex, XMLWriter xml, boolean wrap)
       throws IOException {
     if (wrap) {
-      xml.openElement("exception");
+      xml.openElement(EXCEPTION_ELEMENT);
     }
     boolean isConfig = ex instanceof TransformerConfigurationException;
     xml.attribute("type", isConfig? "TransformerConfigurationException" : "TransformerException");
