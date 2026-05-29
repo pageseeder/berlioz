@@ -449,7 +449,7 @@ public abstract class AppInitializer {
     String configFolder = getConfigFolder();
     try {
       // Reject names with unsafe characters to prevent path traversal
-      if (!configFolder.matches("^[0-9a-zA-Z_]+$")) {
+      if (!configFolder.matches("^\\w+$")) {
         throw new IOException("Config folder name '"+configFolder+"' is invalid; only alphanumerics and underscores are allowed.");
       }
 
@@ -897,6 +897,7 @@ public abstract class AppInitializer {
    * @param phase   the initialization phase.
    * @param message the message to log.
    */
+  @SuppressWarnings("java:S106") // Writing to System.out is intentional here, logging isn't configured yet!
   private static void console(Phase phase, String message) {
     System.out.println("[BERLIOZ_"+phase+"] "+message);
   }
