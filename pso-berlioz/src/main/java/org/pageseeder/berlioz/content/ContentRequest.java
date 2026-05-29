@@ -27,7 +27,7 @@ import org.jspecify.annotations.Nullable;
  * Provides a generic and uniform mechanism for the content generator to access parameters
  * and attributes from a request.
  *
- * All of the methods will return a <code>NullPointerException</code> if the specified
+ * <p>All methods will return a <code>NullPointerException</code> if the specified
  * parameter name, attribute name or object name is <code>null</code>.
  *
  * @author Tu Tak Tran
@@ -101,7 +101,7 @@ public interface ContentRequest {
   long getLongParameter(String name, long def);
 
   /**
-   * Returns an array of String objects containing all of the values the given request parameter
+   * Returns an array of String objects containing all the values the given request parameter
    * has, or <code>null</code> if the parameter does not exist.
    *
    * <p>If the parameter has a single value, the array has a length of 1.
@@ -152,7 +152,7 @@ public interface ContentRequest {
   @Nullable Date getDateParameter(String name);
 
   /**
-   * Returns an array containing all of the Cookie objects the client sent with this request.
+   * Returns an array containing all the Cookie objects the client sent with this request.
    *
    * This method returns <code>null</code> if no cookies were sent.
    *
