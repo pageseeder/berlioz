@@ -190,7 +190,7 @@ public final class GlobalSettings {
    * @return the Berlioz version.
    */
   public static String getVersion() {
-    Package p = Package.getPackage("org.pageseeder.berlioz");
+    Package p = GlobalSettings.class.getPackage();
     String v = p != null ? p.getImplementationVersion() : "unknown";
     return v != null ? v : "unknown";
   }
