@@ -103,8 +103,8 @@ public final class Service {
     this.id = Objects.requireNonNull(builder.id, "The service must have an id");
     this.group = Objects.requireNonNull(builder.group, "The service must belong to a collection (group)");
     this.rule = Objects.requireNonNull(builder.rule, "There must be a rule for this service");
-    this.cache = builder.cache;
-    this.flags = builder.flags;
+    this.cache = Objects.requireNonNull(builder.cache, "The cache configuration cannot be null, use empty string for no cache");
+    this.flags = Objects.requireNonNull(builder.flags, "The flags configuration cannot be null, use empty string for no flags");
     this.generators = immutableList(builder.generators);
     this.allParameters = immutableMap(builder.allParameters);
     this.cacheable = isCacheable(this.generators);
@@ -261,9 +261,7 @@ public final class Service {
     xml.openElement("service", true);
     xml.attribute("id", this.id);
     xml.attribute("group", this.group);
-    if (method != null) {
-      xml.attribute("method", method.toString().toLowerCase());
-    }
+    xml.attribute("method", method.toString().toLowerCase());
     if (!this.flags.isEmpty()) {
       xml.attribute("flags", this.flags);
     }
@@ -285,6 +283,7 @@ public final class Service {
     xml.closeElement();
 
     // URI patterns
+    //noinspection ConstantValue
     if (urls != null) {
       for (String url : urls) {
         xml.openElement("url", true);
@@ -432,7 +431,7 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder cache(@Nullable String cache) {
-      this.cache = cache != null? cache : "";
+      this.cache = cache != null ? cache : "";
       return this;
     }
 
@@ -443,7 +442,7 @@ public final class Service {
      * @return this builder for easy chaining.
      */
     public Builder flags(@Nullable String flags) {
-      this.flags = flags != null? flags : "";
+      this.flags = flags != null ? flags : "";
       return this;
     }
 
@@ -565,10 +564,10 @@ public final class Service {
    */
   private static Map<ContentGenerator, List<Parameter>> immutableMap(Map<ContentGenerator, List<Parameter>> original) {
     if (original.isEmpty())
-      return Collections.emptyMap();
+      return Map.of();
     else if (original.size() == 1) {
       Entry<ContentGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
-      return Collections.singletonMap(entry.getKey(), immutableList(entry.getValue()));
+      return Map.of(entry.getKey(), immutableList(entry.getValue()));
     } else {
       Map<ContentGenerator, List<Parameter>> map = new HashMap<>();
       for (Entry<ContentGenerator, List<Parameter>> entry : original.entrySet()) {
