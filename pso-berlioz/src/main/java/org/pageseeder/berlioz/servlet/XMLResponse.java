@@ -164,7 +164,7 @@ public final class XMLResponse {
         ContentGenerator generator = request.generator();
         // Check if cacheable
         if (generator instanceof Cacheable) {
-          String localTag = getETag(request);
+          String localTag = retrieveETag(request);
           if (localTag.isEmpty()) return null;
           etag.append(localTag).append('/');
         } else {
@@ -223,7 +223,7 @@ public final class XMLResponse {
     Service service = this.match.service();
     xml.attribute("service", service.id());
     xml.attribute("group", service.group());
-    if (service.flags() != null) {
+    if (!service.flags().isEmpty()) {
       xml.attribute("flags", service.flags());
     }
 
@@ -288,7 +288,7 @@ public final class XMLResponse {
 
     // If cacheable, include etag
     if (generator instanceof Cacheable) {
-      String etag = getETag(request);
+      String etag = retrieveETag(request);
       if (!etag.isEmpty()) {
         xml.attribute("etag", etag);
       }
@@ -394,9 +394,8 @@ public final class XMLResponse {
    *
    * @return a Berlioz exception for immediate use.
    */
-  @SuppressWarnings("unchecked")
   private BerliozException handleError(Exception exception, ContentGenerator generator) {
-    LOGGER.warn("Handling "+exception.getClass().getName()+" thrown by "+generator.getClass().getName());
+    LOGGER.warn("Handling {} thrown by {}", exception.getClass().getName(), generator.getClass().getName());
     // Ensure we have a berlioz exception we can deal with
     BerliozException bex;
     if (exception instanceof BerliozException) {
@@ -415,15 +414,14 @@ public final class XMLResponse {
     // In less frequent case when multiple errors are thrown...
     } else {
       CompoundBerliozException compound = ex instanceof CompoundBerliozException? (CompoundBerliozException)ex : null;
-      ErrorCollector<Exception> collector;
+      ErrorCollector<Throwable> collector;
       if (compound != null) {
-        collector = (ErrorCollector<Exception>)compound.getCollector();
+        collector = compound.getCollector();
       } else {
         collector = new ErrorCollector<>();
         compound = new CompoundBerliozException("Multiple errors thrown by generators", BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
-        // TODO This should be cleaned up
         Throwable t = ex.getCause();
-        collector.collectQuietly(Level.ERROR, t != null? (Exception)t : ex);
+        collector.collectQuietly(Level.ERROR, t != null? t : ex);
         ex = compound;
       }
       collector.collectQuietly(Level.ERROR, exception);
@@ -469,7 +467,7 @@ public final class XMLResponse {
    * @param request The HTTP content request.
    * @return the corresponding etag if there is one or <code>null</code>.
    */
-  private String getETag(HttpContentRequest request) {
+  private String retrieveETag(HttpContentRequest request) {
     String etag = null;
     Integer key = request.order();
     if (this.etags.containsKey(key)) {
