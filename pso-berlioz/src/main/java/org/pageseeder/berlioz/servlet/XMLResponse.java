@@ -36,7 +36,6 @@ import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Service;
-import org.pageseeder.berlioz.content.ServiceStatusRule;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
 import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.util.CollectedError.Level;
@@ -441,24 +440,15 @@ public final class XMLResponse {
    *         <code>false</code> otherwise.
    */
   private boolean handleStatus(ContentStatus status, ContentGenerator generator, Service service) {
-    boolean relevant = service.affectStatus(generator);
-    if (relevant) {
-      ServiceStatusRule r = service.rule();
-      CodeRule rule = r.rule();
-      // If null set it (works for all rules)
-      ContentStatus s = this.status;
-      if (s == null) {
-        this.status = status;
-        return true;
-      } else if (rule == CodeRule.HIGHEST && status.code() > s.code()) {
-        this.status = status;
-        return true;
-      } else if (rule == CodeRule.LOWEST && status.code() < s.code()) {
-        this.status = status;
-        return true;
-      }
-    }
-    return false;
+    if (!service.affectStatus(generator)) return false;
+    CodeRule rule = service.rule().rule();
+    ContentStatus current = this.status;
+    // No status yet, or the new status wins under the configured rule (highest/lowest HTTP code)
+    boolean update = current == null
+        || (rule == CodeRule.HIGHEST && status.code() > current.code())
+        || (rule == CodeRule.LOWEST && status.code() < current.code());
+    if (update) this.status = status;
+    return update;
   }
 
   /**
