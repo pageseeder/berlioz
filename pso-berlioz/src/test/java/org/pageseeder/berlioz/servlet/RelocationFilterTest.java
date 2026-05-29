@@ -96,8 +96,7 @@ public class RelocationFilterTest {
     Assert.assertTrue("Dispatcher.forward should be called on relocation match", forwardCalled[0]);
     Assert.assertEquals("Content-Location header should be set to target", "/new",
         recorder.header("Content-Location"));
-    // RelocationFilter always continues the chain after forwarding
-    Assert.assertTrue("Chain should still be invoked after relocation", chainInvoked[0]);
+    Assert.assertFalse("Chain should NOT be invoked after a successful forward", chainInvoked[0]);
   }
 
   @Test
