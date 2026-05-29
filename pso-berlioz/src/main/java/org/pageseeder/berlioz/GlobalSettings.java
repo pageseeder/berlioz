@@ -25,12 +25,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jspecify.annotations.Nullable;
@@ -76,7 +76,7 @@ import org.slf4j.LoggerFactory;
 public final class GlobalSettings {
 
   /**
-   * Error about loading the properties are reported here.
+   * Errors about loading the properties are reported here.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalSettings.class);
 
@@ -478,22 +478,19 @@ public final class GlobalSettings {
    */
   public static @Nullable Properties getNode(String name) {
     Map<String, String> s = ensureSettings();
-    Map<String, Properties> all = NODES.get();
-    if (all == null) return null;
-    // return the node if already processed.
-    if (all.containsKey(name))
-      return all.get(name);
-    // other process and store
-    Properties node = new Properties();
-    String prefix = name+'.';
-    for (Entry<String, String> e : s.entrySet()) {
-      String key = e.getKey();
-      if (key.startsWith(prefix) && key.indexOf('.', prefix.length()) < 0) {
-        node.setProperty(key.substring(prefix.length()), e.getValue());
+    Map<String, Properties> cache = NODES.get();
+    if (cache == null) return null;
+    return cache.computeIfAbsent(name, k -> {
+      Properties node = new Properties();
+      String prefix = k + '.';
+      for (Entry<String, String> e : s.entrySet()) {
+        String key = e.getKey();
+        if (key.startsWith(prefix) && key.indexOf('.', prefix.length()) < 0) {
+          node.setProperty(key.substring(prefix.length()), e.getValue());
+        }
       }
-    }
-    all.put(name, node);
-    return node;
+      return node;
+    });
   }
 
   /**
@@ -650,7 +647,7 @@ public final class GlobalSettings {
     } finally {
       // Reset after loading
       SETTINGS.set(properties);
-      NODES.set(new Hashtable<>());
+      NODES.set(new ConcurrentHashMap<>());
     }
 
     // Notify the listeners
