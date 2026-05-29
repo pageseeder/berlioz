@@ -21,6 +21,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.Location;
 
+import java.util.Objects;
+
 /**
  * Encapsulate all the common and immutable information for an HTTP request.
  *
@@ -59,9 +61,9 @@ final class CoreHttpRequest {
    * @param env The environment for this request.
    */
   public CoreHttpRequest(HttpServletRequest req, HttpServletResponse res, Environment env) {
-    this.req = req;
-    this.res = res;
-    this.env = env;
+    this.req = Objects.requireNonNull(req, "request cannot be null");
+    this.res = Objects.requireNonNull(res, "response cannot be null");
+    this.env = Objects.requireNonNull(env, "environment cannot be null");
     this.loc = HttpLocation.build(req);
   }
 
