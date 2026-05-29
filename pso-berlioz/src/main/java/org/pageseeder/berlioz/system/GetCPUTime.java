@@ -25,7 +25,36 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
- * Returns the User, System and CPU times.
+ * A content generator that measures CPU usage over a short sampling interval.
+ *
+ * <p>It takes two snapshots of thread CPU and user time separated by a configurable sleep
+ * interval, then expresses the delta as a percentage of elapsed wall-clock time. The result
+ * covers either all JVM threads combined or a single identified thread.</p>
+ *
+ * <h2>Parameters</h2>
+ * <dl>
+ *   <dt>{@code interval}</dt>
+ *   <dd>Sampling duration in milliseconds (default: {@code 100}). Must be strictly positive.</dd>
+ *   <dt>{@code thread}</dt>
+ *   <dd>Thread ID to measure (default: {@code -1}, meaning all threads). Omit or pass {@code -1}
+ *       to aggregate across the whole JVM, excluding the current request thread.</dd>
+ * </dl>
+ *
+ * <h2>Output</h2>
+ * <p>On success, writes a single {@code <sample>} element:</p>
+ * <pre>{@code
+ * <sample interval="100" cpu="12" user="9" system="3"/>
+ * }</pre>
+ * <dl>
+ *   <dt>{@code interval}</dt><dd>The actual sampling interval used, in milliseconds.</dd>
+ *   <dt>{@code cpu}</dt><dd>Total CPU usage as a percentage (user + system time).</dd>
+ *   <dt>{@code user}</dt><dd>User-mode CPU usage as a percentage.</dd>
+ *   <dt>{@code system}</dt><dd>Kernel-mode CPU usage as a percentage (cpu − user).</dd>
+ * </dl>
+ *
+ * <p>On error, the response status is set to {@code 400 Bad Request} (invalid parameters) or
+ * {@code 503 Service Unavailable} (sampling interrupted), with an XML comment describing the
+ * cause.</p>
  *
  * @author Christophe Lauret
  *
@@ -92,52 +121,60 @@ public final class GetCPUTime implements ContentGenerator {
   }
 
   /**
-   * Return a sample for the whole system.
+   * Captures a CPU/user time snapshot across all live JVM threads, excluding the calling thread.
    *
-   * @param bean The thread management instance
-   * @param current the ID of the current thread.
+   * <p>Threads that have died since {@link ThreadMXBean#getAllThreadIds()} was called return
+   * {@code -1} for their times and are silently skipped.</p>
    *
-   * @return the corresponding sample
+   * @param bean    the thread management bean used to query per-thread CPU times
+   * @param current the ID of the calling thread, excluded from the aggregate to avoid
+   *                skewing results with the overhead of this measurement itself
+   * @return a snapshot holding the summed CPU and user times (in nanoseconds) across all
+   *         included threads, plus the wall-clock time at which the snapshot was taken
    */
   private Sample global(ThreadMXBean bean, long current) {
-    long cpu = 0L;
-    long user = 0L;
+    long cpuTotal = 0L;
+    long userTotal = 0L;
     final long[] threadIds = bean.getAllThreadIds();
     for (long id : threadIds) {
-      // Exclude this thread
-      if (id == current) {
-        continue;
+      if (id != current) {
+        final long cpu = bean.getThreadCpuTime(id);
+        final long user = bean.getThreadUserTime(id);
+        if (cpu != -1 && user != -1) {
+          cpuTotal += cpu;
+          userTotal += user;
+        }
       }
-      final long _c = bean.getThreadCpuTime(id);
-      final long _u = bean.getThreadUserTime(id);
-      // Ignore dead threads
-      if (_c == -1 || _u == -1) {
-        continue;
-      }
-      cpu += _c;
-      user += _u;
     }
-    return new Sample(cpu, user);
+    return new Sample(cpuTotal, userTotal);
   }
 
   /**
-   * Return a sample for a single thread
+   * Captures a CPU/user time snapshot for a single thread.
    *
-   * @param bean The thread management instance
-   * @param id   The ID of the thread to measure.
+   * <p>If the thread has terminated between the call and the query, both times will be
+   * {@code -1}; in that case a zeroed sample is returned so downstream delta calculations
+   * remain valid.</p>
    *
-   * @return the corresponding sample
+   * @param bean the thread management bean used to query per-thread CPU times
+   * @param id   the ID of the thread to measure
+   * @return a snapshot holding the thread's CPU and user times (in nanoseconds), or a zeroed
+   *         snapshot if the thread is no longer alive
    */
   private Sample single(ThreadMXBean bean, long id) {
-    final long _cpu = bean.getThreadCpuTime(id);
-    final long _user = bean.getThreadUserTime(id);
+    final long cpu = bean.getThreadCpuTime(id);
+    final long user = bean.getThreadUserTime(id);
     // The thread has died!
-    if (_cpu == -1 || _user == -1) return new Sample(0L, 0L);
-    else return new Sample(_cpu, _user);
+    if (cpu == -1 || user == -1) return new Sample(0L, 0L);
+    else return new Sample(cpu, user);
   }
 
   /**
+   * An immutable point-in-time snapshot of CPU usage for one or more threads.
    *
+   * <p>The wall-clock timestamp ({@link #time()}) is captured at construction so that two
+   * snapshots taken before and after a sleep interval can be compared to compute CPU
+   * percentages relative to elapsed real time.</p>
    */
   private static class Sample {
     private final long time = System.nanoTime();
