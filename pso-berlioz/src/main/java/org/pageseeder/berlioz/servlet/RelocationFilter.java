@@ -176,6 +176,7 @@ public final class RelocationFilter implements Filter {
       if (dispatcher != null) {
         res.setHeader("Content-Location", to);
         dispatcher.forward(req, res);
+        return;
       } else {
         LOGGER.debug("Invalid URL, no dispatcher found");
       }
