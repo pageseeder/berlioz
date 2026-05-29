@@ -131,10 +131,12 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
    */
   private static final Map<String, BundleConfig> JS_CONFIGS = new HashMap<>();
 
+  private enum Writable { UNKNOWN, YES, NO }
+
   /**
-   * Indicates whether the bundle can be written..
+   * Indicates whether the bundle store is writable; checked once on first use.
    */
-  private static volatile @Nullable Boolean isWritable = null;
+  private static volatile Writable writable = Writable.UNKNOWN;
 
   @Override
   public @Nullable String getETag(ContentRequest req) {
@@ -146,9 +148,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
     BundleConfig js = getConfig(config, BundleType.JS, env.getPublicFolder());
     BundleConfig css =  getConfig(config, BundleType.CSS, env.getPublicFolder());
     // Ensure that we can use bundles
-    if (isWritable == null) {
-      isWritable = js.store().exists() && js.store().canWrite();
-    }
+    ensureWritableChecked(js.store());
     boolean doBundle = canBundle(req);
     if (doBundle) {
       long etagJS = js.getLastModifiedBundle(service);
@@ -206,12 +206,18 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
     return Objects.requireNonNull(req.getParameter("config", "default"));
   }
 
+  private static void ensureWritableChecked(File store) {
+    if (writable == Writable.UNKNOWN) {
+      writable = store.exists() && store.canWrite() ? Writable.YES : Writable.NO;
+    }
+  }
+
   /**
    * @param req content request
    * @return <code>true</code> if bundles folder is writable and "bundle-bundle" parameter is set to "false"
    */
   private static boolean canBundle(ContentRequest req) {
-    return isWritable == Boolean.TRUE
+    return writable == Writable.YES
         && !"false".equals(req.getParameter("berlioz-bundle", "true"));
   }
 
