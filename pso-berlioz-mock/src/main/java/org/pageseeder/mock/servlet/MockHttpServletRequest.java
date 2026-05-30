@@ -15,10 +15,14 @@
  */
 package org.pageseeder.mock.servlet;
 
+import java.io.ByteArrayInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +48,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
+import javax.servlet.ReadListener;
 
 /**
  * An HTTP servlet request implementation mocking a servlet request sent by a
@@ -65,11 +70,23 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   private Map<String, List<String>> headers = new HashMap<>();
 
+  private Map<String, RequestDispatcher> dispatchers = new HashMap<>();
+
   private String remoteAddr = "127.0.0.1";
 
   private String remoteHost = "127.0.0.1";
 
+  private int remotePort = 0;
+
+  private String localAddr = "127.0.0.1";
+
+  private String localName = "localhost";
+
+  private int localPort = 0;
+
   private MockHttpSession session = null;
+
+  private String requestedSessionId;
 
   private String characterEncoding;
 
@@ -79,14 +96,40 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   private byte[] data = new byte[]{};
 
+  private Locale locale = Locale.getDefault();
+
+  private List<Locale> locales = new ArrayList<>();
+
+  private ServletContext servletContext;
+
+  private String contextPath = "";
+
+  private String servletPath;
+
+  private String pathInfo;
+
+  private String pathTranslated;
+
+  private String remoteUser;
+
+  private String authType;
+
+  private Principal principal;
+
+  private List<Cookie> cookies = new ArrayList<>();
+
+  private Collection<Part> parts = new ArrayList<>();
+
   public MockHttpServletRequest() {
     this.url = URI.create("http://localhost:8080/");
     this.method = "GET";
+    this.servletPath = this.url.getPath();
   }
 
   public MockHttpServletRequest(URI url, String method) {
     this.url = url;
     this.method = method;
+    this.servletPath = url.getPath();
   }
 
   @Override
@@ -126,8 +169,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public ServletInputStream getInputStream() throws IOException {
-    // TODO Auto-generated method stub
-    return null;
+    return new MockServletInputStream(this.data);
   }
 
   @Override
@@ -148,12 +190,11 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public Map<String, String[]> getParameterMap() {
-    return this.parameters;
+    return Collections.unmodifiableMap(this.parameters);
   }
 
   @Override
   public String getProtocol() {
-    // TODO Auto-generated method stub
     return getScheme().startsWith("http")? "HTTP/1.1" : getScheme();
   }
 
@@ -169,13 +210,14 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public int getServerPort() {
-    return this.url.getPort();
+    int port = this.url.getPort();
+    if (port >= 0) return port;
+    return isSecure()? 443 : 80;
   }
 
   @Override
   public BufferedReader getReader() throws IOException {
-    // TODO Auto-generated method stub
-    return null;
+    return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(this.data), getCharset()));
   }
 
   @Override
@@ -200,14 +242,13 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public Locale getLocale() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.locale;
   }
 
   @Override
   public Enumeration<Locale> getLocales() {
-    // TODO Auto-generated method stub
-    return null;
+    if (this.locales.isEmpty()) return Collections.enumeration(Collections.singletonList(this.locale));
+    return Collections.enumeration(this.locales);
   }
 
   @Override
@@ -217,99 +258,90 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public RequestDispatcher getRequestDispatcher(String path) {
-    // TODO Auto-generated method stub
-    return null;
+    return this.dispatchers.get(path);
   }
 
   @Override
   public String getRealPath(String path) {
-    // TODO Auto-generated method stub
-    return null;
+    return this.servletContext != null? this.servletContext.getRealPath(path) : path;
   }
 
   @Override
   public int getRemotePort() {
-    // TODO Auto-generated method stub
-    return 0;
+    return this.remotePort;
   }
 
   @Override
   public String getLocalName() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.localName;
   }
 
   @Override
   public String getLocalAddr() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.localAddr;
   }
 
   @Override
   public int getLocalPort() {
-    // TODO Auto-generated method stub
-    return 0;
+    return this.localPort != 0? this.localPort : getServerPort();
   }
 
   @Override
   public ServletContext getServletContext() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.servletContext;
   }
 
   @Override
   public AsyncContext startAsync() throws IllegalStateException {
-    // TODO Auto-generated method stub
-    return null;
+    throw new IllegalStateException("Async processing is not supported by this mock request");
   }
 
   @Override
   public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse)
       throws IllegalStateException {
-    // TODO Auto-generated method stub
-    return null;
+    throw new IllegalStateException("Async processing is not supported by this mock request");
   }
 
   @Override
   public boolean isAsyncStarted() {
-    // TODO Auto-generated method stub
     return false;
   }
 
   @Override
   public boolean isAsyncSupported() {
-    // TODO Auto-generated method stub
     return false;
   }
 
   @Override
   public AsyncContext getAsyncContext() {
-    // TODO Auto-generated method stub
-    return null;
+    throw new IllegalStateException("Async processing has not been started");
   }
 
   @Override
   public DispatcherType getDispatcherType() {
-    // TODO Auto-generated method stub
-    return null;
+    return DispatcherType.REQUEST;
   }
 
   @Override
   public String getAuthType() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.authType;
   }
 
   @Override
   public Cookie[] getCookies() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.cookies.isEmpty()? null : this.cookies.toArray(new Cookie[this.cookies.size()]);
   }
 
   @Override
   public long getDateHeader(String name) {
-    // TODO Auto-generated method stub
-    return 0;
+    String value = getHeader(name);
+    if (value == null) return -1;
+    try {
+      return java.time.ZonedDateTime.parse(value, java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME)
+          .toInstant().toEpochMilli();
+    } catch (java.time.format.DateTimeParseException ex) {
+      throw new IllegalArgumentException("Header "+name+" cannot be parsed as an HTTP date", ex);
+    }
   }
 
   @Override
@@ -332,8 +364,9 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public int getIntHeader(String name) {
-    // TODO Auto-generated method stub
-    return 0;
+    String value = getHeader(name);
+    if (value == null) return -1;
+    return Integer.parseInt(value);
   }
 
   @Override
@@ -343,20 +376,17 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public String getPathInfo() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.pathInfo;
   }
 
   @Override
   public String getPathTranslated() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.pathTranslated;
   }
 
   @Override
   public String getContextPath() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.contextPath;
   }
 
   @Override
@@ -366,26 +396,22 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public String getRemoteUser() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.remoteUser;
   }
 
   @Override
   public boolean isUserInRole(String role) {
-    // TODO Auto-generated method stub
     return false;
   }
 
   @Override
   public Principal getUserPrincipal() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.principal;
   }
 
   @Override
   public String getRequestedSessionId() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.requestedSessionId;
   }
 
   @Override
@@ -400,88 +426,76 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   @Override
   public String getServletPath() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.servletPath;
   }
 
   @Override
   public HttpSession getSession(boolean create) {
     if (create && this.session == null) {
       this.session = new MockHttpSession();
+      this.requestedSessionId = this.session.getId();
+      return this.session;
     }
+    if (this.session != null) this.session.access();
     return this.session;
   }
 
   @Override
   public HttpSession getSession() {
-    return this.session;
+    return getSession(true);
   }
-
-//  @Override
-//  public String changeSessionId() {
-//    if (this.session == null) throw new IllegalStateException();
-// // TODO Auto-generated method stub
-//    return null;
-//  }
 
   @Override
   public boolean isRequestedSessionIdValid() {
-    // TODO Auto-generated method stub
-    return false;
+    return this.session != null && this.session.getId().equals(this.requestedSessionId);
   }
 
   @Override
   public boolean isRequestedSessionIdFromCookie() {
-    // TODO Auto-generated method stub
-    return false;
+    return this.requestedSessionId != null;
   }
 
   @Override
   public boolean isRequestedSessionIdFromURL() {
-    // TODO Auto-generated method stub
     return false;
   }
 
   @Override
   public boolean isRequestedSessionIdFromUrl() {
-    // TODO Auto-generated method stub
     return false;
   }
 
   @Override
   public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
-    // TODO Auto-generated method stub
-    return false;
+    return this.principal != null;
   }
 
   @Override
   public void login(String username, String password) throws ServletException {
-    // TODO Auto-generated method stub
-
+    this.remoteUser = username;
+    this.authType = "FORM";
+    this.principal = () -> username;
   }
 
   @Override
   public void logout() throws ServletException {
-    // TODO Auto-generated method stub
+    this.remoteUser = null;
+    this.authType = null;
+    this.principal = null;
   }
 
   @Override
   public Collection<Part> getParts() throws IOException, ServletException {
-    // TODO Auto-generated method stub
-    return null;
+    return Collections.unmodifiableCollection(this.parts);
   }
 
   @Override
   public Part getPart(String name) throws IOException, ServletException {
-    // TODO Auto-generated method stub
+    for (Part part : this.parts) {
+      if (part.getName().equals(name)) return part;
+    }
     return null;
   }
-
-//  @Override
-//  public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
-//    // TODO Auto-generated method stub
-//    throw new UnsupportedOperationException();
-//  }
 
   // Setters which aren't part of Servlet API
   //
@@ -507,6 +521,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   public void addParameter(String name, String value) {
     String[] values = this.parameters.get(name);
+    if (values == null) values = new String[0];
     values = Arrays.copyOf(values, values.length+1);
     values[values.length-1] = value;
     this.parameters.put(name, values);
@@ -520,9 +535,94 @@ public class MockHttpServletRequest implements HttpServletRequest {
     this.contentType = contentType;
   }
 
+  public void setContent(byte[] data) {
+    this.data = data != null? Arrays.copyOf(data, data.length) : new byte[]{};
+    this.contentLength = this.data.length;
+  }
+
+  public void setContent(String content) {
+    setContent(content.getBytes(getCharset()));
+  }
+
+  public void setCookie(Cookie cookie) {
+    this.cookies.clear();
+    addCookie(cookie);
+  }
+
+  public void addCookie(Cookie cookie) {
+    this.cookies.add(cookie);
+  }
+
+  public void setLocale(Locale locale) {
+    this.locale = locale;
+    this.locales.clear();
+    this.locales.add(locale);
+  }
+
+  public void addLocale(Locale locale) {
+    if (this.locales.isEmpty()) this.locales.add(this.locale);
+    this.locales.add(locale);
+  }
+
+  public void setRequestDispatcher(String path, RequestDispatcher dispatcher) {
+    this.dispatchers.put(path, dispatcher);
+  }
+
+  public void setServletContext(ServletContext servletContext) {
+    this.servletContext = servletContext;
+  }
+
+  public void setContextPath(String contextPath) {
+    this.contextPath = contextPath;
+  }
+
+  public void setServletPath(String servletPath) {
+    this.servletPath = servletPath;
+  }
+
+  public void setPathInfo(String pathInfo) {
+    this.pathInfo = pathInfo;
+  }
+
+  public void setPathTranslated(String pathTranslated) {
+    this.pathTranslated = pathTranslated;
+  }
+
+  public void setRemoteAddr(String remoteAddr) {
+    this.remoteAddr = remoteAddr;
+  }
+
+  public void setRemoteHost(String remoteHost) {
+    this.remoteHost = remoteHost;
+  }
+
+  public void setRemotePort(int remotePort) {
+    this.remotePort = remotePort;
+  }
+
+  public void setLocalAddr(String localAddr) {
+    this.localAddr = localAddr;
+  }
+
+  public void setLocalName(String localName) {
+    this.localName = localName;
+  }
+
+  public void setLocalPort(int localPort) {
+    this.localPort = localPort;
+  }
+
+  public void setParts(Collection<Part> parts) {
+    this.parts = parts != null? new ArrayList<>(parts) : new ArrayList<>();
+  }
+
   @Override
   public String changeSessionId() {
-    if (this.session != null) return this.session.changeId();
+    if (this.session != null) {
+      String id = this.session.changeId();
+      this.requestedSessionId = id;
+      return id;
+    }
     throw new IllegalStateException("there is no session associated with the request");
   }
 
@@ -544,13 +644,15 @@ public class MockHttpServletRequest implements HttpServletRequest {
     MockHttpServletRequest req = new MockHttpServletRequest(url, method);
     // Extract parameters from the query
     String query = url.getQuery();
-    String[] pairs = query.split("&");
-    for (String p : pairs) {
-      int equal = p.indexOf('=');
-      if (equal > 0) {
-        req.addParameter(p.substring(0, equal), p.substring(equal+1));
-      } else {
-        req.addParameter(p, "");
+    if (query != null && !query.isEmpty()) {
+      String[] pairs = query.split("&");
+      for (String p : pairs) {
+        int equal = p.indexOf('=');
+        if (equal > 0) {
+          req.addParameter(p.substring(0, equal), p.substring(equal+1));
+        } else {
+          req.addParameter(p, "");
+        }
       }
     }
     req.setHeader("Host", "chris-pc.ad.allette.com.au:8443");
@@ -559,6 +661,47 @@ public class MockHttpServletRequest implements HttpServletRequest {
     req.setHeader("Accept-Language", "en-US,en;q=0.5");
     req.setHeader("Accept-Encoding", "gzip, deflate, br");
     return req;
+  }
+
+  private Charset getCharset() {
+    if (this.characterEncoding == null) return StandardCharsets.UTF_8;
+    return Charset.forName(this.characterEncoding);
+  }
+
+  private static final class MockServletInputStream extends ServletInputStream {
+
+    private final ByteArrayInputStream in;
+
+    private ReadListener listener;
+
+    private MockServletInputStream(byte[] data) {
+      this.in = new ByteArrayInputStream(data);
+    }
+
+    @Override
+    public int read() throws IOException {
+      return this.in.read();
+    }
+
+    @Override
+    public boolean isFinished() {
+      return this.in.available() == 0;
+    }
+
+    @Override
+    public boolean isReady() {
+      return true;
+    }
+
+    @Override
+    public void setReadListener(ReadListener readListener) {
+      this.listener = readListener;
+    }
+
+    @SuppressWarnings("unused")
+    ReadListener getReadListener() {
+      return this.listener;
+    }
   }
 
 }

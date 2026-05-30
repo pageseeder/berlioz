@@ -15,6 +15,7 @@
  */
 package org.pageseeder.mock.berlioz;
 
+import java.io.File;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Enumeration;
@@ -26,13 +27,17 @@ import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.Location;
+import org.pageseeder.berlioz.servlet.HttpEnvironment;
 import org.pageseeder.berlioz.servlet.HttpLocation;
+import org.pageseeder.berlioz.servlet.HttpRequestWrapper;
 import org.pageseeder.berlioz.util.ISO8601;
 import org.pageseeder.mock.servlet.MockHttpServletRequest;
 
 public class MockContentRequest implements ContentRequest{
 
-  private MockHttpServletRequest _http;
+  private final MockHttpServletRequest _http;
+
+  private Environment environment;
 
   private String redirectURL;
 
@@ -44,6 +49,7 @@ public class MockContentRequest implements ContentRequest{
 
   public MockContentRequest(MockHttpServletRequest http) {
     this._http = http;
+    this.environment = new HttpEnvironment(new File("."), new File("."), "");
   }
 
   @Override
@@ -53,8 +59,7 @@ public class MockContentRequest implements ContentRequest{
 
   @Override
   public String getBerliozPath() {
-    // TODO Auto-generated method stub
-    return null;
+    return HttpRequestWrapper.getBerliozPath(this._http);
   }
 
   @Override
@@ -73,8 +78,7 @@ public class MockContentRequest implements ContentRequest{
 
   @Override
   public Environment getEnvironment() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.environment;
   }
 
   @Override
@@ -148,6 +152,14 @@ public class MockContentRequest implements ContentRequest{
 
   public ContentStatus getStatus() {
     return this.status;
+  }
+
+  public String getRedirectURL() {
+    return this.redirectURL;
+  }
+
+  public void setEnvironment(Environment environment) {
+    this.environment = environment;
   }
 
   public void setParameter(String name, String value) {

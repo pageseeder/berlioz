@@ -31,11 +31,15 @@ public class MockHttpSession implements HttpSession {
 
   private long creationTime = System.currentTimeMillis();
 
+  private long lastAccessedTime = this.creationTime;
+
   private String id = UUID.randomUUID().toString();
 
   private Map<String, Object> attributes = new HashMap<>();
 
   private boolean valid = true;
+
+  private boolean isNew = true;
 
   private int maxInactiveInterval = 60;
 
@@ -53,8 +57,7 @@ public class MockHttpSession implements HttpSession {
   @Override
   public long getLastAccessedTime() {
     checkIfValid();
-    // TODO Auto-generated method stub
-    return this.creationTime;
+    return this.lastAccessedTime;
   }
 
   @Override
@@ -129,18 +132,26 @@ public class MockHttpSession implements HttpSession {
   @Override
   public void invalidate() {
     this.valid = false;
+    this.attributes.clear();
   }
 
   @Override
   public boolean isNew() {
-    // TODO Auto-generated method stub
-    return false;
+    checkIfValid();
+    return this.isNew;
   }
 
   public String changeId() {
+    checkIfValid();
     String newId = UUID.randomUUID().toString();
     this.id = newId;
     return newId;
+  }
+
+  public void access() {
+    checkIfValid();
+    this.lastAccessedTime = System.currentTimeMillis();
+    this.isNew = false;
   }
 
   private void checkIfValid() {

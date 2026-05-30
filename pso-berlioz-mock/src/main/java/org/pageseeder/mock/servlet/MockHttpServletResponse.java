@@ -15,11 +15,15 @@
  */
 package org.pageseeder.mock.servlet;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +57,10 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
   private PrintWriter print = new PrintWriter(this.out);
 
+  private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+  private MockServletOutputstream stream = new MockServletOutputstream(this.bytes);
+
   private Map<String, Object> attributes = new HashMap<>();
 
   private Map<String, List<String>> headers = new HashMap<>();
@@ -81,8 +89,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
   @Override
   public ServletOutputStream getOutputStream() throws IOException {
-    // TODO Auto-generated method stub
-    return null;
+    return this.stream;
   }
 
   @Override
@@ -122,26 +129,37 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
   @Override
   public void flushBuffer() throws IOException {
-    // TODO Auto-generated method stub
-
+    this.print.flush();
+    this.stream.flush();
+    this.isCommitted = true;
   }
 
   @Override
   public void resetBuffer() {
-    // TODO Auto-generated method stub
-
+    checkCommitted();
+    this.out = new StringWriter();
+    this.print = new PrintWriter(this.out);
+    this.bytes.reset();
   }
 
   @Override
   public boolean isCommitted() {
-    // TODO Auto-generated method stub
-    return false;
+    return this.isCommitted;
   }
 
   @Override
   public void reset() {
-    // TODO Auto-generated method stub
-
+    checkCommitted();
+    resetBuffer();
+    this.characterEncoding = null;
+    this.contentLength = 0;
+    this.contentType = null;
+    this.status = SC_OK;
+    this.errorMessage = null;
+    this.headers.clear();
+    this.cookies.clear();
+    this.locale = null;
+    this.isError = false;
   }
 
   @Override
@@ -166,13 +184,11 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
   @Override
   public String encodeURL(String url) {
-    // TODO Auto-generated method stub
     return url;
   }
 
   @Override
   public String encodeRedirectURL(String url) {
-    // TODO Auto-generated method stub
     return url;
   }
 
@@ -206,9 +222,8 @@ public class MockHttpServletResponse implements HttpServletResponse {
   @Override
   public void sendRedirect(String location) throws IOException {
     checkCommitted();
-    // TODO Process the location URL
     this.status = SC_FOUND;
-    setHeader("Location", location);
+    setHeader("Location", encodeRedirectURL(location));
     this.isCommitted = true;
   }
 
@@ -280,7 +295,8 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
   @Override
   public Collection<String> getHeaders(String name) {
-    return this.headers.get(name);
+    List<String> values = this.headers.get(name);
+    return values != null? values : Collections.emptyList();
   }
 
   @Override
@@ -296,11 +312,23 @@ public class MockHttpServletResponse implements HttpServletResponse {
   }
 
   public String getOutputAsString() {
+    this.print.flush();
+    if (this.bytes.size() > 0) {
+      return new String(this.bytes.toByteArray(), getCharset());
+    }
     return this.out.toString();
   }
 
   public boolean errorSent() {
     return this.isError;
+  }
+
+  public int getContentLength() {
+    return this.contentLength;
+  }
+
+  public List<Cookie> getCookies() {
+    return Collections.unmodifiableList(this.cookies);
   }
 
   // private helpers
@@ -314,6 +342,11 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
   private void checkCommitted() {
     if (this.isCommitted) throw new IllegalStateException("Response already committed");
+  }
+
+  private Charset getCharset() {
+    if (this.characterEncoding == null) return StandardCharsets.UTF_8;
+    return Charset.forName(this.characterEncoding);
   }
 
 }
