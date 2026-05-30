@@ -44,7 +44,7 @@ public final class WebBundleToolTest {
     File missing = new File(this.temporary.getRoot(), "missing");
     File file = this.temporary.newFile("not-a-directory");
 
-    Assert.assertThrows(IllegalArgumentException.class, () -> new WebBundleTool(null));
+    Assert.assertThrows(NullPointerException.class, () -> new WebBundleTool(null));
     Assert.assertThrows(IllegalArgumentException.class, () -> new WebBundleTool(missing));
     Assert.assertThrows(IllegalArgumentException.class, () -> new WebBundleTool(file));
   }

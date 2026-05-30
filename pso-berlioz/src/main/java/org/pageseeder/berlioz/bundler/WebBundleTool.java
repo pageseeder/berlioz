@@ -290,7 +290,7 @@ public final class WebBundleTool {
    *
    * @throws IOException if an input/output error occurs.
    */
-  protected static void concatenate(List<File> files, File bundle, boolean minimize) throws IOException {
+  private static void concatenate(List<File> files, File bundle, boolean minimize) throws IOException {
     // Copy the input stream to the output stream
     try (FileOutputStream out = new FileOutputStream(bundle)) {
       for (File f : files) {
@@ -577,7 +577,7 @@ public final class WebBundleTool {
    *
    * @return The location based on the target file.
    */
-  protected static String getLocation(File source, File target, String path, long threshold) {
+  static String getLocation(File source, File target, String path, long threshold) {
     // Ignore data URIs, full URLs and absolute paths
     if (!isRelative(path)) return path;
     StringBuilder location = new StringBuilder();
