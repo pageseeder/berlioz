@@ -8,7 +8,3 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.servlet.api)
 }
-
-tasks.withType<Javadoc>().configureEach {
-  isFailOnError = false
-}

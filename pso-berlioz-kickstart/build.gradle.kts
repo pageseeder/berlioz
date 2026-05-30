@@ -5,7 +5,3 @@ dependencies {
   api(project(":pso-berlioz"))
   compileOnly(libs.servlet.api)
 }
-
-tasks.withType<Javadoc>().configureEach {
-  isFailOnError = false
-}

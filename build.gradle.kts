@@ -64,7 +64,6 @@ subprojects {
 
   tasks.withType<Javadoc>().configureEach {
     (options as StandardJavadocDocletOptions).apply {
-      addStringOption("Xdoclint:none", "-quiet")
       if (JavaVersion.current().isJava9Compatible) {
         addBooleanOption("html5", true)
       }
