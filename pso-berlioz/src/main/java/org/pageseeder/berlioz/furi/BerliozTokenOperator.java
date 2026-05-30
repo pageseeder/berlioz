@@ -280,7 +280,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
 
       @Override
       Pattern pattern(List<Variable> variables) {
-        return Pattern.compile("(?:/[^/?#]*)*");
+        return Pattern.compile("(?:/[^/?#]*+)*+");
       }
     },
 
