@@ -715,15 +715,7 @@ public abstract class AppInitializer {
         Method setContext = joranClass.getMethod("setContext", contextClass);
         setContext.invoke(configurator, contextClass.cast(context));
         // Reset the context
-        try {
-          Class<?> loggerContextClass = Class.forName("ch.qos.logback.classic.LoggerContext");
-          Method reset = loggerContextClass.getMethod("reset");
-          reset.invoke(context);
-          console(Phase.INIT, "Logging: logger context reset successfully");
-        } catch (Exception ex) {
-          console(Phase.INIT, "(!) Logging: Failed to  logger context - logging messages may appear twice");
-          consoleException(Phase.INIT, ex);
-        }
+        resetLogbackContext(context);
         // Invoke the configuration
         Method doConfigure = joranClass.getMethod("doConfigure", String.class);
         doConfigure.invoke(configurator, configuration.getAbsolutePath());
@@ -741,6 +733,18 @@ public abstract class AppInitializer {
       console(Phase.INIT, "Logging: config/"+configuration.getName()+" not found");
     }
     return configured;
+  }
+
+  private static void resetLogbackContext(ILoggerFactory context) {
+    try {
+      Class<?> loggerContextClass = Class.forName("ch.qos.logback.classic.LoggerContext");
+      Method reset = loggerContextClass.getMethod("reset");
+      reset.invoke(context);
+      console(Phase.INIT, "Logging: logger context reset successfully");
+    } catch (Exception ex) {
+      console(Phase.INIT, "(!) Logging: Failed to  logger context - logging messages may appear twice");
+      consoleException(Phase.INIT, ex);
+    }
   }
 
   /**
