@@ -19,6 +19,8 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.jspecify.annotations.Nullable;
+
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.ErrorID;
@@ -35,17 +37,15 @@ import org.pageseeder.berlioz.util.ISO8601;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
- * Generates no content.
+ * Returns HTTP error details as XML.
  *
- * <p>This content generator is useful to display information about errors, when a
- * Berlioz service is used for error handling.
+ * <p>This content generator is designed for use in error-handling services, where it reads
+ * the standard servlet error request attributes and serialises them as XML.
  *
  * <h3>Configuration</h3>
  * <p>There is no configuration directly associated with this generator.</p>
- * <p>However, since the purpose is to display servlet error details, the services
- * using this generator should have their URLs mapped in the Web descriptor for error
- * catching.
- * For example:
+ * <p>Since the purpose is to display servlet error details, services using this generator
+ * should have their URLs mapped in the web descriptor for error catching. For example:
  * <pre>{@code
  * <error-page>
  *   <error-code>404</error-code>
@@ -54,28 +54,34 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * }</pre>
  *
  * <h3>Parameters</h3>
- * <p>This generator does not use and require any parameter.
+ * <p>This generator does not use any parameter.
  *
  * <h3>Attributes</h3>
- * <p>This generator will try to retrieve values from the standard Servlet error request attributes.
+ * <p>This generator reads the following standard servlet error request attributes:
+ * <ul>
+ *   <li>{@code javax.servlet.error.status_code} — the HTTP status code</li>
+ *   <li>{@code javax.servlet.error.message} — the error message</li>
+ *   <li>{@code javax.servlet.error.exception} — the exception that caused the error</li>
+ *   <li>{@code javax.servlet.error.request_uri} — the URI that triggered the error</li>
+ *   <li>{@code org.pageseeder.berlioz.error_id} — an optional Berlioz-specific error ID</li>
+ * </ul>
  *
  * <h3>Returned XML</h3>
- * <p>This generator does not have any content, so the XML content is always empty.
- * <p>Since Berlioz always wraps generators' content, the final XML is always:
  * <pre>{@code
- * <content generator="org.pageseeder.berlioz.generator.GetErrorDetails"
- *               name="[name]" target="[target]" status="ok">
- *   <error http-class="[http-class]" http-code="[http-code]" datetime="[iso8601-datetime]" id="[berlioz-id]">
- *     <title>Not Found</title>
- *     <message>Not Found</message>
- *     <request-uri>/fdhvjfdls</request-uri>
- *     <!-- Any exception will be serialised a XML here -->
- *   </error>
- * </content>
+ * <error http-class="[http-class]" http-code="[http-code]" datetime="[iso8601-datetime]" id="[error-id]">
+ *   <title>[http-status-title]</title>
+ *   <message>[error-message]</message>           <!-- only if a message is available -->
+ *   <request-uri>[request-uri]</request-uri>     <!-- only if a request URI is available -->
+ *   <!-- exception XML if an exception was thrown -->
+ *   <collected-errors>                           <!-- only for CompoundBerliozException -->
+ *     ...
+ *   </collected-errors>
+ * </error>
  * }</pre>
- *
- * <p><i>Note: since this generator does produce any data, the return status is always
- * <code>ok</code>.</i></p>
+ * <p>The {@code http-class} attribute is the kebab-case name of the HTTP status class
+ * (e.g. {@code client-error}, {@code server-error}). The {@code id} attribute is taken from
+ * {@link BerliozException#id()} when available, or from the Berlioz error ID attribute,
+ * falling back to {@link BerliozErrorID#UNEXPECTED}.
  *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
@@ -83,11 +89,11 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *                         name="[name]" target="[target]"/>}</pre>
  *
  * <h3>Etag</h3>
- * <p>This generator is not cacheable.</code>.
+ * <p>This generator is not cacheable.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.8.7
  */
 public final class GetErrorDetails implements ContentGenerator {
@@ -113,14 +119,7 @@ public final class GetErrorDetails implements ContentGenerator {
     xml.attribute("http-class", getHTTPClass(code));
     xml.attribute("http-code", code);
     xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
-
-    // If it has a Berlioz ID
-    ErrorID berliozId = exception instanceof BerliozException? ((BerliozException)exception).id() : null;
-    if (berliozId != null) {
-      xml.attribute("id", berliozId.id());
-    } else {
-      xml.attribute("id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString());
-    }
+    xml.attribute("id", resolveErrorId(exception, errorId));
 
     // Other informational elements
     String title = HttpStatusCodes.getTitle(code);
@@ -133,18 +132,7 @@ public final class GetErrorDetails implements ContentGenerator {
     }
 
     if (exception != null) {
-      Errors.toXML(exception, xml, true);
-
-      // If some errors were collected, let's include them
-      if (exception instanceof CompoundBerliozException) {
-        xml.openElement("collected-errors");
-        ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)exception).getCollector();
-        for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
-          collected.toXML(xml);
-        }
-        xml.closeElement();
-      }
-
+      writeException(exception, xml);
     }
     xml.closeElement();
 
@@ -154,6 +142,26 @@ public final class GetErrorDetails implements ContentGenerator {
       req.setStatus(status);
     }
 
+  }
+
+  private static String resolveErrorId(@Nullable Throwable exception, @Nullable String errorId) {
+    if (exception instanceof BerliozException) {
+      ErrorID id = ((BerliozException) exception).id();
+      if (id != null) return id.id();
+    }
+    return errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString();
+  }
+
+  private static void writeException(Throwable exception, XMLWriter xml) throws IOException {
+    Errors.toXML(exception, xml, true);
+    if (exception instanceof CompoundBerliozException) {
+      xml.openElement("collected-errors");
+      ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException) exception).getCollector();
+      for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
+        collected.toXML(xml);
+      }
+      xml.closeElement();
+    }
   }
 
   /**
