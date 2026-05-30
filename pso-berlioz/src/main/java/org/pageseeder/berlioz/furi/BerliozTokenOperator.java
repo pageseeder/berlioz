@@ -182,7 +182,6 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
               }
             // A list
             } else if (variable.form() == Form.LIST) {
-              // TODO: what should it be?
               String[] values = variable.values(parameters);
               for (String value : values) {
                 expansion.append(';');
@@ -321,9 +320,6 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
 
       @Override
       boolean resolve(List<Variable> vars, String value, Map<Variable, Object> values) {
-        // TODO: should we return false instead??
-        if (vars.size() != 1)
-          throw new UnsupportedOperationException("Operator + cannot be resolved with multiple variables.");
         values.put(vars.get(0), URICoder.decode(value));
         return true;
       }
@@ -364,10 +360,6 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
 
       @Override
       boolean resolve(List<Variable> vars, String value, Map<Variable, Object> values) {
-        // TODO: should we return false instead??
-        // TODO: could we somewhat support a comma separated list of values?
-        if (vars.size() != 1)
-          throw new UnsupportedOperationException("Operator cannot be resolved with multiple variables.");
         values.put(vars.get(0), URICoder.decode(value));
         return true;
       }
