@@ -100,7 +100,8 @@ public final class WebBundleTool {
    *
    * @param bundles Where the bundles should be saved (must exist and be a directory).
    *
-   * @throws IllegalArgumentException If the specified file is <code>null</code>, does not exist or is not a directory.
+   * @throws NullPointerException If the specified file is <code>null</code>.
+   * @throws IllegalArgumentException If the specified file does not exist or is not a directory.
    */
   public WebBundleTool(File bundles) {
     Objects.requireNonNull(bundles, "The location where bundles are saved must not be null");
