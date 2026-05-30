@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
@@ -102,13 +103,12 @@ public final class WebBundleTool {
    * @throws IllegalArgumentException If the specified file is <code>null</code>, does not exist or is not a directory.
    */
   public WebBundleTool(File bundles) {
+    Objects.requireNonNull(bundles, "The location where bundles are saved must not be null");
     this.bundles = checkBundlesFile(bundles);
     this.virtual = bundles;
   }
 
   private File checkBundlesFile(File bundles) {
-    if (bundles == null)
-      throw new IllegalArgumentException("The location where bundles are saved must not be null");
     if (!bundles.exists())
       throw new IllegalArgumentException("The location where bundles are saved must exist: "+bundles);
     if (!bundles.isDirectory())
@@ -125,7 +125,7 @@ public final class WebBundleTool {
    * @param virtual the virtual location of the bundles.
    */
   public void setVirtual(File virtual) {
-    this.virtual = virtual;
+    this.virtual = Objects.requireNonNull(virtual, "The virtual location of bundles must not be null");
   }
 
   /**
@@ -476,6 +476,7 @@ public final class WebBundleTool {
    *
    * @throws IOException if writing to the bundle fails.
    */
+  @SuppressWarnings("java:S107")
   private static @Nullable IOException expandStyleLine(WebBundle bundle, File file, File virtual, Writer out, String line, boolean minimize, long threshold,
       List<File> processed) throws IOException {
     Matcher matcher = CSS_URL.matcher(line);
@@ -486,13 +487,14 @@ public final class WebBundleTool {
     if (line.trim().toLowerCase().startsWith("@import")) {
       return expandImport(bundle, file, virtual, out, line, matcher, minimize, threshold, processed);
     }
-    out.write(rewriteStyleUrls(file, virtual, line, matcher, threshold));
+    out.write(rewriteStyleUrls(file, virtual, matcher, threshold));
     return null;
   }
 
   /**
    * Expands an import rule or writes it unchanged when the imported URL is not relative.
    */
+  @SuppressWarnings("java:S107")
   private static @Nullable IOException expandImport(WebBundle bundle, File file, File virtual, Writer out, String line, Matcher matcher, boolean minimize,
       long threshold, List<File> processed) throws IOException {
     String path = unquote(matcher.group(1));
@@ -511,6 +513,7 @@ public final class WebBundleTool {
   /**
    * Writes an expanded CSS import.
    */
+  @SuppressWarnings("java:S107")
   private static @Nullable IOException writeImportedStyle(WebBundle bundle, File imported, File virtual, Writer out, String path, boolean minimize, long threshold,
       List<File> processed) throws IOException {
     if (minimize && path.endsWith("min.css")) {
@@ -538,7 +541,7 @@ public final class WebBundleTool {
   /**
    * Rewrites relative CSS URLs in a line.
    */
-  private static String rewriteStyleUrls(File file, File virtual, String line, Matcher matcher, long threshold) {
+  private static String rewriteStyleUrls(File file, File virtual, Matcher matcher, long threshold) {
     matcher.reset();
     StringBuilder sb = new StringBuilder();
     while (matcher.find()) {
