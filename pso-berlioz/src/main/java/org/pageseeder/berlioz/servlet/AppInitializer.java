@@ -434,6 +434,7 @@ public abstract class AppInitializer {
 
     @Override
     void addLifecycleListener() {
+      // No lifecycle listener required for this context
     }
 
   }
@@ -627,12 +628,13 @@ public abstract class AppInitializer {
    * @param env The Web application init environment
    */
   private static void checkServices(InitEnvironment env) {
-    Path services = env.webInf().toPath().resolve(env.configFolder()+"/services.xml");
+    String servicesFile = env.configFolder() + "/services.xml";
+    Path services = env.webInf().toPath().resolve(servicesFile);
     if (Files.exists(services)) {
-      console(Phase.INIT, "Services: found "+env.configFolder()+"/services.xml");
+      console(Phase.INIT, "Services: found " + servicesFile);
       console(Phase.INIT, "Services: OK --------------------------------------------------");
     } else {
-      console(Phase.INIT, "(!) Could not find "+env.configFolder()+"/services.xml");
+      console(Phase.INIT, "(!) Could not find " + servicesFile);
       console(Phase.INIT, "Services: FAIL ------------------------------------------------");
     }
   }
@@ -672,13 +674,14 @@ public abstract class AppInitializer {
     configured = configureLogback(file);
     if (configured) return;
     // Try specific log4j
-    file = new File(appDataConfig, "log4j-"+env.mode()+".properties");
+    String log4jModeFile = "log4j-" + env.mode() + ".properties";
+    file = new File(appDataConfig, log4jModeFile);
     configured = configureLog4j(file);
     if (configured) return;
     // Try specific log4j in WEB-INF
     if (env.hasAppData()) {
       // Try specific log4j
-      file = new File(webInfConfig, "log4j-"+env.mode()+".properties");
+      file = new File(webInfConfig, log4jModeFile);
       configured = configureLog4j(file);
       if (configured) return;
     }
