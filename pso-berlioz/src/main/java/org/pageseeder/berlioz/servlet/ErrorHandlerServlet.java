@@ -141,12 +141,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.
    */
-  private String autoExtension = AUTO_EXTENSION;
-
-  /**
-   * The default extension to use for extensions which are neither preserved nor ignored.
-   */
-  private static String defaultExtension = DEFAULT_EXTENSION;
+  private String defaultExtension = DEFAULT_EXTENSION;
 
   @Override
   public void init(ServletConfig config) throws ServletException {
@@ -227,7 +222,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     }
 
     // When processing an .auto URI
-    if (uri.endsWith(autoExtension)) {
+    if (uri.endsWith(AUTO_EXTENSION)) {
 
       // Check if we need to preserve the extension
       if (!forwardExtensions.contains(ext)) {
@@ -265,8 +260,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
     if (url != null) {
       String html = XSLTransformer.transformFailSafe(xml, url);
-      // FIXME if it fails uses the incorrect content type
-      res.setContentType("text/html;charset=UTF-8");
+      res.setContentType(!Objects.equals(html, xml) ? "text/html;charset=UTF-8" : "application/xml;charset=UTF-8");
       out.print(html);
       out.flush();
     } else {
