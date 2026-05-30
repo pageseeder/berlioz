@@ -175,7 +175,7 @@ final class Overlays {
           Path path = Paths.get(rootPath, name).normalize();
           boolean illegal = !path.startsWith(rootPath);
           for (String illegalPath : ILLEGAL_OVERLAY_FILEPATHS) {
-            if (path.endsWith(illegalPath)) {
+            if (path.endsWith(illegalPath.substring(1))) {
               illegal = true;
               break;
             }
