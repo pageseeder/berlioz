@@ -325,6 +325,42 @@ public final class XmlAppendableTest {
     xml.flush();
   }
 
+  @Test
+  public void testCloseElementWithNoOpenElementLeavesWriterUsable() {
+    XmlStringBuilder xml = new XmlStringBuilder();
+    try {
+      xml.closeElement();
+      Assert.fail("Expected IllegalCloseElementException");
+    } catch (IllegalCloseElementException e) {
+      // writer must still be functional
+    }
+    xml.openElement("x").closeElement();
+    Assert.assertEquals("<x/>", xml.toString());
+  }
+
+  // xml(String) ----------------------------------------------------------------------------------
+
+  @Test(expected = NullPointerException.class)
+  public void testXmlNullThrows() {
+    new XmlStringBuilder().openElement("x").xml((String) null);
+  }
+
+  // emptyElement() indentation -------------------------------------------------------------------
+
+  @Test
+  public void testEmptyElementRespectsParentHasChildrenFalse() {
+    XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
+    xml.openElement("parent", false).emptyElement("br").closeElement();
+    Assert.assertEquals("<parent><br/></parent>", xml.toString());
+  }
+
+  @Test
+  public void testEmptyElementIndentsInsideParentWithChildren() {
+    XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
+    xml.openElement("parent", true).emptyElement("br").closeElement();
+    Assert.assertEquals("<parent>\n  <br/>\n</parent>", xml.toString());
+  }
+
   // withIndent ------------------------------------------------------------------------------------
 
   @Test(expected = IllegalStateException.class)

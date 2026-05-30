@@ -223,6 +223,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
   @Override
   public final XmlAppendable<T> xml(String xml) {
+    Objects.requireNonNull(xml, "XML must not be null.");
     deNude();
     append(xml);
     return this;
@@ -408,10 +409,10 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    */
   @Override
   public XmlAppendable<T> closeElement() throws IllegalCloseElementException {
-    Element elt = popElement();
     // reaching the end of the document
-    if (elt == ROOT)
+    if (peekElement() == ROOT)
       throw new IllegalCloseElementException();
+    Element elt = popElement();
     this.depth--;
     // this is an empty element
     if (this.isNude) {
@@ -458,7 +459,9 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   @Override
   public XmlAppendable<T> emptyElement(String element) {
     deNude();
-    indent();
+    if (peekElement().hasChildren) {
+      indent();
+    }
     this.append('<');
     this.append(element);
     this.append('/');
@@ -679,9 +682,6 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * A light object to keep track of the element.
    *
    * <p>This object does not support namespaces.
-   *
-   * @author Christophe Lauret
-   * @version 7 March 2005
    */
   private static final class Element {
 
