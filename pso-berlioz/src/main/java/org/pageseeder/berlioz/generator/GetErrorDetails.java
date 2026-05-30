@@ -147,7 +147,7 @@ public final class GetErrorDetails implements ContentGenerator {
   private static String resolveErrorId(@Nullable Throwable exception, @Nullable String errorId) {
     if (exception instanceof BerliozException) {
       ErrorID id = ((BerliozException) exception).id();
-      return id != null ? id.id() : BerliozErrorID.GENERATOR_ERROR_UNFORCED.toString();
+      if (id != null) return id.id();
     }
     return errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString();
   }

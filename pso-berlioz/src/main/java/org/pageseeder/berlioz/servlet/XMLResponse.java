@@ -401,6 +401,7 @@ public final class XMLResponse {
     return bex;
   }
 
+  @SuppressWarnings("java:S5738") // Suppress warning for deprecated method usage
   private static BerliozException toBerliozException(Exception exception) {
     if (exception instanceof BerliozException) {
       BerliozException bex = (BerliozException) exception;

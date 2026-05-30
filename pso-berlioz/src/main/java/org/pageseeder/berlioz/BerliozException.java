@@ -49,6 +49,7 @@ public class BerliozException extends Exception implements XMLWritable {
   /**
    * An Berlioz Error ID
    */
+  @SuppressWarnings("java:S1165") // setId() is deprecated for removal; field will be made final once it is removed
   private @Nullable ErrorID id = null;
 
   /**
@@ -107,7 +108,10 @@ public class BerliozException extends Exception implements XMLWritable {
    * To set the error ID of this Berlioz exception.
    *
    * @param id The error ID of the berlioz exception.
+   *
+   * @deprecated Use the constructor that accepts an {@link ErrorID} instead.
    */
+  @Deprecated(since = "0.13.0")
   public final void setId(ErrorID id) {
     this.id = id;
   }
