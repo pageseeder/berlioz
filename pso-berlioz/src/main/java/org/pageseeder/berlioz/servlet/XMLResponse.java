@@ -302,7 +302,7 @@ public final class XMLResponse {
     // Let's invoke the generator
     String result = null;
     BerliozException error = null;
-    ContentStatus status = ContentStatus.OK;
+    ContentStatus generatorStatus = ContentStatus.OK;
     long start = System.nanoTime();
     try {
       // Normal response
@@ -310,21 +310,21 @@ public final class XMLResponse {
       XMLWriter ok = new XMLWriterImpl(writer);
       generator.process(request, ok);
       result = writer.toString();
-      status = request.getStatus();
+      generatorStatus = request.getStatus();
     } catch (Exception ex) {
       // We wrap any exception in a Berlioz Exception
       error = handleError(ex, generator);
-      status = ContentStatus.INTERNAL_SERVER_ERROR;
+      generatorStatus = ContentStatus.INTERNAL_SERVER_ERROR;
     }
 
     long end = System.nanoTime();
 
     // Update Status
-    boolean wasSet = handleStatus(status, generator, service);
-    if (wasSet && ContentStatus.isRedirect(status)) {
+    boolean wasSet = handleStatus(generatorStatus, generator, service);
+    if (wasSet && ContentStatus.isRedirect(generatorStatus)) {
       this.redirect = request.getRedirectURL();
     }
-    xml.attribute("status", status.toString());
+    xml.attribute("status", generatorStatus.toString());
     if (this.profile) {
       xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));
       xml.attribute("profile-process", ProfileFormat.format(end - start));
@@ -338,7 +338,7 @@ public final class XMLResponse {
     // Report if requested
     GeneratorListener l = listener.get();
     if (l != null) {
-      l.generate(service, generator, status, request.getProfileEtag(), end - start);
+      l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
     }
 
     // Write the XML
