@@ -31,13 +31,20 @@ public class Xml {
 
   /**
    * @return A SAX Parser
+   *
+   * @throws ParserConfigurationException if a parser cannot be created.
+   * @throws SAXException if a parser feature cannot be configured.
    */
   public static SAXParser newSafeParser() throws ParserConfigurationException, SAXException {
     return newSafeParser(false);
   }
 
   /**
+   * @param validating Whether the parser should validate.
    * @return A SAX Parser
+   *
+   * @throws ParserConfigurationException if a parser cannot be created.
+   * @throws SAXException if a parser feature cannot be configured.
    */
   public static SAXParser newSafeParser(boolean validating) throws ParserConfigurationException, SAXException {
     // use the SAX parser factory to ensure validation

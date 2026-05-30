@@ -72,6 +72,8 @@ public class JsonOutputAdapter implements OutputWriter {
 
   /**
    * Creates a new JSON writer with a custom writer.
+   *
+   * @param json The JSON writer to adapt.
    */
   public JsonOutputAdapter(JsonWriter json) {
     this.json = json;

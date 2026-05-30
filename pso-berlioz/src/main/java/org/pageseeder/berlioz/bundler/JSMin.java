@@ -490,6 +490,8 @@ public final class JSMin {
    * To invoke the minimizer on the command line.
    *
    * @param args first argument is path to file to minimize
+   *
+   * @throws IOException if an input/output error occurs.
    */
   @SuppressWarnings("java:S106")
   public static void main(String[] args) throws IOException {

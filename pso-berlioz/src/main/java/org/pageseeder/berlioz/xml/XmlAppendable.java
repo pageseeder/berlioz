@@ -190,6 +190,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * <p>Does nothing if the object is <code>null</code>.
    *
    * @param o The object that should be written as text.
+   * @return this writer.
    */
   public XmlAppendable<T> asText(@Nullable Object o) {
     if (o != null) {
@@ -206,6 +207,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    * Does nothing if {@code o} is {@code null}.
    *
    * @param o The object to write as XML, or {@code null} to do nothing.
+   * @return this writer.
    */
   public XmlAppendable<T> asXml(@Nullable Object o) {
     if (o instanceof XmlWritable) {

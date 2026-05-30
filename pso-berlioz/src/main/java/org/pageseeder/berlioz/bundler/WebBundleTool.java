@@ -310,6 +310,7 @@ public final class WebBundleTool {
    * @param bundle    The list of files to concatenate.
    * @param writer    The bundle to write to.
    * @param virtual   The virtual location of the bundle.
+   * @param minimize  Whether to minimize the expanded styles.
    * @param threshold The threshold for data URIs
    *
    * @throws IOException if an input/output error occurs.

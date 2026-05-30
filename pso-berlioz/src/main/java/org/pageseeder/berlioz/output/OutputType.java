@@ -40,6 +40,8 @@ public enum OutputType {
 
   /**
    * The mediatype for the format.
+   *
+   * @return The media type for the format.
    */
   public String getMediaType() {
     return this.mediaType;

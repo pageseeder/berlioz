@@ -198,6 +198,8 @@ public abstract class AppInitializer {
   /**
    * Returns a new application initializer using only system properties.
    *
+   * @param root The application root folder.
+   * @param listeners The lifecycle listeners.
    * @return a new application initializer
    */
   public static AppInitializer newInstance(File root, List<LifecycleListener> listeners) {
@@ -207,6 +209,8 @@ public abstract class AppInitializer {
   /**
    * Returns a new application initializer using the servlet context.
    *
+   * @param context The servlet context.
+   * @param listeners The lifecycle listeners.
    * @return a new application initializer
    */
   public static AppInitializer newInstance(ServletContext context, List<LifecycleListener> listeners) {
@@ -216,6 +220,8 @@ public abstract class AppInitializer {
   /**
    * Returns a new application initializer using the servlet configuration.
    *
+   * @param config The servlet configuration.
+   * @param listeners The lifecycle listeners.
    * @return a new application initializer
    */
   public static AppInitializer newInstance(ServletConfig config, List<LifecycleListener> listeners) {

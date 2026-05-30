@@ -38,7 +38,7 @@ public enum Directive {
 
   /**
    * {@code connect-src} limits the origins that you can connect to via XMLHttpRequest (AJAX), WebSocket,
-   * fetch(), <a ping> or EventSource).
+   * fetch(), {@code <a ping>} or EventSource).
    *
    * <p>Falls back to {@code default-src} directive.
    */
@@ -136,7 +136,7 @@ public enum Directive {
   STYLE_SRC_ATTR("style-src-attr"),
 
   /**
-   * {@code style-src-elem} specifies valid sources for stylesheet <style> elements and <link> elements
+   * {@code style-src-elem} specifies valid sources for stylesheet {@code <style>} elements and {@code <link>} elements
    * with rel="stylesheet".
    *
    * <p>Falls back to <code>style-src</code>, then <code>default-src</code> directive.
@@ -169,7 +169,7 @@ public enum Directive {
    * {@code plugin-types} defines valid MIME types for plugins invoked via {@code <object>} and
    * {@code <embed>}.
    *
-   * <p>To load an <applet> you must specify application/x-java-applet.
+   * <p>To load an {@code <applet>} you must specify application/x-java-applet.
    */
   @Deprecated(since = "0.12.6")
   PLUGIN_TYPES("plugin-types"),

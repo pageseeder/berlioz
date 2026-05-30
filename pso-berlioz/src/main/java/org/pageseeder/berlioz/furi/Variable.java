@@ -61,7 +61,7 @@ import org.jspecify.annotations.Nullable;
  *      href="http://bitworking.org/projects/URI-Templates/spec/draft-gregorio-uritemplate-03.html">URI
  *      Template (Internet Draft 3)</a>
  * @see <a href="http://tools.ietf.org/html/rfc3986">RFC 3986 - Uniform Resource Identifier (URI):
- *      Generic Syntax<a/>
+ *      Generic Syntax</a>
  *
  * @author Christophe Lauret
  *
@@ -269,6 +269,7 @@ public class Variable {
    * @param name The name of the variable.
    * @param def  The default value for the variable.
    * @param type The type of the variable.
+   * @param form The form of the variable.
    *
    * @throws NullPointerException If the specified name is <code>null</code>.
    * @throws IllegalArgumentException If the specified name is an empty string.

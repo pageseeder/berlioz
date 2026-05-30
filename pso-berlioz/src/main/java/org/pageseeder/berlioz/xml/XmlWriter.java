@@ -71,6 +71,7 @@ public interface XmlWriter {
    *
    * @param c The character to write.
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter text(char c);
@@ -80,6 +81,7 @@ public interface XmlWriter {
    *
    * @param text The text to write
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception is thrown by the underlying writer.
    */
   XmlWriter text(long text);
@@ -89,6 +91,7 @@ public interface XmlWriter {
    *
    * @param text The text to write
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception is thrown by the underlying writer.
    */
   XmlWriter text(double text);
@@ -98,6 +101,7 @@ public interface XmlWriter {
    *
    * @param text The text to write
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter text(String text);
@@ -109,6 +113,7 @@ public interface XmlWriter {
    * @param off  The offset where we should start writing the string.
    * @param len  The length of the character subarray to write.
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter text(char[] text, int off, int len);
@@ -124,6 +129,7 @@ public interface XmlWriter {
    *
    * @param xml The raw XML content to write.
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter xml(String xml);
@@ -138,6 +144,7 @@ public interface XmlWriter {
    * @param off  The offset where we should start writing the string.
    * @param len  The length of the character subarray to write.
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter xml(char[] text, int off, int len);
@@ -162,6 +169,7 @@ public interface XmlWriter {
    *
    * @param comment The comment to be written
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter comment(String comment);
@@ -173,6 +181,7 @@ public interface XmlWriter {
    *
    * @param data The data to write inside the CDATA section.
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    * @throws IllegalArgumentException If the implementation does not support CDATA nesting
    */
@@ -189,6 +198,7 @@ public interface XmlWriter {
    * @param target The PI's target.
    * @param data   The PI's data.
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter processingInstruction(String target, @Nullable String data);
@@ -222,6 +232,7 @@ public interface XmlWriter {
    *
    * @param name the name of the element
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter openElement(String name);
@@ -237,6 +248,7 @@ public interface XmlWriter {
    * @param name        The name of the element
    * @param hasChildren true if this element has children
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter openElement(String name, boolean hasChildren);
@@ -247,6 +259,7 @@ public interface XmlWriter {
    * <p>The element is closed symmetrically to the
    * {@link #openElement(String, boolean)} method.
    *
+   * @return this writer.
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
   XmlWriter closeElement();
@@ -266,6 +279,7 @@ public interface XmlWriter {
    *
    * @param name The name of the element.
    * @param text The text of the element.
+   * @return this writer.
    */
   XmlWriter element(String name, String text);
 
@@ -281,6 +295,7 @@ public interface XmlWriter {
    *
    * @param name The name of the element.
    * @param text The text of the element.
+   * @return this writer.
    */
   XmlWriter element(String name, long text);
 
@@ -296,6 +311,7 @@ public interface XmlWriter {
    *
    * @param name The name of the element.
    * @param text The text of the element.
+   * @return this writer.
    */
   XmlWriter element(String name, double text);
 
@@ -303,6 +319,7 @@ public interface XmlWriter {
    * Writes an empty element.
    *
    * @param element the name of the element
+   * @return this writer.
    */
   XmlWriter emptyElement(String element);
 
@@ -315,6 +332,7 @@ public interface XmlWriter {
    * @param name  The name of the attribute.
    * @param value The value of the attribute.
    *
+   * @return this writer.
    * @throws IllegalStateException If there is no open element or text has been written.
    */
   XmlWriter attribute(String name, String value);
@@ -327,6 +345,7 @@ public interface XmlWriter {
    * @param name  The name of the attribute.
    * @param value The value of the attribute.
    *
+   * @return this writer.
    * @throws IllegalStateException If there is no open element or text has been written.
    */
   XmlWriter attribute(String name, long value);
@@ -339,6 +358,7 @@ public interface XmlWriter {
    * @param name  The name of the attribute.
    * @param value The value of the attribute.
    *
+   * @return this writer.
    * @throws IllegalStateException If there is no open element or text has been written.
    */
   XmlWriter attribute(String name, double value);
@@ -349,6 +369,7 @@ public interface XmlWriter {
    * @param name  The name of the attribute.
    * @param value The value of the attribute.
    *
+   * @return this writer.
    * @throws IllegalStateException If there is no open element or text has been written.
    */
   XmlWriter attribute(String name, boolean value);
@@ -358,6 +379,7 @@ public interface XmlWriter {
    *
    * @param map  A map of name/value pairs of the attributes.
    *
+   * @return this writer.
    * @throws IllegalStateException If there is no open element or text has been written.
    */
   XmlWriter attributes(Map<String, String> map);

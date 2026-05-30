@@ -39,16 +39,16 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * When files included in a bundle are modified, this generator will automatically produce a new bundle
  * with a new stamp so that it results in a different URL.
  *
- * <h4>Bundling</h4>
+ * <h2>Bundling</h2>
  * <p>Scripts are simply concatenated. Styles are concatenated and import rules will automatically include
  * the imported styles into the main file.
  *
- * <h4>Minimization</h4>
+ * <h2>Minimization</h2>
  * <p>Both styles and scripts can be minimised after the bundling. Minimized bundles will be saved using the
  * following extensions <code>.min.js</code> and <code>.min.css</code>. If files to be bundled already use the
  * <code>*.min.*</code> extension, it will be considered to be already minimised and won't be minimised again.
  *
- * <h4>File naming</h4>
+ * <h2>File naming</h2>
  * <p>Bundled files are automatically named as:</p>
  * <pre>[bundlename]-[date]-[etag].[ext]</pre>
  * <p>The <i>bundle name</i> is specified in the configuration; the <i>date</i> is the creation date of the

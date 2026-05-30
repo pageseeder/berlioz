@@ -49,6 +49,8 @@ public class MovedLocationPattern {
 
   /**
    * URI pattern matching the original path.
+   *
+   * @return URI pattern matching the original path.
    */
   public URIPattern from() {
     return this.from;
@@ -56,6 +58,8 @@ public class MovedLocationPattern {
 
   /**
    * URI template of the target path.
+   *
+   * @return URI template of the target path.
    */
   public URIPattern to() {
     return this.to;

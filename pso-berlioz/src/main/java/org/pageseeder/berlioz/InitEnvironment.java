@@ -96,6 +96,7 @@ public final class InitEnvironment {
   }
 
   /**
+   * @param webInf The WEB-INF folder.
    * @return An instance initialised with the specified folder.
    */
   public static InitEnvironment create(File webInf) {
@@ -104,6 +105,8 @@ public final class InitEnvironment {
 
   /**
    * The Berlioz mode.
+   *
+   * @return The Berlioz mode.
    */
   public String mode() {
     return this.mode;
@@ -115,6 +118,8 @@ public final class InitEnvironment {
    * <p>It can be the same as the Web application directory, but may different in
    * cases where the data needs to be persistent and separate from the
    * application itself.
+   *
+   * @return The Web application data directory.
    */
   public File appData() {
     return this.appData;
@@ -125,6 +130,8 @@ public final class InitEnvironment {
    *
    * <p>This should always be the <code>WEB-INF</code> folder of the Web
    * application.
+   *
+   * @return The WEB-INF folder.
    */
   public File webInf() {
     return this.webInf;
@@ -132,6 +139,8 @@ public final class InitEnvironment {
 
   /**
    * The name of the configuration folder.
+   *
+   * @return The name of the configuration folder.
    */
   public String configFolder() {
     return this.configFolder;

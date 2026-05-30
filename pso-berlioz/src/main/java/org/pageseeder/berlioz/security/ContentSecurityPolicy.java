@@ -194,6 +194,7 @@ public final class ContentSecurityPolicy {
      *
      * @param directive The policy directive
      * @param value The source value to set
+     * @return this builder
      */
     public Builder set(Directive directive, String value) {
       this.directives.put(directive, value);
@@ -207,6 +208,7 @@ public final class ContentSecurityPolicy {
      *
      * @param directive The policy directive
      * @param source The source value to add or set
+     * @return this builder
      */
     public Builder add(Directive directive, String source) {
       String current = this.directives.get(directive);
@@ -221,6 +223,7 @@ public final class ContentSecurityPolicy {
      *
      * @param directive The policy directive
      * @param nonce The source value to add or set
+     * @return this builder
      */
     public Builder nonce(Directive directive, String nonce) {
       return this.add(directive, "'nonce-"+nonce+"'");
@@ -230,6 +233,7 @@ public final class ContentSecurityPolicy {
      * Remove the specified policy directive.
      *
      * @param directive The policy directive
+     * @return this builder
      */
     public Builder remove(Directive directive) {
       this.directives.remove(directive);
