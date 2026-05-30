@@ -213,9 +213,8 @@ public final class URIResolver {
           result.put(entry.getKey().name(), o);
         }
 
-      // returned an array of values
+      // array values are not supported: VariableResolver only handles single strings
       } else if (value instanceof String[]) {
-        // FIXME: handle arrays
         status = Status.ERROR;
 
         // unknown object
