@@ -18,6 +18,8 @@ package org.pageseeder.berlioz.furi;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * A URI token wrapping a variable.
  *
@@ -93,6 +95,18 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
   public boolean resolve(String expanded, Map<Variable, Object> values) {
     values.put(this.variable, URICoder.decode(expanded));
     return true;
+  }
+
+  @Override
+  public boolean equals(@Nullable Object o) {
+    if (o == this) return true;
+    if (!(o instanceof TokenVariable)) return false;
+    return this.variable.equals(((TokenVariable) o).variable);
+  }
+
+  @Override
+  public int hashCode() {
+    return this.variable.hashCode();
   }
 
 }
