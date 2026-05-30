@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.Variable.Form;
 
 /**
@@ -81,11 +82,11 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
             String[] values = variable.values(parameters);
             // Associative Array: odd indexed values are names, even are values
             if (variable.form() == Form.MAP) {
-              for (int i = 0; i < values.length; i++) {
+              for (int i = 0; i < values.length; i += 2) {
                 expansion.append(first ? '?' : '&');
                 expansion.append(URICoder.encode(values[i])).append('=');
-                if (values.length > i+1) {
-                  expansion.append(URICoder.encode(values[++i]));
+                if (i + 1 < values.length) {
+                  expansion.append(URICoder.encode(values[i + 1]));
                 }
                 first = false;
               }
@@ -173,10 +174,10 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
             // An associative array: odd index for names, even index for values
             if (variable.form() == Form.MAP) {
               String[] values = variable.values(parameters);
-              for (int i = 0; i < values.length; i++) {
+              for (int i = 0; i < values.length; i += 2) {
                 expansion.append(';').append(URICoder.encode(values[i]));
-                if (values.length > i+1) {
-                  expansion.append('=').append(URICoder.encode(values[++i]));
+                if (i + 1 < values.length) {
+                  expansion.append('=').append(URICoder.encode(values[i + 1]));
                 }
               }
             // A list
@@ -536,6 +537,16 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   @Override
   public Pattern pattern() {
     return this.pattern;
+  }
+
+  @Override
+  public boolean equals(@Nullable Object o) {
+    return super.equals(o);
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
   }
 
   /**
