@@ -24,12 +24,12 @@ import org.jspecify.annotations.Nullable;
 /**
  * Holds the results of a transformation process.
  *
- * <p>This class holds information about a process such as its content, processing time (in ms),
+ * <p>This class holds information about a process such as its content, processing time (in nanoseconds),
  * status and exception.
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version Berlioz 0.13.0
  * @since Berlioz 0.7
  */
 public final class XSLTransformResult implements BerliozOutput {
@@ -37,7 +37,7 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * The status of a process result.
    *
-   * These are loosely based on the HTTP error codes.
+   * <p>These are loosely based on the HTTP error codes.
    */
   public enum Status {
 
@@ -101,9 +101,7 @@ public final class XSLTransformResult implements BerliozOutput {
     this.status = Status.OK;
     this.error = null;
     this.ex = null;
-    if (templates != null) {
-      setOutputProperties(templates);
-    }
+    setOutputProperties(templates);
   }
 
   /**
@@ -128,7 +126,7 @@ public final class XSLTransformResult implements BerliozOutput {
   // Immutable fields
 
   /**
-   * @return the transformed content.
+   * @return The transformed content.
    */
   @Override
   public CharSequence content() {
@@ -136,7 +134,7 @@ public final class XSLTransformResult implements BerliozOutput {
   }
 
   /**
-   * @return The processing time in nano seconds.
+   * @return The processing time in nanoseconds.
    */
   public long time() {
     return this.time;
@@ -152,7 +150,7 @@ public final class XSLTransformResult implements BerliozOutput {
   }
 
   // ==============================================================================================
-  // Immutable fields
+  // Accessors
 
   /**
    * @return An error message or <code>null</code> if none.
@@ -162,7 +160,7 @@ public final class XSLTransformResult implements BerliozOutput {
   }
 
   /**
-   * @return An error message or <code>null</code> if none.
+   * @return The exception that occurred, or <code>null</code> if none.
    */
   public @Nullable Exception getException() {
     return this.ex;
@@ -191,7 +189,7 @@ public final class XSLTransformResult implements BerliozOutput {
    *
    * @param templates the templates used to generate this.
    */
-  protected void setOutputProperties(Templates templates) {
+  private void setOutputProperties(Templates templates) {
     Properties p = templates.getOutputProperties();
     this.encoding = p.getProperty("encoding", "utf-8");
     this.mediaType = p.getProperty("media-type", "text/html");
