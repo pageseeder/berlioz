@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.content;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -186,7 +185,7 @@ public final class Service {
    */
   public List<Parameter> parameters(ContentGenerator generator) {
     List<Parameter> parameters = this.allParameters.get(generator);
-    if (parameters == null) return Collections.emptyList();
+    if (parameters == null) return List.of();
     return parameters;
   }
 
@@ -573,7 +572,7 @@ public final class Service {
       for (Entry<ContentGenerator, List<Parameter>> entry : original.entrySet()) {
         map.put(entry.getKey(), immutableList(entry.getValue()));
       }
-      return Collections.unmodifiableMap(map);
+      return Map.copyOf(map);
     }
   }
 

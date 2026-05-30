@@ -54,7 +54,6 @@ package org.pageseeder.berlioz.bundler;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -188,7 +187,7 @@ public final class CSSMin {
      try (BufferedReader br = new BufferedReader(input)) {
        String s;
        while ((s = br.readLine()) != null) {
-         if (!s.trim().isEmpty()) {
+         if (!s.isBlank()) {
            buffer.append(s);
          }
          buffer.append('\n');
@@ -309,7 +308,7 @@ public final class CSSMin {
       }
       i++;
     }
-    if (!css.subSequence(start, css.length()).toString().trim().isEmpty()) {
+    if (!css.subSequence(start, css.length()).toString().isBlank()) {
       LOGGER.debug("Ignoring CSS text without a rule block.");
     }
     return rules;
@@ -560,7 +559,7 @@ public final class CSSMin {
       List<String> parts = splitTopLevel(contents, ';');
       List<Property> valid = new ArrayList<>(parts.size());
       for (String part : parts) {
-        if (part.trim().isEmpty()) continue;
+        if (part.isBlank()) continue;
         try {
           valid.add(new Property(part));
         } catch (Exception e) {
@@ -693,7 +692,7 @@ public final class CSSMin {
       List<String> rawParts = splitTopLevel(contents, ',');
       List<Part> valid = new ArrayList<>(rawParts.size());
       for (String raw : rawParts) {
-        if (raw.trim().isEmpty()) continue;
+        if (raw.isBlank()) continue;
         try {
           valid.add(Part.newPart(raw, this.name));
         } catch (Exception ex) {
@@ -753,8 +752,8 @@ public final class CSSMin {
         if (hex.length() < name.length()) n2h.put(name, hex);
         if (name.length() < hex.length()) h2n.put(hex, name);
       }
-      COLOR_NAME_TO_HEX = Collections.unmodifiableMap(n2h);
-      COLOR_HEX_TO_NAME = Collections.unmodifiableMap(h2n);
+      COLOR_NAME_TO_HEX = Map.copyOf(n2h);
+      COLOR_HEX_TO_NAME = Map.copyOf(h2n);
     }
 
     /**

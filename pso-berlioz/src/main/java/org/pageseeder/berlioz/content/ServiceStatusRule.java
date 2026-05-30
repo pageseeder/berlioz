@@ -15,8 +15,6 @@
  */
 package org.pageseeder.berlioz.content;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -78,7 +76,7 @@ import org.pageseeder.berlioz.Beta;
    * The default rule to use when none is specified.
    */
   static final ServiceStatusRule DEFAULT_RULE =
-    new ServiceStatusRule(SelectType.NAME, Collections.emptyList(), CodeRule.HIGHEST);
+    new ServiceStatusRule(SelectType.NAME, List.of(), CodeRule.HIGHEST);
 
   /**
    * How the generator should be selected.
@@ -189,14 +187,14 @@ import org.pageseeder.berlioz.Beta;
     }
     List<String> list;
     if ("*".equals(items)) {
-      list = Collections.emptyList();
+      list = List.of();
     } else {
-      list = Arrays.asList(items.split(","));
+      list = List.of(items.split(","));
       for (String i : list) {
         validate(i);
       }
     }
-    return new ServiceStatusRule(t, Collections.unmodifiableList(list), r);
+    return new ServiceStatusRule(t, list, r);
   }
 
   /**

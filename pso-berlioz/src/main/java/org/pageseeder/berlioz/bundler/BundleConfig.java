@@ -329,7 +329,7 @@ public final class BundleConfig implements Serializable {
       String filename = GlobalSettings.get(prefix + name + ".filename", bc != null? bc.filename() : name);
       // The value of the property if the 'paths' sub-property isn't defined.
       String paths = GlobalSettings.get(prefix + name + ".include", GlobalSettings.get(prefix + name, ""));
-      if (!paths.trim().isEmpty()) {
+      if (!paths.isBlank()) {
         bc = new BundleDefinition(name, filename, paths);
       }
       if (bc != null) {

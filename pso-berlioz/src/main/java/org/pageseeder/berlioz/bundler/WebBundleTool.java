@@ -19,10 +19,8 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
@@ -667,10 +665,10 @@ public final class WebBundleTool {
    *
    * @return the new buffered reader
    *
-   * @throws FileNotFoundException if the file could not be found.
+   * @throws IOException if the file could not be opened.
    */
-  private static BufferedReader newBufferedReader(File f) throws FileNotFoundException {
-    return new BufferedReader(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8));
+  private static BufferedReader newBufferedReader(File f) throws IOException {
+    return Files.newBufferedReader(f.toPath(), StandardCharsets.UTF_8);
   }
 
   /**

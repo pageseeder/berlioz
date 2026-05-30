@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.system;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -193,7 +192,7 @@ public final class ListLibraries implements ContentGenerator {
     } catch (IOException ex) {
       LOGGER.warn("Unable to read manifest attributes from {}", path, ex);
     }
-    return Collections.unmodifiableMap(m);
+    return Map.copyOf(m);
   }
 
 

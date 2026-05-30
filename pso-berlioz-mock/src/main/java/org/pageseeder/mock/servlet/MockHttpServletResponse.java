@@ -257,7 +257,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
   @Override
   public void setIntHeader(String name, int value) {
     List<String> values = new ArrayList<>(1);
-    values.add(Integer.valueOf(value).toString());
+    values.add(Integer.toString(value));
     this.headers.put(name, values);
   }
 
@@ -267,7 +267,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
     if (values == null) {
       values = new ArrayList<>();
     }
-    values.add(Integer.valueOf(value).toString());
+    values.add(Integer.toString(value));
     this.headers.put(name, values);
   }
 

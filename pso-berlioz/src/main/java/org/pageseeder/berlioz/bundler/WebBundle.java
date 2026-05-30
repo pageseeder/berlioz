@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.bundler;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
@@ -73,7 +72,7 @@ public final class WebBundle {
    */
   public WebBundle(String name, List<File> files, boolean minimized) {
     this.name = name;
-    this.files = Collections.unmodifiableList(files);
+    this.files = List.copyOf(files);
     this.id = id(files);
     this.imported = new ArrayList<>();
     this.minimized = minimized;

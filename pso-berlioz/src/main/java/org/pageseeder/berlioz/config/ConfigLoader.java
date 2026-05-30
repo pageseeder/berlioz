@@ -32,6 +32,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Objects;
@@ -111,12 +112,12 @@ abstract class ConfigLoader<T> extends DefaultHandler {
       SAXParser parser = Xml.newSafeParser(false);
 
       // Look for doctype declarations
-      int start = find(bytes, "<!DOCTYPE ".getBytes());
+      int start = find(bytes, "<!DOCTYPE ".getBytes(StandardCharsets.UTF_8));
       if (start != -1) {
-        int end = find(bytes, ">".getBytes()[0], start+10)+1;
+        int end = find(bytes, ">".getBytes(StandardCharsets.UTF_8)[0], start+10)+1;
         if (end > start) {
           LoggerFactory.getLogger(ConfigLoader.class).warn("Doctype declaration found in config file");
-          String doctype = new String(Arrays.copyOfRange(bytes, start, end));
+          String doctype = new String(Arrays.copyOfRange(bytes, start, end), StandardCharsets.UTF_8);
           // We remove the doctype from our config
           if (doctype.contains("-//Berlioz") || doctype.contains("//Weborganic")) {
             int doctypeLength = end - start;
