@@ -83,8 +83,6 @@ public class URITemplate implements Expandable {
     this.tokens = digest(template);
   }
 
-  // TODO: method to indicate how many variables are used involved in the template
-
   /**
    * Creates a new URI Template instance using the specified token factory.
    *
