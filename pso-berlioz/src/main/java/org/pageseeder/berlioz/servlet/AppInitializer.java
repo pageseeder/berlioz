@@ -69,7 +69,7 @@ public abstract class AppInitializer {
    *
    * @throws NullPointerException If list of lifecycle listeners is <code>null</code>
    */
-  public AppInitializer(File webInf, List<LifecycleListener> listeners) {
+  protected AppInitializer(File webInf, List<LifecycleListener> listeners) {
     this.webInf = Objects.requireNonNull(webInf, "Listeners must be specified");
     this.listeners = Objects.requireNonNull(listeners, "Listeners must be specified");
   }
