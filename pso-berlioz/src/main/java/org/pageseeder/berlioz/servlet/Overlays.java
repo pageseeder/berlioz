@@ -50,6 +50,10 @@ final class Overlays {
     "/WEB-INF/config/services.xml",
   };
 
+  private static final int MAX_ENTRIES = 10_000;
+  private static final long MAX_TOTAL_SIZE = 512L * 1024 * 1024; // 512 MB
+  private static final int MAX_COMPRESSION_RATIO = 100;
+
   /**
    * Utility class.
    */
@@ -166,43 +170,50 @@ final class Overlays {
     public int unpack(final File root) throws IOException {
       String rootPath = root.getCanonicalPath();
       int unpacked = 0;
+      int entries = 0;
+      long totalSize = 0;
       long modified = this.source.lastModified();
       try (ZipFile zip = new ZipFile(this.source)) {
         ZipEntry entry;
         for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements();) {
           entry = e.nextElement();
-          String name = entry.getName();
-          Path path = Paths.get(rootPath, name).normalize();
-          boolean illegal = !path.startsWith(rootPath);
-          for (String illegalPath : ILLEGAL_OVERLAY_FILEPATHS) {
-            if (path.endsWith(illegalPath.substring(1))) {
-              illegal = true;
-              break;
-            }
-          }
-          if (illegal) {
-            LOGGER.warn("Ignoring illegal entry: {}", name);
+          if (++entries > MAX_ENTRIES)
+            throw new IOException("Overlay '" + this.source.getName() + "' exceeds maximum entry count (" + MAX_ENTRIES + ")");
+
+          String entryName = entry.getName();
+          Path path = Paths.get(rootPath, entryName).normalize();
+          if (isIllegal(path, rootPath)) {
+            LOGGER.warn("Ignoring illegal entry: {}", entryName);
             continue;
           }
 
           // Ignore any file in the META-INF folder and any MacOS files
-          if (name.startsWith("META-INF") || name.contains("__MACOSX") || name.endsWith(".DS_Store")) {
+          if (entryName.startsWith("META-INF") || entryName.contains("__MACOSX") || entryName.endsWith(".DS_Store")) {
             continue;
           }
           // Ensure that the folder exists
-          if (name.indexOf('/') > 0) {
+          if (entryName.contains("/")) {
             File dir = path.getParent().toFile();
             if (!dir.exists()) {
               boolean created = dir.mkdirs();
               if (!created) {
-                LOGGER.warn("Unable to create parent folder of: {}", name);
+                LOGGER.warn("Unable to create parent folder of: {}", entryName);
               }
             }
           }
           // Only process files
           if (!entry.isDirectory()) {
+            long size = entry.getSize();
+            long compressedSize = entry.getCompressedSize();
+            if (size >= 0 && compressedSize > 0 && size / compressedSize > MAX_COMPRESSION_RATIO)
+              throw new IOException("Overlay entry '" + entryName + "' has a suspicious compression ratio");
+            if (size > 0) {
+              totalSize += size;
+              if (totalSize > MAX_TOTAL_SIZE)
+                throw new IOException("Overlay '" + this.source.getName() + "' exceeds maximum total size (" + MAX_TOTAL_SIZE + " bytes)");
+            }
             File f = path.toFile();
-            if (!f.exists() || f.length() != entry.getSize() || f.lastModified() < modified) {
+            if (!f.exists() || f.length() != size || f.lastModified() < modified) {
               try (BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry))) {
                 Files.copy(is, path, StandardCopyOption.REPLACE_EXISTING);
                 unpacked++;
@@ -212,6 +223,14 @@ final class Overlays {
         }
       }
       return unpacked;
+    }
+
+    private static boolean isIllegal(Path path, String rootPath) {
+      if (!path.startsWith(rootPath)) return true;
+      for (String illegalPath : ILLEGAL_OVERLAY_FILEPATHS) {
+        if (path.endsWith(illegalPath.substring(1))) return true;
+      }
+      return false;
     }
 
     @Override
