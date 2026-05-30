@@ -69,6 +69,16 @@ public class JSONWriterFactoryTest {
     Assert.assertTrue(json.contains("\"id\":2"));
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueNaNThrows() {
+    JSONWriterFactory.newInstance(new StringWriter()).value(Double.NaN);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testPropertyInfinityThrows() {
+    JSONWriterFactory.newInstance(new StringWriter()).startObject().property("x", Double.POSITIVE_INFINITY);
+  }
+
   // ---------------------------------------------------------------------------
   // Robustness — init() must be idempotent and concurrent-safe
   // ---------------------------------------------------------------------------

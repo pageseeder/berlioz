@@ -259,8 +259,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   }
 
   private void appendJsonDouble(double number) {
-    if (!Double.isFinite(number))
-      throw new IllegalArgumentException("JSON does not support non-finite double values: " + number);
+    Json.checkFinite(number);
     this.json.append(Double.toString(number));
   }
 
@@ -278,11 +277,10 @@ final class BuiltinJsonWriter implements JsonWriter {
 
   private void push(char c) {
     this.level++;
-    if (this.level < this.closer.length) {
-      this.closer[this.level] = c;
-    } else {
+    if (this.level >= this.closer.length) {
       this.closer = Arrays.copyOf(this.closer, this.closer.length*2);
     }
+    this.closer[this.level] = c;
   }
 
 }

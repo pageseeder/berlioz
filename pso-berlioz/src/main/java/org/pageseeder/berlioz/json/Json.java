@@ -16,8 +16,10 @@
 package org.pageseeder.berlioz.json;
 
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,23 +70,13 @@ public class Json {
     },
 
     /**
-     * Oracle's JSONP implementation (javax.json).
-     */
-    JSONP("javax.json.stream.JsonGenerator") {
-      @Override
-      public JsonWriter newWriter(OutputStream out) {
-        return J2eeJsonWriter.newInstance(out);
-      }
-      @Override
-      public JsonWriter newWriter(Writer writer) {
-        return J2eeJsonWriter.newInstance(writer);
-      }
-    },
-
-    /**
      * Jakarta JSON API implementation (jakarta.json).
      */
     JAKARTA_JSONP("jakarta.json.stream.JsonGenerator") {
+      @Override
+      public boolean available() {
+        return hasClass(className()) && JakartaJsonWriter.init();
+      }
       @Override
       public JsonWriter newWriter(OutputStream out) {
         return JakartaJsonWriter.newInstance(out);
@@ -96,12 +88,34 @@ public class Json {
     },
 
     /**
+     * Oracle's JSONP implementation (javax.json).
+     */
+    JSONP("javax.json.stream.JsonGenerator") {
+      @Override
+      public boolean available() {
+        return hasClass(className()) && J2eeJsonWriter.init();
+      }
+      @Override
+      public JsonWriter newWriter(OutputStream out) {
+        return J2eeJsonWriter.newInstance(out);
+      }
+      @Override
+      public JsonWriter newWriter(Writer writer) {
+        return J2eeJsonWriter.newInstance(writer);
+      }
+    },
+
+    /**
      * Builtin fallback implementation.
      */
     BUILTIN("org.pageseeder.berlioz.json.BuiltinJsonWriter") {
       @Override
+      public boolean available() {
+        return true;
+      }
+      @Override
       public JsonWriter newWriter(OutputStream out) {
-        return new BuiltinJsonWriter(new PrintWriter(out));
+        return new BuiltinJsonWriter(new PrintWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8)));
       }
       @Override
       public JsonWriter newWriter(Writer writer) {
@@ -150,6 +164,15 @@ public class Json {
      * @return The JSON writer to use.
      */
     public abstract JsonWriter newWriter(Writer writer);
+
+    /**
+     * Indicates whether this provider can be used.
+     *
+     * @return {@code true} if this provider is available.
+     */
+    public boolean available() {
+      return hasClass(className());
+    }
 
   }
 
@@ -232,15 +255,15 @@ public class Json {
   /**
    * Detects and initializes the first available JSON provider.
    *
-   * <p>Provider priority (highest to lowest): Jackson, Gson, JSONP (javax.json),
-   * Jakarta JSON (jakarta.json), builtin. Only the first detected provider is used.</p>
+   * <p>Provider priority (highest to lowest): Jackson, Gson, Jakarta JSON
+   * (jakarta.json), JSONP (javax.json), builtin. Only the first detected provider is used.</p>
    */
   public static synchronized void init() {
     if (provider != JsonProvider.UNKNOWN) return;
     LOGGER.debug("Identifying Json provider");
     for (JsonProvider p : JsonProvider.values()) {
       if (p == JsonProvider.UNKNOWN) continue;
-      if (hasClass(p.className())) {
+      if (p.available()) {
         Json.provider = p;
         if (p == JsonProvider.BUILTIN) {
           LOGGER.warn("No JSON implementation found - falling back on builtin implementation");
@@ -261,10 +284,17 @@ public class Json {
    */
   private static boolean hasClass(String className) {
     try  {
-      Class.forName(className);
+      ClassLoader cl = Thread.currentThread().getContextClassLoader();
+      Class.forName(className, false, cl != null ? cl : Json.class.getClassLoader());
       return true;
-    } catch (ClassNotFoundException ex) {
+    } catch (ClassNotFoundException | LinkageError ex) {
       return false;
+    }
+  }
+
+  static void checkFinite(double number) {
+    if (!Double.isFinite(number)) {
+      throw new IllegalArgumentException("JSON does not support non-finite double values: " + number);
     }
   }
 

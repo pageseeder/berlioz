@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * An implementation of a JSON Writer backed by the Google Gson implementation.
@@ -36,8 +37,8 @@ final class GsonJsonWriter implements JsonWriter {
   /** The JSON generator */
   private final com.google.gson.stream.JsonWriter json;
 
-  /** Either true or false for Objects and Array respectively. */
-  private final boolean[] inObject = new boolean[64];
+  /** Either '}' or ']' for objects and arrays respectively. */
+  private char[] closer = new char[32];
 
   /** Array index is current depth level, 0 is top level Object or Array. */
   private int level = -1;
@@ -53,9 +54,9 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startArray(String name) {
-    this.inObject[++this.level] = false;
     try {
       this.json.name(name).beginArray();
+      push(']');
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -64,9 +65,9 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startArray() {
-    this.inObject[++this.level] = false;
     try {
       this.json.beginArray();
+      push(']');
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -75,9 +76,10 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter endArray() {
-    this.level--;
+    checkEnd(']');
     try {
       this.json.endArray();
+      this.level--;
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -86,9 +88,9 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startObject(String name) {
-    this.inObject[++this.level] = true;
     try {
       this.json.name(name).beginObject();
+      push('}');
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -97,9 +99,9 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startObject() {
-    this.inObject[++this.level] = true;
     try {
       this.json.beginObject();
+      push('}');
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -108,9 +110,10 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter endObject() {
-    this.level--;
+    checkEnd('}');
     try {
       this.json.endObject();
+      this.level--;
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -149,8 +152,9 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter value(double number) {
+    Json.checkFinite(number);
     try {
-    this.json.value(number);
+      this.json.value(number);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -160,7 +164,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(long number) {
     try {
-    this.json.value(number);
+      this.json.value(number);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -170,7 +174,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(@Nullable String value) {
     try {
-    this.json.value(value);
+      this.json.value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -180,7 +184,7 @@ final class GsonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(boolean value) {
     try {
-    this.json.value(value);
+      this.json.value(value);
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -209,6 +213,7 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter field(String name, double value) {
+    Json.checkFinite(value);
     try {
       this.json.name(name).value(value);
     } catch (IOException ex) {
@@ -229,7 +234,7 @@ final class GsonJsonWriter implements JsonWriter {
 
   @Override
   public boolean inObject() {
-    return this.level >= 0 && this.inObject[this.level];
+    return this.level >= 0 && this.closer[this.level] == '}';
   }
 
   @Override
@@ -273,6 +278,23 @@ final class GsonJsonWriter implements JsonWriter {
    */
   public static GsonJsonWriter newInstance(Writer writer) {
     return new GsonJsonWriter(new com.google.gson.stream.JsonWriter(writer));
+  }
+
+  private void push(char c) {
+    this.level++;
+    if (this.level >= this.closer.length) {
+      this.closer = Arrays.copyOf(this.closer, this.closer.length * 2);
+    }
+    this.closer[this.level] = c;
+  }
+
+  private void checkEnd(char expected) {
+    if (this.level < 0) throw new IllegalStateException("Nothing to end!");
+    if (this.closer[this.level] != expected) {
+      String current = this.closer[this.level] == '}' ? "object" : "array";
+      String requested = expected == '}' ? "object" : "array";
+      throw new IllegalStateException("Current context is an " + current + ", not an " + requested);
+    }
   }
 
 }

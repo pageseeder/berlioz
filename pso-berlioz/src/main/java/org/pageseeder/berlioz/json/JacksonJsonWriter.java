@@ -155,6 +155,7 @@ final class JacksonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter value(double number) {
+    Json.checkFinite(number);
     try {
       this.json.writeNumber(number);
     } catch (IOException ex) {
@@ -176,7 +177,11 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter value(@Nullable String value) {
     try {
-      this.json.writeString(value);
+      if (value == null) {
+        this.json.writeNull();
+      } else {
+        this.json.writeString(value);
+      }
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -196,7 +201,11 @@ final class JacksonJsonWriter implements JsonWriter {
   @Override
   public JsonWriter field(String name, @Nullable String value) {
     try {
-      this.json.writeStringField(name, value);
+      if (value == null) {
+        this.json.writeNullField(name);
+      } else {
+        this.json.writeStringField(name, value);
+      }
     } catch (IOException ex) {
       throw new JsonWriteFailureException(ex);
     }
@@ -215,6 +224,7 @@ final class JacksonJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter field(String name, double value) {
+    Json.checkFinite(value);
     try {
       this.json.writeNumberField(name, value);
     } catch (IOException ex) {

@@ -18,10 +18,8 @@
  *
  * <p>The central entry point is {@link org.pageseeder.berlioz.aeson.JSONResult}, which is a
  * {@code SAXResult} that converts SAX events into JSON output.  The conversion is driven by
- * {@link org.pageseeder.berlioz.aeson.JSONSerializer} and uses a pluggable
- * {@link org.pageseeder.berlioz.aeson.JSONWriter} back-end selected at runtime by
- * {@link org.pageseeder.berlioz.aeson.JSONWriterFactory}: Jakarta JSON API (preferred),
- * Java EE JSON API (legacy fallback), or a built-in writer with no extra dependencies.
+ * {@link org.pageseeder.berlioz.aeson.JSONSerializer} and writes through the canonical
+ * {@link org.pageseeder.berlioz.json.Json} provider selection used by the rest of Berlioz.
  *
  * <p>JSON type hints ({@code json:boolean}, {@code json:number}, {@code json:null}) are
  * controlled via namespace-qualified attributes using the namespace URI

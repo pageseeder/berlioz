@@ -25,6 +25,7 @@ import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -43,8 +44,8 @@ final class JakartaJsonWriter implements JsonWriter {
   /** The JSON generator */
   private static @Nullable JsonGeneratorFactory factory = null;
 
-  /** Either true or false for Objects and Array respectively. */
-  private final boolean[] inObject = new boolean[64];
+  /** Either '}' or ']' for objects and arrays respectively. */
+  private char[] closer = new char[32];
 
   /** Array index is current depth level, 0 is top level Object or Array. */
   private int level = -1;
@@ -63,45 +64,46 @@ final class JakartaJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter startArray(String name) {
-    this.inObject[++this.level] = false;
     this.json.writeStartArray(name);
+    push(']');
     return this;
   }
 
   @Override
   public JsonWriter startArray() {
-    this.inObject[++this.level] = false;
     this.json.writeStartArray();
+    push(']');
     return this;
   }
 
   @Override
   public JsonWriter startObject(String name) {
-    this.inObject[++this.level] = true;
     this.json.writeStartObject(name);
+    push('}');
     return this;
   }
 
   @Override
   public JsonWriter startObject() {
-    this.inObject[++this.level] = true;
     this.json.writeStartObject();
+    push('}');
     return this;
   }
 
   @Override
   public JsonWriter endArray() {
-    return endItem();
+    return endItem(']');
   }
 
   @Override
   public JsonWriter endObject() {
-    return endItem();
+    return endItem('}');
   }
 
-  private JsonWriter endItem() {
-    this.level--;
+  private JsonWriter endItem(char expected) {
+    checkEnd(expected);
     this.json.writeEnd();
+    this.level--;
     return this;
   }
 
@@ -125,6 +127,7 @@ final class JakartaJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter value(double number) {
+    Json.checkFinite(number);
     this.json.write(number);
     return this;
   }
@@ -169,6 +172,7 @@ final class JakartaJsonWriter implements JsonWriter {
 
   @Override
   public JsonWriter field(String name, double value) {
+    Json.checkFinite(value);
     this.json.write(name, value);
     return this;
   }
@@ -181,7 +185,7 @@ final class JakartaJsonWriter implements JsonWriter {
 
   @Override
   public boolean inObject() {
-    return this.level >= 0 && this.inObject[this.level];
+    return this.level >= 0 && this.closer[this.level] == '}';
   }
 
   @Override
@@ -259,11 +263,27 @@ final class JakartaJsonWriter implements JsonWriter {
       // This method does not return null, it throws a JsonException instead
       JsonProvider provider = JsonProvider.provider();
       LOGGER.debug("JSON Provider found using {}", provider.getClass().getName());
-      // XXX: We could supply configuration for the factory
       return provider.createGeneratorFactory(Collections.emptyMap());
     } catch (JsonException ex) {
       LOGGER.warn("JSON Provider not found: {}", ex.getMessage());
       throw new UnsupportedOperationException("Unable to find suitable provider");
+    }
+  }
+
+  private void push(char c) {
+    this.level++;
+    if (this.level >= this.closer.length) {
+      this.closer = Arrays.copyOf(this.closer, this.closer.length * 2);
+    }
+    this.closer[this.level] = c;
+  }
+
+  private void checkEnd(char expected) {
+    if (this.level < 0) throw new IllegalStateException("Nothing to end!");
+    if (this.closer[this.level] != expected) {
+      String current = this.closer[this.level] == '}' ? "object" : "array";
+      String requested = expected == '}' ? "object" : "array";
+      throw new IllegalStateException("Current context is an " + current + ", not an " + requested);
     }
   }
 

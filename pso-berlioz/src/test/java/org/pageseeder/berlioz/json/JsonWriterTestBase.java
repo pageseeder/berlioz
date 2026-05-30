@@ -94,6 +94,31 @@ public abstract class JsonWriterTestBase {
     Assert.assertEquals("0.0", json.toString());
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueNaNThrows() {
+    newJsonWriter(new StringWriter()).value(Double.NaN);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValuePositiveInfinityThrows() {
+    newJsonWriter(new StringWriter()).value(Double.POSITIVE_INFINITY);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueNegativeInfinityThrows() {
+    newJsonWriter(new StringWriter()).value(Double.NEGATIVE_INFINITY);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testFieldNaNThrows() {
+    newJsonWriter(new StringWriter()).startObject().field("value", Double.NaN);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testFieldInfinityThrows() {
+    newJsonWriter(new StringWriter()).startObject().field("value", Double.POSITIVE_INFINITY);
+  }
+
   @Test
   public void testNumberIsZero() {
     StringWriter json = new StringWriter();
@@ -236,6 +261,24 @@ public abstract class JsonWriterTestBase {
     }
     w.flush();
     Assert.assertEquals("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]", json.toString());
+  }
+
+  @Test
+  public void testArrayWithDeepNestedArrays() {
+    StringWriter json = new StringWriter();
+    JsonWriter w = newJsonWriter(json);
+    StringBuilder expected = new StringBuilder();
+    int depth = 96;
+    for (int i = 0; i < depth; i++) {
+      w.startArray();
+      expected.append('[');
+    }
+    for (int i = 0; i < depth; i++) {
+      w.endArray();
+      expected.append(']');
+    }
+    w.flush();
+    Assert.assertEquals(expected.toString(), json.toString());
   }
 
   @Test
