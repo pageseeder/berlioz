@@ -19,12 +19,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.jspecify.annotations.NonNull;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ServiceLoader;
-import org.pageseeder.berlioz.util.MD5;
+import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.berlioz.xml.XMLCopy;
 import org.pageseeder.xmlwriter.XMLWriter;
 
@@ -67,12 +66,12 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class GetServices implements ContentGenerator, Cacheable {
 
   @Override
-  public @NonNull String getETag(ContentRequest req) {
+  public String getETag(ContentRequest req) {
     StringBuilder etag = new StringBuilder();
     for (File f : ServiceLoader.getInstance().listServiceFiles()) {
       etag.append('~').append(f.length()).append('!').append(f.lastModified());
     }
-    return MD5.hash(etag.toString());
+    return SHA256.hash(etag.toString());
   }
 
   @Override

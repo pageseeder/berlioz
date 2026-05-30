@@ -56,10 +56,7 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.aeson.JSONResult;
 import org.pageseeder.berlioz.content.Service;
-import org.pageseeder.berlioz.util.CollectedError;
-import org.pageseeder.berlioz.util.Errors;
-import org.pageseeder.berlioz.util.ISO8601;
-import org.pageseeder.berlioz.util.MD5;
+import org.pageseeder.berlioz.util.*;
 import org.pageseeder.berlioz.xml.Xml;
 import org.pageseeder.berlioz.xslt.XSLTErrorCollector;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -245,7 +242,7 @@ public final class XSLTransformer {
    */
   private static @Nullable String computeEtag(File templates, @Nullable URL fallback) {
     if (!templates.exists()) {
-      if (fallback != null) return MD5.hash(fallback.toString());
+      if (fallback != null) return SHA256.hash(fallback.toString());
       else {
         LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getName());
         LOGGER.error("Create a stylesheet at the path below:");
@@ -260,12 +257,12 @@ public final class XSLTransformer {
     }
     StringBuilder b = new StringBuilder();
     try {
-      for (File f : files) { b.append(MD5.hash(f, false)); }
+      for (File f : files) { b.append(SHA256.hash(f, false)); }
     } catch (IOException ex) {
       LOGGER.warn("Error thrown while trying to calculate template etag", ex);
       return null;
     }
-    return MD5.hash(b.toString());
+    return SHA256.hash(b.toString());
   }
 
   /**

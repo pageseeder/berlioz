@@ -41,11 +41,7 @@ import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.http.*;
 import org.pageseeder.berlioz.servlet.XSLTransformResult.Status;
-import org.pageseeder.berlioz.util.CharsetUtils;
-import org.pageseeder.berlioz.util.EntityInfo;
-import org.pageseeder.berlioz.util.MD5;
-import org.pageseeder.berlioz.util.ProfileFormat;
-import org.pageseeder.berlioz.util.ResourceCompressor;
+import org.pageseeder.berlioz.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -342,7 +338,7 @@ public final class BerliozServlet extends HttpServlet {
       String etagXML = xml.getEtag();
       if (etagXML != null) {
         String etagXSL = transformer != null? transformer.getEtag() : null;
-        etag = '"'+MD5.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
+        etag = '"'+ SHA256.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
 
         // Update the headers (they should also be included in case of redirect)
         res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());

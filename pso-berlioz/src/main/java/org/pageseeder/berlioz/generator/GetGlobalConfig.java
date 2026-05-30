@@ -24,7 +24,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.berlioz.util.MD5;
+import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -62,7 +62,7 @@ public final class GetGlobalConfig implements ContentGenerator, Cacheable {
   public @Nullable String getETag(ContentRequest req) {
     File global = GlobalSettings.getPropertiesFile();
     if (global == null) return null;
-    return MD5.hash(global.length()+"x"+global.lastModified());
+    return SHA256.hash(global.length()+"x"+global.lastModified());
   }
 
   @Override

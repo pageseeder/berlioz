@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.util.ISO8601;
-import org.pageseeder.berlioz.util.MD5;
+import org.pageseeder.berlioz.util.SHA256;
 
 /**
  * A bundle of files to serve.
@@ -207,7 +207,7 @@ public final class WebBundle {
     for (File f : files) {
       id.append(f.getAbsolutePath());
     }
-    return MD5.hash(id.toString());
+    return SHA256.hash(id.toString());
   }
 
   /**
@@ -228,7 +228,7 @@ public final class WebBundle {
     for (File f : imported) {
       appendKey(f, key);
     }
-    return MD5.hash(key.toString());
+    return SHA256.hash(key.toString());
   }
 
   /**
