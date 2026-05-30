@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import org.junit.Assert;
 import org.junit.Test;
 
+@SuppressWarnings("deprecation")
 public class JSONWriterFactoryTest {
 
   // ---------------------------------------------------------------------------

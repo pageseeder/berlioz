@@ -21,6 +21,11 @@
  * {@link org.pageseeder.berlioz.aeson.JSONSerializer} and writes through the canonical
  * {@link org.pageseeder.berlioz.json.Json} provider selection used by the rest of Berlioz.
  *
+ * <p>The legacy {@link org.pageseeder.berlioz.aeson.JSONWriter} and
+ * {@link org.pageseeder.berlioz.aeson.JSONWriterFactory} types are deprecated compatibility
+ * facades. New code should use {@link org.pageseeder.berlioz.json.JsonWriter} and
+ * {@link org.pageseeder.berlioz.json.Json} directly.</p>
+ *
  * <p>JSON type hints ({@code json:boolean}, {@code json:number}, {@code json:null}) are
  * controlled via namespace-qualified attributes using the namespace URI
  * {@value org.pageseeder.berlioz.aeson.JSONSerializer#NS_URI}.

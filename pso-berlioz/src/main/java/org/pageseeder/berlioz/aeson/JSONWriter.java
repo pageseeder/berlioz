@@ -18,19 +18,20 @@ package org.pageseeder.berlioz.aeson;
 import java.io.Closeable;
 
 /**
- * Simple interface used internally to pass JSON events to the actual JSON writer.
+ * Simple interface used to pass JSON events to the actual JSON writer.
  *
- * <p>This class is required in order to handle the case when a <code>JsonGenerator</code>
- * implementation is not available. Aeson uses this interface so that it is not coupled
- * directly the <code>JsonGenerator</code> and can revert back to its internal JSON writer.
+ * @deprecated since 0.13.0. Use {@link org.pageseeder.berlioz.json.JsonWriter} instead.
  *
- * <p>The methods are intendedly similar to the <code>JsonGenerator</code> interface.
+ * <p>This interface is kept as a compatibility facade for existing Aeson callers. The
+ * XML-to-JSON serializer now writes through {@link org.pageseeder.berlioz.json.JsonWriter}
+ * directly.</p>
  *
  * @author Christophe Lauret
  *
  * @version Berlioz 0.12.0
  * @since Berlioz 0.9.32
  */
+@Deprecated(since = "0.13.0")
 public interface JSONWriter extends Closeable {
 
   /**

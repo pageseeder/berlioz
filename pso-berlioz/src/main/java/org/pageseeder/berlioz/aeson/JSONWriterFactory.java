@@ -25,6 +25,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Factory for Aeson-compatible JSON writers.
  *
+ * @deprecated since 0.13.0. Use {@link Json#newWriter(OutputStream)} or
+ *             {@link Json#newWriter(Writer)} instead.
+ *
  * <p>The returned writers delegate to {@link Json#newWriter(OutputStream)} or
  * {@link Json#newWriter(Writer)}, so Aeson uses the same JSON provider selection as the rest of
  * Berlioz while preserving the original {@link JSONWriter} API.</p>
@@ -34,6 +37,7 @@ import org.slf4j.LoggerFactory;
  * @version Berlioz 0.13.0
  * @since Berlioz 0.9.32
  */
+@Deprecated(since = "0.13.0")
 public final class JSONWriterFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JSONWriterFactory.class);

@@ -22,6 +22,7 @@ import org.pageseeder.berlioz.json.JsonWriter;
 /**
  * Adapter from the Aeson writer contract to the canonical Berlioz JSON writer.
  */
+@SuppressWarnings("deprecation")
 final class JsonBackedJSONWriter implements JSONWriter {
 
   /**

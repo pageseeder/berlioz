@@ -20,6 +20,8 @@ import java.io.Writer;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.json.Json;
+import org.pageseeder.berlioz.json.JsonWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.pageseeder.berlioz.aeson.JSONState.JSONContext;
@@ -55,7 +57,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * JSON Generator from JSON Processing API.
    */
-  private final JSONWriter json;
+  private final JsonWriter json;
 
   /**
    * Maintains the state of the serialization.
@@ -82,7 +84,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    */
   @SuppressWarnings("java:S106") // System.out is the intentional default output target, not a log statement
   public JSONSerializer() {
-    this.json = JSONWriterFactory.newInstance(System.out);
+    this.json = Json.newWriter(System.out);
   }
 
   /**
@@ -91,7 +93,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param out A valid OutputStream.
    */
   public JSONSerializer(OutputStream out) {
-    this.json = JSONWriterFactory.newInstance(out);
+    this.json = Json.newWriter(out);
   }
 
   /**
@@ -100,7 +102,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param writer A valid character stream.
    */
   public JSONSerializer(Writer writer) {
-    this.json = JSONWriterFactory.newInstance(writer);
+    this.json = Json.newWriter(writer);
   }
 
   // Content Handler implementations
@@ -151,7 +153,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
 
           // One of the json elements
           if ("array".equals(localName) || "object".equals(localName)) {
-            this.json.end();
+            endContainer(wasContext);
           }
 
         } else if (wasContext == JSONContext.VALUE) {
@@ -165,7 +167,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
 
         } else {
           // A regular element
-          this.json.end();
+          endContainer(wasContext);
         }
       }
     } catch (Exception ex) {
@@ -292,11 +294,11 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
     if (this.state.isContext(JSONContext.ROOT)) {
       warning(new SAXParseException("Illegal null as root, substituting for empty object", this.locator));
       this.json.startObject();
-      this.json.end();
+      this.json.endObject();
     } else if (this.state.isContext(JSONContext.OBJECT)) {
-      this.json.writeNull(name);
+      this.json.nullValue(name);
     } else {
-      this.json.writeNull();
+      this.json.nullValue();
     }
     this.state.pushState(JSONContext.NULL, atts, name);
   }
@@ -394,19 +396,19 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
       if (value.indexOf('.') != -1 || value.indexOf('e') != -1 || value.indexOf('E') != -1) {
         double number = Double.parseDouble(value);
         if (name != null) {
-          this.json.property(name, number);
+          this.json.field(name, number);
         } else {
           this.json.value(number);
         }
       } else {
         long number = Long.parseLong(value);
         if (name != null) {
-          this.json.property(name, number);
+          this.json.field(name, number);
         } else {
           this.json.value(number);
         }
       }
-    } catch (NumberFormatException ex) {
+    } catch (IllegalArgumentException ex) {
       asString(name, value);
       warning(new SAXParseException("Unable to convert attribute '"+name+"' to a number", this.locator, ex));
     }
@@ -423,13 +425,13 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   private void asBoolean(@Nullable String name, String value) {
     if ("true".equals(value)) {
       if (name != null) {
-        this.json.property(name, true);
+        this.json.field(name, true);
       } else {
         this.json.value(true);
       }
     } else if ("false".equals(value)) {
       if (name != null) {
-        this.json.property(name, false);
+        this.json.field(name, false);
       } else {
         this.json.value(false);
       }
@@ -446,9 +448,9 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    */
   private void asNull(@Nullable String name) {
     if (name != null) {
-      this.json.writeNull(name);
+      this.json.nullValue(name);
     } else {
-      this.json.writeNull();
+      this.json.nullValue();
     }
   }
 
@@ -460,9 +462,17 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    */
   private void asString(@Nullable String name, String value) {
     if (name != null) {
-      this.json.property(name, value);
+      this.json.field(name, value);
     } else {
       this.json.value(value);
+    }
+  }
+
+  private void endContainer(JSONContext context) {
+    if (context == JSONContext.ARRAY) {
+      this.json.endArray();
+    } else {
+      this.json.endObject();
     }
   }
 
