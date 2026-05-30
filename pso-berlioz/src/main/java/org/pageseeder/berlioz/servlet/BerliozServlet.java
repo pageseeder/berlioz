@@ -380,11 +380,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Examine the status
     ContentStatus status = xml.getStatus();
-    if (code != null) {
-      res.setStatus(code);
-    } else {
-      res.setStatus(status.code());
-    }
+    res.setStatus(Objects.requireNonNullElseGet(code, status::code));
 
     // If errors occurred and should percolate
     if (xml.getError() != null && !GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) {
