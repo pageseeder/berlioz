@@ -21,24 +21,59 @@ import java.text.Normalizer;
 import java.text.Normalizer.Form;
 
 /**
- * An encoder/decoder for use by URI templates.
+ * An encoder/decoder for use by URI templates, following RFC 3986.
  *
- * <p>Only unreserved characters, according to RFC 3986 do not need to be encoded within a variable:
+ * <p>Only unreserved characters do not need to be encoded within a URI variable:
  *
  * <pre>
- * unreserved = ALPHA / DIGIT / '-' / '.' / '_' / '&tilde;';
+ * unreserved = ALPHA / DIGIT / '-' / '.' / '_' / '&tilde;'
  * </pre>
  *
- * <p>
- * This encoder/decoder should be designed so that URI, which contain only unreserved characters,
- * are processed faster.
+ * <p>Two encoding modes are provided:
+ * <ul>
+ *   <li>{@link #encode(String)} — encodes everything except unreserved characters. Use this
+ *       for URI template variable values.</li>
+ *   <li>{@link #minimalEncode(String)} — additionally preserves RFC 3986 reserved characters
+ *       ({@code : / ? # [ ] @ ! $ &amp; ' ( ) * + , ; =}) and only encodes characters that are
+ *       outright illegal in any URI. Use this when the value already contains structural URI
+ *       characters that must be kept intact.</li>
+ * </ul>
  *
- * @see <a href="http://tools.ietf.org/html/rfc3986">RFC 3986 - Uniform Resource Identifier (URI):
- *      Generic Syntax<a/>
- * @see <a href="http://tools.ietf.org/html/rfc3986#appendix-A">RFC 3986 - Uniform Resource
- *      Identifier (URI): Generic Syntax - Appendix A. Collected ABNF for URI</a>
+ * <h2>Differences from {@link java.net.URLEncoder} / {@link java.net.URLDecoder}</h2>
+ *
+ * <p>{@code java.net.URLEncoder} targets the {@code application/x-www-form-urlencoded} media
+ * type used by HTML forms, not RFC 3986. The two differ in several important ways:
+ *
+ * <table>
+ *   <caption>Encoding comparison</caption>
+ *   <tr><th>Input</th><th>URICoder.encode</th><th>URLEncoder</th></tr>
+ *   <tr><td>space</td><td>{@code %20}</td>
+ *       <td>{@code +} — form-data convention, not valid in a URI path</td></tr>
+ *   <tr><td>{@code ~}</td><td>{@code ~} — left as-is (RFC 3986 unreserved)</td>
+ *       <td>{@code %7E} — encoded (predates RFC 3986 adding {@code ~} to unreserved)</td></tr>
+ *   <tr><td>{@code *}</td><td>{@code %2A} — encoded (not RFC 3986 unreserved)</td>
+ *       <td>{@code *} — left as-is (legacy safe set)</td></tr>
+ *   <tr><td>{@code +}</td><td>{@code %2B}</td><td>{@code %2B} — same</td></tr>
+ *   <tr><td>{@code -._}</td><td>unchanged</td><td>unchanged — same</td></tr>
+ *   <tr><td>non-ASCII</td><td>UTF-8 percent-encoded, after NFKC normalisation</td>
+ *       <td>UTF-8 percent-encoded, no normalisation (NFC and NFD may differ)</td></tr>
+ * </table>
+ *
+ * <p>{@link #decode(String)} accepts both {@code %20} and {@code +} as space, so it can handle
+ * input from either encoding convention. {@code java.net.URLDecoder} behaves the same way on
+ * input, but callers should prefer this class when working with URI templates.
+ *
+ * <p>Strings that contain only unreserved characters (the common case for well-formed path
+ * segments) are processed without allocating a {@code StringBuilder}, keeping the hot path fast.
+ *
+ * @see <a href="http://tools.ietf.org/html/rfc3986">RFC 3986 – Uniform Resource Identifier (URI):
+ *      Generic Syntax</a>
+ * @see <a href="http://tools.ietf.org/html/rfc3986#appendix-A">RFC 3986 Appendix A – Collected
+ *      ABNF for URI</a>
  * @see <a href="http://www.unicode.org/unicode/reports/tr15/tr15-23.html#Specification">UAX #15:
  *      Unicode Normalization</a>
+ * @see java.net.URLEncoder
+ * @see java.net.URLDecoder
  *
  * @author Christophe Lauret
  *
@@ -63,14 +98,20 @@ public final class URICoder {
   // ==========================================================================
 
   /**
-   * Encodes the string as valid URI fragment.
+   * Encodes a string for use as a URI template variable value.
    *
-   * <p>
-   * This encoder will encode all but unreserved characters using the escape sequence.
+   * <p>All characters except RFC 3986 unreserved characters ({@code ALPHA / DIGIT / - . _ ~})
+   * are percent-encoded. In particular:
+   * <ul>
+   *   <li>Space is encoded as {@code %20}, not {@code +}.</li>
+   *   <li>{@code ~} is left as-is (unreserved per RFC 3986).</li>
+   *   <li>{@code *} is encoded as {@code %2A} (not unreserved).</li>
+   *   <li>Non-ASCII text is normalised to NFKC, then encoded as UTF-8 byte sequences.</li>
+   * </ul>
    *
    * @param s The string to encode.
    *
-   * @return The corresponding encoded string.
+   * @return The percent-encoded string.
    */
   public static String encode(String s) {
     // invoke encode method with character that we know does not require encoding
@@ -78,15 +119,16 @@ public final class URICoder {
   }
 
   /**
-   * Encodes the string as valid URI fragment.
+   * Encodes a string for use as a URI template variable value, with one extra passthrough character.
    *
-   * <p>
-   * This encoder will percent-encode all but <em>unreserved</em> characters.
+   * <p>Behaves identically to {@link #encode(String)} except that the ASCII character {@code c}
+   * is also left unencoded. This is useful for operators that allow one structural character
+   * to appear literally in the expansion (e.g. {@code '/'} for path segments).
    *
    * @param s The string to encode.
    * @param c An ASCII character that should not be encoded if found in the string.
    *
-   * @return The corresponding encoded string.
+   * @return The percent-encoded string.
    */
   public static String encode(String s, char c) {
     if (s.isEmpty())
@@ -97,14 +139,20 @@ public final class URICoder {
   }
 
   /**
-   * Encodes the string as valid URI fragment.
+   * Minimally encodes a string so that it is safe to embed in a URI.
    *
-   * <p>
-   * This encoder will percent-encode all but <em>illegal</em> characters.
+   * <p>Unlike {@link #encode(String)}, this method preserves RFC 3986 reserved characters
+   * ({@code : / ? # [ ] @ ! $ &amp; ' ( ) * + , ; =}) so that structural URI syntax is not
+   * destroyed. Only characters that are outright illegal in any URI component are
+   * percent-encoded: space, {@code %}, {@code "}, {@code <}, {@code >}, {@code \},
+   * {@code ^}, {@code `}, {@code {}, {@code |}, {@code }}, and control characters.
+   *
+   * <p>Use this method when the input may already contain valid URI structure (e.g. a full
+   * path-and-query string) and only unsafe characters need to be escaped.
    *
    * @param s The string to encode.
    *
-   * @return The corresponding encoded string.
+   * @return The minimally percent-encoded string.
    */
   public static String minimalEncode(String s) {
     if (s.isEmpty())
@@ -198,11 +246,20 @@ public final class URICoder {
   // ==========================================================================
 
   /**
-   * Decode the string as a valid URI fragment.
+   * Decodes a percent-encoded URI string.
+   *
+   * <p>Both {@code %XX} sequences and {@code +} are treated as space, so input from either
+   * URI percent-encoding ({@code %20}) or HTML form encoding ({@code +}) is handled correctly.
+   * {@code %2B} decodes to a literal {@code +}. Hex digits in {@code %XX} sequences may be
+   * upper- or lowercase.
+   *
+   * <p>Strings that contain no {@code %} or {@code +} characters are returned as-is without
+   * any allocation. Malformed {@code %} sequences (fewer than two following hex digits) are
+   * silently dropped.
    *
    * @param s The string to decode.
    *
-   * @return The corresponding decoded string.
+   * @return The decoded string.
    */
   public static String decode(String s) {
     if (s.isEmpty() || (s.indexOf('%') < 0 && s.indexOf('+') < 0))
