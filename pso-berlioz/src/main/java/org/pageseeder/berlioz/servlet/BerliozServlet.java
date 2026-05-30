@@ -272,30 +272,8 @@ public final class BerliozServlet extends HttpServlet {
     boolean serverTiming = GlobalSettings.has(BerliozOption.HTTP_SERVER_TIMING);
     boolean serviceHeader = GlobalSettings.has(BerliozOption.HTTP_SERVICE_HEADER);
 
-    // Berlioz Control
-    if (config.hasControl(req)) {
-
-      // Clear the cache and reload the services
-      boolean reload = isTrue(req.getParameter("berlioz-reload"));
-
-      // Clear the XSLT cache if requested
-      boolean clearCache = reload || isTrue(req.getParameter("clear-xsl-cache"));
-      if (clearCache) { XSLTransformer.clearAllCache(); }
-
-      // Allow ETags to be reset
-      boolean resetEtags = reload || isTrue(req.getParameter("reset-etags"));
-      if (resetEtags) { config.resetETagSeed(); }
-
-      // Reload the global configuration
-      if (reload) { GlobalSettings.load(); }
-
-      // Clear the service configuration
-      boolean clearServices = reload || isTrue(req.getParameter("reload-services"));
-      if (clearServices) { loader.clear(); }
-
-      // If profile specified on URL
-      profile = profile || isTrue(req.getParameter("berlioz-profile"));
-    }
+    // Apply Berlioz control parameters (cache clearing, reloading, etc.)
+    profile = applyBerliozControl(req, config, loader, profile);
 
     // Load the services if required
     try {
@@ -429,24 +407,8 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
-    // Produce the output
-    BerliozOutput result;
-    if (transformer != null) {
-      XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
-      if (profile && LOGGER.isInfoEnabled()) {
-        LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(xslresult.time()));
-      }
-      if (serverTiming) {
-        ServerTimingHeader.addMetricNano(res, "xslt", "XSLT Transform", xslresult.time());
-      }
-      result = xslresult;
-      if (xslresult.status() == Status.ERROR) {
-        res.reset();
-        res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-      }
-    } else {
-      result = new XMLContent(content);
-    }
+    // Produce the output (XSLT transform or pass through raw XML)
+    BerliozOutput result = executeTransform(content, req, xml, transformer, res, profile, serverTiming);
 
     // Resolve and validate encoding from XSLT output; canonical name is safe for HTTP headers
     Charset charset;
@@ -466,43 +428,121 @@ public final class BerliozServlet extends HttpServlet {
       config.setContentType(ctype);
     }
 
-    // Apply Compression if necessary
-    boolean isCompressed = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType());
-    if (isCompressed) {
+    // Write the response body, applying GZip compression when appropriate
+    writeOutput(req, res, result, etag, charset, config, includeContent);
+  }
 
-      if (HttpHeaderUtils.acceptsGZipCompression(req)) {
-        byte[] compressed = ResourceCompressor.compress(result.content(), charset);
-        if (compressed.length > 0) {
-          res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
-          res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
-          if (etag != null) {
-            res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
-          }
-          if (includeContent) {
-            ServletOutputStream out = res.getOutputStream();
-            out.write(compressed);
-            out.flush();
-          }
-        } else {
-          isCompressed = false; // Compression failed
+  /**
+   * Processes Berlioz control parameters from the request, applying any requested cache clearing,
+   * reloading, or configuration reset, and returns the (possibly updated) profile flag.
+   *
+   * @param req     The HTTP servlet request.
+   * @param config  The Berlioz configuration.
+   * @param loader  The service loader (may be cleared on reload).
+   * @param profile Whether profiling was already enabled via global settings.
+   * @return {@code true} if profiling should be active for this request.
+   */
+  private boolean applyBerliozControl(HttpServletRequest req, BerliozConfig config, ServiceLoader loader, boolean profile) {
+    if (!config.hasControl(req)) return profile;
+
+    // A "reload" triggers all of the sub-operations below
+    boolean reload = isTrue(req.getParameter("berlioz-reload"));
+
+    // Clear the XSLT cache if requested
+    if (reload || isTrue(req.getParameter("clear-xsl-cache"))) { XSLTransformer.clearAllCache(); }
+
+    // Allow ETags to be reset so clients must revalidate
+    if (reload || isTrue(req.getParameter("reset-etags"))) { config.resetETagSeed(); }
+
+    // Reload the global configuration from disk
+    if (reload) { GlobalSettings.load(); }
+
+    // Clear the service configuration so it is re-read on the next request
+    if (reload || isTrue(req.getParameter("reload-services"))) { loader.clear(); }
+
+    // Profile flag can also be enabled per-request via URL parameter
+    return profile || isTrue(req.getParameter("berlioz-profile"));
+  }
+
+  /**
+   * Applies the XSLT transformer to the XML content, or returns the raw XML when no transformer
+   * is configured. Also records profiling and server-timing metrics when enabled.
+   *
+   * @param content       The XML content to transform.
+   * @param req           The HTTP servlet request (passed through to the transformer).
+   * @param xml           The XML response (provides the matched service).
+   * @param transformer   The transformer to use, or {@code null} to pass XML through unchanged.
+   * @param res           The HTTP servlet response (used for server-timing headers).
+   * @param profile       Whether to log profiling information.
+   * @param serverTiming  Whether to add a Server-Timing header entry.
+   * @return The transformed (or raw XML) output.
+   */
+  private BerliozOutput executeTransform(String content, HttpServletRequest req, XMLResponse xml,
+      @Nullable XSLTransformer transformer, HttpServletResponse res, boolean profile, boolean serverTiming) {
+    if (transformer == null) return new XMLContent(content);
+
+    XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
+    if (profile && LOGGER.isInfoEnabled()) {
+      LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(xslresult.time()));
+    }
+    if (serverTiming) {
+      ServerTimingHeader.addMetricNano(res, "xslt", "XSLT Transform", xslresult.time());
+    }
+    // Signal the client that the service is temporarily unavailable when the transform failed
+    if (xslresult.status() == Status.ERROR) {
+      res.reset();
+      res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    }
+    return xslresult;
+  }
+
+  /**
+   * Writes the response body, applying GZip compression when both the configuration and the
+   * client support it. For HEAD requests ({@code includeContent = false}) only the
+   * {@code Content-Length} header is written without a body.
+   *
+   * @param req            The HTTP servlet request.
+   * @param res            The HTTP servlet response.
+   * @param result         The output to write.
+   * @param etag           The current ETag (updated to its GZip variant when compressed), or {@code null}.
+   * @param charset        The character set to use for encoding length calculations.
+   * @param config         The Berlioz configuration (controls compression eligibility).
+   * @param includeContent Whether to write a response body (false for HEAD requests).
+   * @throws IOException For any I/O error while writing to the response.
+   */
+  private void writeOutput(HttpServletRequest req, HttpServletResponse res, BerliozOutput result,
+      @Nullable String etag, Charset charset, BerliozConfig config, boolean includeContent) throws IOException {
+
+    // Only attempt compression when the config enables it and the media type is compressible
+    boolean compressible = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType());
+    if (compressible && HttpHeaderUtils.acceptsGZipCompression(req)) {
+      byte[] compressed = ResourceCompressor.compress(result.content(), charset);
+      if (compressed.length > 0) {
+        res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
+        res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
+        // ETag must reflect the encoding; replace it with the GZip variant
+        if (etag != null) {
+          res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
         }
-      } else {
-        isCompressed = false; // Client does not accept Compression
+        if (includeContent) {
+          ServletOutputStream out = res.getOutputStream();
+          out.write(compressed);
+          out.flush();
+        }
+        return; // Compressed output written; nothing more to do
       }
+      // Compression produced no bytes (e.g. content was empty) — fall through to uncompressed
     }
 
-    // Copy the uncompressed version if needed
-    if (!isCompressed) {
-      if (includeContent) {
-        PrintWriter out = res.getWriter();
-        out.print(result.content());
-        out.flush();
-      } else {
-        // We need to calculate when we don't include the content
-        res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), charset));
-      }
+    // Write uncompressed: body for GET, or just Content-Length for HEAD
+    if (includeContent) {
+      PrintWriter out = res.getWriter();
+      out.print(result.content());
+      out.flush();
+    } else {
+      // HEAD: report the length the client would receive without sending a body
+      res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), charset));
     }
-
   }
 
   /**
