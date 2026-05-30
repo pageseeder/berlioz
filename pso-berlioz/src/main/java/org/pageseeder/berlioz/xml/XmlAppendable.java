@@ -28,19 +28,15 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 /**
- * A base implementation for XML writers.
+ * A base implementation for XML writers wrapping an {@link java.io.Writer} or other
+ * {@link Appendable}.
  *
- * <p>Provides methods to generate well-formed XML data easily. wrapping a writer.
+ * <p>Provides methods to generate well-formed XML data. Characters are written directly to
+ * the underlying {@code Appendable}; when writing to a file, ensure the output stream uses
+ * UTF-8 encoding to match the {@code utf-8} encoding declared by {@link #declaration()}.
  *
- * <p>This version only supports utf-8 encoding, if writing to a file make sure that the
- * encoding of the file output stream is "utf-8".
- *
- * <p>The recommended implementation is to use a <code>BufferedWriter</code> to write.
- *
- * <pre>
- *  Writer writer =
- *     new BufferedWriter(new OutputStreamWriter(new FileOutputStream("foo.out"),"utf-8"));
- * </pre>
+ * <p>Indentation is <em>off</em> by default. Call {@link #withIndent(String)} before writing
+ * any content to enable it.
  *
  * @author Christophe Lauret
  *
@@ -65,16 +61,14 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   private static final String ENCODING = "utf-8";
 
   /**
-   * Indicates whether the xml should be indented or not.
+   * Indicates whether the XML output should be indented.
    *
-   * <p>The default is <code>true</code> (indented).
-   *
-   * <p>The indentation is 2 white-spaces.
+   * <p>The default is {@code false}. Enabled by {@link #withIndent(String)}.
    */
   private final boolean indent;
 
   /**
-   * The default indentation spaces used.
+   * The string used for each indentation level, or {@code null} if indentation is off.
    */
   private final @Nullable String indentChars;
 
@@ -103,12 +97,13 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   // constructors -------------------------------------------------------------------------
 
   /**
-   * <p>Creates a new XML writer.
+   * Creates a new XML writer.
    *
-   * @param xml  Where this writer should write the XML data.
-   * @param indentChars  Set the indentation flag.
+   * @param xml         The appendable to write XML data to.
+   * @param indentChars The string to repeat for each indentation level, or {@code null} to
+   *                    disable indentation.
    *
-   * @throws NullPointerException If the writer is <code>null</code>.
+   * @throws NullPointerException If {@code xml} is {@code null}.
    */
   protected XmlAppendable(T xml, @Nullable String indentChars) throws NullPointerException {
     this.xml = Objects.requireNonNull(xml, "XmlWriter cannot use a null writer.");
@@ -118,29 +113,31 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   }
 
   /**
-   * <p>Creates a new XML writer.
+   * Creates a new XML writer without indentation.
    *
-   * @param xml  Where this writer should write the XML data.
+   * @param xml The appendable to write XML data to.
    *
-   * @throws NullPointerException If the writer is <code>null</code>.
+   * @throws NullPointerException If {@code xml} is {@code null}.
    */
   public XmlAppendable(T xml) throws NullPointerException {
     this(xml, null);
   }
 
   /**
-   * Sets the string to use for indentation.
+   * Returns a new writer sharing the same appendable but with the given indentation string.
    *
-   * <p>The string must be only composed of valid spaces characters.
+   * <p>Each level of nesting is indented by one copy of {@code spaces}. The string must
+   * consist entirely of Unicode space characters as defined by {@link Character#isSpaceChar(char)};
+   * note that tab ({@code '\t'}) and newline characters do not qualify and will be rejected.
    *
-   * <p>If the string is <code>null</code> then the indentation is turned off.
+   * <p>Pass {@code null} to return a new writer with indentation disabled.
    *
-   * @see Character#isSpaceChar(char)
+   * @param spaces The string to repeat for each indentation level, or {@code null} to disable
+   *               indentation.
    *
-   * @param spaces The indentation string to use.
-   *
-   * @throws IllegalArgumentException If the indent string is not made of spaces.
-   * @throws IllegalStateException    If the writer has already been used.
+   * @return A new writer configured with the given indentation, sharing this writer's appendable.
+   * @throws IllegalArgumentException If {@code spaces} contains a non-space character.
+   * @throws IllegalStateException    If this writer has already produced output.
    */
   public XmlAppendable<T> withIndent(@Nullable String spaces) {
     checkCanSetIndent(spaces);
@@ -202,11 +199,13 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   }
 
   /**
-   * Writes the string value of an object.
+   * Writes an object as raw XML content.
    *
-   * <p>Does nothing if the object is <code>null</code>.
+   * <p>If the object implements {@link XmlWritable}, its {@code toXml} method is invoked.
+   * Otherwise, {@code toString()} is passed verbatim to {@link #xml(String)} without escaping.
+   * Does nothing if {@code o} is {@code null}.
    *
-   * @param o The object that should be written as text.
+   * @param o The object to write as XML, or {@code null} to do nothing.
    */
   public XmlAppendable<T> asXml(@Nullable Object o) {
     if (o instanceof XmlWritable) {
@@ -366,11 +365,9 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Writes a start element tag correctly indented.
+   * Writes a start element tag, equivalent to {@code openElement(name, false)}.
    *
-   * <p>It is the same as <code>openElement(null, name, false)</code>
-   *
-   * @param name The name of the element
+   * @param name The name of the element.
    */
   @Override
   public XmlAppendable<T> openElement(String name) {
@@ -378,15 +375,14 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   }
 
   /**
-   * Writes a start element tag correctly indented.
+   * Writes a start element tag.
    *
-   * <p>Use the <code>hasChildren</code> parameter to specify whether this element is
-   * terminal node or not, which affects the indenting.
+   * <p>Set {@code hasChildren} to {@code true} when the element will contain child elements,
+   * so that they are indented correctly. Set it to {@code false} for leaf elements that
+   * contain only text or are empty.
    *
-   * <p>The name can contain attributes and should be a valid xml name.
-   *
-   * @param name        The name of the element.
-   * @param hasChildren <code>true</code> if this element has children.
+   * @param name        The qualified name of the element.
+   * @param hasChildren {@code true} if this element will contain child elements.
    */
   @Override
   public XmlAppendable<T> openElement(String name, boolean hasChildren) {
@@ -403,9 +399,14 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   }
 
   /**
-   * Write the end element tag.
+   * Writes the end element tag, closing the most recently opened element.
    *
-   * @throws IllegalCloseElementException If there is no element to close
+   * <p>If no content was written after the matching {@link #openElement(String)}, the element
+   * is emitted as a self-closing tag ({@code />}); otherwise the closing tag
+   * ({@code </name>}) is written.
+   *
+   * @return This writer.
+   * @throws IllegalCloseElementException If there is no open element to close.
    */
   @Override
   public XmlAppendable<T> closeElement() throws IllegalCloseElementException {
@@ -444,17 +445,9 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   }
 
   /**
-   * Same as <code>emptyElement(null, element);</code>.
+   * Writes a self-closing element tag ({@code <element/>}).
    *
-   * <p>It is possible for the element to contain attributes,
-   * however, since there is no character escaping, great care
-   * must be taken not to introduce invalid characters. For
-   * example:
-   * <pre>
-   *    &lt;<i>example test="yes"</i>/&gt;
-   * </pre>
-   *
-   * @param element the name of the element
+   * @param element The name of the element.
    */
   @Override
   public XmlAppendable<T> emptyElement(String element) {
@@ -598,48 +591,45 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   private void appendEscaped(CharSequence ch, int off, int len, boolean attr) {
     int end = off + len;
     int segmentStart = off;
-    for (int i = off; i < end; i++) {
+    int i = off;
+    while (i < end) {
       char c = ch.charAt(i);
-      String replacement = null;
-      if (c == '<') {
-        replacement = "&lt;";
-      } else if (c == '&') {
-        replacement = "&amp;";
-      } else if (!attr && c == '>') {
-        replacement = "&gt;";
-      } else if (attr && c == '"') {
-        replacement = "&quot;";
-      } else if (attr && c == '\'') {
-        replacement = "&#39;";
-      } else if (Character.isHighSurrogate(c)) {
-        if (i + 1 < end && Character.isLowSurrogate(ch.charAt(i + 1))) {
-          if (segmentStart < i) {
-            append(ch, segmentStart, i);
+      if (Character.isHighSurrogate(c) && i + 1 < end && Character.isLowSurrogate(ch.charAt(i + 1))) {
+        flushSegment(ch, segmentStart, i);
+        append("&#x");
+        append(Integer.toHexString(Character.toCodePoint(c, ch.charAt(i + 1))));
+        append(';');
+        segmentStart = i + 2;
+        i += 2;
+      } else {
+        String replacement = getEscapedReplacement(c, attr);
+        if (replacement != null) {
+          flushSegment(ch, segmentStart, i);
+          if (!replacement.isEmpty()) {
+            append(replacement);
           }
-          append("&#x");
-          append(Integer.toHexString(Character.toCodePoint(c, ch.charAt(i + 1))));
-          append(';');
-          i++;
           segmentStart = i + 1;
-          continue;
         }
-        replacement = "";
-      } else if (Character.isLowSurrogate(c) || !isXmlCharacter(c)) {
-        replacement = "";
-      }
-      if (replacement != null) {
-        if (segmentStart < i) {
-          append(ch, segmentStart, i);
-        }
-        if (!replacement.isEmpty()) {
-          append(replacement);
-        }
-        segmentStart = i + 1;
+        i++;
       }
     }
-    if (segmentStart < end) {
-      append(ch, segmentStart, end);
+    flushSegment(ch, segmentStart, end);
+  }
+
+  private void flushSegment(CharSequence ch, int start, int end) {
+    if (start < end) {
+      append(ch, start, end);
     }
+  }
+
+  private static @Nullable String getEscapedReplacement(char c, boolean attr) {
+    if (c == '<') return "&lt;";
+    if (c == '&') return "&amp;";
+    if (!attr && c == '>') return "&gt;";
+    if (attr && c == '"') return "&quot;";
+    if (attr && c == '\'') return "&#39;";
+    if (Character.isHighSurrogate(c) || Character.isLowSurrogate(c) || !isXmlCharacter(c)) return "";
+    return null;
   }
 
   private static boolean isXmlCharacter(char c) {
