@@ -30,8 +30,8 @@ import java.text.Normalizer.Form;
  * </pre>
  *
  * <p>
- * This encoder/decoder should be designed so that URI which contain only unreserved characters are
- * processed faster.
+ * This encoder/decoder should be designed so that URI, which contain only unreserved characters,
+ * are processed faster.
  *
  * @see <a href="http://tools.ietf.org/html/rfc3986">RFC 3986 - Uniform Resource Identifier (URI):
  *      Generic Syntax<a/>
