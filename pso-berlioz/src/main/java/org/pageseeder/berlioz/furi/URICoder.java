@@ -64,7 +64,7 @@ import java.text.Normalizer.Form;
  * input, but callers should prefer this class when working with URI templates.
  *
  * <p>Strings that contain only unreserved characters (the common case for well-formed path
- * segments) are processed without allocating a {@code StringBuilder}, keeping the hot path fast.
+ * segments) are returned unchanged without any allocation.
  *
  * @see <a href="http://tools.ietf.org/html/rfc3986">RFC 3986 – Uniform Resource Identifier (URI):
  *      Generic Syntax</a>
@@ -85,8 +85,9 @@ public final class URICoder {
   /**
    * The hexadecimal digits for use by the encoder.
    */
-  private static final char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-      'B', 'C', 'D', 'E', 'F' };
+  private static final char[] HEX_DIGITS = {
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+  };
 
   /**
    * Prevents creation of instances.
@@ -114,7 +115,7 @@ public final class URICoder {
    * @return The percent-encoded string.
    */
   public static String encode(String s) {
-    // invoke encode method with character that we know does not require encoding
+    // '0' is unreserved so passing it as the extra passthrough char has no effect
     return encode(s, '0');
   }
 
@@ -133,9 +134,7 @@ public final class URICoder {
   public static String encode(String s, char c) {
     if (s.isEmpty())
       return s;
-    // Check whether we need to use UTF-8 encoder
-    boolean ascii = isASCII(s);
-    return ascii ? encodeASCII(s, c) : encodeUTF8(s, c);
+    return isASCII(s) ? encodeASCII(s, c) : encodeUTF8(s, c);
   }
 
   /**
@@ -157,20 +156,27 @@ public final class URICoder {
   public static String minimalEncode(String s) {
     if (s.isEmpty())
       return s;
-    // Check whether we need to use UTF-8 encoder
-    boolean ascii = isASCII(s);
-    return ascii ? minimalEncodeASCII(s) : minimalEncodeUTF8(s);
+    return isASCII(s) ? minimalEncodeASCII(s) : minimalEncodeUTF8(s);
   }
 
   /**
-   * Encodes a string containing only ASCII characters.
+   * Encodes an ASCII-only string, leaving unreserved characters and {@code e} as-is.
    *
-   * @param s The string the encode (assuming ASCII characters only)
-   * @param e A character that does not require encoding if found in the string.
+   * @param s The string to encode (caller guarantees ASCII-only content).
+   * @param e An extra character that bypasses encoding.
    */
   private static String encodeASCII(String s, char e) {
-    StringBuilder sb = new StringBuilder();
-    for (char c : s.toCharArray()) {
+    int len = s.length();
+    // Scan for the first character that needs encoding; return s unchanged on the hot path.
+    int i = 0;
+    while (i < len && (isUnreserved(s.charAt(i)) || s.charAt(i) == e)) {
+      i++;
+    }
+    if (i == len) return s;
+    StringBuilder sb = new StringBuilder(len);
+    sb.append(s, 0, i);
+    while (i < len) {
+      char c = s.charAt(i++);
       if (isUnreserved(c) || c == e) {
         sb.append(c);
       } else {
@@ -181,13 +187,21 @@ public final class URICoder {
   }
 
   /**
-   * Encodes a string containing only ASCII characters.
+   * Minimally encodes an ASCII-only string, leaving legal URI characters as-is.
    *
-   * @param s The string the encode (assuming ASCII characters only)
+   * @param s The string to encode (caller guarantees ASCII-only content).
    */
   private static String minimalEncodeASCII(String s) {
-    StringBuilder sb = new StringBuilder();
-    for (char c : s.toCharArray()) {
+    int len = s.length();
+    int i = 0;
+    while (i < len && isLegal(s.charAt(i))) {
+      i++;
+    }
+    if (i == len) return s;
+    StringBuilder sb = new StringBuilder(len);
+    sb.append(s, 0, i);
+    while (i < len) {
+      char c = s.charAt(i++);
       if (isLegal(c)) {
         sb.append(c);
       } else {
@@ -198,45 +212,41 @@ public final class URICoder {
   }
 
   /**
-   * Encodes a string containing non ASCII characters using an UTF-8 encoder.
+   * Encodes a string containing non-ASCII characters, normalising to NFKC first.
    *
-   * @param s The string the encode (assuming ASCII characters only)
-   * @param e A character that does not require encoding if found in the string.
+   * @param s The string to encode (may contain non-ASCII characters).
+   * @param e An extra character that bypasses encoding.
    */
   private static String encodeUTF8(String s, char e) {
-    String n = (Normalizer.isNormalized(s, Form.NFKC)) ? s : Normalizer.normalize(s, Form.NFKC);
-    // convert String to UTF-8
+    String n = Normalizer.isNormalized(s, Form.NFKC) ? s : Normalizer.normalize(s, Form.NFKC);
     ByteBuffer bb = StandardCharsets.UTF_8.encode(n);
-    // URI encode
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder(n.length());
     while (bb.hasRemaining()) {
       int b = bb.get() & 0xff;
       if (isUnreserved(b) || b == e) {
         sb.append((char) b);
       } else {
-        appendEscape(sb, (byte) b);
+        appendEscape(sb, b);
       }
     }
     return sb.toString();
   }
 
   /**
-   * Encodes a string containing non ASCII characters using an UTF-8 encoder.
+   * Minimally encodes a string containing non-ASCII characters, normalising to NFKC first.
    *
-   * @param s The string the encode (assuming ASCII characters only)
+   * @param s The string to encode (may contain non-ASCII characters).
    */
   private static String minimalEncodeUTF8(String s) {
-    String n = (Normalizer.isNormalized(s, Form.NFKC)) ? s : Normalizer.normalize(s, Form.NFKC);
-    // convert String to UTF-8
+    String n = Normalizer.isNormalized(s, Form.NFKC) ? s : Normalizer.normalize(s, Form.NFKC);
     ByteBuffer bb = StandardCharsets.UTF_8.encode(n);
-    // URI encode
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder(n.length());
     while (bb.hasRemaining()) {
       int b = bb.get() & 0xff;
       if (isLegal(b)) {
         sb.append((char) b);
       } else {
-        appendEscape(sb, (byte) b);
+        appendEscape(sb, b);
       }
     }
     return sb.toString();
@@ -254,8 +264,8 @@ public final class URICoder {
    * upper- or lowercase.
    *
    * <p>Strings that contain no {@code %} or {@code +} characters are returned as-is without
-   * any allocation. Malformed {@code %} sequences (fewer than two following hex digits) are
-   * silently dropped.
+   * any allocation. Malformed {@code %} sequences (fewer than two following hex digits, or
+   * non-hex digits) are silently dropped.
    *
    * @param s The string to decode.
    *
@@ -264,102 +274,132 @@ public final class URICoder {
   public static String decode(String s) {
     if (s.isEmpty() || (s.indexOf('%') < 0 && s.indexOf('+') < 0))
       return s;
-    // Check whether we need to convert to UTF-8 encoder
-    boolean ascii = isEncodedASCII(s);
-    return ascii ? decodeASCII(s) : decodeUTF8(s);
+    return isEncodedASCII(s) ? decodeASCII(s) : decodeUTF8(s);
   }
 
   /**
-   * Decodes a string containing only ASCII characters.
+   * Decodes a percent-encoded string whose decoded bytes are all in the ASCII range.
    */
   private static String decodeASCII(String s) {
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < s.length(); i++) {
+    int len = s.length();
+    StringBuilder sb = new StringBuilder(len);
+    int i = 0;
+    while (i < len) {
       char c = s.charAt(i);
       if (c == '%') {
-        if (i < s.length() - 2) {
-          String hex = String.copyValueOf(new char[] { s.charAt(++i), s.charAt(++i) });
-          char x = (char) Integer.parseInt(hex, 16);
-          sb.append(x);
+        if (i + 2 < len) {
+          int hi = hexToInt(s.charAt(i + 1));
+          int lo = hexToInt(s.charAt(i + 2));
+          if (hi >= 0 && lo >= 0) {
+            sb.append((char) ((hi << 4) | lo));
+            i += 3;
+          } else {
+            // Non-hex digits after %: drop the % and reprocess the following characters.
+            i++;
+          }
+        } else {
+          // Fewer than two characters remain after %: drop the truncated sequence.
+          i++;
         }
-        // TODO: handle error condition
       } else if (c == '+') {
         sb.append(' ');
+        i++;
       } else {
         sb.append(c);
+        i++;
       }
     }
     return sb.toString();
   }
 
   /**
-   * Decodes a string containing non ASCII characters using an UTF-8 decoder.
+   * Decodes a percent-encoded string that contains multi-byte UTF-8 sequences.
    */
   private static String decodeUTF8(String s) {
-    // URI decode
-    ByteBuffer bb = ByteBuffer.allocate(s.length());
-    for (int i = 0; i < s.length(); i++) {
+    int len = s.length();
+    // Each input character produces at most one output byte for well-formed encoded input
+    // (%XX → 1 byte from 3 chars; ASCII literal → 1 byte; + → 1 byte).
+    byte[] bytes = new byte[len];
+    int pos = 0;
+    int i = 0;
+    while (i < len) {
       char c = s.charAt(i);
       if (c == '%') {
-        if (i < s.length() - 2) {
-          String hex = "" + s.charAt(++i) + s.charAt(++i);
-          byte b = (byte) (Integer.parseInt(hex, 16));
-          bb.put(b);
+        if (i + 2 < len) {
+          int hi = hexToInt(s.charAt(i + 1));
+          int lo = hexToInt(s.charAt(i + 2));
+          if (hi >= 0 && lo >= 0) {
+            bytes[pos++] = (byte) ((hi << 4) | lo);
+            i += 3;
+          } else {
+            // Non-hex digits after %: drop the % and reprocess the following characters.
+            i++;
+          }
+        } else {
+          // Fewer than two characters remain after %: drop the truncated sequence.
+          i++;
         }
       } else if (c == '+') {
-        bb.put((byte)' ');
+        bytes[pos++] = (byte) ' ';
+        i++;
       } else {
-        // TODO: could there be also non-ASCII characters that should have been encoded?
-        bb.put((byte) c);
+        // For valid percent-encoded input this is always an ASCII character.
+        // Non-ASCII literals are not expected here; only the low byte is stored.
+        bytes[pos++] = (byte) c;
+        i++;
       }
     }
-    bb.limit(bb.position());
-    bb.position(0);
-    return StandardCharsets.UTF_8.decode(bb).toString();
+    return new String(bytes, 0, pos, StandardCharsets.UTF_8);
   }
 
+  // Helpers
+  // ==========================================================================
+
   /**
-   * Appends the escape sequence for the given byte to the specified string buffer.
+   * Appends a percent-escape sequence for a single byte value to the builder.
    *
-   * @param sb The string buffer.
-   * @param b The byte to escape.
+   * @param sb The builder to append to.
+   * @param b  The byte value (0–255) to escape.
    */
-  private static void appendEscape(StringBuilder sb, byte b) {
+  private static void appendEscape(StringBuilder sb, int b) {
     sb.append('%');
     sb.append(HEX_DIGITS[(b >> 4) & 0x0f]);
-    sb.append(HEX_DIGITS[(b) & 0x0f]);
+    sb.append(HEX_DIGITS[b & 0x0f]);
   }
 
   /**
-   * Appends the escape sequence for the given byte to the specified string buffer.
+   * Converts a single hexadecimal character to its integer value.
    *
-   * @param sb The string buffer.
-   * @param c The char to escape.
+   * @param c The character to convert ({@code 0–9}, {@code A–F}, or {@code a–f}).
+   *
+   * @return The integer value (0–15), or {@code -1} if {@code c} is not a valid hex digit.
    */
-  private static void appendEscape(StringBuilder sb, char c) {
-    sb.append('%');
-    sb.append(HEX_DIGITS[(c >> 4) & 0x0f]);
-    sb.append(HEX_DIGITS[(c) & 0x0f]);
+  private static int hexToInt(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
   }
 
   /**
-   * Indicates whether the character is unreserved of not.
+   * Returns {@code true} if the character is an RFC 3986 unreserved character.
    *
    * @param c The character to test.
    *
-   * @return <code>true</code> if it is unreserved; <code>false</code> otherwise.
+   * @return {@code true} if unreserved; {@code false} otherwise.
    */
   private static boolean isUnreserved(int c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
-        || c == '.' || c == '_' || c == '-' || c == '~';
+        || c == '-' || c == '.' || c == '_' || c == '~';
   }
 
   /**
-   * Indicates whether the character is unreserved of not.
+   * Returns {@code true} if the character is legal in a URI (i.e. not required to be
+   * percent-encoded by {@link #minimalEncode}).
    *
    * @param c The character to test.
    *
-   * @return <code>true</code> if it is unreserved; <code>false</code> otherwise.
+   * @return {@code true} if legal; {@code false} otherwise.
    */
   private static boolean isLegal(int c) {
     if (c < '&') return c == '!' || c == '#' || c == '$';
@@ -368,23 +408,25 @@ public final class URICoder {
   }
 
   /**
-   * Indicates whether the string contains non-ASCII characters.
+   * Returns {@code true} if the string contains only ASCII characters (code points {@code < 0x80}).
    */
   private static boolean isASCII(String s) {
     for (int i = 0; i < s.length(); i++) {
-      if (s.charAt(i) >= 0x80)
-        return false;
+      if (s.charAt(i) >= 0x80) return false;
     }
     return true;
   }
 
   /**
-   * Indicates whether the encoded string contains non-ASCII characters.
+   * Returns {@code true} if the string contains no percent-encoded non-ASCII bytes.
+   *
+   * <p>A {@code %XX} sequence encodes a non-ASCII byte when the first hex digit is greater than
+   * {@code '7'} (i.e. the byte value is {@code >= 0x80}), which indicates the start of a
+   * multi-byte UTF-8 sequence. If any such sequence is found, the UTF-8 decoder must be used.
    */
   private static boolean isEncodedASCII(String s) {
     for (int i = 0; i < s.length(); i++) {
-      if (s.charAt(i) == '%' && i < s.length() - 1 && s.charAt(i + 1) > '7')
-        return false;
+      if (s.charAt(i) == '%' && i < s.length() - 1 && s.charAt(i + 1) > '7') return false;
     }
     return true;
   }
