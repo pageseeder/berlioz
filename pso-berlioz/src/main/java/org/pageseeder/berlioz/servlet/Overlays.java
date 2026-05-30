@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -151,6 +152,19 @@ final class Overlays {
       return compare;
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof Overlay)) return false;
+      Overlay other = (Overlay) o;
+      return this.name.equals(other.name) && this.version.equals(other.version);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(this.name, this.version);
+    }
+
     /**
      * @return the source file
      */
@@ -174,50 +188,19 @@ final class Overlays {
       long totalSize = 0;
       long modified = this.source.lastModified();
       try (ZipFile zip = new ZipFile(this.source)) {
-        ZipEntry entry;
         for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements();) {
-          entry = e.nextElement();
+          ZipEntry entry = e.nextElement();
           if (++entries > MAX_ENTRIES)
             throw new IOException("Overlay '" + this.source.getName() + "' exceeds maximum entry count (" + MAX_ENTRIES + ")");
-
           String entryName = entry.getName();
           Path path = Paths.get(rootPath, entryName).normalize();
           if (isIllegal(path, rootPath)) {
             LOGGER.warn("Ignoring illegal entry: {}", entryName);
-            continue;
-          }
-
-          // Ignore any file in the META-INF folder and any MacOS files
-          if (entryName.startsWith("META-INF") || entryName.contains("__MACOSX") || entryName.endsWith(".DS_Store")) {
-            continue;
-          }
-          // Ensure that the folder exists
-          if (entryName.contains("/")) {
-            File dir = path.getParent().toFile();
-            if (!dir.exists()) {
-              boolean created = dir.mkdirs();
-              if (!created) {
-                LOGGER.warn("Unable to create parent folder of: {}", entryName);
-              }
-            }
-          }
-          // Only process files
-          if (!entry.isDirectory()) {
-            long size = entry.getSize();
-            long compressedSize = entry.getCompressedSize();
-            if (size >= 0 && compressedSize > 0 && size / compressedSize > MAX_COMPRESSION_RATIO)
-              throw new IOException("Overlay entry '" + entryName + "' has a suspicious compression ratio");
-            if (size > 0) {
-              totalSize += size;
-              if (totalSize > MAX_TOTAL_SIZE)
-                throw new IOException("Overlay '" + this.source.getName() + "' exceeds maximum total size (" + MAX_TOTAL_SIZE + " bytes)");
-            }
-            File f = path.toFile();
-            if (!f.exists() || f.length() != size || f.lastModified() < modified) {
-              try (BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry))) {
-                Files.copy(is, path, StandardCopyOption.REPLACE_EXISTING);
-                unpacked++;
-              }
+          } else if (!shouldSkip(entryName)) {
+            ensureParentExists(path, entryName);
+            if (!entry.isDirectory()) {
+              totalSize = accumulateSize(entry, entryName, totalSize);
+              unpacked += copyIfNeeded(zip, entry, path, modified);
             }
           }
         }
@@ -231,6 +214,40 @@ final class Overlays {
         if (path.endsWith(illegalPath.substring(1))) return true;
       }
       return false;
+    }
+
+    private static boolean shouldSkip(String entryName) {
+      return entryName.startsWith("META-INF") || entryName.contains("__MACOSX") || entryName.endsWith(".DS_Store");
+    }
+
+    private static void ensureParentExists(Path path, String entryName) {
+      if (entryName.contains("/")) {
+        File dir = path.getParent().toFile();
+        if (!dir.exists() && !dir.mkdirs()) {
+          LOGGER.warn("Unable to create parent folder of: {}", entryName);
+        }
+      }
+    }
+
+    private long accumulateSize(ZipEntry entry, String entryName, long totalSize) throws IOException {
+      long size = entry.getSize();
+      long compressedSize = entry.getCompressedSize();
+      if (size >= 0 && compressedSize > 0 && size / compressedSize > MAX_COMPRESSION_RATIO)
+        throw new IOException("Overlay entry '" + entryName + "' has a suspicious compression ratio");
+      if (size <= 0) return totalSize;
+      long newTotal = totalSize + size;
+      if (newTotal > MAX_TOTAL_SIZE)
+        throw new IOException("Overlay '" + this.source.getName() + "' exceeds maximum total size (" + MAX_TOTAL_SIZE + " bytes)");
+      return newTotal;
+    }
+
+    private static int copyIfNeeded(ZipFile zip, ZipEntry entry, Path path, long modified) throws IOException {
+      File f = path.toFile();
+      if (f.exists() && f.length() == entry.getSize() && f.lastModified() >= modified) return 0;
+      try (BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry))) {
+        Files.copy(is, path, StandardCopyOption.REPLACE_EXISTING);
+      }
+      return 1;
     }
 
     @Override
