@@ -20,10 +20,11 @@ import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.content.PathInfo;
 import org.pageseeder.berlioz.http.HttpHeaders;
-import org.pageseeder.berlioz.util.StringUtils;
+import org.pageseeder.berlioz.util.Strings;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -174,7 +175,6 @@ public final class HttpLocation implements Location, Serializable {
     return base;
   }
 
-
   /**
    * Returns the scheme (http or https).
    *
@@ -195,14 +195,13 @@ public final class HttpLocation implements Location, Serializable {
    * @return the corresponding scheme
    */
   private static String getScheme(HttpServletRequest req) {
-    //If there is a reverse proxy, the original scheme maybe in X_FORWARDED_PROTO header
-    String scheme = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
-
-    if (StringUtils.isBlank(scheme)) {
-      scheme = req.getScheme();
+    // If there is a reverse proxy, the original scheme may be in X-Forwarded-Proto header.
+    // Only "http" and "https" are accepted to prevent header injection.
+    String forwarded = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
+    if (isValidScheme(forwarded)) {
+      return forwarded;
     }
-
-    return scheme;
+    return req.getScheme();
   }
 
   /**
@@ -217,18 +216,20 @@ public final class HttpLocation implements Location, Serializable {
   private static int getPort(HttpServletRequest req) {
     int port = req.getServerPort();
 
-    //If there is a reverse proxy, the original port maybe in CustomHttpHeaders.X_FORWARDED_HOST header
-    //It is not compulsory to have the port in the host.
+    // If there is a reverse proxy, the original port may be in X-Forwarded-Host header.
+    // It is not compulsory to have the port in the host.
     String reverseProxyScheme = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
 
-    // If theres is a reverse proxy scheme then it should not use the req.getServerPort
-    if (!StringUtils.isBlank(reverseProxyScheme)) {
-      // If there is not a reverse proxy port, then set to -1 to indicate that there is reverse port but the port has
-      // not been sent.
+    // If there is a reverse proxy scheme, then it should not use the req.getServerPort
+    if (isValidScheme(reverseProxyScheme)) {
+      // If there is not a reverse proxy port, set to -1 to indicate no port was forwarded.
       port = -1;
-      String reverseProxyPort = StringUtils.substringAfter(req.getHeader(HttpHeaders.X_FORWARDED_HOST), ":");
+      String reverseProxyPort = Strings.substringAfter(req.getHeader(HttpHeaders.X_FORWARDED_HOST), ':');
       if (reverseProxyPort.matches("\\d{1,5}")) {
-        port = Integer.parseInt(reverseProxyPort);
+        int parsed = Integer.parseInt(reverseProxyPort);
+        if (parsed > 0 && parsed <= 65535) {
+          port = parsed;
+        }
       }
     }
 
@@ -255,5 +256,15 @@ public final class HttpLocation implements Location, Serializable {
     if (port < 0) return true;
     return (DEFAULT_PORT_HTTP == port  && "http".equals(scheme))
         || (DEFAULT_PORT_HTTPS == port && "https".equals(scheme));
+  }
+
+  /**
+   * Checks if the given scheme is valid. A scheme is considered valid if it is either "http" or "https".
+   *
+   * @param scheme The scheme to validate. It can be null.
+   * @return true if the scheme is "http" or "https"; false otherwise.
+   */
+  private static boolean isValidScheme(@Nullable String scheme) {
+    return "http".equals(scheme) || "https".equals(scheme);
   }
 }
