@@ -168,17 +168,19 @@ public final class RelocationFilter implements Filter {
     String from = req.getRequestURI();
     String to = mapping.relocate(from);
     if (to != null) {
-      to = ensureSafeTarget(to.replaceAll("[\\n\\r]*", ""));
-      LOGGER.debug("Relocating from {} to {}", from, to);
+      to = ensureSafeTarget(to);
+      if (to != null) {
+        LOGGER.debug("Relocating from {} to {}", from, to);
 
-      // And relocate
-      RequestDispatcher dispatcher = req.getRequestDispatcher(to);
-      if (dispatcher != null) {
-        res.setHeader("Content-Location", to);
-        dispatcher.forward(req, res);
-        return;
-      } else {
-        LOGGER.debug("Invalid URL, no dispatcher found");
+        // And relocate
+        RequestDispatcher dispatcher = req.getRequestDispatcher(to);
+        if (dispatcher != null) {
+          res.setHeader("Content-Location", to);
+          dispatcher.forward(req, res);
+          return;
+        } else {
+          LOGGER.debug("Invalid URL, no dispatcher found");
+        }
       }
     }
 
@@ -204,7 +206,12 @@ public final class RelocationFilter implements Filter {
     return relocationConfig;
   }
 
-  private String ensureSafeTarget(String to) {
-    return Paths.get(to.replaceAll("[\\n\\r]*", "")).normalize().toString();
+  private @Nullable String ensureSafeTarget(String to) {
+    String normalized = Paths.get(to.replaceAll("[\\n\\r]*", "")).normalize().toString();
+    if (normalized.startsWith("/WEB-INF") || normalized.startsWith("/META-INF")) {
+      LOGGER.warn("Relocation target '{}' resolves to protected path, ignoring", to);
+      return null;
+    }
+    return normalized;
   }
 }
