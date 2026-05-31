@@ -18,7 +18,6 @@ package org.pageseeder.berlioz.furi;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.pageseeder.berlioz.furi.TokenFactory.Syntax;
 import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
 
 /**
@@ -40,7 +39,7 @@ public final class BerliozSyntaxTest {
   private final Parameters params = new URIParameters();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     // parameters for examples
     this.params.set("var", "value");
     this.params.set("hello", "Hello World!");
@@ -248,8 +247,7 @@ public final class BerliozSyntaxTest {
    * @param parameters The parameters to use for expansion.
    */
   private void assertExpandOK(String expansion, String value, Parameters parameters) {
-    TokenFactory factory = TokenFactory.getInstance(Syntax.DRAFTX);
-    URITemplate template = new URITemplate(expansion, factory);
+    URITemplate template = new URITemplate(expansion);
     Assert.assertEquals(value, template.expand(parameters));
   }
 }

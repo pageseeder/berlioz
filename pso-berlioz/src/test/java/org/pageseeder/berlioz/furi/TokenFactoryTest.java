@@ -36,7 +36,7 @@ public final class TokenFactoryTest {
    */
   @Test(expected = NullPointerException.class)
   public void testNewToken_Null() {
-    Assert.assertNull(TokenFactory.getInstance().newToken(null));
+    Assert.assertNull(TokenFactory.newToken(null));
   }
 
   /**
@@ -45,7 +45,7 @@ public final class TokenFactoryTest {
    */
   @Test
   public void testNewToken_EmptyString() {
-    Assert.assertEquals(TokenLiteral.EMPTY, TokenFactory.getInstance().newToken(""));
+    Assert.assertEquals(TokenLiteral.EMPTY, TokenFactory.newToken(""));
   }
 
   /**
@@ -54,7 +54,7 @@ public final class TokenFactoryTest {
    */
   @Test
   public void testNewToken_Literal() {
-    Assert.assertEquals(new TokenLiteral("x"), TokenFactory.getInstance().newToken("x"));
+    Assert.assertEquals(new TokenLiteral("x"), TokenFactory.newToken("x"));
   }
 
   /**
@@ -64,11 +64,11 @@ public final class TokenFactoryTest {
   @Test
   public void testNewToken_Variable() {
     Variable x = new Variable("x");
-    Assert.assertEquals(new TokenVariable(x), TokenFactory.getInstance().newToken("{x}"));
+    Assert.assertEquals(new TokenVariable(x), TokenFactory.newToken("{x}"));
     Variable y = new Variable("y", "z");
-    Assert.assertEquals(new TokenVariable(y), TokenFactory.getInstance().newToken("{y=z}"));
+    Assert.assertEquals(new TokenVariable(y), TokenFactory.newToken("{y=z}"));
     Variable q = new Variable("q", "p", new VariableType("t"));
-    Assert.assertEquals(new TokenVariable(q), TokenFactory.getInstance().newToken("{t:q=p}"));
+    Assert.assertEquals(new TokenVariable(q), TokenFactory.newToken("{t:q=p}"));
   }
 
   /**
@@ -82,7 +82,6 @@ public final class TokenFactoryTest {
     vars.add(y);
     // make sure that all defined operators are supported
     for (Operator o : Operator.values()) {
-      TokenFactory factory = TokenFactory.getInstance();
       TokenOperator t = new BerliozTokenOperator(o, vars);
       // FIXME
 //      Assert.assertEquals(t, factory.newToken("{-" + o.name().toLowerCase() + "|x|y}"));

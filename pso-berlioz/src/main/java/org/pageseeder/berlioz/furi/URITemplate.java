@@ -84,22 +84,6 @@ public class URITemplate implements Expandable {
   }
 
   /**
-   * Creates a new URI Template instance using the specified token factory.
-   *
-   * <p>If the specified factory is <code>null</code>, the default is used.
-   *
-   * @param template A String following the URI template syntax.
-   * @param factory  A token factory in order to choose the URI template syntax to use.
-   *
-   * @throws NullPointerException If the specified template is <code>null</code>.
-   * @throws URITemplateSyntaxException If the string provided does not follow the proper syntax.
-   */
-  public URITemplate(String template, @Nullable TokenFactory factory) {
-    this.template = Objects.requireNonNull(template, "Cannot create a URI template with a null template");
-    this.tokens = digest(template, factory != null? factory : TokenFactory.getInstance());
-  }
-
-  /**
    * Expands the template to produce a URI as defined by the URI Template specifications.
    *
    * @param parameters The list of variables and their values for substitution.
@@ -140,45 +124,24 @@ public class URITemplate implements Expandable {
    * @throws URITemplateSyntaxException If the string cannot be parsed.
    */
   public static List<Token> digest(String template) throws URITemplateSyntaxException {
-    return digest(template, TokenFactory.getInstance());
-  }
-
-  /**
-   * Returns the list of tokens corresponding to the specified URI template.
-   *
-   * @param template The URI template to digest.
-   * @param factory  The token factory to use.
-   *
-   * @return The corresponding list of URL tokens.
-   *
-   * @throws URITemplateSyntaxException If the string cannot be parsed.
-   */
-  public static List<Token> digest(String template, TokenFactory factory) throws URITemplateSyntaxException {
     List<Token> tokens = new ArrayList<>();
     Matcher m = EXPANSION_PATTERN.matcher(template);
     int start = 0;
     while (m.find()) {
-      // any text since the last expansion
       if (m.start() > start) {
-        String text = template.substring(start, m.start());
-        tokens.add(new TokenLiteral(text));
+        tokens.add(new TokenLiteral(template.substring(start, m.start())));
       }
-      // add the expansion
-      String exp = m.group();
-      Token t = factory.newToken(exp);
+      Token t = TokenFactory.newToken(m.group());
       if (t != TokenLiteral.EMPTY) {
         tokens.add(t);
       }
-      // update the state variables
       start = m.end();
     }
-    // any text left over, including if there were no expansions
     if (start < template.length()) {
       String text = template.substring(start);
-      // support for wild cards only at the end of the string.
       if (text.endsWith("*")) {
         tokens.add(new TokenLiteral(text.substring(0, text.length() - 1)));
-        tokens.add(factory.newToken("*"));
+        tokens.add(TokenFactory.newToken("*"));
       } else {
         tokens.add(new TokenLiteral(text));
       }
