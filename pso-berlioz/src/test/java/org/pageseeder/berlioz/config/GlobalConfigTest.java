@@ -211,6 +211,5 @@ public final class GlobalConfigTest {
     config.load(new ByteArrayInputStream(xml));
     Assert.assertNotNull(config.properties());
     Assert.assertEquals(0, config.properties().size());
-//    Assert.assertEquals(properties, config.properties());
   }
 }
