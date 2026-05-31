@@ -384,7 +384,6 @@ public final class WebBundleTool {
         line = reader.readLine();
       }
       writer.flush();
-      writer = null;
     }
   }
 
