@@ -86,7 +86,7 @@ public final class WebBundleTool {
   /**
    * The virtual location of the bundles (to calculate the relative path).
    */
-  private volatile File virtual;
+  private File virtual;
 
   /**
    * The maximum size for converting the content of an image in CSS into a data URI.
@@ -102,12 +102,11 @@ public final class WebBundleTool {
    * @throws IllegalArgumentException If the specified file does not exist or is not a directory.
    */
   public WebBundleTool(File bundles) {
-    Objects.requireNonNull(bundles, "The location where bundles are saved must not be null");
+    this.virtual = Objects.requireNonNull(bundles, "The location where bundles are saved must not be null");
     this.bundles = checkBundlesFile(bundles);
-    this.virtual = bundles;
   }
 
-  private File checkBundlesFile(File bundles) {
+  private static File checkBundlesFile(File bundles) {
     if (!bundles.exists())
       throw new IllegalArgumentException("The location where bundles are saved must exist: "+bundles);
     if (!bundles.isDirectory())
