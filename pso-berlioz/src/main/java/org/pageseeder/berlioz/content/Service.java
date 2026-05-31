@@ -27,7 +27,6 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 import org.pageseeder.berlioz.http.HttpMethod;
-import org.pageseeder.berlioz.util.StringUtils;
 import org.pageseeder.berlioz.util.Strings;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.slf4j.Logger;

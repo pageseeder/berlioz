@@ -23,7 +23,7 @@ import org.junit.Test;
  * @author ccabral
  * @since 06 July 2021
  */
-public class SimpleStringUtilsTest {
+public class StringUtilsTest {
 
   @Test
   public void testIsBlank() {
@@ -66,35 +66,4 @@ public class SimpleStringUtilsTest {
     Assert.assertEquals("/simple-admin/api/auth/user.json", StringUtils.substringBefore("/simple-admin/api/auth/user.json", ""));
   }
 
-  // --- toKebabCase ---
-
-  @Test
-  public void testToKebabCase_simple() {
-    Assert.assertEquals("no-content", StringUtils.toKebabCase("NoContent", "fallback"));
-  }
-
-  @Test
-  public void testToKebabCase_acronymBlock() {
-    Assert.assertEquals("my-http-client", StringUtils.toKebabCase("MyHTTPClient", "fallback"));
-  }
-
-  @Test
-  public void testToKebabCase_trailingAcronym() {
-    Assert.assertEquals("get-user-id", StringUtils.toKebabCase("GetUserID", "fallback"));
-  }
-
-  @Test
-  public void testToKebabCase_leadingAcronym() {
-    Assert.assertEquals("xml-parser", StringUtils.toKebabCase("XMLParser", "fallback"));
-  }
-
-  @Test
-  public void testToKebabCase_withDigit() {
-    Assert.assertEquals("o-auth2-handler", StringUtils.toKebabCase("OAuth2Handler", "fallback"));
-  }
-
-  @Test
-  public void testToKebabCase_emptyUsesFallback() {
-    Assert.assertEquals("generator", StringUtils.toKebabCase("", "generator"));
-  }
 }
