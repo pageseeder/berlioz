@@ -46,6 +46,19 @@ public class CSSMinTest {
     Assert.assertEquals("a{color:#000;font-size:10px}", min("a { color: #000; font-size: 10px }"));
   }
 
+  @Test
+  public void testPropertiesSortedAlphabetically() {
+    Assert.assertEquals("a{color:#fff;font-size:10px;margin:0}", min("a { margin: 0px; font-size: 10px; color: white }"));
+  }
+
+  @Test
+  public void testVendorPrefixSortedWithUnprefixed() {
+    // -webkit-transform strips to "transform" so it sorts together with transform, not under "-w..."
+    // equal sort keys preserve stable (input) order, so unprefixed first → stays first
+    Assert.assertEquals("a{transform:rotate(45deg);-webkit-transform:rotate(45deg);z-index:0}",
+        min("a { z-index: 0; transform: rotate(45deg); -webkit-transform: rotate(45deg) }"));
+  }
+
   // --- Parameter simplification ---
 
   @Test

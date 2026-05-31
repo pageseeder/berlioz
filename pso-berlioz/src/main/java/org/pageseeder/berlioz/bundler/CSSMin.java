@@ -54,6 +54,7 @@ package org.pageseeder.berlioz.bundler;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -562,6 +563,7 @@ public final class CSSMin {
           LOGGER.warn(e.getMessage());
         }
       }
+      valid.sort(Property.BY_NAME);
       return valid.toArray(new Property[0]);
     }
 
@@ -576,7 +578,23 @@ public final class CSSMin {
    *   <li><code>"-moz-box-shadow: 3px 3px 3px rgba(255, 255, 0, 0.5);"</code></li>
    * </ul>
    */
-  private static class Property implements Comparable<Property> {
+  private static class Property {
+
+    private static final Comparator<Property> BY_NAME = (a, b) -> {
+      String aN = stripSortPrefix(a.name);
+      String bN = stripSortPrefix(b.name);
+      return aN.compareTo(bN);
+    };
+
+    private static String stripSortPrefix(String name) {
+      if (name.charAt(0) == '-') {
+        String s = name.substring(1);
+        return s.substring(s.indexOf('-') + 1);
+      } else if (name.charAt(0) < 'a') {
+        return name.substring(1);
+      }
+      return name;
+    }
 
     private static final Pattern RGB_PATTERN = Pattern.compile(
         "rgb\\s*+\\(\\s*+(\\d++\\s*+,\\s*+\\d++\\s*+,\\s*+\\d++)\\s*+\\)",
@@ -633,35 +651,6 @@ public final class CSSMin {
       return min;
     }
 
-    /**
-     * Compare this property with another.
-     *
-     * <p>We can't just use <code>String.compareTo()</code>, because we need to sort properties that have hack
-     * prefixes last -- eg, *display should come after display.
-     *
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(Property other) {
-      String thisProp = this.name;
-      String thatProp = other.name;
-
-      if (thisProp.charAt(0) == '-') {
-        thisProp = thisProp.substring(1);
-        thisProp = thisProp.substring(thisProp.indexOf('-') + 1);
-      } else if (thisProp.charAt(0) < 'a') {
-        thisProp = thisProp.substring(1);
-      }
-
-      if (thatProp.charAt(0) == '-') {
-        thatProp = thatProp.substring(1);
-        thatProp = thatProp.substring(thatProp.indexOf('-') + 1);
-      } else if (thatProp.charAt(0) < 'a') {
-        thatProp = thatProp.substring(1);
-      }
-
-      return thisProp.compareTo(thatProp);
-    }
 
     /**
      * Finds a delimiter outside strings and functions.
