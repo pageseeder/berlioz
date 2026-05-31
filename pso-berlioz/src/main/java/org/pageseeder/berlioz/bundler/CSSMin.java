@@ -223,12 +223,10 @@ public final class CSSMin {
           quote = 0;
         }
         i++;
-        continue;
-      }
-
-      if (c == '\'' || c == '"') {
+      } else if (c == '\'' || c == '"') {
         quote = c;
         css.append(c);
+        i++;
       } else if (c == '/' && i + 1 < buffer.length() && buffer.charAt(i + 1) == '*') {
         int end = buffer.indexOf("*/", i + 2);
         if (end == -1) throw new ParsingException("Unterminated comment. Aborting.", -1, -1);
@@ -237,11 +235,10 @@ public final class CSSMin {
         }
         appendNewLines(buffer, i, end, css);
         i = end + 2;
-        continue;
       } else {
         css.append(c);
+        i++;
       }
-      i++;
     }
     buffer.setLength(0);
     buffer.append(css);
@@ -287,10 +284,9 @@ public final class CSSMin {
       }
       if (state.accept(c)) {
         i++;
-        continue;
-      }
-      if (c == '}') throw new ParsingException("Unbalanced braces!", line, -1);
-      if (c == '{') {
+      } else if (c == '}') {
+        throw new ParsingException("Unbalanced braces!", line, -1);
+      } else if (c == '{') {
         String selector = css.subSequence(start, i).toString().trim();
         int end = findMatchingBrace(css, i, line);
         if (!selector.isEmpty()) {
@@ -304,9 +300,9 @@ public final class CSSMin {
         i = end + 1;
         start = end + 1;
         state.reset();
-        continue;
+      } else {
+        i++;
       }
-      i++;
     }
     if (!css.subSequence(start, css.length()).toString().isBlank()) {
       LOGGER.debug("Ignoring CSS text without a rule block.");
