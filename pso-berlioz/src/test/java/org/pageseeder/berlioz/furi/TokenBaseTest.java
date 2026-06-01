@@ -53,7 +53,7 @@ public final class TokenBaseTest {
     TokenImpl x = new TokenImpl("t");
     TokenImpl y = new TokenImpl("t");
     TokenImpl z = new TokenImpl("T");
-    TestUtils.satisfyEqualsContract(x, y, z);
+    TestUtils.assertEqualsContract(x, y, z);
   }
 
   /**

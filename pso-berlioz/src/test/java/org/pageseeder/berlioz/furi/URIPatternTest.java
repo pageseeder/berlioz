@@ -71,7 +71,7 @@ public final class URIPatternTest {
     URIPattern x = new URIPattern("http://example.com/{X}");
     URIPattern y = new URIPattern("http://example.com/{X}");
     URIPattern z = new URIPattern("http://example.com/{Y}");
-    TestUtils.satisfyEqualsContract(x, y, z);
+    TestUtils.assertEqualsContract(x, y, z);
   }
 
   /**

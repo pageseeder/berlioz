@@ -162,7 +162,7 @@ public class URITemplateTest {
     URITemplate x = new URITemplate("http://ps.com/{X}");
     URITemplate y = new URITemplate("http://ps.com/{X}");
     URITemplate z = new URITemplate("http://ps.com/{Y}");
-    TestUtils.satisfyEqualsContract(x, y, z);
+    TestUtils.assertEqualsContract(x, y, z);
   }
 
   /**

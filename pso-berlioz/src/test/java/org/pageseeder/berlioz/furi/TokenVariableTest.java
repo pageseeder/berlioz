@@ -51,7 +51,7 @@ public final class TokenVariableTest {
     TokenVariable x = new TokenVariable(v);
     TokenVariable y = new TokenVariable(v);
     TokenVariable z = new TokenVariable(w);
-    TestUtils.satisfyEqualsContract(x, y, z);
+    TestUtils.assertEqualsContract(x, y, z);
   }
 
   /**

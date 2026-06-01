@@ -36,7 +36,7 @@ class TestUtils {
    * @param y An instance of the class to test equal to the first parameter.
    * @param z An instance of the class to test NOT equal to the first parameter.
    */
-  public static void satisfyEqualsContract(Object x, Object y, Object z) {
+  public static void assertEqualsContract(Object x, Object y, Object z) {
     // reflexive
     Assert.assertEquals(x, x);
     Assert.assertEquals(y, y);

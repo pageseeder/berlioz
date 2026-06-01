@@ -103,7 +103,7 @@ public class VariableTest {
     Variable x = new Variable("n");
     Variable y = new Variable("n");
     Variable z = new Variable("m");
-    TestUtils.satisfyEqualsContract(x, y, z);
+    TestUtils.assertEqualsContract(x, y, z);
   }
 
   /**
@@ -114,7 +114,7 @@ public class VariableTest {
     Variable x = new Variable("n", "x");
     Variable y = new Variable("n", "x");
     Variable z = new Variable("n", "y");
-    TestUtils.satisfyEqualsContract(x, y, z);
+    TestUtils.assertEqualsContract(x, y, z);
   }
 
   /**

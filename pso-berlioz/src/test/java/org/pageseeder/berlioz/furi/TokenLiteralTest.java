@@ -51,7 +51,7 @@ public final class TokenLiteralTest {
     TokenLiteral x = new TokenLiteral("t");
     TokenLiteral y = new TokenLiteral("t");
     TokenLiteral z = new TokenLiteral("T");
-    TestUtils.satisfyEqualsContract(x, y, z);
+    TestUtils.assertEqualsContract(x, y, z);
   }
 
   /**
