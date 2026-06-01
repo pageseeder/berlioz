@@ -33,8 +33,8 @@ import java.util.Collections;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.13.0
+ * @version 0.13.0
+ * @since 0.13.0
  */
 final class JakartaJsonWriter implements JsonWriter {
 

@@ -55,8 +55,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.0 - 13 October 2011
- * @since Berlioz 0.7
+ * @version 0.9.0
+ * @since 0.7
  */
 public final class NoContent implements ContentGenerator, Cacheable {
 

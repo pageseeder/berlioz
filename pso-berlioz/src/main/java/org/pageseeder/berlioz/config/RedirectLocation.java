@@ -20,8 +20,8 @@ package org.pageseeder.berlioz.config;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.12.4
+ * @version 0.13.0
+ * @since 0.12.4
  */
 public final class RedirectLocation {
 

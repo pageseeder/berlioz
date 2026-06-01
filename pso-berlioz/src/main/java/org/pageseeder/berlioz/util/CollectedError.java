@@ -31,8 +31,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
- * @since Berlioz 0.8.1
+ * @version 0.9.32
+ * @since 0.8.1
  */
 public final class CollectedError<T extends Throwable> implements XMLWritable {
 

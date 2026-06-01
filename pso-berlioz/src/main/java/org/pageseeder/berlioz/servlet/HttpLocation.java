@@ -32,8 +32,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.9.13
+ * @version 0.13.0
+ * @since 0.9.13
  */
 public final class HttpLocation implements Location, Serializable {
 

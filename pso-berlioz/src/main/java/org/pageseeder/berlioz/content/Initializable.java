@@ -25,8 +25,8 @@ package org.pageseeder.berlioz.content;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0
- * @since Berlioz 0.6
+ * @version 0.6.0
+ * @since 0.6
  */
 public interface Initializable {
 

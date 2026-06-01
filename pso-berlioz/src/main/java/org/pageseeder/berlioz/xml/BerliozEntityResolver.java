@@ -36,8 +36,8 @@ import org.xml.sax.InputSource;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.6
+ * @version 0.13.0
+ * @since 0.6
  */
 @SuppressWarnings("java:S6548")
 public enum BerliozEntityResolver implements EntityResolver {

@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
- * @since Berlioz 0.9.32
+ * @version 0.9.32
+ * @since 0.9.32
  */
 public class GetGeneratorStatistics implements ContentGenerator {
 

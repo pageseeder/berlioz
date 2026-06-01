@@ -25,8 +25,8 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14
- * @since Berlioz 0.9.14
+ * @version 0.9.14
+ * @since 0.9.14
  */
 @Beta
 public final class ProfileFormat {

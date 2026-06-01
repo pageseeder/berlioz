@@ -26,8 +26,8 @@ package org.pageseeder.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.1
- * @since Berlioz 0.9
+ * @version 0.9.1
+ * @since 0.9
  */
 @Beta
 public interface LifecycleListener {

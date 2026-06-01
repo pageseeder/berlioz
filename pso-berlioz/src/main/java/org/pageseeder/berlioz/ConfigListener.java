@@ -20,8 +20,8 @@ package org.pageseeder.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.30
- * @since Berlioz 0.9.30
+ * @version 0.9.30
+ * @since 0.9.30
  */
 public interface ConfigListener {
 

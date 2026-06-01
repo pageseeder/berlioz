@@ -29,8 +29,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.2 - 29 June 2011
- * @since Berlioz 0.8.2
+ * @version 0.8.2
+ * @since 0.8.2
  */
 public final class Pair<T, V> {
 

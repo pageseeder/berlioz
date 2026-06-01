@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.8
+ * @version 0.13.0
+ * @since 0.8
  */
 public final class ServiceRegistry {
 
@@ -275,7 +275,8 @@ public final class ServiceRegistry {
    * Simply Maps generators to URI patterns.
    *
    * @author Christophe Lauret
-   * @version Berlioz 0.12.4
+   * @version 0.12.4
+   * @since 0.6.0
    */
   private static class ServiceMap {
 

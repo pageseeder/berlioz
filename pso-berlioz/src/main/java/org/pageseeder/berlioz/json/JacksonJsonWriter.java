@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.12.0
+ * @version 0.13.0
+ * @since 0.12.0
  */
 final class JacksonJsonWriter implements JsonWriter {
 

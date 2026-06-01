@@ -29,8 +29,8 @@ import org.pageseeder.berlioz.util.CollectedError.Level;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.8.1
+ * @version 0.13.0
+ * @since 0.8.1
  */
 public class ErrorCollector<T extends Throwable>  {
 

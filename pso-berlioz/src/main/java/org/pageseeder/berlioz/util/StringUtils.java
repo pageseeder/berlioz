@@ -22,8 +22,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @deprecated Use {@link Strings} instead, but note changes in null handling.
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.11.0
+ * @version 0.13.0
+ * @since 0.11.0
  */
 @Deprecated(since = "0.13.0", forRemoval = true)
 public final class StringUtils {

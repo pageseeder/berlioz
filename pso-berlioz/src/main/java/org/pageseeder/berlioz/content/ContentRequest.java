@@ -33,8 +33,8 @@ import org.jspecify.annotations.Nullable;
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.0
- * @since Berlioz 0.6
+ * @version 0.11.0
+ * @since 0.6
  */
 public interface ContentRequest {
 

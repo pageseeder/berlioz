@@ -36,8 +36,8 @@ import org.xml.sax.XMLReader;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.4
- * @since Berlioz 0.6
+ * @version 0.12.4
+ * @since 0.6
  */
 public final class XMLUtils {
 

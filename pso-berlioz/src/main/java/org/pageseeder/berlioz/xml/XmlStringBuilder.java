@@ -4,8 +4,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.12.0
+ * @version 0.13.0
+ * @since 0.12.0
  */
 public final class XmlStringBuilder extends XmlAppendable<StringBuilder> {
 

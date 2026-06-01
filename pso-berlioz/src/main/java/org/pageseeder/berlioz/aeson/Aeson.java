@@ -32,8 +32,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.3
- * @since Berlioz 0.9.32
+ * @version 0.12.3
+ * @since 0.9.32
  */
 @SuppressWarnings("java:S106") // CLI entry point — System.out/err are correct here
 public final class Aeson {

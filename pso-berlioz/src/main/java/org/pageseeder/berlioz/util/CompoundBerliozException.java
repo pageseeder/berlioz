@@ -23,8 +23,8 @@ import org.pageseeder.berlioz.ErrorID;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.8.1
+ * @version 0.13.0
+ * @since 0.8.1
  */
 public final class CompoundBerliozException extends BerliozException {
 

@@ -21,8 +21,8 @@ package org.pageseeder.berlioz.xml;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
- * @since Berlioz 0.12.0
+ * @version 0.12.0
+ * @since 0.12.0
  */
 public final class IllegalCloseElementException extends IllegalStateException {
 

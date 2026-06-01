@@ -36,8 +36,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
- * @since Berlioz 0.8
+ * @version 0.11.2
+ * @since 0.8
  */
 public class BerliozException extends Exception implements XMLWritable {
 

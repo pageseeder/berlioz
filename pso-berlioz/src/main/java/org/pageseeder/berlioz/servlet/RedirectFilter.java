@@ -65,8 +65,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
- * @since Berlioz 0.7
+ * @version 0.11.2
+ * @since 0.7
  */
 public final class RedirectFilter implements Filter, Serializable {
 

@@ -27,8 +27,8 @@ import java.util.Set;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.4
- * @since  Berlioz 0.12.4
+ * @version 0.12.4
+ * @since 0.12.4
  */
 public class MovedLocationPattern {
 

@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.32
- * @since Berlioz 0.9.32
+ * @version 0.9.32
+ * @since 0.9.32
  */
 public interface Matchable {
 

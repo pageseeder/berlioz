@@ -29,8 +29,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.3 - 31 May 2010
- * @since  Berlioz 0.6
+ * @version 0.9.3
+ * @since 0.6
  */
 public interface Cacheable {
 

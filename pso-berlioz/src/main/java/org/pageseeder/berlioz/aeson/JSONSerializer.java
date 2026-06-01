@@ -42,8 +42,8 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
- * @since Berlioz 0.9.32
+ * @version 0.12.0
+ * @since 0.9.32
  */
 public final class JSONSerializer extends DefaultHandler implements ContentHandler {
 

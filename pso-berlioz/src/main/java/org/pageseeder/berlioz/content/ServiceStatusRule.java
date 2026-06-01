@@ -28,8 +28,8 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3
- * @since Berlioz 0.8
+ * @version 0.8.3
+ * @since 0.8
  */
 @Beta public final class ServiceStatusRule {
 

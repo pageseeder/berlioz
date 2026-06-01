@@ -70,8 +70,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.6
+ * @version 0.13.0
+ * @since 0.6
  */
 public final class GlobalSettings {
 
@@ -511,7 +511,7 @@ public final class GlobalSettings {
    *
    * @throws IllegalStateException If this class has not been setup properly.
    *
-   * @since Berlioz 0.11.2
+   * @since 0.11.2
    */
   public static Map<String, String> getAll() throws IllegalStateException {
     return Collections.unmodifiableMap(ensureSettings());

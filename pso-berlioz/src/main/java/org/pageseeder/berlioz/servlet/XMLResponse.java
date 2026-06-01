@@ -56,8 +56,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.7
+ * @version 0.13.0
+ * @since 0.7
  */
 public final class XMLResponse {
 
@@ -153,7 +153,7 @@ public final class XMLResponse {
    *
    * @return the Etag for this response if it is cacheable; <code>null</code> if it is not.
    *
-   * @since Berlioz 0.8.0
+   * @since 0.8.0
    */
   public @Nullable String getEtag() {
     Service service = this.match.service();
@@ -180,7 +180,7 @@ public final class XMLResponse {
    * Returns the status of this service response.
    *
    * @return the status of this service response.
-   * @since Berlioz 0.8.2
+   * @since 0.8.2
    */
   public ContentStatus getStatus() {
     ContentStatus s = this.status;

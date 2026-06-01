@@ -29,8 +29,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
- * @since Berlioz 0.8.2
+ * @version 0.11.2
+ * @since 0.8.2
  */
 public final class ParameterTemplate {
 

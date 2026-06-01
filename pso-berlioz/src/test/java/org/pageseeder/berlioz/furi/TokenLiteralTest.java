@@ -24,7 +24,8 @@ import org.junit.jupiter.api.Test;
  * A test class for the <code>TokenLiteral</code>.
  *
  * @author Christophe Lauret
- * @version 30 December 2008
+ * @version 0.9.33
+ * @since 0.9.33
  */
 final class TokenLiteralTest {
 

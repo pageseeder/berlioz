@@ -22,8 +22,8 @@ package org.pageseeder.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.3
- * @since Berlioz 0.8.4
+ * @version 0.10.3
+ * @since 0.8.4
  */
 public enum BerliozOption {
 
@@ -69,7 +69,7 @@ public enum BerliozOption {
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.11">HTTP/1.1 - 14.11 Content-Encoding</a>
    *
-   * @since Berlioz 0.7.0
+   * @since 0.7.0
    */
   HTTP_COMPRESSION("berlioz.http.compression", Boolean.TRUE),
 
@@ -102,7 +102,7 @@ public enum BerliozOption {
    * <p>Since this option goes against REST principles, it is recommended that it is set to
    * <code>false</code> for most applications. It should not be enabled for a Web API.
    *
-   * @since Berlioz 0.8.3
+   * @since 0.8.3
    */
   HTTP_GET_VIA_POST("berlioz.http.get-via-post", Boolean.TRUE),
 
@@ -145,7 +145,7 @@ public enum BerliozOption {
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.9">HTTP/1.1 - 14.9 Cache-Control</a>
    *
-   * @since Berlioz 0.9.3
+   * @since 0.9.3
    */
   HTTP_CACHE_CONTROL("berlioz.http.cache-control", ""),
 
@@ -156,7 +156,7 @@ public enum BerliozOption {
    * @see <a href="https://www.w3.org/TR/server-timing/">W3: Server Timing</a>
    * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing">MDN: Server Timing</a>
    *
-   * @since Berlioz 0.11.5
+   * @since 0.11.5
    */
   HTTP_SERVER_TIMING("berlioz.http.server-timing", Boolean.FALSE),
 
@@ -167,7 +167,7 @@ public enum BerliozOption {
    * <p>It was enabled by default in previous version, from 0.12.6, it is disabled
    * by default.
    *
-   * @since Berlioz 0.12.6
+   * @since 0.12.6
    */
   HTTP_SERVICE_HEADER("berlioz.http.service-header", Boolean.FALSE),
 
@@ -202,7 +202,7 @@ public enum BerliozOption {
    * details are returned to the developer. In production, it is preferable to either customise
    * the error handler or use the Web descriptor to redirect users to a more user friendly page.
    *
-   * @since Berlioz 0.8.3
+   * @since 0.8.3
    */
   @Beta
   ERROR_HANDLER("berlioz.errors.handle", Boolean.TRUE),
@@ -232,7 +232,7 @@ public enum BerliozOption {
    * it is generally preferable to let Berlioz catch the error, format it as XML and use XSLT to
    * produce the response.
    *
-   * @since Berlioz 0.8.3
+   * @since 0.8.3
    */
   @Beta
   ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", Boolean.TRUE),
@@ -241,7 +241,7 @@ public enum BerliozOption {
    * A boolean global property to indicate whether Berlioz should record the time taken by each content generator
    * and by the transformer.
    *
-   * @since Berlioz 0.9.14
+   * @since 0.9.14
    */
   PROFILE("berlioz.profile", Boolean.FALSE),
 
@@ -267,7 +267,7 @@ public enum BerliozOption {
    * <p>It is easier to test the XSLT files during development when caching is disabled; caching
    * should be enabled in production mode.</p>
    *
-   * @since Berlioz 0.8.3
+   * @since 0.8.3
    */
   XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
 
@@ -292,7 +292,7 @@ public enum BerliozOption {
    * </table>
    * <p>This option will default to <code>1.0</code> from Berlioz 1.0.</p>
    *
-   * @since Berlioz 0.9.26
+   * @since 0.9.26
    */
   @Beta
   XML_HEADER_VERSION("berlioz.xml.header.version", "0.9"),
@@ -321,7 +321,7 @@ public enum BerliozOption {
    * configuration issues are resolved early; it is generally not necessary to enable this option
    * in production.</p>
    *
-   * @since Berlioz 0.8.3
+   * @since 0.8.3
    */
   @Beta
   XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE),
@@ -352,7 +352,7 @@ public enum BerliozOption {
    * an MD5 hash value should be specified to secure the application
    * (for example: 'd131dd02c5e6eec4693d96dacd436c91').</p>
    *
-   * @since Berlioz 0.8.3
+   * @since 0.8.3
    */
   @Beta
   XML_CONTROL_KEY("berlioz.control-key", ""),
@@ -379,7 +379,7 @@ public enum BerliozOption {
    *   </tr>
    * </table>
    *
-   * @since Berlioz 0.12.5
+   * @since 0.12.5
    */
   NONCE_ATTRIBUTE("berlioz.nonce.attribute", "berlioz-nonce"),
 
@@ -401,7 +401,7 @@ public enum BerliozOption {
    *
    * <h3>Recommended values</h3>
    *
-   * @since Berlioz 0.12.5
+   * @since 0.12.5
    */
   NONCE_ENABLE("berlioz.nonce.enable", Boolean.FALSE);
 

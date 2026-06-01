@@ -42,8 +42,8 @@ import java.util.Objects;
  *
  * @param <T> The type of object config the handler should create.
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.12.4
+ * @version 0.13.0
+ * @since 0.12.4
  */
 abstract class ConfigLoader<T> extends DefaultHandler {
 

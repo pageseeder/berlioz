@@ -32,7 +32,8 @@ import org.junit.jupiter.api.Test;
  *      Template (Draft 3) - examples</a>
  *
  * @author Christophe Lauret
- * @version 21 October 2009
+ * @version 0.9.33
+ * @since 0.9.33
  */
 class URITemplateTest {
 

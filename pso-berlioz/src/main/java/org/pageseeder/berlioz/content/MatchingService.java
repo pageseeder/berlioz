@@ -27,8 +27,8 @@ import org.pageseeder.berlioz.furi.URIResolveResult;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
- * @since Berlioz 0.6
+ * @version 0.10.7
+ * @since 0.6
  */
 public final class MatchingService {
 

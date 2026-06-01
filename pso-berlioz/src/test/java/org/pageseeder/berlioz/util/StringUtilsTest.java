@@ -21,7 +21,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * @author ccabral
- * @since 06 July 2021
+ * @version 0.12.2
+ * @since 0.12.2
  */
 @SuppressWarnings({"deprecation", "removal"})
 class StringUtilsTest {

@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory;
  * <p>A simple way to modularise aspect of the app.
  *
  * @author Christophe Lauret
- * @version Berlioz 0.12.3
- * @since Berlioz 0.9.26
+ * @version 0.12.3
+ * @since 0.9.26
  */
 final class Overlays {
 
@@ -96,7 +96,8 @@ final class Overlays {
    * Overlay instance.
    *
    * @author Christophe Lauret
-   * @version 16 December 2013
+   * @version 0.9.26
+   * @since 0.9.26
    */
   @Beta
   static final class Overlay implements Comparable<Overlay> {

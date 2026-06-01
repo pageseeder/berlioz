@@ -28,7 +28,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
+ * @version 0.11.2
+ * @since 0.9.13
  */
 public final class HttpPathInfo implements PathInfo, Serializable {
 

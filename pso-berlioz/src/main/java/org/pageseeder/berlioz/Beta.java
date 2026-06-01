@@ -21,8 +21,8 @@ package org.pageseeder.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.7.3 - 11 August 2010
- * @since Berlioz 0.7
+ * @version 0.7.3
+ * @since 0.7
  */
 public @interface Beta {
 

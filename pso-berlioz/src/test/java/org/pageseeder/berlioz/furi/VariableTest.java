@@ -25,7 +25,8 @@ import org.pageseeder.berlioz.furi.Variable.Form;
  * A test class for variables.
  *
  * @author Christophe Lauret
- * @version 5 November 2009
+ * @version 0.9.33
+ * @since 0.9.33
  */
 class VariableTest {
 

@@ -28,8 +28,8 @@ import java.io.Closeable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.12.0
- * @since Berlioz 0.9.32
+ * @version 0.12.0
+ * @since 0.9.32
  */
 @Deprecated(since = "0.13.0")
 public interface JSONWriter extends Closeable {

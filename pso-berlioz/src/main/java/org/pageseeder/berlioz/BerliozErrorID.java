@@ -22,8 +22,8 @@ package org.pageseeder.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.3 - 30 June 2011
- * @since Berlioz 0.8
+ * @version 0.8.3
+ * @since 0.8
  */
 @Beta public enum BerliozErrorID implements ErrorID {
 

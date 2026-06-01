@@ -43,8 +43,8 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.7
+ * @version 0.13.0
+ * @since 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
 

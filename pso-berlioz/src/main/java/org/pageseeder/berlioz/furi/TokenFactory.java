@@ -27,8 +27,8 @@ import org.pageseeder.berlioz.furi.Variable.Reserved;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.9.32
+ * @version 0.13.0
+ * @since 0.9.32
  */
 public final class TokenFactory {
 

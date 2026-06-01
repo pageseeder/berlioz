@@ -63,8 +63,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
- * @since Berlioz 0.9.3
+ * @version 0.10.7
+ * @since 0.9.3
  */
 @Beta
 public final class GetLiveServices implements ContentGenerator, Cacheable {

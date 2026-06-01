@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.3
- * @since Berlioz 0.10.3
+ * @version 0.10.3
+ * @since 0.10.3
  */
 @SuppressWarnings({"deprecated", "java:S1874"})
 final class GlobalSettingsTest {

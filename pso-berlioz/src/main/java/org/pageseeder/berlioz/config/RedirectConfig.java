@@ -41,8 +41,8 @@ import java.util.*;
  * </redirect-mapping>
  * }</pre>
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.12.4
+ * @version 0.13.0
+ * @since 0.12.4
  */
 public final class RedirectConfig {
 

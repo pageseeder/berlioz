@@ -53,8 +53,8 @@ import java.util.Map;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.9.7
+ * @version 0.13.0
+ * @since 0.9.7
  *
  * @deprecated Use org.pageseeder.berlioz.config.GlobalConfig instead.
  */

@@ -24,8 +24,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.6.0 - 25 May 2010
- * @since Berlioz 0.6
+ * @version 0.6.0
+ * @since 0.6
  */
 public interface Environment {
 

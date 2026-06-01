@@ -29,8 +29,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.7
+ * @version 0.13.0
+ * @since 0.7
  */
 public final class XSLTransformResult implements BerliozOutput {
 
@@ -185,7 +185,7 @@ public final class XSLTransformResult implements BerliozOutput {
   /**
    * Sets the output properties of this transform result.
    *
-   * @see <a href="http://www.w3.org/TR/xslt20/#element-output">XSLT 2.0 - 20 Serialization</a>
+   * @see <a href="http://www.w3.org/TR/xslt20/#element-output">XSLT 2.0
    *
    * @param templates the templates used to generate this.
    */

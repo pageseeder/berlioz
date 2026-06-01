@@ -25,8 +25,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
- * @since Berlioz 0.6
+ * @version 0.10.7
+ * @since 0.6
  */
 public interface EntityInfo {
 

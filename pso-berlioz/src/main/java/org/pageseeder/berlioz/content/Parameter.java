@@ -27,8 +27,8 @@ import java.util.Objects;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.10.7
- * @since Berlioz 0.8
+ * @version 0.10.7
+ * @since 0.8
  */
 public final class Parameter {
 

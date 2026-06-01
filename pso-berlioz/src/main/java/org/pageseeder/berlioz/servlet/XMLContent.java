@@ -23,8 +23,8 @@ package org.pageseeder.berlioz.servlet;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.14 - 22 January 2013
- * @since Berlioz 0.6
+ * @version 0.9.14
+ * @since 0.6
  */
 public final class XMLContent implements BerliozOutput {
 

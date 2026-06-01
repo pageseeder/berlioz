@@ -20,8 +20,8 @@ package org.pageseeder.berlioz.bundler;
  *
  * <p>The bundler only supports two types.
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.9.32
+ * @version 0.13.0
+ * @since 0.9.32
  */
 public enum BundleType {
 

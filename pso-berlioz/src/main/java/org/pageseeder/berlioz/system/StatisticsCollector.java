@@ -38,8 +38,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.9.32
+ * @version 0.13.0
+ * @since 0.9.32
  */
 @SuppressWarnings("java:S6548") // intentional framework-level singleton; package-private and eagerly initialized
 final class StatisticsCollector implements GeneratorListener, XMLWritable {

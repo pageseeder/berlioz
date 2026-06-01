@@ -16,8 +16,8 @@
 /**
  * This package implements the Berlioz bundling.
  *
- * @version Berlioz 0.9.32
- * @since Berlioz 0.9.32
+ * @version 0.9.32
+ * @since 0.9.32
  */
 @org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz.bundler;

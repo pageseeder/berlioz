@@ -30,8 +30,8 @@ import java.util.Objects;
  *
  * <p>The initialization environment cannot change Berlioz is running.
  *
- * @version Berlioz 0.11.4
- * @since Berlioz 0.11.4
+ * @version 0.11.4
+ * @since 0.11.4
  */
 public final class InitEnvironment {
 

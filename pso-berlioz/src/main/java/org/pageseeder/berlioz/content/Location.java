@@ -22,7 +22,8 @@ import org.pageseeder.xmlwriter.XMLWritable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.13
+ * @version 0.9.13
+ * @since 0.9.13
  */
 public interface Location extends XMLWritable {
 

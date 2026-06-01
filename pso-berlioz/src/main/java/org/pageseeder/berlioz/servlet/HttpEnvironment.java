@@ -26,8 +26,8 @@ import org.pageseeder.berlioz.content.Environment;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.9
+ * @version 0.13.0
+ * @since 0.9
  */
 public final class HttpEnvironment implements Environment {
 

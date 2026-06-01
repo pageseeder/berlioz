@@ -47,8 +47,8 @@ import java.util.Date;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.4 - 31 January 2012
- * @since Berlioz 0.6
+ * @version 0.9.4
+ * @since 0.6
  */
 public enum ISO8601 {
 

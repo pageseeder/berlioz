@@ -26,7 +26,8 @@ import org.junit.jupiter.api.Test;
  * Note: this class uses a basic implementation of the abstract <code>TokenBase</code> for testing.
  *
  * @author Christophe Lauret
- * @version 31 December 2008
+ * @version 0.9.33
+ * @since 0.9.33
  */
 final class TokenBaseTest {
 

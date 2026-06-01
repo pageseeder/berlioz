@@ -30,8 +30,8 @@ import org.pageseeder.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
- * @since Berlioz 0.9
+ * @version 0.11.2
+ * @since 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
 

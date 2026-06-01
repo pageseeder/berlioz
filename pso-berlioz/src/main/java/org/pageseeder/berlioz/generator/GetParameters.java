@@ -43,8 +43,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.7
+ * @version 0.13.0
+ * @since 0.7
  */
 public final class GetParameters implements ContentGenerator, Cacheable {
 

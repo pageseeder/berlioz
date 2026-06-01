@@ -29,8 +29,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.9.32
+ * @version 0.13.0
+ * @since 0.9.32
  */
 abstract class TokenBase implements Token {
 

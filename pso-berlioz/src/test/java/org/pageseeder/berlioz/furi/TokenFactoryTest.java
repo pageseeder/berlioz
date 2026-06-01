@@ -26,7 +26,8 @@ import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
  * A test class for the <code>TokenFactory</code>.
  *
  * @author Christophe Lauret
- * @version 9 February 2009
+ * @version 0.9.33
+ * @since 0.9.33
  */
 final class TokenFactoryTest {
 

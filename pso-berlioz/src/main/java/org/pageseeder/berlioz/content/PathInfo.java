@@ -26,7 +26,8 @@ import org.pageseeder.xmlwriter.XMLWritable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
+ * @version 0.13.0
+ * @since 0.9.13
  */
 public interface PathInfo extends XMLWritable {
 

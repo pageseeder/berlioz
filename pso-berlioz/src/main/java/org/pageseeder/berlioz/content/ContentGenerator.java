@@ -28,8 +28,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.3 - 8 July 2010
- * @since Berlioz 0.6
+ * @version 0.9.3
+ * @since 0.6
  */
 public interface ContentGenerator {
 

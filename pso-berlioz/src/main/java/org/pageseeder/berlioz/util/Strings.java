@@ -5,8 +5,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * Utility methods for strings
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.13.0
+ * @version 0.13.0
+ * @since 0.13.0
  */
 public final class Strings {
 

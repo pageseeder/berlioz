@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.5
- * @since Berlioz 0.11.5
+ * @version 0.11.5
+ * @since 0.11.5
  */
 public final class PerformanceServerTiming {
 

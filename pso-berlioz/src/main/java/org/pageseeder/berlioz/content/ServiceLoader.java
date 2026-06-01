@@ -52,8 +52,8 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.6
+ * @version 0.13.0
+ * @since 0.6
  */
 @SuppressWarnings("java:S6548")
 public enum ServiceLoader {
@@ -103,7 +103,7 @@ public enum ServiceLoader {
    *
    * @throws BerliozException Should something unexpected happen.
    *
-   * @since Berlioz 0.8.2
+   * @since 0.8.2
    */
   public synchronized boolean loadIfRequired() throws BerliozException {
     if (this.loaded) return false;

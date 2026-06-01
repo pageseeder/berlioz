@@ -52,8 +52,8 @@ import org.pageseeder.berlioz.LifecycleListener;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.0
- * @since Berlioz 0.7
+ * @version 0.11.0
+ * @since 0.7
  */
 public final class InitServlet extends HttpServlet implements Servlet {
 

@@ -56,13 +56,13 @@ import org.slf4j.LoggerFactory;
  *
  * <p>See {@link #init} for details about configuration options.
  *
- * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.14">HTTP 1.1 - Content-Location</a>
+ * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.14">HTTP 1.1
  *
  * @author Christophe Lauret
  * @author Jean-Baptiste Reure
  *
- * @version Berlioz 0.12.4
- * @since Berlioz 0.7
+ * @version 0.12.4
+ * @since 0.7
  */
 public final class RelocationFilter implements Filter {
 

@@ -22,8 +22,8 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.9.16
- * @since Berlioz 0.9.16
+ * @version 0.9.16
+ * @since 0.9.16
  */
 @Beta
 public interface GeneratorListener {

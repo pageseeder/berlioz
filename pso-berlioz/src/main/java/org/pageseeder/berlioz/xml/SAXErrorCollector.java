@@ -26,8 +26,8 @@ import org.xml.sax.SAXParseException;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.8.5 - 15 August 2011
- * @since Berlioz 0.8
+ * @version 0.8.5
+ * @since 0.8
  */
 public final class SAXErrorCollector extends ErrorCollector<SAXParseException> implements ErrorHandler {
 

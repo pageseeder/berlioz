@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.11.5
+ * @version 0.13.0
+ * @since 0.11.5
  */
 public final class ServerTimingHeader {
 

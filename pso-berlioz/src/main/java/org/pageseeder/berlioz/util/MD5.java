@@ -30,8 +30,8 @@ import java.nio.file.Path;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.6
+ * @version 0.13.0
+ * @since 0.6
  */
 public final class MD5 {
 

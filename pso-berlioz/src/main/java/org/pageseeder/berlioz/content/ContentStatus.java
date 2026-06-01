@@ -25,8 +25,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.13.0
- * @since Berlioz 0.8.2
+ * @version 0.13.0
+ * @since 0.8.2
  */
 public enum ContentStatus {
 
@@ -354,7 +354,7 @@ public enum ContentStatus {
    * @param code The HTTP code.
    * @return the corresponding enum constant or <code>null</code>.
    *
-   * @since Berlioz 0.8.3
+   * @since 0.8.3
    */
   public static @Nullable ContentStatus forCode(int code) {
     for (ContentStatus status : values()) {
@@ -372,7 +372,7 @@ public enum ContentStatus {
    * @return <code>true</code> if the content status greater than or equal to 300 and less than 400;
    *         <code>false</code> otherwise.
    *
-   * @since Berlioz 0.9.10
+   * @since 0.9.10
    */
   public static boolean isRedirect(ContentStatus status) {
     return status.code >= 300 && status.code < 400;

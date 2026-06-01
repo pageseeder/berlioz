@@ -37,8 +37,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version Berlioz 0.11.2
- * @since Berlioz 0.6
+ * @version 0.11.2
+ * @since 0.6
  */
 public final class HttpHeaderUtils {
 

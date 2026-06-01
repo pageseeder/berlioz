@@ -8,7 +8,7 @@ package org.pageseeder.berlioz.security;
  *
  * @author Christophe Lauret
  * @version 0.12.6
- * @version 0.12.6
+ * @since 0.12.6
  */
 public enum Directive {
 
