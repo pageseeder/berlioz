@@ -224,7 +224,8 @@ public final class HttpLocation implements Location, Serializable {
     if (isValidScheme(reverseProxyScheme)) {
       // If there is not a reverse proxy port, set to -1 to indicate no port was forwarded.
       port = -1;
-      String reverseProxyPort = Strings.substringAfter(req.getHeader(HttpHeaders.X_FORWARDED_HOST), ':');
+      String forwardedHost = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
+      String reverseProxyPort = forwardedHost != null ? Strings.substringAfter(forwardedHost, ':') : "";
       if (reverseProxyPort.matches("\\d{1,5}")) {
         int parsed = Integer.parseInt(reverseProxyPort);
         if (parsed > 0 && parsed <= 65535) {
