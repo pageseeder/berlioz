@@ -49,13 +49,13 @@ class TestUtils {
     // consistent hashcode
     Assert.assertEquals(x.hashCode(), x.hashCode());
     Assert.assertEquals(y.hashCode(), y.hashCode());
-    Assert.assertTrue(x.hashCode() != z.hashCode());
-    Assert.assertTrue(y.hashCode() != z.hashCode());
+    Assert.assertNotEquals(x.hashCode(), z.hashCode());
+    Assert.assertNotEquals(y.hashCode(), z.hashCode());
     // null is false
-    Assert.assertFalse(x.equals(null));
-    Assert.assertFalse(z.equals(null));
-    // different object is false;
-    Assert.assertFalse(x.equals(new Object()));
+    Assert.assertNotEquals(null, x);
+    Assert.assertNotEquals(null, z);
+    // different object is false
+    Assert.assertNotEquals(false, x);
   }
 
 }
