@@ -10,31 +10,31 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
-public class MockHttpServletResponseTest {
+class MockHttpServletResponseTest {
 
   @Test
-  public void capturesWriterOutput() throws Exception {
+  void capturesWriterOutput() throws Exception {
     MockHttpServletResponse response = new MockHttpServletResponse();
 
     PrintWriter writer = response.getWriter();
     writer.write("hello");
 
-    Assertions.assertEquals(response.getOutputAsString(), "hello");
+    Assertions.assertEquals("hello", response.getOutputAsString());
   }
 
   @Test
-  public void capturesOutputStreamOutput() throws Exception {
+  void capturesOutputStreamOutput() throws Exception {
     MockHttpServletResponse response = new MockHttpServletResponse();
     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
     ServletOutputStream stream = response.getOutputStream();
     stream.write("hello".getBytes(StandardCharsets.UTF_8));
 
-    Assertions.assertEquals(response.getOutputAsString(), "hello");
+    Assertions.assertEquals("hello", response.getOutputAsString());
   }
 
   @Test
-  public void flushCommitsResponse() throws Exception {
+  void flushCommitsResponse() throws Exception {
     MockHttpServletResponse response = new MockHttpServletResponse();
 
     Assertions.assertFalse(response.isCommitted());
@@ -44,7 +44,7 @@ public class MockHttpServletResponseTest {
   }
 
   @Test
-  public void resetClearsBufferHeadersCookiesAndStatus() throws Exception {
+  void resetClearsBufferHeadersCookiesAndStatus() throws Exception {
     MockHttpServletResponse response = new MockHttpServletResponse();
     response.getWriter().write("body");
     response.setHeader("X-Test", "yes");
@@ -53,20 +53,20 @@ public class MockHttpServletResponseTest {
 
     response.reset();
 
-    Assertions.assertEquals(response.getOutputAsString(), "");
+    Assertions.assertEquals("", response.getOutputAsString());
     Assertions.assertNull(response.getHeader("X-Test"));
     Assertions.assertTrue(response.getCookies().isEmpty());
     Assertions.assertEquals(HttpServletResponse.SC_OK, response.getStatus());
   }
 
   @Test
-  public void sendRedirectCommitsWithLocation() throws Exception {
+  void sendRedirectCommitsWithLocation() throws Exception {
     MockHttpServletResponse response = new MockHttpServletResponse();
 
     response.sendRedirect("/next");
 
     Assertions.assertEquals(HttpServletResponse.SC_FOUND, response.getStatus());
-    Assertions.assertEquals(response.getHeader("Location"), "/next");
+    Assertions.assertEquals("/next", response.getHeader("Location"));
     Assertions.assertTrue(response.isCommitted());
   }
 }

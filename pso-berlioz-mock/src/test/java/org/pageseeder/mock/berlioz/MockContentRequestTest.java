@@ -10,28 +10,28 @@ import org.pageseeder.mock.servlet.MockHttpServletRequest;
 import java.io.File;
 import java.net.URI;
 
-public class MockContentRequestTest {
+class MockContentRequestTest {
 
   @Test
-  public void berliozPathUsesServletPathWithoutExtension() {
+  void berliozPathUsesServletPathWithoutExtension() {
     MockHttpServletRequest http = new MockHttpServletRequest(URI.create("http://localhost:8080/articles/one.html"), "GET");
     MockContentRequest request = new MockContentRequest(http);
 
-    Assertions.assertEquals(request.getBerliozPath(), "/articles/one");
+    Assertions.assertEquals("/articles/one", request.getBerliozPath());
   }
 
   @Test
-  public void berliozPathPrefersPathInfo() {
+  void berliozPathPrefersPathInfo() {
     MockHttpServletRequest http = new MockHttpServletRequest();
     http.setServletPath("/html");
     http.setPathInfo("/articles/one");
     MockContentRequest request = new MockContentRequest(http);
 
-    Assertions.assertEquals(request.getBerliozPath(), "/articles/one");
+    Assertions.assertEquals("/articles/one", request.getBerliozPath());
   }
 
   @Test
-  public void environmentCanBeOverridden() {
+  void environmentCanBeOverridden() {
     MockContentRequest request = new MockContentRequest();
     Environment environment = new HttpEnvironment(new File("public"), new File("private"), "no-cache");
 
@@ -41,12 +41,12 @@ public class MockContentRequestTest {
   }
 
   @Test
-  public void redirectStatusAndUrlAreCaptured() {
+  void redirectStatusAndUrlAreCaptured() {
     MockContentRequest request = new MockContentRequest();
 
     request.setRedirect("/elsewhere", ContentStatus.FOUND);
 
     Assertions.assertEquals(ContentStatus.FOUND, request.getStatus());
-    Assertions.assertEquals(request.getRedirectURL(), "/elsewhere");
+    Assertions.assertEquals("/elsewhere", request.getRedirectURL());
   }
 }

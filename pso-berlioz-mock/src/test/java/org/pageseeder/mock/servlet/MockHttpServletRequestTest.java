@@ -13,30 +13,30 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 
-public class MockHttpServletRequestTest {
+class MockHttpServletRequestTest {
 
   @Test
-  public void createWithoutQuery() {
+  void createWithoutQuery() {
     MockHttpServletRequest request = MockHttpServletRequest.create("https://example.org/index.html", "GET");
 
-    Assertions.assertEquals(request.getScheme(), "https");
-    Assertions.assertEquals(request.getServerName(), "example.org");
+    Assertions.assertEquals("https", request.getScheme());
+    Assertions.assertEquals("example.org", request.getServerName());
     Assertions.assertEquals(443, request.getServerPort());
     Assertions.assertFalse(request.getParameterNames().hasMoreElements());
   }
 
   @Test
-  public void createWithQueryParameters() {
+  void createWithQueryParameters() {
     MockHttpServletRequest request = MockHttpServletRequest.create(
         "http://example.org/search?q=berlioz&page=1&empty", "GET");
 
-    Assertions.assertEquals(request.getParameter("q"), "berlioz");
-    Assertions.assertEquals(request.getParameter("page"), "1");
-    Assertions.assertEquals(request.getParameter("empty"), "");
+    Assertions.assertEquals("berlioz", request.getParameter("q"));
+    Assertions.assertEquals("1", request.getParameter("page"));
+    Assertions.assertEquals("", request.getParameter("empty"));
   }
 
   @Test
-  public void readsBodyThroughInputStreamAndReader() throws Exception {
+  void readsBodyThroughInputStreamAndReader() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setContent("hello");
 
@@ -46,12 +46,12 @@ public class MockHttpServletRequestTest {
     Assertions.assertFalse(stream.isFinished());
 
     BufferedReader reader = request.getReader();
-    Assertions.assertEquals(reader.readLine(), "hello");
+    Assertions.assertEquals("hello", reader.readLine());
     Assertions.assertEquals(5, request.getContentLength());
   }
 
   @Test
-  public void sessionsAreCreatedAndCanChangeId() {
+  void sessionsAreCreatedAndCanChangeId() {
     MockHttpServletRequest request = new MockHttpServletRequest();
 
     Assertions.assertNull(request.getSession(false));
@@ -65,22 +65,22 @@ public class MockHttpServletRequestTest {
   }
 
   @Test
-  public void cookiesAndLocalesAreStored() {
+  void cookiesAndLocalesAreStored() {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addCookie(new Cookie("flavour", "vanilla"));
     request.setLocale(Locale.CANADA_FRENCH);
 
-    Assertions.assertEquals(request.getCookies()[0].getName(), "flavour");
+    Assertions.assertEquals("flavour", request.getCookies()[0].getName());
     Enumeration<Locale> locales = request.getLocales();
     Assertions.assertEquals(Locale.CANADA_FRENCH, Collections.list(locales).get(0));
   }
 
   @Test
-  public void characterEncodingIsUsedForStringContent() throws Exception {
+  void characterEncodingIsUsedForStringContent() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setCharacterEncoding(StandardCharsets.UTF_16.name());
     request.setContent("A");
 
-    Assertions.assertEquals(request.getReader().readLine(), "A");
+    Assertions.assertEquals("A", request.getReader().readLine());
   }
 }
