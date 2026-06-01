@@ -46,22 +46,22 @@ final class GlobalSettingsTest {
   @Test
   void testGet_String() {
     // Value is "hello" -> "hello"
-    Assertions.assertEquals(GlobalSettings.get("test.string.sample"), "hello");
-    Assertions.assertEquals(GlobalSettings.get("test.string.sample", "byebye"), "hello");
+    Assertions.assertEquals("hello", GlobalSettings.get("test.string.sample"));
+    Assertions.assertEquals("hello", GlobalSettings.get("test.string.sample", "byebye"));
     // Value is empty ("") -> ""
-    Assertions.assertEquals(GlobalSettings.get("test.string.empty"), "");
-    Assertions.assertEquals(GlobalSettings.get("test.string.empty", "fallback-1"), "");
+    Assertions.assertEquals("", GlobalSettings.get("test.string.empty"));
+    Assertions.assertEquals("", GlobalSettings.get("test.string.empty", "fallback-1"));
     // Value is undefined (null) -> default
     Assertions.assertNull(GlobalSettings.get("test.string.undefined"));
-    Assertions.assertEquals(GlobalSettings.get("test.string.undefined", "fallback-2"), "fallback-2");
+    Assertions.assertEquals("fallback-2", GlobalSettings.get("test.string.undefined", "fallback-2"));
   }
 
   @Test
   void testGet_Boolean_TrueAndFalse() {
-    Assertions.assertEquals(GlobalSettings.get("test.boolean.true"), "true");
+    Assertions.assertEquals("true", GlobalSettings.get("test.boolean.true"));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.true", true));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.true", false));
-    Assertions.assertEquals(GlobalSettings.get("test.boolean.false"), "false");
+    Assertions.assertEquals("false", GlobalSettings.get("test.boolean.false"));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.false", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.false", false));
   }
@@ -70,23 +70,23 @@ final class GlobalSettingsTest {
   void testGet_Boolean_Invalid() {
     Assertions.assertTrue(GlobalSettings.get("test.boolean.invalid", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.invalid", false));
-    Assertions.assertEquals(GlobalSettings.get("test.boolean.invalid-true"), "True");
+    Assertions.assertEquals("True", GlobalSettings.get("test.boolean.invalid-true"));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.invalid-true", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.invalid-true", false));
-    Assertions.assertEquals(GlobalSettings.get("test.boolean.invalid-false"), "FALSE");
+    Assertions.assertEquals("FALSE", GlobalSettings.get("test.boolean.invalid-false"));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.invalid-false", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.invalid-false", false));
-    Assertions.assertEquals(GlobalSettings.get("test.boolean.invalid-yes"), "yes");
+    Assertions.assertEquals("yes", GlobalSettings.get("test.boolean.invalid-yes"));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.invalid-yes", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.invalid-yes", false));
-    Assertions.assertEquals(GlobalSettings.get("test.boolean.invalid-no"), "no");
+    Assertions.assertEquals("no", GlobalSettings.get("test.boolean.invalid-no"));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.invalid-no", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.invalid-no", false));
   }
 
   @Test
   void testGet_Boolean_EmptyAndUndefined() {
-    Assertions.assertEquals(GlobalSettings.get("test.boolean.empty"), "");
+    Assertions.assertEquals("", GlobalSettings.get("test.boolean.empty"));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.empty", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.empty", false));
     Assertions.assertNull(GlobalSettings.get("test.boolean.undefined"));
@@ -100,14 +100,14 @@ final class GlobalSettingsTest {
   @Test
   void testGet_Int() {
     // Value is a number
-    Assertions.assertEquals(GlobalSettings.get("test.int.valid"), "123");
+    Assertions.assertEquals("123", GlobalSettings.get("test.int.valid"));
     Assertions.assertEquals(123, GlobalSettings.get("test.int.valid", 777));
     // Value is larger than MAX_INTEGER
     Assertions.assertEquals(777, GlobalSettings.get("test.int.toolarge", 777));
     // Value is not an integer
     Assertions.assertEquals(777, GlobalSettings.get("test.int.invalid", 777));
     // Value is empty
-    Assertions.assertEquals(GlobalSettings.get("test.int.empty"), "");
+    Assertions.assertEquals("", GlobalSettings.get("test.int.empty"));
     Assertions.assertEquals(777, GlobalSettings.get("test.int.empty", 777));
     Assertions.assertEquals(777, GlobalSettings.get("test.int.empty", 777));
     // Value is undefined (null)
@@ -118,11 +118,11 @@ final class GlobalSettingsTest {
 
   @Test
   void testSetMode() {
-    Assertions.assertEquals(GlobalSettings.getMode(), "default");
+    Assertions.assertEquals("default", GlobalSettings.getMode());
     GlobalSettings.setMode("test");
-    Assertions.assertEquals(GlobalSettings.getMode(), "test");
+    Assertions.assertEquals("test", GlobalSettings.getMode());
     GlobalSettings.setMode("default");
-    Assertions.assertEquals(GlobalSettings.getMode(), "default");
+    Assertions.assertEquals("default", GlobalSettings.getMode());
   }
 
   @Test
@@ -134,24 +134,24 @@ final class GlobalSettingsTest {
   void testLoad_Override() {
     GlobalSettings.setMode("undefined"); // Loads without the override
     GlobalSettings.load();
-    Assertions.assertEquals(GlobalSettings.get("berlioz.xslt.cache"), "true");
-    Assertions.assertEquals(GlobalSettings.get("app.location"), "default");
-    Assertions.assertEquals(GlobalSettings.get("app.cache"), "true");
+    Assertions.assertEquals("true", GlobalSettings.get("berlioz.xslt.cache"));
+    Assertions.assertEquals("default", GlobalSettings.get("app.location"));
+    Assertions.assertEquals("true", GlobalSettings.get("app.cache"));
     Assertions.assertNull(GlobalSettings.get("app.name"));
 
     GlobalSettings.setMode("override1"); // Loads with the override (xml)
     GlobalSettings.load();
-    Assertions.assertEquals(GlobalSettings.get("berlioz.xslt.cache"), "false");
-    Assertions.assertEquals(GlobalSettings.get("app.name"), "app1");
-    Assertions.assertEquals(GlobalSettings.get("app.location"), "default");
-    Assertions.assertEquals(GlobalSettings.get("app.cache"), "false");
+    Assertions.assertEquals("false", GlobalSettings.get("berlioz.xslt.cache"));
+    Assertions.assertEquals("app1", GlobalSettings.get("app.name"));
+    Assertions.assertEquals("default", GlobalSettings.get("app.location"));
+    Assertions.assertEquals("false", GlobalSettings.get("app.cache"));
 
     GlobalSettings.setMode("override2"); // Loads with the override (properties)
     GlobalSettings.load();
-    Assertions.assertEquals(GlobalSettings.get("berlioz.xslt.cache"), "false");
-    Assertions.assertEquals(GlobalSettings.get("app.name"), "app2");
-    Assertions.assertEquals(GlobalSettings.get("app.location"), "default");
-    Assertions.assertEquals(GlobalSettings.get("app.cache"), "false");
+    Assertions.assertEquals("false", GlobalSettings.get("berlioz.xslt.cache"));
+    Assertions.assertEquals("app2", GlobalSettings.get("app.name"));
+    Assertions.assertEquals("default", GlobalSettings.get("app.location"));
+    Assertions.assertEquals("false", GlobalSettings.get("app.cache"));
 
   }
 

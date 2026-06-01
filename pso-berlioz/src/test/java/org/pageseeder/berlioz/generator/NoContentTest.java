@@ -21,7 +21,7 @@ class NoContentTest {
   void testETagIsAlwaysNocontent() {
     NoContent gen = new NoContent();
     ContentRequest req = GeneratorTestSupport.request().build();
-    Assertions.assertEquals(gen.getETag(req), "nocontent");
+    Assertions.assertEquals("nocontent", gen.getETag(req));
   }
 
   @Test
@@ -31,6 +31,6 @@ class NoContentTest {
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
     gen.process(req, xml);
     xml.flush();
-    Assertions.assertEquals(xml.toString(), "");
+    Assertions.assertEquals("", xml.toString());
   }
 }

@@ -15,7 +15,7 @@ final class XmlStringBuilderTest {
         .closeElement()
         .closeElement();
 
-    Assertions.assertEquals(xml.toString(), "<root>\n  <item name=\"one\"/>\n</root>");
+    Assertions.assertEquals("<root>\n  <item name=\"one\"/>\n</root>", xml.toString());
   }
 
   @Test
@@ -24,7 +24,7 @@ final class XmlStringBuilderTest {
 
     xml.openElement("root", true).emptyElement("item").closeElement();
 
-    Assertions.assertEquals(xml.toString(), "<root><item/></root>");
+    Assertions.assertEquals("<root><item/></root>", xml.toString());
   }
 
   @Test
@@ -34,21 +34,22 @@ final class XmlStringBuilderTest {
 
     indented.openElement("root").closeElement();
 
-    Assertions.assertEquals(original.toString(), "<root/>");
-    Assertions.assertEquals(indented.toString(), "<root/>");
+    Assertions.assertEquals("<root/>", original.toString());
+    Assertions.assertEquals("<root/>", indented.toString());
   }
 
   @Test
   void testWithIndentRejectsNonSpaceCharacters() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> new XmlStringBuilder().withIndent(" \t."));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> xml.withIndent(" \t."));
   }
 
   @Test
   void testWithIndentAfterText() {
-    Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.text("already used");
-    xml.withIndent("  ");
-    });
+    Assertions.assertThrows(IllegalStateException.class, () ->
+        xml.withIndent("  ")
+    );
   }
 }

@@ -68,18 +68,18 @@ class HttpHeaderUtilsTest {
 
   @Test
   void testGetETagForGZip_Normal() {
-    Assertions.assertEquals(HttpHeaderUtils.getETagForGZip("\"abc\""), "\"abc-gzip\"");
+    Assertions.assertEquals("\"abc-gzip\"", HttpHeaderUtils.getETagForGZip("\"abc\""));
   }
 
   @Test
   void testGetETagForGZip_Hash() {
-    Assertions.assertEquals(HttpHeaderUtils.getETagForGZip("\"a1b2c3\""), "\"a1b2c3-gzip\"");
+    Assertions.assertEquals("\"a1b2c3-gzip\"", HttpHeaderUtils.getETagForGZip("\"a1b2c3\""));
   }
 
   @Test
   void testGetETagForGZip_NoQuotes() {
     // ETag with no double-quote at all (lastIndexOf returns -1): returned unchanged
-    Assertions.assertEquals(HttpHeaderUtils.getETagForGZip("abc"), "abc");
+    Assertions.assertEquals("abc", HttpHeaderUtils.getETagForGZip("abc"));
   }
 
   // ---------------------------------------------------------------------------
@@ -93,18 +93,18 @@ class HttpHeaderUtilsTest {
 
   @Test
   void testGetETagForUncompressed_GZipETag() {
-    Assertions.assertEquals(HttpHeaderUtils.getETagForUncompressed("\"abc-gzip\""), "\"abc\"");
+    Assertions.assertEquals("\"abc\"", HttpHeaderUtils.getETagForUncompressed("\"abc-gzip\""));
   }
 
   @Test
   void testGetETagForUncompressed_Hash() {
-    Assertions.assertEquals(HttpHeaderUtils.getETagForUncompressed("\"a1b2c3-gzip\""), "\"a1b2c3\"");
+    Assertions.assertEquals("\"a1b2c3\"", HttpHeaderUtils.getETagForUncompressed("\"a1b2c3-gzip\""));
   }
 
   @Test
   void testGetETagForUncompressed_PlainETag() {
     // No GZip suffix: returned unchanged
-    Assertions.assertEquals(HttpHeaderUtils.getETagForUncompressed("\"abc\""), "\"abc\"");
+    Assertions.assertEquals("\"abc\"", HttpHeaderUtils.getETagForUncompressed("\"abc\""));
   }
 
   @Test
@@ -121,13 +121,13 @@ class HttpHeaderUtilsTest {
   @Test
   void testToLastModified_Epoch() {
     // Unix epoch is Thursday 1 January 1970 00:00:00 GMT
-    Assertions.assertEquals(HttpHeaderUtils.toLastModified(0L), "Thu, 01 Jan 1970 00:00:00 GMT");
+    Assertions.assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", HttpHeaderUtils.toLastModified(0L));
   }
 
   @Test
   void testToLastModified_KnownDate() {
     // 2000-01-01T00:00:00Z = 946684800000 ms
-    Assertions.assertEquals(HttpHeaderUtils.toLastModified(946684800000L), "Sat, 01 Jan 2000 00:00:00 GMT");
+    Assertions.assertEquals("Sat, 01 Jan 2000 00:00:00 GMT", HttpHeaderUtils.toLastModified(946684800000L));
   }
 
   @Test
@@ -149,18 +149,18 @@ class HttpHeaderUtilsTest {
 
   @Test
   void testAllow_Empty() {
-    Assertions.assertEquals(HttpHeaderUtils.allow(Collections.emptyList()), "");
+    Assertions.assertEquals("", HttpHeaderUtils.allow(Collections.emptyList()));
   }
 
   @Test
   void testAllow_Single() {
-    Assertions.assertEquals(HttpHeaderUtils.allow(Collections.singletonList("GET")), "GET");
+    Assertions.assertEquals("GET", HttpHeaderUtils.allow(Collections.singletonList("GET")));
   }
 
   @Test
   void testAllow_Multiple() {
     List<String> methods = Arrays.asList("GET", "HEAD", "POST");
-    Assertions.assertEquals(HttpHeaderUtils.allow(methods), "GET,HEAD,POST");
+    Assertions.assertEquals("GET,HEAD,POST", HttpHeaderUtils.allow(methods));
   }
 
   @Test
@@ -212,7 +212,7 @@ class HttpHeaderUtilsTest {
     HttpHeaderUtils.setContentLength(response, (long) Integer.MAX_VALUE + 1);
 
     Assertions.assertEquals(-1, recorder.contentLength());
-    Assertions.assertEquals(recorder.header(HttpHeaders.CONTENT_LENGTH), "2147483648");
+    Assertions.assertEquals("2147483648", recorder.header(HttpHeaders.CONTENT_LENGTH));
   }
 
   // ---------------------------------------------------------------------------
@@ -240,7 +240,7 @@ class HttpHeaderUtilsTest {
 
     Assertions.assertFalse(HttpHeaderUtils.checkIfHeaders(request, response, new GenericEntityInfo(1000, "text/plain", "\"abc\"")));
     Assertions.assertEquals(HttpServletResponse.SC_NOT_MODIFIED, recorder.status());
-    Assertions.assertEquals(recorder.header(HttpHeaders.ETAG), "\"abc\"");
+    Assertions.assertEquals("\"abc\"", recorder.header(HttpHeaders.ETAG));
     Assertions.assertFalse(recorder.errorSent());
   }
 
@@ -281,6 +281,6 @@ class HttpHeaderUtilsTest {
 
     Assertions.assertFalse(HttpHeaderUtils.checkIfHeaders(request, response, new GenericEntityInfo(1500, "text/plain", "\"abc\"")));
     Assertions.assertEquals(HttpServletResponse.SC_NOT_MODIFIED, recorder.status());
-    Assertions.assertEquals(recorder.header(HttpHeaders.ETAG), "\"abc\"");
+    Assertions.assertEquals("\"abc\"", recorder.header(HttpHeaders.ETAG));
   }
 }

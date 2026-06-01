@@ -83,7 +83,7 @@ class ServiceStatusRuleTest {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("target:main", null);
     Assertions.assertEquals(SelectType.TARGET, rule.use());
     Assertions.assertEquals(1, rule.items().size());
-    Assertions.assertEquals(rule.items().get(0), "main");
+    Assertions.assertEquals("main", rule.items().get(0));
   }
 
   @Test

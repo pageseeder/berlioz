@@ -21,8 +21,8 @@ class HttpLocationTest {
         .contextPath("").servletPath("/page.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    Assertions.assertEquals(loc.scheme(), "http");
-    Assertions.assertEquals(loc.host(), "example.org");
+    Assertions.assertEquals("http", loc.scheme());
+    Assertions.assertEquals("example.org", loc.host());
     Assertions.assertEquals(8080, loc.port());
   }
 
@@ -34,8 +34,8 @@ class HttpLocationTest {
         .contextPath("").servletPath("/search.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    Assertions.assertEquals(loc.path(), "/search");
-    Assertions.assertEquals(loc.query(), "q=berlioz&page=2");
+    Assertions.assertEquals("/search", loc.path());
+    Assertions.assertEquals("q=berlioz&page=2", loc.query());
   }
 
   @Test
@@ -46,7 +46,7 @@ class HttpLocationTest {
         .contextPath("").servletPath("/page.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    Assertions.assertEquals(loc.query(), "");
+    Assertions.assertEquals("", loc.query());
   }
 
   @Test
@@ -58,8 +58,8 @@ class HttpLocationTest {
         .build();
     HttpLocation loc = HttpLocation.build(req);
     Assertions.assertNotNull(loc.info());
-    Assertions.assertEquals(loc.info().path(), "/users");
-    Assertions.assertEquals(loc.info().prefix(), "/api");
+    Assertions.assertEquals("/users", loc.info().path());
+    Assertions.assertEquals("/api", loc.info().prefix());
   }
 
   // toBaseURL() — default port suppression
@@ -69,28 +69,28 @@ class HttpLocationTest {
   void testToBaseUrlDefaultHttpPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(80).uri("/").build();
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "http://example.org");
+    Assertions.assertEquals("http://example.org", HttpLocation.toBaseURL(req).toString());
   }
 
   @Test
   void testToBaseUrlNonDefaultHttpPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(8080).uri("/").build();
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "http://example.org:8080");
+    Assertions.assertEquals("http://example.org:8080", HttpLocation.toBaseURL(req).toString());
   }
 
   @Test
   void testToBaseUrlDefaultHttpsPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("secure.example.org").port(443).uri("/").build();
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://secure.example.org");
+    Assertions.assertEquals("https://secure.example.org", HttpLocation.toBaseURL(req).toString());
   }
 
   @Test
   void testToBaseUrlNonDefaultHttpsPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("secure.example.org").port(8443).uri("/").build();
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://secure.example.org:8443");
+    Assertions.assertEquals("https://secure.example.org:8443", HttpLocation.toBaseURL(req).toString());
   }
 
   // toBaseURL() — reverse proxy header handling
@@ -102,7 +102,7 @@ class HttpLocationTest {
         .scheme("http").host("internal").port(8080)
         .header("X-Forwarded-Proto", "https")
         .build();
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://internal");
+    Assertions.assertEquals("https://internal", HttpLocation.toBaseURL(req).toString());
   }
 
   @Test
@@ -112,7 +112,7 @@ class HttpLocationTest {
         .header("X-Forwarded-Proto", "https")
         .header("X-Forwarded-Host", "public.example.org:8443")
         .build();
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://internal:8443");
+    Assertions.assertEquals("https://internal:8443", HttpLocation.toBaseURL(req).toString());
   }
 
   @Test
@@ -123,14 +123,14 @@ class HttpLocationTest {
         .header("X-Forwarded-Host", "public.example.org")
         .build();
     // No port in forwarded host → port treated as -1 → omitted (default)
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://internal");
+    Assertions.assertEquals("https://internal", HttpLocation.toBaseURL(req).toString());
   }
 
   @Test
   void testNoReverseProxyHeadersUsesServerPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("app.example.org").port(443).uri("/").build();
-    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://app.example.org");
+    Assertions.assertEquals("https://app.example.org", HttpLocation.toBaseURL(req).toString());
   }
 
   // toXML()

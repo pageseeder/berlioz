@@ -22,44 +22,44 @@ class JsonTest {
 
   @Test
   void testCamelifyEmpty() {
-    Assertions.assertEquals(Json.camelify(""), "");
+    Assertions.assertEquals("", Json.camelify(""));
   }
 
   @Test
   void testCamelifyNoDash() {
-    Assertions.assertEquals(Json.camelify("hello"), "hello");
+    Assertions.assertEquals("hello", Json.camelify("hello"));
   }
 
   @Test
   void testCamelifyOneDash() {
-    Assertions.assertEquals(Json.camelify("hello-world"), "helloWorld");
+    Assertions.assertEquals("helloWorld", Json.camelify("hello-world"));
   }
 
   @Test
   void testCamelifyMultipleDashes() {
-    Assertions.assertEquals(Json.camelify("hello-world-foo"), "helloWorldFoo");
+    Assertions.assertEquals("helloWorldFoo", Json.camelify("hello-world-foo"));
   }
 
   @Test
   void testCamelifyTrailingDash() {
-    Assertions.assertEquals(Json.camelify("hello-"), "hello-");
+    Assertions.assertEquals("hello-", Json.camelify("hello-"));
   }
 
   @Test
   void testCamelifyLeadingDash() {
-    Assertions.assertEquals(Json.camelify("-hello"), "Hello");
+    Assertions.assertEquals("Hello", Json.camelify("-hello"));
   }
 
   @Test
   void testCamelifyConsecutiveDashes() {
-    Assertions.assertEquals(Json.camelify("hello--world"), "hello-world");
+    Assertions.assertEquals("hello-world", Json.camelify("hello--world"));
   }
 
   @Test
   void testProviderNameIsKnown() {
     String name = Json.providerName();
     Assertions.assertNotNull(name);
-    Assertions.assertNotEquals(name, "UNKNOWN");
+    Assertions.assertNotEquals("UNKNOWN", name);
   }
 
   @Test

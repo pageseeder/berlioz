@@ -67,11 +67,11 @@ class VariableTest {
   void testNew_Default() {
     // default value specified and null
     Variable variable = new Variable("name", null);
-    Assertions.assertEquals(variable.defaultValue(), "");
+    Assertions.assertEquals("", variable.defaultValue());
     Assertions.assertNull(variable.type());
     // default value unspecified
     variable = new Variable("name");
-    Assertions.assertEquals(variable.defaultValue(), "");
+    Assertions.assertEquals("", variable.defaultValue());
     Assertions.assertNull(variable.type());
     Assertions.assertEquals(Form.STRING, variable.form());
   }
@@ -185,16 +185,16 @@ class VariableTest {
     params.set("d", new String[] { "m", "n" });
     params.set("e", new String[] { "m", "", "n" });
     // test
-    Assertions.assertEquals(new Variable("a").value(params), "");
-    Assertions.assertEquals(new Variable("a", "x").value(params), "x");
-    Assertions.assertEquals(new Variable("b").value(params), "");
-    Assertions.assertEquals(new Variable("b", "x").value(params), "");
-    Assertions.assertEquals(new Variable("c").value(params), "m");
-    Assertions.assertEquals(new Variable("c", "x").value(params), "m");
-    Assertions.assertEquals(new Variable("d").value(params), "m");
-    Assertions.assertEquals(new Variable("d", "x").value(params), "m");
-    Assertions.assertEquals(new Variable("e").value(params), "m");
-    Assertions.assertEquals(new Variable("e", "x").value(params), "m");
+    Assertions.assertEquals("", new Variable("a").value(params));
+    Assertions.assertEquals("x", new Variable("a", "x").value(params));
+    Assertions.assertEquals("", new Variable("b").value(params));
+    Assertions.assertEquals("", new Variable("b", "x").value(params));
+    Assertions.assertEquals("m", new Variable("c").value(params));
+    Assertions.assertEquals("m", new Variable("c", "x").value(params));
+    Assertions.assertEquals("m", new Variable("d").value(params));
+    Assertions.assertEquals("m", new Variable("d", "x").value(params));
+    Assertions.assertEquals("m", new Variable("e").value(params));
+    Assertions.assertEquals("m", new Variable("e", "x").value(params));
   }
 
   /**

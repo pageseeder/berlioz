@@ -46,84 +46,89 @@ abstract class JsonWriterTestBase {
   void testNumberLong() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Long.MAX_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "9223372036854775807");
+    Assertions.assertEquals("9223372036854775807", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(Long.MIN_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "-9223372036854775808");
+    Assertions.assertEquals("-9223372036854775808", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(0L).flush();
-    Assertions.assertEquals(json.toString(), "0");
+    Assertions.assertEquals("0", json.toString());
   }
 
   @Test
   void testNumberInteger() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Integer.MAX_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "2147483647");
+    Assertions.assertEquals("2147483647", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(Integer.MIN_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "-2147483648");
+    Assertions.assertEquals("-2147483648", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(0).flush();
-    Assertions.assertEquals(json.toString(), "0");
+    Assertions.assertEquals("0", json.toString());
   }
 
   @Test
   void testNumberDouble() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Double.MAX_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "1.7976931348623157E308");
+    Assertions.assertEquals("1.7976931348623157E308", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(Double.MIN_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "4.9E-324");
+    Assertions.assertEquals("4.9E-324", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(0.0).flush();
-    Assertions.assertEquals(json.toString(), "0.0");
+    Assertions.assertEquals("0.0", json.toString());
   }
 
   @Test
   void testNumberFloat() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Float.MAX_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "3.4028234663852886E38");
+    Assertions.assertEquals("3.4028234663852886E38", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(Float.MIN_VALUE).flush();
-    Assertions.assertEquals(json.toString(), "1.401298464324817E-45");
+    Assertions.assertEquals("1.401298464324817E-45", json.toString());
     json = new StringWriter();
     newJsonWriter(json).value(0.0f).flush();
-    Assertions.assertEquals(json.toString(), "0.0");
+    Assertions.assertEquals("0.0", json.toString());
   }
 
   @Test
   void testValueNaNThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NaN));
+    JsonWriter json = newJsonWriter(new StringWriter());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.value(Double.NaN));
   }
 
   @Test
   void testValuePositiveInfinityThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.POSITIVE_INFINITY));
+    JsonWriter json = newJsonWriter(new StringWriter());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.value(Double.POSITIVE_INFINITY));
   }
 
   @Test
   void testValueNegativeInfinityThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NEGATIVE_INFINITY));
+    JsonWriter json = newJsonWriter(new StringWriter());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.value(Double.NEGATIVE_INFINITY));
   }
 
   @Test
   void testFieldNaNThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).startObject().field("value", Double.NaN));
+    JsonWriter json = newJsonWriter(new StringWriter()).startObject();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.field("value", Double.NaN));
   }
 
   @Test
   void testFieldInfinityThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).startObject().field("value", Double.POSITIVE_INFINITY));
+    JsonWriter json = newJsonWriter(new StringWriter()).startObject();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.field("value", Double.POSITIVE_INFINITY));
   }
 
   @Test
   void testNumberIsZero() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(0).flush();
-    Assertions.assertEquals(json.toString(), "0");
+    Assertions.assertEquals("0", json.toString());
   }
 
   @Test
@@ -132,7 +137,7 @@ abstract class JsonWriterTestBase {
     newJsonWriter(json)
         .value("")
         .flush();
-    Assertions.assertEquals(json.toString(), "\"\"");
+    Assertions.assertEquals("\"\"", json.toString());
   }
 
   @Test
@@ -141,7 +146,7 @@ abstract class JsonWriterTestBase {
     newJsonWriter(json)
         .value("Caf\u00e9\n \"Test\" \t\\")
         .flush();
-    Assertions.assertEquals(json.toString(), "\"Caf\u00e9\\n \\\"Test\\\" \\t\\\\\"");
+    Assertions.assertEquals("\"Caf\u00e9\\n \\\"Test\\\" \\t\\\\\"", json.toString());
   }
 
   @Test
@@ -150,7 +155,7 @@ abstract class JsonWriterTestBase {
     newJsonWriter(json)
         .value(true)
         .flush();
-    Assertions.assertEquals(json.toString(), "true");
+    Assertions.assertEquals("true", json.toString());
   }
 
   @Test
@@ -159,28 +164,28 @@ abstract class JsonWriterTestBase {
     newJsonWriter(json)
         .value(false)
         .flush();
-    Assertions.assertEquals(json.toString(), "false");
+    Assertions.assertEquals("false", json.toString());
   }
 
   @Test
   void testNull() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).nullValue().flush();
-    Assertions.assertEquals(json.toString(), "null");
+    Assertions.assertEquals("null", json.toString());
   }
 
   @Test
   void testValueNullString() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value((String) null).flush();
-    Assertions.assertEquals(json.toString(), "null");
+    Assertions.assertEquals("null", json.toString());
   }
 
   @Test
   void testFieldNullStringValue() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).startObject().field("k", (String) null).endObject().flush();
-    Assertions.assertEquals(json.toString(), "{\"k\":null}");
+    Assertions.assertEquals("{\"k\":null}", json.toString());
   }
 
   @Test
@@ -190,7 +195,7 @@ abstract class JsonWriterTestBase {
         .startArray()
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[]");
+    Assertions.assertEquals("[]", json.toString());
   }
 
   @Test
@@ -201,7 +206,7 @@ abstract class JsonWriterTestBase {
         .value("")
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[\"\"]");
+    Assertions.assertEquals("[\"\"]", json.toString());
   }
 
   @Test
@@ -212,7 +217,7 @@ abstract class JsonWriterTestBase {
         .value(0)
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[0]");
+    Assertions.assertEquals("[0]", json.toString());
   }
 
   @Test
@@ -223,7 +228,7 @@ abstract class JsonWriterTestBase {
         .value(false)
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[false]");
+    Assertions.assertEquals("[false]", json.toString());
   }
 
   @Test
@@ -234,7 +239,7 @@ abstract class JsonWriterTestBase {
         .nullValue()
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[null]");
+    Assertions.assertEquals("[null]", json.toString());
   }
 
   @Test
@@ -246,7 +251,7 @@ abstract class JsonWriterTestBase {
         .endArray()
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[[]]");
+    Assertions.assertEquals("[[]]", json.toString());
   }
 
   @Test
@@ -260,7 +265,7 @@ abstract class JsonWriterTestBase {
       w.endArray();
     }
     w.flush();
-    Assertions.assertEquals(json.toString(), "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]");
+    Assertions.assertEquals("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]", json.toString());
   }
 
   @Test
@@ -290,7 +295,7 @@ abstract class JsonWriterTestBase {
         .endObject()
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[{}]");
+    Assertions.assertEquals("[{}]", json.toString());
   }
 
   @Test
@@ -307,7 +312,7 @@ abstract class JsonWriterTestBase {
         .nullValue()
         .endArray()
         .flush();
-    Assertions.assertEquals(json.toString(), "[\"abc\",123,3.141592653589793,true,false,[],{},null]");
+    Assertions.assertEquals("[\"abc\",123,3.141592653589793,true,false,[],{},null]", json.toString());
   }
 
   @Test
@@ -317,7 +322,7 @@ abstract class JsonWriterTestBase {
         .startObject()
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{}");
+    Assertions.assertEquals("{}", json.toString());
   }
 
   @Test
@@ -328,7 +333,7 @@ abstract class JsonWriterTestBase {
         .field("a", "b")
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"a\":\"b\"}");
+    Assertions.assertEquals("{\"a\":\"b\"}", json.toString());
   }
 
   @Test
@@ -343,7 +348,7 @@ abstract class JsonWriterTestBase {
         .nullValue("f")
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"a\":\"xyz\",\"b\":123,\"c\":3.141592653589793,\"d\":true,\"e\":false,\"f\":null}");
+    Assertions.assertEquals("{\"a\":\"xyz\",\"b\":123,\"c\":3.141592653589793,\"d\":true,\"e\":false,\"f\":null}", json.toString());
   }
 
   @Test
@@ -355,7 +360,7 @@ abstract class JsonWriterTestBase {
         .endObject()
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"abc\":{}}");
+    Assertions.assertEquals("{\"abc\":{}}", json.toString());
   }
 
   @Test
@@ -367,7 +372,7 @@ abstract class JsonWriterTestBase {
         .endArray()
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"abc\":[]}");
+    Assertions.assertEquals("{\"abc\":[]}", json.toString());
   }
 
   @Test
@@ -383,7 +388,7 @@ abstract class JsonWriterTestBase {
         .value(3)
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"a\":1,\"b\":2,\"c\":3}");
+    Assertions.assertEquals("{\"a\":1,\"b\":2,\"c\":3}", json.toString());
   }
 
   @Test
@@ -398,7 +403,7 @@ abstract class JsonWriterTestBase {
         .endArray()
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"items\":[1,2]}");
+    Assertions.assertEquals("{\"items\":[1,2]}", json.toString());
   }
 
   @Test
@@ -412,7 +417,7 @@ abstract class JsonWriterTestBase {
         .endObject()
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"inner\":{\"x\":\"y\"}}");
+    Assertions.assertEquals("{\"inner\":{\"x\":\"y\"}}", json.toString());
   }
 
   @Test
@@ -426,14 +431,14 @@ abstract class JsonWriterTestBase {
         .properties(map)
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"a\":\"1\",\"b\":\"2\"}");
+    Assertions.assertEquals("{\"a\":\"1\",\"b\":\"2\"}", json.toString());
   }
 
   @Test
   void testValueInt() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(42).flush();
-    Assertions.assertEquals(json.toString(), "42");
+    Assertions.assertEquals("42", json.toString());
   }
 
   @Test
@@ -444,7 +449,7 @@ abstract class JsonWriterTestBase {
         .field("count", 42)
         .endObject()
         .flush();
-    Assertions.assertEquals(json.toString(), "{\"count\":42}");
+    Assertions.assertEquals("{\"count\":42}", json.toString());
   }
 
   @Test

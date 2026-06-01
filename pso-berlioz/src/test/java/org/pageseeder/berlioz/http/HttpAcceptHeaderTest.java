@@ -23,7 +23,8 @@ class HttpAcceptHeaderTest {
 
   @Test
   void testGet_ReturnsUnmodifiableMap() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> HttpAcceptHeader.get("text/html").put("application/json", 1.0f));
+    Map<String, Float> acceptHeaderMap = HttpAcceptHeader.get("text/html");
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> acceptHeaderMap.put("application/json", 1.0f));
   }
 
   @Test

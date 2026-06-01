@@ -19,7 +19,7 @@ final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testFileLargerThan1MBThrowsConfigException() throws Exception {
+  void testFileLargerThan1MBThrowsConfigException() {
     Assertions.assertThrows(ConfigException.class, () -> {
     File large = Files.createFile(tmp.resolve("big.xml")).toFile();
     try (FileOutputStream out = new FileOutputStream(large)) {
@@ -53,7 +53,7 @@ final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testNonExistentFileThrowsConfigException() throws Exception {
+  void testNonExistentFileThrowsConfigException() {
     Assertions.assertThrows(ConfigException.class, () -> {
     File missing = new File(tmp.toFile(), "does-not-exist.xml");
     RedirectConfig.newInstance(missing);
@@ -64,7 +64,7 @@ final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testDirectoryThrowsConfigException() throws Exception {
+  void testDirectoryThrowsConfigException() {
     Assertions.assertThrows(ConfigException.class, () -> {
     File dir = Files.createDirectory(tmp.resolve("notafile")).toFile();
     RedirectConfig.newInstance(dir);
@@ -83,7 +83,7 @@ final class ConfigLoaderTest {
         new java.io.ByteArrayInputStream(xml.getBytes()));
     Assertions.assertEquals(1, config.size());
     Assertions.assertNotNull(config.redirect("/old"));
-    Assertions.assertEquals(config.redirect("/old").to(), "/new");
+    Assertions.assertEquals("/new", config.redirect("/old").to());
   }
 
 }

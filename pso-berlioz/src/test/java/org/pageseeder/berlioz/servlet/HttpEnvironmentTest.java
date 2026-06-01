@@ -26,9 +26,9 @@ class HttpEnvironmentTest {
   void testGetCacheControl() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
-    Assertions.assertEquals(new HttpEnvironment(pub, priv, "max-age=3600").getCacheControl(), "max-age=3600");
-    Assertions.assertEquals(new HttpEnvironment(pub, priv, "no-cache").getCacheControl(), "no-cache");
-    Assertions.assertEquals(new HttpEnvironment(pub, priv, "").getCacheControl(), "");
+    Assertions.assertEquals("max-age=3600", new HttpEnvironment(pub, priv, "max-age=3600").getCacheControl());
+    Assertions.assertEquals("no-cache", new HttpEnvironment(pub, priv, "no-cache").getCacheControl());
+    Assertions.assertEquals("", new HttpEnvironment(pub, priv, "").getCacheControl());
   }
 
   @Test

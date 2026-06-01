@@ -28,7 +28,7 @@ class JsonStringBuilderTest {
         .field("count", 42L)
         .endObject()
         .flush();
-    Assertions.assertEquals(builder.toString(), "{\"name\":\"test\",\"count\":42}");
+    Assertions.assertEquals("{\"name\":\"test\",\"count\":42}", builder.toString());
   }
 
   @Test
@@ -39,7 +39,7 @@ class JsonStringBuilderTest {
         .value("b")
         .endArray()
         .flush();
-    Assertions.assertEquals(builder.toString(), "[\"a\",\"b\"]");
+    Assertions.assertEquals("[\"a\",\"b\"]", builder.toString());
   }
 
   @Test
@@ -49,7 +49,7 @@ class JsonStringBuilderTest {
         .nullValue("key")
         .endObject()
         .flush();
-    Assertions.assertEquals(builder.toString(), "{\"key\":null}");
+    Assertions.assertEquals("{\"key\":null}", builder.toString());
   }
 
   @Test
@@ -66,7 +66,7 @@ class JsonStringBuilderTest {
     JsonStringBuilder builder = JsonStringBuilder.create();
     builder.startObject().field("x", 1L).endObject();
     builder.close();
-    Assertions.assertEquals(builder.toString(), "{\"x\":1}");
+    Assertions.assertEquals("{\"x\":1}", builder.toString());
   }
 
 }

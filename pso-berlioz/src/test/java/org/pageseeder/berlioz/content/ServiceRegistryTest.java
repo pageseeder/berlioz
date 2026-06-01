@@ -45,17 +45,21 @@ final class ServiceRegistryTest {
 
   @Test
   void testRegister_nullService() {
-    Assertions.assertThrows(NullPointerException.class, () -> registry.register(null, new URIPattern("/home"), HttpMethod.GET));
+    URIPattern pattern = new URIPattern("/home");
+    Assertions.assertThrows(NullPointerException.class, () -> registry.register(null, pattern, HttpMethod.GET));
   }
 
   @Test
   void testRegister_nullPattern() {
-    Assertions.assertThrows(NullPointerException.class, () -> registry.register(buildService("svc"), null, HttpMethod.GET));
+    Service service = buildService("svc");
+    Assertions.assertThrows(NullPointerException.class, () -> registry.register(service, null, HttpMethod.GET));
   }
 
   @Test
   void testRegister_nullMethod() {
-    Assertions.assertThrows(NullPointerException.class, () -> registry.register(buildService("svc"), new URIPattern("/home"), null));
+    URIPattern pattern = new URIPattern("/home");
+    Service service = buildService("svc");
+    Assertions.assertThrows(NullPointerException.class, () -> registry.register(service, pattern, null));
   }
 
   @Test
@@ -177,7 +181,7 @@ final class ServiceRegistryTest {
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
     List<String> patterns = registry.matches(svc);
     Assertions.assertEquals(1, patterns.size());
-    Assertions.assertEquals(patterns.get(0), "/home");
+    Assertions.assertEquals("/home", patterns.get(0));
   }
 
   @Test

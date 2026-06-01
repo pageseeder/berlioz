@@ -46,11 +46,11 @@ final class RelocationConfigTest {
     Assertions.assertNull(config.relocate("/index.xml"));
     Assertions.assertNull(config.relocate("/example.html"));
 
-    Assertions.assertEquals(config.relocate("/"), "/html/home");
-    Assertions.assertEquals(config.relocate("/index.html"), "/html/home");
-    Assertions.assertEquals(config.relocate("/html"), "/html/home");
-    Assertions.assertEquals(config.relocate("/xml"), "/xml/home");
-    Assertions.assertEquals(config.relocate("/example.psml"), "/html/example");
+    Assertions.assertEquals("/html/home", config.relocate("/"));
+    Assertions.assertEquals("/html/home", config.relocate("/index.html"));
+    Assertions.assertEquals("/html/home", config.relocate("/html"));
+    Assertions.assertEquals("/xml/home", config.relocate("/xml"));
+    Assertions.assertEquals("/html/example", config.relocate("/example.psml"));
   }
 
   @Test
@@ -62,7 +62,7 @@ final class RelocationConfigTest {
     RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
     Assertions.assertEquals(2, config.size());
     // First match wins
-    Assertions.assertEquals(config.relocate("/a"), "/b");
+    Assertions.assertEquals("/b", config.relocate("/a"));
   }
 
   @Test
@@ -71,12 +71,12 @@ final class RelocationConfigTest {
         "<relocation from=\"/{+path}.psml\" to=\"/html/{+path}\"/>" +
         "</relocation-mapping>";
     RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    Assertions.assertEquals(config.relocate("/docs/guide.psml"), "/html/docs/guide");
-    Assertions.assertEquals(config.relocate("/page.psml"), "/html/page");
+    Assertions.assertEquals("/html/docs/guide", config.relocate("/docs/guide.psml"));
+    Assertions.assertEquals("/html/page", config.relocate("/page.psml"));
   }
 
   @Test
-  void testLoad_invalidXml() throws ConfigException {
+  void testLoad_invalidXml() {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>";
     RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
@@ -84,7 +84,7 @@ final class RelocationConfigTest {
   }
 
   @Test
-  void testLoad_xxe() throws ConfigException {
+  void testLoad_xxe() {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!DOCTYPE relocation-mapping [<!ELEMENT relocation-mapping ANY >" +
         "<!ENTITY x SYSTEM \"/etc/passwd\" >]>" +

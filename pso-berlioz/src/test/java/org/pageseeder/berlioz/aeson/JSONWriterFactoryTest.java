@@ -2,6 +2,7 @@ package org.pageseeder.berlioz.aeson;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class JSONWriterFactoryTest {
   }
 
   @Test
-  void testNewInstanceStreamProducesValidJSON() throws Exception {
+  void testNewInstanceStreamProducesValidJSON() {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     try (JSONWriter writer = JSONWriterFactory.newInstance(out)) {
       writer.startArray()
@@ -45,7 +46,7 @@ class JSONWriterFactoryTest {
             .writeNull()
             .end();
     }
-    String json = out.toString("UTF-8");
+    String json = out.toString(StandardCharsets.UTF_8);
     Assertions.assertTrue(json.startsWith("["));
     Assertions.assertTrue(json.endsWith("]"));
     Assertions.assertTrue(json.contains("\"a\""));
@@ -72,12 +73,14 @@ class JSONWriterFactoryTest {
 
   @Test
   void testValueNaNThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> JSONWriterFactory.newInstance(new StringWriter()).value(Double.NaN));
+    JSONWriter json = JSONWriterFactory.newInstance(new StringWriter());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.value(Double.NaN));
   }
 
   @Test
   void testPropertyInfinityThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> JSONWriterFactory.newInstance(new StringWriter()).startObject().property("x", Double.POSITIVE_INFINITY));
+    JSONWriter json = JSONWriterFactory.newInstance(new StringWriter()).startObject();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.property("x", Double.POSITIVE_INFINITY));
   }
 
   // ---------------------------------------------------------------------------

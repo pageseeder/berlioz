@@ -83,8 +83,8 @@ final class BundleConfigTest {
 
     Assertions.assertEquals(1, config.definitions().size());
     BundleDefinition definition = config.definitions().get(0);
-    Assertions.assertEquals(definition.name(), "group");
-    Assertions.assertEquals(definition.filename(), "{GROUP}");
+    Assertions.assertEquals("group", definition.name());
+    Assertions.assertEquals("{GROUP}", definition.filename());
     Assertions.assertArrayEquals(new String[]{"/script/{GROUP}/extra.js"}, definition.paths());
   }
 

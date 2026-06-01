@@ -15,7 +15,7 @@ class ServerTimingHeaderTest {
     header.add(new PerformanceServerTiming("miss", -1));
     header.add(new PerformanceServerTiming("db", 53));
     header.add(new PerformanceServerTiming("app", 47.2));
-    Assertions.assertEquals(header.toValue(), "miss, db;dur=53, app;dur=47.2");
+    Assertions.assertEquals("miss, db;dur=53, app;dur=47.2", header.toValue());
   }
 
   @Test
@@ -23,14 +23,14 @@ class ServerTimingHeaderTest {
     ServerTimingHeader header = new ServerTimingHeader();
     header.add(new PerformanceServerTiming("customView", -1));
     header.add(new PerformanceServerTiming("dc", "atl", -1));
-    Assertions.assertEquals(header.toValue(), "customView, dc;desc=atl");
+    Assertions.assertEquals("customView, dc;desc=atl", header.toValue());
   }
 
   @Test
   void testToValue3() {
     ServerTimingHeader header = new ServerTimingHeader();
     header.add(new PerformanceServerTiming("cache", "Cache Read",23.2));
-    Assertions.assertEquals(header.toValue(), "cache;desc=\"Cache Read\";dur=23.2");
+    Assertions.assertEquals("cache;desc=\"Cache Read\";dur=23.2", header.toValue());
   }
 
   @Test
@@ -40,7 +40,7 @@ class ServerTimingHeaderTest {
     header.addMetric("db", 53);
     header.addMetric("dc", "atl");
     header.addMetric("app", "App Render", 47.2);
-    Assertions.assertEquals(header.toValue(), "miss, db;dur=53, dc;desc=atl, app;desc=\"App Render\";dur=47.2");
+    Assertions.assertEquals("miss, db;dur=53, dc;desc=atl, app;desc=\"App Render\";dur=47.2", header.toValue());
   }
 
   @Test
@@ -48,7 +48,7 @@ class ServerTimingHeaderTest {
     ServerTimingHeader header = new ServerTimingHeader();
     header.addMetricNano("db", 1234567);
     header.addMetricNano("app", "App Render", 2000000);
-    Assertions.assertEquals(header.toValue(), "db;dur=1.235, app;desc=\"App Render\";dur=2");
+    Assertions.assertEquals("db;dur=1.235, app;desc=\"App Render\";dur=2", header.toValue());
   }
 
   @Test
@@ -58,7 +58,7 @@ class ServerTimingHeaderTest {
     HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
     HttpServletResponse response = recorder.build();
     header.addHeaderTo(response);
-    Assertions.assertEquals(recorder.header(HttpHeaders.SERVER_TIMING), "db;dur=53");
+    Assertions.assertEquals("db;dur=53", recorder.header(HttpHeaders.SERVER_TIMING));
   }
 
   @Test
@@ -69,7 +69,7 @@ class ServerTimingHeaderTest {
 
     Collection<String> values = recorder.headers(HttpHeaders.SERVER_TIMING);
     Assertions.assertEquals(1, values.size());
-    Assertions.assertEquals(values.iterator().next(), "app;desc=\"App Render\";dur=2");
+    Assertions.assertEquals("app;desc=\"App Render\";dur=2", values.iterator().next());
   }
 
 }

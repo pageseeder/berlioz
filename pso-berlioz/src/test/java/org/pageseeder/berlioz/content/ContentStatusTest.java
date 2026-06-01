@@ -76,11 +76,11 @@ final class ContentStatusTest {
 
   @Test
   void testToString_lowercaseWithHyphens() {
-    Assertions.assertEquals(ContentStatus.OK.toString(), "ok");
-    Assertions.assertEquals(ContentStatus.NOT_FOUND.toString(), "not-found");
-    Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR.toString(), "internal-server-error");
-    Assertions.assertEquals(ContentStatus.MOVED_PERMANENTLY.toString(), "moved-permanently");
-    Assertions.assertEquals(ContentStatus.NON_AUTHORITATIVE_INFORMATION.toString(), "non-authoritative-information");
+    Assertions.assertEquals("ok", ContentStatus.OK.toString());
+    Assertions.assertEquals("not-found", ContentStatus.NOT_FOUND.toString());
+    Assertions.assertEquals("internal-server-error", ContentStatus.INTERNAL_SERVER_ERROR.toString());
+    Assertions.assertEquals("moved-permanently", ContentStatus.MOVED_PERMANENTLY.toString());
+    Assertions.assertEquals("non-authoritative-information", ContentStatus.NON_AUTHORITATIVE_INFORMATION.toString());
   }
 
   @Test

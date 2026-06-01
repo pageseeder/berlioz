@@ -7,10 +7,10 @@ class HttpStatusCodesTest {
 
   @Test
   void testGetTitle_KnownCodes() {
-    Assertions.assertEquals(HttpStatusCodes.getTitle(200), "OK");
-    Assertions.assertEquals(HttpStatusCodes.getTitle(301), "Moved Permanently");
-    Assertions.assertEquals(HttpStatusCodes.getTitle(404), "Not Found");
-    Assertions.assertEquals(HttpStatusCodes.getTitle(500), "Internal Server Error");
+    Assertions.assertEquals("OK", HttpStatusCodes.getTitle(200));
+    Assertions.assertEquals("Moved Permanently", HttpStatusCodes.getTitle(301));
+    Assertions.assertEquals("Not Found", HttpStatusCodes.getTitle(404));
+    Assertions.assertEquals("Internal Server Error", HttpStatusCodes.getTitle(500));
   }
 
   @Test
@@ -21,11 +21,11 @@ class HttpStatusCodesTest {
 
   @Test
   void testGetClassOfStatus() {
-    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(100), "Informational");
-    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(204), "Successful");
-    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(304), "Redirection");
-    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(404), "Client Error");
-    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(503), "Server Error");
+    Assertions.assertEquals("Informational", HttpStatusCodes.getClassOfStatus(100));
+    Assertions.assertEquals("Successful", HttpStatusCodes.getClassOfStatus(204));
+    Assertions.assertEquals("Redirection", HttpStatusCodes.getClassOfStatus(304));
+    Assertions.assertEquals("Client Error", HttpStatusCodes.getClassOfStatus(404));
+    Assertions.assertEquals("Server Error", HttpStatusCodes.getClassOfStatus(503));
   }
 
   @Test

@@ -31,23 +31,23 @@ class OverlaysTest {
   @Test
   void testListSortedByNameThenVersion() {
     List<Overlays.Overlay> overlays = Overlays.list(root);
-    Assertions.assertEquals(overlays.get(0).toString(), "illegal[1.0]");
-    Assertions.assertEquals(overlays.get(1).toString(), "readme[1.0]");
-    Assertions.assertEquals(overlays.get(2).toString(), "readme[2.0]");
-    Assertions.assertEquals(overlays.get(3).toString(), "sample[1.0]");
+    Assertions.assertEquals("illegal[1.0]", overlays.get(0).toString());
+    Assertions.assertEquals("readme[1.0]", overlays.get(1).toString());
+    Assertions.assertEquals("readme[2.0]", overlays.get(2).toString());
+    Assertions.assertEquals("sample[1.0]", overlays.get(3).toString());
   }
 
   @Test
   void testListNamesAndVersions() {
     List<Overlays.Overlay> overlays = Overlays.list(root);
-    Assertions.assertEquals(overlays.get(0).name(), "illegal");
-    Assertions.assertEquals(overlays.get(0).version(), "1.0");
-    Assertions.assertEquals(overlays.get(1).name(), "readme");
-    Assertions.assertEquals(overlays.get(1).version(), "1.0");
-    Assertions.assertEquals(overlays.get(2).name(), "readme");
-    Assertions.assertEquals(overlays.get(2).version(), "2.0");
-    Assertions.assertEquals(overlays.get(3).name(), "sample");
-    Assertions.assertEquals(overlays.get(3).version(), "1.0");
+    Assertions.assertEquals("illegal", overlays.get(0).name());
+    Assertions.assertEquals("1.0", overlays.get(0).version());
+    Assertions.assertEquals("readme", overlays.get(1).name());
+    Assertions.assertEquals("1.0", overlays.get(1).version());
+    Assertions.assertEquals("readme", overlays.get(2).name());
+    Assertions.assertEquals("2.0", overlays.get(2).version());
+    Assertions.assertEquals("sample", overlays.get(3).name());
+    Assertions.assertEquals("1.0", overlays.get(3).version());
   }
 
   @Test

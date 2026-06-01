@@ -22,8 +22,8 @@ class ContentSecurityPolicyTest {
     ContentSecurityPolicy self2 = empty.withValue(Directive.DEFAULT_SRC, "'self'");
     Assertions.assertNotSame(empty, self2);
     Assertions.assertTrue(empty.isEmpty());
-    Assertions.assertEquals(self1.get(Directive.DEFAULT_SRC), "'self'");
-    Assertions.assertEquals(self2.get(Directive.DEFAULT_SRC), "'self'");
+    Assertions.assertEquals("'self'", self1.get(Directive.DEFAULT_SRC));
+    Assertions.assertEquals("'self'", self2.get(Directive.DEFAULT_SRC));
     Assertions.assertEquals(self1, self2);
   }
 
@@ -36,8 +36,8 @@ class ContentSecurityPolicyTest {
     ContentSecurityPolicy self2 = empty.withSource(Directive.DEFAULT_SRC, "'self'");
     Assertions.assertNotSame(empty, self2);
     Assertions.assertTrue(empty.isEmpty());
-    Assertions.assertEquals(self1.get(Directive.DEFAULT_SRC), "'self'");
-    Assertions.assertEquals(self2.get(Directive.DEFAULT_SRC), "'self'");
+    Assertions.assertEquals("'self'", self1.get(Directive.DEFAULT_SRC));
+    Assertions.assertEquals("'self'", self2.get(Directive.DEFAULT_SRC));
     Assertions.assertEquals(self1, self2);
   }
 
@@ -53,8 +53,8 @@ class ContentSecurityPolicyTest {
     Assertions.assertTrue(empty.isEmpty());
     Assertions.assertNotSame(empty, csp2);
     Assertions.assertNotSame(csp2, csp3);
-    Assertions.assertEquals(csp1.get(Directive.DEFAULT_SRC), "'self' https:");
-    Assertions.assertEquals(csp3.get(Directive.DEFAULT_SRC), "'self' https:");
+    Assertions.assertEquals("'self' https:", csp1.get(Directive.DEFAULT_SRC));
+    Assertions.assertEquals("'self' https:", csp3.get(Directive.DEFAULT_SRC));
     Assertions.assertEquals(csp1, csp3);
   }
 

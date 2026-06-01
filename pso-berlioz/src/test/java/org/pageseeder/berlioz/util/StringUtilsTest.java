@@ -38,33 +38,33 @@ class StringUtilsTest {
 
   @Test
   void testSubstringAfter(){
-    Assertions.assertEquals(StringUtils.substringAfter(null, ","), "");
-    Assertions.assertEquals(StringUtils.substringAfter(" ", ","), "");
-    Assertions.assertEquals(StringUtils.substringAfter("first second", null), "");
-    Assertions.assertEquals(StringUtils.substringAfter(null, null), "");
-    Assertions.assertEquals(StringUtils.substringAfter("first,second", ","), "second");
-    Assertions.assertEquals(StringUtils.substringAfter("first second", " "), "second");
-    Assertions.assertEquals(StringUtils.substringAfter("first second", ","), "first second");
-    Assertions.assertEquals(StringUtils.substringAfter("first", " "), "first");
-    Assertions.assertEquals(StringUtils.substringAfter("first ", " "), "");
-    Assertions.assertEquals(StringUtils.substringAfter("first second third", " "), "second third");
-    Assertions.assertEquals(StringUtils.substringBefore("/simple-admin/api/auth/user.json", ""), "/simple-admin/api/auth/user.json");
+    Assertions.assertEquals("", StringUtils.substringAfter(null, ","));
+    Assertions.assertEquals("", StringUtils.substringAfter(" ", ","));
+    Assertions.assertEquals("", StringUtils.substringAfter("first second", null));
+    Assertions.assertEquals("", StringUtils.substringAfter(null, null));
+    Assertions.assertEquals("second", StringUtils.substringAfter("first,second", ","));
+    Assertions.assertEquals("second", StringUtils.substringAfter("first second", " "));
+    Assertions.assertEquals("first second", StringUtils.substringAfter("first second", ","));
+    Assertions.assertEquals("first", StringUtils.substringAfter("first", " "));
+    Assertions.assertEquals("", StringUtils.substringAfter("first ", " "));
+    Assertions.assertEquals("second third", StringUtils.substringAfter("first second third", " "));
+    Assertions.assertEquals("/simple-admin/api/auth/user.json", StringUtils.substringBefore("/simple-admin/api/auth/user.json", ""));
   }
 
 
   @Test
   void testSubstringBefore(){
-    Assertions.assertEquals(StringUtils.substringBefore(null, ","), "");
-    Assertions.assertEquals(StringUtils.substringBefore(" ", ","), "");
-    Assertions.assertEquals(StringUtils.substringBefore("first second", null), "");
-    Assertions.assertEquals(StringUtils.substringBefore(null, null), "");
-    Assertions.assertEquals(StringUtils.substringBefore("first second", ","), "first second");
-    Assertions.assertEquals(StringUtils.substringBefore(",first,second", ","), "");
-    Assertions.assertEquals(StringUtils.substringBefore("first,second", ","), "first");
-    Assertions.assertEquals(StringUtils.substringBefore("first second", " "), "first");
-    Assertions.assertEquals(StringUtils.substringBefore("first second third", " "), "first");
-    Assertions.assertEquals(StringUtils.substringBefore("first", " "), "first");
-    Assertions.assertEquals(StringUtils.substringBefore("/simple-admin/api/auth/user.json", ""), "/simple-admin/api/auth/user.json");
+    Assertions.assertEquals("", StringUtils.substringBefore(null, ","));
+    Assertions.assertEquals("", StringUtils.substringBefore(" ", ","));
+    Assertions.assertEquals("", StringUtils.substringBefore("first second", null));
+    Assertions.assertEquals("", StringUtils.substringBefore(null, null));
+    Assertions.assertEquals("first second", StringUtils.substringBefore("first second", ","));
+    Assertions.assertEquals("", StringUtils.substringBefore(",first,second", ","));
+    Assertions.assertEquals("first", StringUtils.substringBefore("first,second", ","));
+    Assertions.assertEquals("first", StringUtils.substringBefore("first second", " "));
+    Assertions.assertEquals("first", StringUtils.substringBefore("first second third", " "));
+    Assertions.assertEquals("first", StringUtils.substringBefore("first", " "));
+    Assertions.assertEquals("/simple-admin/api/auth/user.json", StringUtils.substringBefore("/simple-admin/api/auth/user.json", ""));
   }
 
 }

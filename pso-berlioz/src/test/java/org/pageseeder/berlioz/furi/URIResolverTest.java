@@ -79,7 +79,7 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("groupid"), "1892");
+    Assertions.assertEquals("1892", r.get("groupid"));
   }
 
   /**
@@ -112,7 +112,7 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("account"), "~clauret");
+    Assertions.assertEquals("~clauret", r.get("account"));
   }
 
   /**
@@ -125,7 +125,7 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("tag"), "Caf\u00e9");
+    Assertions.assertEquals("Caf\u00e9", r.get("tag"));
   }
 
   /**
@@ -138,10 +138,10 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("scheme"), "http");
-    Assertions.assertEquals(r.get("domain"), "acme.com");
-    Assertions.assertEquals(r.get("group"), "dev");
-    Assertions.assertEquals(r.get("user"), "clauret");
+    Assertions.assertEquals("http", r.get("scheme"));
+    Assertions.assertEquals("acme.com", r.get("domain"));
+    Assertions.assertEquals("dev", r.get("group"));
+    Assertions.assertEquals("clauret", r.get("user"));
   }
 
   /**
@@ -154,8 +154,8 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("label"), "technical");
-    Assertions.assertEquals(r.get("version"), "1.0");
+    Assertions.assertEquals("technical", r.get("label"));
+    Assertions.assertEquals("1.0", r.get("version"));
   }
 
   /**
@@ -168,7 +168,7 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("label"), "technical");
+    Assertions.assertEquals("technical", r.get("label"));
   }
 
   /**
@@ -181,8 +181,8 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("label"), "technical");
-    Assertions.assertEquals(r.get("version"), "1.0");
+    Assertions.assertEquals("technical", r.get("label"));
+    Assertions.assertEquals("1.0", r.get("version"));
   }
 
   /**
@@ -195,8 +195,8 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("label"), "technical");
-    Assertions.assertEquals(r.get("version"), "1.0");
+    Assertions.assertEquals("technical", r.get("label"));
+    Assertions.assertEquals("1.0", r.get("version"));
   }
 
   /**
@@ -209,7 +209,7 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("path"), "dir/subdir/document.xml");
+    Assertions.assertEquals("dir/subdir/document.xml", r.get("path"));
   }
 
   /**
@@ -222,7 +222,7 @@ class URIResolverTest {
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals(r.get("path"), "dir/subdir/document.xml");
+    Assertions.assertEquals("dir/subdir/document.xml", r.get("path"));
   }
 
   @Test
@@ -237,28 +237,28 @@ class URIResolverTest {
     // test case #0
     URIResolver resolver0 = new URIResolver("/home");
     URIPattern pattern0 = resolver0.find(patterns);
-    Assertions.assertEquals(pattern0.toString(), "/home");
+    Assertions.assertEquals("/home", pattern0.toString());
 
     // test case #1
     URIResolver resolver1 = new URIResolver("/path/dir/subdir/doc.xml");
     URIPattern pattern1 = resolver1.find(patterns);
     ResolvedVariables result1 = resolver1.resolve(pattern1);
     String doc = (String)result1.get("path");
-    Assertions.assertEquals(doc, "dir/subdir/doc.xml");
+    Assertions.assertEquals("dir/subdir/doc.xml", doc);
 
     // test case #2
     URIResolver resolver2 = new URIResolver("/documents;label=important");
     URIPattern pattern2 = resolver2.find(patterns);
     ResolvedVariables result2 = resolver2.resolve(pattern2);
     String name = (String)result2.get("label");
-    Assertions.assertEquals(name, "important");
+    Assertions.assertEquals("important", name);
 
     // test case #3
     URIResolver resolver3 = new URIResolver("/document/doc.xml");
     URIPattern pattern3 = resolver3.find(patterns);
     ResolvedVariables result3 = resolver3.resolve(pattern3);
     String wildcard = (String)result3.get("*");
-    Assertions.assertEquals(wildcard, "doc.xml");
+    Assertions.assertEquals("doc.xml", wildcard);
 
   }
 

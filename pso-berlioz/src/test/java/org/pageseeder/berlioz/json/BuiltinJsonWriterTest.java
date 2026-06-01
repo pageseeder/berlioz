@@ -14,32 +14,38 @@ final class BuiltinJsonWriterTest extends JsonWriterTestBase {
 
   @Test
   void testValueDoubleNaN() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NaN));
+    JsonWriter json = newJsonWriter(new StringWriter());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.value(Double.NaN));
   }
 
   @Test
   void testValueDoublePositiveInfinity() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.POSITIVE_INFINITY));
+    JsonWriter json = newJsonWriter(new StringWriter());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.value(Double.POSITIVE_INFINITY));
   }
 
   @Test
   void testValueDoubleNegativeInfinity() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NEGATIVE_INFINITY));
+    JsonWriter json = newJsonWriter(new StringWriter());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.value(Double.NEGATIVE_INFINITY));
   }
 
   @Test
   void testFieldDoubleNaN() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).startObject().field("v", Double.NaN));
+    JsonWriter json = newJsonWriter(new StringWriter()).startObject();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> json.field("v", Double.NaN));
   }
 
   @Test
   void testEndArrayOnObject() {
-    Assertions.assertThrows(IllegalStateException.class, () -> newJsonWriter(new StringWriter()).startObject().endArray());
+    JsonWriter json = newJsonWriter(new StringWriter()).startObject();
+    Assertions.assertThrows(IllegalStateException.class, json::endArray);
   }
 
   @Test
   void testEndObjectOnArray() {
-    Assertions.assertThrows(IllegalStateException.class, () -> newJsonWriter(new StringWriter()).startArray().endObject());
+    JsonWriter json = newJsonWriter(new StringWriter()).startArray();
+    Assertions.assertThrows(IllegalStateException.class, json::endObject);
   }
 
 }

@@ -51,6 +51,6 @@ class XSLTransformerTest {
 
     String result = XSLTransformer.transformFailSafe("<root/>", stylesheet.toURI().toURL());
 
-    Assertions.assertEquals(result, "<out><included>ok</included></out>");
+    Assertions.assertEquals("<out><included>ok</included></out>", result);
   }
 }

@@ -38,15 +38,15 @@ final class MD5Test {
   }
 
   @Test
-  void testHash_NullInputStream() throws IOException {
+  void testHash_NullInputStream() {
     Assertions.assertThrows(NullPointerException.class, () -> MD5.hash((InputStream) null));
   }
 
   @Test
   void testHash_String() {
-    Assertions.assertEquals(MD5.hash(""), "d41d8cd98f00b204e9800998ecf8427e");
-    Assertions.assertEquals(MD5.hash("test"), "098f6bcd4621d373cade4e832627b4f6");
-    Assertions.assertEquals(MD5.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"), "942a46d563d50475e73c41765b35cbbf");
+    Assertions.assertEquals("d41d8cd98f00b204e9800998ecf8427e", MD5.hash(""));
+    Assertions.assertEquals("098f6bcd4621d373cade4e832627b4f6", MD5.hash("test"));
+    Assertions.assertEquals("942a46d563d50475e73c41765b35cbbf", MD5.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"));
   }
 
   @Test

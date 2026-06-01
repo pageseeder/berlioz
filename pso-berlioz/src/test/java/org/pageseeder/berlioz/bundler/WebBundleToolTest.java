@@ -93,7 +93,7 @@ final class WebBundleToolTest {
 
     Assertions.assertNotNull(bundle);
     Assertions.assertTrue(bundle.exists());
-    Assertions.assertEquals(read(bundle), "var first = 1;\nvar second = 2;\n");
+    Assertions.assertEquals("var first = 1;\nvar second = 2;\n", read(bundle));
   }
 
   @Test

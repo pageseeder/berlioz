@@ -60,7 +60,7 @@ final class URIPatternTest {
    */
   @Test
   void testNew_EmptyString() {
-    new URIPattern("");
+    Assertions.assertDoesNotThrow(() -> new URIPattern(""));
   }
 
   /**

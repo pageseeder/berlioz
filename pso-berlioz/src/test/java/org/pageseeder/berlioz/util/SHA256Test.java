@@ -38,15 +38,15 @@ final class SHA256Test {
   }
 
   @Test
-  void testHash_NullInputStream() throws IOException {
+  void testHash_NullInputStream() {
     Assertions.assertThrows(NullPointerException.class, () -> SHA256.hash((InputStream) null));
   }
 
   @Test
   void testHash_String() {
-    Assertions.assertEquals(SHA256.hash(""), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-    Assertions.assertEquals(SHA256.hash("test"), "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
-    Assertions.assertEquals(SHA256.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"), "55f12528ddd4240e797f6391c80f5cf883e9c281253ad296c30b97dd4810c0a6");
+    Assertions.assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", SHA256.hash(""));
+    Assertions.assertEquals("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", SHA256.hash("test"));
+    Assertions.assertEquals("55f12528ddd4240e797f6391c80f5cf883e9c281253ad296c30b97dd4810c0a6", SHA256.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"));
   }
 
   @Test

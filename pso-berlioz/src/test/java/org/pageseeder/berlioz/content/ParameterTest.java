@@ -27,7 +27,7 @@ final class ParameterTest {
   @Test
   void testName() {
     Parameter p = new Parameter("myParam", "value");
-    Assertions.assertEquals(p.name(), "myParam");
+    Assertions.assertEquals("myParam", p.name());
   }
 
   @Test
@@ -38,40 +38,40 @@ final class ParameterTest {
   @Test
   void testValue_literal() {
     Parameter p = new Parameter("x", "hello");
-    Assertions.assertEquals(p.value(), "hello");
+    Assertions.assertEquals("hello", p.value());
   }
 
   @Test
   void testValue_template() {
     Parameter p = new Parameter("x", "{var}");
-    Assertions.assertEquals(p.value(), "{var}");
+    Assertions.assertEquals("{var}", p.value());
   }
 
   @Test
   void testValueWithMap_literal() {
     Parameter p = new Parameter("x", "hello");
     Map<String, String> map = Collections.singletonMap("x", "ignored");
-    Assertions.assertEquals(p.value(map), "hello");
+    Assertions.assertEquals("hello", p.value(map));
   }
 
   @Test
   void testValueWithMap_variableResolved() {
     Parameter p = new Parameter("x", "{var}");
     Map<String, String> map = Collections.singletonMap("var", "world");
-    Assertions.assertEquals(p.value(map), "world");
+    Assertions.assertEquals("world", p.value(map));
   }
 
   @Test
   void testValueWithMap_variableMissing() {
     Parameter p = new Parameter("x", "{var}");
-    Assertions.assertEquals(p.value(Collections.emptyMap()), "");
+    Assertions.assertEquals("", p.value(Collections.emptyMap()));
   }
 
   @Test
   void testValueWithMap_variableWithDefault() {
     Parameter p = new Parameter("x", "{var=fallback}");
-    Assertions.assertEquals(p.value(Collections.emptyMap()), "fallback");
-    Assertions.assertEquals(p.value(Collections.singletonMap("var", "actual")), "actual");
+    Assertions.assertEquals("fallback", p.value(Collections.emptyMap()));
+    Assertions.assertEquals("actual", p.value(Collections.singletonMap("var", "actual")));
   }
 
   @Test
@@ -80,6 +80,6 @@ final class ParameterTest {
     Map<String, String> map = new HashMap<>();
     map.put("a", "hello");
     map.put("b", "world");
-    Assertions.assertEquals(p.value(map), "hello-world");
+    Assertions.assertEquals("hello-world", p.value(map));
   }
 }

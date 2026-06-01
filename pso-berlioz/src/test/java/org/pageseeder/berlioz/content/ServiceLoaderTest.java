@@ -58,8 +58,8 @@ class ServiceLoaderTest {
 
     MatchingService match = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
     Assertions.assertNotNull(match, "Expected 'home' service to match /home GET");
-    Assertions.assertEquals(match.service().id(), "home");
-    Assertions.assertEquals(match.service().group(), "default");
+    Assertions.assertEquals("home", match.service().id());
+    Assertions.assertEquals("default", match.service().group());
   }
 
   @Test

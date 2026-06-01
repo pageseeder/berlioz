@@ -41,7 +41,7 @@ final class HashesTest {
   }
 
   @Test
-  void testHash_NullInputStream() throws IOException {
+  void testHash_NullInputStream() {
     Assertions.assertThrows(NullPointerException.class, () -> Hashes.hash((InputStream) null, Hashes.Algorithm.SHA_256));
   }
 
@@ -60,20 +60,20 @@ final class HashesTest {
   @Test
   void testHash_String_KnownValues() {
     // MD5 — from existing test coverage
-    Assertions.assertEquals(Hashes.hash("", Hashes.Algorithm.MD5), "d41d8cd98f00b204e9800998ecf8427e");
-    Assertions.assertEquals(Hashes.hash("test", Hashes.Algorithm.MD5), "098f6bcd4621d373cade4e832627b4f6");
+    Assertions.assertEquals("d41d8cd98f00b204e9800998ecf8427e", Hashes.hash("", Hashes.Algorithm.MD5));
+    Assertions.assertEquals("098f6bcd4621d373cade4e832627b4f6", Hashes.hash("test", Hashes.Algorithm.MD5));
 
     // SHA-256 — from existing test coverage
-    Assertions.assertEquals(Hashes.hash("", Hashes.Algorithm.SHA_256), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-    Assertions.assertEquals(Hashes.hash("test", Hashes.Algorithm.SHA_256), "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
+    Assertions.assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", Hashes.hash("", Hashes.Algorithm.SHA_256));
+    Assertions.assertEquals("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", Hashes.hash("test", Hashes.Algorithm.SHA_256));
 
     // SHA-384 — NIST FIPS 180-4 test vectors
-    Assertions.assertEquals(Hashes.hash("", Hashes.Algorithm.SHA_384), "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b");
-    Assertions.assertEquals(Hashes.hash("abc", Hashes.Algorithm.SHA_384), "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7");
+    Assertions.assertEquals("38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b", Hashes.hash("", Hashes.Algorithm.SHA_384));
+    Assertions.assertEquals("cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7", Hashes.hash("abc", Hashes.Algorithm.SHA_384));
 
     // SHA-512 — NIST FIPS 180-4 test vectors
-    Assertions.assertEquals(Hashes.hash("", Hashes.Algorithm.SHA_512), "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e");
-    Assertions.assertEquals(Hashes.hash("abc", Hashes.Algorithm.SHA_512), "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f");
+    Assertions.assertEquals("cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e", Hashes.hash("", Hashes.Algorithm.SHA_512));
+    Assertions.assertEquals("ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f", Hashes.hash("abc", Hashes.Algorithm.SHA_512));
   }
 
   // -- Cross-type consistency ---------------------------------------------

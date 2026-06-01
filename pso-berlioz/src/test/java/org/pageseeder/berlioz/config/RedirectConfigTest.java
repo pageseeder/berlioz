@@ -40,15 +40,15 @@ final class RedirectConfigTest {
     Assertions.assertNull(config.redirect("/index.xml"));
     Assertions.assertNull(config.redirect("/example.html"));
     Assertions.assertNotNull(config.redirect("/"));
-    Assertions.assertEquals(config.redirect("/").to(), "/html/home");
+    Assertions.assertEquals("/html/home", config.redirect("/").to());
     Assertions.assertNotNull(config.redirect("/index.html"));
-    Assertions.assertEquals(config.redirect("/index.html").to(), "/html/home");
+    Assertions.assertEquals("/html/home", config.redirect("/index.html").to());
     Assertions.assertNotNull( config.redirect("/html"));
-    Assertions.assertEquals(config.redirect("/html").to(), "/html/home");
+    Assertions.assertEquals("/html/home", config.redirect("/html").to());
     Assertions.assertNotNull(config.redirect("/xml"));
-    Assertions.assertEquals(config.redirect("/xml").to(), "/xml/home");
+    Assertions.assertEquals("/xml/home", config.redirect("/xml").to());
     Assertions.assertNotNull(config.redirect("/example.psml"));
-    Assertions.assertEquals(config.redirect("/example.psml").to(), "/html/example");
+    Assertions.assertEquals("/html/example", config.redirect("/example.psml").to());
   }
 
   @Test
@@ -58,17 +58,17 @@ final class RedirectConfigTest {
   }
 
   @Test
-  void testLoadFile_Invalid() throws ConfigException {
+  void testLoadFile_Invalid() {
     Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new File(this.configFolder, "redirect_invalid.xml")));
   }
 
   @Test
-  void testLoadFile_Malformed() throws ConfigException {
+  void testLoadFile_Malformed() {
     Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new File(this.configFolder, "redirect_malformed.xml")));
   }
 
   @Test
-  void testLoad_XXE() throws ConfigException {
+  void testLoad_XXE() {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!-- XXE --><!DOCTYPE redirect-mapping [<!ELEMENT redirect-mapping ANY > <!ENTITY x SYSTEM \"/etc/password.xml\" >]><redirect-mapping>&x;</redirect-mapping>";
     RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
@@ -76,7 +76,7 @@ final class RedirectConfigTest {
   }
 
   @Test
-  void testLoad_XXE2() throws ConfigException {
+  void testLoad_XXE2() {
     Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new File(this.configFolder, "redirect_xxe.xml")));
   }
 
@@ -88,7 +88,7 @@ final class RedirectConfigTest {
     RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
     RedirectLocation loc = config.redirect("/old");
     Assertions.assertNotNull(loc);
-    Assertions.assertEquals(loc.to(), "/new");
+    Assertions.assertEquals("/new", loc.to());
     Assertions.assertTrue(loc.isPermanent(), "isPermanent() should be true for permanent=\"yes\"");
   }
 
@@ -110,11 +110,11 @@ final class RedirectConfigTest {
         "<redirect-mapping><redirect from=\"/\" to=\"/home\"/></redirect-mapping>";
     RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
     Assertions.assertNotNull(config.redirect("/"));
-    Assertions.assertEquals(config.redirect("/").to(), "/home");
+    Assertions.assertEquals("/home", config.redirect("/").to());
   }
 
   @Test
-  void testLoad_XMLBomb() throws ConfigException {
+  void testLoad_XMLBomb() {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!DOCTYPE redirect-mapping [\n" +
         "  <!ELEMENT redirect-mapping ANY >\n" +

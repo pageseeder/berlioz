@@ -35,30 +35,30 @@ final class MatchingServiceTest {
 
   @Test
   void testConstructor_nullService() {
-    Assertions.assertThrows(NullPointerException.class, () -> {
     URIPattern pattern = new URIPattern("/home");
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
-    new MatchingService(null, pattern, result);
-    });
+    Assertions.assertThrows(NullPointerException.class, () ->
+        new MatchingService(null, pattern, result)
+    );
   }
 
   @Test
   void testConstructor_nullPattern() {
-    Assertions.assertThrows(NullPointerException.class, () -> {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
-    new MatchingService(service, null, result);
-    });
+    Assertions.assertThrows(NullPointerException.class, () ->
+        new MatchingService(service, null, result)
+    );
   }
 
   @Test
   void testConstructor_nullResult() {
-    Assertions.assertThrows(NullPointerException.class, () -> {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
-    new MatchingService(service, pattern, null);
-    });
+    Assertions.assertThrows(NullPointerException.class, () ->
+        new MatchingService(service, pattern, null)
+    );
   }
 
   @Test
@@ -87,7 +87,8 @@ final class MatchingServiceTest {
   @Test
   void testIsCacheable_nonCacheableGenerator() {
     // A generator that does NOT implement Cacheable
-    ContentGenerator nonCacheable = (req, xml) -> {};
+    ContentGenerator nonCacheable = (req, xml) -> {
+    };
     Service service = new Service.Builder()
         .id("non-cacheable")
         .group("test")

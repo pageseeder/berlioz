@@ -32,47 +32,47 @@ class HttpPathInfoTest {
   @Test
   void testExtensionMappingHtml() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/path/page.html"));
-    Assertions.assertEquals(info.path(), "/path/page");
-    Assertions.assertEquals(info.extension(), ".html");
-    Assertions.assertEquals(info.prefix(), "");
-    Assertions.assertEquals(info.context(), "");
+    Assertions.assertEquals("/path/page", info.path());
+    Assertions.assertEquals(".html", info.extension());
+    Assertions.assertEquals("", info.prefix());
+    Assertions.assertEquals("", info.context());
   }
 
   @Test
   void testExtensionMappingXml() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/feed.xml"));
-    Assertions.assertEquals(info.path(), "/feed");
-    Assertions.assertEquals(info.extension(), ".xml");
+    Assertions.assertEquals("/feed", info.path());
+    Assertions.assertEquals(".xml", info.extension());
   }
 
   @Test
   void testExtensionMappingJson() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/api/data.json"));
-    Assertions.assertEquals(info.path(), "/api/data");
-    Assertions.assertEquals(info.extension(), ".json");
+    Assertions.assertEquals("/api/data", info.path());
+    Assertions.assertEquals(".json", info.extension());
   }
 
   @Test
   void testExtensionMappingNoExtension() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/about"));
-    Assertions.assertEquals(info.path(), "/about");
-    Assertions.assertEquals(info.extension(), "");
+    Assertions.assertEquals("/about", info.path());
+    Assertions.assertEquals("", info.extension());
   }
 
   @Test
   void testExtensionMappingWithContext() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/home.html"));
-    Assertions.assertEquals(info.context(), "/app");
-    Assertions.assertEquals(info.path(), "/home");
-    Assertions.assertEquals(info.extension(), ".html");
-    Assertions.assertEquals(info.prefix(), "");
+    Assertions.assertEquals("/app", info.context());
+    Assertions.assertEquals("/home", info.path());
+    Assertions.assertEquals(".html", info.extension());
+    Assertions.assertEquals("", info.prefix());
   }
 
   @Test
   void testExtensionMappingRootPath() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/.html"));
-    Assertions.assertEquals(info.path(), "/");
-    Assertions.assertEquals(info.extension(), ".html");
+    Assertions.assertEquals("/", info.path());
+    Assertions.assertEquals(".html", info.extension());
   }
 
   // Prefix mapping tests (/prefix/* style)
@@ -81,26 +81,26 @@ class HttpPathInfoTest {
   @Test
   void testPrefixMapping() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/api", "/users/42"));
-    Assertions.assertEquals(info.path(), "/users/42");
-    Assertions.assertEquals(info.prefix(), "/api");
-    Assertions.assertEquals(info.extension(), "");
-    Assertions.assertEquals(info.context(), "");
+    Assertions.assertEquals("/users/42", info.path());
+    Assertions.assertEquals("/api", info.prefix());
+    Assertions.assertEquals("", info.extension());
+    Assertions.assertEquals("", info.context());
   }
 
   @Test
   void testPrefixMappingWithContext() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("/myapp", "/svc", "/data"));
-    Assertions.assertEquals(info.context(), "/myapp");
-    Assertions.assertEquals(info.prefix(), "/svc");
-    Assertions.assertEquals(info.path(), "/data");
-    Assertions.assertEquals(info.extension(), "");
+    Assertions.assertEquals("/myapp", info.context());
+    Assertions.assertEquals("/svc", info.prefix());
+    Assertions.assertEquals("/data", info.path());
+    Assertions.assertEquals("", info.extension());
   }
 
   @Test
   void testPrefixMappingEmptyPath() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/html", ""));
-    Assertions.assertEquals(info.path(), "");
-    Assertions.assertEquals(info.prefix(), "/html");
+    Assertions.assertEquals("", info.path());
+    Assertions.assertEquals("/html", info.prefix());
   }
 
   // toString tests
@@ -109,13 +109,13 @@ class HttpPathInfoTest {
   @Test
   void testToStringExtensionMapped() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/home.html"));
-    Assertions.assertEquals(info.toString(), "/app/home.html");
+    Assertions.assertEquals("/app/home.html", info.toString());
   }
 
   @Test
   void testToStringPrefixMapped() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("/app", "/api", "/items"));
-    Assertions.assertEquals(info.toString(), "/app/api/items");
+    Assertions.assertEquals("/app/api/items", info.toString());
   }
 
   // toXML tests

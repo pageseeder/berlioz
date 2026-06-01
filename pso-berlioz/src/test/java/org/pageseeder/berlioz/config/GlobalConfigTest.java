@@ -28,32 +28,32 @@ final class GlobalConfigTest {
   }
 
   @Test
-  void testLoad_XXE() throws ConfigException {
+  void testLoad_XXE() {
     Assertions.assertThrows(ConfigException.class, () -> {
-    GlobalConfig config = new GlobalConfig();
-    String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
-    config.load(new ByteArrayInputStream(xml.getBytes()));
+      GlobalConfig config = new GlobalConfig();
+      String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
+      config.load(new ByteArrayInputStream(xml.getBytes()));
     });
   }
 
   @Test
-  void testLoad_XMLBomb() throws ConfigException {
+  void testLoad_XMLBomb() {
     Assertions.assertThrows(ConfigException.class, () -> {
-    GlobalConfig config = new GlobalConfig();
-    String xml = "<!DOCTYPE global [\n" +
-        "  <!ELEMENT global ANY >\n" +
-        "  <!ENTITY lol \"lol\">\n" +
-        "  <!ENTITY lol1 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">\n" +
-        "  <!ENTITY lol2 \"&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;\">\n" +
-        "  <!ENTITY lol3 \"&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;\">\n" +
-        "  <!ENTITY lol4 \"&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;\">\n" +
-        "  <!ENTITY lol5 \"&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;\">\n" +
-        "  <!ENTITY lol6 \"&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;\">\n" +
-        "  <!ENTITY lol7 \"&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;\">\n" +
-        "  <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
-        "  <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
-        "]><global>&lol9;</global>";
-    config.load(new ByteArrayInputStream(xml.getBytes()));
+      GlobalConfig config = new GlobalConfig();
+      String xml = "<!DOCTYPE global [\n" +
+          "  <!ELEMENT global ANY >\n" +
+          "  <!ENTITY lol \"lol\">\n" +
+          "  <!ENTITY lol1 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">\n" +
+          "  <!ENTITY lol2 \"&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;\">\n" +
+          "  <!ENTITY lol3 \"&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;\">\n" +
+          "  <!ENTITY lol4 \"&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;\">\n" +
+          "  <!ENTITY lol5 \"&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;\">\n" +
+          "  <!ENTITY lol6 \"&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;\">\n" +
+          "  <!ENTITY lol7 \"&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;\">\n" +
+          "  <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
+          "  <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
+          "]><global>&lol9;</global>";
+      config.load(new ByteArrayInputStream(xml.getBytes()));
     });
   }
 
@@ -64,8 +64,8 @@ final class GlobalConfigTest {
     config.load(new ByteArrayInputStream(xml.getBytes()));
     Map<String, String> properties = config.properties();
     Assertions.assertEquals(2, properties.size());
-    Assertions.assertEquals(properties.get("greeting"), "hello");
-    Assertions.assertEquals(properties.get("empty"), "");
+    Assertions.assertEquals("hello", properties.get("greeting"));
+    Assertions.assertEquals("", properties.get("empty"));
     Assertions.assertNull(properties.get("undefined"));
   }
 
@@ -82,11 +82,11 @@ final class GlobalConfigTest {
     Assertions.assertNull(properties.get("a.b.d"));
     // Attributes do
     Assertions.assertEquals(5, properties.size());
-    Assertions.assertEquals(properties.get("a.x"), "1");
-    Assertions.assertEquals(properties.get("a.b.y"), "2");
-    Assertions.assertEquals(properties.get("a.b.c.z"), "3");
-    Assertions.assertEquals(properties.get("a.b.d.z"), "4");
-    Assertions.assertEquals(properties.get("a.b.d.q"), "5");
+    Assertions.assertEquals("1", properties.get("a.x"));
+    Assertions.assertEquals("2", properties.get("a.b.y"));
+    Assertions.assertEquals("3", properties.get("a.b.c.z"));
+    Assertions.assertEquals("4", properties.get("a.b.d.z"));
+    Assertions.assertEquals("5", properties.get("a.b.d.q"));
   }
 
   @Test
@@ -97,12 +97,12 @@ final class GlobalConfigTest {
     Map<String, String> properties = config.properties();
     // Attributes do
     Assertions.assertEquals(6, properties.size());
-    Assertions.assertEquals(properties.get("a"), "0");
-    Assertions.assertEquals(properties.get("a.x"), "1");
-    Assertions.assertEquals(properties.get("a.x.y"), "2");
-    Assertions.assertEquals(properties.get("a.x.z"), "3");
-    Assertions.assertEquals(properties.get("a.x.q"), "4");
-    Assertions.assertEquals(properties.get("a.x.w"), "5");
+    Assertions.assertEquals("0", properties.get("a"));
+    Assertions.assertEquals("1", properties.get("a.x"));
+    Assertions.assertEquals("2", properties.get("a.x.y"));
+    Assertions.assertEquals("3", properties.get("a.x.z"));
+    Assertions.assertEquals("4", properties.get("a.x.q"));
+    Assertions.assertEquals("5", properties.get("a.x.w"));
   }
 
   @Test
@@ -113,8 +113,8 @@ final class GlobalConfigTest {
     Map<String, String> properties = config.properties();
     // Attributes do
     Assertions.assertEquals(2, properties.size());
-    Assertions.assertEquals(properties.get("a.x"), "1");
-    Assertions.assertEquals(properties.get("a.x.y"), "2");
+    Assertions.assertEquals("1", properties.get("a.x"));
+    Assertions.assertEquals("2", properties.get("a.x.y"));
   }
 
   @Test
@@ -127,19 +127,19 @@ final class GlobalConfigTest {
     Map<String, String> properties = config.properties();
     // Attributes do
     Assertions.assertEquals(4, properties.size());
-    Assertions.assertEquals(properties.get("a"), "1");
-    Assertions.assertEquals(properties.get("a.x"), "2");
-    Assertions.assertEquals(properties.get("a.y"), "3");
-    Assertions.assertEquals(properties.get("a.z"), "4");
+    Assertions.assertEquals("1", properties.get("a"));
+    Assertions.assertEquals("2", properties.get("a.x"));
+    Assertions.assertEquals("3", properties.get("a.y"));
+    Assertions.assertEquals("4", properties.get("a.z"));
   }
 
   @Test
-  void testLoad_Invalid() throws ConfigException {
-    Assertions.assertThrows(ConfigException.class, () -> {
+  void testLoad_Invalid() {
     GlobalConfig config = new GlobalConfig();
     String invalid = "<global>";
-    config.load(new ByteArrayInputStream(invalid.getBytes()));
-    });
+    Assertions.assertThrows(ConfigException.class, () ->
+        config.load(new ByteArrayInputStream(invalid.getBytes()))
+    );
   }
 
   @Test

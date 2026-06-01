@@ -29,174 +29,174 @@ class JSMinTest {
 
   @Test
   void testEmptyInput() throws Exception {
-    Assertions.assertEquals(min(""), "");
+    Assertions.assertEquals("", min(""));
   }
 
   @Test
   void testWhitespaceOnly() throws Exception {
-    Assertions.assertEquals(min("   \n   \n   "), "");
+    Assertions.assertEquals("", min("   \n   \n   "));
   }
 
   // --- Comment removal ---
 
   @Test
   void testLineCommentOnly() throws Exception {
-    Assertions.assertEquals(min("// this is a comment\n"), "");
+    Assertions.assertEquals("", min("// this is a comment\n"));
   }
 
   @Test
   void testBlockCommentOnly() throws Exception {
-    Assertions.assertEquals(min("/* this is a comment */"), "");
+    Assertions.assertEquals("", min("/* this is a comment */"));
   }
 
   @Test
   void testLineCommentBeforeCode() throws Exception {
-    Assertions.assertEquals(min("// comment\nvar x = 1;"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("// comment\nvar x = 1;"));
   }
 
   @Test
   void testBlockCommentBetweenTokens() throws Exception {
-    Assertions.assertEquals(min("var /* comment */ x = 1;"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("var /* comment */ x = 1;"));
   }
 
   @Test
   void testBlockCommentAtEnd() throws Exception {
-    Assertions.assertEquals(min("var x = 1; /* trailing comment */"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("var x = 1; /* trailing comment */"));
   }
 
   @Test
   void testMultiLineBlockComment() throws Exception {
-    Assertions.assertEquals(min("var x = 1; /*\n * multi-line\n * comment\n */"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("var x = 1; /*\n * multi-line\n * comment\n */"));
   }
 
   // --- Whitespace compression ---
 
   @Test
   void testSimpleAssignment() throws Exception {
-    Assertions.assertEquals(min("var x = 1;"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("var x = 1;"));
   }
 
   @Test
   void testExtraSpacesCompressed() throws Exception {
-    Assertions.assertEquals(min("var  x  =  1;"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("var  x  =  1;"));
   }
 
   @Test
   void testSpaceBetweenKeywordsPreserved() throws Exception {
-    Assertions.assertEquals(min("var x=1;"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("var x=1;"));
   }
 
   @Test
   void testNewlinesBetweenStatementsDropped() throws Exception {
-    Assertions.assertEquals(min("var a = 1;\n\n\nvar b = 2;"), "var a=1;var b=2;");
+    Assertions.assertEquals("var a=1;var b=2;", min("var a = 1;\n\n\nvar b = 2;"));
   }
 
   @Test
   void testTabsConvertedToSpaces() throws Exception {
-    Assertions.assertEquals(min("var\tx\t=\t1;"), "var x=1;");
+    Assertions.assertEquals("var x=1;", min("var\tx\t=\t1;"));
   }
 
   @Test
   void testWindowsNewlines() throws Exception {
-    Assertions.assertEquals(min("var a = 1;\r\nvar b = 2;"), "var a=1;var b=2;");
+    Assertions.assertEquals("var a=1;var b=2;", min("var a = 1;\r\nvar b = 2;"));
   }
 
   // --- String literal preservation ---
 
   @Test
   void testDoubleQuotedString() throws Exception {
-    Assertions.assertEquals(min("var s = \"hello world\";"), "var s=\"hello world\";");
+    Assertions.assertEquals("var s=\"hello world\";", min("var s = \"hello world\";"));
   }
 
   @Test
   void testSingleQuotedString() throws Exception {
-    Assertions.assertEquals(min("var s = 'hello world';"), "var s='hello world';");
+    Assertions.assertEquals("var s='hello world';", min("var s = 'hello world';"));
   }
 
   @Test
   void testStringContainingLineCommentSyntax() throws Exception {
-    Assertions.assertEquals(min("var s = \"// not a comment\";"), "var s=\"// not a comment\";");
+    Assertions.assertEquals("var s=\"// not a comment\";", min("var s = \"// not a comment\";"));
   }
 
   @Test
   void testStringContainingBlockCommentSyntax() throws Exception {
-    Assertions.assertEquals(min("var s = \"/* not a comment */\";"), "var s=\"/* not a comment */\";");
+    Assertions.assertEquals("var s=\"/* not a comment */\";", min("var s = \"/* not a comment */\";"));
   }
 
   @Test
   void testStringWithEscapedQuote() throws Exception {
-    Assertions.assertEquals(min("var s = \"say \\\"hi\\\"\";"), "var s=\"say \\\"hi\\\"\";");
+    Assertions.assertEquals("var s=\"say \\\"hi\\\"\";", min("var s = \"say \\\"hi\\\"\";"));
   }
 
   @Test
   void testEmptyString() throws Exception {
-    Assertions.assertEquals(min("var s = \"\";"), "var s=\"\";");
+    Assertions.assertEquals("var s=\"\";", min("var s = \"\";"));
   }
 
   @Test
   void testTemplateLiteralContainingCommentSyntax() throws Exception {
-    Assertions.assertEquals(min("const s = `/* not a comment */`;"), "const s=`/* not a comment */`;");
+    Assertions.assertEquals("const s=`/* not a comment */`;", min("const s = `/* not a comment */`;"));
   }
 
   // --- Operators and punctuation ---
 
   @Test
   void testAdditionExpression() throws Exception {
-    Assertions.assertEquals(min("var z = x + y;"), "var z=x+y;");
+    Assertions.assertEquals("var z=x+y;", min("var z = x + y;"));
   }
 
   @Test
   void testComparisonOperator() throws Exception {
-    Assertions.assertEquals(min("if (a === b) {}"), "if(a===b){}");
+    Assertions.assertEquals("if(a===b){}", min("if (a === b) {}"));
   }
 
   @Test
   void testTernaryOperator() throws Exception {
-    Assertions.assertEquals(min("var x = a ? b : c;"), "var x=a?b:c;");
+    Assertions.assertEquals("var x=a?b:c;", min("var x = a ? b : c;"));
   }
 
   // --- Regex literals ---
 
   @Test
   void testRegexAfterEquals() throws Exception {
-    Assertions.assertEquals(min("var r = /[a-z]+/;"), "var r=/[a-z]+/;");
+    Assertions.assertEquals("var r=/[a-z]+/;", min("var r = /[a-z]+/;"));
   }
 
   @Test
   void testRegexAfterOpenParen() throws Exception {
-    Assertions.assertEquals(min("if (/abc/.test(s)) {}"), "if(/abc/.test(s)){}");
+    Assertions.assertEquals("if(/abc/.test(s)){}", min("if (/abc/.test(s)) {}"));
   }
 
   @Test
   void testRegexWithFlags() throws Exception {
-    Assertions.assertEquals(min("var r = /pattern/gi;"), "var r=/pattern/gi;");
+    Assertions.assertEquals("var r=/pattern/gi;", min("var r = /pattern/gi;"));
   }
 
   @Test
   void testRegexWithSlashInCharacterClass() throws Exception {
-    Assertions.assertEquals(min("var r = /[/]/;"), "var r=/[/]/;");
+    Assertions.assertEquals("var r=/[/]/;", min("var r = /[/]/;"));
   }
 
   // --- Functions and blocks ---
 
   @Test
   void testFunctionDeclaration() throws Exception {
-    Assertions.assertEquals(min("function f(x) {\n  return x + 1;\n}"), "function f(x){return x+1;}");
+    Assertions.assertEquals("function f(x){return x+1;}", min("function f(x) {\n  return x + 1;\n}"));
   }
 
   @Test
   void testObjectLiteral() throws Exception {
-    Assertions.assertEquals(min("var o = { a: 1, b: 2 };"), "var o={a:1,b:2};");
+    Assertions.assertEquals("var o={a:1,b:2};", min("var o = { a: 1, b: 2 };"));
   }
 
   @Test
   void testArrayLiteral() throws Exception {
-    Assertions.assertEquals(min("var a = [1, 2, 3];"), "var a=[1,2,3];");
+    Assertions.assertEquals("var a=[1,2,3];", min("var a = [1, 2, 3];"));
   }
 
   @Test
   void testDivisionExpression() throws Exception {
-    Assertions.assertEquals(min("var x = a / b;"), "var x=a/b;");
+    Assertions.assertEquals("var x=a/b;", min("var x = a / b;"));
   }
 
   // --- Real-world snippets ---
@@ -210,33 +210,33 @@ class JSMinTest {
 
   @Test
   void testReturnStatement() throws Exception {
-    Assertions.assertEquals(min("function f() {\n  return true;\n}"), "function f(){return true;}");
+    Assertions.assertEquals("function f(){return true;}", min("function f() {\n  return true;\n}"));
   }
 
   @Test
   void testIncrementDecrement() throws Exception {
-    Assertions.assertEquals(min("i++; j--;"), "i++;j--;");
+    Assertions.assertEquals("i++;j--;", min("i++; j--;"));
   }
 
   // --- Error conditions ---
 
   @Test
-  void testUnterminatedBlockComment() throws Exception {
+  void testUnterminatedBlockComment() {
     Assertions.assertThrows(JSMin.UnterminatedCommentException.class, () -> min("/* unterminated comment"));
   }
 
   @Test
-  void testUnterminatedBlockCommentAfterCode() throws Exception {
+  void testUnterminatedBlockCommentAfterCode() {
     Assertions.assertThrows(JSMin.UnterminatedCommentException.class, () -> min("var x = 1; /* forgot to close"));
   }
 
   @Test
-  void testUnterminatedDoubleQuotedString() throws Exception {
+  void testUnterminatedDoubleQuotedString() {
     Assertions.assertThrows(JSMin.UnterminatedStringLiteralException.class, () -> min("var s = \"unterminated\nvar x = 1;"));
   }
 
   @Test
-  void testUnterminatedSingleQuotedString() throws Exception {
+  void testUnterminatedSingleQuotedString() {
     Assertions.assertThrows(JSMin.UnterminatedStringLiteralException.class, () -> min("var s = 'unterminated\nvar x = 1;"));
   }
 
@@ -246,6 +246,6 @@ class JSMinTest {
     ByteArrayInputStream in = new ByteArrayInputStream(js.getBytes(StandardCharsets.UTF_8));
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     new JSMin(in, out).jsmin();
-    return out.toString(StandardCharsets.UTF_8.name()).trim();
+    return out.toString(StandardCharsets.UTF_8).trim();
   }
 }

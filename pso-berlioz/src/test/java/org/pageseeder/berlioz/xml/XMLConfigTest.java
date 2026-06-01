@@ -29,7 +29,7 @@ final class XMLConfigTest {
   }
 
   @Test
-  void testLoad_XXE() throws IOException {
+  void testLoad_XXE() {
     Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
@@ -38,7 +38,7 @@ final class XMLConfigTest {
   }
 
   @Test
-  void testLoad_XMLBomb() throws IOException {
+  void testLoad_XMLBomb() {
     Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String xml = "<!DOCTYPE global [\n" +
@@ -65,8 +65,8 @@ final class XMLConfigTest {
     config.load(new ByteArrayInputStream(xml.getBytes()));
     Map<String, String> properties = config.properties();
     Assertions.assertEquals(2, properties.size());
-    Assertions.assertEquals(properties.get("greeting"), "hello");
-    Assertions.assertEquals(properties.get("empty"), "");
+    Assertions.assertEquals("hello", properties.get("greeting"));
+    Assertions.assertEquals("", properties.get("empty"));
     Assertions.assertNull(properties.get("undefined"));
   }
 
@@ -83,11 +83,11 @@ final class XMLConfigTest {
     Assertions.assertNull(properties.get("a.b.d"));
     // Attributes do
     Assertions.assertEquals(5, properties.size());
-    Assertions.assertEquals(properties.get("a.x"), "1");
-    Assertions.assertEquals(properties.get("a.b.y"), "2");
-    Assertions.assertEquals(properties.get("a.b.c.z"), "3");
-    Assertions.assertEquals(properties.get("a.b.d.z"), "4");
-    Assertions.assertEquals(properties.get("a.b.d.q"), "5");
+    Assertions.assertEquals("1", properties.get("a.x"));
+    Assertions.assertEquals("2", properties.get("a.b.y"));
+    Assertions.assertEquals("3", properties.get("a.b.c.z"));
+    Assertions.assertEquals("4", properties.get("a.b.d.z"));
+    Assertions.assertEquals("5", properties.get("a.b.d.q"));
   }
 
   @Test
@@ -98,12 +98,12 @@ final class XMLConfigTest {
     Map<String, String> properties = config.properties();
     // Attributes do
     Assertions.assertEquals(6, properties.size());
-    Assertions.assertEquals(properties.get("a"), "0");
-    Assertions.assertEquals(properties.get("a.x"), "1");
-    Assertions.assertEquals(properties.get("a.x.y"), "2");
-    Assertions.assertEquals(properties.get("a.x.z"), "3");
-    Assertions.assertEquals(properties.get("a.x.q"), "4");
-    Assertions.assertEquals(properties.get("a.x.w"), "5");
+    Assertions.assertEquals("0", properties.get("a"));
+    Assertions.assertEquals("1", properties.get("a.x"));
+    Assertions.assertEquals("2", properties.get("a.x.y"));
+    Assertions.assertEquals("3", properties.get("a.x.z"));
+    Assertions.assertEquals("4", properties.get("a.x.q"));
+    Assertions.assertEquals("5", properties.get("a.x.w"));
   }
 
   @Test
@@ -114,8 +114,8 @@ final class XMLConfigTest {
     Map<String, String> properties = config.properties();
     // Attributes do
     Assertions.assertEquals(2, properties.size());
-    Assertions.assertEquals(properties.get("a.x"), "1");
-    Assertions.assertEquals(properties.get("a.x.y"), "2");
+    Assertions.assertEquals("1", properties.get("a.x"));
+    Assertions.assertEquals("2", properties.get("a.x.y"));
   }
 
   @Test
@@ -128,14 +128,14 @@ final class XMLConfigTest {
     Map<String, String> properties = config.properties();
     // Attributes do
     Assertions.assertEquals(4, properties.size());
-    Assertions.assertEquals(properties.get("a"), "1");
-    Assertions.assertEquals(properties.get("a.x"), "2");
-    Assertions.assertEquals(properties.get("a.y"), "3");
-    Assertions.assertEquals(properties.get("a.z"), "4");
+    Assertions.assertEquals("1", properties.get("a"));
+    Assertions.assertEquals("2", properties.get("a.x"));
+    Assertions.assertEquals("3", properties.get("a.y"));
+    Assertions.assertEquals("4", properties.get("a.z"));
   }
 
   @Test
-  void testLoad_Invalid() throws IOException {
+  void testLoad_Invalid() {
     Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String invalid = "<global>";

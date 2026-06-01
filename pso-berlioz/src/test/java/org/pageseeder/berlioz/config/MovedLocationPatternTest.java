@@ -42,25 +42,25 @@ final class MovedLocationPatternTest {
   @Test
   void testGetTargetSimpleMapping() {
     MovedLocationPattern p = pattern("/old", "/new");
-    Assertions.assertEquals(p.getTarget("/old"), "/new");
+    Assertions.assertEquals("/new", p.getTarget("/old"));
   }
 
   @Test
   void testGetTargetExpandsUriVariable() {
     MovedLocationPattern p = pattern("/{+path}.psml", "/html/{+path}");
-    Assertions.assertEquals(p.getTarget("/example.psml"), "/html/example");
+    Assertions.assertEquals("/html/example", p.getTarget("/example.psml"));
   }
 
   @Test
   void testGetTargetExpandsNestedPath() {
     MovedLocationPattern p = pattern("/{+path}.psml", "/html/{+path}");
-    Assertions.assertEquals(p.getTarget("/folder/page.psml"), "/html/folder/page");
+    Assertions.assertEquals("/html/folder/page", p.getTarget("/folder/page.psml"));
   }
 
   @Test
   void testGetTargetRootMapping() {
     MovedLocationPattern p = pattern("/", "/home");
-    Assertions.assertEquals(p.getTarget("/"), "/home");
+    Assertions.assertEquals("/home", p.getTarget("/"));
   }
 
   // from() / to()

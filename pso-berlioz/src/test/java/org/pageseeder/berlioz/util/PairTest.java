@@ -24,7 +24,7 @@ final class PairTest {
   void testAccessors() {
     Pair<String, Integer> pair = new Pair<>("alpha", 1);
 
-    Assertions.assertEquals(pair.first(), "alpha");
+    Assertions.assertEquals("alpha", pair.first());
     Assertions.assertEquals(Integer.valueOf(1), pair.second());
   }
 
@@ -58,7 +58,7 @@ final class PairTest {
   void testNotEqualsOtherTypes() {
     Pair<String, Integer> pair = new Pair<>("alpha", 1);
 
-    Assertions.assertNotEquals(pair, null);
-    Assertions.assertNotEquals(pair, "alpha");
+    Assertions.assertNotNull(pair);
+    Assertions.assertNotEquals("alpha", pair);
   }
 }

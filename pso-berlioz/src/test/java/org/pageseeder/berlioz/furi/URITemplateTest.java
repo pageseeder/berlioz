@@ -70,7 +70,7 @@ class URITemplateTest {
    */
   @Test
   void testNew_EmptyString() {
-    new URITemplate("");
+    Assertions.assertDoesNotThrow(() -> new URITemplate(""));
   }
 
   /**
@@ -78,7 +78,7 @@ class URITemplateTest {
    */
   @Test
   void testDigest_EmptyString() {
-    List<Token> tokens = new ArrayList<Token>();
+    List<Token> tokens = new ArrayList<>();
     Assertions.assertEquals(tokens, URITemplate.digest(""));
   }
 
@@ -97,7 +97,7 @@ class URITemplateTest {
    */
   @Test
   void testDigest_OneTokenVariable() {
-    List<Token> tokens = new ArrayList<Token>();
+    List<Token> tokens = new ArrayList<>();
     tokens.add(new TokenVariable("x"));
     Assertions.assertEquals(tokens, URITemplate.digest("{x}"));
   }
@@ -108,7 +108,7 @@ class URITemplateTest {
    */
   @Test
   void testDigest_TwoToken() {
-    List<Token> tokens = new ArrayList<Token>();
+    List<Token> tokens = new ArrayList<>();
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
     Assertions.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}"));
@@ -170,10 +170,10 @@ class URITemplateTest {
    * <p>
    * This method tests:
    *
-   * <pre>
+   * <pre>{@code
    *   http://example.org/?q={bar}
    *   http://example.org/?q=fred
-   * </pre>
+   * }</pre>
    */
   @Test
   void testExpand_Spec1() {
@@ -185,10 +185,10 @@ class URITemplateTest {
    * <p>
    * This method tests:
    *
-   * <pre>
+   * <pre>{@code
    * http://example.org/{bar}{bar}/{garply}
    * http://example.org/fredfred/a%2Fb%2Fc
-   * </pre>
+   * }</pre>
    */
   @Test
   void testExpand_Spec6() {
@@ -201,10 +201,10 @@ class URITemplateTest {
    * <p>
    * This method tests:
    *
-   * <pre>
+   * <pre>{@code
    * ../{waldo}/
    * ../ben%20%26%20jerrys/
-   * </pre>
+   * }</pre>
    */
   @Test
   void testExpand_Spec9() {
@@ -216,10 +216,10 @@ class URITemplateTest {
    * <p>
    * This method tests:
    *
-   * <pre>
+   * <pre>{@code
    * :{1-a_b.c}:
    * :200:
-   * </pre>
+   * }</pre>
    */
   @Test
   void testExpand_Spec11() {
@@ -231,10 +231,10 @@ class URITemplateTest {
    * <p>
    * This method tests:
    *
-   * <pre>
+   * <pre>{@code
    * /type/{x:bar}
    * /type/fred
-   * </pre>
+   * }</pre>
    */
   @Test
   void testExpand_Type() {

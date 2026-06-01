@@ -36,13 +36,13 @@ final class ServiceTest {
   @Test
   void testBuilder_id() {
     Service s = defaultBuilder("my-service").add(new NoContent()).build();
-    Assertions.assertEquals(s.id(), "my-service");
+    Assertions.assertEquals("my-service", s.id());
   }
 
   @Test
   void testBuilder_group() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
-    Assertions.assertEquals(s.group(), "test");
+    Assertions.assertEquals("test", s.group());
   }
 
   @Test
@@ -53,42 +53,40 @@ final class ServiceTest {
         .rule(ServiceStatusRule.DEFAULT_RULE)
         .add(new NoContent())
         .build();
-    Assertions.assertEquals(s.group(), "default");
+    Assertions.assertEquals("default", s.group());
   }
 
   @Test
   void testBuilder_cache() {
     Service s = defaultBuilder("svc").cache("max-age=3600").add(new NoContent()).build();
-    Assertions.assertEquals(s.cache(), "max-age=3600");
+    Assertions.assertEquals("max-age=3600", s.cache());
   }
 
   @Test
   void testBuilder_cacheDefault() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
-    Assertions.assertEquals(s.cache(), "");
+    Assertions.assertEquals("", s.cache());
   }
 
   @Test
   void testBuilder_flags() {
     Service s = defaultBuilder("svc").flags("secure").add(new NoContent()).build();
-    Assertions.assertEquals(s.flags(), "secure");
+    Assertions.assertEquals("secure", s.flags());
   }
 
   @Test
   void testBuilder_flagsDefault() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
-    Assertions.assertEquals(s.flags(), "");
+    Assertions.assertEquals("", s.flags());
   }
 
   @Test
   void testBuilder_idRequired() {
-    Assertions.assertThrows(NullPointerException.class, () -> {
-    new Service.Builder()
+    Service.Builder builder = new Service.Builder()
         .group("test")
         .rule(ServiceStatusRule.DEFAULT_RULE)
-        .add(new NoContent())
-        .build();
-    });
+        .add(new NoContent());
+    Assertions.assertThrows(NullPointerException.class, builder::build);
   }
 
   @Test
@@ -99,11 +97,11 @@ final class ServiceTest {
     builder.reset();
 
     Assertions.assertNull(builder.id());
-    Assertions.assertEquals(builder.group(), "test");
+    Assertions.assertEquals("test", builder.group());
 
     builder.id("second").add(new NoContent());
     Service second = builder.build();
-    Assertions.assertEquals(second.id(), "second");
+    Assertions.assertEquals("second", second.id());
   }
 
   // --- Generators ---
@@ -167,14 +165,14 @@ final class ServiceTest {
   void testName_defaultIsKebabCase() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    Assertions.assertEquals(s.name(g), "no-content");
+    Assertions.assertEquals("no-content", s.name(g));
   }
 
   @Test
   void testName_explicit() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).name("my-generator").build();
-    Assertions.assertEquals(s.name(g), "my-generator");
+    Assertions.assertEquals("my-generator", s.name(g));
   }
 
   @Test
@@ -188,7 +186,7 @@ final class ServiceTest {
   void testTarget_set() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).target("main").build();
-    Assertions.assertEquals(s.target(g), "main");
+    Assertions.assertEquals("main", s.target(g));
   }
 
   // --- Parameters ---
@@ -207,8 +205,8 @@ final class ServiceTest {
     Service s = defaultBuilder("svc").add(g).parameter(p).build();
     List<Parameter> params = s.parameters(g);
     Assertions.assertEquals(1, params.size());
-    Assertions.assertEquals(params.get(0).name(), "key");
-    Assertions.assertEquals(params.get(0).value(), "value");
+    Assertions.assertEquals("key", params.get(0).name());
+    Assertions.assertEquals("value", params.get(0).value());
   }
 
   @Test
@@ -255,6 +253,6 @@ final class ServiceTest {
   @Test
   void testToString() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
-    Assertions.assertEquals(s.toString(), "service:test/svc");
+    Assertions.assertEquals("service:test/svc", s.toString());
   }
 }
