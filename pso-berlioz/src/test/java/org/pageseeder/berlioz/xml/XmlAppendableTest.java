@@ -2,19 +2,33 @@ package org.pageseeder.berlioz.xml;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 final class XmlAppendableTest {
 
   // text(String) ---------------------------------------------------------------------------------
 
-  @Test
-  void testTextEscaping() {
+  @ParameterizedTest
+  @MethodSource("textStringCases")
+  void testTextString(String input, String expected) {
     XmlStringBuilder xml = new XmlStringBuilder();
-    xml.openElement("x").text("a<>&\"'😀").closeElement();
-    Assertions.assertEquals("<x>a&lt;&gt;&amp;\"'&#x1f600;</x>", xml.toString());
+    xml.openElement("x").text(input).closeElement();
+    Assertions.assertEquals(expected, xml.toString());
+  }
+
+  static Stream<Arguments> textStringCases() {
+    return Stream.of(
+        Arguments.of("a<>&\"'\u0001\uD83D\uDE00", "<x>a&lt;&gt;&amp;\"'&#x1f600;</x>"),
+        Arguments.of("a\u0001b",    "<x>ab</x>"),
+        Arguments.of("a\uD800b",    "<x>ab</x>"),
+        Arguments.of("a\uDC00b",    "<x>ab</x>")
+    );
   }
 
   @Test
@@ -292,29 +306,6 @@ final class XmlAppendableTest {
     XmlWritable writable = writer -> writer.emptyElement("y");
     xml.openElement("x").asXml((Object) writable).closeElement();
     Assertions.assertEquals("<x><y/></x>", xml.toString());
-  }
-
-  // Non-XML character filtering ------------------------------------------------------------------
-
-  @Test
-  void testNonXmlControlCharIsStripped() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    xml.openElement("x").text("ab").closeElement();
-    Assertions.assertEquals("<x>ab</x>", xml.toString());
-  }
-
-  @Test
-  void testOrphanedHighSurrogateIsStripped() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    xml.openElement("x").text("a\uD800b").closeElement();
-    Assertions.assertEquals("<x>ab</x>", xml.toString());
-  }
-
-  @Test
-  void testOrphanedLowSurrogateIsStripped() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    xml.openElement("x").text("a\uDC00b").closeElement();
-    Assertions.assertEquals("<x>ab</x>", xml.toString());
   }
 
   // close() / flush() ----------------------------------------------------------------------------

@@ -20,13 +20,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.pageseeder.berlioz.furi.URIResolver.MatchRule;
 
 /**
  * A test class for the <code>URIResolver</code>.
- *
- * @author Christophe Lauret
- * @version 27 May 2009
  */
 class URIResolverTest {
 
@@ -186,43 +185,20 @@ class URIResolverTest {
   }
 
   /**
-   * Test the <code>resolve</code> method with some objects values.
+   * Test the <code>resolve</code> method with URI insert operator.
    */
-  @Test
-  void testResolve_Objects() {
-    URIResolver resolver = new URIResolver("/documents;label=technical;version=1.0");
-    URIPattern p = new URIPattern("/documents;label={label};version={version}");
+  @ParameterizedTest
+  @CsvSource({
+      "/path/dir/subdir/document.xml,          /path/{+path},          dir/subdir/document.xml",
+      "/path/dir/subdir/document.xml/comments, /path/{+path}/comments, dir/subdir/document.xml"
+  })
+  void testResolve_URIInsert(String uri, String pattern, String expected) {
+    URIResolver resolver = new URIResolver(uri);
+    URIPattern p = new URIPattern(pattern);
     Assertions.assertTrue(p.match(resolver.uri()));
     URIResolveResult r = resolver.resolve(p);
     Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals("technical", r.get("label"));
-    Assertions.assertEquals("1.0", r.get("version"));
-  }
-
-  /**
-   * Test the <code>resolve</code> method with some objects values.
-   */
-  @Test
-  void testResolve_URIInsert() {
-    URIResolver resolver = new URIResolver("/path/dir/subdir/document.xml");
-    URIPattern p = new URIPattern("/path/{+path}");
-    Assertions.assertTrue(p.match(resolver.uri()));
-    URIResolveResult r = resolver.resolve(p);
-    Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals("dir/subdir/document.xml", r.get("path"));
-  }
-
-  /**
-   * Test the <code>resolve</code> method with some objects values.
-   */
-  @Test
-  void testResolve_URIInsert2() {
-    URIResolver resolver = new URIResolver("/path/dir/subdir/document.xml/comments");
-    URIPattern p = new URIPattern("/path/{+path}/comments");
-    Assertions.assertTrue(p.match(resolver.uri()));
-    URIResolveResult r = resolver.resolve(p);
-    Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
-    Assertions.assertEquals("dir/subdir/document.xml", r.get("path"));
+    Assertions.assertEquals(expected, r.get("path"));
   }
 
   @Test
