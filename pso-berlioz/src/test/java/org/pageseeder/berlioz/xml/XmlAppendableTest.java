@@ -160,7 +160,8 @@ final class XmlAppendableTest {
 
   @Test
   void testCommentWithDoubleDashThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> new XmlStringBuilder().comment("bad--comment"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> xml.comment("bad--comment"));
   }
 
   // cdata() --------------------------------------------------------------------------------------
@@ -174,7 +175,8 @@ final class XmlAppendableTest {
 
   @Test
   void testCdataWithEndSequenceThrows() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> new XmlStringBuilder().cdata("bad]]>data"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> xml.cdata("bad]]>data"));
   }
 
   // processingInstruction() ----------------------------------------------------------------------
@@ -195,7 +197,8 @@ final class XmlAppendableTest {
 
   @Test
   void testProcessingInstructionNullTargetThrows() {
-    Assertions.assertThrows(NullPointerException.class, () -> new XmlStringBuilder().processingInstruction(null, "data"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    Assertions.assertThrows(NullPointerException.class, () -> xml.processingInstruction(null, "data"));
   }
 
   // declaration() --------------------------------------------------------------------------------
@@ -209,11 +212,9 @@ final class XmlAppendableTest {
 
   @Test
   void testDeclarationAfterUse() {
-    Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.text("x");
-    xml.declaration();
-    });
+    Assertions.assertThrows(IllegalStateException.class, xml::declaration);
   }
 
   // emptyElement() -------------------------------------------------------------------------------
@@ -351,7 +352,9 @@ final class XmlAppendableTest {
 
   @Test
   void testXmlNullThrows() {
-    Assertions.assertThrows(NullPointerException.class, () -> new XmlStringBuilder().openElement("x").xml((String) null));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    xml.openElement("x");
+    Assertions.assertThrows(NullPointerException.class, () -> xml.xml(null));
   }
 
   // emptyElement() indentation -------------------------------------------------------------------
@@ -374,11 +377,9 @@ final class XmlAppendableTest {
 
   @Test
   void testWithIndentAfterUse() {
-    Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x");
-    xml.withIndent("  ");
-    });
+    Assertions.assertThrows(IllegalStateException.class, () -> xml.withIndent("  "));
   }
 
   @Test

@@ -30,16 +30,13 @@ final class XMLConfigTest {
 
   @Test
   void testLoad_XXE() {
-    Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
-    config.load(new ByteArrayInputStream(xml.getBytes()));
-    });
+    Assertions.assertThrows(IOException.class, () -> config.load(new ByteArrayInputStream(xml.getBytes())));
   }
 
   @Test
   void testLoad_XMLBomb() {
-    Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String xml = "<!DOCTYPE global [\n" +
         "  <!ELEMENT global ANY >\n" +
@@ -54,8 +51,7 @@ final class XMLConfigTest {
         "  <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
         "  <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
         "]><global>&lol9;</global>";
-    config.load(new ByteArrayInputStream(xml.getBytes()));
-    });
+    Assertions.assertThrows(IOException.class, () -> config.load(new ByteArrayInputStream(xml.getBytes())));
   }
 
   @Test
@@ -136,11 +132,9 @@ final class XMLConfigTest {
 
   @Test
   void testLoad_Invalid() {
-    Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String invalid = "<global>";
-    config.load(new ByteArrayInputStream(invalid.getBytes()));
-    });
+    Assertions.assertThrows(IOException.class, () -> config.load(new ByteArrayInputStream(invalid.getBytes())));
   }
 
   @Test

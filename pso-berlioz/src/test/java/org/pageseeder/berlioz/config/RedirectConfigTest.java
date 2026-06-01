@@ -69,10 +69,8 @@ final class RedirectConfigTest {
 
   @Test
   void testLoad_XXE() {
-    Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!-- XXE --><!DOCTYPE redirect-mapping [<!ELEMENT redirect-mapping ANY > <!ENTITY x SYSTEM \"/etc/password.xml\" >]><redirect-mapping>&x;</redirect-mapping>";
-    RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    });
+    Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes())));
   }
 
   @Test
@@ -115,7 +113,6 @@ final class RedirectConfigTest {
 
   @Test
   void testLoad_XMLBomb() {
-    Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!DOCTYPE redirect-mapping [\n" +
         "  <!ELEMENT redirect-mapping ANY >\n" +
         "  <!ENTITY lol \"lol\">\n" +
@@ -129,8 +126,7 @@ final class RedirectConfigTest {
         "  <!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">\n" +
         "  <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
         "]><redirect-mapping><redirect from=\"&lol9;\" to=\"&lol9\"/></redirect-mapping>";
-    RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    });
+    Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes())));
   }
 
 }

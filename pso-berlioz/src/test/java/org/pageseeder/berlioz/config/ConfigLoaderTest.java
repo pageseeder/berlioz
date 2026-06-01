@@ -19,8 +19,7 @@ final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testFileLargerThan1MBThrowsConfigException() {
-    Assertions.assertThrows(ConfigException.class, () -> {
+  void testFileLargerThan1MBThrowsConfigException() throws Exception {
     File large = Files.createFile(tmp.resolve("big.xml")).toFile();
     try (FileOutputStream out = new FileOutputStream(large)) {
       byte[] chunk = new byte[10_000];
@@ -29,8 +28,7 @@ final class ConfigLoaderTest {
         out.write(chunk);
       }
     }
-    RedirectConfig.newInstance(large);
-    });
+    Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(large));
   }
 
   @Test
@@ -54,21 +52,17 @@ final class ConfigLoaderTest {
 
   @Test
   void testNonExistentFileThrowsConfigException() {
-    Assertions.assertThrows(ConfigException.class, () -> {
     File missing = new File(tmp.toFile(), "does-not-exist.xml");
-    RedirectConfig.newInstance(missing);
-    });
+    Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(missing));
   }
 
   // Directory instead of file
   // ---------------------------------------------------------------------------
 
   @Test
-  void testDirectoryThrowsConfigException() {
-    Assertions.assertThrows(ConfigException.class, () -> {
+  void testDirectoryThrowsConfigException() throws Exception {
     File dir = Files.createDirectory(tmp.resolve("notafile")).toFile();
-    RedirectConfig.newInstance(dir);
-    });
+    Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(dir));
   }
 
   // Weborganic DOCTYPE stripping

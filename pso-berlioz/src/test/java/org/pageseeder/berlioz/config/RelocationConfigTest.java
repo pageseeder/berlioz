@@ -77,20 +77,16 @@ final class RelocationConfigTest {
 
   @Test
   void testLoad_invalidXml() {
-    Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>";
-    RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    });
+    Assertions.assertThrows(ConfigException.class, () -> RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes())));
   }
 
   @Test
   void testLoad_xxe() {
-    Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!DOCTYPE relocation-mapping [<!ELEMENT relocation-mapping ANY >" +
         "<!ENTITY x SYSTEM \"/etc/passwd\" >]>" +
         "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>&x;</relocation-mapping>";
-    RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    });
+    Assertions.assertThrows(ConfigException.class, () -> RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes())));
   }
 
 }
