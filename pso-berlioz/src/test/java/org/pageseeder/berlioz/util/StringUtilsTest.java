@@ -23,6 +23,7 @@ import org.junit.Test;
  * @author ccabral
  * @since 06 July 2021
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class StringUtilsTest {
 
   @Test

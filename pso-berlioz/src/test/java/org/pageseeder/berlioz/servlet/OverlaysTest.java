@@ -11,7 +11,7 @@ import java.util.List;
 
 public class OverlaysTest {
 
-  // Root containing WEB-INF/overlays/{illegal-1.0.zip, readme-1.0.zip, readme-2.0.war, sample-1.0.war}
+  // Root with WEB-INF/overlays containing: illegal-1.0.zip, readme-1.0.zip, readme-2.0.war, sample-1.0.war
   private final File root = new File("./src/test/resources/org/pageseeder/berlioz/servlet");
 
   @Rule
@@ -67,6 +67,7 @@ public class OverlaysTest {
   // unpack() — readme-1.0.zip (single file: README.txt)
   // ---------------------------------------------------------------------------
 
+  @SuppressWarnings("java:S5976")
   @Test
   public void testUnpackReadmeCount() throws IOException {
     File target = tmp.newFolder();

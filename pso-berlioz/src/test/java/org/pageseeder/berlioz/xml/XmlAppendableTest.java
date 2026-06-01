@@ -316,6 +316,7 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").closeElement();
     xml.close();
+    Assert.assertEquals("<x/>", xml.toString());
   }
 
   @Test
@@ -323,6 +324,7 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").closeElement();
     xml.flush();
+    Assert.assertEquals("<x/>", xml.toString());
   }
 
   @Test

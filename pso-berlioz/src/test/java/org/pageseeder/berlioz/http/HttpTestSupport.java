@@ -54,8 +54,8 @@ final class HttpTestSupport {
     }
 
     HttpServletRequest build() {
-      InvocationHandler handler = (proxy, method, args) -> {
-        String name = method.getName();
+      InvocationHandler handler = (proxy, m, args) -> {
+        String name = m.getName();
         if ("getHeader".equals(name)) return this.headers.get(args[0]);
         if ("getDateHeader".equals(name)) return this.dateHeaders.getOrDefault(args[0], -1L);
         if ("getMethod".equals(name)) return this.method;
@@ -64,7 +64,7 @@ final class HttpTestSupport {
         if ("toString".equals(name)) return "RequestBuilder";
         if ("hashCode".equals(name)) return System.identityHashCode(proxy);
         if ("equals".equals(name)) return proxy == args[0];
-        return defaultValue(method.getReturnType());
+        return defaultValue(m.getReturnType());
       };
       return (HttpServletRequest) Proxy.newProxyInstance(
           HttpServletRequest.class.getClassLoader(),

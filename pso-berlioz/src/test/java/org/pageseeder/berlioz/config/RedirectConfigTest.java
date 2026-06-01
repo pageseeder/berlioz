@@ -53,7 +53,8 @@ public final class RedirectConfigTest {
 
   @Test
   public void testLoadFile_DTD() throws ConfigException {
-    RedirectConfig.newInstance(new File(this.configFolder, "redirect_dtd.xml"));
+    RedirectConfig config = RedirectConfig.newInstance(new File(this.configFolder, "redirect_dtd.xml"));
+    Assert.assertNotNull(config);
   }
 
   @Test(expected = ConfigException.class)

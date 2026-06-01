@@ -7,11 +7,17 @@ import org.junit.Test;
 
 public final class ParameterTemplateTest {
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testParameter_Null() {
-    ParameterTemplate.parameter(null, "x");
+    try {
+      ParameterTemplate.parameter(null, "x");
+      Assert.fail("Expected NullPointerException");
+    } catch (NullPointerException e) {
+      // expected
+    }
   }
 
+  @SuppressWarnings("java:S5976")
   @Test
   public void testParameter_Nofallback1() {
     ParameterTemplate pt = ParameterTemplate.parameter("test", null);
@@ -44,9 +50,14 @@ public final class ParameterTemplateTest {
     Assert.assertEquals("test", pt.toString(Collections.singletonMap("test", "abc")));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testValue_Null() {
-    ParameterTemplate.value(null);
+    try {
+      ParameterTemplate.value(null);
+      Assert.fail("Expected NullPointerException");
+    } catch (NullPointerException e) {
+      // expected
+    }
   }
 
   @Test

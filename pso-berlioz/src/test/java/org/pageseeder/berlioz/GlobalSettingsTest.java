@@ -56,20 +56,18 @@ public final class GlobalSettingsTest {
     Assert.assertEquals("fallback-2", GlobalSettings.get("test.string.undefined", "fallback-2"));
   }
 
-  /**
-   * <boolean true="true" false="false" invalid="coconut" empty=""/>
-   */
   @Test
-  public void testGet_Boolean() {
-    // Value is 'true' -> true
+  public void testGet_Boolean_TrueAndFalse() {
     Assert.assertEquals("true", GlobalSettings.get("test.boolean.true"));
     Assert.assertTrue(GlobalSettings.get("test.boolean.true", true));
     Assert.assertTrue(GlobalSettings.get("test.boolean.true", false));
-    // Value is 'false' -> false
     Assert.assertEquals("false", GlobalSettings.get("test.boolean.false"));
     Assert.assertFalse(GlobalSettings.get("test.boolean.false", true));
     Assert.assertFalse(GlobalSettings.get("test.boolean.false", false));
-    // Value is not a valid boolean -> default
+  }
+
+  @Test
+  public void testGet_Boolean_Invalid() {
     Assert.assertTrue(GlobalSettings.get("test.boolean.invalid", true));
     Assert.assertFalse(GlobalSettings.get("test.boolean.invalid", false));
     Assert.assertEquals("True", GlobalSettings.get("test.boolean.invalid-true"));
@@ -84,11 +82,13 @@ public final class GlobalSettingsTest {
     Assert.assertEquals("no", GlobalSettings.get("test.boolean.invalid-no"));
     Assert.assertTrue(GlobalSettings.get("test.boolean.invalid-no", true));
     Assert.assertFalse(GlobalSettings.get("test.boolean.invalid-no", false));
-    // Value is empty ("") -> default
+  }
+
+  @Test
+  public void testGet_Boolean_EmptyAndUndefined() {
     Assert.assertEquals("", GlobalSettings.get("test.boolean.empty"));
     Assert.assertTrue(GlobalSettings.get("test.boolean.empty", true));
     Assert.assertFalse(GlobalSettings.get("test.boolean.empty", false));
-    // Value is undefined (null) -> default
     Assert.assertNull(GlobalSettings.get("test.boolean.undefined"));
     Assert.assertTrue(GlobalSettings.get("test.boolean.undefined", true));
     Assert.assertFalse(GlobalSettings.get("test.boolean.undefined", false));

@@ -450,7 +450,7 @@ public final class URICoderTest {
   @Test
   public void testDecode_IncompletePercent_OneDigit_PercentDroppedTrailingKept() {
     // When % has only one following hex digit (i.e., at the second-to-last position),
-    // the % is silently dropped (TODO in source) but the trailing char is kept as a literal.
+    // the % is silently dropped but the trailing char is kept as a literal.
     Assert.assertEquals("abc2", URICoder.decode("abc%2"));
   }
 

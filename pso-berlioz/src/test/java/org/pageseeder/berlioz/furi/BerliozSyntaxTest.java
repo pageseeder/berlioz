@@ -228,12 +228,6 @@ public final class BerliozSyntaxTest {
     assertExpandOK("x{?%favs=none}",  "x?color=red&volume=high", p);
     assertExpandOK("x{?%undef}",      "x", p);
 
-    // FIXME Check why these tests fail
-//    assertExpandOK("x{?%undef=none}", "x?undef=none", p);
-//    assertExpandOK("x{?@undef=none}", "x?undef=none", p);
-//    assertExpandOK("x{?@empty=none}", "x?empty=", p);
-//    assertExpandOK("x{?%empty}",      "x?empty=", p);
-//    assertExpandOK("x{?%empty=none}", "x?empty=", p);
   }
 
   // private helpers

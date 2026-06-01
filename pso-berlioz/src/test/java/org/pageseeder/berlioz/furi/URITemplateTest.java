@@ -42,7 +42,7 @@ public class URITemplateTest {
   private final Parameters vars = new URIParameters();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     // set up the parameters from the specifications.
     this.vars.set("foo", new String[] { "\u03d3" });
     this.vars.set("bar", new String[] { "fred" });
@@ -100,17 +100,6 @@ public class URITemplateTest {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenVariable("x"));
     Assert.assertEquals(tokens, URITemplate.digest("{x}"));
-  }
-
-  /**
-   * Test that the <code>digest</code> method returns an operator token for an operator expression.
-   */
-  @Test
-  public void testDigest_OneTokenOperator() {
-    // FIXME
-//    List<Token> tokens = new ArrayList<Token>();
-//    tokens.add(TokenFactory.getInstance().newToken("{-opt|x|y}"));
-//    Assert.assertEquals(tokens, URITemplate.digest("{-opt|x|y}"));
   }
 
   /**
@@ -197,70 +186,6 @@ public class URITemplateTest {
    * This method tests:
    *
    * <pre>
-   * /{xyzzy}
-   * /
-   * </pre>
-   */
-  @Test
-  public void testExpand_Spec2() {
-    // FIXME
-//    assertExpand("/{xyzzy}", this.vars, "/");
-  }
-
-  /**
-   * Test the <code>expand</code> method using test cases in the specifications.
-   * <p>
-   * This method tests:
-   *
-   * <pre>
-   * http://example.org/?{-join|&amp;|foo,bar,xyzzy,baz}
-   * http://example.org/?foo=%CE%8E&amp;bar=fred&amp;baz=10%2C20%2C30
-   * </pre>
-   */
-  @Test
-  public void testExpand_Spec3() {
-    // FIXME
-//    assertExpand("http://example.org/?{-join|&|foo,bar,xyzzy,baz}", this.vars, "http://example.org/?foo=%CE%8E&bar=fred&baz=10%2C20%2C30");
-  }
-
-  /**
-   * Test the <code>expand</code> method using test cases in the specifications.
-   * <p>
-   * This method tests:
-   *
-   * <pre>
-   * http://example.org/?d={-list|,|qux}
-   * http://example.org/?d=10,20,30
-   * </pre>
-   */
-  @Test
-  public void testExpand_Spec4() {
-    // FIXME
-//    assertExpand("http://example.org/?d={-list|,|qux}", this.vars, "http://example.org/?d=10,20,30");
-  }
-
-  /**
-   * Test the <code>expand</code> method using test cases in the specifications.
-   * <p>
-   * This method tests:
-   *
-   * <pre>
-   * http://example.org/?d={-list|&amp;d=|qux}
-   * http://example.org/?d=10&amp;d=20&amp;d=30
-   * </pre>
-   */
-  @Test
-  public void testExpand_Spec5() {
-    // FIXME
-//    assertExpand("http://example.org/?d={-list|&d=|qux}", this.vars, "http://example.org/?d=10&d=20&d=30");
-  }
-
-  /**
-   * Test the <code>expand</code> method using test cases in the specifications.
-   * <p>
-   * This method tests:
-   *
-   * <pre>
    * http://example.org/{bar}{bar}/{garply}
    * http://example.org/fredfred/a%2Fb%2Fc
    * </pre>
@@ -277,38 +202,6 @@ public class URITemplateTest {
    * This method tests:
    *
    * <pre>
-   * http://example.org/{bar}{-prefix|/|fred}
-   * http://example.org/fred/fred//wilma
-   * </pre>
-   */
-  @Test
-  public void testExpand_Spec7() {
-    // FIXME
-//    assertExpand("http://example.org/{bar}{-prefix|/|fred}", this.vars, "http://example.org/fred/fred//wilma");
-  }
-
-  /**
-   * Test the <code>expand</code> method using test cases in the specifications.
-   * <p>
-   * This method tests:
-   *
-   * <pre>
-   * {-neg|:|corge}{-suffix|:|plugh}
-   * :%E1%B9%A1:%E1%B9%A1:
-   * </pre>
-   */
-  @Test
-  public void testExpand_Spec8() {
-    // FIXME
-//    assertExpand("{-neg|:|corge}{-suffix|:|plugh}", this.vars, ":%E1%B9%A1:%E1%B9%A1:");
-  }
-
-  /**
-   * Test the <code>expand</code> method using test cases in the specifications.
-   * <p>
-   * This method tests:
-   *
-   * <pre>
    * ../{waldo}/
    * ../ben%20%26%20jerrys/
    * </pre>
@@ -316,22 +209,6 @@ public class URITemplateTest {
   @Test
   public void testExpand_Spec9() {
     assertExpand("../{waldo}/", this.vars, "../ben%20%26%20jerrys/");
-  }
-
-  /**
-   * Test the <code>expand</code> method using test cases in the specifications.
-   * <p>
-   * This method tests:
-   *
-   * <pre>
-   * telnet:192.0.2.16{-opt|:80|grault}
-   * telnet:192.0.2.16:80
-   * </pre>
-   */
-  @Test
-  public void testExpand_Spec10() {
-    // FIXME
-    //assertExpand("telnet:192.0.2.16{-opt|:80|grault}", this.vars, "telnet:192.0.2.16:80");
   }
 
   /**

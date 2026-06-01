@@ -110,7 +110,7 @@ final class ServletTestSupport {
       InvocationHandler h = (proxy, m, args) -> {
         switch (m.getName()) {
           case "setStatus":          status = (Integer) args[0]; return null;
-          case "setHeader":          headers.put((String) args[0], (String) args[1]); return null;
+          case "setHeader":
           case "addHeader":          headers.put((String) args[0], (String) args[1]); return null;
           case "reset":              resetCalled = true; headers.clear(); return null;
           case "setContentLength":   return null;

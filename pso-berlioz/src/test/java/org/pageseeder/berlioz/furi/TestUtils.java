@@ -38,14 +38,14 @@ class TestUtils {
    */
   public static void satisfyEqualsContract(Object x, Object y, Object z) {
     // reflexive
-    Assert.assertTrue(x.equals(x));
-    Assert.assertTrue(y.equals(y));
-    Assert.assertTrue(z.equals(z));
+    Assert.assertEquals(x, x);
+    Assert.assertEquals(y, y);
+    Assert.assertEquals(z, z);
     // symmetric
-    Assert.assertTrue(x.equals(y));
-    Assert.assertTrue(y.equals(x));
-    Assert.assertFalse(x.equals(z));
-    Assert.assertFalse(z.equals(x));
+    Assert.assertEquals(x, y);
+    Assert.assertEquals(y, x);
+    Assert.assertNotEquals(x, z);
+    Assert.assertNotEquals(z, x);
     // consistent hashcode
     Assert.assertEquals(x.hashCode(), x.hashCode());
     Assert.assertEquals(y.hashCode(), y.hashCode());
