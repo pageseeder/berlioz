@@ -1,0 +1,104 @@
+/*
+ * Copyright 2015 Allette Systems (Australia)
+ * http://www.allette.com.au
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.pageseeder.berlioz.system;
+
+import java.io.IOException;
+import java.lang.management.ThreadInfo;
+
+import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.content.ContentGenerator;
+import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.xmlwriter.XMLWriter;
+
+/**
+ * Returns information about a thread.
+ *
+ * @author Christophe Lauret
+ *
+ * @version Berlioz 0.10.7
+ * @since Berlioz 0.9.32
+ */
+@Beta
+public final class GetThreadInfo implements ContentGenerator {
+
+  @Override
+  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+
+    long threadId = req.getLongParameter("id", -1L);
+    if (threadId < 0) {
+      req.setStatus(ContentStatus.BAD_REQUEST);
+      xml.writeComment("Interval must be strictly positive");
+      return;
+    } else {
+      threadId = Thread.currentThread().getId();
+    }
+
+    ThreadInfo thread = Threads.getThreadInfo(threadId);
+    if (thread != null) {
+      toXML(thread, xml);
+    } else {
+      xml.openElement("no-thread", true);
+      xml.attribute("id", Long.toString(threadId));
+      xml.closeElement();
+    }
+  }
+
+  /**
+   * Return all the threads with stack traces
+   *
+   * @param thread     The thread information to serialise as XML
+   * @param xml The XML writer
+   *
+   * @throws IOException If thrown while writing XML.
+   */
+  private static void toXML(ThreadInfo thread, XMLWriter xml)
+      throws IOException {
+    xml.openElement("thread", true);
+    xml.attribute("id", Long.toString(thread.getThreadId()));
+    xml.attribute("name", thread.getThreadName());
+    xml.attribute("priority", thread.getPriority());
+    xml.attribute("state", thread.getThreadState().name());
+    xml.attribute("alive", Boolean.TRUE.toString());
+    xml.attribute("daemon", Boolean.toString(thread.isDaemon()));
+    xml.attribute("group", Threads.threadGroupName());
+
+    StackTraceElement[] stacktrace = thread.getStackTrace();
+    if (stacktrace != null) {
+      xml.openElement("stacktrace");
+      for (StackTraceElement element : stacktrace) {
+        xml.openElement("element");
+        String method = element.getMethodName();
+        String filename = element.getFileName();
+        int line = element.getLineNumber();
+        xml.attribute("class", element.getClassName());
+        if (filename != null) {
+          xml.attribute("filename", filename);
+        }
+        if (method != null) {
+          xml.attribute("method", method);
+        }
+        if (line >= 0) {
+          xml.attribute("line", line);
+        }
+        xml.closeElement();
+      }
+      xml.closeElement();
+    }
+
+    xml.closeElement();
+  }
+}

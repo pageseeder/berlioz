@@ -15,6 +15,7 @@
  */
 package org.pageseeder.mock.servlet;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import javax.servlet.ServletOutputStream;
@@ -22,23 +23,42 @@ import javax.servlet.WriteListener;
 
 public class MockServletOutputstream extends ServletOutputStream {
 
+  private final ByteArrayOutputStream out;
+
+  private WriteListener listener;
+
   public MockServletOutputstream() {
+    this(new ByteArrayOutputStream());
+  }
+
+  public MockServletOutputstream(ByteArrayOutputStream out) {
+    this.out = out;
   }
 
   @Override
   public void write(int b) throws IOException {
-    // TODO Auto-generated method stub
-
+    this.out.write(b);
   }
 
   @Override
   public boolean isReady() {
-    // TODO Auto-generated method stub
-    return false;
+    return true;
   }
 
   @Override
   public void setWriteListener(WriteListener writeListener) {
-    // TODO Auto-generated method stub
+    this.listener = writeListener;
+  }
+
+  public byte[] toByteArray() {
+    return this.out.toByteArray();
+  }
+
+  public void reset() {
+    this.out.reset();
+  }
+
+  public WriteListener getWriteListener() {
+    return this.listener;
   }
 }

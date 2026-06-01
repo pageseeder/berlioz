@@ -1,3 +1,4 @@
+/.sonarlint/
 /.checkstyle
 /.classpath
 /.factorypath
@@ -9,3 +10,8 @@
 /build/
 /target/
 /out/
+/.devcontainer/devcontainer.json
+/CLAUDE.md
+/AGENTS.md
+/.claude/
+/pso-berlioz/build/

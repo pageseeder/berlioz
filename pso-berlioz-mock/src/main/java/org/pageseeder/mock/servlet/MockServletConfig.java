@@ -29,6 +29,8 @@ public class MockServletConfig implements ServletConfig {
 
   private Map<String, String> parameters = new HashMap<>();
 
+  private ServletContext context;
+
   public MockServletConfig() {
     this.servletName = "org.example.UnnamedServlet";
   }
@@ -40,13 +42,12 @@ public class MockServletConfig implements ServletConfig {
 
   @Override
   public Enumeration<String> getInitParameterNames() {
-    return Collections.enumeration(this.parameters.values());
+    return Collections.enumeration(this.parameters.keySet());
   }
 
   @Override
   public ServletContext getServletContext() {
-    // TODO Auto-generated method stub
-    return null;
+    return this.context;
   }
 
   @Override
@@ -57,5 +58,13 @@ public class MockServletConfig implements ServletConfig {
 
   public void setInitParameter(String name, String value) {
     this.parameters.put(name, value);
+  }
+
+  public void setServletContext(ServletContext context) {
+    this.context = context;
+  }
+
+  public void setServletName(String servletName) {
+    this.servletName = servletName;
   }
 }
