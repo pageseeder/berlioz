@@ -52,7 +52,8 @@ final class Overlays {
   };
 
   private static final int MAX_ENTRIES = 10_000;
-  private static final long MAX_TOTAL_SIZE = 512L * 1024 * 1024; // 512 MB
+  private static final long MAX_ENTRY_SIZE = 100L * 1024 * 1024;  // 100 MB per entry
+  private static final long MAX_TOTAL_SIZE = 512L * 1024 * 1024;  // 512 MB total
   private static final int MAX_COMPRESSION_RATIO = 100;
 
   /**
@@ -234,6 +235,8 @@ final class Overlays {
       long compressedSize = entry.getCompressedSize();
       if (size >= 0 && compressedSize > 0 && size / compressedSize > MAX_COMPRESSION_RATIO)
         throw new IOException("Overlay entry '" + entryName + "' has a suspicious compression ratio");
+      if (size > MAX_ENTRY_SIZE)
+        throw new IOException("Overlay entry '" + entryName + "' exceeds maximum entry size (" + MAX_ENTRY_SIZE + " bytes)");
       if (size <= 0) return totalSize;
       long newTotal = totalSize + size;
       if (newTotal > MAX_TOTAL_SIZE)
