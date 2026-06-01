@@ -76,6 +76,7 @@ public class MockHttpSession implements HttpSession {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public HttpSessionContext getSessionContext() {
     throw new UnsupportedOperationException();
   }
@@ -88,8 +89,7 @@ public class MockHttpSession implements HttpSession {
 
   @Override
   public Object getValue(String name) {
-    checkIfValid();
-    return this.attributes.get(name);
+    return getAttribute(name);
   }
 
   @Override
@@ -113,8 +113,7 @@ public class MockHttpSession implements HttpSession {
 
   @Override
   public void putValue(String name, Object value) {
-    checkIfValid();
-    this.attributes.put(name, value);
+    setAttribute(name, value);
   }
 
   @Override
@@ -125,8 +124,7 @@ public class MockHttpSession implements HttpSession {
 
   @Override
   public void removeValue(String name) {
-    checkIfValid();
-    this.attributes.remove(name);
+    removeAttribute(name);
   }
 
   @Override

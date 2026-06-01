@@ -60,6 +60,8 @@ import javax.servlet.ReadListener;
  */
 public class MockHttpServletRequest implements HttpServletRequest {
 
+  private static final String LOOPBACK_ADDRESS = "127.0.0.1";
+
   private URI url;
 
   private String method;
@@ -72,13 +74,13 @@ public class MockHttpServletRequest implements HttpServletRequest {
 
   private Map<String, RequestDispatcher> dispatchers = new HashMap<>();
 
-  private String remoteAddr = "127.0.0.1";
+  private String remoteAddr = LOOPBACK_ADDRESS;
 
-  private String remoteHost = "127.0.0.1";
+  private String remoteHost = LOOPBACK_ADDRESS;
 
   private int remotePort = 0;
 
-  private String localAddr = "127.0.0.1";
+  private String localAddr = LOOPBACK_ADDRESS;
 
   private String localName = "localhost";
 
@@ -347,7 +349,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
   @Override
   public String getHeader(String name) {
     List<String> values = this.headers.get(name);
-    return values != null && values.size() > 0? values.get(0) : null;
+    return values != null && !values.isEmpty() ? values.get(0) : null;
   }
 
   @Override

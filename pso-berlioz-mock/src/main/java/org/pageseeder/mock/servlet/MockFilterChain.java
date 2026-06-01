@@ -26,6 +26,7 @@ public class MockFilterChain implements FilterChain {
 
   @Override
   public void doFilter(ServletRequest request, ServletResponse response) throws IOException, ServletException {
+    // No-op: test filter chain does not forward the request
   }
 
 }

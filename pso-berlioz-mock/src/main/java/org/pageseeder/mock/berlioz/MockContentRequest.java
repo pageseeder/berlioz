@@ -35,7 +35,7 @@ import org.pageseeder.mock.servlet.MockHttpServletRequest;
 
 public class MockContentRequest implements ContentRequest{
 
-  private final MockHttpServletRequest _http;
+  private final MockHttpServletRequest http;
 
   private Environment environment;
 
@@ -48,23 +48,23 @@ public class MockContentRequest implements ContentRequest{
   }
 
   public MockContentRequest(MockHttpServletRequest http) {
-    this._http = http;
+    this.http = http;
     this.environment = new HttpEnvironment(new File("."), new File("."), "");
   }
 
   @Override
   public Object getAttribute(String name) {
-    return this._http.getAttribute(name);
+    return this.http.getAttribute(name);
   }
 
   @Override
   public String getBerliozPath() {
-    return HttpRequestWrapper.getBerliozPath(this._http);
+    return HttpRequestWrapper.getBerliozPath(this.http);
   }
 
   @Override
   public Cookie[] getCookies() {
-    return this._http.getCookies();
+    return this.http.getCookies();
   }
 
   @Override
@@ -105,12 +105,12 @@ public class MockContentRequest implements ContentRequest{
 
   @Override
   public Location getLocation() {
-    return HttpLocation.build(this._http);
+    return HttpLocation.build(this.http);
   }
 
   @Override
   public String getParameter(String name) {
-    return this._http.getParameter(name);
+    return this.http.getParameter(name);
   }
 
   @Override
@@ -121,22 +121,22 @@ public class MockContentRequest implements ContentRequest{
 
   @Override
   public Enumeration<String> getParameterNames() {
-    return this._http.getParameterNames();
+    return this.http.getParameterNames();
   }
 
   @Override
   public String[] getParameterValues(String name) {
-    return this._http.getParameterValues(name);
+    return this.http.getParameterValues(name);
   }
 
   @Override
   public HttpSession getSession() {
-    return this._http.getSession();
+    return this.http.getSession();
   }
 
   @Override
   public void setAttribute(String name, Object value) {
-    this._http.setAttribute(name, value);
+    this.http.setAttribute(name, value);
   }
 
   @Override
@@ -163,7 +163,7 @@ public class MockContentRequest implements ContentRequest{
   }
 
   public void setParameter(String name, String value) {
-    this._http.setParameter(name, value);
+    this.http.setParameter(name, value);
   }
 
 }

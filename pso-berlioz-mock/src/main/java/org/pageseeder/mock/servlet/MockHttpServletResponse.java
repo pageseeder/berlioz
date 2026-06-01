@@ -61,8 +61,6 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
   private MockServletOutputstream stream = new MockServletOutputstream(this.bytes);
 
-  private Map<String, Object> attributes = new HashMap<>();
-
   private Map<String, List<String>> headers = new HashMap<>();
 
   private Locale locale = null;
@@ -75,6 +73,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
 
   public MockHttpServletResponse() {
+    // No initialization required; defaults are set at field declarations
   }
 
   @Override
@@ -290,7 +289,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
   @Override
   public String getHeader(String name) {
     List<String> values = this.headers.get(name);
-    return values != null && values.size() > 0? values.get(0) : null;
+    return values != null && !values.isEmpty() ? values.get(0) : null;
   }
 
   @Override
