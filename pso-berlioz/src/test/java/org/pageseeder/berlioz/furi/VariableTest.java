@@ -27,13 +27,13 @@ import org.pageseeder.berlioz.furi.Variable.Form;
  * @author Christophe Lauret
  * @version 5 November 2009
  */
-public class VariableTest {
+class VariableTest {
 
   /**
    * Test that the constructor throws a NullPointerException for a <code>null</code> variable name.
    */
   @Test
-  public void testNew_NullName() {
+  void testNew_NullName() {
     boolean nullThrown = false;
     try {
       new Variable(null, null);
@@ -48,7 +48,7 @@ public class VariableTest {
    * Test that the constructor throws an IllegalArgumentException for an empty string as a name.
    */
   @Test
-  public void testNew_EmptyString() {
+  void testNew_EmptyString() {
     boolean illegalThrown = false;
     try {
       new Variable("", null);
@@ -64,7 +64,7 @@ public class VariableTest {
    * The variable should remain untyped.
    */
   @Test
-  public void testNew_Default() {
+  void testNew_Default() {
     // default value specified and null
     Variable variable = new Variable("name", null);
     Assertions.assertEquals(variable.defaultValue(), "");
@@ -80,7 +80,7 @@ public class VariableTest {
    * Test that the <code>isValidName</code> method work as specified.
    */
   @Test
-  public void testIsValidName() {
+  void testIsValidName() {
     // invalid
     Assertions.assertFalse(Variable.isValidName(null));
     Assertions.assertFalse(Variable.isValidName(""));
@@ -99,7 +99,7 @@ public class VariableTest {
    * Test the <code>equals</code> method for variables with no default value.
    */
   @Test
-  public void testEquals_noDefault() {
+  void testEquals_noDefault() {
     Variable x = new Variable("n");
     Variable y = new Variable("n");
     Variable z = new Variable("m");
@@ -110,7 +110,7 @@ public class VariableTest {
    * Test the <code>equals</code> method for variables with a default value.
    */
   @Test
-  public void testEquals_default() {
+  void testEquals_default() {
     Variable x = new Variable("n", "x");
     Variable y = new Variable("n", "x");
     Variable z = new Variable("n", "y");
@@ -121,7 +121,7 @@ public class VariableTest {
    * Test the <code>parse</code> method for normal situations.
    */
   @Test
-  public void testParse_OK() {
+  void testParse_OK() {
     VariableType t = new VariableType("t");
     Assertions.assertEquals(new Variable("x"),      Variable.parse("x"));
     Assertions.assertEquals(new Variable("x", "y"), Variable.parse("x=y"));
@@ -150,7 +150,7 @@ public class VariableTest {
    * Test the <code>parse</code> method for a <code>null</code> value.
    */
   @Test
-  public void testParse_ErrorNull() {
+  void testParse_ErrorNull() {
     try {
       Variable.parse(null);
       Assertions.fail("No exception was thrown");
@@ -163,7 +163,7 @@ public class VariableTest {
    * Test the <code>parse</code> method with syntax error.
    */
   @Test
-  public void testParse_ErrorSyntax() {
+  void testParse_ErrorSyntax() {
     try {
       Variable.parse("=y");
       Assertions.fail("No exception was thrown");
@@ -176,7 +176,7 @@ public class VariableTest {
    * Test the <code>value</code> method.
    */
   @Test
-  public void testValue() {
+  void testValue() {
     // setup
     Parameters params = new URIParameters();
     params.set("a", new String[] {});
@@ -201,7 +201,7 @@ public class VariableTest {
    * Test the <code>values</code> method.
    */
   @Test
-  public void testValues() {
+  void testValues() {
     // setup
     Parameters params = new URIParameters();
     params.set("a", new String[] {});

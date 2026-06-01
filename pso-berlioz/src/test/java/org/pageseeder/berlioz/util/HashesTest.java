@@ -26,29 +26,29 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public final class HashesTest {
+final class HashesTest {
 
   // -- Null-input guards ---------------------------------------------------
 
   @Test
-  public void testHash_NullString() {
+  void testHash_NullString() {
     Assertions.assertThrows(NullPointerException.class, () -> Hashes.hash((String) null, Hashes.Algorithm.SHA_256));
   }
 
   @Test
-  public void testHash_NullBytes() {
+  void testHash_NullBytes() {
     Assertions.assertThrows(NullPointerException.class, () -> Hashes.hash((byte[]) null, Hashes.Algorithm.SHA_256));
   }
 
   @Test
-  public void testHash_NullInputStream() throws IOException {
+  void testHash_NullInputStream() throws IOException {
     Assertions.assertThrows(NullPointerException.class, () -> Hashes.hash((InputStream) null, Hashes.Algorithm.SHA_256));
   }
 
   // -- Output length -------------------------------------------------------
 
   @Test
-  public void testHash_String_OutputLength() {
+  void testHash_String_OutputLength() {
     Assertions.assertEquals(32,  Hashes.hash("test", Hashes.Algorithm.MD5).length());
     Assertions.assertEquals(64,  Hashes.hash("test", Hashes.Algorithm.SHA_256).length());
     Assertions.assertEquals(96,  Hashes.hash("test", Hashes.Algorithm.SHA_384).length());
@@ -58,7 +58,7 @@ public final class HashesTest {
   // -- Known values (NIST FIPS 180-4) -------------------------------------
 
   @Test
-  public void testHash_String_KnownValues() {
+  void testHash_String_KnownValues() {
     // MD5 — from existing test coverage
     Assertions.assertEquals(Hashes.hash("", Hashes.Algorithm.MD5), "d41d8cd98f00b204e9800998ecf8427e");
     Assertions.assertEquals(Hashes.hash("test", Hashes.Algorithm.MD5), "098f6bcd4621d373cade4e832627b4f6");
@@ -79,7 +79,7 @@ public final class HashesTest {
   // -- Cross-type consistency ---------------------------------------------
 
   @Test
-  public void testHash_Bytes_ConsistentWithString() {
+  void testHash_Bytes_ConsistentWithString() {
     for (Hashes.Algorithm algorithm : Hashes.Algorithm.values()) {
       String text = "test";
       byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
@@ -91,7 +91,7 @@ public final class HashesTest {
   }
 
   @Test
-  public void testHash_InputStream_ConsistentWithBytes() throws IOException {
+  void testHash_InputStream_ConsistentWithBytes() throws IOException {
     for (Hashes.Algorithm algorithm : Hashes.Algorithm.values()) {
       byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
       Assertions.assertEquals(
@@ -102,7 +102,7 @@ public final class HashesTest {
   }
 
   @Test
-  public void testHash_File_ConsistentWithString() throws IOException {
+  void testHash_File_ConsistentWithString() throws IOException {
     byte[] content = "test".getBytes(StandardCharsets.UTF_8);
     Path temp = Files.createTempFile("hashes-test-", ".txt");
     try {
@@ -120,7 +120,7 @@ public final class HashesTest {
   }
 
   @Test
-  public void testHash_Path_ConsistentWithFile() throws IOException {
+  void testHash_Path_ConsistentWithFile() throws IOException {
     byte[] content = "test".getBytes(StandardCharsets.UTF_8);
     Path temp = Files.createTempFile("hashes-test-", ".txt");
     try {
@@ -139,7 +139,7 @@ public final class HashesTest {
   // -- Weak (metadata-based) hash -----------------------------------------
 
   @Test
-  public void testHash_File_WeakHash() throws IOException {
+  void testHash_File_WeakHash() throws IOException {
     Path temp = Files.createTempFile("hashes-test-", ".txt");
     try {
       Files.write(temp, "test".getBytes(StandardCharsets.UTF_8));
@@ -154,7 +154,7 @@ public final class HashesTest {
   }
 
   @Test
-  public void testHash_Path_WeakHash() throws IOException {
+  void testHash_Path_WeakHash() throws IOException {
     Path temp = Files.createTempFile("hashes-test-", ".txt");
     try {
       Files.write(temp, "test".getBytes(StandardCharsets.UTF_8));
@@ -168,7 +168,7 @@ public final class HashesTest {
   }
 
   @Test
-  public void testHash_File_WeakAndPath_WeakConsistent() throws IOException {
+  void testHash_File_WeakAndPath_WeakConsistent() throws IOException {
     Path temp = Files.createTempFile("hashes-test-", ".txt");
     try {
       Files.write(temp, "test".getBytes(StandardCharsets.UTF_8));

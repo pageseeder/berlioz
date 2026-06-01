@@ -3,33 +3,33 @@ package org.pageseeder.berlioz.http;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 
-public class PerformanceServerTimingTest {
+class PerformanceServerTimingTest {
 
   @Test
-  public void testContructor_NullName() {
+  void testContructor_NullName() {
     Assertions.assertThrows(NullPointerException.class, () -> new PerformanceServerTiming(null, 0));
   }
 
   @Test
-  public void testContructor_EmptyName() {
+  void testContructor_EmptyName() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> new PerformanceServerTiming("", 0));
   }
 
   @Test
-  public void testContructor_InvalidName() {
+  void testContructor_InvalidName() {
     // Illegal names are (),/:;<=>?@[\]{} and "
     Assertions.assertThrows(IllegalArgumentException.class, () -> new PerformanceServerTiming("{", 0));
   }
 
   @Test
-  public void testContructor_ValidName() {
+  void testContructor_ValidName() {
     PerformanceServerTiming a =new PerformanceServerTiming("a.b!C$D", 0);
     Assertions.assertEquals(a.name(), "a.b!C$D");
     Assertions.assertEquals(0, a.duration(), 0);
   }
 
   @Test
-  public void testContructor_EmptyDescription() {
+  void testContructor_EmptyDescription() {
     PerformanceServerTiming a = new PerformanceServerTiming("x", null, 1.2);
     PerformanceServerTiming b = new PerformanceServerTiming("x", "", 1.2);
     PerformanceServerTiming c = new PerformanceServerTiming("x", 1.2);
@@ -39,85 +39,85 @@ public class PerformanceServerTimingTest {
   }
 
   @Test
-  public void testContructor_ValidDescription() {
+  void testContructor_ValidDescription() {
     PerformanceServerTiming t = new PerformanceServerTiming("x", "Test", 1.2);
     Assertions.assertEquals(t.description(), "Test");
   }
 
   @Test
-  public void testContructor_InvalidDescription1() {
+  void testContructor_InvalidDescription1() {
     PerformanceServerTiming t = new PerformanceServerTiming("x", " ", 1.2);
     Assertions.assertEquals(t.description(), "_");
   }
 
   @Test
-  public void testContructor_InvalidDescription2() {
+  void testContructor_InvalidDescription2() {
     PerformanceServerTiming t = new PerformanceServerTiming("x", "A B\nC", 1.2);
     Assertions.assertEquals(t.description(), "A__B_C");
   }
 
   @Test
-  public void testContructor_InvalidDescription3() {
+  void testContructor_InvalidDescription3() {
     PerformanceServerTiming t = new PerformanceServerTiming("x", "A\n\rB", 1.2);
     Assertions.assertEquals(t.description(), "A__B");
   }
 
   @Test
-  public void testToHeader1() {
+  void testToHeader1() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", "xyz", 1.2);
     Assertions.assertEquals(timing.toHeaderString(), "abc;desc=xyz;dur=1.2");
   }
 
   @Test
-  public void testToHeader2() {
+  void testToHeader2() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", 1.2);
     Assertions.assertEquals(timing.toHeaderString(), "abc;dur=1.2");
   }
 
   @Test
-  public void testToHeader3() {
+  void testToHeader3() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", "Requires quotes",1.2);
     Assertions.assertEquals(timing.toHeaderString(), "abc;desc=\"Requires quotes\";dur=1.2");
   }
 
   @Test
-  public void testToHeader4() {
+  void testToHeader4() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", "()",1.2);
     Assertions.assertEquals(timing.toHeaderString(), "abc;desc=\"()\";dur=1.2");
   }
 
   @Test
-  public void testToHeader5() {
+  void testToHeader5() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", "\"a\\b\"",1.2);
     Assertions.assertEquals(timing.toHeaderString(), "abc;desc=\"\\\"a\\\\b\\\"\";dur=1.2");
   }
 
   @Test
-  public void testToHeader6() {
+  void testToHeader6() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc",Math.PI);
     Assertions.assertEquals(timing.toHeaderString(), "abc;dur=3.142");
   }
 
   @Test
-  public void testToHeader7() {
+  void testToHeader7() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", 2);
     Assertions.assertEquals(timing.toHeaderString(), "abc;dur=2");
   }
 
   @Test
-  public void testToHeader8() {
+  void testToHeader8() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", -1);
     Assertions.assertEquals(timing.toHeaderString(), "abc");
   }
 
   @Test
-  public void testToHeader9() {
+  void testToHeader9() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", 0);
     Assertions.assertEquals(timing.toHeaderString(), "abc;dur=0");
   }
 
   @Test
-  public void testToHeader10() {
+  void testToHeader10() {
     PerformanceServerTiming timing = new PerformanceServerTiming("abc", 0.0005);
     Assertions.assertEquals(timing.toHeaderString(), "abc;dur=0.001");
   }

@@ -18,10 +18,10 @@ package org.pageseeder.berlioz.content;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class ContentStatusTest {
+final class ContentStatusTest {
 
   @Test
-  public void testCode_selectedValues() {
+  void testCode_selectedValues() {
     Assertions.assertEquals(200, ContentStatus.OK.code());
     Assertions.assertEquals(201, ContentStatus.CREATED.code());
     Assertions.assertEquals(204, ContentStatus.NO_CONTENT.code());
@@ -36,7 +36,7 @@ public final class ContentStatusTest {
   }
 
   @Test
-  public void testForCode_found() {
+  void testForCode_found() {
     Assertions.assertEquals(ContentStatus.OK, ContentStatus.forCode(200));
     Assertions.assertEquals(ContentStatus.NOT_FOUND, ContentStatus.forCode(404));
     Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR, ContentStatus.forCode(500));
@@ -44,21 +44,21 @@ public final class ContentStatusTest {
   }
 
   @Test
-  public void testForCode_unknown() {
+  void testForCode_unknown() {
     Assertions.assertNull(ContentStatus.forCode(0));
     Assertions.assertNull(ContentStatus.forCode(999));
     Assertions.assertNull(ContentStatus.forCode(-1));
   }
 
   @Test
-  public void testForCode_allValuesRoundTrip() {
+  void testForCode_allValuesRoundTrip() {
     for (ContentStatus status : ContentStatus.values()) {
       Assertions.assertEquals(status, ContentStatus.forCode(status.code()));
     }
   }
 
   @Test
-  public void testIsRedirect_redirectCodes() {
+  void testIsRedirect_redirectCodes() {
     Assertions.assertTrue(ContentStatus.isRedirect(ContentStatus.MOVED_PERMANENTLY));
     Assertions.assertTrue(ContentStatus.isRedirect(ContentStatus.FOUND));
     Assertions.assertTrue(ContentStatus.isRedirect(ContentStatus.SEE_OTHER));
@@ -67,7 +67,7 @@ public final class ContentStatusTest {
   }
 
   @Test
-  public void testIsRedirect_nonRedirectCodes() {
+  void testIsRedirect_nonRedirectCodes() {
     Assertions.assertFalse(ContentStatus.isRedirect(ContentStatus.OK));
     Assertions.assertFalse(ContentStatus.isRedirect(ContentStatus.CREATED));
     Assertions.assertFalse(ContentStatus.isRedirect(ContentStatus.NOT_FOUND));
@@ -75,7 +75,7 @@ public final class ContentStatusTest {
   }
 
   @Test
-  public void testToString_lowercaseWithHyphens() {
+  void testToString_lowercaseWithHyphens() {
     Assertions.assertEquals(ContentStatus.OK.toString(), "ok");
     Assertions.assertEquals(ContentStatus.NOT_FOUND.toString(), "not-found");
     Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR.toString(), "internal-server-error");
@@ -84,7 +84,7 @@ public final class ContentStatusTest {
   }
 
   @Test
-  public void testToString_noUpperCaseNoUnderscore() {
+  void testToString_noUpperCaseNoUnderscore() {
     for (ContentStatus status : ContentStatus.values()) {
       String s = status.toString();
       Assertions.assertEquals(s, s.toLowerCase(), "toString should be lowercase: " + s);

@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 
-public final class ConfigLoaderTest {
+final class ConfigLoaderTest {
 
   @TempDir
   Path tmp;
@@ -19,7 +19,7 @@ public final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testFileLargerThan1MBThrowsConfigException() throws Exception {
+  void testFileLargerThan1MBThrowsConfigException() throws Exception {
     Assertions.assertThrows(ConfigException.class, () -> {
     File large = Files.createFile(tmp.resolve("big.xml")).toFile();
     try (FileOutputStream out = new FileOutputStream(large)) {
@@ -34,7 +34,7 @@ public final class ConfigLoaderTest {
   }
 
   @Test
-  public void testFileExactly1MBDoesNotThrow() throws Exception {
+  void testFileExactly1MBDoesNotThrow() throws Exception {
     File exactly = Files.createFile(tmp.resolve("exact.xml")).toFile();
     byte[] xml = "<redirect-mapping/>".getBytes();
     // pad with spaces to reach exactly 1,000,000 bytes (the limit is strictly > 1MB)
@@ -53,7 +53,7 @@ public final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNonExistentFileThrowsConfigException() throws Exception {
+  void testNonExistentFileThrowsConfigException() throws Exception {
     Assertions.assertThrows(ConfigException.class, () -> {
     File missing = new File(tmp.toFile(), "does-not-exist.xml");
     RedirectConfig.newInstance(missing);
@@ -64,7 +64,7 @@ public final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testDirectoryThrowsConfigException() throws Exception {
+  void testDirectoryThrowsConfigException() throws Exception {
     Assertions.assertThrows(ConfigException.class, () -> {
     File dir = Files.createDirectory(tmp.resolve("notafile")).toFile();
     RedirectConfig.newInstance(dir);
@@ -75,7 +75,7 @@ public final class ConfigLoaderTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testWeboorganicDoctypeIsStrippedAndParsesSuccessfully() throws ConfigException {
+  void testWeboorganicDoctypeIsStrippedAndParsesSuccessfully() throws ConfigException {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
         "<!DOCTYPE redirect-mapping PUBLIC \"-//Weborganic//DTD::Redirect Mapping 1.0//EN\" \"\">" +
         "<redirect-mapping><redirect from=\"/old\" to=\"/new\"/></redirect-mapping>";

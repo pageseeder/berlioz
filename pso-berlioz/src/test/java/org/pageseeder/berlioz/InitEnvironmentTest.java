@@ -6,10 +6,10 @@ import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public final class InitEnvironmentTest {
+final class InitEnvironmentTest {
 
   @Test
-  public void testCreate() {
+  void testCreate() {
     File f = getWebInf();
     InitEnvironment env = InitEnvironment.create(f);
     assertEquals(f, env.webInf());
@@ -19,7 +19,7 @@ public final class InitEnvironmentTest {
   }
 
   @Test
-  public void testConfigFolder() {
+  void testConfigFolder() {
     File f = getWebInf();
     InitEnvironment env = InitEnvironment.create(f);
     InitEnvironment env2 = env.configFolder("sysconfig");
@@ -28,7 +28,7 @@ public final class InitEnvironmentTest {
   }
 
   @Test
-  public void testMode() {
+  void testMode() {
     File f = getWebInf();
     InitEnvironment env = InitEnvironment.create(f);
     InitEnvironment env2 = env.mode("dev");

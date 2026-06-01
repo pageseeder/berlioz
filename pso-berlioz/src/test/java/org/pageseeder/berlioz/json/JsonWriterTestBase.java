@@ -30,7 +30,7 @@ import java.util.Map;
  * @version Berlioz 0.12.0
  * @since Berlioz 0.12.0
  */
-public abstract class JsonWriterTestBase {
+abstract class JsonWriterTestBase {
 
   /**
    * @param json StringWriter used in test
@@ -43,7 +43,7 @@ public abstract class JsonWriterTestBase {
   // ------------------------------------------------------------------------------------------------
 
   @Test
-  public void testNumberLong() {
+  void testNumberLong() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Long.MAX_VALUE).flush();
     Assertions.assertEquals(json.toString(), "9223372036854775807");
@@ -56,7 +56,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testNumberInteger() {
+  void testNumberInteger() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Integer.MAX_VALUE).flush();
     Assertions.assertEquals(json.toString(), "2147483647");
@@ -69,7 +69,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testNumberDouble() {
+  void testNumberDouble() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Double.MAX_VALUE).flush();
     Assertions.assertEquals(json.toString(), "1.7976931348623157E308");
@@ -82,7 +82,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testNumberFloat() {
+  void testNumberFloat() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(Float.MAX_VALUE).flush();
     Assertions.assertEquals(json.toString(), "3.4028234663852886E38");
@@ -95,39 +95,39 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testValueNaNThrows() {
+  void testValueNaNThrows() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NaN));
   }
 
   @Test
-  public void testValuePositiveInfinityThrows() {
+  void testValuePositiveInfinityThrows() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.POSITIVE_INFINITY));
   }
 
   @Test
-  public void testValueNegativeInfinityThrows() {
+  void testValueNegativeInfinityThrows() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NEGATIVE_INFINITY));
   }
 
   @Test
-  public void testFieldNaNThrows() {
+  void testFieldNaNThrows() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).startObject().field("value", Double.NaN));
   }
 
   @Test
-  public void testFieldInfinityThrows() {
+  void testFieldInfinityThrows() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).startObject().field("value", Double.POSITIVE_INFINITY));
   }
 
   @Test
-  public void testNumberIsZero() {
+  void testNumberIsZero() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(0).flush();
     Assertions.assertEquals(json.toString(), "0");
   }
 
   @Test
-  public void testStringIsEmpty() {
+  void testStringIsEmpty() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .value("")
@@ -136,7 +136,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testString() {
+  void testString() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .value("Caf\u00e9\n \"Test\" \t\\")
@@ -145,7 +145,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testBooleanIsTrue() {
+  void testBooleanIsTrue() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .value(true)
@@ -154,7 +154,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testBooleanIsFalse() {
+  void testBooleanIsFalse() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .value(false)
@@ -163,28 +163,28 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testNull() {
+  void testNull() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).nullValue().flush();
     Assertions.assertEquals(json.toString(), "null");
   }
 
   @Test
-  public void testValueNullString() {
+  void testValueNullString() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value((String) null).flush();
     Assertions.assertEquals(json.toString(), "null");
   }
 
   @Test
-  public void testFieldNullStringValue() {
+  void testFieldNullStringValue() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).startObject().field("k", (String) null).endObject().flush();
     Assertions.assertEquals(json.toString(), "{\"k\":null}");
   }
 
   @Test
-  public void testEmptyArray() {
+  void testEmptyArray() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray()
@@ -194,7 +194,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithStringValue() {
+  void testArrayWithStringValue() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray()
@@ -205,7 +205,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithNumberValue() {
+  void testArrayWithNumberValue() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray()
@@ -216,7 +216,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithBooleanValue() {
+  void testArrayWithBooleanValue() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray()
@@ -227,7 +227,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithNullValue() {
+  void testArrayWithNullValue() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray()
@@ -238,7 +238,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithArray() {
+  void testArrayWithArray() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray()
@@ -250,7 +250,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithNestedArrays() {
+  void testArrayWithNestedArrays() {
     StringWriter json = new StringWriter();
     JsonWriter w = newJsonWriter(json);
     for (int i=0; i<32; i++) {
@@ -264,7 +264,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithDeepNestedArrays() {
+  void testArrayWithDeepNestedArrays() {
     StringWriter json = new StringWriter();
     JsonWriter w = newJsonWriter(json);
     StringBuilder expected = new StringBuilder();
@@ -282,7 +282,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithObject() {
+  void testArrayWithObject() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray()
@@ -294,7 +294,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testArrayWithMixedValues() {
+  void testArrayWithMixedValues() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startArray().value("abc")
@@ -311,7 +311,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testObjectIsEmpty() {
+  void testObjectIsEmpty() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -321,7 +321,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testSimpleObject() {
+  void testSimpleObject() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -332,7 +332,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testObject() {
+  void testObject() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).startObject()
         .field("a", "xyz")
@@ -347,7 +347,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testObjectWithObjectField() {
+  void testObjectWithObjectField() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -359,7 +359,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testObjectWithArrayField() {
+  void testObjectWithArrayField() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -371,7 +371,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testObjectWithNames() {
+  void testObjectWithNames() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -387,7 +387,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testNameFollowedByArray() {
+  void testNameFollowedByArray() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -402,7 +402,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testNameFollowedByObject() {
+  void testNameFollowedByObject() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -416,7 +416,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testProperties() {
+  void testProperties() {
     Map<String, String> map = new LinkedHashMap<>();
     map.put("a", "1");
     map.put("b", "2");
@@ -430,14 +430,14 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testValueInt() {
+  void testValueInt() {
     StringWriter json = new StringWriter();
     newJsonWriter(json).value(42).flush();
     Assertions.assertEquals(json.toString(), "42");
   }
 
   @Test
-  public void testFieldInt() {
+  void testFieldInt() {
     StringWriter json = new StringWriter();
     newJsonWriter(json)
         .startObject()
@@ -448,14 +448,14 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testInObjectAtTopLevel() {
+  void testInObjectAtTopLevel() {
     StringWriter json = new StringWriter();
     JsonWriter w = newJsonWriter(json);
     Assertions.assertFalse(w.inObject());
   }
 
   @Test
-  public void testInObjectInsideObject() {
+  void testInObjectInsideObject() {
     StringWriter json = new StringWriter();
     JsonWriter w = newJsonWriter(json).startObject();
     Assertions.assertTrue(w.inObject());
@@ -463,7 +463,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testInObjectInsideArray() {
+  void testInObjectInsideArray() {
     StringWriter json = new StringWriter();
     JsonWriter w = newJsonWriter(json).startArray();
     Assertions.assertFalse(w.inObject());
@@ -471,7 +471,7 @@ public abstract class JsonWriterTestBase {
   }
 
   @Test
-  public void testInObjectNested() {
+  void testInObjectNested() {
     StringWriter json = new StringWriter();
     JsonWriter w = newJsonWriter(json).startObject().startArray("items");
     Assertions.assertFalse(w.inObject());

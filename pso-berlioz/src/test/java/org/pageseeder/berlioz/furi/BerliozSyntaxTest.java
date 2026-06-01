@@ -31,7 +31,7 @@ import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
  * @author Christophe Lauret
  * @version 5 November 2009
  */
-public final class BerliozSyntaxTest {
+final class BerliozSyntaxTest {
 
   /**
    * Parameters for use in all tests.
@@ -39,7 +39,7 @@ public final class BerliozSyntaxTest {
   private final Parameters params = new URIParameters();
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     // parameters for examples
     this.params.set("var", "value");
     this.params.set("hello", "Hello World!");
@@ -63,7 +63,7 @@ public final class BerliozSyntaxTest {
    * Test that the constructor throws a NullPointerException for a <code>null</code> expression.
    */
   @Test
-  public void testNew_TokenOperatorDX() {
+  void testNew_TokenOperatorDX() {
     boolean nullThrown = false;
     try {
       new BerliozTokenOperator(Operator.PATH_PARAMETER, (Variable) null);
@@ -87,7 +87,7 @@ public final class BerliozSyntaxTest {
    * </pre>
    */
   @Test
-  public void testExpand_SecX1() {
+  void testExpand_SecX1() {
     assertExpandOK("{var}",           "value", this.params);
     assertExpandOK("{hello}",         "Hello%20World%21", this.params);
     assertExpandOK("{path}/here",     "%2Ffoo%2Fbar/here", this.params);
@@ -109,7 +109,7 @@ public final class BerliozSyntaxTest {
    * </pre>
    */
   @Test
-  public void testExpand_SecX2() {
+  void testExpand_SecX2() {
     assertExpandOK("{+var}",          "value", this.params);
     assertExpandOK("{+hello}",        "Hello%20World!", this.params);
     assertExpandOK("{+path}/here",    "/foo/bar/here", this.params);
@@ -129,7 +129,7 @@ public final class BerliozSyntaxTest {
    * </pre>
    */
   @Test
-  public void testExpand_SecX3() {
+  void testExpand_SecX3() {
     assertExpandOK("{;x,y}",       ";x=1024;y=768", this.params);
     assertExpandOK("{;x,y,empty}", ";x=1024;y=768;empty", this.params);
     assertExpandOK("{;x,y,undef}", ";x=1024;y=768", this.params);
@@ -149,7 +149,7 @@ public final class BerliozSyntaxTest {
    * </pre>
    */
   @Test
-  public void testExpand_SecX4() {
+  void testExpand_SecX4() {
     assertExpandOK("{?x,y}",       "?x=1024&y=768", this.params);
     assertExpandOK("{?x,y,empty}", "?x=1024&y=768&empty=", this.params);
     assertExpandOK("{?x,y,undef}", "?x=1024&y=768", this.params);
@@ -168,7 +168,7 @@ public final class BerliozSyntaxTest {
    * </pre>
    */
   @Test
-  public void testExpand_SecX5() {
+  void testExpand_SecX5() {
     assertExpandOK("{/var}",    "/value", this.params);
     assertExpandOK("{/list}",   "/val1/val2/val3", this.params);
     assertExpandOK("{/list,x}", "/val1/val2/val3/1024", this.params);
@@ -208,7 +208,7 @@ public final class BerliozSyntaxTest {
    * </pre>
    */
   @Test
-  public void testExpand_DefaultValues() {
+  void testExpand_DefaultValues() {
     // Set the parameters
     Parameters p = new URIParameters();
     p.set("var",   "value");

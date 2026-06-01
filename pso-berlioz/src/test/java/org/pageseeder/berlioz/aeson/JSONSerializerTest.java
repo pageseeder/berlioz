@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
-public class JSONSerializerTest {
+class JSONSerializerTest {
 
   // ---------------------------------------------------------------------------
   // Helper
@@ -33,7 +33,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testParse() throws Exception {
+  void testParse() throws Exception {
     String xml = "<test description=\"Test\">"
         + "<json:array json:name=\"items\" xmlns:json=\"" + JSON_NS + "\">"
         + "<item title=\"A\"/>"
@@ -50,7 +50,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNumberLong() throws Exception {
+  void testNumberLong() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"count\">"
         + "<item count=\"42\"/></root>";
     String json = toJSON(xml);
@@ -59,7 +59,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testNumberNegativeLong() throws Exception {
+  void testNumberNegativeLong() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"offset\">"
         + "<item offset=\"-7\"/></root>";
     String json = toJSON(xml);
@@ -68,7 +68,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testNumberDouble() throws Exception {
+  void testNumberDouble() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"rate\">"
         + "<item rate=\"3.14\"/></root>";
     String json = toJSON(xml);
@@ -81,7 +81,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNumberScientificLowerE() throws Exception {
+  void testNumberScientificLowerE() throws Exception {
     // "1e10" has no '.'; the old code called Long.parseLong which threw NFE
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"amount\">"
         + "<item amount=\"1e10\"/></root>";
@@ -90,7 +90,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testNumberScientificUpperE() throws Exception {
+  void testNumberScientificUpperE() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"amount\">"
         + "<item amount=\"2E5\"/></root>";
     String json = toJSON(xml);
@@ -98,7 +98,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testNumberScientificWithDecimalAndExponent() throws Exception {
+  void testNumberScientificWithDecimalAndExponent() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"rate\">"
         + "<item rate=\"1.5e3\"/></root>";
     String json = toJSON(xml);
@@ -106,7 +106,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testNumberNegativeExponent() throws Exception {
+  void testNumberNegativeExponent() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"prob\">"
         + "<item prob=\"5E-3\"/></root>";
     String json = toJSON(xml);
@@ -118,7 +118,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNumberInvalidFallsBackToString() throws Exception {
+  void testNumberInvalidFallsBackToString() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"value\">"
         + "<item value=\"not-a-number\"/></root>";
     String json = toJSON(xml);
@@ -130,7 +130,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testBooleanTrue() throws Exception {
+  void testBooleanTrue() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:boolean=\"active\">"
         + "<item active=\"true\"/></root>";
     String json = toJSON(xml);
@@ -139,7 +139,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testBooleanFalse() throws Exception {
+  void testBooleanFalse() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:boolean=\"active\">"
         + "<item active=\"false\"/></root>";
     String json = toJSON(xml);
@@ -148,7 +148,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testBooleanInvalidFallsBackToString() throws Exception {
+  void testBooleanInvalidFallsBackToString() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:boolean=\"active\">"
         + "<item active=\"yes\"/></root>";
     String json = toJSON(xml);
@@ -160,7 +160,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNullProperty() throws Exception {
+  void testNullProperty() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:null=\"missing\">"
         + "<item missing=\"whatever\"/></root>";
     String json = toJSON(xml);
@@ -173,7 +173,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testJsonNullElementInObjectContext() throws Exception {
+  void testJsonNullElementInObjectContext() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
         + "<json:null json:name=\"missing\"/>"
         + "</root>";
@@ -182,7 +182,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testJsonNullElementInArrayContext() throws Exception {
+  void testJsonNullElementInArrayContext() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
         + "<json:array json:name=\"items\">"
         + "<json:null/>"
@@ -194,7 +194,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testJsonNullElementInRootContextEmitsEmptyObject() throws Exception {
+  void testJsonNullElementInRootContextEmitsEmptyObject() throws Exception {
     // json:null at root is illegal; the serializer substitutes an empty object
     String xml = "<json:null xmlns:json=\"" + JSON_NS + "\"/>";
     String json = toJSON(xml);
@@ -206,7 +206,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testJsonArrayInArrayContext() throws Exception {
+  void testJsonArrayInArrayContext() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
         + "<json:array json:name=\"outer\">"
         + "<json:array/>"
@@ -217,7 +217,7 @@ public class JSONSerializerTest {
   }
 
   @Test
-  public void testJsonObjectInArrayContext() throws Exception {
+  void testJsonObjectInArrayContext() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
         + "<json:array json:name=\"list\">"
         + "<json:object/>"
@@ -232,7 +232,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testCharactersOutsideValueContextAreIgnored() throws Exception {
+  void testCharactersOutsideValueContextAreIgnored() throws Exception {
     // Whitespace between elements in OBJECT context must not appear in output
     String xml = "<root xmlns:json=\"" + JSON_NS + "\">\n"
         + "  <item id=\"1\"/>\n"
@@ -248,7 +248,7 @@ public class JSONSerializerTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testJsonObjectWithAttributes() throws Exception {
+  void testJsonObjectWithAttributes() throws Exception {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\">"
         + "<json:object json:name=\"meta\" version=\"2\" label=\"test\"/>"
         + "</root>";

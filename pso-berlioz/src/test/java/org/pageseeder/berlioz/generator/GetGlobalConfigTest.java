@@ -12,18 +12,18 @@ import org.pageseeder.xmlwriter.XMLStringWriter;
 
 import java.io.File;
 
-public class GetGlobalConfigTest {
+class GetGlobalConfigTest {
 
   private static final File WEB_INF =
       new File("./src/test/resources/org/pageseeder/berlioz");
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     GlobalSettings.setup(WEB_INF);
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     GlobalSettings.setup((InitEnvironment) null);
   }
 
@@ -31,21 +31,21 @@ public class GetGlobalConfigTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testProcessAlwaysWritesPropertiesElement() throws Exception {
+  void testProcessAlwaysWritesPropertiesElement() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertTrue(out.contains("<properties"), "Should contain <properties>");
   }
 
   @Test
-  public void testProcessIncludesSourceAttributeWhenConfigExists() throws Exception {
+  void testProcessIncludesSourceAttributeWhenConfigExists() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertTrue(out.contains("source="), "Should include source attribute when config file is found");
   }
 
   @Test
-  public void testETagNotNullWhenConfigFileExists() {
+  void testETagNotNullWhenConfigFileExists() {
     GetGlobalConfig gen = new GetGlobalConfig();
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag = gen.getETag(req);
@@ -54,7 +54,7 @@ public class GetGlobalConfigTest {
   }
 
   @Test
-  public void testETagNullWhenNoConfigFile() {
+  void testETagNullWhenNoConfigFile() {
     GlobalSettings.setup((InitEnvironment) null);
     GetGlobalConfig gen = new GetGlobalConfig();
     ContentRequest req = GeneratorTestSupport.request().build();

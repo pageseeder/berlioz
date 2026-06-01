@@ -28,14 +28,14 @@ import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
  * @author Christophe Lauret
  * @version 9 February 2009
  */
-public final class TokenFactoryTest {
+final class TokenFactoryTest {
 
   /**
    * Test that the <code>NewToken</code> method returns a <code>null</code> token for a
    * <code>null</code> expression.
    */
   @Test
-  public void testNewToken_Null() {
+  void testNewToken_Null() {
     try {
       TokenFactory.newToken(null);
       Assertions.fail("Expected NullPointerException");
@@ -49,7 +49,7 @@ public final class TokenFactoryTest {
    * string.
    */
   @Test
-  public void testNewToken_EmptyString() {
+  void testNewToken_EmptyString() {
     Assertions.assertEquals(TokenLiteral.EMPTY, TokenFactory.newToken(""));
   }
 
@@ -58,7 +58,7 @@ public final class TokenFactoryTest {
    * corresponding to the specified text.
    */
   @Test
-  public void testNewToken_Literal() {
+  void testNewToken_Literal() {
     Assertions.assertEquals(new TokenLiteral("x"), TokenFactory.newToken("x"));
   }
 
@@ -67,7 +67,7 @@ public final class TokenFactoryTest {
    * corresponding to the specified variable definition.
    */
   @Test
-  public void testNewToken_Variable() {
+  void testNewToken_Variable() {
     Variable x = new Variable("x");
     Assertions.assertEquals(new TokenVariable(x), TokenFactory.newToken("{x}"));
     Variable y = new Variable("y", "z");
@@ -81,7 +81,7 @@ public final class TokenFactoryTest {
    * corresponding to the specified operator definition.
    */
   @Test
-  public void testNewToken_Operator() {
+  void testNewToken_Operator() {
     List<Variable> vars = new ArrayList<>();
     Variable y = new Variable("y");
     vars.add(y);

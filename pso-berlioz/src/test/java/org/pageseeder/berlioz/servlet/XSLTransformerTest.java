@@ -9,13 +9,13 @@ import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
-public class XSLTransformerTest {
+class XSLTransformerTest {
 
   @TempDir
   Path temporary;
 
   @Test
-  public void testTransformFailSafeDoesNotResolveExternalEntity() throws Exception {
+  void testTransformFailSafeDoesNotResolveExternalEntity() throws Exception {
     File secret = Files.createFile(this.temporary.resolve("secret.txt")).toFile();
     Files.write(secret.toPath(), "LEAKED".getBytes(StandardCharsets.UTF_8));
 
@@ -34,7 +34,7 @@ public class XSLTransformerTest {
   }
 
   @Test
-  public void testTransformFailSafeAllowsLocalStylesheetIncludes() throws Exception {
+  void testTransformFailSafeAllowsLocalStylesheetIncludes() throws Exception {
     File included = Files.createFile(this.temporary.resolve("included.xsl")).toFile();
     Files.write(included.toPath(), (
         "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"

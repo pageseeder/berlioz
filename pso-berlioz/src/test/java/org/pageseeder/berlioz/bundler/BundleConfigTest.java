@@ -32,13 +32,13 @@ import org.pageseeder.berlioz.InitEnvironment;
 /**
  * Tests for bundle configuration loading.
  */
-public final class BundleConfigTest {
+final class BundleConfigTest {
 
   @TempDir
   Path temporary;
 
   @Test
-  public void testDefaultConfigIncludesServiceBundle() throws IOException {
+  void testDefaultConfigIncludesServiceBundle() throws IOException {
     setupGlobalSettings("<global/>");
     File root = Files.createDirectory(this.temporary.resolve("public-default")).toFile();
 
@@ -48,7 +48,7 @@ public final class BundleConfigTest {
   }
 
   @Test
-  public void testConfigNamesAreTrimmed() throws IOException {
+  void testConfigNamesAreTrimmed() throws IOException {
     setupGlobalSettings(
         "<global>"
       + "  <berlioz>"
@@ -65,7 +65,7 @@ public final class BundleConfigTest {
   }
 
   @Test
-  public void testIncludeOverrideKeepsDefaultFilename() throws IOException {
+  void testIncludeOverrideKeepsDefaultFilename() throws IOException {
     setupGlobalSettings(
         "<global>"
       + "  <berlioz>"

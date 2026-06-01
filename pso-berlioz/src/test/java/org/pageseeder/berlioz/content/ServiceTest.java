@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.generator.NoContent;
 
-public final class ServiceTest {
+final class ServiceTest {
 
   private static Service.Builder defaultBuilder(String id) {
     return new Service.Builder()
@@ -34,19 +34,19 @@ public final class ServiceTest {
   // --- Builder ---
 
   @Test
-  public void testBuilder_id() {
+  void testBuilder_id() {
     Service s = defaultBuilder("my-service").add(new NoContent()).build();
     Assertions.assertEquals(s.id(), "my-service");
   }
 
   @Test
-  public void testBuilder_group() {
+  void testBuilder_group() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
     Assertions.assertEquals(s.group(), "test");
   }
 
   @Test
-  public void testBuilder_groupDefault() {
+  void testBuilder_groupDefault() {
     Service s = new Service.Builder()
         .id("svc")
         .group(null)
@@ -57,31 +57,31 @@ public final class ServiceTest {
   }
 
   @Test
-  public void testBuilder_cache() {
+  void testBuilder_cache() {
     Service s = defaultBuilder("svc").cache("max-age=3600").add(new NoContent()).build();
     Assertions.assertEquals(s.cache(), "max-age=3600");
   }
 
   @Test
-  public void testBuilder_cacheDefault() {
+  void testBuilder_cacheDefault() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
     Assertions.assertEquals(s.cache(), "");
   }
 
   @Test
-  public void testBuilder_flags() {
+  void testBuilder_flags() {
     Service s = defaultBuilder("svc").flags("secure").add(new NoContent()).build();
     Assertions.assertEquals(s.flags(), "secure");
   }
 
   @Test
-  public void testBuilder_flagsDefault() {
+  void testBuilder_flagsDefault() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
     Assertions.assertEquals(s.flags(), "");
   }
 
   @Test
-  public void testBuilder_idRequired() {
+  void testBuilder_idRequired() {
     Assertions.assertThrows(NullPointerException.class, () -> {
     new Service.Builder()
         .group("test")
@@ -92,7 +92,7 @@ public final class ServiceTest {
   }
 
   @Test
-  public void testBuilder_reset() {
+  void testBuilder_reset() {
     Service.Builder builder = defaultBuilder("first");
     builder.add(new NoContent());
     builder.build();
@@ -109,7 +109,7 @@ public final class ServiceTest {
   // --- Generators ---
 
   @Test
-  public void testGenerators_single() {
+  void testGenerators_single() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
     Assertions.assertEquals(1, s.generators().size());
@@ -117,7 +117,7 @@ public final class ServiceTest {
   }
 
   @Test
-  public void testGenerators_multiple() {
+  void testGenerators_multiple() {
     NoContent g1 = new NoContent();
     NoContent g2 = new NoContent();
     Service s = defaultBuilder("svc").add(g1).add(g2).build();
@@ -127,36 +127,36 @@ public final class ServiceTest {
   // --- Cacheability ---
 
   @Test
-  public void testIsCacheable_allCacheable() {
+  void testIsCacheable_allCacheable() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
     Assertions.assertTrue(s.isCacheable());
   }
 
   @Test
-  public void testIsCacheable_notCacheable() {
+  void testIsCacheable_notCacheable() {
     ContentGenerator nonCacheable = (req, xml) -> {};
     Service s = defaultBuilder("svc").add(nonCacheable).build();
     Assertions.assertFalse(s.isCacheable());
   }
 
   @Test
-  public void testIsCacheable_mixedGenerators() {
+  void testIsCacheable_mixedGenerators() {
     Service s = defaultBuilder("svc").add(new NoContent()).add((req, xml) -> {}).build();
     Assertions.assertFalse(s.isCacheable());
   }
 
   @Test
-  public void testIsCacheable_static_emptyList() {
+  void testIsCacheable_static_emptyList() {
     Assertions.assertTrue(Service.isCacheable(Collections.emptyList()));
   }
 
   @Test
-  public void testIsCacheable_static_allCacheable() {
+  void testIsCacheable_static_allCacheable() {
     Assertions.assertTrue(Service.isCacheable(List.of(new NoContent())));
   }
 
   @Test
-  public void testIsCacheable_static_notCacheable() {
+  void testIsCacheable_static_notCacheable() {
     ContentGenerator nonCacheable = (req, xml) -> {};
     Assertions.assertFalse(Service.isCacheable(List.of(nonCacheable)));
   }
@@ -164,28 +164,28 @@ public final class ServiceTest {
   // --- Name and Target ---
 
   @Test
-  public void testName_defaultIsKebabCase() {
+  void testName_defaultIsKebabCase() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
     Assertions.assertEquals(s.name(g), "no-content");
   }
 
   @Test
-  public void testName_explicit() {
+  void testName_explicit() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).name("my-generator").build();
     Assertions.assertEquals(s.name(g), "my-generator");
   }
 
   @Test
-  public void testTarget_absent() {
+  void testTarget_absent() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
     Assertions.assertNull(s.target(g));
   }
 
   @Test
-  public void testTarget_set() {
+  void testTarget_set() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).target("main").build();
     Assertions.assertEquals(s.target(g), "main");
@@ -194,14 +194,14 @@ public final class ServiceTest {
   // --- Parameters ---
 
   @Test
-  public void testParameters_empty() {
+  void testParameters_empty() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
     Assertions.assertTrue(s.parameters(g).isEmpty());
   }
 
   @Test
-  public void testParameters_withParameter() {
+  void testParameters_withParameter() {
     NoContent g = new NoContent();
     Parameter p = new Parameter("key", "value");
     Service s = defaultBuilder("svc").add(g).parameter(p).build();
@@ -212,7 +212,7 @@ public final class ServiceTest {
   }
 
   @Test
-  public void testParameters_nullParameterIgnored() {
+  void testParameters_nullParameterIgnored() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).parameter(null).build();
     Assertions.assertTrue(s.parameters(g).isEmpty());
@@ -221,7 +221,7 @@ public final class ServiceTest {
   // --- affectStatus ---
 
   @Test
-  public void testAffectStatus_appliesToAll() {
+  void testAffectStatus_appliesToAll() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
     // DEFAULT_RULE applies to all
@@ -229,7 +229,7 @@ public final class ServiceTest {
   }
 
   @Test
-  public void testAffectStatus_byName_matching() {
+  void testAffectStatus_byName_matching() {
     NoContent g = new NoContent();
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:my-gen", "HIGHEST");
     Service s = new Service.Builder()
@@ -240,7 +240,7 @@ public final class ServiceTest {
   }
 
   @Test
-  public void testAffectStatus_byName_notMatching() {
+  void testAffectStatus_byName_notMatching() {
     NoContent g = new NoContent();
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:other-gen", "HIGHEST");
     Service s = new Service.Builder()
@@ -253,7 +253,7 @@ public final class ServiceTest {
   // --- toString ---
 
   @Test
-  public void testToString() {
+  void testToString() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
     Assertions.assertEquals(s.toString(), "service:test/svc");
   }

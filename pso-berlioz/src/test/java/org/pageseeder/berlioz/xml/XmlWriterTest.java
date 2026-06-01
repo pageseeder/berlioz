@@ -6,10 +6,10 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class XmlWriterTest {
+final class XmlWriterTest {
 
   @Test
-  public void testWriteDocumentThroughInterface() {
+  void testWriteDocumentThroughInterface() {
     XmlStringBuilder out = new XmlStringBuilder();
     XmlWriter xml = out;
     Map<String, String> attributes = new LinkedHashMap<>();
@@ -29,59 +29,53 @@ public final class XmlWriterTest {
     xml.closeElement();
     xml.close();
 
-    Assertions.assertEquals(out.toString(), "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-            + "<?xml-stylesheet href=\"style.xsl\"?>"
-            + "<!--  comment  -->"
-            + "<root a=\"1&lt;&amp;&quot;\" b=\"two\">"
-            + "<text>A&amp;B&lt;C&gt;</text>"
-            + "<long>42</long>"
-            + "<double>3.5</double>"
-            + "<empty/>"
-            + "<raw><inside/></raw>"
-            + "<![CDATA[safe <raw> & text]]>"
-            + "</root>");
+    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        + "<?xml-stylesheet href=\"style.xsl\"?>"
+        + "<!--  comment  -->"
+        + "<root a=\"1&lt;&amp;&quot;\" b=\"two\">"
+        + "<text>A&amp;B&lt;C&gt;</text>"
+        + "<long>42</long>"
+        + "<double>3.5</double>"
+        + "<empty/>"
+        + "<raw><inside/></raw>"
+        + "<![CDATA[safe <raw> & text]]>"
+        + "</root>",
+        out.toString());
   }
 
   @Test
-  public void testProcessingInstructionWithoutData() {
-    XmlStringBuilder out = new XmlStringBuilder();
-    XmlWriter xml = out;
-
+  void testProcessingInstructionWithoutData() {
+    XmlStringBuilder xml = new XmlStringBuilder();
     xml.processingInstruction("target", null);
-
-    Assertions.assertEquals(out.toString(), "<?target?>");
+    Assertions.assertEquals("<?target?>", xml.toString());
   }
 
   @Test
-  public void testProcessingInstructionRejectsTerminator() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+  void testProcessingInstructionRejectsTerminator() {
     XmlWriter xml = new XmlStringBuilder();
-    xml.processingInstruction("target", "bad?>data");
-    });
+    Assertions.assertThrows(IllegalArgumentException.class, () ->
+        xml.processingInstruction("target", "bad?>data")
+    );
   }
 
   @Test
-  public void testAttributeAfterElementContent() {
-    Assertions.assertThrows(IllegalStateException.class, () -> {
+  void testAttributeAfterElementContent() {
     XmlWriter xml = new XmlStringBuilder();
-    xml.openElement("root").text("content").attribute("late", "true");
-    });
+    xml.openElement("root").text("content");
+    Assertions.assertThrows(IllegalStateException.class, () ->
+        xml.attribute("late", "true"));
   }
 
   @Test
-  public void testCloseElementWithoutOpenElement() {
-    Assertions.assertThrows(IllegalCloseElementException.class, () -> {
+  void testCloseElementWithoutOpenElement() {
     XmlWriter xml = new XmlStringBuilder();
-    xml.closeElement();
-    });
+    Assertions.assertThrows(IllegalCloseElementException.class, xml::closeElement);
   }
 
   @Test
-  public void testCloseWriterWithUnclosedElement() {
-    Assertions.assertThrows(UnclosedElementException.class, () -> {
+  void testCloseWriterWithUnclosedElement() {
     XmlWriter xml = new XmlStringBuilder();
     xml.openElement("root");
-    xml.close();
-    });
+    Assertions.assertThrows(UnclosedElementException.class, xml::close);
   }
 }

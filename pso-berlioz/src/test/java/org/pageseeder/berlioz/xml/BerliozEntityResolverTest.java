@@ -20,17 +20,14 @@ import org.junit.jupiter.api.Test;
 
 /**
  * A test case for the Berlioz entity resolver.
- *
- * @author Christophe Lauret (Weborganic)
- * @version 29 October 2009
  */
-public class BerliozEntityResolverTest {
+class BerliozEntityResolverTest {
 
   /**
    * Tests the {BerliozEntityResolver#toFileName} method.
    */
   @Test
-  public void testToFileName() {
+  void testToFileName() {
     // No public ID
     Assertions.assertNull(BerliozEntityResolver.toFileName(null));
     // Public ID does not match prefix
@@ -38,14 +35,14 @@ public class BerliozEntityResolverTest {
     // Public ID matched prefix (empty)
     Assertions.assertNull(BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz "));
     // Public ID matched prefix (correct rules)
-    Assertions.assertEquals(BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz ABC.7//EN"), "abc.7.dtd");
-    Assertions.assertEquals(BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz A BC . 7//EN"), "a-bc-.-7.dtd");
+    Assertions.assertEquals("abc.7.dtd", BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz ABC.7//EN"));
+    Assertions.assertEquals("a-bc-.-7.dtd", BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz A BC . 7//EN"));
     // Public ID matched prefix (known DTDs)
-    Assertions.assertEquals(BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz Services 1.0//EN"), "services-1.0.dtd");
-    Assertions.assertEquals(BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz Web Access 1.0//EN"), "web-access-1.0.dtd");
-    Assertions.assertEquals(BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz Properties 1.0//EN"), "properties-1.0.dtd");
+    Assertions.assertEquals("services-1.0.dtd", BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz Services 1.0//EN"));
+    Assertions.assertEquals("web-access-1.0.dtd", BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz Web Access 1.0//EN"));
+    Assertions.assertEquals("properties-1.0.dtd", BerliozEntityResolver.toFileName("-//Weborganic//DTD::Berlioz Properties 1.0//EN"));
     // Alias public IDs
-    Assertions.assertEquals(BerliozEntityResolver.toFileName("-//Berlioz//DTD::Web Access 1.0//EN"), "web-access-1.0.dtd");
-    Assertions.assertEquals(BerliozEntityResolver.toFileName("-//Berlioz//DTD::Properties 1.0//EN"), "properties-1.0.dtd");
+    Assertions.assertEquals("web-access-1.0.dtd", BerliozEntityResolver.toFileName("-//Berlioz//DTD::Web Access 1.0//EN"));
+    Assertions.assertEquals("properties-1.0.dtd", BerliozEntityResolver.toFileName("-//Berlioz//DTD::Properties 1.0//EN"));
   }
 }

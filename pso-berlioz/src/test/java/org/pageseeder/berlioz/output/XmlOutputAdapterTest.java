@@ -33,14 +33,14 @@ import static org.pageseeder.berlioz.output.OutputWriter.FieldOption;
  * <p>All tests capture output via an explicit {@link StringWriter} passed to the
  * {@link XmlOutputAdapter#XmlOutputAdapter(java.io.Writer)} constructor.</p>
  */
-public class XmlOutputAdapterTest {
+class XmlOutputAdapterTest {
 
   // ---------------------------------------------------------------------------
   // getType
   // ---------------------------------------------------------------------------
 
   @Test
-  public void getType_returnsXml() {
+  void getType_returnsXml() {
     assertEquals(OutputType.XML, new XmlOutputAdapter().getType());
   }
 
@@ -49,7 +49,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void startObject_default_writesElement() {
+  void startObject_default_writesElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -59,7 +59,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void startObject_xmlOnly_writesElement() {
+  void startObject_xmlOnly_writesElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -72,7 +72,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void startObject_jsonOnly_suppressesWrapperElementOnly() {
+  void startObject_jsonOnly_suppressesWrapperElementOnly() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -89,7 +89,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void startArray_default_writesWrapperElement() {
+  void startArray_default_writesWrapperElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -101,7 +101,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void startArray_jsonOnly_suppressesWrapperElement() {
+  void startArray_jsonOnly_suppressesWrapperElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -116,7 +116,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void startArray_xmlOnly_writesWrapperElement() {
+  void startArray_xmlOnly_writesWrapperElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -132,7 +132,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_boolean_default_writesAttribute() {
+  void field_boolean_default_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -143,7 +143,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_jsonOnly_isSkipped() {
+  void field_boolean_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -154,7 +154,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_xmlText_writesTextContent() {
+  void field_boolean_xmlText_writesTextContent() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -165,7 +165,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_xmlElement_writesChildElement() {
+  void field_boolean_xmlElement_writesChildElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -176,7 +176,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_xmlOnly_writesAttribute() {
+  void field_boolean_xmlOnly_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -191,7 +191,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_int_default_writesAttribute() {
+  void field_int_default_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -202,7 +202,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_int_xmlElement_writesChildElement() {
+  void field_int_xmlElement_writesChildElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -213,7 +213,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_int_noOption_writesAttribute() {
+  void field_int_noOption_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -228,7 +228,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_long_default_writesAttribute() {
+  void field_long_default_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -239,7 +239,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_long_jsonOnly_isSkipped() {
+  void field_long_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -250,7 +250,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_long_xmlText_writesTextContent() {
+  void field_long_xmlText_writesTextContent() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -261,7 +261,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_long_xmlElement_writesChildElement() {
+  void field_long_xmlElement_writesChildElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -272,7 +272,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_long_xmlOnly_writesAttribute() {
+  void field_long_xmlOnly_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -287,7 +287,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_double_default_writesAttribute() {
+  void field_double_default_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -298,7 +298,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_double_jsonOnly_isSkipped() {
+  void field_double_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -309,7 +309,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_double_xmlText_writesTextContent() {
+  void field_double_xmlText_writesTextContent() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -320,7 +320,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_double_xmlElement_writesChildElement() {
+  void field_double_xmlElement_writesChildElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -331,7 +331,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_double_xmlOnly_writesAttribute() {
+  void field_double_xmlOnly_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -346,7 +346,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_string_default_writesAttribute() {
+  void field_string_default_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -357,7 +357,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_string_jsonOnly_isSkipped() {
+  void field_string_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -368,7 +368,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlText_writesTextContent() {
+  void field_string_xmlText_writesTextContent() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -379,7 +379,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlElement_writesChildElement() {
+  void field_string_xmlElement_writesChildElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -390,7 +390,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlCopy_writesRawXml() {
+  void field_string_xmlCopy_writesRawXml() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -401,7 +401,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlOnly_writesAttribute() {
+  void field_string_xmlOnly_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -412,7 +412,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_string_default_escapesSpecialChars() {
+  void field_string_default_escapesSpecialChars() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -427,7 +427,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_stringArray_default_writesSpaceSeparatedAttribute() {
+  void field_stringArray_default_writesSpaceSeparatedAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -438,7 +438,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_stringArray_xmlElement_writesOneElementPerValue() {
+  void field_stringArray_xmlElement_writesOneElementPerValue() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -449,7 +449,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_stringArray_jsonOnly_isSkipped() {
+  void field_stringArray_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -464,7 +464,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_iterable_default_writesSpaceSeparatedAttribute() {
+  void field_iterable_default_writesSpaceSeparatedAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -475,7 +475,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_iterable_jsonOnly_isSkipped() {
+  void field_iterable_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -491,7 +491,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void optionalField_null_isSkipped() {
+  void optionalField_null_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -502,7 +502,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void optionalField_nonNull_writesAttribute() {
+  void optionalField_nonNull_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -513,7 +513,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void optionalField_withOption_null_isSkipped() {
+  void optionalField_withOption_null_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -524,7 +524,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void optionalField_withOption_nonNull_writesAttribute() {
+  void optionalField_withOption_nonNull_writesAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -539,7 +539,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_doubleArray_default_writesCommaSeparatedAttribute() {
+  void field_doubleArray_default_writesCommaSeparatedAttribute() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -550,7 +550,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_doubleArray_xmlElement_writesOneElementPerValue() {
+  void field_doubleArray_xmlElement_writesOneElementPerValue() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -561,7 +561,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void field_doubleArray_jsonOnly_isSkipped() {
+  void field_doubleArray_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -576,7 +576,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void nullField_default_isSkipped() {
+  void nullField_default_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -587,7 +587,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void nullField_xmlElement_writesSelfClosingElement() {
+  void nullField_xmlElement_writesSelfClosingElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -598,7 +598,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void nullField_xmlOnly_writesSelfClosingElement() {
+  void nullField_xmlOnly_writesSelfClosingElement() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -609,7 +609,7 @@ public class XmlOutputAdapterTest {
   }
 
   @Test
-  public void nullField_jsonOnly_isSkipped() {
+  void nullField_jsonOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");
@@ -624,7 +624,7 @@ public class XmlOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void multipleFields_allWritten() {
+  void multipleFields_allWritten() {
     StringWriter sw = new StringWriter();
     XmlOutputAdapter out = new XmlOutputAdapter(sw);
     out.startObject("root");

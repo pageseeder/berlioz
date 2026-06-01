@@ -6,12 +6,12 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 
-public final class RelocationConfigTest {
+final class RelocationConfigTest {
 
   File configFolder = new File("src/test/resources/org/pageseeder/berlioz/config");
 
   @Test
-  public void testConstructor_empty() {
+  void testConstructor_empty() {
     RelocationConfig config = new RelocationConfig();
     Assertions.assertTrue(config.isEmpty());
     Assertions.assertEquals(0, config.size());
@@ -19,7 +19,7 @@ public final class RelocationConfigTest {
   }
 
   @Test
-  public void testLoad_empty() throws ConfigException {
+  void testLoad_empty() throws ConfigException {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping/>";
     RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
     Assertions.assertTrue(config.isEmpty());
@@ -38,7 +38,7 @@ public final class RelocationConfigTest {
    * }</pre>
    */
   @Test
-  public void testLoad_file() throws ConfigException {
+  void testLoad_file() throws ConfigException {
     RelocationConfig config = RelocationConfig.newInstance(new File(this.configFolder, "relocation.xml"));
     Assertions.assertFalse(config.isEmpty());
     Assertions.assertEquals(5, config.size());
@@ -54,7 +54,7 @@ public final class RelocationConfigTest {
   }
 
   @Test
-  public void testLoad_duplicatePattern() throws ConfigException {
+  void testLoad_duplicatePattern() throws ConfigException {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>" +
         "<relocation from=\"/a\" to=\"/b\"/>" +
         "<relocation from=\"/a\" to=\"/c\"/>" +
@@ -66,7 +66,7 @@ public final class RelocationConfigTest {
   }
 
   @Test
-  public void testLoad_variableExpansion() throws ConfigException {
+  void testLoad_variableExpansion() throws ConfigException {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>" +
         "<relocation from=\"/{+path}.psml\" to=\"/html/{+path}\"/>" +
         "</relocation-mapping>";
@@ -76,7 +76,7 @@ public final class RelocationConfigTest {
   }
 
   @Test
-  public void testLoad_invalidXml() throws ConfigException {
+  void testLoad_invalidXml() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>";
     RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
@@ -84,7 +84,7 @@ public final class RelocationConfigTest {
   }
 
   @Test
-  public void testLoad_xxe() throws ConfigException {
+  void testLoad_xxe() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!DOCTYPE relocation-mapping [<!ELEMENT relocation-mapping ANY >" +
         "<!ENTITY x SYSTEM \"/etc/passwd\" >]>" +

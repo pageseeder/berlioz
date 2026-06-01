@@ -22,60 +22,60 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class ParameterTest {
+final class ParameterTest {
 
   @Test
-  public void testName() {
+  void testName() {
     Parameter p = new Parameter("myParam", "value");
     Assertions.assertEquals(p.name(), "myParam");
   }
 
   @Test
-  public void testName_null() {
+  void testName_null() {
     Assertions.assertThrows(NullPointerException.class, () -> new Parameter(null, "value"));
   }
 
   @Test
-  public void testValue_literal() {
+  void testValue_literal() {
     Parameter p = new Parameter("x", "hello");
     Assertions.assertEquals(p.value(), "hello");
   }
 
   @Test
-  public void testValue_template() {
+  void testValue_template() {
     Parameter p = new Parameter("x", "{var}");
     Assertions.assertEquals(p.value(), "{var}");
   }
 
   @Test
-  public void testValueWithMap_literal() {
+  void testValueWithMap_literal() {
     Parameter p = new Parameter("x", "hello");
     Map<String, String> map = Collections.singletonMap("x", "ignored");
     Assertions.assertEquals(p.value(map), "hello");
   }
 
   @Test
-  public void testValueWithMap_variableResolved() {
+  void testValueWithMap_variableResolved() {
     Parameter p = new Parameter("x", "{var}");
     Map<String, String> map = Collections.singletonMap("var", "world");
     Assertions.assertEquals(p.value(map), "world");
   }
 
   @Test
-  public void testValueWithMap_variableMissing() {
+  void testValueWithMap_variableMissing() {
     Parameter p = new Parameter("x", "{var}");
     Assertions.assertEquals(p.value(Collections.emptyMap()), "");
   }
 
   @Test
-  public void testValueWithMap_variableWithDefault() {
+  void testValueWithMap_variableWithDefault() {
     Parameter p = new Parameter("x", "{var=fallback}");
     Assertions.assertEquals(p.value(Collections.emptyMap()), "fallback");
     Assertions.assertEquals(p.value(Collections.singletonMap("var", "actual")), "actual");
   }
 
   @Test
-  public void testValueWithMap_multipleVariables() {
+  void testValueWithMap_multipleVariables() {
     Parameter p = new Parameter("x", "{a}-{b}");
     Map<String, String> map = new HashMap<>();
     map.put("a", "hello");

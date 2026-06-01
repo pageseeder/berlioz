@@ -24,13 +24,13 @@ import org.junit.jupiter.api.Test;
  * @author Christophe Lauret
  * @version 30 December 2008
  */
-public final class TokenVariableTest {
+final class TokenVariableTest {
 
   /**
    * Test that the constructor throws a NullPointerException for a <code>null</code> expression.
    */
   @Test
-  public void testNew_Null() {
+  void testNew_Null() {
     boolean nullThrown = false;
     try {
       new TokenVariable((Variable) null);
@@ -45,7 +45,7 @@ public final class TokenVariableTest {
    * Test the <code>equals</code> method.
    */
   @Test
-  public void testEquals() {
+  void testEquals() {
     Variable v = new Variable("v");
     Variable w = new Variable("w");
     TokenVariable x = new TokenVariable(v);
@@ -58,7 +58,7 @@ public final class TokenVariableTest {
    * Test the <code>match</code> method.
    */
   @Test
-  public void testMatch() {
+  void testMatch() {
     TokenVariable v = new TokenVariable("X");
     // should match unreserved characters
     Assertions.assertTrue(v.match("abcxyz"));

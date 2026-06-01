@@ -8,24 +8,24 @@ import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 
-public class NoContentTest {
+class NoContentTest {
 
   @Test
-  public void testImplementsBothInterfaces() {
+  void testImplementsBothInterfaces() {
     NoContent gen = new NoContent();
     Assertions.assertTrue(gen instanceof ContentGenerator);
     Assertions.assertTrue(gen instanceof Cacheable);
   }
 
   @Test
-  public void testETagIsAlwaysNocontent() {
+  void testETagIsAlwaysNocontent() {
     NoContent gen = new NoContent();
     ContentRequest req = GeneratorTestSupport.request().build();
     Assertions.assertEquals(gen.getETag(req), "nocontent");
   }
 
   @Test
-  public void testProcessWritesNothing() {
+  void testProcessWritesNothing() {
     NoContent gen = new NoContent();
     ContentRequest req = GeneratorTestSupport.request().build();
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);

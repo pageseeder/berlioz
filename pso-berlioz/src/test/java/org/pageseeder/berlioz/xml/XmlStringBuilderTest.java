@@ -3,10 +3,10 @@ package org.pageseeder.berlioz.xml;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class XmlStringBuilderTest {
+final class XmlStringBuilderTest {
 
   @Test
-  public void testWithIndentKeepsConcreteType() {
+  void testWithIndentKeepsConcreteType() {
     XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
 
     xml.openElement("root", true)
@@ -19,7 +19,7 @@ public final class XmlStringBuilderTest {
   }
 
   @Test
-  public void testWithIndentOff() {
+  void testWithIndentOff() {
     XmlStringBuilder xml = new XmlStringBuilder().withIndent(null);
 
     xml.openElement("root", true).emptyElement("item").closeElement();
@@ -28,7 +28,7 @@ public final class XmlStringBuilderTest {
   }
 
   @Test
-  public void testToStringReflectsSharedAppendableAfterIndent() {
+  void testToStringReflectsSharedAppendableAfterIndent() {
     XmlStringBuilder original = new XmlStringBuilder();
     XmlStringBuilder indented = original.withIndent(" ");
 
@@ -39,12 +39,12 @@ public final class XmlStringBuilderTest {
   }
 
   @Test
-  public void testWithIndentRejectsNonSpaceCharacters() {
+  void testWithIndentRejectsNonSpaceCharacters() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> new XmlStringBuilder().withIndent(" \t."));
   }
 
   @Test
-  public void testWithIndentAfterText() {
+  void testWithIndentAfterText() {
     Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.text("already used");

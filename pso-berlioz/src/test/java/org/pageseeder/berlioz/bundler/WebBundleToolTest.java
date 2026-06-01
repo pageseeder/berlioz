@@ -34,13 +34,13 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * Tests for the web bundle tool.
  */
-public final class WebBundleToolTest {
+final class WebBundleToolTest {
 
   @TempDir
   Path temporary;
 
   @Test
-  public void testConstructorRequiresDirectory() throws IOException {
+  void testConstructorRequiresDirectory() throws IOException {
     File missing = new File(this.temporary.toFile(), "missing");
     File file = Files.createFile(this.temporary.resolve("not-a-directory")).toFile();
 
@@ -50,7 +50,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testGetBundlesDir() throws IOException {
+  void testGetBundlesDir() throws IOException {
     File bundles = Files.createDirectory(this.temporary.resolve("bundles")).toFile();
 
     WebBundleTool tool = new WebBundleTool(bundles);
@@ -59,7 +59,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testEmptyFileListsReturnNull() throws IOException {
+  void testEmptyFileListsReturnNull() throws IOException {
     WebBundleTool tool = new WebBundleTool(Files.createDirectory(this.temporary.resolve("empty")).toFile());
 
     Assertions.assertNull(tool.getBundle(List.of(), "empty", false));
@@ -70,7 +70,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testGetBundleDoesNotCreateFile() throws IOException {
+  void testGetBundleDoesNotCreateFile() throws IOException {
     File bundles = Files.createDirectory(this.temporary.resolve("get-bundle")).toFile();
     File script = writeFile("scripts/app.js", "var answer = 42;");
     WebBundleTool tool = new WebBundleTool(bundles);
@@ -84,7 +84,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testBundleScripts() throws IOException {
+  void testBundleScripts() throws IOException {
     WebBundleTool tool = new WebBundleTool(Files.createDirectory(this.temporary.resolve("scripts")).toFile());
     File first = writeFile("js/first.js", "var first = 1;");
     File second = writeFile("js/second.js", "var second = 2;");
@@ -97,7 +97,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testBundleDetectsJavaScriptType() throws IOException {
+  void testBundleDetectsJavaScriptType() throws IOException {
     WebBundleTool tool = new WebBundleTool(Files.createDirectory(this.temporary.resolve("detected-js")).toFile());
     File script = writeFile("detected/app.js", "var detected = true;");
 
@@ -109,7 +109,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testBundleWithExplicitCssTypeExpandsImportsAndUrls() throws IOException {
+  void testBundleWithExplicitCssTypeExpandsImportsAndUrls() throws IOException {
     File root = Files.createDirectory(this.temporary.resolve("web")).toFile();
     File bundles = mkdir(root, "style/_");
     WebBundleTool tool = new WebBundleTool(bundles);
@@ -134,7 +134,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testBundleStylesCanEmbedSmallImagesAsDataUris() throws IOException {
+  void testBundleStylesCanEmbedSmallImagesAsDataUris() throws IOException {
     File root = Files.createDirectory(this.temporary.resolve("data-uri-web")).toFile();
     File bundles = mkdir(root, "style/_");
     WebBundleTool tool = new WebBundleTool(bundles);
@@ -148,7 +148,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testBundleStylesCacheIncludesNameAndMinimizeFlag() throws IOException {
+  void testBundleStylesCacheIncludesNameAndMinimizeFlag() throws IOException {
     WebBundleTool tool = new WebBundleTool(Files.createDirectory(this.temporary.resolve("cache")).toFile());
     File style = writeFile("cache/main.css", ".main { color: #123456; }");
 
@@ -164,7 +164,7 @@ public final class WebBundleToolTest {
   }
 
   @Test
-  public void testBundleStylesCanBeCalledConcurrently() throws Exception {
+  void testBundleStylesCanBeCalledConcurrently() throws Exception {
     WebBundleTool tool = new WebBundleTool(Files.createDirectory(this.temporary.resolve("concurrent")).toFile());
     File imported = writeFile("concurrent-css/imported.css", ".imported { color: green; }");
     File style = writeFile("concurrent-css/main.css", "@import url('imported.css');\n.main { color: black; }");

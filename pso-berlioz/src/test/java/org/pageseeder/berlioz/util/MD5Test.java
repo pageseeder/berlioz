@@ -25,44 +25,44 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public final class MD5Test {
+final class MD5Test {
 
   @Test
-  public void testHash_NullString() {
+  void testHash_NullString() {
     Assertions.assertThrows(NullPointerException.class, () -> MD5.hash((String) null));
   }
 
   @Test
-  public void testHash_NullBytes() {
+  void testHash_NullBytes() {
     Assertions.assertThrows(NullPointerException.class, () -> MD5.hash((byte[]) null));
   }
 
   @Test
-  public void testHash_NullInputStream() throws IOException {
+  void testHash_NullInputStream() throws IOException {
     Assertions.assertThrows(NullPointerException.class, () -> MD5.hash((InputStream) null));
   }
 
   @Test
-  public void testHash_String() {
+  void testHash_String() {
     Assertions.assertEquals(MD5.hash(""), "d41d8cd98f00b204e9800998ecf8427e");
     Assertions.assertEquals(MD5.hash("test"), "098f6bcd4621d373cade4e832627b4f6");
     Assertions.assertEquals(MD5.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"), "942a46d563d50475e73c41765b35cbbf");
   }
 
   @Test
-  public void testHash_Bytes_ConsistentWithString() {
+  void testHash_Bytes_ConsistentWithString() {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
     Assertions.assertEquals(MD5.hash("test"), MD5.hash(bytes));
   }
 
   @Test
-  public void testHash_InputStream_ConsistentWithString() throws IOException {
+  void testHash_InputStream_ConsistentWithString() throws IOException {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
     Assertions.assertEquals(MD5.hash("test"), MD5.hash(new ByteArrayInputStream(bytes)));
   }
 
   @Test
-  public void testHash_Path_ConsistentWithString() throws IOException {
+  void testHash_Path_ConsistentWithString() throws IOException {
     byte[] content = "test".getBytes(StandardCharsets.UTF_8);
     Path temp = Files.createTempFile("md5-test-", ".txt");
     try {

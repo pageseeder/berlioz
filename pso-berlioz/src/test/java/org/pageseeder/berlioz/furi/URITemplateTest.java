@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
  * @author Christophe Lauret
  * @version 21 October 2009
  */
-public class URITemplateTest {
+class URITemplateTest {
 
   /**
    * Parameters examples from the specifications.
@@ -42,7 +42,7 @@ public class URITemplateTest {
   private final Parameters vars = new URIParameters();
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     // set up the parameters from the specifications.
     this.vars.set("foo", new String[] { "\u03d3" });
     this.vars.set("bar", new String[] { "fred" });
@@ -61,7 +61,7 @@ public class URITemplateTest {
    * Test that a null pointer exception is thrown by the constructor.
    */
   @Test
-  public void testNew_Null() {
+  void testNew_Null() {
     Assertions.assertThrows(NullPointerException.class, () -> new URITemplate((String)null));
   }
 
@@ -69,7 +69,7 @@ public class URITemplateTest {
    * Test that it can construct a template from an empty string.
    */
   @Test
-  public void testNew_EmptyString() {
+  void testNew_EmptyString() {
     new URITemplate("");
   }
 
@@ -77,7 +77,7 @@ public class URITemplateTest {
    * Test that the <code>digest</code> method returns an empty token list for an empty string.
    */
   @Test
-  public void testDigest_EmptyString() {
+  void testDigest_EmptyString() {
     List<Token> tokens = new ArrayList<Token>();
     Assertions.assertEquals(tokens, URITemplate.digest(""));
   }
@@ -86,7 +86,7 @@ public class URITemplateTest {
    * Test that the <code>digest</code> method returns one literal token list for simple text.
    */
   @Test
-  public void testDigest_OneTokenLiteral() {
+  void testDigest_OneTokenLiteral() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenLiteral("http://acme.com/"));
     Assertions.assertEquals(tokens, URITemplate.digest("http://acme.com/"));
@@ -96,7 +96,7 @@ public class URITemplateTest {
    * Test that the <code>digest</code> method returns a variable token for a variable expression.
    */
   @Test
-  public void testDigest_OneTokenVariable() {
+  void testDigest_OneTokenVariable() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenVariable("x"));
     Assertions.assertEquals(tokens, URITemplate.digest("{x}"));
@@ -107,7 +107,7 @@ public class URITemplateTest {
    * one variable.
    */
   @Test
-  public void testDigest_TwoToken() {
+  void testDigest_TwoToken() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
@@ -119,7 +119,7 @@ public class URITemplateTest {
    * variable in the middle.
    */
   @Test
-  public void testDigest_OneTokenInTheMiddle() {
+  void testDigest_OneTokenInTheMiddle() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
@@ -132,7 +132,7 @@ public class URITemplateTest {
    * variables.
    */
   @Test
-  public void testDigest_TwoTokens() {
+  void testDigest_TwoTokens() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
@@ -146,7 +146,7 @@ public class URITemplateTest {
    * variables.
    */
   @Test
-  public void testDigest_TwoConsecutiveTokens() {
+  void testDigest_TwoConsecutiveTokens() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
@@ -158,7 +158,7 @@ public class URITemplateTest {
    * Test the <code>equals</code> method.
    */
   @Test
-  public void testEquals_Contract() {
+  void testEquals_Contract() {
     URITemplate x = new URITemplate("http://ps.com/{X}");
     URITemplate y = new URITemplate("http://ps.com/{X}");
     URITemplate z = new URITemplate("http://ps.com/{Y}");
@@ -176,7 +176,7 @@ public class URITemplateTest {
    * </pre>
    */
   @Test
-  public void testExpand_Spec1() {
+  void testExpand_Spec1() {
     assertExpand("http://example.org/?q={bar}", this.vars, "http://example.org/?q=fred");
   }
 
@@ -191,7 +191,7 @@ public class URITemplateTest {
    * </pre>
    */
   @Test
-  public void testExpand_Spec6() {
+  void testExpand_Spec6() {
     assertExpand("http://example.org/{bar}{bar}/{garply}", this.vars,
         "http://example.org/fredfred/a%2Fb%2Fc");
   }
@@ -207,7 +207,7 @@ public class URITemplateTest {
    * </pre>
    */
   @Test
-  public void testExpand_Spec9() {
+  void testExpand_Spec9() {
     assertExpand("../{waldo}/", this.vars, "../ben%20%26%20jerrys/");
   }
 
@@ -222,7 +222,7 @@ public class URITemplateTest {
    * </pre>
    */
   @Test
-  public void testExpand_Spec11() {
+  void testExpand_Spec11() {
     assertExpand(":{1-a_b.c}:", this.vars, ":200:");
   }
 
@@ -237,7 +237,7 @@ public class URITemplateTest {
    * </pre>
    */
   @Test
-  public void testExpand_Type() {
+  void testExpand_Type() {
     assertExpand("/type/{x:bar}", this.vars, "/type/fred");
   }
 

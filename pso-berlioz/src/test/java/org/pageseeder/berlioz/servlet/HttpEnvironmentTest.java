@@ -8,13 +8,13 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Files;
 
-public class HttpEnvironmentTest {
+class HttpEnvironmentTest {
 
   @TempDir
   Path tmp;
 
   @Test
-  public void testGetPublicAndPrivateFolders() throws Exception {
+  void testGetPublicAndPrivateFolders() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "max-age=3600");
@@ -23,7 +23,7 @@ public class HttpEnvironmentTest {
   }
 
   @Test
-  public void testGetCacheControl() throws Exception {
+  void testGetCacheControl() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     Assertions.assertEquals(new HttpEnvironment(pub, priv, "max-age=3600").getCacheControl(), "max-age=3600");
@@ -32,7 +32,7 @@ public class HttpEnvironmentTest {
   }
 
   @Test
-  public void testGetPublicFileResolvesRelativePath() throws Exception {
+  void testGetPublicFileResolvesRelativePath() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "");
@@ -40,7 +40,7 @@ public class HttpEnvironmentTest {
   }
 
   @Test
-  public void testGetPrivateFileResolvesRelativePath() throws Exception {
+  void testGetPrivateFileResolvesRelativePath() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "");
@@ -48,7 +48,7 @@ public class HttpEnvironmentTest {
   }
 
   @Test
-  public void testGetPublicFileAndPrivateFileAreIndependent() throws Exception {
+  void testGetPublicFileAndPrivateFileAreIndependent() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "");

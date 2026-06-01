@@ -32,14 +32,14 @@ import static org.pageseeder.berlioz.output.OutputWriter.FieldOption;
  * <p>All tests capture output via an explicit {@link StringWriter} passed to the
  * {@link JsonOutputAdapter#JsonOutputAdapter(java.io.Writer)} constructor.</p>
  */
-public class JsonOutputAdapterTest {
+class JsonOutputAdapterTest {
 
   // ---------------------------------------------------------------------------
   // getType
   // ---------------------------------------------------------------------------
 
   @Test
-  public void getType_returnsJson() {
+  void getType_returnsJson() {
     assertEquals(OutputType.JSON, new JsonOutputAdapter().getType());
   }
 
@@ -48,7 +48,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_boolean_default_isWritten() {
+  void field_boolean_default_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -59,7 +59,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_jsonOnly_isWritten() {
+  void field_boolean_jsonOnly_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -70,7 +70,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_xmlText_isWrittenAsProperty() {
+  void field_boolean_xmlText_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -81,7 +81,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_xmlElement_isWrittenAsProperty() {
+  void field_boolean_xmlElement_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -92,7 +92,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_boolean_xmlOnly_isSkipped() {
+  void field_boolean_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -107,7 +107,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_int_default_isWritten() {
+  void field_int_default_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -118,7 +118,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_int_xmlOnly_isSkipped() {
+  void field_int_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -129,7 +129,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_int_noOption_isWritten() {
+  void field_int_noOption_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -144,7 +144,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_long_default_isWritten() {
+  void field_long_default_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -155,7 +155,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_long_jsonOnly_isWritten() {
+  void field_long_jsonOnly_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -166,7 +166,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_long_xmlText_isWrittenAsProperty() {
+  void field_long_xmlText_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -177,7 +177,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_long_xmlElement_isWrittenAsProperty() {
+  void field_long_xmlElement_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -188,7 +188,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_long_xmlOnly_isSkipped() {
+  void field_long_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -203,7 +203,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_double_default_isWritten() {
+  void field_double_default_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -214,7 +214,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_double_jsonOnly_isWritten() {
+  void field_double_jsonOnly_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -225,7 +225,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_double_xmlText_isWrittenAsProperty() {
+  void field_double_xmlText_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -236,7 +236,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_double_xmlElement_isWrittenAsProperty() {
+  void field_double_xmlElement_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -247,7 +247,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_double_xmlOnly_isSkipped() {
+  void field_double_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -262,7 +262,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_string_default_isWritten() {
+  void field_string_default_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -273,7 +273,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_string_jsonOnly_isWritten() {
+  void field_string_jsonOnly_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -284,7 +284,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlText_isWrittenAsProperty() {
+  void field_string_xmlText_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -295,7 +295,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlElement_isWrittenAsProperty() {
+  void field_string_xmlElement_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -306,7 +306,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlCopy_isWrittenAsProperty() {
+  void field_string_xmlCopy_isWrittenAsProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -317,7 +317,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_string_xmlOnly_isSkipped() {
+  void field_string_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -332,7 +332,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_stringArray_default_isWrittenAsArray() {
+  void field_stringArray_default_isWrittenAsArray() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -343,7 +343,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_stringArray_xmlOnly_isSkipped() {
+  void field_stringArray_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -354,7 +354,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_stringArray_empty_isWrittenAsEmptyArray() {
+  void field_stringArray_empty_isWrittenAsEmptyArray() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -369,7 +369,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_iterable_default_isWrittenAsArray() {
+  void field_iterable_default_isWrittenAsArray() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -380,7 +380,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_iterable_xmlOnly_isSkipped() {
+  void field_iterable_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -396,7 +396,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void startObject_default_isWritten() {
+  void startObject_default_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -409,7 +409,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void startObject_jsonOnly_isWritten() {
+  void startObject_jsonOnly_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -422,7 +422,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void startObject_xmlOnly_isSuppressed() {
+  void startObject_xmlOnly_isSuppressed() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -435,7 +435,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void startObject_xmlOnly_suppressesNestedContent() {
+  void startObject_xmlOnly_suppressesNestedContent() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -455,7 +455,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void startArray_default_isWritten() {
+  void startArray_default_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -467,7 +467,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void startArray_jsonOnly_isWritten() {
+  void startArray_jsonOnly_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -479,7 +479,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void startArray_xmlOnly_isSuppressed() {
+  void startArray_xmlOnly_isSuppressed() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -498,7 +498,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void optionalField_null_isSkipped() {
+  void optionalField_null_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -509,7 +509,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void optionalField_nonNull_isWritten() {
+  void optionalField_nonNull_isWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -520,7 +520,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void optionalField_withOption_null_isSkipped() {
+  void optionalField_withOption_null_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -535,7 +535,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_doubleArray_default_isWrittenAsArray() {
+  void field_doubleArray_default_isWrittenAsArray() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -546,7 +546,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_doubleArray_xmlOnly_isSkipped() {
+  void field_doubleArray_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -557,7 +557,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_doubleArray_empty_isWrittenAsEmptyArray() {
+  void field_doubleArray_empty_isWrittenAsEmptyArray() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -572,7 +572,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void nullField_default_writesNullProperty() {
+  void nullField_default_writesNullProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -583,7 +583,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void nullField_xmlElement_writesNullProperty() {
+  void nullField_xmlElement_writesNullProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -594,7 +594,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void nullField_xmlOnly_isSkipped() {
+  void nullField_xmlOnly_isSkipped() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -605,7 +605,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void nullField_jsonOnly_writesNullProperty() {
+  void nullField_jsonOnly_writesNullProperty() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -620,7 +620,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void field_hyphenatedName_isCamelCased() {
+  void field_hyphenatedName_isCamelCased() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -631,7 +631,7 @@ public class JsonOutputAdapterTest {
   }
 
   @Test
-  public void field_plainName_isUnchanged() {
+  void field_plainName_isUnchanged() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");
@@ -646,7 +646,7 @@ public class JsonOutputAdapterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void multipleFields_allWritten() {
+  void multipleFields_allWritten() {
     StringWriter sw = new StringWriter();
     JsonOutputAdapter out = new JsonOutputAdapter(sw);
     out.startObject("root");

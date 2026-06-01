@@ -10,17 +10,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings({"deprecated", "java:S1874"})
-public final class XMLConfigTest {
+final class XMLConfigTest {
 
   @Test
-  public void testConstructor() {
+  void testConstructor() {
     XMLConfig config = new XMLConfig();
     Assertions.assertNotNull(config.properties());
     Assertions.assertTrue(config.properties().isEmpty());
   }
 
   @Test
-  public void testLoad_Empty() throws IOException {
+  void testLoad_Empty() throws IOException {
     XMLConfig config = new XMLConfig();
     String xml = "<global/>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -29,7 +29,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_XXE() throws IOException {
+  void testLoad_XXE() throws IOException {
     Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
@@ -38,7 +38,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_XMLBomb() throws IOException {
+  void testLoad_XMLBomb() throws IOException {
     Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String xml = "<!DOCTYPE global [\n" +
@@ -59,7 +59,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_Global() throws IOException {
+  void testLoad_Global() throws IOException {
     XMLConfig config = new XMLConfig();
     String xml = "<global greeting='hello' empty=''/>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -71,7 +71,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_Tree() throws IOException {
+  void testLoad_Tree() throws IOException {
     XMLConfig config = new XMLConfig();
     String xml = "<global><a x='1'><b y='2'><c z='3'></c><d z='4' q='5'></d></b></a></global>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -91,7 +91,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_Aliases() throws IOException {
+  void testLoad_Aliases() throws IOException {
     XMLConfig config = new XMLConfig();
     String xml = "<global a='0'><a x='1' x.y='2'><x z='3'/><x q='4'/></a><a.x w='5'/></global>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -107,7 +107,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_Duplicates() throws IOException {
+  void testLoad_Duplicates() throws IOException {
     XMLConfig config = new XMLConfig();
     String xml = "<global a.x='_' a.x.y='_'><a x='1' x.y='_'/><a.x y='2'/></global>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -119,7 +119,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_Overrides() throws IOException {
+  void testLoad_Overrides() throws IOException {
     XMLConfig config = new XMLConfig();
     String original = "<global a='_'><a x='_' y='3'/></global>";
     String override = "<global a='1'><a x='2' z='4'/></global>";
@@ -135,7 +135,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testLoad_Invalid() throws IOException {
+  void testLoad_Invalid() throws IOException {
     Assertions.assertThrows(IOException.class, () -> {
     XMLConfig config = new XMLConfig();
     String invalid = "<global>";
@@ -144,7 +144,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testToXML_Empty() throws IOException {
+  void testToXML_Empty() throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     new XMLConfig().save(out);
     byte[] xml = out.toByteArray();
@@ -155,7 +155,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testToXML_Global() throws IOException {
+  void testToXML_Global() throws IOException {
     Map<String, String> properties = new HashMap<>();
     properties.put("a", "1");
     properties.put("b", "2");
@@ -173,7 +173,7 @@ public final class XMLConfigTest {
 
 
   @Test
-  public void testToXML_ManyProperties() throws IOException {
+  void testToXML_ManyProperties() throws IOException {
     Map<String, String> properties = new HashMap<>();
     properties.put("version", "1.0");
     properties.put("berlioz.cache", "true");
@@ -197,7 +197,7 @@ public final class XMLConfigTest {
   }
 
   @Test
-  public void testToXML_IllegalNames() throws IOException {
+  void testToXML_IllegalNames() throws IOException {
     Map<String, String> properties = new HashMap<>();
     properties.put("app.1", "1");
     properties.put("app.2a", "2");

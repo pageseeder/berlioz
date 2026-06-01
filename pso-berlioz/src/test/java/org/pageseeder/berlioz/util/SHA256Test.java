@@ -25,44 +25,44 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public final class SHA256Test {
+final class SHA256Test {
 
   @Test
-  public void testHash_NullString() {
+  void testHash_NullString() {
     Assertions.assertThrows(NullPointerException.class, () -> SHA256.hash((String) null));
   }
 
   @Test
-  public void testHash_NullBytes() {
+  void testHash_NullBytes() {
     Assertions.assertThrows(NullPointerException.class, () -> SHA256.hash((byte[]) null));
   }
 
   @Test
-  public void testHash_NullInputStream() throws IOException {
+  void testHash_NullInputStream() throws IOException {
     Assertions.assertThrows(NullPointerException.class, () -> SHA256.hash((InputStream) null));
   }
 
   @Test
-  public void testHash_String() {
+  void testHash_String() {
     Assertions.assertEquals(SHA256.hash(""), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     Assertions.assertEquals(SHA256.hash("test"), "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
     Assertions.assertEquals(SHA256.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"), "55f12528ddd4240e797f6391c80f5cf883e9c281253ad296c30b97dd4810c0a6");
   }
 
   @Test
-  public void testHash_Bytes_ConsistentWithString() {
+  void testHash_Bytes_ConsistentWithString() {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
     Assertions.assertEquals(SHA256.hash("test"), SHA256.hash(bytes));
   }
 
   @Test
-  public void testHash_InputStream_ConsistentWithString() throws IOException {
+  void testHash_InputStream_ConsistentWithString() throws IOException {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
     Assertions.assertEquals(SHA256.hash("test"), SHA256.hash(new ByteArrayInputStream(bytes)));
   }
 
   @Test
-  public void testHash_Path_ConsistentWithString() throws IOException {
+  void testHash_Path_ConsistentWithString() throws IOException {
     byte[] content = "test".getBytes(StandardCharsets.UTF_8);
     Path temp = Files.createTempFile("sha256-test-", ".txt");
     try {

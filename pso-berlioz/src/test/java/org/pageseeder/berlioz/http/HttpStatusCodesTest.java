@@ -3,10 +3,10 @@ package org.pageseeder.berlioz.http;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class HttpStatusCodesTest {
+class HttpStatusCodesTest {
 
   @Test
-  public void testGetTitle_KnownCodes() {
+  void testGetTitle_KnownCodes() {
     Assertions.assertEquals(HttpStatusCodes.getTitle(200), "OK");
     Assertions.assertEquals(HttpStatusCodes.getTitle(301), "Moved Permanently");
     Assertions.assertEquals(HttpStatusCodes.getTitle(404), "Not Found");
@@ -14,13 +14,13 @@ public class HttpStatusCodesTest {
   }
 
   @Test
-  public void testGetTitle_UnknownCode() {
+  void testGetTitle_UnknownCode() {
     Assertions.assertNull(HttpStatusCodes.getTitle(199));
     Assertions.assertNull(HttpStatusCodes.getTitle(599));
   }
 
   @Test
-  public void testGetClassOfStatus() {
+  void testGetClassOfStatus() {
     Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(100), "Informational");
     Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(204), "Successful");
     Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(304), "Redirection");
@@ -29,7 +29,7 @@ public class HttpStatusCodesTest {
   }
 
   @Test
-  public void testGetClassOfStatus_OutOfRange() {
+  void testGetClassOfStatus_OutOfRange() {
     Assertions.assertNull(HttpStatusCodes.getClassOfStatus(99));
     Assertions.assertNull(HttpStatusCodes.getClassOfStatus(600));
   }

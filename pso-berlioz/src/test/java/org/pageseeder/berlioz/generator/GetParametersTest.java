@@ -6,13 +6,13 @@ import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 
-public class GetParametersTest {
+class GetParametersTest {
 
   // process() tests
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testProcessNoParametersWritesEmptyElement() throws Exception {
+  void testProcessNoParametersWritesEmptyElement() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertTrue(out.contains("<parameters"), "Should contain <parameters>");
@@ -20,7 +20,7 @@ public class GetParametersTest {
   }
 
   @Test
-  public void testProcessSingleParameter() throws Exception {
+  void testProcessSingleParameter() throws Exception {
     ContentRequest req = GeneratorTestSupport.request()
         .parameter("name", "Alice")
         .build();
@@ -30,7 +30,7 @@ public class GetParametersTest {
   }
 
   @Test
-  public void testProcessMultipleParameters() throws Exception {
+  void testProcessMultipleParameters() throws Exception {
     ContentRequest req = GeneratorTestSupport.request()
         .parameter("a", "1")
         .parameter("b", "2")
@@ -43,7 +43,7 @@ public class GetParametersTest {
   }
 
   @Test
-  public void testProcessMultiValueParameter() throws Exception {
+  void testProcessMultiValueParameter() throws Exception {
     ContentRequest req = GeneratorTestSupport.request()
         .multiParameter("color", "red", "blue", "green")
         .build();
@@ -58,7 +58,7 @@ public class GetParametersTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testETagWithNoParametersIsStable() {
+  void testETagWithNoParametersIsStable() {
     GetParameters gen = new GetParameters();
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag1 = gen.getETag(req);
@@ -69,7 +69,7 @@ public class GetParametersTest {
   }
 
   @Test
-  public void testETagDiffersWithDifferentParameters() {
+  void testETagDiffersWithDifferentParameters() {
     GetParameters gen = new GetParameters();
     ContentRequest empty  = GeneratorTestSupport.request().build();
     ContentRequest withParam = GeneratorTestSupport.request().parameter("q", "test").build();
@@ -77,7 +77,7 @@ public class GetParametersTest {
   }
 
   @Test
-  public void testETagSameForIdenticalParameters() {
+  void testETagSameForIdenticalParameters() {
     GetParameters gen = new GetParameters();
     ContentRequest req1 = GeneratorTestSupport.request().parameter("q", "foo").build();
     ContentRequest req2 = GeneratorTestSupport.request().parameter("q", "foo").build();

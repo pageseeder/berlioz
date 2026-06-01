@@ -18,10 +18,10 @@ package org.pageseeder.berlioz.json;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class JsonStringBuilderTest {
+class JsonStringBuilderTest {
 
   @Test
-  public void testSimpleObject() {
+  void testSimpleObject() {
     JsonStringBuilder builder = JsonStringBuilder.create();
     builder.startObject()
         .field("name", "test")
@@ -32,7 +32,7 @@ public class JsonStringBuilderTest {
   }
 
   @Test
-  public void testArray() {
+  void testArray() {
     JsonStringBuilder builder = JsonStringBuilder.create();
     builder.startArray()
         .value("a")
@@ -43,7 +43,7 @@ public class JsonStringBuilderTest {
   }
 
   @Test
-  public void testNullNamedField() {
+  void testNullNamedField() {
     JsonStringBuilder builder = JsonStringBuilder.create();
     builder.startObject()
         .nullValue("key")
@@ -53,7 +53,7 @@ public class JsonStringBuilderTest {
   }
 
   @Test
-  public void testInObject() {
+  void testInObject() {
     JsonStringBuilder builder = JsonStringBuilder.create();
     Assertions.assertFalse(builder.inObject());
     builder.startObject();
@@ -62,7 +62,7 @@ public class JsonStringBuilderTest {
   }
 
   @Test
-  public void testCloseFlushesContent() {
+  void testCloseFlushesContent() {
     JsonStringBuilder builder = JsonStringBuilder.create();
     builder.startObject().field("x", 1L).endObject();
     builder.close();

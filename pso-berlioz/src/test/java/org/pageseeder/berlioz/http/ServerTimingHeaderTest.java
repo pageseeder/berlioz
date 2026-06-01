@@ -7,10 +7,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.util.Collection;
 
-public class ServerTimingHeaderTest {
+class ServerTimingHeaderTest {
 
   @Test
-  public void testToValue1() {
+  void testToValue1() {
     ServerTimingHeader header = new ServerTimingHeader();
     header.add(new PerformanceServerTiming("miss", -1));
     header.add(new PerformanceServerTiming("db", 53));
@@ -19,7 +19,7 @@ public class ServerTimingHeaderTest {
   }
 
   @Test
-  public void testToValue2() {
+  void testToValue2() {
     ServerTimingHeader header = new ServerTimingHeader();
     header.add(new PerformanceServerTiming("customView", -1));
     header.add(new PerformanceServerTiming("dc", "atl", -1));
@@ -27,14 +27,14 @@ public class ServerTimingHeaderTest {
   }
 
   @Test
-  public void testToValue3() {
+  void testToValue3() {
     ServerTimingHeader header = new ServerTimingHeader();
     header.add(new PerformanceServerTiming("cache", "Cache Read",23.2));
     Assertions.assertEquals(header.toValue(), "cache;desc=\"Cache Read\";dur=23.2");
   }
 
   @Test
-  public void testAddMetricMethods() {
+  void testAddMetricMethods() {
     ServerTimingHeader header = new ServerTimingHeader();
     header.addMetric("miss");
     header.addMetric("db", 53);
@@ -44,7 +44,7 @@ public class ServerTimingHeaderTest {
   }
 
   @Test
-  public void testAddMetricNano() {
+  void testAddMetricNano() {
     ServerTimingHeader header = new ServerTimingHeader();
     header.addMetricNano("db", 1234567);
     header.addMetricNano("app", "App Render", 2000000);
@@ -52,7 +52,7 @@ public class ServerTimingHeaderTest {
   }
 
   @Test
-  public void testAddHeaderTo() {
+  void testAddHeaderTo() {
     ServerTimingHeader header = new ServerTimingHeader();
     header.addMetric("db", 53);
     HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
@@ -62,7 +62,7 @@ public class ServerTimingHeaderTest {
   }
 
   @Test
-  public void testStaticAddMetricNano() {
+  void testStaticAddMetricNano() {
     HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
     HttpServletResponse response = recorder.build();
     ServerTimingHeader.addMetricNano(response, "app", "App Render", 2000000);

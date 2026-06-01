@@ -26,13 +26,13 @@ import org.junit.jupiter.api.Test;
  * @author Christophe Lauret
  * @version 30 December 2008
  */
-public final class TokenLiteralTest {
+final class TokenLiteralTest {
 
   /**
    * Test that the constructor throws a NullPointerException for a <code>null</code> expression.
    */
   @Test
-  public void testNew_Null() {
+  void testNew_Null() {
     boolean nullThrown = false;
     try {
       new TokenLiteral(null);
@@ -47,7 +47,7 @@ public final class TokenLiteralTest {
    * Test the <code>equals</code> method.
    */
   @Test
-  public void testEquals() {
+  void testEquals() {
     TokenLiteral x = new TokenLiteral("t");
     TokenLiteral y = new TokenLiteral("t");
     TokenLiteral z = new TokenLiteral("T");
@@ -58,7 +58,7 @@ public final class TokenLiteralTest {
    * Test the <code>match</code> method.
    */
   @Test
-  public void testMatch() {
+  void testMatch() {
     assertMatchItsef("abc");
     assertMatchItsef("123");
     assertMatchItsef("/\\|");
@@ -72,7 +72,7 @@ public final class TokenLiteralTest {
    * Test the <code>pattern</code> method.
    */
   @Test
-  public void testPattern() {
+  void testPattern() {
     assertPatternIsOK("abc");
     assertPatternIsOK("123");
     assertPatternIsOK("/\\|");

@@ -6,39 +6,39 @@ import org.junit.jupiter.api.Assertions;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public final class BuiltinJsonWriterTest extends JsonWriterTestBase {
+final class BuiltinJsonWriterTest extends JsonWriterTestBase {
 
   BuiltinJsonWriter newJsonWriter(StringWriter json) {
     return new BuiltinJsonWriter(new PrintWriter(json));
   }
 
   @Test
-  public void testValueDoubleNaN() {
+  void testValueDoubleNaN() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NaN));
   }
 
   @Test
-  public void testValueDoublePositiveInfinity() {
+  void testValueDoublePositiveInfinity() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.POSITIVE_INFINITY));
   }
 
   @Test
-  public void testValueDoubleNegativeInfinity() {
+  void testValueDoubleNegativeInfinity() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).value(Double.NEGATIVE_INFINITY));
   }
 
   @Test
-  public void testFieldDoubleNaN() {
+  void testFieldDoubleNaN() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> newJsonWriter(new StringWriter()).startObject().field("v", Double.NaN));
   }
 
   @Test
-  public void testEndArrayOnObject() {
+  void testEndArrayOnObject() {
     Assertions.assertThrows(IllegalStateException.class, () -> newJsonWriter(new StringWriter()).startObject().endArray());
   }
 
   @Test
-  public void testEndObjectOnArray() {
+  void testEndObjectOnArray() {
     Assertions.assertThrows(IllegalStateException.class, () -> newJsonWriter(new StringWriter()).startArray().endObject());
   }
 

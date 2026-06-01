@@ -18,7 +18,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Files;
 
-public class GetMatchingServiceTest {
+class GetMatchingServiceTest {
 
   private static final File WEB_INF =
       new File("./src/test/resources/org/pageseeder/berlioz");
@@ -27,13 +27,13 @@ public class GetMatchingServiceTest {
   Path tmp;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     GlobalSettings.setup((InitEnvironment) null);
     ServiceLoader.getInstance().clear();
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     ServiceLoader.getInstance().clear();
     GlobalSettings.setup((InitEnvironment) null);
   }
@@ -42,7 +42,7 @@ public class GetMatchingServiceTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testMissingUrlParameterWritesError() throws Exception {
+  void testMissingUrlParameterWritesError() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request();
     String out = process(builder);
     Assertions.assertTrue(out.contains("<error"), "Should write an error element");
@@ -51,7 +51,7 @@ public class GetMatchingServiceTest {
   }
 
   @Test
-  public void testInvalidMethodParameterWritesError() throws Exception {
+  void testInvalidMethodParameterWritesError() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .parameter("url", "/home")
         .parameter("method", "INVALID");
@@ -65,7 +65,7 @@ public class GetMatchingServiceTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNoMatchWritesNoMatchingServiceElement() throws Exception {
+  void testNoMatchWritesNoMatchingServiceElement() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .parameter("url", "/unknown/path")
         .parameter("method", "GET");
@@ -77,7 +77,7 @@ public class GetMatchingServiceTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testMatchFoundWritesMatchingServiceElement() throws Exception {
+  void testMatchFoundWritesMatchingServiceElement() throws Exception {
     GlobalSettings.setup(WEB_INF);
     ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
 
@@ -93,7 +93,7 @@ public class GetMatchingServiceTest {
   }
 
   @Test
-  public void testMatchContainsResolvedUrlPattern() throws Exception {
+  void testMatchContainsResolvedUrlPattern() throws Exception {
     GlobalSettings.setup(WEB_INF);
     ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
 
@@ -112,7 +112,7 @@ public class GetMatchingServiceTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testETagReflectsRegistryVersion() {
+  void testETagReflectsRegistryVersion() {
     GetMatchingService gen = new GetMatchingService();
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag = gen.getETag(req);

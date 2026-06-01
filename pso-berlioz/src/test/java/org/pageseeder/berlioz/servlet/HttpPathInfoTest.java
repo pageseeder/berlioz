@@ -8,7 +8,7 @@ import org.pageseeder.xmlwriter.XMLStringWriter;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
-public class HttpPathInfoTest {
+class HttpPathInfoTest {
 
   private static HttpServletRequest extensionMapped(String contextPath, String servletPath) {
     return ServletTestSupport.request()
@@ -30,7 +30,7 @@ public class HttpPathInfoTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testExtensionMappingHtml() {
+  void testExtensionMappingHtml() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/path/page.html"));
     Assertions.assertEquals(info.path(), "/path/page");
     Assertions.assertEquals(info.extension(), ".html");
@@ -39,28 +39,28 @@ public class HttpPathInfoTest {
   }
 
   @Test
-  public void testExtensionMappingXml() {
+  void testExtensionMappingXml() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/feed.xml"));
     Assertions.assertEquals(info.path(), "/feed");
     Assertions.assertEquals(info.extension(), ".xml");
   }
 
   @Test
-  public void testExtensionMappingJson() {
+  void testExtensionMappingJson() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/api/data.json"));
     Assertions.assertEquals(info.path(), "/api/data");
     Assertions.assertEquals(info.extension(), ".json");
   }
 
   @Test
-  public void testExtensionMappingNoExtension() {
+  void testExtensionMappingNoExtension() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/about"));
     Assertions.assertEquals(info.path(), "/about");
     Assertions.assertEquals(info.extension(), "");
   }
 
   @Test
-  public void testExtensionMappingWithContext() {
+  void testExtensionMappingWithContext() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/home.html"));
     Assertions.assertEquals(info.context(), "/app");
     Assertions.assertEquals(info.path(), "/home");
@@ -69,7 +69,7 @@ public class HttpPathInfoTest {
   }
 
   @Test
-  public void testExtensionMappingRootPath() {
+  void testExtensionMappingRootPath() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/.html"));
     Assertions.assertEquals(info.path(), "/");
     Assertions.assertEquals(info.extension(), ".html");
@@ -79,7 +79,7 @@ public class HttpPathInfoTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testPrefixMapping() {
+  void testPrefixMapping() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/api", "/users/42"));
     Assertions.assertEquals(info.path(), "/users/42");
     Assertions.assertEquals(info.prefix(), "/api");
@@ -88,7 +88,7 @@ public class HttpPathInfoTest {
   }
 
   @Test
-  public void testPrefixMappingWithContext() {
+  void testPrefixMappingWithContext() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("/myapp", "/svc", "/data"));
     Assertions.assertEquals(info.context(), "/myapp");
     Assertions.assertEquals(info.prefix(), "/svc");
@@ -97,7 +97,7 @@ public class HttpPathInfoTest {
   }
 
   @Test
-  public void testPrefixMappingEmptyPath() {
+  void testPrefixMappingEmptyPath() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/html", ""));
     Assertions.assertEquals(info.path(), "");
     Assertions.assertEquals(info.prefix(), "/html");
@@ -107,13 +107,13 @@ public class HttpPathInfoTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testToStringExtensionMapped() {
+  void testToStringExtensionMapped() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/home.html"));
     Assertions.assertEquals(info.toString(), "/app/home.html");
   }
 
   @Test
-  public void testToStringPrefixMapped() {
+  void testToStringPrefixMapped() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("/app", "/api", "/items"));
     Assertions.assertEquals(info.toString(), "/app/api/items");
   }
@@ -122,7 +122,7 @@ public class HttpPathInfoTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testToXmlExtensionMapped() throws IOException {
+  void testToXmlExtensionMapped() throws IOException {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/home.html"));
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
     info.toXML(xml);
@@ -135,7 +135,7 @@ public class HttpPathInfoTest {
   }
 
   @Test
-  public void testToXmlPrefixMapped() throws IOException {
+  void testToXmlPrefixMapped() throws IOException {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/svc", "/items"));
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
     info.toXML(xml);
@@ -147,7 +147,7 @@ public class HttpPathInfoTest {
   }
 
   @Test
-  public void testToXmlWithContext() throws IOException {
+  void testToXmlWithContext() throws IOException {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/page.json"));
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
     info.toXML(xml);

@@ -10,13 +10,13 @@ import org.pageseeder.xmlwriter.XMLStringWriter;
 
 import javax.servlet.http.HttpServletResponse;
 
-public class GetErrorDetailsTest {
+class GetErrorDetailsTest {
 
   // http-code and http-class
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNoAttributesDefaultsToStatusCode200() throws Exception {
+  void testNoAttributesDefaultsToStatusCode200() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request();
     String out = process(builder);
     Assertions.assertTrue(out.contains("http-code=\"200\""));
@@ -24,7 +24,7 @@ public class GetErrorDetailsTest {
   }
 
   @Test
-  public void test404ProducesClientErrorClass() throws Exception {
+  void test404ProducesClientErrorClass() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
     String out = process(builder);
@@ -33,7 +33,7 @@ public class GetErrorDetailsTest {
   }
 
   @Test
-  public void test500ProducesServerErrorClass() throws Exception {
+  void test500ProducesServerErrorClass() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     String out = process(builder);
@@ -45,7 +45,7 @@ public class GetErrorDetailsTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testMessageAttributeWritesMessageElement() throws Exception {
+  void testMessageAttributeWritesMessageElement() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
         .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "The page was not found");
@@ -54,7 +54,7 @@ public class GetErrorDetailsTest {
   }
 
   @Test
-  public void testRequestUriAttributeWritesRequestUriElement() throws Exception {
+  void testRequestUriAttributeWritesRequestUriElement() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
         .attribute(ErrorHandlerServlet.ERROR_REQUEST_URI, "/missing/page");
@@ -63,7 +63,7 @@ public class GetErrorDetailsTest {
   }
 
   @Test
-  public void testExceptionIsIncludedInOutput() throws Exception {
+  void testExceptionIsIncludedInOutput() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
         .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, new IllegalStateException("boom"));
@@ -75,7 +75,7 @@ public class GetErrorDetailsTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testStatusSetOnRequest() throws Exception {
+  void testStatusSetOnRequest() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
     process(builder);

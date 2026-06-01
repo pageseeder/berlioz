@@ -30,10 +30,10 @@ import org.junit.jupiter.api.Test;
  * @since Berlioz 0.10.3
  */
 @SuppressWarnings({"deprecated", "java:S1874"})
-public final class GlobalSettingsTest {
+final class GlobalSettingsTest {
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     File webinf = new File("src/test/resources/org/pageseeder/berlioz");
     System.out.println(webinf.getAbsolutePath());
     InitEnvironment env = InitEnvironment.create(webinf).mode("default");
@@ -44,7 +44,7 @@ public final class GlobalSettingsTest {
    * <string sample="hello" empty=""/>
    */
   @Test
-  public void testGet_String() {
+  void testGet_String() {
     // Value is "hello" -> "hello"
     Assertions.assertEquals(GlobalSettings.get("test.string.sample"), "hello");
     Assertions.assertEquals(GlobalSettings.get("test.string.sample", "byebye"), "hello");
@@ -57,7 +57,7 @@ public final class GlobalSettingsTest {
   }
 
   @Test
-  public void testGet_Boolean_TrueAndFalse() {
+  void testGet_Boolean_TrueAndFalse() {
     Assertions.assertEquals(GlobalSettings.get("test.boolean.true"), "true");
     Assertions.assertTrue(GlobalSettings.get("test.boolean.true", true));
     Assertions.assertTrue(GlobalSettings.get("test.boolean.true", false));
@@ -67,7 +67,7 @@ public final class GlobalSettingsTest {
   }
 
   @Test
-  public void testGet_Boolean_Invalid() {
+  void testGet_Boolean_Invalid() {
     Assertions.assertTrue(GlobalSettings.get("test.boolean.invalid", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.invalid", false));
     Assertions.assertEquals(GlobalSettings.get("test.boolean.invalid-true"), "True");
@@ -85,7 +85,7 @@ public final class GlobalSettingsTest {
   }
 
   @Test
-  public void testGet_Boolean_EmptyAndUndefined() {
+  void testGet_Boolean_EmptyAndUndefined() {
     Assertions.assertEquals(GlobalSettings.get("test.boolean.empty"), "");
     Assertions.assertTrue(GlobalSettings.get("test.boolean.empty", true));
     Assertions.assertFalse(GlobalSettings.get("test.boolean.empty", false));
@@ -98,7 +98,7 @@ public final class GlobalSettingsTest {
    * <int valid="123" toolarge="129999999999999999999999" invalid="not_an_int" empty=""/>
    */
   @Test
-  public void testGet_Int() {
+  void testGet_Int() {
     // Value is a number
     Assertions.assertEquals(GlobalSettings.get("test.int.valid"), "123");
     Assertions.assertEquals(123, GlobalSettings.get("test.int.valid", 777));
@@ -117,7 +117,7 @@ public final class GlobalSettingsTest {
   }
 
   @Test
-  public void testSetMode() {
+  void testSetMode() {
     Assertions.assertEquals(GlobalSettings.getMode(), "default");
     GlobalSettings.setMode("test");
     Assertions.assertEquals(GlobalSettings.getMode(), "test");
@@ -126,12 +126,12 @@ public final class GlobalSettingsTest {
   }
 
   @Test
-  public void testSetMode_Null() {
+  void testSetMode_Null() {
     Assertions.assertThrows(NullPointerException.class, () -> GlobalSettings.setMode(null));
   }
 
   @Test
-  public void testLoad_Override() {
+  void testLoad_Override() {
     GlobalSettings.setMode("undefined"); // Loads without the override
     GlobalSettings.load();
     Assertions.assertEquals(GlobalSettings.get("berlioz.xslt.cache"), "true");
@@ -156,7 +156,7 @@ public final class GlobalSettingsTest {
   }
 
   @Test
-  public void testLoad_Errors() {
+  void testLoad_Errors() {
     Assertions.assertTrue(GlobalSettings.load());
     Assertions.assertNotEquals(0, GlobalSettings.countProperties());
 
@@ -170,7 +170,7 @@ public final class GlobalSettingsTest {
   }
 
   @Test
-  public void testLoad_Listeners() {
+  void testLoad_Listeners() {
     final class NotifiableConfigListener implements ConfigListener {
       public int notifications = 0;
       @Override public void load() {

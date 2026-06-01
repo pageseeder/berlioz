@@ -13,19 +13,19 @@ import org.pageseeder.xmlwriter.XMLStringWriter;
 
 import java.io.File;
 
-public class GetServicesTest {
+class GetServicesTest {
 
   private static final File WEB_INF =
       new File("./src/test/resources/org/pageseeder/berlioz");
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     GlobalSettings.setup((InitEnvironment) null);
     ServiceLoader.getInstance().clear();
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     ServiceLoader.getInstance().clear();
     GlobalSettings.setup((InitEnvironment) null);
   }
@@ -34,14 +34,14 @@ public class GetServicesTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testProcessWritesNothingWhenNoConfigured() throws Exception {
+  void testProcessWritesNothingWhenNoConfigured() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertEquals("", out, "No output expected when no service files are configured");
   }
 
   @Test
-  public void testProcessIncludesServicesXmlContent() throws Exception {
+  void testProcessIncludesServicesXmlContent() throws Exception {
     GlobalSettings.setup(WEB_INF);
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
@@ -49,7 +49,7 @@ public class GetServicesTest {
   }
 
   @Test
-  public void testETagIsStableForUnchangedFiles() {
+  void testETagIsStableForUnchangedFiles() {
     GlobalSettings.setup(WEB_INF);
     GetServices gen = new GetServices();
     ContentRequest req = GeneratorTestSupport.request().build();

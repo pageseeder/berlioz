@@ -3,33 +3,33 @@ package org.pageseeder.berlioz.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class VersionsTest {
+final class VersionsTest {
 
   @Test
-  public void testCompareNullA() {
+  void testCompareNullA() {
     Assertions.assertThrows(NullPointerException.class, () -> Versions.compare(null, "1"));
   }
 
   @Test
-  public void testCompareNullB() {
+  void testCompareNullB() {
     Assertions.assertThrows(NullPointerException.class, () -> Versions.compare("1", null));
   }
 
   @Test
-  public void testCompareEmpty() {
+  void testCompareEmpty() {
     assertLatestIsA("1", "");
     assertLatestIsB("", "1");
   }
 
   @Test
-  public void testCompareZeroDot() {
+  void testCompareZeroDot() {
     assertLatestIsA("2", "1");
     assertLatestIsB("1", "2");
     assertEquivalent("1", "1");
   }
 
   @Test
-  public void testCompareOneDot() {
+  void testCompareOneDot() {
     assertLatestIsA("2.0", "1.0");
     assertLatestIsB("1.0", "2.0");
     assertEquivalent("1.0", "1.0");
@@ -38,7 +38,7 @@ public final class VersionsTest {
   }
 
   @Test
-  public void testCompareTwoDots() {
+  void testCompareTwoDots() {
     assertLatestIsA("1.0.1", "1.0.0");
     assertLatestIsB("1.0.0", "1.0.1");
     assertLatestIsA("1.1.0", "1.0.1");
@@ -48,7 +48,7 @@ public final class VersionsTest {
   }
 
   @Test
-  public void testCompareAlpha() {
+  void testCompareAlpha() {
     assertLatestIsA("1.0.beta", "1.0.alpha");
     assertLatestIsB("1.0.alpha", "1.0.beta");
     assertLatestIsA("1.0-alpha2", "1.0-alpha1");

@@ -28,13 +28,13 @@ import org.pageseeder.berlioz.furi.URIResolver.MatchRule;
  * @author Christophe Lauret
  * @version 27 May 2009
  */
-public class URIResolverTest {
+class URIResolverTest {
 
   /**
    * Test the <code>find</code> method.
    */
   @Test
-  public void testFind() {
+  void testFind() {
     URIResolver resolver = new URIResolver("/group/1892/home");
     List<URIPattern> patterns = new ArrayList<URIPattern>();
     patterns.add(new URIPattern("/group/{groupid}/list"));
@@ -47,7 +47,7 @@ public class URIResolverTest {
    * Test the <code>find</code> method.
    */
   @Test
-  public void testFind_First() {
+  void testFind_First() {
     URIResolver resolver = new URIResolver("/document/history/dir/doc.xml");
     List<URIPattern> patterns = new ArrayList<URIPattern>();
     patterns.add(new URIPattern("/document/{+document}"));
@@ -60,7 +60,7 @@ public class URIResolverTest {
    * Test the <code>find</code> method.
    */
   @Test
-  public void testFind_Best() {
+  void testFind_Best() {
     URIResolver resolver = new URIResolver("/document/history/dir/doc.xml");
     List<URIPattern> patterns = new ArrayList<URIPattern>();
     patterns.add(new URIPattern("/document/{+document}"));
@@ -73,7 +73,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some int values.
    */
   @Test
-  public void testResolve_Int() {
+  void testResolve_Int() {
     URIResolver resolver = new URIResolver("/group/1892/home");
     URIPattern p = new URIPattern("/group/{groupid}/home");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -86,7 +86,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some int values.
    */
   @Test
-  public void testResolve_IntTyped() {
+  void testResolve_IntTyped() {
     URIResolver resolver = new URIResolver("/group/1892/home");
     URIPattern p = new URIPattern("/group/{int:groupid}/home");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -106,7 +106,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some String values.
    */
   @Test
-  public void testResolve_String() {
+  void testResolve_String() {
     URIResolver resolver = new URIResolver("/user/~clauret/home");
     URIPattern p = new URIPattern("/user/{account}/home");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -119,7 +119,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some escaped values.
    */
   @Test
-  public void testResolve_Escape() {
+  void testResolve_Escape() {
     URIResolver resolver = new URIResolver("/tag/Caf%C3%A9");
     URIPattern p = new URIPattern("/tag/{tag}");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -132,7 +132,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some multiple values.
    */
   @Test
-  public void testResolve_Multiple() {
+  void testResolve_Multiple() {
     URIResolver resolver = new URIResolver("http://acme.com/dev/clauret");
     URIPattern p = new URIPattern("{scheme}://{domain}/{group}/{user}");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -148,7 +148,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some multiple values.
    */
   @Test
-  public void testResolve_Multiple2() {
+  void testResolve_Multiple2() {
     URIResolver resolver = new URIResolver("/documents;label=technical;version=1.0");
     URIPattern p = new URIPattern("/documents;label={label};version={version}");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -162,7 +162,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some multiple values.
    */
   @Test
-  public void testResolve_OperatorPathParam1Var() {
+  void testResolve_OperatorPathParam1Var() {
     URIResolver resolver = new URIResolver("/documents;label=technical");
     URIPattern p = new URIPattern("/documents{;label}");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -175,7 +175,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some multiple values.
    */
   @Test
-  public void testResolve_OperatorPathParamNVar() {
+  void testResolve_OperatorPathParamNVar() {
     URIResolver resolver = new URIResolver("/documents;label=technical;version=1.0");
     URIPattern p = new URIPattern("/documents{;label,version}");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -189,7 +189,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some objects values.
    */
   @Test
-  public void testResolve_Objects() {
+  void testResolve_Objects() {
     URIResolver resolver = new URIResolver("/documents;label=technical;version=1.0");
     URIPattern p = new URIPattern("/documents;label={label};version={version}");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -203,7 +203,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some objects values.
    */
   @Test
-  public void testResolve_URIInsert() {
+  void testResolve_URIInsert() {
     URIResolver resolver = new URIResolver("/path/dir/subdir/document.xml");
     URIPattern p = new URIPattern("/path/{+path}");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -216,7 +216,7 @@ public class URIResolverTest {
    * Test the <code>resolve</code> method with some objects values.
    */
   @Test
-  public void testResolve_URIInsert2() {
+  void testResolve_URIInsert2() {
     URIResolver resolver = new URIResolver("/path/dir/subdir/document.xml/comments");
     URIPattern p = new URIPattern("/path/{+path}/comments");
     Assertions.assertTrue(p.match(resolver.uri()));
@@ -226,7 +226,7 @@ public class URIResolverTest {
   }
 
   @Test
-  public void testSample() {
+  void testSample() {
     // setting up the patterns when parsing the configuration
     List<URIPattern> patterns = new ArrayList<URIPattern>();
     patterns.add(new URIPattern("/home"));

@@ -23,13 +23,13 @@ import org.junit.jupiter.api.Test;
  *
  * @author Christophe Lauret
  */
-public final class URIPatternTest {
+final class URIPatternTest {
 
   /**
    * Test that the constructor throws a NullPointerException for a <code>null</code> expression.
    */
   @Test
-  public void testNew_NullString() {
+  void testNew_NullString() {
     boolean nullThrown = false;
     try {
       new URIPattern((String) null);
@@ -44,7 +44,7 @@ public final class URIPatternTest {
    * Test that the constructor throws a NullPointerException for a <code>null</code> template.
    */
   @Test
-  public void testNew_NullTemplate() {
+  void testNew_NullTemplate() {
     boolean nullThrown = false;
     try {
       new URIPattern((URITemplate) null);
@@ -59,7 +59,7 @@ public final class URIPatternTest {
    * Test that the constructor handles an empty string.
    */
   @Test
-  public void testNew_EmptyString() {
+  void testNew_EmptyString() {
     new URIPattern("");
   }
 
@@ -67,7 +67,7 @@ public final class URIPatternTest {
    * Test the <code>equals</code> method.
    */
   @Test
-  public void testEquals_Contract() {
+  void testEquals_Contract() {
     URIPattern x = new URIPattern("http://example.com/{X}");
     URIPattern y = new URIPattern("http://example.com/{X}");
     URIPattern z = new URIPattern("http://example.com/{Y}");
@@ -78,7 +78,7 @@ public final class URIPatternTest {
    * Test the <code>match</code> method.
    */
   @Test
-  public void testMatchSingle() {
+  void testMatchSingle() {
     URIPattern x = new URIPattern("http://example.com/{X}");
     Assertions.assertTrue(x.match("http://example.com/toast"));
     Assertions.assertTrue(x.match("http://example.com/~clauret"));
@@ -92,7 +92,7 @@ public final class URIPatternTest {
    * Test the <code>match</code> method.
    */
   @Test
-  public void testMatchDouble() {
+  void testMatchDouble() {
     URIPattern y = new URIPattern("http://example.com/{X}/{Y}/home");
     Assertions.assertTrue(y.match("http://example.com/user/clauret/home"));
     Assertions.assertTrue(y.match("http://example.com/dir-x/_/home"));
@@ -103,7 +103,7 @@ public final class URIPatternTest {
    * Test the <code>match</code> method.
    */
   @Test
-  public void testMatchTyped() {
+  void testMatchTyped() {
     URIPattern x = new URIPattern("http://example.com/{t:X}");
     Assertions.assertTrue(x.match("http://example.com/toast"));
     Assertions.assertTrue(x.match("http://example.com/~clauret"));
@@ -116,7 +116,7 @@ public final class URIPatternTest {
    * Test the <code>match</code> method.
    */
   @Test
-  public void testMatch_URIInsert() {
+  void testMatch_URIInsert() {
     URIPattern x = new URIPattern("http://example.com/{+X}");
     Assertions.assertTrue(x.match("http://example.com/this/is/a/path"));
     Assertions.assertTrue(x.match("http://example.com/email@example.org"));
@@ -126,7 +126,7 @@ public final class URIPatternTest {
    * Test the <code>match</code> method
    */
   @Test
-  public void testMatch_Wildcard() {
+  void testMatch_Wildcard() {
     URIPattern x = new URIPattern("http://example.com/*");
     Assertions.assertTrue(x.match("http://example.com/this/is/a/path"));
     Assertions.assertTrue(x.match("http://example.com/email@example.org"));
@@ -137,7 +137,7 @@ public final class URIPatternTest {
    * Test the <code>match</code> method
    */
   @Test
-  public void testMatch_PathParameter() {
+  void testMatch_PathParameter() {
     URIPattern y = new URIPattern("http://example.com/filter{;x,y,z}/list");
     Assertions.assertTrue(y.match("http://example.com/filter;x=1;y=2;z=5/list"));
     Assertions.assertTrue(y.match("http://example.com/filter;y=1;z=2;x=5/list"));

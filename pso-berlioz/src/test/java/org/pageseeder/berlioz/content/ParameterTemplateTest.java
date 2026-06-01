@@ -5,10 +5,10 @@ import java.util.Collections;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class ParameterTemplateTest {
+final class ParameterTemplateTest {
 
   @Test
-  public void testParameter_Null() {
+  void testParameter_Null() {
     try {
       ParameterTemplate.parameter(null, "x");
       Assertions.fail("Expected NullPointerException");
@@ -19,7 +19,7 @@ public final class ParameterTemplateTest {
 
   @SuppressWarnings("java:S5976")
   @Test
-  public void testParameter_Nofallback1() {
+  void testParameter_Nofallback1() {
     ParameterTemplate pt = ParameterTemplate.parameter("test", null);
     Assertions.assertEquals(pt.toString(), "{test}");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "");
@@ -27,7 +27,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParameter_Nofallback2() {
+  void testParameter_Nofallback2() {
     ParameterTemplate pt = ParameterTemplate.parameter("test", "");
     Assertions.assertEquals(pt.toString(), "{test}");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "");
@@ -35,7 +35,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParameter_Fallback() {
+  void testParameter_Fallback() {
     ParameterTemplate pt = ParameterTemplate.parameter("test", "fallback");
     Assertions.assertEquals(pt.toString(), "{test=fallback}");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "fallback");
@@ -43,7 +43,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testValue() {
+  void testValue() {
     ParameterTemplate pt = ParameterTemplate.value("test");
     Assertions.assertEquals(pt.toString(), "test");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "test");
@@ -51,7 +51,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testValue_Null() {
+  void testValue_Null() {
     try {
       ParameterTemplate.value(null);
       Assertions.fail("Expected NullPointerException");
@@ -61,7 +61,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_Literal() {
+  void testParse_Literal() {
     ParameterTemplate pt = ParameterTemplate.parse("test");
     Assertions.assertEquals(pt.toString(), "test");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "test");
@@ -69,7 +69,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_Variable() {
+  void testParse_Variable() {
     ParameterTemplate pt = ParameterTemplate.parse("{test}");
     Assertions.assertEquals(pt.toString(), "{test}");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "");
@@ -77,7 +77,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_EmptyVariable() {
+  void testParse_EmptyVariable() {
     ParameterTemplate pt = ParameterTemplate.parse("{}");
     Assertions.assertEquals(pt.toString(), "{}");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "{}");
@@ -86,7 +86,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_OpenVariable() {
+  void testParse_OpenVariable() {
     ParameterTemplate pt = ParameterTemplate.parse("{");
     Assertions.assertEquals(pt.toString(), "{");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "{");
@@ -95,7 +95,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_ClosedVariable() {
+  void testParse_ClosedVariable() {
     ParameterTemplate pt = ParameterTemplate.parse("}");
     Assertions.assertEquals(pt.toString(), "}");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "}");
@@ -104,7 +104,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_Mix1() {
+  void testParse_Mix1() {
     ParameterTemplate pt = ParameterTemplate.parse("{a}{b}");
     Assertions.assertEquals(pt.toString(), "{a}{b}");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "");
@@ -114,7 +114,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_Mix2() {
+  void testParse_Mix2() {
     ParameterTemplate pt = ParameterTemplate.parse("|{a}-{b}|");
     Assertions.assertEquals(pt.toString(), "|{a}-{b}|");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "|-|");
@@ -124,7 +124,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_Mix3() {
+  void testParse_Mix3() {
     ParameterTemplate pt = ParameterTemplate.parse("|{a}-{a}|");
     Assertions.assertEquals(pt.toString(), "|{a}-{a}|");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "|-|");
@@ -133,7 +133,7 @@ public final class ParameterTemplateTest {
   }
 
   @Test
-  public void testParse_Mix4() {
+  void testParse_Mix4() {
     ParameterTemplate pt = ParameterTemplate.parse("|{a=x}-{b=y}|");
     Assertions.assertEquals(pt.toString(), "|{a=x}-{b=y}|");
     Assertions.assertEquals(pt.toString(Collections.<String,String>emptyMap()), "|x-y|");

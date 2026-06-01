@@ -5,10 +5,10 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class HttpRequestsTest {
+class HttpRequestsTest {
 
   @Test
-  public void testIsSafeRedirectURL_Relative() {
+  void testIsSafeRedirectURL_Relative() {
     HttpServletRequest request = HttpTestSupport.request().server("example.org", 8080).build();
     Assertions.assertTrue(HttpRequests.isSafeRedirectURL("/docs/index.html", request));
     Assertions.assertTrue(HttpRequests.isSafeRedirectURL("../other", request));
@@ -16,7 +16,7 @@ public class HttpRequestsTest {
   }
 
   @Test
-  public void testIsSafeRedirectURL_SameOrigin() {
+  void testIsSafeRedirectURL_SameOrigin() {
     HttpServletRequest request = HttpTestSupport.request().server("example.org", 8080).build();
     Assertions.assertTrue(HttpRequests.isSafeRedirectURL("https://example.org:8080/docs", request));
     Assertions.assertTrue(HttpRequests.isSafeRedirectURL("//example.org:8080/docs", request));
@@ -24,14 +24,14 @@ public class HttpRequestsTest {
   }
 
   @Test
-  public void testIsSafeRedirectURL_DefaultPorts() {
+  void testIsSafeRedirectURL_DefaultPorts() {
     HttpServletRequest request = HttpTestSupport.request().server("example.org", 443).build();
     Assertions.assertTrue(HttpRequests.isSafeRedirectURL("https://example.org/docs", request));
     Assertions.assertTrue(HttpRequests.isSafeRedirectURL("https://example.org:443/docs", request));
   }
 
   @Test
-  public void testIsSafeRedirectURL_Unsafe() {
+  void testIsSafeRedirectURL_Unsafe() {
     HttpServletRequest request = HttpTestSupport.request().server("example.org", 8080).build();
     Assertions.assertFalse(HttpRequests.isSafeRedirectURL(null, request));
     Assertions.assertFalse(HttpRequests.isSafeRedirectURL("https://elsewhere.example/docs", request));

@@ -6,18 +6,18 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 
-public final class RedirectConfigTest {
+final class RedirectConfigTest {
 
   File configFolder = new File("src/test/resources/org/pageseeder/berlioz/config");
 
   @Test
-  public void testConstructor() {
+  void testConstructor() {
     RedirectConfig config = new RedirectConfig();
     Assertions.assertTrue(config.isEmpty());
   }
 
   @Test
-  public void testLoad_Empty() throws ConfigException {
+  void testLoad_Empty() throws ConfigException {
     String xml = "<redirect-mapping/>";
     RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
     Assertions.assertTrue(config.isEmpty());
@@ -35,7 +35,7 @@ public final class RedirectConfigTest {
    * }</pre>
    */
   @Test
-  public void testLoad_File() throws ConfigException {
+  void testLoad_File() throws ConfigException {
     RedirectConfig config = RedirectConfig.newInstance(new File(this.configFolder, "redirect.xml"));
     Assertions.assertNull(config.redirect("/index.xml"));
     Assertions.assertNull(config.redirect("/example.html"));
@@ -52,23 +52,23 @@ public final class RedirectConfigTest {
   }
 
   @Test
-  public void testLoadFile_DTD() throws ConfigException {
+  void testLoadFile_DTD() throws ConfigException {
     RedirectConfig config = RedirectConfig.newInstance(new File(this.configFolder, "redirect_dtd.xml"));
     Assertions.assertNotNull(config);
   }
 
   @Test
-  public void testLoadFile_Invalid() throws ConfigException {
+  void testLoadFile_Invalid() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new File(this.configFolder, "redirect_invalid.xml")));
   }
 
   @Test
-  public void testLoadFile_Malformed() throws ConfigException {
+  void testLoadFile_Malformed() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new File(this.configFolder, "redirect_malformed.xml")));
   }
 
   @Test
-  public void testLoad_XXE() throws ConfigException {
+  void testLoad_XXE() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!-- XXE --><!DOCTYPE redirect-mapping [<!ELEMENT redirect-mapping ANY > <!ENTITY x SYSTEM \"/etc/password.xml\" >]><redirect-mapping>&x;</redirect-mapping>";
     RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
@@ -76,12 +76,12 @@ public final class RedirectConfigTest {
   }
 
   @Test
-  public void testLoad_XXE2() throws ConfigException {
+  void testLoad_XXE2() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> RedirectConfig.newInstance(new File(this.configFolder, "redirect_xxe.xml")));
   }
 
   @Test
-  public void testLoad_PermanentRedirect() throws ConfigException {
+  void testLoad_PermanentRedirect() throws ConfigException {
     String xml = "<redirect-mapping>" +
         "<redirect from=\"/old\" to=\"/new\" permanent=\"yes\"/>" +
         "</redirect-mapping>";
@@ -93,7 +93,7 @@ public final class RedirectConfigTest {
   }
 
   @Test
-  public void testLoad_TemporaryRedirectIsNotPermanent() throws ConfigException {
+  void testLoad_TemporaryRedirectIsNotPermanent() throws ConfigException {
     String xml = "<redirect-mapping>" +
         "<redirect from=\"/old\" to=\"/new\"/>" +
         "</redirect-mapping>";
@@ -104,7 +104,7 @@ public final class RedirectConfigTest {
   }
 
   @Test
-  public void testLoadFile_WeboorganicDTD() throws ConfigException {
+  void testLoadFile_WeboorganicDTD() throws ConfigException {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
         "<!DOCTYPE redirect-mapping PUBLIC \"-//Weborganic//DTD::Redirect Mapping 1.0//EN\" \"\">" +
         "<redirect-mapping><redirect from=\"/\" to=\"/home\"/></redirect-mapping>";
@@ -114,7 +114,7 @@ public final class RedirectConfigTest {
   }
 
   @Test
-  public void testLoad_XMLBomb() throws ConfigException {
+  void testLoad_XMLBomb() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!DOCTYPE redirect-mapping [\n" +
         "  <!ELEMENT redirect-mapping ANY >\n" +

@@ -29,20 +29,20 @@ import javax.xml.transform.stream.StreamSource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class JSONResultTest {
+class JSONResultTest {
 
   // ---------------------------------------------------------------------------
   // supports()
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testSupportsJsonMediaType() throws Exception {
+  void testSupportsJsonMediaType() throws Exception {
     Transformer t = jsonTransformer();
     Assertions.assertTrue(JSONResult.supports(t), "xml method + application/json media type must be supported");
   }
 
   @Test
-  public void testSupportsRejectsHtmlMethod() throws Exception {
+  void testSupportsRejectsHtmlMethod() throws Exception {
     Transformer t = TransformerFactory.newInstance().newTransformer();
     t.setOutputProperty("method", "html");
     t.setOutputProperty("media-type", "application/json");
@@ -50,7 +50,7 @@ public class JSONResultTest {
   }
 
   @Test
-  public void testSupportsRejectsWrongMediaType() throws Exception {
+  void testSupportsRejectsWrongMediaType() throws Exception {
     Transformer t = TransformerFactory.newInstance().newTransformer();
     t.setOutputProperty("method", "xml");
     t.setOutputProperty("media-type", "text/xml");
@@ -58,7 +58,7 @@ public class JSONResultTest {
   }
 
   @Test
-  public void testSupportsRejectsDefaultTransformer() throws Exception {
+  void testSupportsRejectsDefaultTransformer() throws Exception {
     Transformer t = TransformerFactory.newInstance().newTransformer();
     Assertions.assertFalse(JSONResult.supports(t), "Default identity transformer must not be supported");
   }
@@ -68,7 +68,7 @@ public class JSONResultTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNewInstanceIfSupportedReturnsJSONResultWhenSupported() throws Exception {
+  void testNewInstanceIfSupportedReturnsJSONResultWhenSupported() throws Exception {
     Transformer t = jsonTransformer();
     StreamResult sr = new StreamResult(new StringWriter());
     Result r = JSONResult.newInstanceIfSupported(t, sr);
@@ -76,7 +76,7 @@ public class JSONResultTest {
   }
 
   @Test
-  public void testNewInstanceIfSupportedReturnsStreamResultWhenNotSupported() throws Exception {
+  void testNewInstanceIfSupportedReturnsStreamResultWhenNotSupported() throws Exception {
     Transformer t = TransformerFactory.newInstance().newTransformer();
     StreamResult sr = new StreamResult(new StringWriter());
     Result r = JSONResult.newInstanceIfSupported(t, sr);
@@ -88,7 +88,7 @@ public class JSONResultTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNewInstanceFromOutputStream() {
+  void testNewInstanceFromOutputStream() {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     StreamResult sr = new StreamResult(out);
     JSONResult r = JSONResult.newInstance(sr);
@@ -96,7 +96,7 @@ public class JSONResultTest {
   }
 
   @Test
-  public void testNewInstanceFromWriter() {
+  void testNewInstanceFromWriter() {
     StringWriter writer = new StringWriter();
     StreamResult sr = new StreamResult(writer);
     JSONResult r = JSONResult.newInstance(sr);
@@ -104,7 +104,7 @@ public class JSONResultTest {
   }
 
   @Test
-  public void testNewInstanceFallsBackToSystemOut() {
+  void testNewInstanceFallsBackToSystemOut() {
     StreamResult sr = new StreamResult();
     JSONResult r = JSONResult.newInstance(sr);
     Assertions.assertNotNull(r);
@@ -115,7 +115,7 @@ public class JSONResultTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testTransformProducesValidJSON() throws Exception {
+  void testTransformProducesValidJSON() throws Exception {
     String xml = "<root description=\"hello\"><item id=\"1\"/></root>";
     StringWriter out = new StringWriter();
     Transformer t = jsonTransformer();
@@ -129,7 +129,7 @@ public class JSONResultTest {
   }
 
   @Test
-  public void testTransformToOutputStream() throws Exception {
+  void testTransformToOutputStream() throws Exception {
     String xml = "<root><item name=\"x\"/></root>";
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     Transformer t = jsonTransformer();

@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 
-public class RelocationFilterTest {
+class RelocationFilterTest {
 
   @TempDir
   Path tmp;
@@ -37,7 +37,7 @@ public class RelocationFilterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testPassThroughWhenNoRelocationMatches() throws Exception {
+  void testPassThroughWhenNoRelocationMatches() throws Exception {
     RelocationFilter filter = initFilter(
         "<?xml version=\"1.0\"?><relocation-mapping>"
         + "<relocation from=\"/old\" to=\"/new\"/>"
@@ -54,7 +54,7 @@ public class RelocationFilterTest {
   }
 
   @Test
-  public void testPassThroughWhenConfigIsEmpty() throws Exception {
+  void testPassThroughWhenConfigIsEmpty() throws Exception {
     RelocationFilter filter = initFilter("<?xml version=\"1.0\"?><relocation-mapping/>");
 
     boolean[] chainInvoked = {false};
@@ -70,7 +70,7 @@ public class RelocationFilterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testRelocationSetsContentLocationHeader() throws Exception {
+  void testRelocationSetsContentLocationHeader() throws Exception {
     RelocationFilter filter = initFilter(
         "<?xml version=\"1.0\"?><relocation-mapping>"
         + "<relocation from=\"/old\" to=\"/new\"/>"
@@ -98,7 +98,7 @@ public class RelocationFilterTest {
   }
 
   @Test
-  public void testRelocationWithNullDispatcherStillContinuesChain() throws Exception {
+  void testRelocationWithNullDispatcherStillContinuesChain() throws Exception {
     RelocationFilter filter = initFilter(
         "<?xml version=\"1.0\"?><relocation-mapping>"
         + "<relocation from=\"/old\" to=\"/new\"/>"

@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Test;
  * @author Christophe Lauret
  * @version 31 December 2008
  */
-public final class TokenBaseTest {
+final class TokenBaseTest {
 
   /**
    * Test that the constructor throws a NullPointerException for a <code>null</code> expression.
    */
   @Test
-  public void testNew_Null() {
+  void testNew_Null() {
     boolean nullThrown = false;
     try {
       new TokenImpl(null);
@@ -49,7 +49,7 @@ public final class TokenBaseTest {
    * Test the <code>equal</code> method.
    */
   @Test
-  public void testEquals() {
+  void testEquals() {
     TokenImpl x = new TokenImpl("t");
     TokenImpl y = new TokenImpl("t");
     TokenImpl z = new TokenImpl("T");

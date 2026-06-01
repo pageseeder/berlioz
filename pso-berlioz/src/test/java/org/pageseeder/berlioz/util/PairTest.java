@@ -18,10 +18,10 @@ package org.pageseeder.berlioz.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class PairTest {
+final class PairTest {
 
   @Test
-  public void testAccessors() {
+  void testAccessors() {
     Pair<String, Integer> pair = new Pair<>("alpha", 1);
 
     Assertions.assertEquals(pair.first(), "alpha");
@@ -29,7 +29,7 @@ public final class PairTest {
   }
 
   @Test
-  public void testEquals() {
+  void testEquals() {
     Pair<String, Integer> pair = new Pair<>("alpha", 1);
     Pair<String, Integer> same = new Pair<>("alpha", 1);
     Pair<String, Integer> differentFirst = new Pair<>("beta", 1);
@@ -42,7 +42,7 @@ public final class PairTest {
   }
 
   @Test
-  public void testEqualsWithNullValues() {
+  void testEqualsWithNullValues() {
     Pair<String, Integer> pair = new Pair<>(null, null);
     Pair<String, Integer> same = new Pair<>(null, null);
     Pair<String, Integer> differentFirst = new Pair<>("alpha", null);
@@ -55,7 +55,7 @@ public final class PairTest {
   }
 
   @Test
-  public void testNotEqualsOtherTypes() {
+  void testNotEqualsOtherTypes() {
     Pair<String, Integer> pair = new Pair<>("alpha", 1);
 
     Assertions.assertNotEquals(pair, null);

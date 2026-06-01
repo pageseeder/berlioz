@@ -24,10 +24,10 @@ import org.junit.jupiter.api.Test;
  * @since 06 July 2021
  */
 @SuppressWarnings({"deprecation", "removal"})
-public class StringUtilsTest {
+class StringUtilsTest {
 
   @Test
-  public void testIsBlank() {
+  void testIsBlank() {
     Assertions.assertTrue(StringUtils.isBlank(null));
     Assertions.assertTrue(StringUtils.isBlank(""));
     Assertions.assertTrue(StringUtils.isBlank("  "));
@@ -37,7 +37,7 @@ public class StringUtilsTest {
   }
 
   @Test
-  public void testSubstringAfter(){
+  void testSubstringAfter(){
     Assertions.assertEquals(StringUtils.substringAfter(null, ","), "");
     Assertions.assertEquals(StringUtils.substringAfter(" ", ","), "");
     Assertions.assertEquals(StringUtils.substringAfter("first second", null), "");
@@ -53,7 +53,7 @@ public class StringUtilsTest {
 
 
   @Test
-  public void testSubstringBefore(){
+  void testSubstringBefore(){
     Assertions.assertEquals(StringUtils.substringBefore(null, ","), "");
     Assertions.assertEquals(StringUtils.substringBefore(" ", ","), "");
     Assertions.assertEquals(StringUtils.substringBefore("first second", null), "");

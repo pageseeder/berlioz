@@ -7,14 +7,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("deprecation")
-public class JSONWriterFactoryTest {
+class JSONWriterFactoryTest {
 
   // ---------------------------------------------------------------------------
   // Functional correctness — the produced writer must emit valid JSON
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testNewInstanceWriterProducesValidJSON() {
+  void testNewInstanceWriterProducesValidJSON() {
     StringWriter sw = new StringWriter();
     try (JSONWriter writer = JSONWriterFactory.newInstance(sw)) {
       writer.startObject()
@@ -35,7 +35,7 @@ public class JSONWriterFactoryTest {
   }
 
   @Test
-  public void testNewInstanceStreamProducesValidJSON() throws Exception {
+  void testNewInstanceStreamProducesValidJSON() throws Exception {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     try (JSONWriter writer = JSONWriterFactory.newInstance(out)) {
       writer.startArray()
@@ -54,7 +54,7 @@ public class JSONWriterFactoryTest {
   }
 
   @Test
-  public void testNestedStructure() {
+  void testNestedStructure() {
     StringWriter sw = new StringWriter();
     try (JSONWriter writer = JSONWriterFactory.newInstance(sw)) {
       writer.startObject()
@@ -71,12 +71,12 @@ public class JSONWriterFactoryTest {
   }
 
   @Test
-  public void testValueNaNThrows() {
+  void testValueNaNThrows() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> JSONWriterFactory.newInstance(new StringWriter()).value(Double.NaN));
   }
 
   @Test
-  public void testPropertyInfinityThrows() {
+  void testPropertyInfinityThrows() {
     Assertions.assertThrows(IllegalArgumentException.class, () -> JSONWriterFactory.newInstance(new StringWriter()).startObject().property("x", Double.POSITIVE_INFINITY));
   }
 
@@ -85,7 +85,7 @@ public class JSONWriterFactoryTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testInitIsIdempotent() {
+  void testInitIsIdempotent() {
     // Calling init() multiple times must not throw or corrupt state
     JSONWriterFactory.init();
     JSONWriterFactory.init();
@@ -100,7 +100,7 @@ public class JSONWriterFactoryTest {
   }
 
   @Test
-  public void testConcurrentNewInstance() throws InterruptedException {
+  void testConcurrentNewInstance() throws InterruptedException {
     // Multiple threads obtaining writers must not race or corrupt each other's output
     int threads = 8;
     Thread[] workers = new Thread[threads];

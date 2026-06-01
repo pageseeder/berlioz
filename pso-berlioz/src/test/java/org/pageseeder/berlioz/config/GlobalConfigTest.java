@@ -9,17 +9,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class GlobalConfigTest {
+final class GlobalConfigTest {
 
   @Test
-  public void testConstructor() {
+  void testConstructor() {
     GlobalConfig config = new GlobalConfig();
     Assertions.assertNotNull(config.properties());
     Assertions.assertTrue(config.properties().isEmpty());
   }
 
   @Test
-  public void testLoad_Empty() throws ConfigException {
+  void testLoad_Empty() throws ConfigException {
     GlobalConfig config = new GlobalConfig();
     String xml = "<global/>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -28,7 +28,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_XXE() throws ConfigException {
+  void testLoad_XXE() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> {
     GlobalConfig config = new GlobalConfig();
     String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
@@ -37,7 +37,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_XMLBomb() throws ConfigException {
+  void testLoad_XMLBomb() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> {
     GlobalConfig config = new GlobalConfig();
     String xml = "<!DOCTYPE global [\n" +
@@ -58,7 +58,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_Global() throws ConfigException {
+  void testLoad_Global() throws ConfigException {
     GlobalConfig config = new GlobalConfig();
     String xml = "<global greeting='hello' empty=''/>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -70,7 +70,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_Tree() throws ConfigException {
+  void testLoad_Tree() throws ConfigException {
     GlobalConfig config = new GlobalConfig();
     String xml = "<global><a x='1'><b y='2'><c z='3'></c><d z='4' q='5'></d></b></a></global>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -90,7 +90,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_Aliases() throws ConfigException {
+  void testLoad_Aliases() throws ConfigException {
     GlobalConfig config = new GlobalConfig();
     String xml = "<global a='0'><a x='1' x.y='2'><x z='3'/><x q='4'/></a><a.x w='5'/></global>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -106,7 +106,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_Duplicates() throws ConfigException {
+  void testLoad_Duplicates() throws ConfigException {
     GlobalConfig config = new GlobalConfig();
     String xml = "<global a.x='_' a.x.y='_'><a x='1' x.y='_'/><a.x y='2'/></global>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
@@ -118,7 +118,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_Overrides() throws ConfigException {
+  void testLoad_Overrides() throws ConfigException {
     GlobalConfig config = new GlobalConfig();
     String original = "<global a='_'><a x='_' y='3'/></global>";
     String override = "<global a='1'><a x='2' z='4'/></global>";
@@ -134,7 +134,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testLoad_Invalid() throws ConfigException {
+  void testLoad_Invalid() throws ConfigException {
     Assertions.assertThrows(ConfigException.class, () -> {
     GlobalConfig config = new GlobalConfig();
     String invalid = "<global>";
@@ -143,7 +143,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testToXML_Empty() throws IOException, ConfigException {
+  void testToXML_Empty() throws IOException, ConfigException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     new GlobalConfig().save(out);
     byte[] xml = out.toByteArray();
@@ -154,7 +154,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testToXML_Global() throws ConfigException, IOException {
+  void testToXML_Global() throws ConfigException, IOException {
     Map<String, String> properties = new HashMap<>();
     properties.put("a", "1");
     properties.put("b", "2");
@@ -172,7 +172,7 @@ public final class GlobalConfigTest {
 
 
   @Test
-  public void testToXML_ManyProperties() throws ConfigException, IOException {
+  void testToXML_ManyProperties() throws ConfigException, IOException {
     Map<String, String> properties = new HashMap<>();
     properties.put("version", "1.0");
     properties.put("berlioz.cache", "true");
@@ -196,7 +196,7 @@ public final class GlobalConfigTest {
   }
 
   @Test
-  public void testToXML_IllegalNames() throws ConfigException, IOException {
+  void testToXML_IllegalNames() throws ConfigException, IOException {
     Map<String, String> properties = new HashMap<>();
     properties.put("app.1", "1");
     properties.put("app.2a", "2");

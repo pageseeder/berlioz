@@ -8,13 +8,13 @@ import org.pageseeder.xmlwriter.XMLStringWriter;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
-public class HttpLocationTest {
+class HttpLocationTest {
 
   // build() tests
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testBuildExtractsSchemeHostPort() {
+  void testBuildExtractsSchemeHostPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(8080)
         .uri("/page.html").query(null)
@@ -27,7 +27,7 @@ public class HttpLocationTest {
   }
 
   @Test
-  public void testBuildExtractsPathAndQuery() {
+  void testBuildExtractsPathAndQuery() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("example.org").port(443)
         .uri("/search").query("q=berlioz&page=2")
@@ -39,7 +39,7 @@ public class HttpLocationTest {
   }
 
   @Test
-  public void testBuildNullQueryBecomesEmpty() {
+  void testBuildNullQueryBecomesEmpty() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(80)
         .uri("/page").query(null)
@@ -50,7 +50,7 @@ public class HttpLocationTest {
   }
 
   @Test
-  public void testBuildPathInfoIsPopulated() {
+  void testBuildPathInfoIsPopulated() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(80)
         .uri("/api/users").query(null)
@@ -66,28 +66,28 @@ public class HttpLocationTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testToBaseUrlDefaultHttpPort() {
+  void testToBaseUrlDefaultHttpPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(80).uri("/").build();
     Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "http://example.org");
   }
 
   @Test
-  public void testToBaseUrlNonDefaultHttpPort() {
+  void testToBaseUrlNonDefaultHttpPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(8080).uri("/").build();
     Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "http://example.org:8080");
   }
 
   @Test
-  public void testToBaseUrlDefaultHttpsPort() {
+  void testToBaseUrlDefaultHttpsPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("secure.example.org").port(443).uri("/").build();
     Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://secure.example.org");
   }
 
   @Test
-  public void testToBaseUrlNonDefaultHttpsPort() {
+  void testToBaseUrlNonDefaultHttpsPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("secure.example.org").port(8443).uri("/").build();
     Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://secure.example.org:8443");
@@ -97,7 +97,7 @@ public class HttpLocationTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testReverseProxySchemeOverridesServerScheme() {
+  void testReverseProxySchemeOverridesServerScheme() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("internal").port(8080)
         .header("X-Forwarded-Proto", "https")
@@ -106,7 +106,7 @@ public class HttpLocationTest {
   }
 
   @Test
-  public void testReverseProxyPortExtractedFromForwardedHost() {
+  void testReverseProxyPortExtractedFromForwardedHost() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("internal").port(8080)
         .header("X-Forwarded-Proto", "https")
@@ -116,7 +116,7 @@ public class HttpLocationTest {
   }
 
   @Test
-  public void testReverseProxyForwardedHostWithoutPortUsesDefaultPort() {
+  void testReverseProxyForwardedHostWithoutPortUsesDefaultPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("internal").port(8080)
         .header("X-Forwarded-Proto", "https")
@@ -127,7 +127,7 @@ public class HttpLocationTest {
   }
 
   @Test
-  public void testNoReverseProxyHeadersUsesServerPort() {
+  void testNoReverseProxyHeadersUsesServerPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("app.example.org").port(443).uri("/").build();
     Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://app.example.org");
@@ -137,7 +137,7 @@ public class HttpLocationTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testToXmlContainsSchemeHostPort() throws IOException {
+  void testToXmlContainsSchemeHostPort() throws IOException {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(8080)
         .uri("/page.html").query("a=1")
@@ -157,7 +157,7 @@ public class HttpLocationTest {
   }
 
   @Test
-  public void testToXmlOmitsPortFromBaseWhenDefault() throws IOException {
+  void testToXmlOmitsPortFromBaseWhenDefault() throws IOException {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(80)
         .uri("/page.html").query(null)

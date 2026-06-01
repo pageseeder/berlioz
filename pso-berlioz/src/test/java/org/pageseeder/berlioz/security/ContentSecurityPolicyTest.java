@@ -3,10 +3,10 @@ package org.pageseeder.berlioz.security;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ContentSecurityPolicyTest {
+class ContentSecurityPolicyTest {
 
   @Test
-  public void testEmpty() {
+  void testEmpty() {
     ContentSecurityPolicy empty1 = new ContentSecurityPolicy.Builder().build();
     ContentSecurityPolicy empty2 = new ContentSecurityPolicy.Builder().build();
     Assertions.assertTrue(empty1.isEmpty());
@@ -14,7 +14,7 @@ public class ContentSecurityPolicyTest {
   }
 
   @Test
-  public void testDefaultSelf() {
+  void testDefaultSelf() {
     ContentSecurityPolicy empty = new ContentSecurityPolicy.Builder().build();
     ContentSecurityPolicy self1 = new ContentSecurityPolicy.Builder()
         .set(Directive.DEFAULT_SRC, "'self'")
@@ -28,7 +28,7 @@ public class ContentSecurityPolicyTest {
   }
 
   @Test
-  public void testAdd1() {
+  void testAdd1() {
     ContentSecurityPolicy empty = new ContentSecurityPolicy.Builder().build();
     ContentSecurityPolicy self1 = new ContentSecurityPolicy.Builder()
         .add(Directive.DEFAULT_SRC, "'self'")
@@ -42,7 +42,7 @@ public class ContentSecurityPolicyTest {
   }
 
   @Test
-  public void testAdd2() {
+  void testAdd2() {
     ContentSecurityPolicy empty = new ContentSecurityPolicy.Builder().build();
     ContentSecurityPolicy csp1 = new ContentSecurityPolicy.Builder()
         .add(Directive.DEFAULT_SRC, "'self'")
@@ -59,7 +59,7 @@ public class ContentSecurityPolicyTest {
   }
 
   @Test
-  public void testRemove() {
+  void testRemove() {
     ContentSecurityPolicy empty = new ContentSecurityPolicy.Builder().build();
     ContentSecurityPolicy self = new ContentSecurityPolicy.Builder()
         .set(Directive.DEFAULT_SRC, "'self'")

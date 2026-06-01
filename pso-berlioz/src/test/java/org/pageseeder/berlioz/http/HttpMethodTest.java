@@ -3,10 +3,10 @@ package org.pageseeder.berlioz.http;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class HttpMethodTest {
+class HttpMethodTest {
 
   @Test
-  public void testIsMappable() {
+  void testIsMappable() {
     Assertions.assertTrue(HttpMethod.GET.isMappable());
     Assertions.assertTrue(HttpMethod.POST.isMappable());
     Assertions.assertTrue(HttpMethod.PUT.isMappable());
@@ -17,7 +17,7 @@ public class HttpMethodTest {
   }
 
   @Test
-  public void testMappable() {
+  void testMappable() {
     Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.GET));
     Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.POST));
     Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.PUT));

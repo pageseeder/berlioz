@@ -26,23 +26,23 @@ import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.http.HttpMethod;
 
-public class ServiceLoaderTest {
+class ServiceLoaderTest {
 
   private static final File WEB_INF = new File("./src/test/resources/org/pageseeder/berlioz");
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     GlobalSettings.setup(WEB_INF);
     ServiceLoader.getInstance().clear();
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     ServiceLoader.getInstance().clear();
   }
 
   @Test
-  public void testLoad_parsesServicesFile() throws BerliozException {
+  void testLoad_parsesServicesFile() throws BerliozException {
     ServiceLoader loader = ServiceLoader.getInstance();
     loader.load(new File(WEB_INF, "config/services.xml"));
 
@@ -52,7 +52,7 @@ public class ServiceLoaderTest {
   }
 
   @Test
-  public void testLoad_homeServiceRegistered() throws BerliozException {
+  void testLoad_homeServiceRegistered() throws BerliozException {
     ServiceLoader loader = ServiceLoader.getInstance();
     loader.load(new File(WEB_INF, "config/services.xml"));
 
@@ -63,7 +63,7 @@ public class ServiceLoaderTest {
   }
 
   @Test
-  public void testLoadIfRequired_loadsOnce() throws BerliozException {
+  void testLoadIfRequired_loadsOnce() throws BerliozException {
     ServiceLoader loader = ServiceLoader.getInstance();
     boolean first = loader.loadIfRequired();
     boolean second = loader.loadIfRequired();
@@ -72,7 +72,7 @@ public class ServiceLoaderTest {
   }
 
   @Test
-  public void testClear_resetsLoadedFlag() throws BerliozException {
+  void testClear_resetsLoadedFlag() throws BerliozException {
     ServiceLoader loader = ServiceLoader.getInstance();
     loader.loadIfRequired();
     loader.clear();
@@ -81,7 +81,7 @@ public class ServiceLoaderTest {
   }
 
   @Test
-  public void testListServiceFiles_returnsServicesXml() {
+  void testListServiceFiles_returnsServicesXml() {
     ServiceLoader loader = ServiceLoader.getInstance();
     List<File> files = loader.listServiceFiles();
     Assertions.assertFalse(files.isEmpty(), "Expected at least one services file");

@@ -17,7 +17,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Files;
 
-public class GetLiveServicesTest {
+class GetLiveServicesTest {
 
   private static final File WEB_INF =
       new File("./src/test/resources/org/pageseeder/berlioz");
@@ -26,19 +26,19 @@ public class GetLiveServicesTest {
   Path tmp;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     GlobalSettings.setup((InitEnvironment) null);
     ServiceLoader.getInstance().clear();
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     ServiceLoader.getInstance().clear();
     GlobalSettings.setup((InitEnvironment) null);
   }
 
   @Test
-  public void testProcessWritesLiveServicesElementWhenRegistryEmpty() throws Exception {
+  void testProcessWritesLiveServicesElementWhenRegistryEmpty() throws Exception {
     HttpEnvironment env = new HttpEnvironment(
         Files.createDirectory(tmp.resolve("public")).toFile(), Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=0");
     ContentRequest req = GeneratorTestSupport.request().environment(env).build();
@@ -47,7 +47,7 @@ public class GetLiveServicesTest {
   }
 
   @Test
-  public void testETagReflectsRegistryVersion() {
+  void testETagReflectsRegistryVersion() {
     GetLiveServices gen = new GetLiveServices();
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag = gen.getETag(req);
@@ -56,7 +56,7 @@ public class GetLiveServicesTest {
   }
 
   @Test
-  public void testProcessWithLoadedServicesContainsServiceEntries() throws Exception {
+  void testProcessWithLoadedServicesContainsServiceEntries() throws Exception {
     GlobalSettings.setup(WEB_INF);
     ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
 

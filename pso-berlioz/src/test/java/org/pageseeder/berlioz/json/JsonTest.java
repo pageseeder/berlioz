@@ -18,52 +18,52 @@ package org.pageseeder.berlioz.json;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class JsonTest {
+class JsonTest {
 
   @Test
-  public void testCamelifyEmpty() {
+  void testCamelifyEmpty() {
     Assertions.assertEquals(Json.camelify(""), "");
   }
 
   @Test
-  public void testCamelifyNoDash() {
+  void testCamelifyNoDash() {
     Assertions.assertEquals(Json.camelify("hello"), "hello");
   }
 
   @Test
-  public void testCamelifyOneDash() {
+  void testCamelifyOneDash() {
     Assertions.assertEquals(Json.camelify("hello-world"), "helloWorld");
   }
 
   @Test
-  public void testCamelifyMultipleDashes() {
+  void testCamelifyMultipleDashes() {
     Assertions.assertEquals(Json.camelify("hello-world-foo"), "helloWorldFoo");
   }
 
   @Test
-  public void testCamelifyTrailingDash() {
+  void testCamelifyTrailingDash() {
     Assertions.assertEquals(Json.camelify("hello-"), "hello-");
   }
 
   @Test
-  public void testCamelifyLeadingDash() {
+  void testCamelifyLeadingDash() {
     Assertions.assertEquals(Json.camelify("-hello"), "Hello");
   }
 
   @Test
-  public void testCamelifyConsecutiveDashes() {
+  void testCamelifyConsecutiveDashes() {
     Assertions.assertEquals(Json.camelify("hello--world"), "hello-world");
   }
 
   @Test
-  public void testProviderNameIsKnown() {
+  void testProviderNameIsKnown() {
     String name = Json.providerName();
     Assertions.assertNotNull(name);
     Assertions.assertNotEquals(name, "UNKNOWN");
   }
 
   @Test
-  public void testProviderNameIsStable() {
+  void testProviderNameIsStable() {
     Assertions.assertEquals(Json.providerName(), Json.providerName());
   }
 

@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.io.IOException;
 import java.util.List;
 
-public class OverlaysTest {
+class OverlaysTest {
 
   // Root with WEB-INF/overlays containing: illegal-1.0.zip, readme-1.0.zip, readme-2.0.war, sample-1.0.war
   private final File root = new File("./src/test/resources/org/pageseeder/berlioz/servlet");
@@ -23,13 +23,13 @@ public class OverlaysTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testListCount() {
+  void testListCount() {
     List<Overlays.Overlay> overlays = Overlays.list(root);
     Assertions.assertEquals(4, overlays.size());
   }
 
   @Test
-  public void testListSortedByNameThenVersion() {
+  void testListSortedByNameThenVersion() {
     List<Overlays.Overlay> overlays = Overlays.list(root);
     Assertions.assertEquals(overlays.get(0).toString(), "illegal[1.0]");
     Assertions.assertEquals(overlays.get(1).toString(), "readme[1.0]");
@@ -38,7 +38,7 @@ public class OverlaysTest {
   }
 
   @Test
-  public void testListNamesAndVersions() {
+  void testListNamesAndVersions() {
     List<Overlays.Overlay> overlays = Overlays.list(root);
     Assertions.assertEquals(overlays.get(0).name(), "illegal");
     Assertions.assertEquals(overlays.get(0).version(), "1.0");
@@ -51,14 +51,14 @@ public class OverlaysTest {
   }
 
   @Test
-  public void testListEmptyWhenNoOverlaysDirectory() throws IOException {
+  void testListEmptyWhenNoOverlaysDirectory() throws IOException {
     File emptyRoot = Files.createTempDirectory(tmp, "d").toFile();
     new File(emptyRoot, "WEB-INF").mkdirs();
     Assertions.assertTrue(Overlays.list(emptyRoot).isEmpty());
   }
 
   @Test
-  public void testListEmptyWhenOverlaysFolderIsEmpty() throws IOException {
+  void testListEmptyWhenOverlaysFolderIsEmpty() throws IOException {
     File emptyRoot = Files.createTempDirectory(tmp, "d").toFile();
     new File(emptyRoot, "WEB-INF/overlays").mkdirs();
     Assertions.assertTrue(Overlays.list(emptyRoot).isEmpty());
@@ -70,7 +70,7 @@ public class OverlaysTest {
 
   @SuppressWarnings("java:S5976")
   @Test
-  public void testUnpackReadmeCount() throws IOException {
+  void testUnpackReadmeCount() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     // README.txt only; __MACOSX entries in the 2.0.war must be skipped
     int count = find(root, "readme", "1.0").unpack(target);
@@ -78,7 +78,7 @@ public class OverlaysTest {
   }
 
   @Test
-  public void testUnpackReadmeExtractsFile() throws IOException {
+  void testUnpackReadmeExtractsFile() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     find(root, "readme", "1.0").unpack(target);
     Assertions.assertTrue(new File(target, "README.txt").exists());
@@ -89,7 +89,7 @@ public class OverlaysTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testUnpackSampleCount() throws IOException {
+  void testUnpackSampleCount() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     // Extracted: test/sample.html, WEB-INF/psml/test.psml,
     //            WEB-INF/config/services!test.xml, README.txt
@@ -99,21 +99,21 @@ public class OverlaysTest {
   }
 
   @Test
-  public void testUnpackSampleSkipsMacOsEntries() throws IOException {
+  void testUnpackSampleSkipsMacOsEntries() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     find(root, "sample", "1.0").unpack(target);
     Assertions.assertFalse(new File(target, "__MACOSX").exists());
   }
 
   @Test
-  public void testUnpackSampleSkipsDsStoreFiles() throws IOException {
+  void testUnpackSampleSkipsDsStoreFiles() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     find(root, "sample", "1.0").unpack(target);
     Assertions.assertFalse(new File(target, "WEB-INF/.DS_Store").exists());
   }
 
   @Test
-  public void testUnpackSampleExtractsLegalWebInfFile() throws IOException {
+  void testUnpackSampleExtractsLegalWebInfFile() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     find(root, "sample", "1.0").unpack(target);
     Assertions.assertTrue(new File(target, "WEB-INF/config/services!test.xml").exists());
@@ -124,21 +124,21 @@ public class OverlaysTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testUnpackIllegalSkipsWebXml() throws IOException {
+  void testUnpackIllegalSkipsWebXml() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     find(root, "illegal", "1.0").unpack(target);
     Assertions.assertFalse(new File(target, "WEB-INF/web.xml").exists(), "WEB-INF/web.xml must not be extracted from an overlay");
   }
 
   @Test
-  public void testUnpackIllegalSkipsServicesXml() throws IOException {
+  void testUnpackIllegalSkipsServicesXml() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     find(root, "illegal", "1.0").unpack(target);
     Assertions.assertFalse(new File(target, "WEB-INF/config/services.xml").exists(), "WEB-INF/config/services.xml must not be extracted from an overlay");
   }
 
   @Test
-  public void testUnpackIllegalCount() throws IOException {
+  void testUnpackIllegalCount() throws IOException {
     File target = Files.createTempDirectory(tmp, "d").toFile();
     // Legal files only: test/sample.html, WEB-INF/psml/test.psml, README.txt
     // Blocked: WEB-INF/web.xml, WEB-INF/config/services.xml

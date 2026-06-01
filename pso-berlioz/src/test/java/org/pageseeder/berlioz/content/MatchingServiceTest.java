@@ -22,7 +22,7 @@ import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.furi.URIResolver;
 import org.pageseeder.berlioz.generator.NoContent;
 
-public final class MatchingServiceTest {
+final class MatchingServiceTest {
 
   private static Service buildService(String id) {
     return new Service.Builder()
@@ -34,7 +34,7 @@ public final class MatchingServiceTest {
   }
 
   @Test
-  public void testConstructor_nullService() {
+  void testConstructor_nullService() {
     Assertions.assertThrows(NullPointerException.class, () -> {
     URIPattern pattern = new URIPattern("/home");
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
@@ -43,7 +43,7 @@ public final class MatchingServiceTest {
   }
 
   @Test
-  public void testConstructor_nullPattern() {
+  void testConstructor_nullPattern() {
     Assertions.assertThrows(NullPointerException.class, () -> {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
@@ -53,7 +53,7 @@ public final class MatchingServiceTest {
   }
 
   @Test
-  public void testConstructor_nullResult() {
+  void testConstructor_nullResult() {
     Assertions.assertThrows(NullPointerException.class, () -> {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
@@ -62,7 +62,7 @@ public final class MatchingServiceTest {
   }
 
   @Test
-  public void testGetters() {
+  void testGetters() {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
@@ -74,7 +74,7 @@ public final class MatchingServiceTest {
   }
 
   @Test
-  public void testIsCacheable_cacheableGenerators() {
+  void testIsCacheable_cacheableGenerators() {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
@@ -85,7 +85,7 @@ public final class MatchingServiceTest {
   }
 
   @Test
-  public void testIsCacheable_nonCacheableGenerator() {
+  void testIsCacheable_nonCacheableGenerator() {
     // A generator that does NOT implement Cacheable
     ContentGenerator nonCacheable = (req, xml) -> {};
     Service service = new Service.Builder()

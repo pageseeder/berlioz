@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 
-public class RedirectFilterTest {
+class RedirectFilterTest {
 
   @TempDir
   Path tmp;
@@ -36,7 +36,7 @@ public class RedirectFilterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testPassThroughWhenNoRedirectMatches() throws Exception {
+  void testPassThroughWhenNoRedirectMatches() throws Exception {
     RedirectFilter filter = initFilter(
         "<?xml version=\"1.0\"?><redirect-mapping>"
         + "<redirect from=\"/old\" to=\"/new\"/>"
@@ -55,7 +55,7 @@ public class RedirectFilterTest {
   }
 
   @Test
-  public void testPassThroughWhenConfigIsEmpty() throws Exception {
+  void testPassThroughWhenConfigIsEmpty() throws Exception {
     RedirectFilter filter = initFilter("<?xml version=\"1.0\"?><redirect-mapping/>");
 
     boolean[] chainInvoked = {false};
@@ -73,7 +73,7 @@ public class RedirectFilterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testTemporaryRedirect() throws Exception {
+  void testTemporaryRedirect() throws Exception {
     RedirectFilter filter = initFilter(
         "<?xml version=\"1.0\"?><redirect-mapping>"
         + "<redirect from=\"/old\" to=\"/new\"/>"
@@ -93,7 +93,7 @@ public class RedirectFilterTest {
   }
 
   @Test
-  public void testTemporaryRedirectSetsAbsoluteLocation() throws Exception {
+  void testTemporaryRedirectSetsAbsoluteLocation() throws Exception {
     RedirectFilter filter = initFilter(
         "<?xml version=\"1.0\"?><redirect-mapping>"
         + "<redirect from=\"/index.html\" to=\"/html/home\"/>"
@@ -111,7 +111,7 @@ public class RedirectFilterTest {
   }
 
   @Test
-  public void testTemporaryRedirectSetsCacheControlHeader() throws Exception {
+  void testTemporaryRedirectSetsCacheControlHeader() throws Exception {
     RedirectFilter filter = initFilter(
         "<?xml version=\"1.0\"?><redirect-mapping>"
         + "<redirect from=\"/a\" to=\"/b\"/>"
@@ -130,7 +130,7 @@ public class RedirectFilterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testPermanentRedirect() throws Exception {
+  void testPermanentRedirect() throws Exception {
     RedirectFilter filter = initFilter(
         "<?xml version=\"1.0\"?><redirect-mapping>"
         + "<redirect from=\"/old\" to=\"/new\" permanent=\"yes\"/>"
@@ -152,7 +152,7 @@ public class RedirectFilterTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testRedirectMatchesOnlyExactPath() throws Exception {
+  void testRedirectMatchesOnlyExactPath() throws Exception {
     RedirectFilter filter = initFilter(
         "<?xml version=\"1.0\"?><redirect-mapping>"
         + "<redirect from=\"/old\" to=\"/new\"/>"
@@ -171,7 +171,7 @@ public class RedirectFilterTest {
   }
 
   @Test
-  public void testMultipleRedirectRules() throws Exception {
+  void testMultipleRedirectRules() throws Exception {
     RedirectFilter filter = initFilter(
         "<?xml version=\"1.0\"?><redirect-mapping>"
         + "<redirect from=\"/a\" to=\"/alpha\"/>"

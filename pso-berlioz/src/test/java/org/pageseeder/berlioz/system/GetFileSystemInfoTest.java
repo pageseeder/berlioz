@@ -23,13 +23,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
-public final class GetFileSystemInfoTest {
+final class GetFileSystemInfoTest {
 
   @TempDir
   Path folder;
 
   @Test
-  public void testProcessWithDetails() throws Exception {
+  void testProcessWithDetails() throws Exception {
     File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
     File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
 
@@ -62,7 +62,7 @@ public final class GetFileSystemInfoTest {
   }
 
   @Test
-  public void testProcessWithoutDetails() throws Exception {
+  void testProcessWithoutDetails() throws Exception {
     File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
     File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
 

@@ -29,20 +29,20 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
-public final class ListLibrariesTest {
+final class ListLibrariesTest {
 
   @BeforeEach
-  public void clearCacheBefore() {
+  void clearCacheBefore() {
     ListLibraries.clearCache();
   }
 
   @AfterEach
-  public void clearCacheAfter() {
+  void clearCacheAfter() {
     ListLibraries.clearCache();
   }
 
   @Test
-  public void testExtractLibsListsJarsInOrder() throws Exception {
+  void testExtractLibsListsJarsInOrder() throws Exception {
     ServletContextFixture fixture = new ServletContextFixture();
     fixture.add("/WEB-INF/lib/beta-2.0.jar",
         jar("Implementation-Title", "Beta Library", "Implementation-Version", "2.0"));
@@ -70,7 +70,7 @@ public final class ListLibrariesTest {
   }
 
   @Test
-  public void testExtractLibsUsesCacheUntilCleared() throws Exception {
+  void testExtractLibsUsesCacheUntilCleared() throws Exception {
     ServletContextFixture fixture = new ServletContextFixture();
     fixture.add("/WEB-INF/lib/library-1.0.jar", jar("Implementation-Version", "1.0"));
 
@@ -90,7 +90,7 @@ public final class ListLibrariesTest {
   }
 
   @Test
-  public void testExtractLibsIgnoresUnreadableManifest() throws Exception {
+  void testExtractLibsIgnoresUnreadableManifest() throws Exception {
     ServletContextFixture fixture = new ServletContextFixture();
     fixture.add("/WEB-INF/lib/broken.jar", new byte[] {1, 2, 3});
 

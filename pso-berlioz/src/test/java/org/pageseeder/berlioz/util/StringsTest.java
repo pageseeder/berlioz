@@ -3,10 +3,10 @@ package org.pageseeder.berlioz.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class StringsTest {
+class StringsTest {
 
   @Test
-  public void testSubstringAfter(){
+  void testSubstringAfter(){
     Assertions.assertEquals(Strings.substringAfter("", ","), "");
     Assertions.assertEquals(Strings.substringAfter(" ", ","), " ");
     Assertions.assertEquals(Strings.substringAfter("first second", null), "");
@@ -20,7 +20,7 @@ public class StringsTest {
   }
 
   @Test
-  public void testSubstringAfterChar(){
+  void testSubstringAfterChar(){
     Assertions.assertEquals(Strings.substringAfter("", ','), "");
     Assertions.assertEquals(Strings.substringAfter(" ", ','), " ");
     Assertions.assertEquals(Strings.substringAfter("first,second", ','), "second");
@@ -32,7 +32,7 @@ public class StringsTest {
   }
 
   @Test
-  public void testSubstringBefore(){
+  void testSubstringBefore(){
     Assertions.assertEquals(Strings.substringBefore("", ","), "");
     Assertions.assertEquals(Strings.substringBefore(" ", ","), " ");
     Assertions.assertEquals(Strings.substringBefore("first second", null), "");
@@ -46,7 +46,7 @@ public class StringsTest {
   }
 
   @Test
-  public void testSubstringBeforeChar(){
+  void testSubstringBeforeChar(){
     Assertions.assertEquals(Strings.substringBefore("", ','), "");
     Assertions.assertEquals(Strings.substringBefore(" ", ','), " ");
     Assertions.assertEquals(Strings.substringBefore("first second", ','), "first second");
@@ -58,7 +58,7 @@ public class StringsTest {
   }
 
   @Test
-  public void testToKebabCase() {
+  void testToKebabCase() {
     Assertions.assertEquals(Strings.toKebabCase("NoContent", "fallback"), "no-content");
     Assertions.assertEquals(Strings.toKebabCase("MyHTTPClient", "fallback"), "my-http-client");
     Assertions.assertEquals(Strings.toKebabCase("GetUserID", "fallback"), "get-user-id");
