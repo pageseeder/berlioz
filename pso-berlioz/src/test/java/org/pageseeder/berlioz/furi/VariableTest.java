@@ -66,14 +66,14 @@ public class VariableTest {
   @Test
   public void testNew_Default() {
     // default value specified and null
-    Variable var = new Variable("name", null);
-    Assert.assertEquals("", var.defaultValue());
-    Assert.assertEquals(null, var.type());
+    Variable variable = new Variable("name", null);
+    Assert.assertEquals("", variable.defaultValue());
+    Assert.assertNull(variable.type());
     // default value unspecified
-    var = new Variable("name");
-    Assert.assertEquals("", var.defaultValue());
-    Assert.assertEquals(null, var.type());
-    Assert.assertEquals(Form.STRING, var.form());
+    variable = new Variable("name");
+    Assert.assertEquals("", variable.defaultValue());
+    Assert.assertNull(variable.type());
+    Assert.assertEquals(Form.STRING, variable.form());
   }
 
   /**
