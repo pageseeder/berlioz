@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.config;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -13,17 +13,17 @@ public final class RelocationConfigTest {
   @Test
   public void testConstructor_empty() {
     RelocationConfig config = new RelocationConfig();
-    Assert.assertTrue(config.isEmpty());
-    Assert.assertEquals(0, config.size());
-    Assert.assertNull(config.relocate("/"));
+    Assertions.assertTrue(config.isEmpty());
+    Assertions.assertEquals(0, config.size());
+    Assertions.assertNull(config.relocate("/"));
   }
 
   @Test
   public void testLoad_empty() throws ConfigException {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping/>";
     RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    Assert.assertTrue(config.isEmpty());
-    Assert.assertEquals(0, config.size());
+    Assertions.assertTrue(config.isEmpty());
+    Assertions.assertEquals(0, config.size());
   }
 
   /**
@@ -40,17 +40,17 @@ public final class RelocationConfigTest {
   @Test
   public void testLoad_file() throws ConfigException {
     RelocationConfig config = RelocationConfig.newInstance(new File(this.configFolder, "relocation.xml"));
-    Assert.assertFalse(config.isEmpty());
-    Assert.assertEquals(5, config.size());
+    Assertions.assertFalse(config.isEmpty());
+    Assertions.assertEquals(5, config.size());
 
-    Assert.assertNull(config.relocate("/index.xml"));
-    Assert.assertNull(config.relocate("/example.html"));
+    Assertions.assertNull(config.relocate("/index.xml"));
+    Assertions.assertNull(config.relocate("/example.html"));
 
-    Assert.assertEquals("/html/home", config.relocate("/"));
-    Assert.assertEquals("/html/home", config.relocate("/index.html"));
-    Assert.assertEquals("/html/home", config.relocate("/html"));
-    Assert.assertEquals("/xml/home",  config.relocate("/xml"));
-    Assert.assertEquals("/html/example", config.relocate("/example.psml"));
+    Assertions.assertEquals(config.relocate("/"), "/html/home");
+    Assertions.assertEquals(config.relocate("/index.html"), "/html/home");
+    Assertions.assertEquals(config.relocate("/html"), "/html/home");
+    Assertions.assertEquals(config.relocate("/xml"), "/xml/home");
+    Assertions.assertEquals(config.relocate("/example.psml"), "/html/example");
   }
 
   @Test
@@ -60,9 +60,9 @@ public final class RelocationConfigTest {
         "<relocation from=\"/a\" to=\"/c\"/>" +
         "</relocation-mapping>";
     RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    Assert.assertEquals(2, config.size());
+    Assertions.assertEquals(2, config.size());
     // First match wins
-    Assert.assertEquals("/b", config.relocate("/a"));
+    Assertions.assertEquals(config.relocate("/a"), "/b");
   }
 
   @Test
@@ -71,22 +71,26 @@ public final class RelocationConfigTest {
         "<relocation from=\"/{+path}.psml\" to=\"/html/{+path}\"/>" +
         "</relocation-mapping>";
     RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
-    Assert.assertEquals("/html/docs/guide", config.relocate("/docs/guide.psml"));
-    Assert.assertEquals("/html/page",       config.relocate("/page.psml"));
+    Assertions.assertEquals(config.relocate("/docs/guide.psml"), "/html/docs/guide");
+    Assertions.assertEquals(config.relocate("/page.psml"), "/html/page");
   }
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testLoad_invalidXml() throws ConfigException {
+    Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>";
     RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
+    });
   }
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testLoad_xxe() throws ConfigException {
+    Assertions.assertThrows(ConfigException.class, () -> {
     String xml = "<!DOCTYPE relocation-mapping [<!ELEMENT relocation-mapping ANY >" +
         "<!ENTITY x SYSTEM \"/etc/passwd\" >]>" +
         "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping>&x;</relocation-mapping>";
     RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
+    });
   }
 
 }

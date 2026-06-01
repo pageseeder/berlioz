@@ -1,69 +1,69 @@
 package org.pageseeder.berlioz.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class StringsTest {
 
   @Test
   public void testSubstringAfter(){
-    Assert.assertEquals("", Strings.substringAfter("", ","));
-    Assert.assertEquals(" ", Strings.substringAfter(" ", ","));
-    Assert.assertEquals("", Strings.substringAfter("first second", null));
-    Assert.assertEquals("second", Strings.substringAfter("first,second", ","));
-    Assert.assertEquals("second", Strings.substringAfter("first second", " "));
-    Assert.assertEquals("first second", Strings.substringAfter("first second", ","));
-    Assert.assertEquals("first", Strings.substringAfter("first", " "));
-    Assert.assertEquals("", Strings.substringAfter("first ", " "));
-    Assert.assertEquals("second third", Strings.substringAfter("first second third", " "));
-    Assert.assertEquals("first second", Strings.substringAfter("first second", ""));
+    Assertions.assertEquals(Strings.substringAfter("", ","), "");
+    Assertions.assertEquals(Strings.substringAfter(" ", ","), " ");
+    Assertions.assertEquals(Strings.substringAfter("first second", null), "");
+    Assertions.assertEquals(Strings.substringAfter("first,second", ","), "second");
+    Assertions.assertEquals(Strings.substringAfter("first second", " "), "second");
+    Assertions.assertEquals(Strings.substringAfter("first second", ","), "first second");
+    Assertions.assertEquals(Strings.substringAfter("first", " "), "first");
+    Assertions.assertEquals(Strings.substringAfter("first ", " "), "");
+    Assertions.assertEquals(Strings.substringAfter("first second third", " "), "second third");
+    Assertions.assertEquals(Strings.substringAfter("first second", ""), "first second");
   }
 
   @Test
   public void testSubstringAfterChar(){
-    Assert.assertEquals("", Strings.substringAfter("", ','));
-    Assert.assertEquals(" ", Strings.substringAfter(" ", ','));
-    Assert.assertEquals("second", Strings.substringAfter("first,second", ','));
-    Assert.assertEquals("second", Strings.substringAfter("first second", ' '));
-    Assert.assertEquals("first second", Strings.substringAfter("first second", ','));
-    Assert.assertEquals("first", Strings.substringAfter("first", ' '));
-    Assert.assertEquals("", Strings.substringAfter("first ", ' '));
-    Assert.assertEquals("second third", Strings.substringAfter("first second third", ' '));
+    Assertions.assertEquals(Strings.substringAfter("", ','), "");
+    Assertions.assertEquals(Strings.substringAfter(" ", ','), " ");
+    Assertions.assertEquals(Strings.substringAfter("first,second", ','), "second");
+    Assertions.assertEquals(Strings.substringAfter("first second", ' '), "second");
+    Assertions.assertEquals(Strings.substringAfter("first second", ','), "first second");
+    Assertions.assertEquals(Strings.substringAfter("first", ' '), "first");
+    Assertions.assertEquals(Strings.substringAfter("first ", ' '), "");
+    Assertions.assertEquals(Strings.substringAfter("first second third", ' '), "second third");
   }
 
   @Test
   public void testSubstringBefore(){
-    Assert.assertEquals("", Strings.substringBefore("", ","));
-    Assert.assertEquals(" ", Strings.substringBefore(" ", ","));
-    Assert.assertEquals("", Strings.substringBefore("first second", null));
-    Assert.assertEquals("first second", Strings.substringBefore("first second", ","));
-    Assert.assertEquals("", Strings.substringBefore(",first,second", ","));
-    Assert.assertEquals("first", Strings.substringBefore("first,second", ","));
-    Assert.assertEquals("first", Strings.substringBefore("first second", " "));
-    Assert.assertEquals("first", Strings.substringBefore("first second third", " "));
-    Assert.assertEquals("first", Strings.substringBefore("first", " "));
-    Assert.assertEquals("/simple-admin/api/auth/user.json", Strings.substringBefore("/simple-admin/api/auth/user.json", ""));
+    Assertions.assertEquals(Strings.substringBefore("", ","), "");
+    Assertions.assertEquals(Strings.substringBefore(" ", ","), " ");
+    Assertions.assertEquals(Strings.substringBefore("first second", null), "");
+    Assertions.assertEquals(Strings.substringBefore("first second", ","), "first second");
+    Assertions.assertEquals(Strings.substringBefore(",first,second", ","), "");
+    Assertions.assertEquals(Strings.substringBefore("first,second", ","), "first");
+    Assertions.assertEquals(Strings.substringBefore("first second", " "), "first");
+    Assertions.assertEquals(Strings.substringBefore("first second third", " "), "first");
+    Assertions.assertEquals(Strings.substringBefore("first", " "), "first");
+    Assertions.assertEquals(Strings.substringBefore("/simple-admin/api/auth/user.json", ""), "/simple-admin/api/auth/user.json");
   }
 
   @Test
   public void testSubstringBeforeChar(){
-    Assert.assertEquals("", Strings.substringBefore("", ','));
-    Assert.assertEquals(" ", Strings.substringBefore(" ", ','));
-    Assert.assertEquals("first second", Strings.substringBefore("first second", ','));
-    Assert.assertEquals("", Strings.substringBefore(",first,second", ','));
-    Assert.assertEquals("first", Strings.substringBefore("first,second", ','));
-    Assert.assertEquals("first", Strings.substringBefore("first second", ' '));
-    Assert.assertEquals("first", Strings.substringBefore("first second third", ' '));
-    Assert.assertEquals("first", Strings.substringBefore("first", ' '));
+    Assertions.assertEquals(Strings.substringBefore("", ','), "");
+    Assertions.assertEquals(Strings.substringBefore(" ", ','), " ");
+    Assertions.assertEquals(Strings.substringBefore("first second", ','), "first second");
+    Assertions.assertEquals(Strings.substringBefore(",first,second", ','), "");
+    Assertions.assertEquals(Strings.substringBefore("first,second", ','), "first");
+    Assertions.assertEquals(Strings.substringBefore("first second", ' '), "first");
+    Assertions.assertEquals(Strings.substringBefore("first second third", ' '), "first");
+    Assertions.assertEquals(Strings.substringBefore("first", ' '), "first");
   }
 
   @Test
   public void testToKebabCase() {
-    Assert.assertEquals("no-content", Strings.toKebabCase("NoContent", "fallback"));
-    Assert.assertEquals("my-http-client", Strings.toKebabCase("MyHTTPClient", "fallback"));
-    Assert.assertEquals("get-user-id", Strings.toKebabCase("GetUserID", "fallback"));
-    Assert.assertEquals("xml-parser", Strings.toKebabCase("XMLParser", "fallback"));
-    Assert.assertEquals("o-auth2-handler", Strings.toKebabCase("OAuth2Handler", "fallback"));
-    Assert.assertEquals("generator", Strings.toKebabCase("", "generator"));
+    Assertions.assertEquals(Strings.toKebabCase("NoContent", "fallback"), "no-content");
+    Assertions.assertEquals(Strings.toKebabCase("MyHTTPClient", "fallback"), "my-http-client");
+    Assertions.assertEquals(Strings.toKebabCase("GetUserID", "fallback"), "get-user-id");
+    Assertions.assertEquals(Strings.toKebabCase("XMLParser", "fallback"), "xml-parser");
+    Assertions.assertEquals(Strings.toKebabCase("OAuth2Handler", "fallback"), "o-auth2-handler");
+    Assertions.assertEquals(Strings.toKebabCase("", "generator"), "generator");
   }
 }

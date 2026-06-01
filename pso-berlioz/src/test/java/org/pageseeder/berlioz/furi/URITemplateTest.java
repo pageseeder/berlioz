@@ -18,9 +18,9 @@ package org.pageseeder.berlioz.furi;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for the <code>URITemplate</code> class.
@@ -41,7 +41,7 @@ public class URITemplateTest {
    */
   private final Parameters vars = new URIParameters();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     // set up the parameters from the specifications.
     this.vars.set("foo", new String[] { "\u03d3" });
@@ -60,9 +60,9 @@ public class URITemplateTest {
   /**
    * Test that a null pointer exception is thrown by the constructor.
    */
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testNew_Null() {
-    new URITemplate((String)null);
+    Assertions.assertThrows(NullPointerException.class, () -> new URITemplate((String)null));
   }
 
   /**
@@ -79,7 +79,7 @@ public class URITemplateTest {
   @Test
   public void testDigest_EmptyString() {
     List<Token> tokens = new ArrayList<Token>();
-    Assert.assertEquals(tokens, URITemplate.digest(""));
+    Assertions.assertEquals(tokens, URITemplate.digest(""));
   }
 
   /**
@@ -89,7 +89,7 @@ public class URITemplateTest {
   public void testDigest_OneTokenLiteral() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenLiteral("http://acme.com/"));
-    Assert.assertEquals(tokens, URITemplate.digest("http://acme.com/"));
+    Assertions.assertEquals(tokens, URITemplate.digest("http://acme.com/"));
   }
 
   /**
@@ -99,7 +99,7 @@ public class URITemplateTest {
   public void testDigest_OneTokenVariable() {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenVariable("x"));
-    Assert.assertEquals(tokens, URITemplate.digest("{x}"));
+    Assertions.assertEquals(tokens, URITemplate.digest("{x}"));
   }
 
   /**
@@ -111,7 +111,7 @@ public class URITemplateTest {
     List<Token> tokens = new ArrayList<Token>();
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
-    Assert.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}"));
+    Assertions.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}"));
   }
 
   /**
@@ -124,7 +124,7 @@ public class URITemplateTest {
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
     tokens.add(new TokenLiteral("/text"));
-    Assert.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}/text"));
+    Assertions.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}/text"));
   }
 
   /**
@@ -138,7 +138,7 @@ public class URITemplateTest {
     tokens.add(new TokenVariable("x"));
     tokens.add(new TokenLiteral("/"));
     tokens.add(new TokenVariable("y"));
-    Assert.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}/{y}"));
+    Assertions.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}/{y}"));
   }
 
   /**
@@ -151,7 +151,7 @@ public class URITemplateTest {
     tokens.add(new TokenLiteral("http://acme.com/"));
     tokens.add(new TokenVariable("x"));
     tokens.add(new TokenVariable("y"));
-    Assert.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}{y}"));
+    Assertions.assertEquals(tokens, URITemplate.digest("http://acme.com/{x}{y}"));
   }
 
   /**
@@ -253,6 +253,6 @@ public class URITemplateTest {
    * @param url The expected URL.
    */
   private void assertExpand(String template, Parameters parameters, String url) {
-    Assert.assertEquals(url, URITemplate.expand(template, parameters));
+    Assertions.assertEquals(url, URITemplate.expand(template, parameters));
   }
 }

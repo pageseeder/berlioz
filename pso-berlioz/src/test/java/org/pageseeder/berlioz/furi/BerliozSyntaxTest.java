@@ -15,9 +15,9 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
 
 /**
@@ -38,7 +38,7 @@ public final class BerliozSyntaxTest {
    */
   private final Parameters params = new URIParameters();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     // parameters for examples
     this.params.set("var", "value");
@@ -70,7 +70,7 @@ public final class BerliozSyntaxTest {
     } catch (NullPointerException ex) {
       nullThrown = true;
     } finally {
-      Assert.assertTrue(nullThrown);
+      Assertions.assertTrue(nullThrown);
     }
   }
 
@@ -242,6 +242,6 @@ public final class BerliozSyntaxTest {
    */
   private void assertExpandOK(String expansion, String value, Parameters parameters) {
     URITemplate template = new URITemplate(expansion);
-    Assert.assertEquals(value, template.expand(parameters));
+    Assertions.assertEquals(value, template.expand(parameters));
   }
 }

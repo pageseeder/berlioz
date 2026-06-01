@@ -1,7 +1,7 @@
 package org.pageseeder.mock.berlioz;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
@@ -17,7 +17,7 @@ public class MockContentRequestTest {
     MockHttpServletRequest http = new MockHttpServletRequest(URI.create("http://localhost:8080/articles/one.html"), "GET");
     MockContentRequest request = new MockContentRequest(http);
 
-    Assert.assertEquals("/articles/one", request.getBerliozPath());
+    Assertions.assertEquals(request.getBerliozPath(), "/articles/one");
   }
 
   @Test
@@ -27,7 +27,7 @@ public class MockContentRequestTest {
     http.setPathInfo("/articles/one");
     MockContentRequest request = new MockContentRequest(http);
 
-    Assert.assertEquals("/articles/one", request.getBerliozPath());
+    Assertions.assertEquals(request.getBerliozPath(), "/articles/one");
   }
 
   @Test
@@ -37,7 +37,7 @@ public class MockContentRequestTest {
 
     request.setEnvironment(environment);
 
-    Assert.assertSame(environment, request.getEnvironment());
+    Assertions.assertSame(environment, request.getEnvironment());
   }
 
   @Test
@@ -46,7 +46,7 @@ public class MockContentRequestTest {
 
     request.setRedirect("/elsewhere", ContentStatus.FOUND);
 
-    Assert.assertEquals(ContentStatus.FOUND, request.getStatus());
-    Assert.assertEquals("/elsewhere", request.getRedirectURL());
+    Assertions.assertEquals(ContentStatus.FOUND, request.getStatus());
+    Assertions.assertEquals(request.getRedirectURL(), "/elsewhere");
   }
 }

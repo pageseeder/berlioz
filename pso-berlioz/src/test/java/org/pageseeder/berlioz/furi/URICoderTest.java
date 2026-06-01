@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -65,23 +65,23 @@ public final class URICoderTest {
 
   @Test
   public void testEncode_EmptyString() {
-    Assert.assertEquals("", URICoder.encode(""));
+    Assertions.assertEquals(URICoder.encode(""), "");
   }
 
   @Test
   public void testEncode_Unreserved_Alpha() {
-    Assert.assertEquals(ALPHA, URICoder.encode(ALPHA));
+    Assertions.assertEquals(ALPHA, URICoder.encode(ALPHA));
   }
 
   @Test
   public void testEncode_Unreserved_Digit() {
-    Assert.assertEquals(DIGIT, URICoder.encode(DIGIT));
+    Assertions.assertEquals(DIGIT, URICoder.encode(DIGIT));
   }
 
   @Test
   public void testEncode_Unreserved_Punctuation() {
     // hyphen, dot, underscore, tilde are all unreserved per RFC 3986
-    Assert.assertEquals("-_.~", URICoder.encode("-_.~"));
+    Assertions.assertEquals(URICoder.encode("-_.~"), "-_.~");
   }
 
   @Test
@@ -91,12 +91,11 @@ public final class URICoderTest {
       String s = String.valueOf(c);
       String enc = URICoder.encode(s);
       if (UNRESERVED.indexOf(c) >= 0) {
-        Assert.assertEquals("char 0x" + Integer.toHexString(c) + " should pass through", s, enc);
+        Assertions.assertEquals(s, enc, "char 0x" + Integer.toHexString(c) + " should pass through");
       } else {
         String hex = Integer.toHexString(c);
         if (hex.length() == 1) hex = "0" + hex;
-        Assert.assertEquals("char 0x" + Integer.toHexString(c) + " should be percent-encoded",
-            "%" + hex.toUpperCase(), enc);
+        Assertions.assertEquals("%" + hex.toUpperCase(), enc, "char 0x" + Integer.toHexString(c) + " should be percent-encoded");
       }
     }
   }
@@ -104,83 +103,83 @@ public final class URICoderTest {
   @Test
   public void testEncode_UppercaseHex() {
     // Percent-encoding must use uppercase hex digits (RFC 3986 §2.1 recommends uppercase)
-    Assert.assertEquals("%2F", URICoder.encode("/"));
-    Assert.assertEquals("%3F", URICoder.encode("?"));
-    Assert.assertEquals("%23", URICoder.encode("#"));
-    Assert.assertEquals("%20", URICoder.encode(" "));
+    Assertions.assertEquals(URICoder.encode("/"), "%2F");
+    Assertions.assertEquals(URICoder.encode("?"), "%3F");
+    Assertions.assertEquals(URICoder.encode("#"), "%23");
+    Assertions.assertEquals(URICoder.encode(" "), "%20");
   }
 
   @Test
   public void testEncode_Space_As_Percent20() {
     // Spaces must become %20, not + (which is a form-encoding convention)
-    Assert.assertEquals("%20", URICoder.encode(" "));
-    Assert.assertEquals("hello%20world", URICoder.encode("hello world"));
+    Assertions.assertEquals(URICoder.encode(" "), "%20");
+    Assertions.assertEquals(URICoder.encode("hello world"), "hello%20world");
   }
 
   @Test
   public void testEncode_Plus_Encoded() {
     // + is a reserved char in URIs and must be encoded
-    Assert.assertEquals("%2B", URICoder.encode("+"));
+    Assertions.assertEquals(URICoder.encode("+"), "%2B");
   }
 
   @Test
   public void testEncode_Slash_Encoded() {
-    Assert.assertEquals("%2F", URICoder.encode("/"));
-    Assert.assertEquals("a%2Fb", URICoder.encode("a/b"));
+    Assertions.assertEquals(URICoder.encode("/"), "%2F");
+    Assertions.assertEquals(URICoder.encode("a/b"), "a%2Fb");
   }
 
   @Test
   public void testEncode_ReservedChars_AllEncoded() {
     // RFC 3986 gen-delims: : / ? # [ ] @
-    Assert.assertEquals("%3A", URICoder.encode(":"));
-    Assert.assertEquals("%2F", URICoder.encode("/"));
-    Assert.assertEquals("%3F", URICoder.encode("?"));
-    Assert.assertEquals("%23", URICoder.encode("#"));
-    Assert.assertEquals("%5B", URICoder.encode("["));
-    Assert.assertEquals("%5D", URICoder.encode("]"));
-    Assert.assertEquals("%40", URICoder.encode("@"));
+    Assertions.assertEquals(URICoder.encode(":"), "%3A");
+    Assertions.assertEquals(URICoder.encode("/"), "%2F");
+    Assertions.assertEquals(URICoder.encode("?"), "%3F");
+    Assertions.assertEquals(URICoder.encode("#"), "%23");
+    Assertions.assertEquals(URICoder.encode("["), "%5B");
+    Assertions.assertEquals(URICoder.encode("]"), "%5D");
+    Assertions.assertEquals(URICoder.encode("@"), "%40");
     // RFC 3986 sub-delims: ! $ & ' ( ) * + , ; =
-    Assert.assertEquals("%21", URICoder.encode("!"));
-    Assert.assertEquals("%24", URICoder.encode("$"));
-    Assert.assertEquals("%26", URICoder.encode("&"));
-    Assert.assertEquals("%27", URICoder.encode("'"));
-    Assert.assertEquals("%28", URICoder.encode("("));
-    Assert.assertEquals("%29", URICoder.encode(")"));
-    Assert.assertEquals("%2A", URICoder.encode("*"));
-    Assert.assertEquals("%2B", URICoder.encode("+"));
-    Assert.assertEquals("%2C", URICoder.encode(","));
-    Assert.assertEquals("%3B", URICoder.encode(";"));
-    Assert.assertEquals("%3D", URICoder.encode("="));
+    Assertions.assertEquals(URICoder.encode("!"), "%21");
+    Assertions.assertEquals(URICoder.encode("$"), "%24");
+    Assertions.assertEquals(URICoder.encode("&"), "%26");
+    Assertions.assertEquals(URICoder.encode("'"), "%27");
+    Assertions.assertEquals(URICoder.encode("("), "%28");
+    Assertions.assertEquals(URICoder.encode(")"), "%29");
+    Assertions.assertEquals(URICoder.encode("*"), "%2A");
+    Assertions.assertEquals(URICoder.encode("+"), "%2B");
+    Assertions.assertEquals(URICoder.encode(","), "%2C");
+    Assertions.assertEquals(URICoder.encode(";"), "%3B");
+    Assertions.assertEquals(URICoder.encode("="), "%3D");
   }
 
   @Test
   public void testEncode_PercentSign_Encoded() {
     // A literal % in input must itself be encoded to avoid malformed sequences
-    Assert.assertEquals("%25", URICoder.encode("%"));
-    Assert.assertEquals("%2525", URICoder.encode("%25"));
+    Assertions.assertEquals(URICoder.encode("%"), "%25");
+    Assertions.assertEquals(URICoder.encode("%25"), "%2525");
   }
 
   @Test
   public void testEncode_NonASCII_CafeAccent() {
     // é (U+00E9) → UTF-8 bytes 0xC3 0xA9 → %C3%A9
-    Assert.assertEquals("Caf%C3%A9", URICoder.encode("Café"));
+    Assertions.assertEquals(URICoder.encode("Café"), "Caf%C3%A9");
   }
 
   @Test
   public void testEncode_NonASCII_WithReservedChar() {
-    Assert.assertEquals("Caf%C3%A9%3F", URICoder.encode("Café?"));
+    Assertions.assertEquals(URICoder.encode("Café?"), "Caf%C3%A9%3F");
   }
 
   @Test
   public void testEncode_NonASCII_CJK() {
     // 中 (U+4E2D) → UTF-8 bytes 0xE4 0xB8 0xAD → %E4%B8%AD
-    Assert.assertEquals("%E4%B8%AD", URICoder.encode("中"));
+    Assertions.assertEquals(URICoder.encode("中"), "%E4%B8%AD");
   }
 
   @Test
   public void testEncode_NonASCII_ArabicWord() {
     // م (U+0645) → UTF-8 bytes 0xD9 0x85
-    Assert.assertEquals("%D9%85", URICoder.encode("م"));
+    Assertions.assertEquals(URICoder.encode("م"), "%D9%85");
   }
 
   // ---------------------------------------------------------------------------
@@ -191,16 +190,16 @@ public final class URICoderTest {
   public void testEncode_Normalization_GreekUpsilon() {
     // U+03D3 GREEK UPSILON WITH HOOK AND ACUTE (single codepoint)
     // U+03D2 + U+0301 (decomposed) — both normalise to the same NFKC form
-    Assert.assertEquals("%CE%8E", URICoder.encode("ϓ"));
-    Assert.assertEquals("%CE%8E", URICoder.encode("ϓ"));
+    Assertions.assertEquals(URICoder.encode("ϓ"), "%CE%8E");
+    Assertions.assertEquals(URICoder.encode("ϓ"), "%CE%8E");
   }
 
   @Test
   public void testEncode_Normalization_DotAbove() {
     // Long-s (U+017F) + combining dot above (U+0307) → ṡ (U+1E61)
     // Regular s (U+0073) + combining dot above (U+0307) → same NFKC result
-    Assert.assertEquals("%E1%B9%A1", URICoder.encode("ẛ"));
-    Assert.assertEquals("%E1%B9%A1", URICoder.encode("ṡ"));
+    Assertions.assertEquals(URICoder.encode("ẛ"), "%E1%B9%A1");
+    Assertions.assertEquals(URICoder.encode("ṡ"), "%E1%B9%A1");
   }
 
   @Test
@@ -208,7 +207,7 @@ public final class URICoderTest {
     // NFC and NFD of "é" should both produce the same encoding
     String nfc = "é";           // é as precomposed
     String nfd = "é";          // e + combining acute accent
-    Assert.assertEquals(URICoder.encode(nfc), URICoder.encode(nfd));
+    Assertions.assertEquals(URICoder.encode(nfc), URICoder.encode(nfd));
   }
 
   // ---------------------------------------------------------------------------
@@ -217,39 +216,39 @@ public final class URICoderTest {
 
   @Test
   public void testEncodeWithChar_EmptyString() {
-    Assert.assertEquals("", URICoder.encode("", '/'));
+    Assertions.assertEquals(URICoder.encode("", '/'), "");
   }
 
   @Test
   public void testEncodeWithChar_ExtraCharPassesThrough() {
     // The second argument is an extra char that should not be encoded
-    Assert.assertEquals("a/b/c", URICoder.encode("a/b/c", '/'));
-    Assert.assertEquals("a?b", URICoder.encode("a?b", '?'));
-    Assert.assertEquals("a@b", URICoder.encode("a@b", '@'));
+    Assertions.assertEquals(URICoder.encode("a/b/c", '/'), "a/b/c");
+    Assertions.assertEquals(URICoder.encode("a?b", '?'), "a?b");
+    Assertions.assertEquals(URICoder.encode("a@b", '@'), "a@b");
   }
 
   @Test
   public void testEncodeWithChar_OtherReservedCharsStillEncoded() {
     // Only the specified extra char bypasses encoding; others are still encoded
-    Assert.assertEquals("a/b%3Fc", URICoder.encode("a/b?c", '/'));
-    Assert.assertEquals("a%2Fb%3Fc", URICoder.encode("a/b?c", '@'));
+    Assertions.assertEquals(URICoder.encode("a/b?c", '/'), "a/b%3Fc");
+    Assertions.assertEquals(URICoder.encode("a/b?c", '@'), "a%2Fb%3Fc");
   }
 
   @Test
   public void testEncodeWithChar_UnreservedCharsAlwaysPassThrough() {
-    Assert.assertEquals("abc-._~", URICoder.encode("abc-._~", '/'));
+    Assertions.assertEquals(URICoder.encode("abc-._~", '/'), "abc-._~");
   }
 
   @Test
   public void testEncodeWithChar_NonASCII_WithSlash() {
     // Non-ASCII chars still get encoded even with the extra-char override
-    Assert.assertEquals("/Caf%C3%A9/menu", URICoder.encode("/Café/menu", '/'));
+    Assertions.assertEquals(URICoder.encode("/Café/menu", '/'), "/Caf%C3%A9/menu");
   }
 
   @Test
   public void testEncodeWithChar_UnreservedChar_AsExtraChar_NoChange() {
     // Passing an unreserved char as the extra char has no effect since it's already unencoded
-    Assert.assertEquals("abc", URICoder.encode("abc", 'a'));
+    Assertions.assertEquals(URICoder.encode("abc", 'a'), "abc");
   }
 
   // ---------------------------------------------------------------------------
@@ -258,83 +257,82 @@ public final class URICoderTest {
 
   @Test
   public void testMinimalEncode_EmptyString() {
-    Assert.assertEquals("", URICoder.minimalEncode(""));
+    Assertions.assertEquals(URICoder.minimalEncode(""), "");
   }
 
   @Test
   public void testMinimalEncode_UnreservedChars_PassThrough() {
-    Assert.assertEquals(UNRESERVED, URICoder.minimalEncode(UNRESERVED));
+    Assertions.assertEquals(UNRESERVED, URICoder.minimalEncode(UNRESERVED));
   }
 
   @Test
   public void testMinimalEncode_RFC3986ReservedChars_PassThrough() {
     // gen-delims and sub-delims are "legal" in a URI and must NOT be encoded by minimalEncode
     String reserved = ":/?#[]@!$&'()*+,;=";
-    Assert.assertEquals(reserved, URICoder.minimalEncode(reserved));
+    Assertions.assertEquals(reserved, URICoder.minimalEncode(reserved));
   }
 
   @Test
   public void testMinimalEncode_Slash_PassThrough() {
-    Assert.assertEquals("a/b/c", URICoder.minimalEncode("a/b/c"));
+    Assertions.assertEquals(URICoder.minimalEncode("a/b/c"), "a/b/c");
   }
 
   @Test
   public void testMinimalEncode_Query_PassThrough() {
-    Assert.assertEquals("/search?q=hello&lang=en", URICoder.minimalEncode("/search?q=hello&lang=en"));
+    Assertions.assertEquals(URICoder.minimalEncode("/search?q=hello&lang=en"), "/search?q=hello&lang=en");
   }
 
   @Test
   public void testMinimalEncode_IllegalChars_Encoded() {
     // Characters that are illegal in any URI component must be encoded
-    Assert.assertEquals("%3C", URICoder.minimalEncode("<"));    // less-than
-    Assert.assertEquals("%3E", URICoder.minimalEncode(">"));    // greater-than
-    Assert.assertEquals("%5C", URICoder.minimalEncode("\\"));   // backslash
-    Assert.assertEquals("%5E", URICoder.minimalEncode("^"));    // caret
-    Assert.assertEquals("%60", URICoder.minimalEncode("`"));    // backtick
-    Assert.assertEquals("%7B", URICoder.minimalEncode("{"));    // left brace
-    Assert.assertEquals("%7C", URICoder.minimalEncode("|"));    // vertical bar
-    Assert.assertEquals("%7D", URICoder.minimalEncode("}"));    // right brace
+    Assertions.assertEquals(URICoder.minimalEncode("<"), "%3C");    // less-than
+    Assertions.assertEquals(URICoder.minimalEncode(">"), "%3E");    // greater-than
+    Assertions.assertEquals(URICoder.minimalEncode("\\"), "%5C");   // backslash
+    Assertions.assertEquals(URICoder.minimalEncode("^"), "%5E");    // caret
+    Assertions.assertEquals(URICoder.minimalEncode("`"), "%60");    // backtick
+    Assertions.assertEquals(URICoder.minimalEncode("{"), "%7B");    // left brace
+    Assertions.assertEquals(URICoder.minimalEncode("|"), "%7C");    // vertical bar
+    Assertions.assertEquals(URICoder.minimalEncode("}"), "%7D");    // right brace
   }
 
   @Test
   public void testMinimalEncode_Space_Encoded() {
-    Assert.assertEquals("%20", URICoder.minimalEncode(" "));
+    Assertions.assertEquals(URICoder.minimalEncode(" "), "%20");
   }
 
   @Test
   public void testMinimalEncode_Percent_Encoded() {
-    Assert.assertEquals("%25", URICoder.minimalEncode("%"));
+    Assertions.assertEquals(URICoder.minimalEncode("%"), "%25");
   }
 
   @Test
   public void testMinimalEncode_DEL_Encoded() {
-    Assert.assertEquals("%7F", URICoder.minimalEncode(""));
+    Assertions.assertEquals(URICoder.minimalEncode(""), "%7F");
   }
 
   @Test
   public void testMinimalEncode_ControlChars_Encoded() {
-    Assert.assertEquals("%00", URICoder.minimalEncode(" "));
-    Assert.assertEquals("%01", URICoder.minimalEncode(""));
-    Assert.assertEquals("%1F", URICoder.minimalEncode(""));
+    Assertions.assertEquals(URICoder.minimalEncode(" "), "%00");
+    Assertions.assertEquals(URICoder.minimalEncode(""), "%01");
+    Assertions.assertEquals(URICoder.minimalEncode(""), "%1F");
   }
 
   @Test
   public void testMinimalEncode_NonASCII_Encoded() {
-    Assert.assertEquals("%C3%A9", URICoder.minimalEncode("é"));
+    Assertions.assertEquals(URICoder.minimalEncode("é"), "%C3%A9");
   }
 
   @Test
   public void testMinimalEncode_Normalization() {
     // NFKC normalisation applies in minimalEncode just as in encode
-    Assert.assertEquals("%CE%8E", URICoder.minimalEncode("ϓ"));
-    Assert.assertEquals("%CE%8E", URICoder.minimalEncode("ϓ"));
+    Assertions.assertEquals(URICoder.minimalEncode("ϓ"), "%CE%8E");
+    Assertions.assertEquals(URICoder.minimalEncode("ϓ"), "%CE%8E");
   }
 
   @Test
   public void testMinimalEncode_UrlWithIllegalChars() {
     // A URL-like string with both legal and illegal characters
-    Assert.assertEquals("/path/to?q=hello%3Cworld%3E",
-        URICoder.minimalEncode("/path/to?q=hello<world>"));
+    Assertions.assertEquals(URICoder.minimalEncode("/path/to?q=hello<world>"), "/path/to?q=hello%3Cworld%3E");
   }
 
   @Test
@@ -343,9 +341,9 @@ public final class URICoderTest {
     String reserved = "/?#@";
     String encoded = URICoder.encode(reserved);
     String minEncoded = URICoder.minimalEncode(reserved);
-    Assert.assertNotEquals(encoded, minEncoded);
-    Assert.assertEquals(reserved, minEncoded);  // reserved chars preserved
-    Assert.assertEquals("%2F%3F%23%40", encoded); // all encoded
+    Assertions.assertNotEquals(encoded, minEncoded);
+    Assertions.assertEquals(reserved, minEncoded);  // reserved chars preserved
+    Assertions.assertEquals(encoded, "%2F%3F%23%40"); // all encoded
   }
 
   // ---------------------------------------------------------------------------
@@ -354,62 +352,62 @@ public final class URICoderTest {
 
   @Test
   public void testDecode_EmptyString() {
-    Assert.assertEquals("", URICoder.decode(""));
+    Assertions.assertEquals(URICoder.decode(""), "");
   }
 
   @Test
   public void testDecode_StringWithoutPercentOrPlus_ReturnsSame() {
     // Fast-path: no decoding needed; input is returned unchanged
     String s = "hello-world_foo.bar~baz";
-    Assert.assertEquals(s, URICoder.decode(s));
+    Assertions.assertEquals(s, URICoder.decode(s));
   }
 
   @Test
   public void testDecode_Unreserved_Unchanged() {
-    Assert.assertEquals(ALPHA, URICoder.decode(ALPHA));
-    Assert.assertEquals(DIGIT, URICoder.decode(DIGIT));
-    Assert.assertEquals(PUNC,  URICoder.decode(PUNC));
+    Assertions.assertEquals(ALPHA, URICoder.decode(ALPHA));
+    Assertions.assertEquals(DIGIT, URICoder.decode(DIGIT));
+    Assertions.assertEquals(PUNC,  URICoder.decode(PUNC));
   }
 
   @Test
   public void testDecode_Plus_DecodesToSpace() {
-    Assert.assertEquals(" ", URICoder.decode("+"));
+    Assertions.assertEquals(URICoder.decode("+"), " ");
   }
 
   @Test
   public void testDecode_Percent20_DecodesToSpace() {
-    Assert.assertEquals(" ", URICoder.decode("%20"));
+    Assertions.assertEquals(URICoder.decode("%20"), " ");
   }
 
   @Test
   public void testDecode_Space_BothRepresentations() {
-    Assert.assertEquals("Café $1", URICoder.decode("Caf%C3%A9+$1"));
+    Assertions.assertEquals(URICoder.decode("Caf%C3%A9+$1"), "Café $1");
   }
 
   @Test
   public void testDecode_PercentEncoded_Slash() {
-    Assert.assertEquals("/", URICoder.decode("%2F"));
-    Assert.assertEquals("a/b", URICoder.decode("a%2Fb"));
+    Assertions.assertEquals(URICoder.decode("%2F"), "/");
+    Assertions.assertEquals(URICoder.decode("a%2Fb"), "a/b");
   }
 
   @Test
   public void testDecode_LowercaseHex_Accepted() {
     // Decoders must accept both uppercase and lowercase hex digits per RFC 3986 §2.1
-    Assert.assertEquals("/", URICoder.decode("%2f"));
-    Assert.assertEquals("?", URICoder.decode("%3f"));
+    Assertions.assertEquals(URICoder.decode("%2f"), "/");
+    Assertions.assertEquals(URICoder.decode("%3f"), "?");
   }
 
   @Test
   public void testDecode_MixedCaseHex_Accepted() {
-    Assert.assertEquals("Café", URICoder.decode("Caf%c3%a9"));
-    Assert.assertEquals("Café", URICoder.decode("Caf%C3%A9"));
+    Assertions.assertEquals(URICoder.decode("Caf%c3%a9"), "Café");
+    Assertions.assertEquals(URICoder.decode("Caf%C3%A9"), "Café");
   }
 
   @Test
   public void testDecode_PercentB_DecodesCorrectly() {
     // %2B is + (should not become space, which + does)
-    Assert.assertEquals("+", URICoder.decode("%2B"));
-    Assert.assertEquals("+", URICoder.decode("%2b"));
+    Assertions.assertEquals(URICoder.decode("%2B"), "+");
+    Assertions.assertEquals(URICoder.decode("%2b"), "+");
   }
 
   @Test
@@ -419,50 +417,50 @@ public final class URICoderTest {
       String original = String.valueOf(c);
       String encoded = URICoder.encode(original);
       String decoded = URICoder.decode(encoded);
-      Assert.assertEquals("round-trip failed for char 0x" + Integer.toHexString(c), original, decoded);
+      Assertions.assertEquals(original, decoded, "round-trip failed for char 0x" + Integer.toHexString(c));
     }
   }
 
   @Test
   public void testDecode_NonASCII_CafeAccent() {
-    Assert.assertEquals("Café", URICoder.decode("Caf%C3%A9"));
-    Assert.assertEquals("Café?", URICoder.decode("Caf%C3%A9%3F"));
+    Assertions.assertEquals(URICoder.decode("Caf%C3%A9"), "Café");
+    Assertions.assertEquals(URICoder.decode("Caf%C3%A9%3F"), "Café?");
   }
 
   @Test
   public void testDecode_NonASCII_CJK() {
-    Assert.assertEquals("中", URICoder.decode("%E4%B8%AD"));
+    Assertions.assertEquals(URICoder.decode("%E4%B8%AD"), "中");
   }
 
   @Test
   public void testDecode_NonASCII_RoundTrip() {
     String original = "Café — menu";
     String encoded = URICoder.encode(original);
-    Assert.assertEquals(original, URICoder.decode(encoded));
+    Assertions.assertEquals(original, URICoder.decode(encoded));
   }
 
   @Test
   public void testDecode_IncompletePercent_AtEnd_Ignored() {
     // A % at the very end of the string has no following hex digits; it is silently dropped
-    Assert.assertEquals("abc", URICoder.decode("abc%"));
+    Assertions.assertEquals(URICoder.decode("abc%"), "abc");
   }
 
   @Test
   public void testDecode_IncompletePercent_OneDigit_PercentDroppedTrailingKept() {
     // When % has only one following hex digit (i.e., at the second-to-last position),
     // the % is silently dropped but the trailing char is kept as a literal.
-    Assert.assertEquals("abc2", URICoder.decode("abc%2"));
+    Assertions.assertEquals(URICoder.decode("abc%2"), "abc2");
   }
 
   @Test
   public void testDecode_IncompletePercent_MidString() {
     // Valid sequences around the malformed one are still decoded
-    Assert.assertEquals("a/c", URICoder.decode("a%2Fc"));
+    Assertions.assertEquals(URICoder.decode("a%2Fc"), "a/c");
   }
 
   @Test
   public void testDecode_NullDecodeDoesNotOccur_PlusInMiddle() {
-    Assert.assertEquals("hello world today", URICoder.decode("hello+world+today"));
+    Assertions.assertEquals(URICoder.decode("hello+world+today"), "hello world today");
   }
 
   // ---------------------------------------------------------------------------
@@ -473,9 +471,9 @@ public final class URICoderTest {
   public void testVsURLEncoder_Space_EncodedDifferently() {
     String urlEncoded = URLEncoder.encode(" ", StandardCharsets.UTF_8);
     String uriEncoded = URICoder.encode(" ");
-    Assert.assertEquals("+",   urlEncoded); // form-data convention
-    Assert.assertEquals("%20", uriEncoded); // RFC 3986 percent-encoding
-    Assert.assertNotEquals(urlEncoded, uriEncoded);
+    Assertions.assertEquals(urlEncoded, "+"); // form-data convention
+    Assertions.assertEquals(uriEncoded, "%20"); // RFC 3986 percent-encoding
+    Assertions.assertNotEquals(urlEncoded, uriEncoded);
   }
 
   @Test
@@ -483,9 +481,9 @@ public final class URICoderTest {
     // URLEncoder encodes ~ because it predates RFC 3986 recognising ~ as unreserved
     String urlEncoded = URLEncoder.encode("~", StandardCharsets.UTF_8);
     String uriEncoded = URICoder.encode("~");
-    Assert.assertEquals("%7E", urlEncoded); // URLEncoder encodes tilde
-    Assert.assertEquals("~",   uriEncoded); // URICoder leaves tilde (RFC 3986 unreserved)
-    Assert.assertNotEquals(urlEncoded, uriEncoded);
+    Assertions.assertEquals(urlEncoded, "%7E"); // URLEncoder encodes tilde
+    Assertions.assertEquals(uriEncoded, "~"); // URICoder leaves tilde (RFC 3986 unreserved)
+    Assertions.assertNotEquals(urlEncoded, uriEncoded);
   }
 
   @Test
@@ -493,29 +491,29 @@ public final class URICoderTest {
     // URLEncoder treats * as safe (legacy); URICoder encodes it (not RFC 3986 unreserved)
     String urlEncoded = URLEncoder.encode("*", StandardCharsets.UTF_8);
     String uriEncoded = URICoder.encode("*");
-    Assert.assertEquals("*",   urlEncoded); // URLEncoder leaves asterisk
-    Assert.assertEquals("%2A", uriEncoded); // URICoder percent-encodes it
-    Assert.assertNotEquals(urlEncoded, uriEncoded);
+    Assertions.assertEquals(urlEncoded, "*"); // URLEncoder leaves asterisk
+    Assertions.assertEquals(uriEncoded, "%2A"); // URICoder percent-encodes it
+    Assertions.assertNotEquals(urlEncoded, uriEncoded);
   }
 
   @Test
   public void testVsURLEncoder_Plus_EncodedSame() {
     // Both encode + as %2B (URLEncoder: + means space, so literal + must be encoded)
-    Assert.assertEquals(URLEncoder.encode("+", StandardCharsets.UTF_8), URICoder.encode("+"));
-    Assert.assertEquals("%2B", URICoder.encode("+"));
+    Assertions.assertEquals(URLEncoder.encode("+", StandardCharsets.UTF_8), URICoder.encode("+"));
+    Assertions.assertEquals(URICoder.encode("+"), "%2B");
   }
 
   @Test
   public void testVsURLEncoder_AlphaDigit_EncodedSame() {
     // Both leave letters and digits unencoded
-    Assert.assertEquals(URLEncoder.encode(ALPHA, StandardCharsets.UTF_8), URICoder.encode(ALPHA));
-    Assert.assertEquals(URLEncoder.encode(DIGIT, StandardCharsets.UTF_8), URICoder.encode(DIGIT));
+    Assertions.assertEquals(URLEncoder.encode(ALPHA, StandardCharsets.UTF_8), URICoder.encode(ALPHA));
+    Assertions.assertEquals(URLEncoder.encode(DIGIT, StandardCharsets.UTF_8), URICoder.encode(DIGIT));
   }
 
   @Test
   public void testVsURLEncoder_Hyphen_Dot_Underscore_EncodedSame() {
     // Both leave - . _ unencoded (all are unreserved in both RFC 3986 and form-encoding)
-    Assert.assertEquals(URLEncoder.encode("-._", StandardCharsets.UTF_8), URICoder.encode("-._"));
+    Assertions.assertEquals(URLEncoder.encode("-._", StandardCharsets.UTF_8), URICoder.encode("-._"));
   }
 
   @Test
@@ -523,8 +521,8 @@ public final class URICoderTest {
     // For non-ASCII content both use UTF-8 bytes, but space handling differs
     String urlEncoded = URLEncoder.encode("Café", StandardCharsets.UTF_8);
     String uriEncoded = URICoder.encode("Café");
-    Assert.assertEquals("Caf%C3%A9", urlEncoded);
-    Assert.assertEquals("Caf%C3%A9", uriEncoded);
+    Assertions.assertEquals(urlEncoded, "Caf%C3%A9");
+    Assertions.assertEquals(uriEncoded, "Caf%C3%A9");
   }
 
   @Test
@@ -537,11 +535,11 @@ public final class URICoderTest {
 
     String urlNfc = URLEncoder.encode(nfc, StandardCharsets.UTF_8);
     String urlNfd = URLEncoder.encode(nfd, StandardCharsets.UTF_8);
-    Assert.assertNotEquals("URLEncoder: NFC and NFD differ", urlNfc, urlNfd);
+    Assertions.assertNotEquals(urlNfc, urlNfd, "URLEncoder: NFC and NFD differ");
 
     String uriNfc = URICoder.encode(nfc);
     String uriNfd = URICoder.encode(nfd);
-    Assert.assertEquals("URICoder: NFC and NFD normalise to same output", uriNfc, uriNfd);
+    Assertions.assertEquals(uriNfc, uriNfd, "URICoder: NFC and NFD normalise to same output");
   }
 
   @Test
@@ -552,9 +550,9 @@ public final class URICoderTest {
     String minEncoded = URICoder.minimalEncode(path);
 
     // URLEncoder encodes / ? = and space
-    Assert.assertEquals("%2Fsearch%3Fq%3Dhello+world", urlEncoded);
+    Assertions.assertEquals(urlEncoded, "%2Fsearch%3Fq%3Dhello+world");
     // minimalEncode preserves / ? = and encodes space as %20
-    Assert.assertEquals("/search?q=hello%20world", minEncoded);
+    Assertions.assertEquals(minEncoded, "/search?q=hello%20world");
   }
 
   // ---------------------------------------------------------------------------

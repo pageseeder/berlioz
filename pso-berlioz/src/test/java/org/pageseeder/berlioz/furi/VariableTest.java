@@ -17,8 +17,8 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.Arrays;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.furi.Variable.Form;
 
 /**
@@ -40,7 +40,7 @@ public class VariableTest {
     } catch (NullPointerException ex) {
       nullThrown = true;
     } finally {
-      Assert.assertTrue(nullThrown);
+      Assertions.assertTrue(nullThrown);
     }
   }
 
@@ -55,7 +55,7 @@ public class VariableTest {
     } catch (IllegalArgumentException ex) {
       illegalThrown = true;
     } finally {
-      Assert.assertTrue(illegalThrown);
+      Assertions.assertTrue(illegalThrown);
     }
   }
 
@@ -67,13 +67,13 @@ public class VariableTest {
   public void testNew_Default() {
     // default value specified and null
     Variable variable = new Variable("name", null);
-    Assert.assertEquals("", variable.defaultValue());
-    Assert.assertNull(variable.type());
+    Assertions.assertEquals(variable.defaultValue(), "");
+    Assertions.assertNull(variable.type());
     // default value unspecified
     variable = new Variable("name");
-    Assert.assertEquals("", variable.defaultValue());
-    Assert.assertNull(variable.type());
-    Assert.assertEquals(Form.STRING, variable.form());
+    Assertions.assertEquals(variable.defaultValue(), "");
+    Assertions.assertNull(variable.type());
+    Assertions.assertEquals(Form.STRING, variable.form());
   }
 
   /**
@@ -82,17 +82,17 @@ public class VariableTest {
   @Test
   public void testIsValidName() {
     // invalid
-    Assert.assertFalse(Variable.isValidName(null));
-    Assert.assertFalse(Variable.isValidName(""));
-    Assert.assertFalse(Variable.isValidName("_"));
-    Assert.assertFalse(Variable.isValidName("-"));
-    Assert.assertFalse(Variable.isValidName("."));
+    Assertions.assertFalse(Variable.isValidName(null));
+    Assertions.assertFalse(Variable.isValidName(""));
+    Assertions.assertFalse(Variable.isValidName("_"));
+    Assertions.assertFalse(Variable.isValidName("-"));
+    Assertions.assertFalse(Variable.isValidName("."));
     // valid
-    Assert.assertTrue(Variable.isValidName("a"));
-    Assert.assertTrue(Variable.isValidName("abc"));
-    Assert.assertTrue(Variable.isValidName("a-"));
-    Assert.assertTrue(Variable.isValidName("a_"));
-    Assert.assertTrue(Variable.isValidName("a."));
+    Assertions.assertTrue(Variable.isValidName("a"));
+    Assertions.assertTrue(Variable.isValidName("abc"));
+    Assertions.assertTrue(Variable.isValidName("a-"));
+    Assertions.assertTrue(Variable.isValidName("a_"));
+    Assertions.assertTrue(Variable.isValidName("a."));
   }
 
   /**
@@ -123,27 +123,27 @@ public class VariableTest {
   @Test
   public void testParse_OK() {
     VariableType t = new VariableType("t");
-    Assert.assertEquals(new Variable("x"),      Variable.parse("x"));
-    Assert.assertEquals(new Variable("x", "y"), Variable.parse("x=y"));
-    Assert.assertEquals(new Variable("x", ""),  Variable.parse("x="));
+    Assertions.assertEquals(new Variable("x"),      Variable.parse("x"));
+    Assertions.assertEquals(new Variable("x", "y"), Variable.parse("x=y"));
+    Assertions.assertEquals(new Variable("x", ""),  Variable.parse("x="));
     // typed
-    Assert.assertEquals(new Variable("x", null), Variable.parse("t:x"));
-    Assert.assertEquals(new Variable("x", null), Variable.parse("t:x="));
-    Assert.assertEquals(new Variable("x", "y"),  Variable.parse("t:x=y"));
-    Assert.assertEquals(new Variable("x", "y"),  Variable.parse(":x=y"));
+    Assertions.assertEquals(new Variable("x", null), Variable.parse("t:x"));
+    Assertions.assertEquals(new Variable("x", null), Variable.parse("t:x="));
+    Assertions.assertEquals(new Variable("x", "y"),  Variable.parse("t:x=y"));
+    Assertions.assertEquals(new Variable("x", "y"),  Variable.parse(":x=y"));
     // with different form
-    Assert.assertEquals(new Variable("x", null, null, Form.LIST), Variable.parse("@x"));
-    Assert.assertEquals(new Variable("x", null, null, Form.MAP ), Variable.parse("%x="));
-    Assert.assertEquals(new Variable("x", null, null, Form.LIST), Variable.parse("@t:x"));
-    Assert.assertEquals(new Variable("x", null, null, Form.MAP ), Variable.parse("%t:x="));
-    Assert.assertEquals(new Variable("x", "y", null, Form.LIST ),  Variable.parse("@t:x=y"));
-    Assert.assertEquals(new Variable("x", "y", null, Form.MAP ),  Variable.parse("%:x=y"));
+    Assertions.assertEquals(new Variable("x", null, null, Form.LIST), Variable.parse("@x"));
+    Assertions.assertEquals(new Variable("x", null, null, Form.MAP ), Variable.parse("%x="));
+    Assertions.assertEquals(new Variable("x", null, null, Form.LIST), Variable.parse("@t:x"));
+    Assertions.assertEquals(new Variable("x", null, null, Form.MAP ), Variable.parse("%t:x="));
+    Assertions.assertEquals(new Variable("x", "y", null, Form.LIST ),  Variable.parse("@t:x=y"));
+    Assertions.assertEquals(new Variable("x", "y", null, Form.MAP ),  Variable.parse("%:x=y"));
     // type does not affect equality
-    Assert.assertEquals(t, Variable.parse("t:x").type());
-    Assert.assertEquals(t, Variable.parse("t:x=").type());
-    Assert.assertEquals(t, Variable.parse("t:x=y").type());
+    Assertions.assertEquals(t, Variable.parse("t:x").type());
+    Assertions.assertEquals(t, Variable.parse("t:x=").type());
+    Assertions.assertEquals(t, Variable.parse("t:x=y").type());
 
-    Assert.assertEquals(null,  Variable.parse(":x=y").type());
+    Assertions.assertEquals(null,  Variable.parse(":x=y").type());
   }
 
   /**
@@ -153,9 +153,9 @@ public class VariableTest {
   public void testParse_ErrorNull() {
     try {
       Variable.parse(null);
-      Assert.fail("No exception was thrown");
+      Assertions.fail("No exception was thrown");
     } catch (Exception ex) {
-      Assert.assertEquals(NullPointerException.class, ex.getClass());
+      Assertions.assertEquals(NullPointerException.class, ex.getClass());
     }
   }
 
@@ -166,9 +166,9 @@ public class VariableTest {
   public void testParse_ErrorSyntax() {
     try {
       Variable.parse("=y");
-      Assert.fail("No exception was thrown");
+      Assertions.fail("No exception was thrown");
     } catch (Exception ex) {
-      Assert.assertEquals(URITemplateSyntaxException.class, ex.getClass());
+      Assertions.assertEquals(URITemplateSyntaxException.class, ex.getClass());
     }
   }
 
@@ -185,16 +185,16 @@ public class VariableTest {
     params.set("d", new String[] { "m", "n" });
     params.set("e", new String[] { "m", "", "n" });
     // test
-    Assert.assertEquals("", new Variable("a").value(params));
-    Assert.assertEquals("x", new Variable("a", "x").value(params));
-    Assert.assertEquals("", new Variable("b").value(params));
-    Assert.assertEquals("", new Variable("b", "x").value(params));
-    Assert.assertEquals("m", new Variable("c").value(params));
-    Assert.assertEquals("m", new Variable("c", "x").value(params));
-    Assert.assertEquals("m", new Variable("d").value(params));
-    Assert.assertEquals("m", new Variable("d", "x").value(params));
-    Assert.assertEquals("m", new Variable("e").value(params));
-    Assert.assertEquals("m", new Variable("e", "x").value(params));
+    Assertions.assertEquals(new Variable("a").value(params), "");
+    Assertions.assertEquals(new Variable("a", "x").value(params), "x");
+    Assertions.assertEquals(new Variable("b").value(params), "");
+    Assertions.assertEquals(new Variable("b", "x").value(params), "");
+    Assertions.assertEquals(new Variable("c").value(params), "m");
+    Assertions.assertEquals(new Variable("c", "x").value(params), "m");
+    Assertions.assertEquals(new Variable("d").value(params), "m");
+    Assertions.assertEquals(new Variable("d", "x").value(params), "m");
+    Assertions.assertEquals(new Variable("e").value(params), "m");
+    Assertions.assertEquals(new Variable("e", "x").value(params), "m");
   }
 
   /**
@@ -232,6 +232,6 @@ public class VariableTest {
    * @param act The actual string array.
    */
   private void assertArrayEquals(String[] exp, String[] act) {
-    Assert.assertEquals(Arrays.deepToString(exp), Arrays.deepToString(act));
+    Assertions.assertEquals(Arrays.deepToString(exp), Arrays.deepToString(act));
   }
 }

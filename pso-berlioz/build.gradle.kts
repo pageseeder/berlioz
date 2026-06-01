@@ -19,7 +19,7 @@ dependencies {
   optional(libs.javax.json.api)
   optional(libs.jakarta.json.api)
 
-  testImplementation(libs.junit)
+  testImplementation(libs.junit.jupiter)
   testImplementation(libs.servlet.api)
   testImplementation(libs.slf4j.simple)
   testImplementation(libs.glassfish.javax.json)

@@ -1,20 +1,20 @@
 package org.pageseeder.berlioz.system;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.io.StringReader;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
@@ -25,13 +25,13 @@ import org.xml.sax.InputSource;
 
 public final class GetFileSystemInfoTest {
 
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
+  @TempDir
+  Path folder;
 
   @Test
   public void testProcessWithDetails() throws Exception {
-    File publicFolder = this.folder.newFolder("public");
-    File privateFolder = this.folder.newFolder("private");
+    File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
+    File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
 
     write(publicFolder, "root.txt", 4);
     write(publicFolder, "alpha/a.txt", 2);
@@ -63,8 +63,8 @@ public final class GetFileSystemInfoTest {
 
   @Test
   public void testProcessWithoutDetails() throws Exception {
-    File publicFolder = this.folder.newFolder("public");
-    File privateFolder = this.folder.newFolder("private");
+    File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
+    File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
 
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
     new GetFileSystemInfo().process(request(publicFolder, privateFolder, null), xml);

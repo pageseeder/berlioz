@@ -5,6 +5,6 @@ dependencies {
   api(project(":pso-berlioz"))
   compileOnly(libs.servlet.api)
 
-  testImplementation(libs.junit)
+  testImplementation(libs.junit.jupiter)
   testImplementation(libs.servlet.api)
 }

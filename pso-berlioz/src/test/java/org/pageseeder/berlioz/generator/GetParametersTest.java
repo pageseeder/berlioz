@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.generator;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
@@ -15,8 +15,8 @@ public class GetParametersTest {
   public void testProcessNoParametersWritesEmptyElement() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assert.assertTrue("Should contain <parameters>", out.contains("<parameters"));
-    Assert.assertFalse("Should contain no <parameter> elements", out.contains("<parameter "));
+    Assertions.assertTrue(out.contains("<parameters"), "Should contain <parameters>");
+    Assertions.assertFalse(out.contains("<parameter "), "Should contain no <parameter> elements");
   }
 
   @Test
@@ -25,8 +25,8 @@ public class GetParametersTest {
         .parameter("name", "Alice")
         .build();
     String out = process(req);
-    Assert.assertTrue(out.contains("name=\"name\""));
-    Assert.assertTrue(out.contains("Alice"));
+    Assertions.assertTrue(out.contains("name=\"name\""));
+    Assertions.assertTrue(out.contains("Alice"));
   }
 
   @Test
@@ -36,10 +36,10 @@ public class GetParametersTest {
         .parameter("b", "2")
         .build();
     String out = process(req);
-    Assert.assertTrue(out.contains("name=\"a\""));
-    Assert.assertTrue(out.contains("name=\"b\""));
-    Assert.assertTrue(out.contains(">1<"));
-    Assert.assertTrue(out.contains(">2<"));
+    Assertions.assertTrue(out.contains("name=\"a\""));
+    Assertions.assertTrue(out.contains("name=\"b\""));
+    Assertions.assertTrue(out.contains(">1<"));
+    Assertions.assertTrue(out.contains(">2<"));
   }
 
   @Test
@@ -49,9 +49,9 @@ public class GetParametersTest {
         .build();
     String out = process(req);
     // 3 <parameter> elements inside <parameters>
-    Assert.assertTrue("Should contain 3 parameter elements", out.contains("red"));
-    Assert.assertTrue(out.contains("blue"));
-    Assert.assertTrue(out.contains("green"));
+    Assertions.assertTrue(out.contains("red"), "Should contain 3 parameter elements");
+    Assertions.assertTrue(out.contains("blue"));
+    Assertions.assertTrue(out.contains("green"));
   }
 
   // getETag() tests
@@ -63,9 +63,9 @@ public class GetParametersTest {
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag1 = gen.getETag(req);
     String etag2 = gen.getETag(req);
-    Assert.assertEquals("ETag should be stable for same request", etag1, etag2);
-    Assert.assertNotNull(etag1);
-    Assert.assertFalse(etag1.isEmpty());
+    Assertions.assertEquals(etag1, etag2, "ETag should be stable for same request");
+    Assertions.assertNotNull(etag1);
+    Assertions.assertFalse(etag1.isEmpty());
   }
 
   @Test
@@ -73,7 +73,7 @@ public class GetParametersTest {
     GetParameters gen = new GetParameters();
     ContentRequest empty  = GeneratorTestSupport.request().build();
     ContentRequest withParam = GeneratorTestSupport.request().parameter("q", "test").build();
-    Assert.assertNotEquals(gen.getETag(empty), gen.getETag(withParam));
+    Assertions.assertNotEquals(gen.getETag(empty), gen.getETag(withParam));
   }
 
   @Test
@@ -81,7 +81,7 @@ public class GetParametersTest {
     GetParameters gen = new GetParameters();
     ContentRequest req1 = GeneratorTestSupport.request().parameter("q", "foo").build();
     ContentRequest req2 = GeneratorTestSupport.request().parameter("q", "foo").build();
-    Assert.assertEquals(gen.getETag(req1), gen.getETag(req2));
+    Assertions.assertEquals(gen.getETag(req1), gen.getETag(req2));
   }
 
   // helpers

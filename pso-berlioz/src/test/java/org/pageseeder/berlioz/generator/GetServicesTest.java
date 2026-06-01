@@ -1,9 +1,9 @@
 package org.pageseeder.berlioz.generator;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -18,13 +18,13 @@ public class GetServicesTest {
   private static final File WEB_INF =
       new File("./src/test/resources/org/pageseeder/berlioz");
 
-  @Before
+  @BeforeEach
   public void setUp() {
     GlobalSettings.setup((InitEnvironment) null);
     ServiceLoader.getInstance().clear();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     ServiceLoader.getInstance().clear();
     GlobalSettings.setup((InitEnvironment) null);
@@ -37,7 +37,7 @@ public class GetServicesTest {
   public void testProcessWritesNothingWhenNoConfigured() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assert.assertEquals("No output expected when no service files are configured", "", out);
+    Assertions.assertEquals("", out, "No output expected when no service files are configured");
   }
 
   @Test
@@ -45,8 +45,7 @@ public class GetServicesTest {
     GlobalSettings.setup(WEB_INF);
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assert.assertTrue("Should include service-config element from services.xml",
-        out.contains("service-config"));
+    Assertions.assertTrue(out.contains("service-config"), "Should include service-config element from services.xml");
   }
 
   @Test
@@ -56,8 +55,8 @@ public class GetServicesTest {
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag1 = gen.getETag(req);
     String etag2 = gen.getETag(req);
-    Assert.assertEquals("ETag should be stable for unchanged files", etag1, etag2);
-    Assert.assertNotNull(etag1);
+    Assertions.assertEquals(etag1, etag2, "ETag should be stable for unchanged files");
+    Assertions.assertNotNull(etag1);
   }
 
   // helpers

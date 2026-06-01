@@ -18,9 +18,9 @@ package org.pageseeder.berlioz.content;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
@@ -38,24 +38,24 @@ public final class ServiceRegistryTest {
         .build();
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     registry = new ServiceRegistry();
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testRegister_nullService() {
-    registry.register(null, new URIPattern("/home"), HttpMethod.GET);
+    Assertions.assertThrows(NullPointerException.class, () -> registry.register(null, new URIPattern("/home"), HttpMethod.GET));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testRegister_nullPattern() {
-    registry.register(buildService("svc"), null, HttpMethod.GET);
+    Assertions.assertThrows(NullPointerException.class, () -> registry.register(buildService("svc"), null, HttpMethod.GET));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testRegister_nullMethod() {
-    registry.register(buildService("svc"), new URIPattern("/home"), null);
+    Assertions.assertThrows(NullPointerException.class, () -> registry.register(buildService("svc"), new URIPattern("/home"), null));
   }
 
   @Test
@@ -64,20 +64,20 @@ public final class ServiceRegistryTest {
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
 
     MatchingService match = registry.get("/home", HttpMethod.GET);
-    Assert.assertNotNull(match);
-    Assert.assertSame(svc, match.service());
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(svc, match.service());
   }
 
   @Test
   public void testGet_byMethodAndUrl_noMatch() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
-    Assert.assertNull(registry.get("/other", HttpMethod.GET));
+    Assertions.assertNull(registry.get("/other", HttpMethod.GET));
   }
 
   @Test
   public void testGet_byMethodAndUrl_wrongMethod() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
-    Assert.assertNull(registry.get("/home", HttpMethod.POST));
+    Assertions.assertNull(registry.get("/home", HttpMethod.POST));
   }
 
   @Test
@@ -86,8 +86,8 @@ public final class ServiceRegistryTest {
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
 
     MatchingService match = registry.get("/home", HttpMethod.HEAD);
-    Assert.assertNotNull(match);
-    Assert.assertSame(svc, match.service());
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(svc, match.service());
   }
 
   @Test
@@ -96,20 +96,20 @@ public final class ServiceRegistryTest {
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
 
     MatchingService match = registry.get("/home", "GET");
-    Assert.assertNotNull(match);
-    Assert.assertSame(svc, match.service());
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(svc, match.service());
   }
 
   @Test
   public void testGet_byMethodString_nullMethod() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
-    Assert.assertNull(registry.get("/home", (String) null));
+    Assertions.assertNull(registry.get("/home", (String) null));
   }
 
   @Test
   public void testGet_byMethodString_unknownMethod() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
-    Assert.assertNull(registry.get("/home", "UNKNOWN"));
+    Assertions.assertNull(registry.get("/home", "UNKNOWN"));
   }
 
   @Test
@@ -118,8 +118,8 @@ public final class ServiceRegistryTest {
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
 
     MatchingService match = registry.get("/home");
-    Assert.assertNotNull(match);
-    Assert.assertSame(svc, match.service());
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(svc, match.service());
   }
 
   @Test
@@ -128,47 +128,47 @@ public final class ServiceRegistryTest {
     registry.register(svc, new URIPattern("/items/{id}"), HttpMethod.GET);
 
     MatchingService match = registry.get("/items/42", HttpMethod.GET);
-    Assert.assertNotNull(match);
-    Assert.assertSame(svc, match.service());
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(svc, match.service());
   }
 
   @Test
   public void testAllows_getAlsoAddsHead() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
     List<String> methods = registry.allows("/home");
-    Assert.assertTrue(methods.contains("GET"));
-    Assert.assertTrue(methods.contains("HEAD"));
+    Assertions.assertTrue(methods.contains("GET"));
+    Assertions.assertTrue(methods.contains("HEAD"));
   }
 
   @Test
   public void testAllows_postOnly() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.POST);
     List<String> methods = registry.allows("/home");
-    Assert.assertTrue(methods.contains("POST"));
-    Assert.assertFalse(methods.contains("HEAD"));
+    Assertions.assertTrue(methods.contains("POST"));
+    Assertions.assertFalse(methods.contains("HEAD"));
   }
 
   @Test
   public void testAllows_noMatch() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
-    Assert.assertTrue(registry.allows("/other").isEmpty());
+    Assertions.assertTrue(registry.allows("/other").isEmpty());
   }
 
   @Test
   public void testGetMethod() {
     Service svc = buildService("home");
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
-    Assert.assertEquals(HttpMethod.GET, registry.getMethod(svc));
+    Assertions.assertEquals(HttpMethod.GET, registry.getMethod(svc));
   }
 
   @Test
   public void testGetMethod_null() {
-    Assert.assertNull(registry.getMethod(null));
+    Assertions.assertNull(registry.getMethod(null));
   }
 
   @Test
   public void testGetMethod_notRegistered() {
-    Assert.assertNull(registry.getMethod(buildService("unknown")));
+    Assertions.assertNull(registry.getMethod(buildService("unknown")));
   }
 
   @Test
@@ -176,13 +176,13 @@ public final class ServiceRegistryTest {
     Service svc = buildService("home");
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
     List<String> patterns = registry.matches(svc);
-    Assert.assertEquals(1, patterns.size());
-    Assert.assertEquals("/home", patterns.get(0));
+    Assertions.assertEquals(1, patterns.size());
+    Assertions.assertEquals(patterns.get(0), "/home");
   }
 
   @Test
   public void testMatches_null() {
-    Assert.assertTrue(registry.matches(null).isEmpty());
+    Assertions.assertTrue(registry.matches(null).isEmpty());
   }
 
   @Test
@@ -190,8 +190,8 @@ public final class ServiceRegistryTest {
     Service svc = buildService("home");
     registry.register(svc, new URIPattern("/home"), HttpMethod.GET);
     Map<String, Service> map = registry.getServiceMap(HttpMethod.GET);
-    Assert.assertTrue(map.containsKey("/home"));
-    Assert.assertSame(svc, map.get("/home"));
+    Assertions.assertTrue(map.containsKey("/home"));
+    Assertions.assertSame(svc, map.get("/home"));
   }
 
   @Test
@@ -201,7 +201,7 @@ public final class ServiceRegistryTest {
     registry.register(s1, new URIPattern("/a"), HttpMethod.GET);
     registry.register(s2, new URIPattern("/b"), HttpMethod.POST);
     List<Service> services = registry.getServices();
-    Assert.assertEquals(2, services.size());
+    Assertions.assertEquals(2, services.size());
   }
 
   @Test
@@ -212,22 +212,22 @@ public final class ServiceRegistryTest {
     registry.register(svcPost, new URIPattern("/b"), HttpMethod.POST);
 
     List<Service> gets = registry.getServices(HttpMethod.GET);
-    Assert.assertEquals(1, gets.size());
-    Assert.assertSame(svcGet, gets.get(0));
+    Assertions.assertEquals(1, gets.size());
+    Assertions.assertSame(svcGet, gets.get(0));
   }
 
   @Test
   public void testClear() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
     registry.clear();
-    Assert.assertNull(registry.get("/home", HttpMethod.GET));
-    Assert.assertTrue(registry.getServices().isEmpty());
+    Assertions.assertNull(registry.get("/home", HttpMethod.GET));
+    Assertions.assertTrue(registry.getServices().isEmpty());
   }
 
   @Test
   public void testVersion_changesAfterTouch() {
     long before = registry.version();
     registry.touch();
-    Assert.assertTrue(registry.version() >= before);
+    Assertions.assertTrue(registry.version() >= before);
   }
 }

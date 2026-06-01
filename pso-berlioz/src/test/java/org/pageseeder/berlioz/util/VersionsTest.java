@@ -1,18 +1,18 @@
 package org.pageseeder.berlioz.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public final class VersionsTest {
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testCompareNullA() {
-    Versions.compare(null, "1");
+    Assertions.assertThrows(NullPointerException.class, () -> Versions.compare(null, "1"));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testCompareNullB() {
-    Versions.compare("1", null);
+    Assertions.assertThrows(NullPointerException.class, () -> Versions.compare("1", null));
   }
 
   @Test
@@ -57,16 +57,16 @@ public final class VersionsTest {
 
   private static void assertLatestIsA(String a, String b) {
     int compare = Versions.compare(a, b);
-    Assert.assertTrue("A '"+a+"' is newer than B '"+b+"'", compare > 0);
+    Assertions.assertTrue(compare > 0, "A '"+a+"' is newer than B '"+b+"'");
   }
 
   private static void assertLatestIsB(String a, String b) {
     int compare = Versions.compare(a, b);
-    Assert.assertTrue("B '"+b+"' is newer than A '"+a+"'", compare < 0);
+    Assertions.assertTrue(compare < 0, "B '"+b+"' is newer than A '"+a+"'");
   }
 
   private static void assertEquivalent(String a, String b) {
     int compare = Versions.compare(a, b);
-    Assert.assertEquals("A and B are equivalent", 0, compare);
+    Assertions.assertEquals(0, compare, "A and B are equivalent");
   }
 }

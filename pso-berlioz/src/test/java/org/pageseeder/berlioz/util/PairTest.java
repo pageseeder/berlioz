@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public final class PairTest {
 
@@ -24,8 +24,8 @@ public final class PairTest {
   public void testAccessors() {
     Pair<String, Integer> pair = new Pair<>("alpha", 1);
 
-    Assert.assertEquals("alpha", pair.first());
-    Assert.assertEquals(Integer.valueOf(1), pair.second());
+    Assertions.assertEquals(pair.first(), "alpha");
+    Assertions.assertEquals(Integer.valueOf(1), pair.second());
   }
 
   @Test
@@ -35,10 +35,10 @@ public final class PairTest {
     Pair<String, Integer> differentFirst = new Pair<>("beta", 1);
     Pair<String, Integer> differentSecond = new Pair<>("alpha", 2);
 
-    Assert.assertEquals(pair, same);
-    Assert.assertEquals(pair.hashCode(), same.hashCode());
-    Assert.assertNotEquals(pair, differentFirst);
-    Assert.assertNotEquals(pair, differentSecond);
+    Assertions.assertEquals(pair, same);
+    Assertions.assertEquals(pair.hashCode(), same.hashCode());
+    Assertions.assertNotEquals(pair, differentFirst);
+    Assertions.assertNotEquals(pair, differentSecond);
   }
 
   @Test
@@ -48,17 +48,17 @@ public final class PairTest {
     Pair<String, Integer> differentFirst = new Pair<>("alpha", null);
     Pair<String, Integer> differentSecond = new Pair<>(null, 1);
 
-    Assert.assertEquals(pair, same);
-    Assert.assertEquals(pair.hashCode(), same.hashCode());
-    Assert.assertNotEquals(pair, differentFirst);
-    Assert.assertNotEquals(pair, differentSecond);
+    Assertions.assertEquals(pair, same);
+    Assertions.assertEquals(pair.hashCode(), same.hashCode());
+    Assertions.assertNotEquals(pair, differentFirst);
+    Assertions.assertNotEquals(pair, differentSecond);
   }
 
   @Test
   public void testNotEqualsOtherTypes() {
     Pair<String, Integer> pair = new Pair<>("alpha", 1);
 
-    Assert.assertNotEquals(pair, null);
-    Assert.assertNotEquals(pair, "alpha");
+    Assertions.assertNotEquals(pair, null);
+    Assertions.assertNotEquals(pair, "alpha");
   }
 }

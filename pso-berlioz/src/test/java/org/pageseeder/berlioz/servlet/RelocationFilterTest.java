@@ -1,14 +1,14 @@
 package org.pageseeder.berlioz.servlet;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.nio.file.Path;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,11 +16,11 @@ import java.util.Collections;
 
 public class RelocationFilterTest {
 
-  @Rule
-  public TemporaryFolder tmp = new TemporaryFolder();
+  @TempDir
+  Path tmp;
 
   private RelocationFilter initFilter(String relocationXml) throws Exception {
-    File webRoot = tmp.newFolder();
+    File webRoot = Files.createTempDirectory(tmp, "d").toFile();
     File webinf  = new File(webRoot, "WEB-INF");
     webinf.mkdirs();
     Files.write(new File(webinf, "relocation.xml").toPath(),
@@ -49,9 +49,8 @@ public class RelocationFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertTrue("Chain should be invoked when no relocation matches", chainInvoked[0]);
-    Assert.assertNull("No Content-Location header should be set",
-        recorder.header("Content-Location"));
+    Assertions.assertTrue(chainInvoked[0], "Chain should be invoked when no relocation matches");
+    Assertions.assertNull(recorder.header("Content-Location"), "No Content-Location header should be set");
   }
 
   @Test
@@ -64,7 +63,7 @@ public class RelocationFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertTrue(chainInvoked[0]);
+    Assertions.assertTrue(chainInvoked[0]);
   }
 
   // Relocation with RequestDispatcher
@@ -93,10 +92,9 @@ public class RelocationFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertTrue("Dispatcher.forward should be called on relocation match", forwardCalled[0]);
-    Assert.assertEquals("Content-Location header should be set to target", "/new",
-        recorder.header("Content-Location"));
-    Assert.assertFalse("Chain should NOT be invoked after a successful forward", chainInvoked[0]);
+    Assertions.assertTrue(forwardCalled[0], "Dispatcher.forward should be called on relocation match");
+    Assertions.assertEquals("/new", recorder.header("Content-Location"), "Content-Location header should be set to target");
+    Assertions.assertFalse(chainInvoked[0], "Chain should NOT be invoked after a successful forward");
   }
 
   @Test
@@ -113,8 +111,7 @@ public class RelocationFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertTrue("Chain should be invoked even when dispatcher is null", chainInvoked[0]);
-    Assert.assertNull("Content-Location should not be set when dispatcher is null",
-        recorder.header("Content-Location"));
+    Assertions.assertTrue(chainInvoked[0], "Chain should be invoked even when dispatcher is null");
+    Assertions.assertNull(recorder.header("Content-Location"), "Content-Location should not be set when dispatcher is null");
   }
 }

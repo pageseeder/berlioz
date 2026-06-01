@@ -1,9 +1,9 @@
 package org.pageseeder.berlioz.generator;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -17,12 +17,12 @@ public class GetGlobalConfigTest {
   private static final File WEB_INF =
       new File("./src/test/resources/org/pageseeder/berlioz");
 
-  @Before
+  @BeforeEach
   public void setUp() {
     GlobalSettings.setup(WEB_INF);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     GlobalSettings.setup((InitEnvironment) null);
   }
@@ -34,15 +34,14 @@ public class GetGlobalConfigTest {
   public void testProcessAlwaysWritesPropertiesElement() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assert.assertTrue("Should contain <properties>", out.contains("<properties"));
+    Assertions.assertTrue(out.contains("<properties"), "Should contain <properties>");
   }
 
   @Test
   public void testProcessIncludesSourceAttributeWhenConfigExists() throws Exception {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assert.assertTrue("Should include source attribute when config file is found",
-        out.contains("source="));
+    Assertions.assertTrue(out.contains("source="), "Should include source attribute when config file is found");
   }
 
   @Test
@@ -50,8 +49,8 @@ public class GetGlobalConfigTest {
     GetGlobalConfig gen = new GetGlobalConfig();
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag = gen.getETag(req);
-    Assert.assertNotNull("ETag should not be null when a properties file is found", etag);
-    Assert.assertFalse(etag.isEmpty());
+    Assertions.assertNotNull(etag, "ETag should not be null when a properties file is found");
+    Assertions.assertFalse(etag.isEmpty());
   }
 
   @Test
@@ -59,8 +58,7 @@ public class GetGlobalConfigTest {
     GlobalSettings.setup((InitEnvironment) null);
     GetGlobalConfig gen = new GetGlobalConfig();
     ContentRequest req = GeneratorTestSupport.request().build();
-    Assert.assertNull("ETag should be null when no properties file is configured",
-        gen.getETag(req));
+    Assertions.assertNull(gen.getETag(req), "ETag should be null when no properties file is configured");
   }
 
   // helpers

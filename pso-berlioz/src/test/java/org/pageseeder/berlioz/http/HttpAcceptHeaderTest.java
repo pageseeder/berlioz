@@ -2,49 +2,49 @@ package org.pageseeder.berlioz.http;
 
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class HttpAcceptHeaderTest {
 
   @Test
   public void testGet_NullOrEmpty() {
-    Assert.assertTrue(HttpAcceptHeader.get(null).isEmpty());
-    Assert.assertTrue(HttpAcceptHeader.get("").isEmpty());
+    Assertions.assertTrue(HttpAcceptHeader.get(null).isEmpty());
+    Assertions.assertTrue(HttpAcceptHeader.get("").isEmpty());
   }
 
   @Test
   public void testGet_ParseQualityValues() {
     Map<String, Float> accept = HttpAcceptHeader.get("text/html,application/xml;q=0.9,*/*;q=0.1");
-    Assert.assertEquals(Float.valueOf(1.0f), accept.get("text/html"));
-    Assert.assertEquals(Float.valueOf(0.9f), accept.get("application/xml"));
-    Assert.assertEquals(Float.valueOf(0.1f), accept.get("*/*"));
+    Assertions.assertEquals(Float.valueOf(1.0f), accept.get("text/html"));
+    Assertions.assertEquals(Float.valueOf(0.9f), accept.get("application/xml"));
+    Assertions.assertEquals(Float.valueOf(0.1f), accept.get("*/*"));
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void testGet_ReturnsUnmodifiableMap() {
-    HttpAcceptHeader.get("text/html").put("application/json", 1.0f);
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> HttpAcceptHeader.get("text/html").put("application/json", 1.0f));
   }
 
   @Test
   public void testAccepts_ExactValue() {
-    Assert.assertTrue(HttpAcceptHeader.accepts("text/html", "text/html"));
-    Assert.assertFalse(HttpAcceptHeader.accepts("text/html;q=0", "text/html"));
+    Assertions.assertTrue(HttpAcceptHeader.accepts("text/html", "text/html"));
+    Assertions.assertFalse(HttpAcceptHeader.accepts("text/html;q=0", "text/html"));
   }
 
   @Test
   public void testAccepts_Wildcards() {
-    Assert.assertTrue(HttpAcceptHeader.accepts("*/*;q=0.5", "image/png"));
-    Assert.assertTrue(HttpAcceptHeader.accepts("text/*;q=0.5", "text/plain"));
-    Assert.assertTrue(HttpAcceptHeader.accepts("*;q=0.5", "br"));
-    Assert.assertFalse(HttpAcceptHeader.accepts("text/*;q=0", "text/plain"));
+    Assertions.assertTrue(HttpAcceptHeader.accepts("*/*;q=0.5", "image/png"));
+    Assertions.assertTrue(HttpAcceptHeader.accepts("text/*;q=0.5", "text/plain"));
+    Assertions.assertTrue(HttpAcceptHeader.accepts("*;q=0.5", "br"));
+    Assertions.assertFalse(HttpAcceptHeader.accepts("text/*;q=0", "text/plain"));
   }
 
   @Test
   public void testAccepts_Map() {
     Map<String, Float> accept = HttpAcceptHeader.get("application/json;q=0.7");
-    Assert.assertTrue(HttpAcceptHeader.accepts(accept, "application/json"));
-    Assert.assertFalse(HttpAcceptHeader.accepts(accept, "application/xml"));
+    Assertions.assertTrue(HttpAcceptHeader.accepts(accept, "application/json"));
+    Assertions.assertFalse(HttpAcceptHeader.accepts(accept, "application/xml"));
   }
 
 }

@@ -1,25 +1,27 @@
 package org.pageseeder.berlioz.config;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 
 public final class ConfigLoaderTest {
 
-  @Rule
-  public TemporaryFolder tmp = new TemporaryFolder();
+  @TempDir
+  Path tmp;
 
   // File size limit
   // ---------------------------------------------------------------------------
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testFileLargerThan1MBThrowsConfigException() throws Exception {
-    File large = tmp.newFile("big.xml");
+    Assertions.assertThrows(ConfigException.class, () -> {
+    File large = Files.createFile(tmp.resolve("big.xml")).toFile();
     try (FileOutputStream out = new FileOutputStream(large)) {
       byte[] chunk = new byte[10_000];
       Arrays.fill(chunk, (byte) ' ');
@@ -28,11 +30,12 @@ public final class ConfigLoaderTest {
       }
     }
     RedirectConfig.newInstance(large);
+    });
   }
 
   @Test
   public void testFileExactly1MBDoesNotThrow() throws Exception {
-    File exactly = tmp.newFile("exact.xml");
+    File exactly = Files.createFile(tmp.resolve("exact.xml")).toFile();
     byte[] xml = "<redirect-mapping/>".getBytes();
     // pad with spaces to reach exactly 1,000,000 bytes (the limit is strictly > 1MB)
     byte[] padding = new byte[1_000_000 - xml.length];
@@ -41,27 +44,31 @@ public final class ConfigLoaderTest {
       out.write(xml);
       out.write(padding);
     }
-    Assert.assertEquals(1_000_000, exactly.length());
+    Assertions.assertEquals(1_000_000, exactly.length());
     RedirectConfig config = RedirectConfig.newInstance(exactly);
-    Assert.assertTrue(config.isEmpty());
+    Assertions.assertTrue(config.isEmpty());
   }
 
   // Non-existent file
   // ---------------------------------------------------------------------------
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testNonExistentFileThrowsConfigException() throws Exception {
-    File missing = new File(tmp.getRoot(), "does-not-exist.xml");
+    Assertions.assertThrows(ConfigException.class, () -> {
+    File missing = new File(tmp.toFile(), "does-not-exist.xml");
     RedirectConfig.newInstance(missing);
+    });
   }
 
   // Directory instead of file
   // ---------------------------------------------------------------------------
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testDirectoryThrowsConfigException() throws Exception {
-    File dir = tmp.newFolder("notafile");
+    Assertions.assertThrows(ConfigException.class, () -> {
+    File dir = Files.createDirectory(tmp.resolve("notafile")).toFile();
     RedirectConfig.newInstance(dir);
+    });
   }
 
   // Weborganic DOCTYPE stripping
@@ -74,9 +81,9 @@ public final class ConfigLoaderTest {
         "<redirect-mapping><redirect from=\"/old\" to=\"/new\"/></redirect-mapping>";
     RedirectConfig config = RedirectConfig.newInstance(
         new java.io.ByteArrayInputStream(xml.getBytes()));
-    Assert.assertEquals(1, config.size());
-    Assert.assertNotNull(config.redirect("/old"));
-    Assert.assertEquals("/new", config.redirect("/old").to());
+    Assertions.assertEquals(1, config.size());
+    Assertions.assertNotNull(config.redirect("/old"));
+    Assertions.assertEquals(config.redirect("/old").to(), "/new");
   }
 
 }

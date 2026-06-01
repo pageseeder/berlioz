@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.config;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.furi.URIPattern;
 
 public final class MovedLocationPatternTest {
@@ -12,28 +12,28 @@ public final class MovedLocationPatternTest {
   @Test
   public void testMatchReturnsTrueForMatchingPath() {
     MovedLocationPattern p = pattern("/old", "/new");
-    Assert.assertTrue(p.match("/old"));
+    Assertions.assertTrue(p.match("/old"));
   }
 
   @Test
   public void testMatchReturnsFalseForNonMatchingPath() {
     MovedLocationPattern p = pattern("/old", "/new");
-    Assert.assertFalse(p.match("/other"));
+    Assertions.assertFalse(p.match("/other"));
   }
 
   @Test
   public void testMatchWithUriVariablePattern() {
     MovedLocationPattern p = pattern("/{+path}.psml", "/html/{+path}");
-    Assert.assertTrue(p.match("/example.psml"));
-    Assert.assertTrue(p.match("/folder/page.psml"));
-    Assert.assertFalse(p.match("/example.html"));
+    Assertions.assertTrue(p.match("/example.psml"));
+    Assertions.assertTrue(p.match("/folder/page.psml"));
+    Assertions.assertFalse(p.match("/example.html"));
   }
 
   @Test
   public void testMatchRootPath() {
     MovedLocationPattern p = pattern("/", "/home");
-    Assert.assertTrue(p.match("/"));
-    Assert.assertFalse(p.match("/other"));
+    Assertions.assertTrue(p.match("/"));
+    Assertions.assertFalse(p.match("/other"));
   }
 
   // getTarget()
@@ -42,25 +42,25 @@ public final class MovedLocationPatternTest {
   @Test
   public void testGetTargetSimpleMapping() {
     MovedLocationPattern p = pattern("/old", "/new");
-    Assert.assertEquals("/new", p.getTarget("/old"));
+    Assertions.assertEquals(p.getTarget("/old"), "/new");
   }
 
   @Test
   public void testGetTargetExpandsUriVariable() {
     MovedLocationPattern p = pattern("/{+path}.psml", "/html/{+path}");
-    Assert.assertEquals("/html/example", p.getTarget("/example.psml"));
+    Assertions.assertEquals(p.getTarget("/example.psml"), "/html/example");
   }
 
   @Test
   public void testGetTargetExpandsNestedPath() {
     MovedLocationPattern p = pattern("/{+path}.psml", "/html/{+path}");
-    Assert.assertEquals("/html/folder/page", p.getTarget("/folder/page.psml"));
+    Assertions.assertEquals(p.getTarget("/folder/page.psml"), "/html/folder/page");
   }
 
   @Test
   public void testGetTargetRootMapping() {
     MovedLocationPattern p = pattern("/", "/home");
-    Assert.assertEquals("/home", p.getTarget("/"));
+    Assertions.assertEquals(p.getTarget("/"), "/home");
   }
 
   // from() / to()
@@ -71,7 +71,7 @@ public final class MovedLocationPatternTest {
     URIPattern from = new URIPattern("/old");
     URIPattern to = new URIPattern("/new");
     MovedLocationPattern p = new MovedLocationPattern(from, to);
-    Assert.assertEquals(from, p.from());
+    Assertions.assertEquals(from, p.from());
   }
 
   @Test
@@ -79,7 +79,7 @@ public final class MovedLocationPatternTest {
     URIPattern from = new URIPattern("/old");
     URIPattern to = new URIPattern("/new");
     MovedLocationPattern p = new MovedLocationPattern(from, to);
-    Assert.assertEquals(to, p.to());
+    Assertions.assertEquals(to, p.to());
   }
 
   // helpers

@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * A test class for the <code>TokenVariable</code>.
@@ -37,7 +37,7 @@ public final class TokenVariableTest {
     } catch (NullPointerException ex) {
       nullThrown = true;
     } finally {
-      Assert.assertTrue(nullThrown);
+      Assertions.assertTrue(nullThrown);
     }
   }
 
@@ -61,19 +61,19 @@ public final class TokenVariableTest {
   public void testMatch() {
     TokenVariable v = new TokenVariable("X");
     // should match unreserved characters
-    Assert.assertTrue(v.match("abcxyz"));
-    Assert.assertTrue(v.match("ABCXYZ"));
-    Assert.assertTrue(v.match("0123456789"));
-    Assert.assertTrue(v.match("_"));
-    Assert.assertTrue(v.match("-"));
-    Assert.assertTrue(v.match("."));
-    Assert.assertTrue(v.match("%45"));
+    Assertions.assertTrue(v.match("abcxyz"));
+    Assertions.assertTrue(v.match("ABCXYZ"));
+    Assertions.assertTrue(v.match("0123456789"));
+    Assertions.assertTrue(v.match("_"));
+    Assertions.assertTrue(v.match("-"));
+    Assertions.assertTrue(v.match("."));
+    Assertions.assertTrue(v.match("%45"));
     // should not match reserved characters in ASCII range
-    Assert.assertFalse(v.match("%"));
-    Assert.assertFalse(v.match("/"));
-    Assert.assertFalse(v.match("*"));
-    Assert.assertFalse(v.match("*"));
+    Assertions.assertFalse(v.match("%"));
+    Assertions.assertFalse(v.match("/"));
+    Assertions.assertFalse(v.match("*"));
+    Assertions.assertFalse(v.match("*"));
     // should not match reserved characters outside ASCII range
-    Assert.assertFalse(v.match("\u00e9"));
+    Assertions.assertFalse(v.match("\u00e9"));
   }
 }

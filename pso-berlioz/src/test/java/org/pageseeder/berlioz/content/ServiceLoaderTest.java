@@ -18,10 +18,10 @@ package org.pageseeder.berlioz.content;
 import java.io.File;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.http.HttpMethod;
@@ -30,13 +30,13 @@ public class ServiceLoaderTest {
 
   private static final File WEB_INF = new File("./src/test/resources/org/pageseeder/berlioz");
 
-  @Before
+  @BeforeEach
   public void setUp() {
     GlobalSettings.setup(WEB_INF);
     ServiceLoader.getInstance().clear();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     ServiceLoader.getInstance().clear();
   }
@@ -48,7 +48,7 @@ public class ServiceLoaderTest {
 
     ServiceRegistry registry = loader.getDefaultRegistry();
     List<Service> services = registry.getServices();
-    Assert.assertFalse("Registry should contain at least one service", services.isEmpty());
+    Assertions.assertFalse(services.isEmpty(), "Registry should contain at least one service");
   }
 
   @Test
@@ -57,9 +57,9 @@ public class ServiceLoaderTest {
     loader.load(new File(WEB_INF, "config/services.xml"));
 
     MatchingService match = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
-    Assert.assertNotNull("Expected 'home' service to match /home GET", match);
-    Assert.assertEquals("home", match.service().id());
-    Assert.assertEquals("default", match.service().group());
+    Assertions.assertNotNull(match, "Expected 'home' service to match /home GET");
+    Assertions.assertEquals(match.service().id(), "home");
+    Assertions.assertEquals(match.service().group(), "default");
   }
 
   @Test
@@ -67,8 +67,8 @@ public class ServiceLoaderTest {
     ServiceLoader loader = ServiceLoader.getInstance();
     boolean first = loader.loadIfRequired();
     boolean second = loader.loadIfRequired();
-    Assert.assertTrue("First call should return true (loaded)", first);
-    Assert.assertFalse("Second call should return false (already loaded)", second);
+    Assertions.assertTrue(first, "First call should return true (loaded)");
+    Assertions.assertFalse(second, "Second call should return false (already loaded)");
   }
 
   @Test
@@ -77,15 +77,15 @@ public class ServiceLoaderTest {
     loader.loadIfRequired();
     loader.clear();
     boolean reloaded = loader.loadIfRequired();
-    Assert.assertTrue("After clear, loadIfRequired should load again", reloaded);
+    Assertions.assertTrue(reloaded, "After clear, loadIfRequired should load again");
   }
 
   @Test
   public void testListServiceFiles_returnsServicesXml() {
     ServiceLoader loader = ServiceLoader.getInstance();
     List<File> files = loader.listServiceFiles();
-    Assert.assertFalse("Expected at least one services file", files.isEmpty());
+    Assertions.assertFalse(files.isEmpty(), "Expected at least one services file");
     boolean hasServicesXml = files.stream().anyMatch(f -> f.getName().equals("services.xml"));
-    Assert.assertTrue("Expected services.xml in the list", hasServicesXml);
+    Assertions.assertTrue(hasServicesXml, "Expected services.xml in the list");
   }
 }

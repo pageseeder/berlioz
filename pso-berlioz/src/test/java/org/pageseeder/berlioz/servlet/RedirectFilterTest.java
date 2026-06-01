@@ -1,25 +1,25 @@
 package org.pageseeder.berlioz.servlet;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 
 public class RedirectFilterTest {
 
-  @Rule
-  public TemporaryFolder tmp = new TemporaryFolder();
+  @TempDir
+  Path tmp;
 
   private RedirectFilter initFilter(String redirectXml) throws Exception {
-    File webRoot = tmp.newFolder();
+    File webRoot = Files.createTempDirectory(tmp, "d").toFile();
     File webinf  = new File(webRoot, "WEB-INF");
     webinf.mkdirs();
     Files.write(new File(webinf, "redirect.xml").toPath(),
@@ -49,9 +49,9 @@ public class RedirectFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertTrue("Chain should be invoked when no redirect matches", chainInvoked[0]);
-    Assert.assertEquals(200, recorder.status);
-    Assert.assertNull("No Location header should be set", recorder.header("Location"));
+    Assertions.assertTrue(chainInvoked[0], "Chain should be invoked when no redirect matches");
+    Assertions.assertEquals(200, recorder.status);
+    Assertions.assertNull(recorder.header("Location"), "No Location header should be set");
   }
 
   @Test
@@ -65,8 +65,8 @@ public class RedirectFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertTrue(chainInvoked[0]);
-    Assert.assertEquals(200, recorder.status);
+    Assertions.assertTrue(chainInvoked[0]);
+    Assertions.assertEquals(200, recorder.status);
   }
 
   // Temporary redirect (302)
@@ -86,10 +86,10 @@ public class RedirectFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertFalse("Chain must not be invoked when a redirect is issued", chainInvoked[0]);
-    Assert.assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, recorder.status);
-    Assert.assertNotNull("Location header must be set", recorder.header("Location"));
-    Assert.assertTrue(recorder.header("Location").endsWith("/new"));
+    Assertions.assertFalse(chainInvoked[0], "Chain must not be invoked when a redirect is issued");
+    Assertions.assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, recorder.status);
+    Assertions.assertNotNull(recorder.header("Location"), "Location header must be set");
+    Assertions.assertTrue(recorder.header("Location").endsWith("/new"));
   }
 
   @Test
@@ -106,8 +106,8 @@ public class RedirectFilterTest {
     filter.doHTTPFilter(req, recorder.build(), (r, s) -> {});
 
     String location = recorder.header("Location");
-    Assert.assertNotNull(location);
-    Assert.assertTrue("Location should be absolute", location.startsWith("http://example.org:8080/html/home"));
+    Assertions.assertNotNull(location);
+    Assertions.assertTrue(location.startsWith("http://example.org:8080/html/home"), "Location should be absolute");
   }
 
   @Test
@@ -123,8 +123,7 @@ public class RedirectFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), (r, s) -> {});
 
-    Assert.assertNotNull("Cache-Control header must be set on redirect",
-        recorder.header("Cache-Control"));
+    Assertions.assertNotNull(recorder.header("Cache-Control"), "Cache-Control header must be set on redirect");
   }
 
   // Permanent redirect (301)
@@ -144,9 +143,9 @@ public class RedirectFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertFalse("Chain must not be invoked on permanent redirect", chainInvoked[0]);
-    Assert.assertEquals(HttpServletResponse.SC_MOVED_PERMANENTLY, recorder.status);
-    Assert.assertNotNull(recorder.header("Location"));
+    Assertions.assertFalse(chainInvoked[0], "Chain must not be invoked on permanent redirect");
+    Assertions.assertEquals(HttpServletResponse.SC_MOVED_PERMANENTLY, recorder.status);
+    Assertions.assertNotNull(recorder.header("Location"));
   }
 
   // URI pattern matching
@@ -167,8 +166,8 @@ public class RedirectFilterTest {
 
     filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
 
-    Assert.assertTrue("Sub-path should not match the /old pattern", chainInvoked[0]);
-    Assert.assertEquals(200, recorder.status);
+    Assertions.assertTrue(chainInvoked[0], "Sub-path should not match the /old pattern");
+    Assertions.assertEquals(200, recorder.status);
   }
 
   @Test
@@ -183,12 +182,12 @@ public class RedirectFilterTest {
         .uri("/a").scheme("http").host("example.org").port(80).build();
     ServletTestSupport.ResponseRecorder recA = ServletTestSupport.response();
     filter.doHTTPFilter(reqA, recA.build(), (r, s) -> {});
-    Assert.assertTrue(recA.header("Location").endsWith("/alpha"));
+    Assertions.assertTrue(recA.header("Location").endsWith("/alpha"));
 
     HttpServletRequest reqB = ServletTestSupport.request()
         .uri("/b").scheme("http").host("example.org").port(80).build();
     ServletTestSupport.ResponseRecorder recB = ServletTestSupport.response();
     filter.doHTTPFilter(reqB, recB.build(), (r, s) -> {});
-    Assert.assertTrue(recB.header("Location").endsWith("/beta"));
+    Assertions.assertTrue(recB.header("Location").endsWith("/beta"));
   }
 }

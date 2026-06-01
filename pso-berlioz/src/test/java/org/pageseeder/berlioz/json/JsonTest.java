@@ -15,56 +15,56 @@
  */
 package org.pageseeder.berlioz.json;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class JsonTest {
 
   @Test
   public void testCamelifyEmpty() {
-    Assert.assertEquals("", Json.camelify(""));
+    Assertions.assertEquals(Json.camelify(""), "");
   }
 
   @Test
   public void testCamelifyNoDash() {
-    Assert.assertEquals("hello", Json.camelify("hello"));
+    Assertions.assertEquals(Json.camelify("hello"), "hello");
   }
 
   @Test
   public void testCamelifyOneDash() {
-    Assert.assertEquals("helloWorld", Json.camelify("hello-world"));
+    Assertions.assertEquals(Json.camelify("hello-world"), "helloWorld");
   }
 
   @Test
   public void testCamelifyMultipleDashes() {
-    Assert.assertEquals("helloWorldFoo", Json.camelify("hello-world-foo"));
+    Assertions.assertEquals(Json.camelify("hello-world-foo"), "helloWorldFoo");
   }
 
   @Test
   public void testCamelifyTrailingDash() {
-    Assert.assertEquals("hello-", Json.camelify("hello-"));
+    Assertions.assertEquals(Json.camelify("hello-"), "hello-");
   }
 
   @Test
   public void testCamelifyLeadingDash() {
-    Assert.assertEquals("Hello", Json.camelify("-hello"));
+    Assertions.assertEquals(Json.camelify("-hello"), "Hello");
   }
 
   @Test
   public void testCamelifyConsecutiveDashes() {
-    Assert.assertEquals("hello-world", Json.camelify("hello--world"));
+    Assertions.assertEquals(Json.camelify("hello--world"), "hello-world");
   }
 
   @Test
   public void testProviderNameIsKnown() {
     String name = Json.providerName();
-    Assert.assertNotNull(name);
-    Assert.assertNotEquals("UNKNOWN", name);
+    Assertions.assertNotNull(name);
+    Assertions.assertNotEquals(name, "UNKNOWN");
   }
 
   @Test
   public void testProviderNameIsStable() {
-    Assert.assertEquals(Json.providerName(), Json.providerName());
+    Assertions.assertEquals(Json.providerName(), Json.providerName());
   }
 
 }

@@ -18,8 +18,8 @@ package org.pageseeder.berlioz.furi;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.furi.BerliozTokenOperator.Operator;
 
 /**
@@ -38,7 +38,7 @@ public final class TokenFactoryTest {
   public void testNewToken_Null() {
     try {
       TokenFactory.newToken(null);
-      Assert.fail("Expected NullPointerException");
+      Assertions.fail("Expected NullPointerException");
     } catch (NullPointerException e) {
       // expected
     }
@@ -50,7 +50,7 @@ public final class TokenFactoryTest {
    */
   @Test
   public void testNewToken_EmptyString() {
-    Assert.assertEquals(TokenLiteral.EMPTY, TokenFactory.newToken(""));
+    Assertions.assertEquals(TokenLiteral.EMPTY, TokenFactory.newToken(""));
   }
 
   /**
@@ -59,7 +59,7 @@ public final class TokenFactoryTest {
    */
   @Test
   public void testNewToken_Literal() {
-    Assert.assertEquals(new TokenLiteral("x"), TokenFactory.newToken("x"));
+    Assertions.assertEquals(new TokenLiteral("x"), TokenFactory.newToken("x"));
   }
 
   /**
@@ -69,11 +69,11 @@ public final class TokenFactoryTest {
   @Test
   public void testNewToken_Variable() {
     Variable x = new Variable("x");
-    Assert.assertEquals(new TokenVariable(x), TokenFactory.newToken("{x}"));
+    Assertions.assertEquals(new TokenVariable(x), TokenFactory.newToken("{x}"));
     Variable y = new Variable("y", "z");
-    Assert.assertEquals(new TokenVariable(y), TokenFactory.newToken("{y=z}"));
+    Assertions.assertEquals(new TokenVariable(y), TokenFactory.newToken("{y=z}"));
     Variable q = new Variable("q", "p", new VariableType("t"));
-    Assert.assertEquals(new TokenVariable(q), TokenFactory.newToken("{t:q=p}"));
+    Assertions.assertEquals(new TokenVariable(q), TokenFactory.newToken("{t:q=p}"));
   }
 
   /**
@@ -87,7 +87,7 @@ public final class TokenFactoryTest {
     vars.add(y);
     for (Operator o : Operator.values()) {
       TokenOperator t = new BerliozTokenOperator(o, vars);
-      Assert.assertNotNull(t);
+      Assertions.assertNotNull(t);
     }
   }
 

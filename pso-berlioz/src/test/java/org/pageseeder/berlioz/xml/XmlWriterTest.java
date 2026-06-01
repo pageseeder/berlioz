@@ -3,8 +3,8 @@ package org.pageseeder.berlioz.xml;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public final class XmlWriterTest {
 
@@ -29,8 +29,7 @@ public final class XmlWriterTest {
     xml.closeElement();
     xml.close();
 
-    Assert.assertEquals(
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    Assertions.assertEquals(out.toString(), "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
             + "<?xml-stylesheet href=\"style.xsl\"?>"
             + "<!--  comment  -->"
             + "<root a=\"1&lt;&amp;&quot;\" b=\"two\">"
@@ -40,8 +39,7 @@ public final class XmlWriterTest {
             + "<empty/>"
             + "<raw><inside/></raw>"
             + "<![CDATA[safe <raw> & text]]>"
-            + "</root>",
-        out.toString());
+            + "</root>");
   }
 
   @Test
@@ -51,31 +49,39 @@ public final class XmlWriterTest {
 
     xml.processingInstruction("target", null);
 
-    Assert.assertEquals("<?target?>", out.toString());
+    Assertions.assertEquals(out.toString(), "<?target?>");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testProcessingInstructionRejectsTerminator() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
     XmlWriter xml = new XmlStringBuilder();
     xml.processingInstruction("target", "bad?>data");
+    });
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testAttributeAfterElementContent() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlWriter xml = new XmlStringBuilder();
     xml.openElement("root").text("content").attribute("late", "true");
+    });
   }
 
-  @Test(expected = IllegalCloseElementException.class)
+  @Test
   public void testCloseElementWithoutOpenElement() {
+    Assertions.assertThrows(IllegalCloseElementException.class, () -> {
     XmlWriter xml = new XmlStringBuilder();
     xml.closeElement();
+    });
   }
 
-  @Test(expected = UnclosedElementException.class)
+  @Test
   public void testCloseWriterWithUnclosedElement() {
+    Assertions.assertThrows(UnclosedElementException.class, () -> {
     XmlWriter xml = new XmlStringBuilder();
     xml.openElement("root");
     xml.close();
+    });
   }
 }

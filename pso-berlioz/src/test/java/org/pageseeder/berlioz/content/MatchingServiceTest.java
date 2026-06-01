@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.furi.URIResolver;
@@ -33,26 +33,32 @@ public final class MatchingServiceTest {
         .build();
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testConstructor_nullService() {
+    Assertions.assertThrows(NullPointerException.class, () -> {
     URIPattern pattern = new URIPattern("/home");
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
     new MatchingService(null, pattern, result);
+    });
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testConstructor_nullPattern() {
+    Assertions.assertThrows(NullPointerException.class, () -> {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
     new MatchingService(service, null, result);
+    });
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testConstructor_nullResult() {
+    Assertions.assertThrows(NullPointerException.class, () -> {
     Service service = buildService("home");
     URIPattern pattern = new URIPattern("/home");
     new MatchingService(service, pattern, null);
+    });
   }
 
   @Test
@@ -62,9 +68,9 @@ public final class MatchingServiceTest {
     URIResolveResult result = new URIResolver("/home").resolve(pattern);
     MatchingService match = new MatchingService(service, pattern, result);
 
-    Assert.assertSame(service, match.service());
-    Assert.assertSame(pattern, match.pattern());
-    Assert.assertSame(result, match.result());
+    Assertions.assertSame(service, match.service());
+    Assertions.assertSame(pattern, match.pattern());
+    Assertions.assertSame(result, match.result());
   }
 
   @Test
@@ -75,7 +81,7 @@ public final class MatchingServiceTest {
     MatchingService match = new MatchingService(service, pattern, result);
 
     // NoContent implements Cacheable
-    Assert.assertTrue(match.isCacheable());
+    Assertions.assertTrue(match.isCacheable());
   }
 
   @Test
@@ -92,6 +98,6 @@ public final class MatchingServiceTest {
     URIResolveResult result = new URIResolver("/test").resolve(pattern);
     MatchingService match = new MatchingService(service, pattern, result);
 
-    Assert.assertFalse(match.isCacheable());
+    Assertions.assertFalse(match.isCacheable());
   }
 }

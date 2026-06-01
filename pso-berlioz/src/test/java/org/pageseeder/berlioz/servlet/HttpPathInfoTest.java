@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.servlet;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 
@@ -32,47 +32,47 @@ public class HttpPathInfoTest {
   @Test
   public void testExtensionMappingHtml() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/path/page.html"));
-    Assert.assertEquals("/path/page", info.path());
-    Assert.assertEquals(".html", info.extension());
-    Assert.assertEquals("", info.prefix());
-    Assert.assertEquals("", info.context());
+    Assertions.assertEquals(info.path(), "/path/page");
+    Assertions.assertEquals(info.extension(), ".html");
+    Assertions.assertEquals(info.prefix(), "");
+    Assertions.assertEquals(info.context(), "");
   }
 
   @Test
   public void testExtensionMappingXml() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/feed.xml"));
-    Assert.assertEquals("/feed", info.path());
-    Assert.assertEquals(".xml", info.extension());
+    Assertions.assertEquals(info.path(), "/feed");
+    Assertions.assertEquals(info.extension(), ".xml");
   }
 
   @Test
   public void testExtensionMappingJson() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/api/data.json"));
-    Assert.assertEquals("/api/data", info.path());
-    Assert.assertEquals(".json", info.extension());
+    Assertions.assertEquals(info.path(), "/api/data");
+    Assertions.assertEquals(info.extension(), ".json");
   }
 
   @Test
   public void testExtensionMappingNoExtension() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/about"));
-    Assert.assertEquals("/about", info.path());
-    Assert.assertEquals("", info.extension());
+    Assertions.assertEquals(info.path(), "/about");
+    Assertions.assertEquals(info.extension(), "");
   }
 
   @Test
   public void testExtensionMappingWithContext() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/home.html"));
-    Assert.assertEquals("/app", info.context());
-    Assert.assertEquals("/home", info.path());
-    Assert.assertEquals(".html", info.extension());
-    Assert.assertEquals("", info.prefix());
+    Assertions.assertEquals(info.context(), "/app");
+    Assertions.assertEquals(info.path(), "/home");
+    Assertions.assertEquals(info.extension(), ".html");
+    Assertions.assertEquals(info.prefix(), "");
   }
 
   @Test
   public void testExtensionMappingRootPath() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/.html"));
-    Assert.assertEquals("/", info.path());
-    Assert.assertEquals(".html", info.extension());
+    Assertions.assertEquals(info.path(), "/");
+    Assertions.assertEquals(info.extension(), ".html");
   }
 
   // Prefix mapping tests (/prefix/* style)
@@ -81,26 +81,26 @@ public class HttpPathInfoTest {
   @Test
   public void testPrefixMapping() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/api", "/users/42"));
-    Assert.assertEquals("/users/42", info.path());
-    Assert.assertEquals("/api", info.prefix());
-    Assert.assertEquals("", info.extension());
-    Assert.assertEquals("", info.context());
+    Assertions.assertEquals(info.path(), "/users/42");
+    Assertions.assertEquals(info.prefix(), "/api");
+    Assertions.assertEquals(info.extension(), "");
+    Assertions.assertEquals(info.context(), "");
   }
 
   @Test
   public void testPrefixMappingWithContext() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("/myapp", "/svc", "/data"));
-    Assert.assertEquals("/myapp", info.context());
-    Assert.assertEquals("/svc", info.prefix());
-    Assert.assertEquals("/data", info.path());
-    Assert.assertEquals("", info.extension());
+    Assertions.assertEquals(info.context(), "/myapp");
+    Assertions.assertEquals(info.prefix(), "/svc");
+    Assertions.assertEquals(info.path(), "/data");
+    Assertions.assertEquals(info.extension(), "");
   }
 
   @Test
   public void testPrefixMappingEmptyPath() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/html", ""));
-    Assert.assertEquals("", info.path());
-    Assert.assertEquals("/html", info.prefix());
+    Assertions.assertEquals(info.path(), "");
+    Assertions.assertEquals(info.prefix(), "/html");
   }
 
   // toString tests
@@ -109,13 +109,13 @@ public class HttpPathInfoTest {
   @Test
   public void testToStringExtensionMapped() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/home.html"));
-    Assert.assertEquals("/app/home.html", info.toString());
+    Assertions.assertEquals(info.toString(), "/app/home.html");
   }
 
   @Test
   public void testToStringPrefixMapped() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("/app", "/api", "/items"));
-    Assert.assertEquals("/app/api/items", info.toString());
+    Assertions.assertEquals(info.toString(), "/app/api/items");
   }
 
   // toXML tests
@@ -128,10 +128,10 @@ public class HttpPathInfoTest {
     info.toXML(xml);
     xml.flush();
     String out = xml.toString();
-    Assert.assertTrue("Should contain info attribute", out.contains("info=\"/home\""));
-    Assert.assertTrue("Should contain extension attribute", out.contains("extension=\".html\""));
-    Assert.assertFalse("Should not have context attribute when empty", out.contains("context="));
-    Assert.assertFalse("Should not have prefix attribute when empty", out.contains("prefix="));
+    Assertions.assertTrue(out.contains("info=\"/home\""), "Should contain info attribute");
+    Assertions.assertTrue(out.contains("extension=\".html\""), "Should contain extension attribute");
+    Assertions.assertFalse(out.contains("context="), "Should not have context attribute when empty");
+    Assertions.assertFalse(out.contains("prefix="), "Should not have prefix attribute when empty");
   }
 
   @Test
@@ -141,9 +141,9 @@ public class HttpPathInfoTest {
     info.toXML(xml);
     xml.flush();
     String out = xml.toString();
-    Assert.assertTrue("Should contain prefix attribute", out.contains("prefix=\"/svc\""));
-    Assert.assertTrue("Should contain info attribute", out.contains("info=\"/items\""));
-    Assert.assertFalse("Should not have extension attribute when empty", out.contains("extension="));
+    Assertions.assertTrue(out.contains("prefix=\"/svc\""), "Should contain prefix attribute");
+    Assertions.assertTrue(out.contains("info=\"/items\""), "Should contain info attribute");
+    Assertions.assertFalse(out.contains("extension="), "Should not have extension attribute when empty");
   }
 
   @Test
@@ -153,7 +153,7 @@ public class HttpPathInfoTest {
     info.toXML(xml);
     xml.flush();
     String out = xml.toString();
-    Assert.assertTrue("Should contain context attribute", out.contains("context=\"/app\""));
-    Assert.assertTrue("Should contain extension attribute", out.contains("extension=\".json\""));
+    Assertions.assertTrue(out.contains("context=\"/app\""), "Should contain context attribute");
+    Assertions.assertTrue(out.contains("extension=\".json\""), "Should contain extension attribute");
   }
 }

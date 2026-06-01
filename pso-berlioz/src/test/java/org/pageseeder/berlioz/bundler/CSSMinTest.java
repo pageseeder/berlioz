@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.bundler;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -28,140 +28,139 @@ public class CSSMinTest {
 
   @Test
   public void testEmptyRule() {
-    Assert.assertEquals("a{}", min("a { }"));
+    Assertions.assertEquals(min("a { }"), "a{}");
   }
 
   @Test
   public void testTrailingSemicolon() {
-    Assert.assertEquals("a{color:#000}", min("a { color: #000;}"));
+    Assertions.assertEquals(min("a { color: #000;}"), "a{color:#000}");
   }
 
   @Test
   public void testSingleProperty() {
-    Assert.assertEquals("a{font-size:10px}", min("a { font-size: 10px}"));
+    Assertions.assertEquals(min("a { font-size: 10px}"), "a{font-size:10px}");
   }
 
   @Test
   public void testMultipleProperties() {
-    Assert.assertEquals("a{color:#000;font-size:10px}", min("a { color: #000; font-size: 10px }"));
+    Assertions.assertEquals(min("a { color: #000; font-size: 10px }"), "a{color:#000;font-size:10px}");
   }
 
   @Test
   public void testPropertiesSortedAlphabetically() {
-    Assert.assertEquals("a{color:#fff;font-size:10px;margin:0}", min("a { margin: 0px; font-size: 10px; color: white }"));
+    Assertions.assertEquals(min("a { margin: 0px; font-size: 10px; color: white }"), "a{color:#fff;font-size:10px;margin:0}");
   }
 
   @Test
   public void testVendorPrefixSortedWithUnprefixed() {
     // -webkit-transform strips to "transform" so it sorts together with transform, not under "-w..."
     // equal sort keys preserve stable (input) order, so unprefixed first → stays first
-    Assert.assertEquals("a{transform:rotate(45deg);-webkit-transform:rotate(45deg);z-index:0}",
-        min("a { z-index: 0; transform: rotate(45deg); -webkit-transform: rotate(45deg) }"));
+    Assertions.assertEquals(min("a { z-index: 0; transform: rotate(45deg); -webkit-transform: rotate(45deg) }"), "a{transform:rotate(45deg);-webkit-transform:rotate(45deg);z-index:0}");
   }
 
   // --- Parameter simplification ---
 
   @Test
   public void testSimplifyParameters() {
-    Assert.assertEquals("a{border:1px 2px 3px}", min("a { border: 1px 2px 3px 2px}"));
-    Assert.assertEquals("a{border:1px 2px}",     min("a { border: 1px 2px 1px 2px}"));
-    Assert.assertEquals("a{border:1px 2px}",     min("a { border: 1px 2px 1px}"));
-    Assert.assertEquals("a{border:1px}",         min("a { border: 1px 1px 1px 1px}"));
-    Assert.assertEquals("a{border:1px}",         min("a { border: 1px 1px 1px}"));
-    Assert.assertEquals("a{border:1px}",         min("a { border: 1px 1px}"));
+    Assertions.assertEquals(min("a { border: 1px 2px 3px 2px}"), "a{border:1px 2px 3px}");
+    Assertions.assertEquals(min("a { border: 1px 2px 1px 2px}"), "a{border:1px 2px}");
+    Assertions.assertEquals(min("a { border: 1px 2px 1px}"), "a{border:1px 2px}");
+    Assertions.assertEquals(min("a { border: 1px 1px 1px 1px}"), "a{border:1px}");
+    Assertions.assertEquals(min("a { border: 1px 1px 1px}"), "a{border:1px}");
+    Assertions.assertEquals(min("a { border: 1px 1px}"), "a{border:1px}");
   }
 
   @Test
   public void testZeroUnit() {
-    Assert.assertEquals("div{height:0}", min("div { height: 0px }"));
+    Assertions.assertEquals(min("div { height: 0px }"), "div{height:0}");
   }
 
   @Test
   public void testMultipleZeros() {
-    Assert.assertEquals("a{margin:0}", min("a { margin: 0px 0px 0px 0px }"));
-    Assert.assertEquals("a{padding:0}", min("a { padding: 0em 0em }"));
+    Assertions.assertEquals(min("a { margin: 0px 0px 0px 0px }"), "a{margin:0}");
+    Assertions.assertEquals(min("a { padding: 0em 0em }"), "a{padding:0}");
   }
 
   // --- Color transformations ---
 
   @Test
   public void testNamedColors() {
-    Assert.assertEquals("a{color:#fff}", min("a { color: white}"));
-    Assert.assertEquals("a{color:#000}", min("a { color: black}"));
-    Assert.assertEquals("a{color:#777}", min("a { color: #777777}"));
+    Assertions.assertEquals(min("a { color: white}"), "a{color:#fff}");
+    Assertions.assertEquals(min("a { color: black}"), "a{color:#000}");
+    Assertions.assertEquals(min("a { color: #777777}"), "a{color:#777}");
   }
 
   @Test
   public void testHexColorShortening() {
-    Assert.assertEquals("a{color:#abc}", min("a { color: #aabbcc }"));
-    Assert.assertEquals("a{color:#f0f}", min("a { color: #ff00ff }"));
+    Assertions.assertEquals(min("a { color: #aabbcc }"), "a{color:#abc}");
+    Assertions.assertEquals(min("a { color: #ff00ff }"), "a{color:#f0f}");
   }
 
   @Test
   public void testRgbToHex() {
-    Assert.assertEquals("a{color:#369}", min("a { color: rgb(51, 102, 153) }"));
-    Assert.assertEquals("a{color:#000}", min("a { color: rgb(0, 0, 0) }"));
+    Assertions.assertEquals(min("a { color: rgb(51, 102, 153) }"), "a{color:#369}");
+    Assertions.assertEquals(min("a { color: rgb(0, 0, 0) }"), "a{color:#000}");
   }
 
   @Test
   public void testHexColorNotShortenedWhenMismatch() {
-    Assert.assertEquals("a{color:#aabbcd}", min("a { color: #aabbcd }"));
+    Assertions.assertEquals(min("a { color: #aabbcd }"), "a{color:#aabbcd}");
   }
 
   // --- Font weight ---
 
   @Test
   public void testFontWeightBold() {
-    Assert.assertEquals("a{font-weight:700}", min("a { font-weight: bold }"));
+    Assertions.assertEquals(min("a { font-weight: bold }"), "a{font-weight:700}");
   }
 
   @Test
   public void testFontWeightNormal() {
-    Assert.assertEquals("a{font-weight:400}", min("a { font-weight: normal }"));
+    Assertions.assertEquals(min("a { font-weight: normal }"), "a{font-weight:400}");
   }
 
   @Test
   public void testFontWeightLighter() {
-    Assert.assertEquals("a{font-weight:100}", min("a { font-weight: lighter }"));
+    Assertions.assertEquals(min("a { font-weight: lighter }"), "a{font-weight:100}");
   }
 
   @Test
   public void testFontWeightNumericUnchanged() {
-    Assert.assertEquals("a{font-weight:600}", min("a { font-weight: 600 }"));
+    Assertions.assertEquals(min("a { font-weight: 600 }"), "a{font-weight:600}");
   }
 
   // --- URL values ---
 
   @Test
   public void testUrlSingleQuotesStripped() {
-    Assert.assertEquals("a{background:url(image.png)}", min("a { background: url('image.png') }"));
+    Assertions.assertEquals(min("a { background: url('image.png') }"), "a{background:url(image.png)}");
   }
 
   @Test
   public void testUrlDoubleQuotesStripped() {
-    Assert.assertEquals("a{background:url(image.png)}", min("a { background: url(\"image.png\") }"));
+    Assertions.assertEquals(min("a { background: url(\"image.png\") }"), "a{background:url(image.png)}");
   }
 
   @Test
   public void testUrlCaseInsensitive() {
-    Assert.assertEquals("a{background:url(image.png)}", min("a { background: URL(\"image.png\") }"));
+    Assertions.assertEquals(min("a { background: URL(\"image.png\") }"), "a{background:url(image.png)}");
   }
 
   @Test
   public void testPreserveCaseDataURL() {
     String x = ".x{background:url(data:image/svg+xml,%3Csvg/%3E)}";
-    Assert.assertEquals(x, min(x));
+    Assertions.assertEquals(x, min(x));
   }
 
   @Test
   public void testPreserveCaseDataURLwithCharset() {
     String x = ".x{background:url(data:image/svg+xml;charset=utf8,%3Csvg/%3E)}";
-    Assert.assertEquals(x, min(x));
+    Assertions.assertEquals(x, min(x));
   }
 
   @Test
   public void testPreserveUrlQuotesWhenRequired() {
-    Assert.assertEquals("a{background:url(\"image 1.png\")}", min("a { background: url(\"image 1.png\") }"));
+    Assertions.assertEquals(min("a { background: url(\"image 1.png\") }"), "a{background:url(\"image 1.png\")}");
   }
 
   // --- !important ---
@@ -169,117 +168,117 @@ public class CSSMinTest {
   @Test
   public void testImportant() {
     // color names with !important are joined before lookup, so use hex instead
-    Assert.assertEquals("a{color:#fff!important}", min("a { color: #ffffff !important }"));
+    Assertions.assertEquals(min("a { color: #ffffff !important }"), "a{color:#fff!important}");
   }
 
   @Test
   public void testImportantWithNamedColor() {
-    Assert.assertEquals("a{color:#fff!important}", min("a { color: white !important }"));
+    Assertions.assertEquals(min("a { color: white !important }"), "a{color:#fff!important}");
   }
 
   // --- Selectors ---
 
   @Test
   public void testPseudoClass() {
-    Assert.assertEquals("a:hover{color:#fff}", min("a:hover { color: white }"));
+    Assertions.assertEquals(min("a:hover { color: white }"), "a:hover{color:#fff}");
   }
 
   @Test
   public void testPseudoElement() {
-    Assert.assertEquals("p::first-line{color:#fff}", min("p::first-line { color: white }"));
+    Assertions.assertEquals(min("p::first-line { color: white }"), "p::first-line{color:#fff}");
   }
 
   @Test
   public void testChildCombinator() {
-    Assert.assertEquals("a>b{color:#fff}", min("a > b { color: white }"));
+    Assertions.assertEquals(min("a > b { color: white }"), "a>b{color:#fff}");
   }
 
   @Test
   public void testAdjacentSiblingCombinator() {
-    Assert.assertEquals("a+b{color:#fff}", min("a + b { color: white }"));
+    Assertions.assertEquals(min("a + b { color: white }"), "a+b{color:#fff}");
   }
 
   @Test
   public void testGeneralSiblingCombinator() {
-    Assert.assertEquals("a~b{color:#fff}", min("a ~ b { color: white }"));
+    Assertions.assertEquals(min("a ~ b { color: white }"), "a~b{color:#fff}");
   }
 
   @Test
   public void testMultipleSelectors() {
-    Assert.assertEquals("h1,h2,h3{color:#fff}", min("h1, h2, h3 { color: white }"));
+    Assertions.assertEquals(min("h1, h2, h3 { color: white }"), "h1,h2,h3{color:#fff}");
   }
 
   @Test
   public void testAttributeSelectorOperator() {
-    Assert.assertEquals("a[href=\"/A B\"]{color:#fff}", min("a[href = \"/A B\"] { color: white }"));
+    Assertions.assertEquals(min("a[href = \"/A B\"] { color: white }"), "a[href=\"/A B\"]{color:#fff}");
   }
 
   @Test
   public void testContentProperty() {
-    Assert.assertEquals("i::before{content:\" \"}", min("i::before { content: \" \" }"));
+    Assertions.assertEquals(min("i::before { content: \" \" }"), "i::before{content:\" \"}");
   }
 
   @Test
   public void testContentWithSemicolon() {
-    Assert.assertEquals("i::before{content:\"a;b\"}", min("i::before { content: \"a;b\" }"));
+    Assertions.assertEquals(min("i::before { content: \"a;b\" }"), "i::before{content:\"a;b\"}");
   }
 
   @Test
   public void testContentWithBraces() {
-    Assert.assertEquals("i::before{content:\"{}\"}", min("i::before { content: \"{}\" }"));
+    Assertions.assertEquals(min("i::before { content: \"{}\" }"), "i::before{content:\"{}\"}");
   }
 
   // --- Comments ---
 
   @Test
   public void testRegularCommentStripped() {
-    Assert.assertEquals("a{color:#fff}", min("/* a comment */\na { color: white }"));
+    Assertions.assertEquals(min("/* a comment */\na { color: white }"), "a{color:#fff}");
   }
 
   @Test
   public void testInlineCommentStripped() {
-    Assert.assertEquals("a{color:#fff}", min("a { /* inline */ color: white }"));
+    Assertions.assertEquals(min("a { /* inline */ color: white }"), "a{color:#fff}");
   }
 
   @Test
   public void testCommentSyntaxInStringPreserved() {
-    Assert.assertEquals("a{content:\"/* not a comment */\"}", min("a { content: \"/* not a comment */\" }"));
+    Assertions.assertEquals(min("a { content: \"/* not a comment */\" }"), "a{content:\"/* not a comment */\"}");
   }
 
   @Test
   public void testSpecialCommentPreserved() {
     String result = min("/** keep this */\na { color: white }");
-    Assert.assertTrue("Special comment should be preserved", result.contains("/** keep this */"));
-    Assert.assertTrue("Rule should still be output", result.contains("a{color:#fff}"));
+    Assertions.assertTrue(result.contains("/** keep this */"), "Special comment should be preserved");
+    Assertions.assertTrue(result.contains("a{color:#fff}"), "Rule should still be output");
   }
 
   // --- Nested rules (at-rules) ---
 
   @Test
   public void testMediaQuery() {
-    Assert.assertEquals("@media screen{a{color:#fff}}", min("@media screen { a { color: white; } }"));
+    Assertions.assertEquals(min("@media screen { a { color: white; } }"), "@media screen{a{color:#fff}}");
   }
 
   @Test
   public void testMediaQueryWithMultipleRules() {
-    Assert.assertEquals("@media screen{a{color:#fff}b{color:#000}}", min("@media screen { a { color: white; } b { color: black; } }"));
+    Assertions.assertEquals(min("@media screen { a { color: white; } b { color: black; } }"), "@media screen{a{color:#fff}b{color:#000}}");
   }
 
   @Test
   public void testKeyframes() {
-    Assert.assertEquals("@keyframes fade{from{opacity:1}to{opacity:0}}", min("@keyframes fade { from { opacity: 1; } to { opacity: 0; } }"));
+    Assertions.assertEquals(min("@keyframes fade { from { opacity: 1; } to { opacity: 0; } }"), "@keyframes fade{from{opacity:1}to{opacity:0}}");
   }
 
   @Test
   public void testNestedRuleWithQuotedBrace() {
-    Assert.assertEquals("@media screen{a::before{content:\"{\"}}", min("@media screen { a::before { content: \"{\"; } }"));
+    Assertions.assertEquals(min("@media screen { a::before { content: \"{\"; } }"), "@media screen{a::before{content:\"{\"}}");
   }
 
   // --- At-rules ---
 
   @Test
   public void testFontFace() {
-    Assert.assertEquals("@font-face{font-family:'Open Sans'}", min("@font-face { font-family: 'Open Sans'; }"));
+    Assertions.assertEquals(min("@font-face { font-family: 'Open Sans'; }"), "@font-face{font-family:'Open Sans'}");
   }
 
   // --- Helper ---

@@ -1,7 +1,7 @@
 package org.pageseeder.mock.servlet;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
@@ -19,10 +19,10 @@ public class MockHttpServletRequestTest {
   public void createWithoutQuery() {
     MockHttpServletRequest request = MockHttpServletRequest.create("https://example.org/index.html", "GET");
 
-    Assert.assertEquals("https", request.getScheme());
-    Assert.assertEquals("example.org", request.getServerName());
-    Assert.assertEquals(443, request.getServerPort());
-    Assert.assertFalse(request.getParameterNames().hasMoreElements());
+    Assertions.assertEquals(request.getScheme(), "https");
+    Assertions.assertEquals(request.getServerName(), "example.org");
+    Assertions.assertEquals(443, request.getServerPort());
+    Assertions.assertFalse(request.getParameterNames().hasMoreElements());
   }
 
   @Test
@@ -30,9 +30,9 @@ public class MockHttpServletRequestTest {
     MockHttpServletRequest request = MockHttpServletRequest.create(
         "http://example.org/search?q=berlioz&page=1&empty", "GET");
 
-    Assert.assertEquals("berlioz", request.getParameter("q"));
-    Assert.assertEquals("1", request.getParameter("page"));
-    Assert.assertEquals("", request.getParameter("empty"));
+    Assertions.assertEquals(request.getParameter("q"), "berlioz");
+    Assertions.assertEquals(request.getParameter("page"), "1");
+    Assertions.assertEquals(request.getParameter("empty"), "");
   }
 
   @Test
@@ -41,27 +41,27 @@ public class MockHttpServletRequestTest {
     request.setContent("hello");
 
     ServletInputStream stream = request.getInputStream();
-    Assert.assertEquals('h', stream.read());
-    Assert.assertTrue(stream.isReady());
-    Assert.assertFalse(stream.isFinished());
+    Assertions.assertEquals('h', stream.read());
+    Assertions.assertTrue(stream.isReady());
+    Assertions.assertFalse(stream.isFinished());
 
     BufferedReader reader = request.getReader();
-    Assert.assertEquals("hello", reader.readLine());
-    Assert.assertEquals(5, request.getContentLength());
+    Assertions.assertEquals(reader.readLine(), "hello");
+    Assertions.assertEquals(5, request.getContentLength());
   }
 
   @Test
   public void sessionsAreCreatedAndCanChangeId() {
     MockHttpServletRequest request = new MockHttpServletRequest();
 
-    Assert.assertNull(request.getSession(false));
+    Assertions.assertNull(request.getSession(false));
     HttpSession session = request.getSession();
     String original = session.getId();
 
-    Assert.assertTrue(session.isNew());
-    Assert.assertTrue(request.isRequestedSessionIdValid());
-    Assert.assertNotEquals(original, request.changeSessionId());
-    Assert.assertTrue(request.isRequestedSessionIdValid());
+    Assertions.assertTrue(session.isNew());
+    Assertions.assertTrue(request.isRequestedSessionIdValid());
+    Assertions.assertNotEquals(original, request.changeSessionId());
+    Assertions.assertTrue(request.isRequestedSessionIdValid());
   }
 
   @Test
@@ -70,9 +70,9 @@ public class MockHttpServletRequestTest {
     request.addCookie(new Cookie("flavour", "vanilla"));
     request.setLocale(Locale.CANADA_FRENCH);
 
-    Assert.assertEquals("flavour", request.getCookies()[0].getName());
+    Assertions.assertEquals(request.getCookies()[0].getName(), "flavour");
     Enumeration<Locale> locales = request.getLocales();
-    Assert.assertEquals(Locale.CANADA_FRENCH, Collections.list(locales).get(0));
+    Assertions.assertEquals(Locale.CANADA_FRENCH, Collections.list(locales).get(0));
   }
 
   @Test
@@ -81,6 +81,6 @@ public class MockHttpServletRequestTest {
     request.setCharacterEncoding(StandardCharsets.UTF_16.name());
     request.setContent("A");
 
-    Assert.assertEquals("A", request.getReader().readLine());
+    Assertions.assertEquals(request.getReader().readLine(), "A");
   }
 }

@@ -3,8 +3,8 @@ package org.pageseeder.berlioz.aeson;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("deprecation")
 public class JSONWriterFactoryTest {
@@ -26,12 +26,12 @@ public class JSONWriterFactoryTest {
             .end();
     }
     String json = sw.toString();
-    Assert.assertTrue(json.startsWith("{"));
-    Assert.assertTrue(json.endsWith("}"));
-    Assert.assertTrue(json.contains("\"key\":\"value\""));
-    Assert.assertTrue(json.contains("\"count\":42"));
-    Assert.assertTrue(json.contains("\"flag\":true"));
-    Assert.assertTrue(json.contains("\"missing\":null"));
+    Assertions.assertTrue(json.startsWith("{"));
+    Assertions.assertTrue(json.endsWith("}"));
+    Assertions.assertTrue(json.contains("\"key\":\"value\""));
+    Assertions.assertTrue(json.contains("\"count\":42"));
+    Assertions.assertTrue(json.contains("\"flag\":true"));
+    Assertions.assertTrue(json.contains("\"missing\":null"));
   }
 
   @Test
@@ -46,11 +46,11 @@ public class JSONWriterFactoryTest {
             .end();
     }
     String json = out.toString("UTF-8");
-    Assert.assertTrue(json.startsWith("["));
-    Assert.assertTrue(json.endsWith("]"));
-    Assert.assertTrue(json.contains("\"a\""));
-    Assert.assertTrue(json.contains("true"));
-    Assert.assertTrue(json.contains("null"));
+    Assertions.assertTrue(json.startsWith("["));
+    Assertions.assertTrue(json.endsWith("]"));
+    Assertions.assertTrue(json.contains("\"a\""));
+    Assertions.assertTrue(json.contains("true"));
+    Assertions.assertTrue(json.contains("null"));
   }
 
   @Test
@@ -65,19 +65,19 @@ public class JSONWriterFactoryTest {
             .end();
     }
     String json = sw.toString();
-    Assert.assertTrue(json.contains("\"items\""));
-    Assert.assertTrue(json.contains("\"id\":1"));
-    Assert.assertTrue(json.contains("\"id\":2"));
+    Assertions.assertTrue(json.contains("\"items\""));
+    Assertions.assertTrue(json.contains("\"id\":1"));
+    Assertions.assertTrue(json.contains("\"id\":2"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testValueNaNThrows() {
-    JSONWriterFactory.newInstance(new StringWriter()).value(Double.NaN);
+    Assertions.assertThrows(IllegalArgumentException.class, () -> JSONWriterFactory.newInstance(new StringWriter()).value(Double.NaN));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testPropertyInfinityThrows() {
-    JSONWriterFactory.newInstance(new StringWriter()).startObject().property("x", Double.POSITIVE_INFINITY);
+    Assertions.assertThrows(IllegalArgumentException.class, () -> JSONWriterFactory.newInstance(new StringWriter()).startObject().property("x", Double.POSITIVE_INFINITY));
   }
 
   // ---------------------------------------------------------------------------
@@ -96,7 +96,7 @@ public class JSONWriterFactoryTest {
     try (JSONWriter writer = JSONWriterFactory.newInstance(sw)) {
       writer.startObject().property("ok", true).end();
     }
-    Assert.assertTrue(sw.toString().contains("true"));
+    Assertions.assertTrue(sw.toString().contains("true"));
   }
 
   @Test
@@ -119,9 +119,8 @@ public class JSONWriterFactoryTest {
     for (Thread t : workers) t.join();
 
     for (int i = 0; i < threads; i++) {
-      Assert.assertNotNull("Thread " + i + " produced no output", results[i]);
-      Assert.assertTrue("Thread " + i + " produced invalid JSON",
-          results[i].contains("\"thread\":" + i));
+      Assertions.assertNotNull(results[i], "Thread " + i + " produced no output");
+      Assertions.assertTrue(results[i].contains("\"thread\":" + i), "Thread " + i + " produced invalid JSON");
     }
   }
 

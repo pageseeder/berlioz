@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,38 +27,38 @@ import java.nio.file.Path;
 
 public final class MD5Test {
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testHash_NullString() {
-    MD5.hash((String) null);
+    Assertions.assertThrows(NullPointerException.class, () -> MD5.hash((String) null));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testHash_NullBytes() {
-    MD5.hash((byte[]) null);
+    Assertions.assertThrows(NullPointerException.class, () -> MD5.hash((byte[]) null));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testHash_NullInputStream() throws IOException {
-    MD5.hash((InputStream) null);
+    Assertions.assertThrows(NullPointerException.class, () -> MD5.hash((InputStream) null));
   }
 
   @Test
   public void testHash_String() {
-    Assert.assertEquals("d41d8cd98f00b204e9800998ecf8427e", MD5.hash(""));
-    Assert.assertEquals("098f6bcd4621d373cade4e832627b4f6", MD5.hash("test"));
-    Assert.assertEquals("942a46d563d50475e73c41765b35cbbf", MD5.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"));
+    Assertions.assertEquals(MD5.hash(""), "d41d8cd98f00b204e9800998ecf8427e");
+    Assertions.assertEquals(MD5.hash("test"), "098f6bcd4621d373cade4e832627b4f6");
+    Assertions.assertEquals(MD5.hash("Licensed under the Apache License, Version 2.0 (the \"License\");"), "942a46d563d50475e73c41765b35cbbf");
   }
 
   @Test
   public void testHash_Bytes_ConsistentWithString() {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
-    Assert.assertEquals(MD5.hash("test"), MD5.hash(bytes));
+    Assertions.assertEquals(MD5.hash("test"), MD5.hash(bytes));
   }
 
   @Test
   public void testHash_InputStream_ConsistentWithString() throws IOException {
     byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
-    Assert.assertEquals(MD5.hash("test"), MD5.hash(new ByteArrayInputStream(bytes)));
+    Assertions.assertEquals(MD5.hash("test"), MD5.hash(new ByteArrayInputStream(bytes)));
   }
 
   @Test
@@ -67,7 +67,7 @@ public final class MD5Test {
     Path temp = Files.createTempFile("md5-test-", ".txt");
     try {
       Files.write(temp, content);
-      Assert.assertEquals(MD5.hash("test"), MD5.hash(temp));
+      Assertions.assertEquals(MD5.hash("test"), MD5.hash(temp));
     } finally {
       Files.deleteIfExists(temp);
     }

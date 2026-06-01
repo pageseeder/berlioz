@@ -54,7 +54,8 @@ subprojects {
     }
   }
 
-  tasks.named("test") {
+  tasks.named<Test>("test") {
+    useJUnitPlatform()
     finalizedBy(tasks.named("jacocoTestReport"))
   }
 

@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.generator;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.servlet.ErrorHandlerServlet;
@@ -19,8 +19,8 @@ public class GetErrorDetailsTest {
   public void testNoAttributesDefaultsToStatusCode200() throws Exception {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request();
     String out = process(builder);
-    Assert.assertTrue(out.contains("http-code=\"200\""));
-    Assert.assertTrue(out.contains("http-class=\"successful\""));
+    Assertions.assertTrue(out.contains("http-code=\"200\""));
+    Assertions.assertTrue(out.contains("http-class=\"successful\""));
   }
 
   @Test
@@ -28,8 +28,8 @@ public class GetErrorDetailsTest {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
     String out = process(builder);
-    Assert.assertTrue(out.contains("http-code=\"404\""));
-    Assert.assertTrue(out.contains("http-class=\"client-error\""));
+    Assertions.assertTrue(out.contains("http-code=\"404\""));
+    Assertions.assertTrue(out.contains("http-class=\"client-error\""));
   }
 
   @Test
@@ -37,8 +37,8 @@ public class GetErrorDetailsTest {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     String out = process(builder);
-    Assert.assertTrue(out.contains("http-code=\"500\""));
-    Assert.assertTrue(out.contains("http-class=\"server-error\""));
+    Assertions.assertTrue(out.contains("http-code=\"500\""));
+    Assertions.assertTrue(out.contains("http-class=\"server-error\""));
   }
 
   // Optional elements
@@ -50,7 +50,7 @@ public class GetErrorDetailsTest {
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
         .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "The page was not found");
     String out = process(builder);
-    Assert.assertTrue(out.contains("<message>The page was not found</message>"));
+    Assertions.assertTrue(out.contains("<message>The page was not found</message>"));
   }
 
   @Test
@@ -59,7 +59,7 @@ public class GetErrorDetailsTest {
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
         .attribute(ErrorHandlerServlet.ERROR_REQUEST_URI, "/missing/page");
     String out = process(builder);
-    Assert.assertTrue(out.contains("<request-uri>/missing/page</request-uri>"));
+    Assertions.assertTrue(out.contains("<request-uri>/missing/page</request-uri>"));
   }
 
   @Test
@@ -68,8 +68,7 @@ public class GetErrorDetailsTest {
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
         .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, new IllegalStateException("boom"));
     String out = process(builder);
-    Assert.assertTrue("Exception class should appear in output",
-        out.contains("IllegalStateException") || out.contains("exception"));
+    Assertions.assertTrue(out.contains("IllegalStateException") || out.contains("exception"), "Exception class should appear in output");
   }
 
   // Status propagation
@@ -80,7 +79,7 @@ public class GetErrorDetailsTest {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
     process(builder);
-    Assert.assertEquals(ContentStatus.NOT_FOUND, builder.capturedStatus);
+    Assertions.assertEquals(ContentStatus.NOT_FOUND, builder.capturedStatus);
   }
 
   // helpers

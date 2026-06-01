@@ -17,8 +17,8 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.regex.Pattern;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * A test class for the <code>TokenLiteral</code>.
@@ -39,7 +39,7 @@ public final class TokenLiteralTest {
     } catch (NullPointerException ex) {
       nullThrown = true;
     } finally {
-      Assert.assertTrue(nullThrown);
+      Assertions.assertTrue(nullThrown);
     }
   }
 
@@ -90,7 +90,7 @@ public final class TokenLiteralTest {
    */
   private void assertMatchItsef(String s) {
     TokenLiteral t = new TokenLiteral(s);
-    Assert.assertTrue(t.match(s));
+    Assertions.assertTrue(t.match(s));
   }
 
   /**
@@ -99,7 +99,7 @@ public final class TokenLiteralTest {
   private void assertPatternIsOK(String s) {
     TokenLiteral t = new TokenLiteral(s);
     Pattern p = t.pattern();
-    Assert.assertNotNull(p);
-    Assert.assertTrue(p.matcher(s).matches());
+    Assertions.assertNotNull(p);
+    Assertions.assertTrue(p.matcher(s).matches());
   }
 }

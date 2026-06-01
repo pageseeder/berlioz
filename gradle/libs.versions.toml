@@ -6,7 +6,7 @@ jackson = "2.21.3"
 jakarta-json = "2.1.3"
 javax-json = "1.1.4"
 jspecify = "1.0.0"
-junit = "4.13.2"
+junit-jupiter = "5.11.4"
 parsson = "1.1.7"
 servlet-api = "4.0.1"
 slf4j = "2.0.18"
@@ -18,7 +18,7 @@ jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref
 jakarta-json-api = { module = "jakarta.json:jakarta.json-api", version.ref = "jakarta-json" }
 javax-json-api = { module = "javax.json:javax.json-api", version.ref = "javax-json" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
-junit = { module = "junit:junit", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 parsson = { module = "org.eclipse.parsson:parsson", version.ref = "parsson" }
 glassfish-javax-json = { module = "org.glassfish:javax.json", version.ref = "javax-json" }
 glassfish-jakarta-json = { module = "org.glassfish:jakarta.json", version = "2.0.1" }

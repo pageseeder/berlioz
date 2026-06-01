@@ -26,8 +26,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class JSONResultTest {
 
@@ -38,7 +38,7 @@ public class JSONResultTest {
   @Test
   public void testSupportsJsonMediaType() throws Exception {
     Transformer t = jsonTransformer();
-    Assert.assertTrue("xml method + application/json media type must be supported", JSONResult.supports(t));
+    Assertions.assertTrue(JSONResult.supports(t), "xml method + application/json media type must be supported");
   }
 
   @Test
@@ -46,7 +46,7 @@ public class JSONResultTest {
     Transformer t = TransformerFactory.newInstance().newTransformer();
     t.setOutputProperty("method", "html");
     t.setOutputProperty("media-type", "application/json");
-    Assert.assertFalse("html method must not be supported", JSONResult.supports(t));
+    Assertions.assertFalse(JSONResult.supports(t), "html method must not be supported");
   }
 
   @Test
@@ -54,13 +54,13 @@ public class JSONResultTest {
     Transformer t = TransformerFactory.newInstance().newTransformer();
     t.setOutputProperty("method", "xml");
     t.setOutputProperty("media-type", "text/xml");
-    Assert.assertFalse("text/xml media type must not be supported", JSONResult.supports(t));
+    Assertions.assertFalse(JSONResult.supports(t), "text/xml media type must not be supported");
   }
 
   @Test
   public void testSupportsRejectsDefaultTransformer() throws Exception {
     Transformer t = TransformerFactory.newInstance().newTransformer();
-    Assert.assertFalse("Default identity transformer must not be supported", JSONResult.supports(t));
+    Assertions.assertFalse(JSONResult.supports(t), "Default identity transformer must not be supported");
   }
 
   // ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ public class JSONResultTest {
     Transformer t = jsonTransformer();
     StreamResult sr = new StreamResult(new StringWriter());
     Result r = JSONResult.newInstanceIfSupported(t, sr);
-    Assert.assertTrue("Must return a JSONResult when transformer is supported", r instanceof JSONResult);
+    Assertions.assertTrue(r instanceof JSONResult, "Must return a JSONResult when transformer is supported");
   }
 
   @Test
@@ -80,7 +80,7 @@ public class JSONResultTest {
     Transformer t = TransformerFactory.newInstance().newTransformer();
     StreamResult sr = new StreamResult(new StringWriter());
     Result r = JSONResult.newInstanceIfSupported(t, sr);
-    Assert.assertSame("Must return the original StreamResult when transformer is not supported", sr, r);
+    Assertions.assertSame(sr, r, "Must return the original StreamResult when transformer is not supported");
   }
 
   // ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ public class JSONResultTest {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     StreamResult sr = new StreamResult(out);
     JSONResult r = JSONResult.newInstance(sr);
-    Assert.assertNotNull(r);
+    Assertions.assertNotNull(r);
   }
 
   @Test
@@ -100,14 +100,14 @@ public class JSONResultTest {
     StringWriter writer = new StringWriter();
     StreamResult sr = new StreamResult(writer);
     JSONResult r = JSONResult.newInstance(sr);
-    Assert.assertNotNull(r);
+    Assertions.assertNotNull(r);
   }
 
   @Test
   public void testNewInstanceFallsBackToSystemOut() {
     StreamResult sr = new StreamResult();
     JSONResult r = JSONResult.newInstance(sr);
-    Assert.assertNotNull(r);
+    Assertions.assertNotNull(r);
   }
 
   // ---------------------------------------------------------------------------
@@ -123,9 +123,9 @@ public class JSONResultTest {
     Result result = JSONResult.newInstanceIfSupported(t, sr);
     t.transform(new StreamSource(new StringReader(xml)), result);
     String json = out.toString();
-    Assert.assertTrue("JSON must start with {", json.startsWith("{"));
-    Assert.assertTrue("JSON must contain 'description' attribute", json.contains("\"description\""));
-    Assert.assertTrue("JSON must contain attribute value", json.contains("\"hello\""));
+    Assertions.assertTrue(json.startsWith("{"), "JSON must start with {");
+    Assertions.assertTrue(json.contains("\"description\""), "JSON must contain 'description' attribute");
+    Assertions.assertTrue(json.contains("\"hello\""), "JSON must contain attribute value");
   }
 
   @Test
@@ -137,8 +137,8 @@ public class JSONResultTest {
     Result result = JSONResult.newInstanceIfSupported(t, sr);
     t.transform(new StreamSource(new StringReader(xml)), result);
     String json = out.toString("UTF-8");
-    Assert.assertFalse("Output must not be empty", json.isEmpty());
-    Assert.assertTrue("JSON must contain 'name'", json.contains("\"name\""));
+    Assertions.assertFalse(json.isEmpty(), "Output must not be empty");
+    Assertions.assertTrue(json.contains("\"name\""), "JSON must contain 'name'");
   }
 
   // ---------------------------------------------------------------------------

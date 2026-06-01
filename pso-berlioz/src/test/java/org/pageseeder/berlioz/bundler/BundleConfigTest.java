@@ -16,16 +16,16 @@
 package org.pageseeder.berlioz.bundler;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 
@@ -34,17 +34,17 @@ import org.pageseeder.berlioz.InitEnvironment;
  */
 public final class BundleConfigTest {
 
-  @Rule
-  public TemporaryFolder temporary = new TemporaryFolder();
+  @TempDir
+  Path temporary;
 
   @Test
   public void testDefaultConfigIncludesServiceBundle() throws IOException {
     setupGlobalSettings("<global/>");
-    File root = this.temporary.newFolder("public-default");
+    File root = Files.createDirectory(this.temporary.resolve("public-default")).toFile();
 
     BundleConfig config = BundleConfig.newInstance("default", BundleType.JS, root);
 
-    Assert.assertEquals(List.of("global", "group", "service"), names(config.definitions()));
+    Assertions.assertEquals(List.of("global", "group", "service"), names(config.definitions()));
   }
 
   @Test
@@ -57,11 +57,11 @@ public final class BundleConfigTest {
       + "    </jsbundler>"
       + "  </berlioz>"
       + "</global>");
-    File root = this.temporary.newFolder("public-spaced");
+    File root = Files.createDirectory(this.temporary.resolve("public-spaced")).toFile();
 
     BundleConfig config = BundleConfig.newInstance("spaced", BundleType.JS, root);
 
-    Assert.assertEquals(List.of("global", "group", "service"), names(config.definitions()));
+    Assertions.assertEquals(List.of("global", "group", "service"), names(config.definitions()));
   }
 
   @Test
@@ -77,19 +77,19 @@ public final class BundleConfigTest {
       + "    </jsbundler>"
       + "  </berlioz>"
       + "</global>");
-    File root = this.temporary.newFolder("public-override");
+    File root = Files.createDirectory(this.temporary.resolve("public-override")).toFile();
 
     BundleConfig config = BundleConfig.newInstance("custom", BundleType.JS, root);
 
-    Assert.assertEquals(1, config.definitions().size());
+    Assertions.assertEquals(1, config.definitions().size());
     BundleDefinition definition = config.definitions().get(0);
-    Assert.assertEquals("group", definition.name());
-    Assert.assertEquals("{GROUP}", definition.filename());
-    Assert.assertArrayEquals(new String[]{"/script/{GROUP}/extra.js"}, definition.paths());
+    Assertions.assertEquals(definition.name(), "group");
+    Assertions.assertEquals(definition.filename(), "{GROUP}");
+    Assertions.assertArrayEquals(new String[]{"/script/{GROUP}/extra.js"}, definition.paths());
   }
 
   private void setupGlobalSettings(String xml) throws IOException {
-    File webinf = this.temporary.newFolder("WEB-INF");
+    File webinf = Files.createDirectory(this.temporary.resolve("WEB-INF")).toFile();
     File config = new File(webinf, "config");
     Files.createDirectories(config.toPath());
     Files.writeString(new File(config, "config.xml").toPath(), xml, StandardCharsets.UTF_8);

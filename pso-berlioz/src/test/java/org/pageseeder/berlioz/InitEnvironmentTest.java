@@ -1,10 +1,10 @@
 package org.pageseeder.berlioz;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public final class InitEnvironmentTest {
 

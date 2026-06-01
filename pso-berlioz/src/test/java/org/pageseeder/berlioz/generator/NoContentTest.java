@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.generator;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -13,15 +13,15 @@ public class NoContentTest {
   @Test
   public void testImplementsBothInterfaces() {
     NoContent gen = new NoContent();
-    Assert.assertTrue(gen instanceof ContentGenerator);
-    Assert.assertTrue(gen instanceof Cacheable);
+    Assertions.assertTrue(gen instanceof ContentGenerator);
+    Assertions.assertTrue(gen instanceof Cacheable);
   }
 
   @Test
   public void testETagIsAlwaysNocontent() {
     NoContent gen = new NoContent();
     ContentRequest req = GeneratorTestSupport.request().build();
-    Assert.assertEquals("nocontent", gen.getETag(req));
+    Assertions.assertEquals(gen.getETag(req), "nocontent");
   }
 
   @Test
@@ -31,6 +31,6 @@ public class NoContentTest {
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
     gen.process(req, xml);
     xml.flush();
-    Assert.assertEquals("", xml.toString());
+    Assertions.assertEquals(xml.toString(), "");
   }
 }

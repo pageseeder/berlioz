@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.servlet;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 
@@ -21,9 +21,9 @@ public class HttpLocationTest {
         .contextPath("").servletPath("/page.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    Assert.assertEquals("http", loc.scheme());
-    Assert.assertEquals("example.org", loc.host());
-    Assert.assertEquals(8080, loc.port());
+    Assertions.assertEquals(loc.scheme(), "http");
+    Assertions.assertEquals(loc.host(), "example.org");
+    Assertions.assertEquals(8080, loc.port());
   }
 
   @Test
@@ -34,8 +34,8 @@ public class HttpLocationTest {
         .contextPath("").servletPath("/search.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    Assert.assertEquals("/search", loc.path());
-    Assert.assertEquals("q=berlioz&page=2", loc.query());
+    Assertions.assertEquals(loc.path(), "/search");
+    Assertions.assertEquals(loc.query(), "q=berlioz&page=2");
   }
 
   @Test
@@ -46,7 +46,7 @@ public class HttpLocationTest {
         .contextPath("").servletPath("/page.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    Assert.assertEquals("", loc.query());
+    Assertions.assertEquals(loc.query(), "");
   }
 
   @Test
@@ -57,9 +57,9 @@ public class HttpLocationTest {
         .contextPath("").servletPath("/api").pathInfo("/users")
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    Assert.assertNotNull(loc.info());
-    Assert.assertEquals("/users", loc.info().path());
-    Assert.assertEquals("/api", loc.info().prefix());
+    Assertions.assertNotNull(loc.info());
+    Assertions.assertEquals(loc.info().path(), "/users");
+    Assertions.assertEquals(loc.info().prefix(), "/api");
   }
 
   // toBaseURL() — default port suppression
@@ -69,28 +69,28 @@ public class HttpLocationTest {
   public void testToBaseUrlDefaultHttpPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(80).uri("/").build();
-    Assert.assertEquals("http://example.org", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "http://example.org");
   }
 
   @Test
   public void testToBaseUrlNonDefaultHttpPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(8080).uri("/").build();
-    Assert.assertEquals("http://example.org:8080", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "http://example.org:8080");
   }
 
   @Test
   public void testToBaseUrlDefaultHttpsPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("secure.example.org").port(443).uri("/").build();
-    Assert.assertEquals("https://secure.example.org", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://secure.example.org");
   }
 
   @Test
   public void testToBaseUrlNonDefaultHttpsPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("secure.example.org").port(8443).uri("/").build();
-    Assert.assertEquals("https://secure.example.org:8443", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://secure.example.org:8443");
   }
 
   // toBaseURL() — reverse proxy header handling
@@ -102,7 +102,7 @@ public class HttpLocationTest {
         .scheme("http").host("internal").port(8080)
         .header("X-Forwarded-Proto", "https")
         .build();
-    Assert.assertEquals("https://internal", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://internal");
   }
 
   @Test
@@ -112,7 +112,7 @@ public class HttpLocationTest {
         .header("X-Forwarded-Proto", "https")
         .header("X-Forwarded-Host", "public.example.org:8443")
         .build();
-    Assert.assertEquals("https://internal:8443", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://internal:8443");
   }
 
   @Test
@@ -123,14 +123,14 @@ public class HttpLocationTest {
         .header("X-Forwarded-Host", "public.example.org")
         .build();
     // No port in forwarded host → port treated as -1 → omitted (default)
-    Assert.assertEquals("https://internal", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://internal");
   }
 
   @Test
   public void testNoReverseProxyHeadersUsesServerPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("https").host("app.example.org").port(443).uri("/").build();
-    Assert.assertEquals("https://app.example.org", HttpLocation.toBaseURL(req).toString());
+    Assertions.assertEquals(HttpLocation.toBaseURL(req).toString(), "https://app.example.org");
   }
 
   // toXML()
@@ -148,12 +148,12 @@ public class HttpLocationTest {
     loc.toXML(xml);
     xml.flush();
     String out = xml.toString();
-    Assert.assertTrue(out.contains("scheme=\"http\""));
-    Assert.assertTrue(out.contains("host=\"example.org\""));
-    Assert.assertTrue(out.contains("port=\"8080\""));
-    Assert.assertTrue(out.contains("query=\"a=1\""));
-    Assert.assertTrue(out.contains("base=\"http://example.org:8080\""));
-    Assert.assertTrue(out.contains("http://example.org:8080/page.html?a=1"));
+    Assertions.assertTrue(out.contains("scheme=\"http\""));
+    Assertions.assertTrue(out.contains("host=\"example.org\""));
+    Assertions.assertTrue(out.contains("port=\"8080\""));
+    Assertions.assertTrue(out.contains("query=\"a=1\""));
+    Assertions.assertTrue(out.contains("base=\"http://example.org:8080\""));
+    Assertions.assertTrue(out.contains("http://example.org:8080/page.html?a=1"));
   }
 
   @Test
@@ -168,7 +168,7 @@ public class HttpLocationTest {
     loc.toXML(xml);
     xml.flush();
     String out = xml.toString();
-    Assert.assertTrue(out.contains("base=\"http://example.org\""));
-    Assert.assertFalse("Base URL should not contain :80", out.contains(":80"));
+    Assertions.assertTrue(out.contains("base=\"http://example.org\""));
+    Assertions.assertFalse(out.contains(":80"), "Base URL should not contain :80");
   }
 }

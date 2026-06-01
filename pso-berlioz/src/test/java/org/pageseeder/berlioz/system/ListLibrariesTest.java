@@ -1,8 +1,8 @@
 package org.pageseeder.berlioz.system;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -20,9 +20,9 @@ import java.util.jar.Manifest;
 import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 import org.w3c.dom.Document;
@@ -31,12 +31,12 @@ import org.xml.sax.InputSource;
 
 public final class ListLibrariesTest {
 
-  @Before
+  @BeforeEach
   public void clearCacheBefore() {
     ListLibraries.clearCache();
   }
 
-  @After
+  @AfterEach
   public void clearCacheAfter() {
     ListLibraries.clearCache();
   }

@@ -1,30 +1,30 @@
 package org.pageseeder.berlioz.http;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class HttpMethodTest {
 
   @Test
   public void testIsMappable() {
-    Assert.assertTrue(HttpMethod.GET.isMappable());
-    Assert.assertTrue(HttpMethod.POST.isMappable());
-    Assert.assertTrue(HttpMethod.PUT.isMappable());
-    Assert.assertTrue(HttpMethod.PATCH.isMappable());
-    Assert.assertTrue(HttpMethod.DELETE.isMappable());
-    Assert.assertFalse(HttpMethod.HEAD.isMappable());
-    Assert.assertFalse(HttpMethod.OPTIONS.isMappable());
+    Assertions.assertTrue(HttpMethod.GET.isMappable());
+    Assertions.assertTrue(HttpMethod.POST.isMappable());
+    Assertions.assertTrue(HttpMethod.PUT.isMappable());
+    Assertions.assertTrue(HttpMethod.PATCH.isMappable());
+    Assertions.assertTrue(HttpMethod.DELETE.isMappable());
+    Assertions.assertFalse(HttpMethod.HEAD.isMappable());
+    Assertions.assertFalse(HttpMethod.OPTIONS.isMappable());
   }
 
   @Test
   public void testMappable() {
-    Assert.assertTrue(HttpMethod.mappable().contains(HttpMethod.GET));
-    Assert.assertTrue(HttpMethod.mappable().contains(HttpMethod.POST));
-    Assert.assertTrue(HttpMethod.mappable().contains(HttpMethod.PUT));
-    Assert.assertTrue(HttpMethod.mappable().contains(HttpMethod.PATCH));
-    Assert.assertTrue(HttpMethod.mappable().contains(HttpMethod.DELETE));
-    Assert.assertFalse(HttpMethod.mappable().contains(HttpMethod.HEAD));
-    Assert.assertFalse(HttpMethod.mappable().contains(HttpMethod.OPTIONS));
+    Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.GET));
+    Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.POST));
+    Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.PUT));
+    Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.PATCH));
+    Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.DELETE));
+    Assertions.assertFalse(HttpMethod.mappable().contains(HttpMethod.HEAD));
+    Assertions.assertFalse(HttpMethod.mappable().contains(HttpMethod.OPTIONS));
   }
 
 }

@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.xml;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,7 +14,7 @@ public final class XmlAppendableTest {
   public void testTextEscaping() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text("a<>&\"'😀").closeElement();
-    Assert.assertEquals("<x>a&lt;&gt;&amp;\"'&#x1f600;</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>a&lt;&gt;&amp;\"'&#x1f600;</x>");
   }
 
   @Test
@@ -22,12 +22,12 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     char[] text = "xx😀<&yy".toCharArray();
     xml.openElement("x").text(text, 2, 4).closeElement();
-    Assert.assertEquals("<x>&#x1f600;&lt;&amp;</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>&#x1f600;&lt;&amp;</x>");
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testTextNullThrows() {
-    new XmlStringBuilder().openElement("x").text((String) null);
+    Assertions.assertThrows(NullPointerException.class, () -> new XmlStringBuilder().openElement("x").text((String) null));
   }
 
   // text(long) / text(double) / text(char) -------------------------------------------------------
@@ -36,35 +36,35 @@ public final class XmlAppendableTest {
   public void testTextLong() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text(42L).closeElement();
-    Assert.assertEquals("<x>42</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>42</x>");
   }
 
   @Test
   public void testTextLongNegative() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text(-1L).closeElement();
-    Assert.assertEquals("<x>-1</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>-1</x>");
   }
 
   @Test
   public void testTextDouble() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text(3.14).closeElement();
-    Assert.assertEquals("<x>3.14</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>3.14</x>");
   }
 
   @Test
   public void testTextCharPlain() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text('a').closeElement();
-    Assert.assertEquals("<x>a</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>a</x>");
   }
 
   @Test
   public void testTextCharEscaping() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text('<').closeElement();
-    Assert.assertEquals("<x>&lt;</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>&lt;</x>");
   }
 
   // xml(char[], int, int) ------------------------------------------------------------------------
@@ -74,7 +74,7 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     char[] raw = "<y/>".toCharArray();
     xml.openElement("x").xml(raw, 0, raw.length).closeElement();
-    Assert.assertEquals("<x><y/></x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x><y/></x>");
   }
 
   @Test
@@ -82,7 +82,7 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     char[] raw = "xx<y/>zz".toCharArray();
     xml.openElement("x").xml(raw, 2, 4).closeElement();
-    Assert.assertEquals("<x><y/></x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x><y/></x>");
   }
 
   // attribute(String, *) -------------------------------------------------------------------------
@@ -91,45 +91,45 @@ public final class XmlAppendableTest {
   public void testAttributeEscaping() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").attribute("a", "<&\"'😀").closeElement();
-    Assert.assertEquals("<x a=\"&lt;&amp;&quot;&#39;&#x1f600;\"/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x a=\"&lt;&amp;&quot;&#39;&#x1f600;\"/>");
   }
 
   @Test
   public void testAttributeLong() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").attribute("n", 42L).closeElement();
-    Assert.assertEquals("<x n=\"42\"/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x n=\"42\"/>");
   }
 
   @Test
   public void testAttributeDouble() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").attribute("n", 3.14).closeElement();
-    Assert.assertEquals("<x n=\"3.14\"/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x n=\"3.14\"/>");
   }
 
   @Test
   public void testAttributeBooleanTrue() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").attribute("flag", true).closeElement();
-    Assert.assertEquals("<x flag=\"true\"/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x flag=\"true\"/>");
   }
 
   @Test
   public void testAttributeBooleanFalse() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").attribute("flag", false).closeElement();
-    Assert.assertEquals("<x flag=\"false\"/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x flag=\"false\"/>");
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testAttributeNullNameThrows() {
-    new XmlStringBuilder().openElement("x").attribute(null, "v");
+    Assertions.assertThrows(NullPointerException.class, () -> new XmlStringBuilder().openElement("x").attribute(null, "v"));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testAttributeNullValueThrows() {
-    new XmlStringBuilder().openElement("x").attribute("n", (String) null);
+    Assertions.assertThrows(NullPointerException.class, () -> new XmlStringBuilder().openElement("x").attribute("n", (String) null));
   }
 
   // attributes(Map) ------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ public final class XmlAppendableTest {
     attrs.put("a", "1");
     attrs.put("b", "two");
     xml.openElement("x").attributes(attrs).closeElement();
-    Assert.assertEquals("<x a=\"1\" b=\"two\"/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x a=\"1\" b=\"two\"/>");
   }
 
   // comment() ------------------------------------------------------------------------------------
@@ -150,12 +150,12 @@ public final class XmlAppendableTest {
   public void testComment() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.comment("hello");
-    Assert.assertEquals("<!-- hello -->", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<!-- hello -->");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testCommentWithDoubleDashThrows() {
-    new XmlStringBuilder().comment("bad--comment");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> new XmlStringBuilder().comment("bad--comment"));
   }
 
   // cdata() --------------------------------------------------------------------------------------
@@ -164,12 +164,12 @@ public final class XmlAppendableTest {
   public void testCdata() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").cdata("safe text").closeElement();
-    Assert.assertEquals("<x><![CDATA[safe text]]></x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x><![CDATA[safe text]]></x>");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testCdataWithEndSequenceThrows() {
-    new XmlStringBuilder().cdata("bad]]>data");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> new XmlStringBuilder().cdata("bad]]>data"));
   }
 
   // processingInstruction() ----------------------------------------------------------------------
@@ -178,19 +178,19 @@ public final class XmlAppendableTest {
   public void testProcessingInstruction() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.processingInstruction("target", "data");
-    Assert.assertEquals("<?target data?>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<?target data?>");
   }
 
   @Test
   public void testProcessingInstructionEmptyData() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.processingInstruction("target", "");
-    Assert.assertEquals("<?target?>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<?target?>");
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testProcessingInstructionNullTargetThrows() {
-    new XmlStringBuilder().processingInstruction(null, "data");
+    Assertions.assertThrows(NullPointerException.class, () -> new XmlStringBuilder().processingInstruction(null, "data"));
   }
 
   // declaration() --------------------------------------------------------------------------------
@@ -199,14 +199,16 @@ public final class XmlAppendableTest {
   public void testDeclaration() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.declaration();
-    Assert.assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testDeclarationAfterUse() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.text("x");
     xml.declaration();
+    });
   }
 
   // emptyElement() -------------------------------------------------------------------------------
@@ -215,7 +217,7 @@ public final class XmlAppendableTest {
   public void testEmptyElement() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.emptyElement("br");
-    Assert.assertEquals("<br/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<br/>");
   }
 
   // element() shortcuts --------------------------------------------------------------------------
@@ -224,28 +226,28 @@ public final class XmlAppendableTest {
   public void testElementString() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.element("x", "hello");
-    Assert.assertEquals("<x>hello</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>hello</x>");
   }
 
   @Test
   public void testElementStringEscapesContent() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.element("x", "a<b");
-    Assert.assertEquals("<x>a&lt;b</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>a&lt;b</x>");
   }
 
   @Test
   public void testElementLong() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.element("x", 42L);
-    Assert.assertEquals("<x>42</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>42</x>");
   }
 
   @Test
   public void testElementDouble() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.element("x", 3.5d);
-    Assert.assertEquals("<x>3.5</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>3.5</x>");
   }
 
   // asText() / asXml() ---------------------------------------------------------------------------
@@ -254,28 +256,28 @@ public final class XmlAppendableTest {
   public void testNullContentIsIgnored() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.asText(null).asXml((Object) null).comment(null).cdata(null);
-    Assert.assertEquals("", xml.toString());
+    Assertions.assertEquals(xml.toString(), "");
   }
 
   @Test
   public void testAsTextNonNull() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").asText(42).closeElement();
-    Assert.assertEquals("<x>42</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>42</x>");
   }
 
   @Test
   public void testAsTextEscapesContent() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").asText("<b>").closeElement();
-    Assert.assertEquals("<x>&lt;b&gt;</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>&lt;b&gt;</x>");
   }
 
   @Test
   public void testAsXmlObject() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").asXml("<y/>").closeElement();
-    Assert.assertEquals("<x><y/></x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x><y/></x>");
   }
 
   @Test
@@ -283,7 +285,7 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     XmlWritable writable = writer -> writer.emptyElement("y");
     xml.openElement("x").asXml((Object) writable).closeElement();
-    Assert.assertEquals("<x><y/></x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x><y/></x>");
   }
 
   // Non-XML character filtering ------------------------------------------------------------------
@@ -292,21 +294,21 @@ public final class XmlAppendableTest {
   public void testNonXmlControlCharIsStripped() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text("ab").closeElement();
-    Assert.assertEquals("<x>ab</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>ab</x>");
   }
 
   @Test
   public void testOrphanedHighSurrogateIsStripped() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text("a\uD800b").closeElement();
-    Assert.assertEquals("<x>ab</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>ab</x>");
   }
 
   @Test
   public void testOrphanedLowSurrogateIsStripped() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").text("a\uDC00b").closeElement();
-    Assert.assertEquals("<x>ab</x>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x>ab</x>");
   }
 
   // close() / flush() ----------------------------------------------------------------------------
@@ -316,7 +318,7 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").closeElement();
     xml.close();
-    Assert.assertEquals("<x/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x/>");
   }
 
   @Test
@@ -324,7 +326,7 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x").closeElement();
     xml.flush();
-    Assert.assertEquals("<x/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x/>");
   }
 
   @Test
@@ -332,19 +334,19 @@ public final class XmlAppendableTest {
     XmlStringBuilder xml = new XmlStringBuilder();
     try {
       xml.closeElement();
-      Assert.fail("Expected IllegalCloseElementException");
+      Assertions.fail("Expected IllegalCloseElementException");
     } catch (IllegalCloseElementException e) {
       // writer must still be functional
     }
     xml.openElement("x").closeElement();
-    Assert.assertEquals("<x/>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<x/>");
   }
 
   // xml(String) ----------------------------------------------------------------------------------
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testXmlNullThrows() {
-    new XmlStringBuilder().openElement("x").xml((String) null);
+    Assertions.assertThrows(NullPointerException.class, () -> new XmlStringBuilder().openElement("x").xml((String) null));
   }
 
   // emptyElement() indentation -------------------------------------------------------------------
@@ -353,23 +355,25 @@ public final class XmlAppendableTest {
   public void testEmptyElementRespectsParentHasChildrenFalse() {
     XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
     xml.openElement("parent", false).emptyElement("br").closeElement();
-    Assert.assertEquals("<parent><br/></parent>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<parent><br/></parent>");
   }
 
   @Test
   public void testEmptyElementIndentsInsideParentWithChildren() {
     XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
     xml.openElement("parent", true).emptyElement("br").closeElement();
-    Assert.assertEquals("<parent>\n  <br/>\n</parent>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<parent>\n  <br/>\n</parent>");
   }
 
   // withIndent ------------------------------------------------------------------------------------
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testWithIndentAfterUse() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.openElement("x");
     xml.withIndent("  ");
+    });
   }
 
   @Test
@@ -380,20 +384,20 @@ public final class XmlAppendableTest {
         .text("hi")
         .closeElement()
         .closeElement();
-    Assert.assertEquals("<root>\n  <leaf>hi</leaf>\n</root>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<root>\n  <leaf>hi</leaf>\n</root>");
   }
 
   @Test
   public void testCommentWithIndentAddsNewline() {
     XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
     xml.comment("note");
-    Assert.assertEquals("<!-- note -->\n", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<!-- note -->\n");
   }
 
   @Test
   public void testDeclarationWithIndentAddsNewline() {
     XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
     xml.declaration();
-    Assert.assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
   }
 }

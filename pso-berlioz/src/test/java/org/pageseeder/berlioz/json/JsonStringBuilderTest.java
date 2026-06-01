@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.json;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class JsonStringBuilderTest {
 
@@ -28,7 +28,7 @@ public class JsonStringBuilderTest {
         .field("count", 42L)
         .endObject()
         .flush();
-    Assert.assertEquals("{\"name\":\"test\",\"count\":42}", builder.toString());
+    Assertions.assertEquals(builder.toString(), "{\"name\":\"test\",\"count\":42}");
   }
 
   @Test
@@ -39,7 +39,7 @@ public class JsonStringBuilderTest {
         .value("b")
         .endArray()
         .flush();
-    Assert.assertEquals("[\"a\",\"b\"]", builder.toString());
+    Assertions.assertEquals(builder.toString(), "[\"a\",\"b\"]");
   }
 
   @Test
@@ -49,15 +49,15 @@ public class JsonStringBuilderTest {
         .nullValue("key")
         .endObject()
         .flush();
-    Assert.assertEquals("{\"key\":null}", builder.toString());
+    Assertions.assertEquals(builder.toString(), "{\"key\":null}");
   }
 
   @Test
   public void testInObject() {
     JsonStringBuilder builder = JsonStringBuilder.create();
-    Assert.assertFalse(builder.inObject());
+    Assertions.assertFalse(builder.inObject());
     builder.startObject();
-    Assert.assertTrue(builder.inObject());
+    Assertions.assertTrue(builder.inObject());
     builder.endObject().flush();
   }
 
@@ -66,7 +66,7 @@ public class JsonStringBuilderTest {
     JsonStringBuilder builder = JsonStringBuilder.create();
     builder.startObject().field("x", 1L).endObject();
     builder.close();
-    Assert.assertEquals("{\"x\":1}", builder.toString());
+    Assertions.assertEquals(builder.toString(), "{\"x\":1}");
   }
 
 }

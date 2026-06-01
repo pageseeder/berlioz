@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.security;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ContentSecurityPolicyTest {
 
@@ -9,8 +9,8 @@ public class ContentSecurityPolicyTest {
   public void testEmpty() {
     ContentSecurityPolicy empty1 = new ContentSecurityPolicy.Builder().build();
     ContentSecurityPolicy empty2 = new ContentSecurityPolicy.Builder().build();
-    Assert.assertTrue(empty1.isEmpty());
-    Assert.assertEquals(empty1, empty2);
+    Assertions.assertTrue(empty1.isEmpty());
+    Assertions.assertEquals(empty1, empty2);
   }
 
   @Test
@@ -20,11 +20,11 @@ public class ContentSecurityPolicyTest {
         .set(Directive.DEFAULT_SRC, "'self'")
         .build();
     ContentSecurityPolicy self2 = empty.withValue(Directive.DEFAULT_SRC, "'self'");
-    Assert.assertNotSame(empty, self2);
-    Assert.assertTrue(empty.isEmpty());
-    Assert.assertEquals("'self'", self1.get(Directive.DEFAULT_SRC));
-    Assert.assertEquals("'self'", self2.get(Directive.DEFAULT_SRC));
-    Assert.assertEquals(self1, self2);
+    Assertions.assertNotSame(empty, self2);
+    Assertions.assertTrue(empty.isEmpty());
+    Assertions.assertEquals(self1.get(Directive.DEFAULT_SRC), "'self'");
+    Assertions.assertEquals(self2.get(Directive.DEFAULT_SRC), "'self'");
+    Assertions.assertEquals(self1, self2);
   }
 
   @Test
@@ -34,11 +34,11 @@ public class ContentSecurityPolicyTest {
         .add(Directive.DEFAULT_SRC, "'self'")
         .build();
     ContentSecurityPolicy self2 = empty.withSource(Directive.DEFAULT_SRC, "'self'");
-    Assert.assertNotSame(empty, self2);
-    Assert.assertTrue(empty.isEmpty());
-    Assert.assertEquals("'self'", self1.get(Directive.DEFAULT_SRC));
-    Assert.assertEquals("'self'", self2.get(Directive.DEFAULT_SRC));
-    Assert.assertEquals(self1, self2);
+    Assertions.assertNotSame(empty, self2);
+    Assertions.assertTrue(empty.isEmpty());
+    Assertions.assertEquals(self1.get(Directive.DEFAULT_SRC), "'self'");
+    Assertions.assertEquals(self2.get(Directive.DEFAULT_SRC), "'self'");
+    Assertions.assertEquals(self1, self2);
   }
 
   @Test
@@ -50,12 +50,12 @@ public class ContentSecurityPolicyTest {
         .build();
     ContentSecurityPolicy csp2 = empty.withSource(Directive.DEFAULT_SRC, "'self'");
     ContentSecurityPolicy csp3 = csp2.withSource(Directive.DEFAULT_SRC, "https:");
-    Assert.assertTrue(empty.isEmpty());
-    Assert.assertNotSame(empty, csp2);
-    Assert.assertNotSame(csp2, csp3);
-    Assert.assertEquals("'self' https:", csp1.get(Directive.DEFAULT_SRC));
-    Assert.assertEquals("'self' https:", csp3.get(Directive.DEFAULT_SRC));
-    Assert.assertEquals(csp1, csp3);
+    Assertions.assertTrue(empty.isEmpty());
+    Assertions.assertNotSame(empty, csp2);
+    Assertions.assertNotSame(csp2, csp3);
+    Assertions.assertEquals(csp1.get(Directive.DEFAULT_SRC), "'self' https:");
+    Assertions.assertEquals(csp3.get(Directive.DEFAULT_SRC), "'self' https:");
+    Assertions.assertEquals(csp1, csp3);
   }
 
   @Test
@@ -66,9 +66,9 @@ public class ContentSecurityPolicyTest {
         .build();
     ContentSecurityPolicy remove1 = self.builder().remove(Directive.DEFAULT_SRC).build();
     ContentSecurityPolicy remove2 = self.without(Directive.DEFAULT_SRC);
-    Assert.assertNull(remove1.get(Directive.DEFAULT_SRC));
-    Assert.assertNull(remove2.get(Directive.DEFAULT_SRC));
-    Assert.assertEquals(empty, remove1);
-    Assert.assertEquals(empty, remove2);
+    Assertions.assertNull(remove1.get(Directive.DEFAULT_SRC));
+    Assertions.assertNull(remove2.get(Directive.DEFAULT_SRC));
+    Assertions.assertEquals(empty, remove1);
+    Assertions.assertEquals(empty, remove2);
   }
 }

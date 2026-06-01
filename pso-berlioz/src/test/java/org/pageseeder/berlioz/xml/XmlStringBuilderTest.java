@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.xml;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public final class XmlStringBuilderTest {
 
@@ -15,7 +15,7 @@ public final class XmlStringBuilderTest {
         .closeElement()
         .closeElement();
 
-    Assert.assertEquals("<root>\n  <item name=\"one\"/>\n</root>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<root>\n  <item name=\"one\"/>\n</root>");
   }
 
   @Test
@@ -24,7 +24,7 @@ public final class XmlStringBuilderTest {
 
     xml.openElement("root", true).emptyElement("item").closeElement();
 
-    Assert.assertEquals("<root><item/></root>", xml.toString());
+    Assertions.assertEquals(xml.toString(), "<root><item/></root>");
   }
 
   @Test
@@ -34,20 +34,21 @@ public final class XmlStringBuilderTest {
 
     indented.openElement("root").closeElement();
 
-    Assert.assertEquals("<root/>", original.toString());
-    Assert.assertEquals("<root/>", indented.toString());
+    Assertions.assertEquals(original.toString(), "<root/>");
+    Assertions.assertEquals(indented.toString(), "<root/>");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testWithIndentRejectsNonSpaceCharacters() {
-    new XmlStringBuilder().withIndent(" \t.");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> new XmlStringBuilder().withIndent(" \t."));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testWithIndentAfterText() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
     XmlStringBuilder xml = new XmlStringBuilder();
-
     xml.text("already used");
     xml.withIndent("  ");
+    });
   }
 }

@@ -17,8 +17,8 @@ package org.pageseeder.berlioz.furi;
 
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * A test class for the <code>TokenBase</code> class.
@@ -41,7 +41,7 @@ public final class TokenBaseTest {
     } catch (NullPointerException ex) {
       nullThrown = true;
     } finally {
-      Assert.assertTrue(nullThrown);
+      Assertions.assertTrue(nullThrown);
     }
   }
 

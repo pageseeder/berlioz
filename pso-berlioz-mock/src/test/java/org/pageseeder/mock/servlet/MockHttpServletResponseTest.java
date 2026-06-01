@@ -1,7 +1,7 @@
 package org.pageseeder.mock.servlet;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +19,7 @@ public class MockHttpServletResponseTest {
     PrintWriter writer = response.getWriter();
     writer.write("hello");
 
-    Assert.assertEquals("hello", response.getOutputAsString());
+    Assertions.assertEquals(response.getOutputAsString(), "hello");
   }
 
   @Test
@@ -30,17 +30,17 @@ public class MockHttpServletResponseTest {
     ServletOutputStream stream = response.getOutputStream();
     stream.write("hello".getBytes(StandardCharsets.UTF_8));
 
-    Assert.assertEquals("hello", response.getOutputAsString());
+    Assertions.assertEquals(response.getOutputAsString(), "hello");
   }
 
   @Test
   public void flushCommitsResponse() throws Exception {
     MockHttpServletResponse response = new MockHttpServletResponse();
 
-    Assert.assertFalse(response.isCommitted());
+    Assertions.assertFalse(response.isCommitted());
     response.flushBuffer();
 
-    Assert.assertTrue(response.isCommitted());
+    Assertions.assertTrue(response.isCommitted());
   }
 
   @Test
@@ -53,10 +53,10 @@ public class MockHttpServletResponseTest {
 
     response.reset();
 
-    Assert.assertEquals("", response.getOutputAsString());
-    Assert.assertNull(response.getHeader("X-Test"));
-    Assert.assertTrue(response.getCookies().isEmpty());
-    Assert.assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+    Assertions.assertEquals(response.getOutputAsString(), "");
+    Assertions.assertNull(response.getHeader("X-Test"));
+    Assertions.assertTrue(response.getCookies().isEmpty());
+    Assertions.assertEquals(HttpServletResponse.SC_OK, response.getStatus());
   }
 
   @Test
@@ -65,8 +65,8 @@ public class MockHttpServletResponseTest {
 
     response.sendRedirect("/next");
 
-    Assert.assertEquals(HttpServletResponse.SC_FOUND, response.getStatus());
-    Assert.assertEquals("/next", response.getHeader("Location"));
-    Assert.assertTrue(response.isCommitted());
+    Assertions.assertEquals(HttpServletResponse.SC_FOUND, response.getStatus());
+    Assertions.assertEquals(response.getHeader("Location"), "/next");
+    Assertions.assertTrue(response.isCommitted());
   }
 }

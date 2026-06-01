@@ -1,56 +1,57 @@
 package org.pageseeder.berlioz.servlet;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Files;
 
 public class HttpEnvironmentTest {
 
-  @Rule
-  public TemporaryFolder tmp = new TemporaryFolder();
+  @TempDir
+  Path tmp;
 
   @Test
   public void testGetPublicAndPrivateFolders() throws Exception {
-    File pub  = tmp.newFolder("public");
-    File priv = tmp.newFolder("private");
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "max-age=3600");
-    Assert.assertEquals(pub, env.getPublicFolder());
-    Assert.assertEquals(priv, env.getPrivateFolder());
+    Assertions.assertEquals(pub, env.getPublicFolder());
+    Assertions.assertEquals(priv, env.getPrivateFolder());
   }
 
   @Test
   public void testGetCacheControl() throws Exception {
-    File pub  = tmp.newFolder("public");
-    File priv = tmp.newFolder("private");
-    Assert.assertEquals("max-age=3600", new HttpEnvironment(pub, priv, "max-age=3600").getCacheControl());
-    Assert.assertEquals("no-cache",     new HttpEnvironment(pub, priv, "no-cache").getCacheControl());
-    Assert.assertEquals("",             new HttpEnvironment(pub, priv, "").getCacheControl());
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
+    Assertions.assertEquals(new HttpEnvironment(pub, priv, "max-age=3600").getCacheControl(), "max-age=3600");
+    Assertions.assertEquals(new HttpEnvironment(pub, priv, "no-cache").getCacheControl(), "no-cache");
+    Assertions.assertEquals(new HttpEnvironment(pub, priv, "").getCacheControl(), "");
   }
 
   @Test
   public void testGetPublicFileResolvesRelativePath() throws Exception {
-    File pub  = tmp.newFolder("public");
-    File priv = tmp.newFolder("private");
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "");
-    Assert.assertEquals(new File(pub, "images/logo.png"), env.getPublicFile("images/logo.png"));
+    Assertions.assertEquals(new File(pub, "images/logo.png"), env.getPublicFile("images/logo.png"));
   }
 
   @Test
   public void testGetPrivateFileResolvesRelativePath() throws Exception {
-    File pub  = tmp.newFolder("public");
-    File priv = tmp.newFolder("private");
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "");
-    Assert.assertEquals(new File(priv, "config/services.xml"), env.getPrivateFile("config/services.xml"));
+    Assertions.assertEquals(new File(priv, "config/services.xml"), env.getPrivateFile("config/services.xml"));
   }
 
   @Test
   public void testGetPublicFileAndPrivateFileAreIndependent() throws Exception {
-    File pub  = tmp.newFolder("public");
-    File priv = tmp.newFolder("private");
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "");
-    Assert.assertNotEquals(env.getPublicFile("data.xml"), env.getPrivateFile("data.xml"));
+    Assertions.assertNotEquals(env.getPublicFile("data.xml"), env.getPrivateFile("data.xml"));
   }
 }

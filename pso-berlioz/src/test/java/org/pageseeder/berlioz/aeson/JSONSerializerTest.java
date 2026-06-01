@@ -6,8 +6,8 @@ import java.io.StringWriter;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
 public class JSONSerializerTest {
@@ -41,8 +41,8 @@ public class JSONSerializerTest {
         + "</json:array>"
         + "</test>";
     String json = toJSON(xml);
-    Assert.assertTrue(json.contains("\"items\""));
-    Assert.assertTrue(json.contains("\"title\""));
+    Assertions.assertTrue(json.contains("\"items\""));
+    Assertions.assertTrue(json.contains("\"title\""));
   }
 
   // ---------------------------------------------------------------------------
@@ -54,8 +54,8 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"count\">"
         + "<item count=\"42\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue("count should appear as a number", json.contains("42"));
-    Assert.assertFalse("count should not be a JSON string", json.contains("\"42\""));
+    Assertions.assertTrue(json.contains("42"), "count should appear as a number");
+    Assertions.assertFalse(json.contains("\"42\""), "count should not be a JSON string");
   }
 
   @Test
@@ -63,8 +63,8 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"offset\">"
         + "<item offset=\"-7\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue(json.contains("-7"));
-    Assert.assertFalse("negative long should not be a JSON string", json.contains("\"-7\""));
+    Assertions.assertTrue(json.contains("-7"));
+    Assertions.assertFalse(json.contains("\"-7\""), "negative long should not be a JSON string");
   }
 
   @Test
@@ -72,8 +72,8 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"rate\">"
         + "<item rate=\"3.14\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue(json.contains("3.14"));
-    Assert.assertFalse("decimal should not be a JSON string", json.contains("\"3.14\""));
+    Assertions.assertTrue(json.contains("3.14"));
+    Assertions.assertFalse(json.contains("\"3.14\""), "decimal should not be a JSON string");
   }
 
   // ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"amount\">"
         + "<item amount=\"1e10\"/></root>";
     String json = toJSON(xml);
-    Assert.assertFalse("1e10 must not be serialized as a JSON string", json.contains("\"1e10\""));
+    Assertions.assertFalse(json.contains("\"1e10\""), "1e10 must not be serialized as a JSON string");
   }
 
   @Test
@@ -94,7 +94,7 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"amount\">"
         + "<item amount=\"2E5\"/></root>";
     String json = toJSON(xml);
-    Assert.assertFalse("2E5 must not be serialized as a JSON string", json.contains("\"2E5\""));
+    Assertions.assertFalse(json.contains("\"2E5\""), "2E5 must not be serialized as a JSON string");
   }
 
   @Test
@@ -102,7 +102,7 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"rate\">"
         + "<item rate=\"1.5e3\"/></root>";
     String json = toJSON(xml);
-    Assert.assertFalse("1.5e3 must not be serialized as a JSON string", json.contains("\"1.5e3\""));
+    Assertions.assertFalse(json.contains("\"1.5e3\""), "1.5e3 must not be serialized as a JSON string");
   }
 
   @Test
@@ -110,7 +110,7 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"prob\">"
         + "<item prob=\"5E-3\"/></root>";
     String json = toJSON(xml);
-    Assert.assertFalse("5E-3 must not be serialized as a JSON string", json.contains("\"5E-3\""));
+    Assertions.assertFalse(json.contains("\"5E-3\""), "5E-3 must not be serialized as a JSON string");
   }
 
   // ---------------------------------------------------------------------------
@@ -122,8 +122,7 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:number=\"value\">"
         + "<item value=\"not-a-number\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue("Invalid number should fall back to a JSON string",
-        json.contains("\"not-a-number\""));
+    Assertions.assertTrue(json.contains("\"not-a-number\""), "Invalid number should fall back to a JSON string");
   }
 
   // ---------------------------------------------------------------------------
@@ -135,8 +134,8 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:boolean=\"active\">"
         + "<item active=\"true\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue(json.contains("true"));
-    Assert.assertFalse("true should not be a JSON string", json.contains("\"true\""));
+    Assertions.assertTrue(json.contains("true"));
+    Assertions.assertFalse(json.contains("\"true\""), "true should not be a JSON string");
   }
 
   @Test
@@ -144,8 +143,8 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:boolean=\"active\">"
         + "<item active=\"false\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue(json.contains("false"));
-    Assert.assertFalse("false should not be a JSON string", json.contains("\"false\""));
+    Assertions.assertTrue(json.contains("false"));
+    Assertions.assertFalse(json.contains("\"false\""), "false should not be a JSON string");
   }
 
   @Test
@@ -153,8 +152,7 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:boolean=\"active\">"
         + "<item active=\"yes\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue("Invalid boolean should fall back to a JSON string",
-        json.contains("\"yes\""));
+    Assertions.assertTrue(json.contains("\"yes\""), "Invalid boolean should fall back to a JSON string");
   }
 
   // ---------------------------------------------------------------------------
@@ -166,9 +164,8 @@ public class JSONSerializerTest {
     String xml = "<root xmlns:json=\"" + JSON_NS + "\" json:null=\"missing\">"
         + "<item missing=\"whatever\"/></root>";
     String json = toJSON(xml);
-    Assert.assertTrue("null-typed property should emit JSON null", json.contains("null"));
-    Assert.assertFalse("null-typed property should not keep the attribute value",
-        json.contains("\"whatever\""));
+    Assertions.assertTrue(json.contains("null"), "null-typed property should emit JSON null");
+    Assertions.assertFalse(json.contains("\"whatever\""), "null-typed property should not keep the attribute value");
   }
 
   // ---------------------------------------------------------------------------
@@ -181,8 +178,7 @@ public class JSONSerializerTest {
         + "<json:null json:name=\"missing\"/>"
         + "</root>";
     String json = toJSON(xml);
-    Assert.assertTrue("named null element in object context must emit \"missing\":null",
-        json.contains("\"missing\":null"));
+    Assertions.assertTrue(json.contains("\"missing\":null"), "named null element in object context must emit \"missing\":null");
   }
 
   @Test
@@ -193,8 +189,8 @@ public class JSONSerializerTest {
         + "</json:array>"
         + "</root>";
     String json = toJSON(xml);
-    Assert.assertTrue("null element in array context must emit null value", json.contains("null"));
-    Assert.assertTrue("array must be present", json.contains("\"items\""));
+    Assertions.assertTrue(json.contains("null"), "null element in array context must emit null value");
+    Assertions.assertTrue(json.contains("\"items\""), "array must be present");
   }
 
   @Test
@@ -202,7 +198,7 @@ public class JSONSerializerTest {
     // json:null at root is illegal; the serializer substitutes an empty object
     String xml = "<json:null xmlns:json=\"" + JSON_NS + "\"/>";
     String json = toJSON(xml);
-    Assert.assertEquals("root null must be replaced by empty object", "{}", json);
+    Assertions.assertEquals("{}", json, "root null must be replaced by empty object");
   }
 
   // ---------------------------------------------------------------------------
@@ -217,7 +213,7 @@ public class JSONSerializerTest {
         + "</json:array>"
         + "</root>";
     String json = toJSON(xml);
-    Assert.assertTrue("nested array must be emitted", json.contains("[[]]"));
+    Assertions.assertTrue(json.contains("[[]]"), "nested array must be emitted");
   }
 
   @Test
@@ -228,7 +224,7 @@ public class JSONSerializerTest {
         + "</json:array>"
         + "</root>";
     String json = toJSON(xml);
-    Assert.assertTrue("object in array context must produce [{}]", json.contains("[{}]"));
+    Assertions.assertTrue(json.contains("[{}]"), "object in array context must produce [{}]");
   }
 
   // ---------------------------------------------------------------------------
@@ -243,9 +239,8 @@ public class JSONSerializerTest {
         + "</root>";
     String json = toJSON(xml);
     // The output should be valid JSON with no stray text tokens
-    Assert.assertTrue("Output must start with {", json.startsWith("{"));
-    Assert.assertFalse("Whitespace text must not appear as a string value in output",
-        json.contains("\"\\n\"") || json.contains("\"  \""));
+    Assertions.assertTrue(json.startsWith("{"), "Output must start with {");
+    Assertions.assertFalse(json.contains("\"\\n\"") || json.contains("\"  \""), "Whitespace text must not appear as a string value in output");
   }
 
   // ---------------------------------------------------------------------------
@@ -258,9 +253,9 @@ public class JSONSerializerTest {
         + "<json:object json:name=\"meta\" version=\"2\" label=\"test\"/>"
         + "</root>";
     String json = toJSON(xml);
-    Assert.assertTrue("version attribute must be a property", json.contains("\"version\""));
-    Assert.assertTrue("label attribute must be a property", json.contains("\"label\""));
-    Assert.assertTrue("label value must be serialized", json.contains("\"test\""));
+    Assertions.assertTrue(json.contains("\"version\""), "version attribute must be a property");
+    Assertions.assertTrue(json.contains("\"label\""), "label attribute must be a property");
+    Assertions.assertTrue(json.contains("\"test\""), "label value must be serialized");
   }
 
 }

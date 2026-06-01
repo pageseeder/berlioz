@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Utility classes for tests.
@@ -38,24 +38,24 @@ class TestUtils {
    */
   public static void assertEqualsContract(Object x, Object y, Object z) {
     // reflexive
-    Assert.assertEquals(x, x);
-    Assert.assertEquals(y, y);
-    Assert.assertEquals(z, z);
+    Assertions.assertEquals(x, x);
+    Assertions.assertEquals(y, y);
+    Assertions.assertEquals(z, z);
     // symmetric
-    Assert.assertEquals(x, y);
-    Assert.assertEquals(y, x);
-    Assert.assertNotEquals(x, z);
-    Assert.assertNotEquals(z, x);
+    Assertions.assertEquals(x, y);
+    Assertions.assertEquals(y, x);
+    Assertions.assertNotEquals(x, z);
+    Assertions.assertNotEquals(z, x);
     // consistent hashcode
-    Assert.assertEquals(x.hashCode(), x.hashCode());
-    Assert.assertEquals(y.hashCode(), y.hashCode());
-    Assert.assertNotEquals(x.hashCode(), z.hashCode());
-    Assert.assertNotEquals(y.hashCode(), z.hashCode());
+    Assertions.assertEquals(x.hashCode(), x.hashCode());
+    Assertions.assertEquals(y.hashCode(), y.hashCode());
+    Assertions.assertNotEquals(x.hashCode(), z.hashCode());
+    Assertions.assertNotEquals(y.hashCode(), z.hashCode());
     // null is false
-    Assert.assertNotEquals(null, x);
-    Assert.assertNotEquals(null, z);
+    Assertions.assertNotEquals(null, x);
+    Assertions.assertNotEquals(null, z);
     // different object is false
-    Assert.assertNotEquals(false, x);
+    Assertions.assertNotEquals(false, x);
   }
 
 }

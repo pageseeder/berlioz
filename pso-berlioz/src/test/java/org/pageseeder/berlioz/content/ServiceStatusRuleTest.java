@@ -15,8 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 
@@ -24,9 +24,9 @@ public class ServiceStatusRuleTest {
 
   // --- validate ---
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testValidate_empty() {
-    ServiceStatusRule.validate("");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> ServiceStatusRule.validate(""));
   }
 
   @Test
@@ -42,14 +42,14 @@ public class ServiceStatusRuleTest {
     ServiceStatusRule.validate("a:bc-d_1.23");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testValidate_invalid() {
-    ServiceStatusRule.validate("&");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> ServiceStatusRule.validate("&"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testValidate_space() {
-    ServiceStatusRule.validate("a b");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> ServiceStatusRule.validate("a b"));
   }
 
   // --- newInstance ---
@@ -57,56 +57,56 @@ public class ServiceStatusRuleTest {
   @Test
   public void testNewInstance_wildcardName() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:*", null);
-    Assert.assertEquals(SelectType.NAME, rule.use());
-    Assert.assertTrue(rule.items().isEmpty());
-    Assert.assertEquals(CodeRule.HIGHEST, rule.rule());
+    Assertions.assertEquals(SelectType.NAME, rule.use());
+    Assertions.assertTrue(rule.items().isEmpty());
+    Assertions.assertEquals(CodeRule.HIGHEST, rule.rule());
   }
 
   @Test
   public void testNewInstance_wildcardTarget() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("target:*", null);
-    Assert.assertEquals(SelectType.TARGET, rule.use());
-    Assert.assertTrue(rule.items().isEmpty());
+    Assertions.assertEquals(SelectType.TARGET, rule.use());
+    Assertions.assertTrue(rule.items().isEmpty());
   }
 
   @Test
   public void testNewInstance_namedGenerators() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:gen1,gen2", null);
-    Assert.assertEquals(SelectType.NAME, rule.use());
-    Assert.assertEquals(2, rule.items().size());
-    Assert.assertTrue(rule.items().contains("gen1"));
-    Assert.assertTrue(rule.items().contains("gen2"));
+    Assertions.assertEquals(SelectType.NAME, rule.use());
+    Assertions.assertEquals(2, rule.items().size());
+    Assertions.assertTrue(rule.items().contains("gen1"));
+    Assertions.assertTrue(rule.items().contains("gen2"));
   }
 
   @Test
   public void testNewInstance_targetGenerators() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("target:main", null);
-    Assert.assertEquals(SelectType.TARGET, rule.use());
-    Assert.assertEquals(1, rule.items().size());
-    Assert.assertEquals("main", rule.items().get(0));
+    Assertions.assertEquals(SelectType.TARGET, rule.use());
+    Assertions.assertEquals(1, rule.items().size());
+    Assertions.assertEquals(rule.items().get(0), "main");
   }
 
   @Test
   public void testNewInstance_codeRuleFirst() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:*", "FIRST");
-    Assert.assertEquals(CodeRule.FIRST, rule.rule());
+    Assertions.assertEquals(CodeRule.FIRST, rule.rule());
   }
 
   @Test
   public void testNewInstance_codeRuleLowest() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:*", "LOWEST");
-    Assert.assertEquals(CodeRule.LOWEST, rule.rule());
+    Assertions.assertEquals(CodeRule.LOWEST, rule.rule());
   }
 
   @Test
   public void testNewInstance_codeRuleCaseInsensitive() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:*", "highest");
-    Assert.assertEquals(CodeRule.HIGHEST, rule.rule());
+    Assertions.assertEquals(CodeRule.HIGHEST, rule.rule());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNewInstance_invalidItem() {
-    ServiceStatusRule.newInstance("name:bad item", null);
+    Assertions.assertThrows(IllegalArgumentException.class, () -> ServiceStatusRule.newInstance("name:bad item", null));
   }
 
   // --- appliesTo / appliesToAll ---
@@ -114,34 +114,34 @@ public class ServiceStatusRuleTest {
   @Test
   public void testAppliesToAll_emptyItems() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:*", null);
-    Assert.assertTrue(rule.appliesToAll());
-    Assert.assertTrue(rule.appliesTo("anything"));
-    Assert.assertTrue(rule.appliesTo(null));
+    Assertions.assertTrue(rule.appliesToAll());
+    Assertions.assertTrue(rule.appliesTo("anything"));
+    Assertions.assertTrue(rule.appliesTo(null));
   }
 
   @Test
   public void testAppliesToAll_specificItems() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:gen1", null);
-    Assert.assertFalse(rule.appliesToAll());
+    Assertions.assertFalse(rule.appliesToAll());
   }
 
   @Test
   public void testAppliesTo_match() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:gen1,gen2", null);
-    Assert.assertTrue(rule.appliesTo("gen1"));
-    Assert.assertTrue(rule.appliesTo("gen2"));
+    Assertions.assertTrue(rule.appliesTo("gen1"));
+    Assertions.assertTrue(rule.appliesTo("gen2"));
   }
 
   @Test
   public void testAppliesTo_noMatch() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:gen1", null);
-    Assert.assertFalse(rule.appliesTo("gen2"));
+    Assertions.assertFalse(rule.appliesTo("gen2"));
   }
 
   @Test
   public void testAppliesTo_null() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:gen1", null);
-    Assert.assertFalse(rule.appliesTo(null));
+    Assertions.assertFalse(rule.appliesTo(null));
   }
 
   // --- DEFAULT_RULE ---
@@ -149,10 +149,10 @@ public class ServiceStatusRuleTest {
   @Test
   public void testDefaultRule() {
     ServiceStatusRule rule = ServiceStatusRule.DEFAULT_RULE;
-    Assert.assertEquals(SelectType.NAME, rule.use());
-    Assert.assertTrue(rule.items().isEmpty());
-    Assert.assertEquals(CodeRule.HIGHEST, rule.rule());
-    Assert.assertTrue(rule.appliesToAll());
+    Assertions.assertEquals(SelectType.NAME, rule.use());
+    Assertions.assertTrue(rule.items().isEmpty());
+    Assertions.assertEquals(CodeRule.HIGHEST, rule.rule());
+    Assertions.assertTrue(rule.appliesToAll());
   }
 
   // --- toString ---
@@ -161,7 +161,7 @@ public class ServiceStatusRuleTest {
   public void testToString_wildcard() {
     ServiceStatusRule rule = ServiceStatusRule.newInstance("name:*", "HIGHEST");
     String s = rule.toString();
-    Assert.assertNotNull(s);
-    Assert.assertFalse(s.isEmpty());
+    Assertions.assertNotNull(s);
+    Assertions.assertFalse(s.isEmpty());
   }
 }

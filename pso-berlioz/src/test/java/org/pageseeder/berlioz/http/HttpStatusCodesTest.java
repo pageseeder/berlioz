@@ -1,37 +1,37 @@
 package org.pageseeder.berlioz.http;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class HttpStatusCodesTest {
 
   @Test
   public void testGetTitle_KnownCodes() {
-    Assert.assertEquals("OK", HttpStatusCodes.getTitle(200));
-    Assert.assertEquals("Moved Permanently", HttpStatusCodes.getTitle(301));
-    Assert.assertEquals("Not Found", HttpStatusCodes.getTitle(404));
-    Assert.assertEquals("Internal Server Error", HttpStatusCodes.getTitle(500));
+    Assertions.assertEquals(HttpStatusCodes.getTitle(200), "OK");
+    Assertions.assertEquals(HttpStatusCodes.getTitle(301), "Moved Permanently");
+    Assertions.assertEquals(HttpStatusCodes.getTitle(404), "Not Found");
+    Assertions.assertEquals(HttpStatusCodes.getTitle(500), "Internal Server Error");
   }
 
   @Test
   public void testGetTitle_UnknownCode() {
-    Assert.assertNull(HttpStatusCodes.getTitle(199));
-    Assert.assertNull(HttpStatusCodes.getTitle(599));
+    Assertions.assertNull(HttpStatusCodes.getTitle(199));
+    Assertions.assertNull(HttpStatusCodes.getTitle(599));
   }
 
   @Test
   public void testGetClassOfStatus() {
-    Assert.assertEquals("Informational", HttpStatusCodes.getClassOfStatus(100));
-    Assert.assertEquals("Successful", HttpStatusCodes.getClassOfStatus(204));
-    Assert.assertEquals("Redirection", HttpStatusCodes.getClassOfStatus(304));
-    Assert.assertEquals("Client Error", HttpStatusCodes.getClassOfStatus(404));
-    Assert.assertEquals("Server Error", HttpStatusCodes.getClassOfStatus(503));
+    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(100), "Informational");
+    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(204), "Successful");
+    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(304), "Redirection");
+    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(404), "Client Error");
+    Assertions.assertEquals(HttpStatusCodes.getClassOfStatus(503), "Server Error");
   }
 
   @Test
   public void testGetClassOfStatus_OutOfRange() {
-    Assert.assertNull(HttpStatusCodes.getClassOfStatus(99));
-    Assert.assertNull(HttpStatusCodes.getClassOfStatus(600));
+    Assertions.assertNull(HttpStatusCodes.getClassOfStatus(99));
+    Assertions.assertNull(HttpStatusCodes.getClassOfStatus(600));
   }
 
 }

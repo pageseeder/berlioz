@@ -1,7 +1,7 @@
 package org.pageseeder.berlioz.config;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,8 +14,8 @@ public final class GlobalConfigTest {
   @Test
   public void testConstructor() {
     GlobalConfig config = new GlobalConfig();
-    Assert.assertNotNull(config.properties());
-    Assert.assertTrue(config.properties().isEmpty());
+    Assertions.assertNotNull(config.properties());
+    Assertions.assertTrue(config.properties().isEmpty());
   }
 
   @Test
@@ -23,19 +23,22 @@ public final class GlobalConfigTest {
     GlobalConfig config = new GlobalConfig();
     String xml = "<global/>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
-    Assert.assertNotNull(config.properties());
-    Assert.assertTrue(config.properties().isEmpty());
+    Assertions.assertNotNull(config.properties());
+    Assertions.assertTrue(config.properties().isEmpty());
   }
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testLoad_XXE() throws ConfigException {
+    Assertions.assertThrows(ConfigException.class, () -> {
     GlobalConfig config = new GlobalConfig();
     String xml = "<!DOCTYPE global [<!ELEMENT global ANY > <!ENTITY x SYSTEM \"./x.xml\" >]><global>&x;<global/>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
+    });
   }
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testLoad_XMLBomb() throws ConfigException {
+    Assertions.assertThrows(ConfigException.class, () -> {
     GlobalConfig config = new GlobalConfig();
     String xml = "<!DOCTYPE global [\n" +
         "  <!ELEMENT global ANY >\n" +
@@ -51,6 +54,7 @@ public final class GlobalConfigTest {
         "  <!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">\n" +
         "]><global>&lol9;</global>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
+    });
   }
 
   @Test
@@ -59,10 +63,10 @@ public final class GlobalConfigTest {
     String xml = "<global greeting='hello' empty=''/>";
     config.load(new ByteArrayInputStream(xml.getBytes()));
     Map<String, String> properties = config.properties();
-    Assert.assertEquals(2, properties.size());
-    Assert.assertEquals("hello", properties.get("greeting"));
-    Assert.assertEquals("", properties.get("empty"));
-    Assert.assertNull(properties.get("undefined"));
+    Assertions.assertEquals(2, properties.size());
+    Assertions.assertEquals(properties.get("greeting"), "hello");
+    Assertions.assertEquals(properties.get("empty"), "");
+    Assertions.assertNull(properties.get("undefined"));
   }
 
   @Test
@@ -72,17 +76,17 @@ public final class GlobalConfigTest {
     config.load(new ByteArrayInputStream(xml.getBytes()));
     Map<String, String> properties = config.properties();
     // Element do not generate properties
-    Assert.assertNull(properties.get("a"));
-    Assert.assertNull(properties.get("a.b"));
-    Assert.assertNull(properties.get("a.b.c"));
-    Assert.assertNull(properties.get("a.b.d"));
+    Assertions.assertNull(properties.get("a"));
+    Assertions.assertNull(properties.get("a.b"));
+    Assertions.assertNull(properties.get("a.b.c"));
+    Assertions.assertNull(properties.get("a.b.d"));
     // Attributes do
-    Assert.assertEquals(5, properties.size());
-    Assert.assertEquals("1", properties.get("a.x"));
-    Assert.assertEquals("2", properties.get("a.b.y"));
-    Assert.assertEquals("3", properties.get("a.b.c.z"));
-    Assert.assertEquals("4", properties.get("a.b.d.z"));
-    Assert.assertEquals("5", properties.get("a.b.d.q"));
+    Assertions.assertEquals(5, properties.size());
+    Assertions.assertEquals(properties.get("a.x"), "1");
+    Assertions.assertEquals(properties.get("a.b.y"), "2");
+    Assertions.assertEquals(properties.get("a.b.c.z"), "3");
+    Assertions.assertEquals(properties.get("a.b.d.z"), "4");
+    Assertions.assertEquals(properties.get("a.b.d.q"), "5");
   }
 
   @Test
@@ -92,13 +96,13 @@ public final class GlobalConfigTest {
     config.load(new ByteArrayInputStream(xml.getBytes()));
     Map<String, String> properties = config.properties();
     // Attributes do
-    Assert.assertEquals(6, properties.size());
-    Assert.assertEquals("0", properties.get("a"));
-    Assert.assertEquals("1", properties.get("a.x"));
-    Assert.assertEquals("2", properties.get("a.x.y"));
-    Assert.assertEquals("3", properties.get("a.x.z"));
-    Assert.assertEquals("4", properties.get("a.x.q"));
-    Assert.assertEquals("5", properties.get("a.x.w"));
+    Assertions.assertEquals(6, properties.size());
+    Assertions.assertEquals(properties.get("a"), "0");
+    Assertions.assertEquals(properties.get("a.x"), "1");
+    Assertions.assertEquals(properties.get("a.x.y"), "2");
+    Assertions.assertEquals(properties.get("a.x.z"), "3");
+    Assertions.assertEquals(properties.get("a.x.q"), "4");
+    Assertions.assertEquals(properties.get("a.x.w"), "5");
   }
 
   @Test
@@ -108,9 +112,9 @@ public final class GlobalConfigTest {
     config.load(new ByteArrayInputStream(xml.getBytes()));
     Map<String, String> properties = config.properties();
     // Attributes do
-    Assert.assertEquals(2, properties.size());
-    Assert.assertEquals("1", properties.get("a.x"));
-    Assert.assertEquals("2", properties.get("a.x.y"));
+    Assertions.assertEquals(2, properties.size());
+    Assertions.assertEquals(properties.get("a.x"), "1");
+    Assertions.assertEquals(properties.get("a.x.y"), "2");
   }
 
   @Test
@@ -122,18 +126,20 @@ public final class GlobalConfigTest {
     config.load(new ByteArrayInputStream(override.getBytes()));
     Map<String, String> properties = config.properties();
     // Attributes do
-    Assert.assertEquals(4, properties.size());
-    Assert.assertEquals("1", properties.get("a"));
-    Assert.assertEquals("2", properties.get("a.x"));
-    Assert.assertEquals("3", properties.get("a.y"));
-    Assert.assertEquals("4", properties.get("a.z"));
+    Assertions.assertEquals(4, properties.size());
+    Assertions.assertEquals(properties.get("a"), "1");
+    Assertions.assertEquals(properties.get("a.x"), "2");
+    Assertions.assertEquals(properties.get("a.y"), "3");
+    Assertions.assertEquals(properties.get("a.z"), "4");
   }
 
-  @Test(expected = ConfigException.class)
+  @Test
   public void testLoad_Invalid() throws ConfigException {
+    Assertions.assertThrows(ConfigException.class, () -> {
     GlobalConfig config = new GlobalConfig();
     String invalid = "<global>";
     config.load(new ByteArrayInputStream(invalid.getBytes()));
+    });
   }
 
   @Test
@@ -143,8 +149,8 @@ public final class GlobalConfigTest {
     byte[] xml = out.toByteArray();
     GlobalConfig config = new GlobalConfig();
     config.load(new ByteArrayInputStream(xml));
-    Assert.assertNotNull(config.properties());
-    Assert.assertTrue(config.properties().isEmpty());
+    Assertions.assertNotNull(config.properties());
+    Assertions.assertTrue(config.properties().isEmpty());
   }
 
   @Test
@@ -159,9 +165,9 @@ public final class GlobalConfigTest {
     // Load
     GlobalConfig config = new GlobalConfig();
     config.load(new ByteArrayInputStream(xml));
-    Assert.assertNotNull(config.properties());
-    Assert.assertEquals(properties.size(), config.properties().size());
-    Assert.assertEquals(properties, config.properties());
+    Assertions.assertNotNull(config.properties());
+    Assertions.assertEquals(properties.size(), config.properties().size());
+    Assertions.assertEquals(properties, config.properties());
   }
 
 
@@ -184,9 +190,9 @@ public final class GlobalConfigTest {
     // Load
     GlobalConfig config = new GlobalConfig();
     config.load(new ByteArrayInputStream(xml));
-    Assert.assertNotNull(config.properties());
-    Assert.assertEquals(properties.size(), config.properties().size());
-    Assert.assertEquals(properties, config.properties());
+    Assertions.assertNotNull(config.properties());
+    Assertions.assertEquals(properties.size(), config.properties().size());
+    Assertions.assertEquals(properties, config.properties());
   }
 
   @Test
@@ -209,7 +215,7 @@ public final class GlobalConfigTest {
     // Load
     GlobalConfig config = new GlobalConfig();
     config.load(new ByteArrayInputStream(xml));
-    Assert.assertNotNull(config.properties());
-    Assert.assertEquals(0, config.properties().size());
+    Assertions.assertNotNull(config.properties());
+    Assertions.assertEquals(0, config.properties().size());
   }
 }

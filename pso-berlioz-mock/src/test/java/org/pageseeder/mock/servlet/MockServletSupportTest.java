@@ -1,7 +1,7 @@
 package org.pageseeder.mock.servlet;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
@@ -12,8 +12,8 @@ public class MockServletSupportTest {
     MockServletConfig config = new MockServletConfig();
     config.setInitParameter("config", "WEB-INF/config.xml");
 
-    Assert.assertEquals("WEB-INF/config.xml", config.getInitParameter("config"));
-    Assert.assertEquals("config", Collections.list(config.getInitParameterNames()).get(0));
+    Assertions.assertEquals(config.getInitParameter("config"), "WEB-INF/config.xml");
+    Assertions.assertEquals(Collections.list(config.getInitParameterNames()).get(0), "config");
   }
 
   @Test
@@ -22,8 +22,8 @@ public class MockServletSupportTest {
 
     stream.write('A');
 
-    Assert.assertTrue(stream.isReady());
-    Assert.assertArrayEquals(new byte[]{'A'}, stream.toByteArray());
+    Assertions.assertTrue(stream.isReady());
+    Assertions.assertArrayEquals(new byte[]{'A'}, stream.toByteArray());
   }
 
   @Test
@@ -35,9 +35,9 @@ public class MockServletSupportTest {
 
     try {
       session.getAttribute("name");
-      Assert.fail("Invalidated session should reject access");
+      Assertions.fail("Invalidated session should reject access");
     } catch (IllegalStateException ex) {
-      Assert.assertEquals("HttpSession is no longer valid", ex.getMessage());
+      Assertions.assertEquals(ex.getMessage(), "HttpSession is no longer valid");
     }
   }
 }

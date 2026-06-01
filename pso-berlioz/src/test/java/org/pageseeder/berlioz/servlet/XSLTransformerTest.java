@@ -1,25 +1,25 @@
 package org.pageseeder.berlioz.servlet;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 public class XSLTransformerTest {
 
-  @Rule
-  public TemporaryFolder temporary = new TemporaryFolder();
+  @TempDir
+  Path temporary;
 
   @Test
   public void testTransformFailSafeDoesNotResolveExternalEntity() throws Exception {
-    File secret = this.temporary.newFile("secret.txt");
+    File secret = Files.createFile(this.temporary.resolve("secret.txt")).toFile();
     Files.write(secret.toPath(), "LEAKED".getBytes(StandardCharsets.UTF_8));
 
-    File stylesheet = this.temporary.newFile("copy.xsl");
+    File stylesheet = Files.createFile(this.temporary.resolve("copy.xsl")).toFile();
     Files.write(stylesheet.toPath(), (
         "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
       + "<xsl:output method=\"xml\" omit-xml-declaration=\"yes\"/>"
@@ -29,19 +29,19 @@ public class XSLTransformerTest {
     String xml = "<!DOCTYPE root [<!ENTITY xxe SYSTEM \""+secret.toURI()+"\">]><root>&xxe;</root>";
     String result = XSLTransformer.transformFailSafe(xml, stylesheet.toURI().toURL());
 
-    Assert.assertTrue(result, result.contains("<out"));
-    Assert.assertFalse(result, result.contains("LEAKED"));
+    Assertions.assertTrue(result.contains("<out"), result);
+    Assertions.assertFalse(result.contains("LEAKED"), result);
   }
 
   @Test
   public void testTransformFailSafeAllowsLocalStylesheetIncludes() throws Exception {
-    File included = this.temporary.newFile("included.xsl");
+    File included = Files.createFile(this.temporary.resolve("included.xsl")).toFile();
     Files.write(included.toPath(), (
         "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
       + "<xsl:template name=\"included\"><included>ok</included></xsl:template>"
       + "</xsl:stylesheet>").getBytes(StandardCharsets.UTF_8));
 
-    File stylesheet = this.temporary.newFile("main.xsl");
+    File stylesheet = Files.createFile(this.temporary.resolve("main.xsl")).toFile();
     Files.write(stylesheet.toPath(), (
         "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
       + "<xsl:include href=\"included.xsl\"/>"
@@ -51,6 +51,6 @@ public class XSLTransformerTest {
 
     String result = XSLTransformer.transformFailSafe("<root/>", stylesheet.toURI().toURL());
 
-    Assert.assertEquals("<out><included>ok</included></out>", result);
+    Assertions.assertEquals(result, "<out><included>ok</included></out>");
   }
 }

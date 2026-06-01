@@ -19,59 +19,59 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public final class ParameterTest {
 
   @Test
   public void testName() {
     Parameter p = new Parameter("myParam", "value");
-    Assert.assertEquals("myParam", p.name());
+    Assertions.assertEquals(p.name(), "myParam");
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testName_null() {
-    new Parameter(null, "value");
+    Assertions.assertThrows(NullPointerException.class, () -> new Parameter(null, "value"));
   }
 
   @Test
   public void testValue_literal() {
     Parameter p = new Parameter("x", "hello");
-    Assert.assertEquals("hello", p.value());
+    Assertions.assertEquals(p.value(), "hello");
   }
 
   @Test
   public void testValue_template() {
     Parameter p = new Parameter("x", "{var}");
-    Assert.assertEquals("{var}", p.value());
+    Assertions.assertEquals(p.value(), "{var}");
   }
 
   @Test
   public void testValueWithMap_literal() {
     Parameter p = new Parameter("x", "hello");
     Map<String, String> map = Collections.singletonMap("x", "ignored");
-    Assert.assertEquals("hello", p.value(map));
+    Assertions.assertEquals(p.value(map), "hello");
   }
 
   @Test
   public void testValueWithMap_variableResolved() {
     Parameter p = new Parameter("x", "{var}");
     Map<String, String> map = Collections.singletonMap("var", "world");
-    Assert.assertEquals("world", p.value(map));
+    Assertions.assertEquals(p.value(map), "world");
   }
 
   @Test
   public void testValueWithMap_variableMissing() {
     Parameter p = new Parameter("x", "{var}");
-    Assert.assertEquals("", p.value(Collections.emptyMap()));
+    Assertions.assertEquals(p.value(Collections.emptyMap()), "");
   }
 
   @Test
   public void testValueWithMap_variableWithDefault() {
     Parameter p = new Parameter("x", "{var=fallback}");
-    Assert.assertEquals("fallback", p.value(Collections.emptyMap()));
-    Assert.assertEquals("actual", p.value(Collections.singletonMap("var", "actual")));
+    Assertions.assertEquals(p.value(Collections.emptyMap()), "fallback");
+    Assertions.assertEquals(p.value(Collections.singletonMap("var", "actual")), "actual");
   }
 
   @Test
@@ -80,6 +80,6 @@ public final class ParameterTest {
     Map<String, String> map = new HashMap<>();
     map.put("a", "hello");
     map.put("b", "world");
-    Assert.assertEquals("hello-world", p.value(map));
+    Assertions.assertEquals(p.value(map), "hello-world");
   }
 }
