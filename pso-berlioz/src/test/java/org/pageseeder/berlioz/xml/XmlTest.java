@@ -2,7 +2,6 @@ package org.pageseeder.berlioz.xml;
 
 import org.junit.jupiter.api.Test;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import java.io.StringWriter;
 
@@ -41,7 +40,7 @@ class XmlTest {
   }
 
   @Test
-  void testNewSafeParser_secureProcessing() throws Exception {
+  void testNewSafeParser_secureProcessing() {
     // should not throw even with security features enabled
     assertDoesNotThrow(() -> Xml.newSafeParser(false));
   }
