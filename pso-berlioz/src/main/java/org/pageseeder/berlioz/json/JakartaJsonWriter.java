@@ -227,7 +227,7 @@ final class JakartaJsonWriter implements JsonWriter {
    *
    * @return The JSON writer to use.
    */
-  protected static synchronized boolean init() {
+  static synchronized boolean init() {
     try {
       factory();
       return true;

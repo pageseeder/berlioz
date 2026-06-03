@@ -228,7 +228,7 @@ final class J2eeJsonWriter implements JsonWriter {
    *
    * @return The JSON writer to use.
    */
-  protected static synchronized boolean init() {
+  static synchronized boolean init() {
     try {
       factory();
       return true;
