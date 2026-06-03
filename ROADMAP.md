@@ -11,7 +11,7 @@ we want to keep, and the integration points that may make Berlioz easier to use 
 
 - Keep Berlioz simple, explicit, and easy to reason about.
 - Keep the core annotation-free. Annotation-based programming can be useful, but it should live in optional modules.
-- Preserve URI templates as the primary request matching model.
+- Preserve URI templates as the primary request-matching model.
 - Preserve XML and XSLT as first-class mechanisms for generating XML and HTML responses.
 - Make JSON and other output formats easier to support without weakening the XML/XSLT pipeline.
 - Prefer small extension points over large framework dependencies.
@@ -30,7 +30,7 @@ Areas to explore:
 - A generator interface based on an `OutputWriter` or similar abstraction.
 - Backward-compatible support for existing `ContentGenerator` implementations.
 - Request format detection from URI extensions such as `.html`, `.xml`, `.json`, and `.src`.
-- Rules for when output should be transformed by XSLT and when it should be written directly.
+- Rules for when XSLT should transform output and when it should be written directly.
 - A simple model for services that support only specific output formats.
 
 Possible shape:
@@ -185,7 +185,7 @@ Natural optional integrations:
 
 ### 7. Optional Integration Modules
 
-Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
+Keep Berlioz core small but provide integration points for applications that already use other Java frameworks.
 
 Possible modules:
 
