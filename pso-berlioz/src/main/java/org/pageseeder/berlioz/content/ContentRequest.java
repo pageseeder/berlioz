@@ -76,6 +76,7 @@ public interface ContentRequest extends RequestContext {
    * Implementations should override this directly.
    */
   @Override
+  @SuppressWarnings({"deprecation", "java:S1874"})
   default Collection<String> parameterNames() {
     return Collections.list(getParameterNames());
   }
@@ -87,6 +88,7 @@ public interface ContentRequest extends RequestContext {
    * Implementations should override this directly.
    */
   @Override
+  @SuppressWarnings({"deprecation", "java:S1874"})
   default List<String> parameterValues(String name) {
     String[] values = getParameterValues(name);
     return values != null ? Arrays.asList(values) : Collections.emptyList();
@@ -99,6 +101,7 @@ public interface ContentRequest extends RequestContext {
    * Implementations should override this directly.
    */
   @Override
+  @SuppressWarnings({"deprecation", "java:S1874"})
   default List<Cookie> cookies() {
     Cookie[] arr = getCookies();
     return arr != null ? Arrays.asList(arr) : List.of();
