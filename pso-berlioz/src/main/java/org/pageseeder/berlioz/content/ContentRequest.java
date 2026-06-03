@@ -91,7 +91,7 @@ public interface ContentRequest extends RequestContext {
   @SuppressWarnings({"deprecation", "java:S1874"})
   default List<String> parameterValues(String name) {
     String[] values = getParameterValues(name);
-    return values != null ? Arrays.asList(values) : Collections.emptyList();
+    return values != null ? Arrays.asList(values) : List.of();
   }
 
   /**
