@@ -101,7 +101,7 @@ public final class InvalidParameterException extends RuntimeException {
    * @return the exception
    */
   public static InvalidParameterException required(String name) {
-    return new InvalidParameterException("Parameter '" + name + "' is required", name, null, Reason.REQUIRED);
+    return new InvalidParameterException(param(name) + " is required", name, null, Reason.REQUIRED);
   }
 
   /**
@@ -114,7 +114,7 @@ public final class InvalidParameterException extends RuntimeException {
    */
   public static InvalidParameterException invalidFormat(String name, String value, String targetType) {
     return new InvalidParameterException(
-        "Parameter '" + name + "' value '" + value + "' is not a valid " + targetType,
+        paramValue(name, value) + " is not a valid " + targetType,
         name, value, Reason.INVALID_FORMAT);
   }
 
@@ -128,7 +128,7 @@ public final class InvalidParameterException extends RuntimeException {
    */
   public static InvalidParameterException outOfRange(String name, String value, String detail) {
     return new InvalidParameterException(
-        "Parameter '" + name + "' value '" + value + "': " + detail,
+        paramValue(name, value) + ": " + detail,
         name, value, Reason.OUT_OF_RANGE);
   }
 
@@ -142,7 +142,7 @@ public final class InvalidParameterException extends RuntimeException {
    */
   public static InvalidParameterException notAllowed(String name, String value, String... allowed) {
     return new InvalidParameterException(
-        "Parameter '" + name + "' value '" + value + "' must be one of: " + String.join(", ", allowed),
+        paramValue(name, value) + " must be one of: " + String.join(", ", allowed),
         name, value, Reason.NOT_ALLOWED);
   }
 
@@ -156,8 +156,18 @@ public final class InvalidParameterException extends RuntimeException {
    */
   public static InvalidParameterException constraintFailed(String name, String value, String description) {
     return new InvalidParameterException(
-        "Parameter '" + name + "' value '" + value + "': " + description,
+        paramValue(name, value) + ": " + description,
         name, value, Reason.NOT_ALLOWED);
+  }
+
+  // --- Helpers ---------------------------------------------------------------
+
+  private static String param(String name) {
+    return "Parameter '" + name + "'";
+  }
+
+  private static String paramValue(String name, String value) {
+    return param(name) + " value '" + value + "'";
   }
 
 }
