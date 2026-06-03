@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.13.1
  * @since 0.9.32
  */
 @Beta
@@ -250,12 +250,7 @@ public final class ListLibraries implements ContentGenerator {
 
   private static Map<String, Map<String, String>> cache(ServletContext context) {
     synchronized (MANIFESTS) {
-      Map<String, Map<String, String>> cache = MANIFESTS.get(context);
-      if (cache == null) {
-        cache = createLRUMap(MAX_CACHED_MANIFESTS);
-        MANIFESTS.put(context, cache);
-      }
-      return cache;
+      return MANIFESTS.computeIfAbsent(context, k -> createLRUMap(MAX_CACHED_MANIFESTS));
     }
   }
 
