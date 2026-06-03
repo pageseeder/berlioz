@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pageseeder.berlioz;
+package org.pageseeder.berlioz.xslt;
+
+import org.pageseeder.berlioz.BerliozOption;
 
 import java.util.Locale;
 
@@ -27,7 +29,7 @@ import java.util.Locale;
  * @version 0.13.1
  * @since 0.13.1
  */
-public enum XSLTCacheMode {
+public enum XsltCacheMode {
 
   /**
    * Disable XSLT caching; templates are always recompiled from source.
@@ -56,7 +58,7 @@ public enum XSLTCacheMode {
    * @param value the configured property value
    * @return the corresponding cache mode, never {@code null}
    */
-  public static XSLTCacheMode from(String value) {
+  public static XsltCacheMode from(String value) {
     String v = value.toLowerCase(Locale.ROOT);
     if ("no".equals(v) || "false".equals(v)) return NO;
     if ("auto".equals(v)) return AUTO;

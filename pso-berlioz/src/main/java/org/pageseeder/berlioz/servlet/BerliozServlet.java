@@ -40,7 +40,7 @@ import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.http.*;
-import org.pageseeder.berlioz.servlet.XSLTransformResult.Status;
+import org.pageseeder.berlioz.servlet.XsltTransformResult.Status;
 import org.pageseeder.berlioz.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -323,7 +323,7 @@ public final class BerliozServlet extends HttpServlet {
     Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
 
     // Identify the transformer
-    XSLTransformer transformer = config.getTransformer(match.service());
+    XsltTransformer transformer = config.getTransformer(match.service());
     long start = System.nanoTime();
 
     // Indicate that the representation may vary depending on the encoding
@@ -441,7 +441,7 @@ public final class BerliozServlet extends HttpServlet {
     boolean reload = isTrue(req.getParameter("berlioz-reload"));
 
     // Clear the XSLT cache if requested
-    if (reload || isTrue(req.getParameter("clear-xsl-cache"))) { XSLTransformer.clearAllCache(); }
+    if (reload || isTrue(req.getParameter("clear-xsl-cache"))) { XsltTransformer.clearAllCache(); }
 
     // Allow ETags to be reset so clients must revalidate
     if (reload || isTrue(req.getParameter("reset-etags"))) { config.resetETagSeed(); }
@@ -470,10 +470,10 @@ public final class BerliozServlet extends HttpServlet {
    * @return The transformed (or raw XML) output.
    */
   private BerliozOutput executeTransform(String content, HttpServletRequest req, XMLResponse xml,
-      @Nullable XSLTransformer transformer, HttpServletResponse res, boolean profile, boolean serverTiming) {
+                                         @Nullable XsltTransformer transformer, HttpServletResponse res, boolean profile, boolean serverTiming) {
     if (transformer == null) return new XMLContent(content);
 
-    XSLTransformResult xslresult = transformer.transform(content, req, xml.getService());
+    XsltTransformResult xslresult = transformer.transform(content, req, xml.getService());
     if (profile && LOGGER.isInfoEnabled()) {
       LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(xslresult.time()));
     }

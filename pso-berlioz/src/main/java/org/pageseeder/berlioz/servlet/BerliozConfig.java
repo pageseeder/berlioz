@@ -137,7 +137,7 @@ public final class BerliozConfig {
    *
    * <p>The key depends on how the transformers are allocated.
    */
-  private final Map<String, XSLTransformer> transformers;
+  private final Map<String, XsltTransformer> transformers;
 
   /**
    * A seed to use for the calculation of etags (allows them to be reset)
@@ -289,7 +289,7 @@ public final class BerliozConfig {
    * @param service the service that requires a transformer.
    * @return the corresponding XSLT transformer.
    */
-  public @Nullable XSLTransformer getTransformer(Service service) {
+  public @Nullable XsltTransformer getTransformer(Service service) {
     switch (this.allocation) {
       case NIL:     return null;
       case GLOBAL:  return getTransformer(service, "global");
@@ -426,7 +426,7 @@ public final class BerliozConfig {
    * @param key the key to use to store the transformer.
    * @return the corresponding XSLT transformer.
    */
-  private XSLTransformer getTransformer(Service service, String key) {
+  private XsltTransformer getTransformer(Service service, String key) {
     return this.transformers.computeIfAbsent(key, k -> newTransformer(service));
   }
 
@@ -441,7 +441,7 @@ public final class BerliozConfig {
    *
    * @throws NullPointerException if the service is <code>null</code>.
    */
-  private XSLTransformer newTransformer(Service service) {
+  private XsltTransformer newTransformer(Service service) {
     String path = this.stylePath
         .replace("{GROUP}", service.group())
         .replace("{SERVICE}", service.id());
@@ -455,7 +455,7 @@ public final class BerliozConfig {
     } catch (IOException ex) {
       LOGGER.warn("Unable to verify stylesheet path for service '{}': {}", service.id(), ex.getMessage());
     }
-    return new XSLTransformer(styleSheet, toURL(this.fallbackStyleSheet));
+    return new XsltTransformer(styleSheet, toURL(this.fallbackStyleSheet));
   }
 
   /**

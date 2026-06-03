@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz;
 
+import org.pageseeder.berlioz.xslt.XsltCacheMode;
+
 /**
  * An enumerated list of the Berlioz options globally available.
  *
@@ -277,7 +279,7 @@ public enum BerliozOption {
    *   <tbody><tr><td><code>auto</code></td><td><code>manual</code></td></tr></tbody>
    * </table>
    *
-   * @see XSLTCacheMode
+   * @see XsltCacheMode
    * @since 0.8.3
    */
   XSLT_CACHE("berlioz.xslt.cache", "manual"),

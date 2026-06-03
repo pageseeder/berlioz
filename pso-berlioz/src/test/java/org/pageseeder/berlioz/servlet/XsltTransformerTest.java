@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
-class XSLTransformerTest {
+class XsltTransformerTest {
 
   @TempDir
   Path temporary;
@@ -27,7 +27,7 @@ class XSLTransformerTest {
       + "</xsl:stylesheet>").getBytes(StandardCharsets.UTF_8));
 
     String xml = "<!DOCTYPE root [<!ENTITY xxe SYSTEM \""+secret.toURI()+"\">]><root>&xxe;</root>";
-    String result = XSLTransformer.transformFailSafe(xml, stylesheet.toURI().toURL());
+    String result = XsltTransformer.transformFailSafe(xml, stylesheet.toURI().toURL());
 
     Assertions.assertTrue(result.contains("<out"), result);
     Assertions.assertFalse(result.contains("LEAKED"), result);
@@ -49,7 +49,7 @@ class XSLTransformerTest {
       + "<xsl:template match=\"/\"><out><xsl:call-template name=\"included\"/></out></xsl:template>"
       + "</xsl:stylesheet>").getBytes(StandardCharsets.UTF_8));
 
-    String result = XSLTransformer.transformFailSafe("<root/>", stylesheet.toURI().toURL());
+    String result = XsltTransformer.transformFailSafe("<root/>", stylesheet.toURI().toURL());
 
     Assertions.assertEquals("<out><included>ok</included></out>", result);
   }

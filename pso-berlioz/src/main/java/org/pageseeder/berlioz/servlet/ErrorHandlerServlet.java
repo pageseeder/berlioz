@@ -259,7 +259,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     ClassLoader loader = ErrorHandlerServlet.class.getClassLoader();
     URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
     if (url != null) {
-      String html = XSLTransformer.transformFailSafe(xml, url);
+      String html = XsltTransformer.transformFailSafe(xml, url);
       res.setContentType(!Objects.equals(html, xml) ? "text/html;charset=UTF-8" : "application/xml;charset=UTF-8");
       out.print(html);
       out.flush();

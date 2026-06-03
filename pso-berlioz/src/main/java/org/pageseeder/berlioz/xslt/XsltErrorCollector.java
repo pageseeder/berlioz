@@ -30,7 +30,7 @@ import org.slf4j.Logger;
  * @version 0.11.2
  * @since 0.8
  */
-public final class XSLTErrorCollector extends ErrorCollector<TransformerException> implements ErrorListener {
+public final class XsltErrorCollector extends ErrorCollector<TransformerException> implements ErrorListener {
 
   /**
    * The logger to use to report errors
@@ -42,7 +42,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
    *
    * @param logger A logger to report errors when the listener's methods are called.
    */
-  public XSLTErrorCollector(Logger logger) {
+  public XsltErrorCollector(Logger logger) {
     this.logger = logger;
   }
 

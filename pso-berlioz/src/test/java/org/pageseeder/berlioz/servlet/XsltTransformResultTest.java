@@ -10,7 +10,7 @@ import java.io.StringReader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class XSLTransformResultTest {
+class XsltTransformResultTest {
 
   private static Templates htmlTemplates;
   private static Templates xmlTemplates;
@@ -32,35 +32,35 @@ class XSLTransformResultTest {
 
   @Test
   void testSuccessStatus() {
-    XSLTransformResult r = new XSLTransformResult("<html/>", 1000L, htmlTemplates);
-    assertEquals(XSLTransformResult.Status.OK, r.status());
+    XsltTransformResult r = new XsltTransformResult("<html/>", 1000L, htmlTemplates);
+    assertEquals(XsltTransformResult.Status.OK, r.status());
   }
 
   @Test
   void testSuccessContent() {
-    XSLTransformResult r = new XSLTransformResult("<html/>", 1000L, htmlTemplates);
+    XsltTransformResult r = new XsltTransformResult("<html/>", 1000L, htmlTemplates);
     assertEquals("<html/>", r.content().toString());
   }
 
   @Test
   void testSuccessTime() {
-    XSLTransformResult r = new XSLTransformResult("<html/>", 42_000L, htmlTemplates);
+    XsltTransformResult r = new XsltTransformResult("<html/>", 42_000L, htmlTemplates);
     assertEquals(42_000L, r.time());
   }
 
   @Test
   void testSuccessNoException() {
-    XSLTransformResult r = new XSLTransformResult("<html/>", 1000L, htmlTemplates);
+    XsltTransformResult r = new XsltTransformResult("<html/>", 1000L, htmlTemplates);
     assertNull(r.getException());
     assertNull(r.getErrorMessage());
   }
 
   @Test
   void testSuccessMediaTypeFromTemplates() {
-    XSLTransformResult html = new XSLTransformResult("", 0L, htmlTemplates);
+    XsltTransformResult html = new XsltTransformResult("", 0L, htmlTemplates);
     assertEquals("text/html", html.getMediaType());
 
-    XSLTransformResult xml = new XSLTransformResult("", 0L, xmlTemplates);
+    XsltTransformResult xml = new XsltTransformResult("", 0L, xmlTemplates);
     assertEquals("application/xml", xml.getMediaType());
   }
 
@@ -69,38 +69,38 @@ class XSLTransformResultTest {
   @Test
   void testErrorStatus() {
     Exception ex = new RuntimeException("xslt failed");
-    XSLTransformResult r = new XSLTransformResult("<error/>", ex, null);
-    assertEquals(XSLTransformResult.Status.ERROR, r.status());
+    XsltTransformResult r = new XsltTransformResult("<error/>", ex, null);
+    assertEquals(XsltTransformResult.Status.ERROR, r.status());
   }
 
   @Test
   void testErrorTimeIsZero() {
-    XSLTransformResult r = new XSLTransformResult("", new RuntimeException(), null);
+    XsltTransformResult r = new XsltTransformResult("", new RuntimeException(), null);
     assertEquals(0L, r.time());
   }
 
   @Test
   void testErrorExceptionIsPreserved() {
     RuntimeException ex = new RuntimeException("bad transform");
-    XSLTransformResult r = new XSLTransformResult("", ex, null);
+    XsltTransformResult r = new XsltTransformResult("", ex, null);
     assertSame(ex, r.getException());
   }
 
   @Test
   void testErrorWithNullTemplates_usesDefaults() {
-    XSLTransformResult r = new XSLTransformResult("", new RuntimeException(), null);
+    XsltTransformResult r = new XsltTransformResult("", new RuntimeException(), null);
     assertEquals("text/html", r.getMediaType());
     assertEquals("utf-8", r.getEncoding());
   }
 
   @Test
   void testErrorWithTemplates_usesTemplateOutputProps() {
-    XSLTransformResult r = new XSLTransformResult("", new RuntimeException(), xmlTemplates);
+    XsltTransformResult r = new XsltTransformResult("", new RuntimeException(), xmlTemplates);
     assertEquals("application/xml", r.getMediaType());
   }
 
   @Test
   void testImplementsBerliozOutput() {
-    assertInstanceOf(BerliozOutput.class, new XSLTransformResult("", 0L, htmlTemplates));
+    assertInstanceOf(BerliozOutput.class, new XsltTransformResult("", 0L, htmlTemplates));
   }
 }

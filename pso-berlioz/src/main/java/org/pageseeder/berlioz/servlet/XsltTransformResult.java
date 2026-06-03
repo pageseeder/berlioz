@@ -29,10 +29,10 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.1
  * @since 0.7
  */
-public final class XSLTransformResult implements BerliozOutput {
+public final class XsltTransformResult implements BerliozOutput {
 
   /**
    * The status of a process result.
@@ -95,7 +95,7 @@ public final class XSLTransformResult implements BerliozOutput {
    * @param time      The processing nanoseconds.
    * @param templates The templates used for the transformation.
    */
-  public XSLTransformResult(CharSequence content, long time, Templates templates) {
+  public XsltTransformResult(CharSequence content, long time, Templates templates) {
     this.content = content;
     this.time = time;
     this.status = Status.OK;
@@ -111,7 +111,7 @@ public final class XSLTransformResult implements BerliozOutput {
    * @param ex        An exception.
    * @param templates The templates used for the transformation.
    */
-  public XSLTransformResult(CharSequence content, Exception ex, @Nullable Templates templates) {
+  public XsltTransformResult(CharSequence content, Exception ex, @Nullable Templates templates) {
     this.content = content;
     this.time = 0;
     this.status = Status.ERROR;
