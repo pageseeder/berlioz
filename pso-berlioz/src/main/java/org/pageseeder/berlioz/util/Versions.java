@@ -34,8 +34,8 @@ public final class Versions {
    * Compares two versions.
    *
    * <p>This method decomposes the versions into components assuming they are separated
-   * by '.', and compare them in order. If possible the comparison is numeric, otherwise it
-   * is alphanumeric. The first comparison resulting in a non equal result will be the
+   * by '.', and compare them in order. If possible, the comparison is numeric, otherwise it
+   * is alphanumeric. The first comparison resulting in a non-equal result will be the
    * result of this function.
    *
    * @param versionA The first version to compare.

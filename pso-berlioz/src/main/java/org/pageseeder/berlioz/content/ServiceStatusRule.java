@@ -44,7 +44,7 @@ import org.pageseeder.berlioz.Beta;
   private static final String TARGET_SELECTOR_PREFIX = "target:";
 
   /**
-   * How is the status code for the determined.
+   * How the status code is determined.
    */
   @Beta
   public enum CodeRule {
@@ -98,7 +98,7 @@ import org.pageseeder.berlioz.Beta;
    *
    * @param use   How the generator should be selected.
    * @param items The names or targets of the generators to select.
-   * @param rule  How is the status code for the determined.
+   * @param rule  How to determine the status code
    *
    * @throws NullPointerException If any argument is <code>null</code>
    */
@@ -178,7 +178,7 @@ import org.pageseeder.berlioz.Beta;
     CodeRule r = rule != null? CodeRule.valueOf(rule.toUpperCase()) : CodeRule.HIGHEST;
     // Select type default to NAME
     SelectType t = use.startsWith(TARGET_SELECTOR_PREFIX)? SelectType.TARGET : SelectType.NAME;
-    // Now get the list of items if any
+    // Now get the list of items, if any
     String items = Objects.requireNonNull(use, "Parameter use is null.");
     if (items.startsWith(NAME_SELECTOR_PREFIX)) {
       items = items.substring(NAME_SELECTOR_PREFIX.length());

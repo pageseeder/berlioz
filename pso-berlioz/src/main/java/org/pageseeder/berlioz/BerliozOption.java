@@ -35,7 +35,7 @@ public enum BerliozOption {
    * <code>Etag</code> appropriately.
    *
    * <p>Berlioz will not compress the response content if it is not considered compressible or if
-   * the client does not accept response compressed with GZip.
+   * the client does not accept responses compressed with GZip.
    *
    * <p>When HTTP compression is enabled and possible, the headers are modified as:
    * <pre>
@@ -46,7 +46,7 @@ public enum BerliozOption {
    * </pre>
    *
    * <p>Berlioz considers that the content is compressible if its content type indicates that it
-   * is textual.<br>For examples, scripts, CSS stylesheets, XML and HTML are considered
+   * is textual.<br>For examples, scripts, CSS stylesheets, XML, and HTML are considered
    * compressible; most images and other media files are not.
    *
    * <h3>Property</h3>
@@ -91,7 +91,7 @@ public enum BerliozOption {
    *   </tr>
    * </table>
    * <p><sup>*</sup>The default value is set to <code>true</code> for legacy applications,
-   * this may change in subsequent versions of Berlioz.</p>
+   * this may change in later versions of Berlioz.</p>
    *
    * <h3>Recommended values</h3>
    * <table>
@@ -164,7 +164,7 @@ public enum BerliozOption {
    * A global option to show the Berlioz service in the <code>X-Berlioz-Service</code>
    * header.
    *
-   * <p>It was enabled by default in previous version, from 0.12.6, it is disabled
+   * <p>It was enabled by default in the previous version; from 0.12.6, it is disabled
    * by default.
    *
    * @since 0.12.6
@@ -175,7 +175,7 @@ public enum BerliozOption {
    * A boolean global option to indicate whether Berlioz should use its own error handler when
    * an error occurs.
    *
-   * <p>If set to <code>true</code>, Berlioz will use fail safe templates to display the error
+   * <p>If set to <code>true</code>, Berlioz will use fail-safe templates to display the error
    * details on screen for the user.</p>
    *
    * <p>If set to <code>false</code>, Berlioz invoke the <code>sendError</code> method on the
@@ -199,8 +199,8 @@ public enum BerliozOption {
    *   <tbody><tr><td><code>true</code></td><td><code>false</code></td></tr></tbody>
    * </table>
    * <p>The default value should be set to <code>true</code> in development so that all error
-   * details are returned to the developer. In production, it is preferable to either customise
-   * the error handler or use the Web descriptor to redirect users to a more user friendly page.
+   * details are returned to the developer. In production, it is preferable to either customize
+   * the error handler or use the Web descriptor to redirect users to a more user-friendly page.
    *
    * @since 0.8.3
    */
@@ -272,7 +272,7 @@ public enum BerliozOption {
   XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
 
   /**
-   * Indicates the version of the XML header format  berlioz should use.
+   * Indicates the version of the XML header format berlioz should use.
    *
    * <h3>Property</h3>
    * <table>
@@ -327,7 +327,7 @@ public enum BerliozOption {
   XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE),
 
   /**
-   * A string global option to specify a key to use enable the control parameters to reload the
+   * A string global option to specify a key to use enables the control parameters to reload the
    * configuration and XSLT or reset the Etag seed.
    *
    * <p>If the control key is empty, then the control parameters can be used directly.
@@ -348,9 +348,9 @@ public enum BerliozOption {
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>""</code><i>(Empty string)</i></td><td><code>[a complex string]</code></td></tr></tbody>
    * </table>
-   * <p>No control key is required for development, however in production the a string such as
-   * an MD5 hash value should be specified to secure the application
-   * (for example: 'd131dd02c5e6eec4693d96dacd436c91').</p>
+   * <p>No control key is required for development; however, in production a string such as
+   * a hash value should be specified to secure the application
+   * (for example, 'd131dd02c5e6eec4693d96dacd436c91').</p>
    *
    * @since 0.8.3
    */
@@ -458,7 +458,6 @@ public enum BerliozOption {
 
   /**
    * Returns the same as the <code>property()</code> method.
-   *
    * {@inheritDoc}
    */
   @Override

@@ -99,6 +99,7 @@ public final class XMLUtils {
    *
    * @throws BerliozException Should something unexpected happen.
    */
+  @SuppressWarnings("HttpUrlsUsage")
   public static void parse(ContentHandler handler, File xml, boolean validate) throws BerliozException {
     SAXParser parser = getParser(validate);
     try {
@@ -137,7 +138,7 @@ public final class XMLUtils {
    *                   <code>false</code> for the non-validating factory;
    * @return the SAX parser factory to use.
    *
-   * @throws BerliozException If one of the features is not recognised or supported by the factory.
+   * @throws BerliozException If one of the features is not recognized or supported by the factory.
    */
   public static SAXParser getParser(boolean validating) throws BerliozException {
     SAXParser parser;

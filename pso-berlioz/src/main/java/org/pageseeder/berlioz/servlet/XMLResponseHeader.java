@@ -39,7 +39,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * <p>This class is used to produce consistent headers for all the servlets.
  *
- * <p>The <i>area name</i> and <i>service name</i>, must be specified by the servlet.
+ * <p>The servlet must specify the area name and service name.
  *
  * <p>The HTTP parameters are the parameters attached with the HTTP request. They are returned
  * in the order in which they are given by the HTTP request. Values for parameters with multiple

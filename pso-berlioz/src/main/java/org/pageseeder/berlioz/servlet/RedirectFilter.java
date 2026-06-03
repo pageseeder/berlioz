@@ -89,7 +89,7 @@ public final class RedirectFilter implements Filter, Serializable {
   private @Nullable File configFile;
 
   /**
-   * Maps URI patterns to redirect to URI pattern target.
+   * Maps URI patterns to redirect to the URI pattern target.
    */
   private transient @Nullable RedirectConfig config = null;
 
@@ -102,11 +102,11 @@ public final class RedirectFilter implements Filter, Serializable {
   // ---------------------------------------------------------------------------------------------
 
   /**
-   * Initialises the Redirector Servlet.
+   * Initializes the Redirector Servlet.
    *
    * <p>This servlet accepts the following init parameters:
    * <ul>
-   *   <li><code>config</code> path to the URI redirect mapping XML file (eg. '/config/redirect.xml')
+   *   <li><code>config</code> path to the URI redirect mapping XML file (e.g. '/config/redirect.xml')
    * </ul>
    *
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
@@ -123,7 +123,7 @@ public final class RedirectFilter implements Filter, Serializable {
 
     this.controlKey = GlobalSettings.get(BerliozOption.XML_CONTROL_KEY);
 
-    // Mapping not specified
+    // Mapping isn't specified
     if (mappingConfig == null) {
       LOGGER.warn("Missing 'config' init-parameter - filter will have no effect");
       return;
@@ -156,13 +156,13 @@ public final class RedirectFilter implements Filter, Serializable {
   }
 
   /**
-   * Do the filtering for a HTTP request.
+   * Do the filtering for an HTTP request.
    *
    * @param req   The HTTP servlet request.
    * @param res   The HTTP servlet response.
    * @param chain The filter chain.
    *
-   * @throws IOException      Should an error occurs while writing the response.
+   * @throws IOException      Should an error occur while writing the response.
    * @throws ServletException If thrown by the filter chain.
    */
   public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
@@ -219,11 +219,11 @@ public final class RedirectFilter implements Filter, Serializable {
    *
    * @param req       The HTTP servlet request
    * @param res       The HTTP servlet response
-   * @param location  The target location for "Location" header
+   * @param location  The target location for the "Location" header
    * @param permanent <code>true</code> to use HTTP 301 status;
    *                  <code>false</code> to HTTP 302.
    *
-   * @throws ServletException If the a relative URL was used.
+   * @throws ServletException If a relative URL was used.
    */
   private static void sendRedirect(HttpServletRequest req, HttpServletResponse res, String location, boolean permanent)
       throws ServletException {

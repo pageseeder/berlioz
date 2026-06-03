@@ -23,9 +23,9 @@ import java.util.Map;
 /**
  * Simple interface used internally to pass JSON events to the actual JSON writer.
  *
- * <p>This class is required in order to handle the case when a JSON generator
+ * <p>This class is required to handle the case when a JSON generator
  * implementation is not available. Aeson uses this interface so that it is not coupled
- * directly the <code>JsonGenerator</code> and can revert back to its internal JSON writer.
+ * directly the <code>JsonGenerator</code> and can revert to its internal JSON writer.
  *
  * <p>The methods are similar to the <code>JsonGenerator</code> interface on purpose.
  *
@@ -99,7 +99,7 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes a JSON null value paired with the given name in the current object context.
    *
-   * @param name a name in the JSON name/value pair to be written in current JSON object
+   * @param name a name in the JSON name/value pair to be written in the current JSON object
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
@@ -118,7 +118,7 @@ public interface JsonWriter extends AutoCloseable, Flushable {
    *
    * @param number the value to write.
    * @return this instance.
-   * @throws IllegalArgumentException  if number is NaN or infinite.
+   * @throws IllegalArgumentException  if the number is NaN or infinite.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
   JsonWriter value(double number);
@@ -158,7 +158,7 @@ public interface JsonWriter extends AutoCloseable, Flushable {
    * <p>Must be followed by one of the {@code value()}, {@link #startObject()}, or
    * {@link #startArray()} methods.</p>
    *
-   * @param name a name in the JSON name/value pair to be written in current JSON object
+   * @param name a name in the JSON name/value pair to be written in the current JSON object
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
@@ -169,7 +169,7 @@ public interface JsonWriter extends AutoCloseable, Flushable {
    *
    * <p>If value is {@code null}, writes a JSON {@code null} for the field value.</p>
    *
-   * @param name  the name in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in the current JSON object
    * @param value the value in the JSON name/value pair; {@code null} writes JSON {@code null}.
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
@@ -179,8 +179,8 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes a JSON name/boolean value pair in the current object context.
    *
-   * @param name  the name in the JSON name/value pair to be written in current JSON object
-   * @param value the value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in the current JSON object
+   * @param value the value in the JSON name/value pair to be written in the current JSON object
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
@@ -189,8 +189,8 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes a JSON name/double value pair in the current object context.
    *
-   * @param name  the name in the JSON name/value pair to be written in current JSON object
-   * @param value the value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in the current JSON object
+   * @param value the value in the JSON name/value pair to be written in the current JSON object
    * @return this instance.
    * @throws IllegalArgumentException  if value is NaN or infinite.
    * @throws JsonWriteFailureException if an I/O error occurs.
@@ -200,8 +200,8 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   /**
    * Writes a JSON name/long value pair in the current object context.
    *
-   * @param name  the name in the JSON name/value pair to be written in current JSON object
-   * @param value the value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in the current JSON object
+   * @param value the value in the JSON name/value pair to be written in the current JSON object
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */
@@ -225,8 +225,8 @@ public interface JsonWriter extends AutoCloseable, Flushable {
    *
    * <p>Delegates to {@link #field(String, long)}.</p>
    *
-   * @param name  the name in the JSON name/value pair to be written in current JSON object
-   * @param value the value in the JSON name/value pair to be written in current JSON object
+   * @param name  the name in the JSON name/value pair to be written in the current JSON object
+   * @param value the value in the JSON name/value pair to be written in the current JSON object
    * @return this instance.
    * @throws JsonWriteFailureException if an I/O error occurs.
    */

@@ -41,7 +41,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   private char[] closer = new char[64];
 
   /**
-   * Array index is current depth level, 0 is top level Object or Array.
+   * Array index is the current depth level, 0 is top level Object or Array.
    */
   private int level = -1;
 

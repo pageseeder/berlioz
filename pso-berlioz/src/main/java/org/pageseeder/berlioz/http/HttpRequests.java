@@ -38,7 +38,7 @@ public final class HttpRequests {
    * Returns {@code true} only for relative paths and same-origin absolute URLs, blocking open redirects.
    * Protocol-relative URLs ({@code //host/path}) are treated as absolute.
    *
-   * @param url the redirect URL to validate (may be {@code null})
+   * @param url the redirect URL to validate (might be {@code null})
    * @param req the current request, used to determine the expected origin
    * @return {@code true} if the URL is safe to redirect to
    */
@@ -48,7 +48,7 @@ public final class HttpRequests {
     if (url.indexOf('\r') >= 0 || url.indexOf('\n') >= 0) return false;
     try {
       URI uri = new URI(url);
-      // Relative URL with no authority is safe (e.g. /some/path or ../other)
+      // Relative URL with no authority is safe (e.g., /some/path or ../other)
       if (!uri.isAbsolute() && uri.getAuthority() == null) return true;
       // Absolute or protocol-relative: must match the same host and port
       String host = uri.getHost();

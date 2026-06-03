@@ -53,7 +53,7 @@ final class JacksonJsonWriter implements JsonWriter {
   private final JsonGenerator json;
 
   /**
-   * Creates new JSON writer.
+   * Creates a new JSON writer.
    *
    * @param json The generator to use.
    */

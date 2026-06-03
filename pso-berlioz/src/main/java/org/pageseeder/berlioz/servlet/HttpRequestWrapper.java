@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods
- * to access the parameters and attributes in a consistent manner.
+ * to access the parameters and attributes consistently.
  *
  * @author Christophe Lauret
  * @author Tu Tak Tran

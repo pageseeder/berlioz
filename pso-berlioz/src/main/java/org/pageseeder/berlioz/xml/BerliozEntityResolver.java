@@ -87,7 +87,7 @@ public enum BerliozEntityResolver implements EntityResolver {
       // return a special input source
       InputStream inputStream = BerliozEntityResolver.class.getResourceAsStream("/library/"+dtd);
       source = new InputSource(inputStream);
-    // use the default behaviour
+    // use the default behavior
     } else {
       LOGGER.info("Tried to use the entity resolver on unknown public ID '{}'", publicId);
     }

@@ -69,7 +69,7 @@ public final class BerliozConfig {
   private static final SecureRandom RANDOM = new SecureRandom();
 
   /**
-   * At what level is the XML transformer allocated.
+   * At what level the XML transformer is allocated.
    */
   private enum TransformAllocation {
     /** No transformation */
@@ -128,7 +128,7 @@ public final class BerliozConfig {
   private final Environment env;
 
   /**
-   * How is the XSLT allocated for this configuration.
+   * How the XSLT allocated for this is configuration.
    */
   private final TransformAllocation allocation;
 
@@ -205,7 +205,7 @@ public final class BerliozConfig {
   }
 
   /**
-   * Expiry date is a year from now.
+   * The expiry date is a year from now.
    * @return One year into the future.
    */
   public long getExpiryDate() {
@@ -251,7 +251,7 @@ public final class BerliozConfig {
   }
 
   /**
-   * Indicates whether this configuration can be controlled by the user.
+   * Indicates whether the user can control this configuration.
    *
    * @param req the request including the control key is specified as a request parameter
    * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
@@ -262,7 +262,7 @@ public final class BerliozConfig {
   }
 
   /**
-   * Indicates whether this configuration can be controlled by the user.
+   * Indicates whether the user can control this configuration.
    *
    * @param req the request including the control key is specified as a request parameter
    * @param controlKey the control key
@@ -272,7 +272,7 @@ public final class BerliozConfig {
    */
   public static boolean hasControl(HttpServletRequest req, @Nullable String controlKey) {
     if (controlKey == null || controlKey.isEmpty()) return true;
-    // NB: query parameters may be logged by servers/proxies — prefer the Authorization header for non-dev use
+    // NB: servers/proxies may log query parameters — prefer the Authorization header for non-dev use
     if (controlKey.equals(req.getParameter("berlioz-control"))) return true;
     // Accept a custom "Berlioz <key>" Authorization header as an alternative to the query parameter
     // NB: use equals (not endsWith) to prevent a suffix like "Berlioz xyzSECRET" from matching "SECRET"
@@ -286,7 +286,7 @@ public final class BerliozConfig {
   /**
    * Returns the XSLT transformer for the specified service.
    *
-   * @param service the service which requires a transformer.
+   * @param service the service that requires a transformer.
    * @return the corresponding XSLT transformer.
    */
   public @Nullable XSLTransformer getTransformer(Service service) {
@@ -375,7 +375,7 @@ public final class BerliozConfig {
   }
 
   /**
-   * Expiry date is a year from now.
+   * The expiry date is a year from now.
    * @return One year into the future.
    */
   private long loadEtagSeed() {
@@ -395,7 +395,7 @@ public final class BerliozConfig {
   }
 
   /**
-   * Expiry date is a year from now.
+   * The expiry date is a year from now.
    * @return One year into the future.
    */
   private long newEtagSeed() {
@@ -422,7 +422,7 @@ public final class BerliozConfig {
    *
    * <p>This method will create and cache the transformer if necessary.
    *
-   * @param service the service which requires a transformer.
+   * @param service the service that requires a transformer.
    * @param key the key to use to store the transformer.
    * @return the corresponding XSLT transformer.
    */

@@ -25,9 +25,9 @@ import java.text.Normalizer.Form;
  *
  * <p>Only unreserved characters do not need to be encoded within a URI variable:
  *
- * <pre>
+ * <pre>{@code
  * unreserved = ALPHA / DIGIT / '-' / '.' / '_' / '&tilde;'
- * </pre>
+ * }</pre>
  *
  * <p>Two encoding modes are provided:
  * <ul>
@@ -56,7 +56,7 @@ import java.text.Normalizer.Form;
  *   <tr><td>{@code +}</td><td>{@code %2B}</td><td>{@code %2B} — same</td></tr>
  *   <tr><td>{@code -._}</td><td>unchanged</td><td>unchanged — same</td></tr>
  *   <tr><td>non-ASCII</td><td>UTF-8 percent-encoded, after NFKC normalisation</td>
- *       <td>UTF-8 percent-encoded, no normalisation (NFC and NFD may differ)</td></tr>
+ *       <td>UTF-8 percent-encoded, no normalization (NFC and NFD may differ)</td></tr>
  * </table>
  *
  * <p>{@link #decode(String)} accepts both {@code %20} and {@code +} as space, so it can handle
@@ -107,7 +107,7 @@ public final class URICoder {
    *   <li>Space is encoded as {@code %20}, not {@code +}.</li>
    *   <li>{@code ~} is left as-is (unreserved per RFC 3986).</li>
    *   <li>{@code *} is encoded as {@code %2A} (not unreserved).</li>
-   *   <li>Non-ASCII text is normalised to NFKC, then encoded as UTF-8 byte sequences.</li>
+   *   <li>Non-ASCII text is normalized to NFKC, then encoded as UTF-8 byte sequences.</li>
    * </ul>
    *
    * @param s The string to encode.
@@ -115,7 +115,7 @@ public final class URICoder {
    * @return The percent-encoded string.
    */
   public static String encode(String s) {
-    // '0' is unreserved so passing it as the extra passthrough char has no effect
+    // '0' is unreserved, so passing it as the extra passthrough char has no effect
     return encode(s, '0');
   }
 
@@ -146,7 +146,7 @@ public final class URICoder {
    * percent-encoded: space, {@code %}, {@code "}, {@code <}, {@code >}, {@code \},
    * {@code ^}, {@code `}, {@code {}, {@code |}, {@code }}, and control characters.
    *
-   * <p>Use this method when the input may already contain valid URI structure (e.g. a full
+   * <p>Use this method when the input may already contain a valid URI structure (e.g. a full
    * path-and-query string) and only unsafe characters need to be escaped.
    *
    * @param s The string to encode.
@@ -212,7 +212,7 @@ public final class URICoder {
   }
 
   /**
-   * Encodes a string containing non-ASCII characters, normalising to NFKC first.
+   * Encodes a string containing non-ASCII characters, normalizing to NFKC first.
    *
    * @param s The string to encode (may contain non-ASCII characters).
    * @param e An extra character that bypasses encoding.
@@ -233,7 +233,7 @@ public final class URICoder {
   }
 
   /**
-   * Minimally encodes a string containing non-ASCII characters, normalising to NFKC first.
+   * Minimally encodes a string containing non-ASCII characters, normalizing to NFKC first.
    *
    * @param s The string to encode (may contain non-ASCII characters).
    */
@@ -313,7 +313,7 @@ public final class URICoder {
   }
 
   /**
-   * Decodes a percent-encoded string that contains multi-byte UTF-8 sequences.
+   * Decodes a percent-encoded string that contains multibyte UTF-8 sequences.
    */
   private static String decodeUTF8(String s) {
     int len = s.length();
@@ -422,7 +422,7 @@ public final class URICoder {
    *
    * <p>A {@code %XX} sequence encodes a non-ASCII byte when the first hex digit is greater than
    * {@code '7'} (i.e. the byte value is {@code >= 0x80}), which indicates the start of a
-   * multi-byte UTF-8 sequence. If any such sequence is found, the UTF-8 decoder must be used.
+   * multibyte UTF-8 sequence. If any such sequence is found, the UTF-8 decoder must be used.
    */
   private static boolean isEncodedASCII(String s) {
     for (int i = 0; i < s.length(); i++) {

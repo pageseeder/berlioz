@@ -28,14 +28,14 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Provides a generic and uniform mechanism for the content generator to access parameters
- * and attributes from a request, and to signal the desired response status.
+ * and attributes from a request and to signal the desired response status.
  *
  * <p>This interface extends {@link RequestContext}, which carries the clean, read-only
  * request-reading API. New code should prefer {@link RequestContext} where response
- * signalling is not needed.
+ * signaling is not needed.
  *
  * <p>{@link #getParameterNames()}, {@link #getParameterValues(String)}, and {@link #getCookies()}
- * are deprecated in favour of their {@link RequestContext} equivalents.
+ * are deprecated in favor of their {@link RequestContext} equivalents.
  * {@link #getDateParameter(String)} is deprecated because {@link java.util.Date} is a legacy type;
  * use {@code request.parameter(name).asLocalDate()} instead.
  * {@link #getIntParameter(String, int)} and {@link #getLongParameter(String, long)} are retained
@@ -76,7 +76,7 @@ public interface ContentRequest extends RequestContext {
    * Implementations should override this directly.
    */
   @Override
-  @SuppressWarnings({"deprecation", "java:S1874"})
+  @SuppressWarnings({"java:S1874"})
   default Collection<String> parameterNames() {
     return Collections.list(getParameterNames());
   }
@@ -88,7 +88,7 @@ public interface ContentRequest extends RequestContext {
    * Implementations should override this directly.
    */
   @Override
-  @SuppressWarnings({"deprecation", "java:S1874"})
+  @SuppressWarnings({"java:S1874"})
   default List<String> parameterValues(String name) {
     String[] values = getParameterValues(name);
     return values != null ? Arrays.asList(values) : List.of();
@@ -101,7 +101,7 @@ public interface ContentRequest extends RequestContext {
    * Implementations should override this directly.
    */
   @Override
-  @SuppressWarnings({"deprecation", "java:S1874"})
+  @SuppressWarnings({"java:S1874"})
   default List<Cookie> cookies() {
     Cookie[] arr = getCookies();
     return arr != null ? Arrays.asList(arr) : List.of();

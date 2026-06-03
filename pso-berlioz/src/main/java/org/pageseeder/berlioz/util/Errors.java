@@ -103,7 +103,7 @@ public final class Errors {
   /**
    * Writes the XML for the given exception.
    *
-   * <p>If there is a more specialised method for this exception defined in this class, this
+   * <p>If there is a more specialized method for this exception defined in this class, this
    * method will automatically use the more specific method.
    *
    * <p>The default XML for a generic exception is:

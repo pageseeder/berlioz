@@ -63,6 +63,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   /**
    * The LexicalHandler property.
    */
+  @SuppressWarnings("HttpUrlsUsage")
   private static final String LEXICAL_HANDLER_PROPERTY = "http://xml.org/sax/properties/lexical-handler";
 
   /**
@@ -222,8 +223,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    *
    * <p>Any error is reported as XML on the XML writer.
    *
-   * <p>This method does not perform any caching, caching is better handled externally by
-   * generators.
+   * <p>This method does not perform any caching, generators better handle caching externally   * .
    *
    * @param file The file.
    * @param xml  The XML writer.
@@ -250,7 +250,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
         xml.writeXML(parsed);
         ok = true;
 
-      // an error was reported by the parser
+      // the parser reported an error
       } catch (BerliozException ex) {
         LOGGER.warn("An error was reported by the parser while parsing {}", file.toURI());
         handleError(xml, ex);
@@ -295,7 +295,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
       xml.writeXML(parsed);
       ok = true;
 
-    // an error was reported by the parser
+    // the parser reported an error
     } catch (BerliozException ex) {
       LOGGER.warn("An error was reported by the parser while parsing reader");
       handleError(xml, ex);
@@ -334,7 +334,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
   }
 
   /**
-   * Try set the lexical handler property in order to copy comments.
+   * Try to set the lexical handler property to copy comments.
    *
    * <p>If the property is not supported, a warning is logged and no further attempts will be made.
    *

@@ -28,10 +28,10 @@ import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.LifecycleListener;
 
 /**
- * Initialise a Berlioz-based application.
+ * Initialize a Berlioz-based application.
  *
  * <p>
- * This servlet does not return any data, it is simply used to initialise some data, and therefore
+ * This servlet does not return any data, it is simply used to initialize some data, and therefore
  * only implements the {@link #init(ServletConfig)} method.
  *
  * <p>
@@ -39,7 +39,7 @@ import org.pageseeder.berlioz.LifecycleListener;
  * version of Berlioz is running and which configuration files are used.
  *
  * <p>
- * Typically this servlet should be configured in the Web Configuration (web.xml) as:
+ * Typically, this servlet should be configured in the Web Configuration (web.xml) as:
  *
  * <pre>
  * {@code <!-- Initialisation servlet -->
@@ -99,9 +99,9 @@ public final class InitServlet extends HttpServlet implements Servlet {
   }
 
   /**
-   * Reset the initialisation Berlioz.
+   * Reset the initialization Berlioz.
    *
-   * <p>This method unload the configuration setting and does the following in order:
+   * <p>This method unloads the configuration setting and does the following in order:
    * <ol>
    *  <li>Invokes the <code>stop</code> method of the <code>ConfigListener</code>.</li>
    * </ol>
@@ -119,11 +119,11 @@ public final class InitServlet extends HttpServlet implements Servlet {
   }
 
   /**
-   * @return "Berlioz Initialisation Servlet"
+   * @return "Berlioz Initialization Servlet"
    */
   @Override
   public String getServletInfo() {
-    return "Berlioz Initialisation Servlet";
+    return "Berlioz Initialization Servlet";
   }
 
   /**

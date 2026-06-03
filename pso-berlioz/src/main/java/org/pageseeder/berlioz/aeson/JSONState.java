@@ -86,7 +86,7 @@ final class JSONState {
   }
 
   /**
-   * Remove all objects from state.
+   * Remove all objects from the state.
    */
   public void popState() {
     this.context.pop();
@@ -176,7 +176,7 @@ final class JSONState {
     }
 
     /**
-     * Keep private - use factory method.
+     * Keep private, use factory method.
      *
      * @param map the internal mapping to use.
      */
@@ -198,7 +198,7 @@ final class JSONState {
     /**
      * Makes a map inheriting another map.
      *
-     * <p>If there is not attribute specifying the type, then the same map is returned.
+     * <p>If there is no attribute specifying the type, then the same map is returned.
      *
      * @param inherited The property type map to inherit (may be <code>null</code>)
      * @param atts      The attributes to scan.

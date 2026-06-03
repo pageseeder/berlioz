@@ -30,21 +30,21 @@ import org.jspecify.annotations.Nullable;
 public interface Environment {
 
   /**
-   * Returns the directory pointing to the public area of the Web site.
+   * Returns the directory pointing to the public area of the website.
    *
-   * @return the directory pointing to the public area of the Web site.
+   * @return the directory pointing to the public area of the website.
    */
   File getPublicFolder();
 
   /**
-   * Returns the directory pointing to the private area of the Web site (generally WEB-INF).
+   * Returns the directory pointing to the private area of the website (generally WEB-INF).
    *
-   * @return the directory pointing to the private area of the Web site (generally WEB-INF).
+   * @return the directory pointing to the private area of the website (generally WEB-INF).
    */
   File getPrivateFolder();
 
   /**
-   * Returns the file pointing to the public area of the Web site.
+   * Returns the file pointing to the public area of the website.
    *
    * @param path The path of the requested file.
    * @return the requested file.
@@ -52,7 +52,7 @@ public interface Environment {
   File getPublicFile(String path);
 
   /**
-   * Returns the file pointing to the private area of the Web site (that is within WEB-INF).
+   * Returns the file pointing to the private area of the website (that is within WEB-INF).
    *
    * @param path The path of the requested file.
    * @return the requested file.
@@ -70,7 +70,7 @@ public interface Environment {
   @Nullable String getProperty(String name);
 
   /**
-   * Returns the requested property or it default value.
+   * Returns the requested property or its default value.
    *
    * <p>The given default value is returned only if the property is not found.
    *
@@ -82,7 +82,7 @@ public interface Environment {
   String getProperty(String name, String def);
 
   /**
-   * Returns the requested int property or it default value.
+   * Returns the requested int property or its default value.
    *
    * @param name  The name of the property.
    * @param def   A default value for the property.
@@ -92,7 +92,7 @@ public interface Environment {
   int getProperty(String name, int def);
 
   /**
-   * Returns the requested property or it default value.
+   * Returns the requested property or its default value.
    *
    * <p>The given default value is returned only if the property is not found.
    *

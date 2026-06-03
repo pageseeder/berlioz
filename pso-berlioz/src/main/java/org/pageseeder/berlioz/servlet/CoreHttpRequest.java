@@ -54,7 +54,7 @@ final class CoreHttpRequest {
   private final Location loc;
 
   /**
-   * Creates a object containing all the common HTTP information.
+   * Creates an object containing all the common HTTP information.
    *
    * @param req The request to wrap.
    * @param res The response to wrap.

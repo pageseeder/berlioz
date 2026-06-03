@@ -43,7 +43,7 @@ public final class NonceFactory {
    *
    * @param length Length in bytes of the nonce.
    *
-   * @throws IllegalArgumentException If length is less than 4 or greater than 256.
+   * @throws IllegalArgumentException If the length is less than 4 or greater than 256.
    */
   public NonceFactory(int length) {
     if (length < 4 || length > 256) throw new IllegalArgumentException();

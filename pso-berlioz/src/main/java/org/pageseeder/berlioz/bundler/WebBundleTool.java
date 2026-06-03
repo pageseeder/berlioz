@@ -154,7 +154,7 @@ public final class WebBundleTool {
    *
    * @param files    The list of files to bundle together.
    * @param prefix   The prefix for the bundle.
-   * @param minimize Whether to minimise the files.
+   * @param minimize Whether to minimize the files.
    *
    * @return The file corresponding to the generated bundle.
    */
@@ -169,7 +169,7 @@ public final class WebBundleTool {
    *
    * @param files The list of files to bundle together.
    * @param name  The name of the bundle.
-   * @param minimize Whether to minimise the files.
+   * @param minimize Whether to minimize the files.
    *
    * @return The file corresponding to the generated bundle.
    *
@@ -191,7 +191,7 @@ public final class WebBundleTool {
    * @param files The list of files to bundle together.
    * @param name  The name of the bundle.
    * @param type  The type of bundling.
-   * @param minimize Whether to minimise the files.
+   * @param minimize Whether to minimize the files.
    *
    * @return The file corresponding to the generated bundle.
    *
@@ -340,7 +340,7 @@ public final class WebBundleTool {
   }
 
   /**
-   * Copy the contents of the specified input stream to the specified output stream, and ensure that both streams are
+   * Copy the contents of the specified input stream to the specified output stream and ensure that both streams are
    * closed before returning (even in the face of an exception).
    *
    * @param file The file to read.
@@ -365,7 +365,7 @@ public final class WebBundleTool {
   }
 
   /**
-   * Copy the contents of the specified file to the specified output stream, and ensure that both streams are
+   * Copy the contents of the specified file to the specified output stream and ensure that both streams are
    * closed before returning (even in the face of an exception).
    *
    * @param file The file to read.
@@ -387,7 +387,7 @@ public final class WebBundleTool {
   }
 
   /**
-   * Copy the contents of the specified file to the specified output stream, and ensure that both streams are
+   * Copy the contents of the specified file to the specified output stream and ensure that both streams are
    * closed before returning (even in the face of an exception).
    *
    * @param reader The file to read.
@@ -432,7 +432,7 @@ public final class WebBundleTool {
    *
    * @return IOException if an input/output error occurs
    *
-   * @throws IOException if unable to read file.
+   * @throws IOException if unable to read the file.
    */
   private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, Writer out, List<File> processed, boolean minimize, long threshold)
       throws IOException {

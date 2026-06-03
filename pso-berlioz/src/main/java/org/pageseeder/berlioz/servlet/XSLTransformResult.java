@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
  * Holds the results of a transformation process.
  *
  * <p>This class holds information about a process such as its content, processing time (in nanoseconds),
- * status and exception.
+ * status, and exception.
  *
  * @author Christophe Lauret
  *
@@ -92,7 +92,7 @@ public final class XSLTransformResult implements BerliozOutput {
    * Creates a successful transformation result.
    *
    * @param content   The content.
-   * @param time      The processing nano seconds.
+   * @param time      The processing nanoseconds.
    * @param templates The templates used for the transformation.
    */
   public XSLTransformResult(CharSequence content, long time, Templates templates) {
@@ -160,7 +160,7 @@ public final class XSLTransformResult implements BerliozOutput {
   }
 
   /**
-   * @return The exception that occurred, or <code>null</code> if none.
+   * @return The exception that occurred or <code>null</code> if none.
    */
   public @Nullable Exception getException() {
     return this.ex;

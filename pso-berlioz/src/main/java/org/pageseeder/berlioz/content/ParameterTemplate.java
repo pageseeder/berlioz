@@ -71,7 +71,7 @@ public final class ParameterTemplate {
   public String toString() {
     StringBuilder value = new StringBuilder();
     for (Token t : this.tokens) {
-      value.append(t.toString());
+      value.append(t);
     }
     return value.toString();
   }
@@ -108,7 +108,7 @@ public final class ParameterTemplate {
   }
 
   /**
-   * Returns a template for single constant string value.
+   * Returns a template for a single constant string value.
    *
    * <p>Use this method when you know that the template is made of a single plain value and does
    * not require to be parsed.
@@ -122,7 +122,7 @@ public final class ParameterTemplate {
   }
 
   /**
-   * Returns a template for single constant string value.
+   * Returns a template for a single constant string value.
    *
    * <p>Use this method when you know that the template is made of a single plain value and does
    * not require to be parsed.
@@ -179,7 +179,7 @@ public final class ParameterTemplate {
   }
 
   /**
-   * A token which can be resolved using a content request.
+   * A token that can be resolved using a content request.
    */
   private static class Literal implements Token {
 
@@ -209,7 +209,7 @@ public final class ParameterTemplate {
   }
 
   /**
-   * A token which can be resolved using a content request.
+   * A token that can be resolved using a content request.
    */
   private static class Variable implements Token {
 

@@ -24,7 +24,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * Generates no content.
  *
  * <p>This content generator is useful for when the XML header already contains
- * enough information for the purpose of application.
+ * enough information for an application.
  *
  * <p>This generator can also be useful to be picked up by the XSLT even if no content is required.
  *

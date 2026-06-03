@@ -47,7 +47,7 @@ public class BerliozException extends Exception implements XMLWritable {
   private static final long serialVersionUID = 2528728071585695520L;
 
   /**
-   * An Berlioz Error ID
+   * A Berlioz Error ID
    */
   @SuppressWarnings("java:S1165") // setId() is deprecated for removal; field will be made final once it is removed
   private @Nullable ErrorID id = null;
@@ -75,7 +75,7 @@ public class BerliozException extends Exception implements XMLWritable {
    * Creates a new Berlioz exception wrapping an existing exception.
    *
    * @param message The message.
-   * @param id      An error ID to help with error handling and diagnostic (may be <code>null</code>)
+   * @param id      An error ID to help with error handling and diagnostic (might be <code>null</code>)
    */
   public BerliozException(String message, ErrorID id) {
     super(message);
@@ -87,7 +87,7 @@ public class BerliozException extends Exception implements XMLWritable {
    *
    * @param message The message.
    * @param cause   The wrapped exception.
-   * @param id      An error ID to help with error handling and diagnostic (may be <code>null</code>)
+   * @param id      An error ID to help with error handling and diagnostic
    */
   public BerliozException(String message, Exception cause, ErrorID id) {
     super(message, cause);
@@ -117,7 +117,7 @@ public class BerliozException extends Exception implements XMLWritable {
   }
 
   /**
-   * Serialises this exception as XML.
+   * Serializes this exception as XML.
    *
    * <p>The XML generated is as follows:
    * <pre class="xml">{@code

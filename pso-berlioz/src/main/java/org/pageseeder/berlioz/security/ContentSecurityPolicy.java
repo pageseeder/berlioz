@@ -9,7 +9,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Class for immutable content security policy objects to help creating a Content-Security-Policy HTTP header.
+ * Class for immutable content security policy objects to help create a Content-Security-Policy HTTP header.
  *
  * <p>The {@link #toString()} method returns a value that can be used in the
  * <code>Content-Security-Policy</code> or <code>Content-Security-Policy-Report-Only</code>
@@ -78,7 +78,7 @@ public final class ContentSecurityPolicy {
   }
 
   /**
-   * @return The value that can be used the header.
+   * @return The value that can be used in the header.
    */
   @Override
   public String toString() {
@@ -108,12 +108,12 @@ public final class ContentSecurityPolicy {
   }
 
   /**
-   * Shorthand method to create a new policy the specified value add to the existing policy directive.
+   * Shorthand method to create a new policy the specified value adds to the existing policy directive.
    *
    * <p>If the policy has no source value, it is set to the specified value.
    *
    * @param directive The policy directive to update
-   * @param source The source value to add or set to new policy
+   * @param source The source value to add or set to a new policy
    *
    * @return a new ContentSecurityPolicy instance.
    */
@@ -127,7 +127,7 @@ public final class ContentSecurityPolicy {
    * <p>If the policy has no source value, it is set to the specified value.
    *
    * @param directive The policy directive to update
-   * @param nonce The source value to add or set to new policy.
+   * @param nonce The source value to add or set to a new policy.
    *
    * @return a new ContentSecurityPolicy instance.
    */

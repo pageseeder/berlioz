@@ -85,7 +85,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
      *
      * <p>This option is only meaningful for {@code String} fields whose value is already
      * well-formed XML markup. For {@code boolean}, {@code int}, {@code long}, and {@code double}
-     * fields it falls back to {@link #DEFAULT} (attribute) behaviour.</p>
+     * fields it falls back to {@link #DEFAULT} (attribute) behavior.</p>
      */
     XML_COPY
   }
@@ -102,7 +102,7 @@ public interface OutputWriter extends AutoCloseable, Flushable {
 
     /**
      * In JSON, the object or array is written normally.
-     * In XML, the wrapper element is omitted but its children are still written at the enclosing level.
+     * In XML, the wrapper element is omitted, but its children are still written at the enclosing level.
      *
      * <p>Use this when a JSON object or array is used for structural grouping and has no
      * meaningful XML counterpart as a distinct element.</p>

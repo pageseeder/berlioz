@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 
 /**
- * A typed, optionally-constrained view of a single request parameter.
+ * A typed, optionally constrained, view of a single request parameter.
  *
  * <p>Obtained by calling {@link ParameterBuilder#asString()}, {@link ParameterBuilder#asInt()},
  * and similar methods. Terminal methods resolve the final value or throw
@@ -43,7 +43,7 @@ import org.pageseeder.berlioz.Beta;
  *   <li>{@link #matching(Predicate, String)} — marks a value that fails a predicate as invalid ({@link InvalidParameterException.Reason#NOT_ALLOWED}).</li>
  * </ul>
  *
- * <p>Terminal methods — behaviour by state:
+ * <p>Terminal methods — behavior by state:
  * <table>
  *   <tr><th>Terminal</th>          <th>Absent</th>       <th>Invalid</th></tr>
  *   <tr><td>{@link #required()}</td>        <td>throws</td>  <td>throws</td></tr>
@@ -80,7 +80,7 @@ public final class TypedParameter<T> {
   /**
    * Silently coerces the value to the nearest bound when it falls outside {@code [min, max]}.
    *
-   * <p>Absent and already-invalid states are passed through unchanged so the terminal method
+   * <p>Absent and already-invalid states are passed through unchanged, so the terminal method
    * handles them normally. {@code T} must implement {@link Comparable}.
    *
    * <pre>
@@ -104,13 +104,13 @@ public final class TypedParameter<T> {
   /**
    * Marks the value as invalid when it falls outside {@code [min, max]}.
    *
-   * <p>Absent and already-invalid states are passed through unchanged so the terminal method
+   * <p>Absent and already-invalid states are passed through unchanged, so the terminal method
    * handles them normally. {@code T} must implement {@link Comparable}.
    *
-   * <pre>
+   * <pre>{@code
    * int page = request.parameter("page").asInt().inRange(1, 1000).required();      // throw if out of range
    * int page = request.parameter("page").asInt().inRange(1, 1000).defaultValue(1); // default if out of range
-   * </pre>
+   * }</pre>
    *
    * @param min the lower bound (inclusive)
    * @param max the upper bound (inclusive)
@@ -133,13 +133,13 @@ public final class TypedParameter<T> {
   /**
    * Marks the value as invalid when it fails the given predicate.
    *
-   * <p>Absent and already-invalid states are passed through unchanged so the terminal method
+   * <p>Absent and already-invalid states are passed through unchanged, so the terminal method
    * handles them normally.
    *
-   * <pre>
+   * <pre>{@code
    * int n    = request.parameter("count").asInt().matching(v -> v % 2 == 0, "must be even").required();
    * String s = request.parameter("sku").asString().matching(v -> v.startsWith("SKU-"), "must start with SKU-").required();
-   * </pre>
+   * }</pre>
    *
    * @param predicate   the constraint the value must satisfy
    * @param description a short description used in the error message when the predicate fails
@@ -182,7 +182,7 @@ public final class TypedParameter<T> {
   /**
    * Returns the value, or {@code def} if the parameter was submitted but is invalid; throws if absent.
    *
-   * <p>Use this when the parameter must be present but a malformed value should fall back to a
+   * <p>Use this when the parameter must be present, but a malformed value should fall back to a
    * safe default rather than surfacing an error.
    *
    * <pre>
@@ -241,7 +241,7 @@ public final class TypedParameter<T> {
   /**
    * Returns the value, or {@code def} if the parameter is absent or invalid.
    *
-   * <p>Use this when any missing or unrecognised value should silently fall back to a default.
+   * <p>Use this when any missing or unrecognized value should silently fall back to a default.
    *
    * <pre>
    * int page = request.parameter("page").asInt().clamp(1, 1000).defaultValue(1);

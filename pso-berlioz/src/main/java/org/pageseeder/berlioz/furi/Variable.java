@@ -30,22 +30,22 @@ import org.jspecify.annotations.Nullable;
  * simply allows variables to be associated with a type.
  *
  * <p>Examples of variables:
- * <pre>
+ * <pre>{@code
  *   foo         - An untyped variable named 'foo'
  *   bar         - An untyped variable named 'bar'
  *   ping:foo    - A variable named 'foo' typed 'ping'
  *   ping:foo=1  - A variable named 'foo' typed 'ping' which default value is '1'
  *   foo=pong    - An untyped variable named 'foo' which default value is 'pong'
- * </pre>
+ * }</pre>
  *
- * <p>Variables only appear in the context of the a template expansion.
+ * <p>Variables only appear in the context of a template expansion.
  *
  * <p>Expansion rule (4.4.1):
  *
  * <pre>
- * &quot;In a variable ('var') expansion, if the variable is defined then substitute the value of
+ * &quot;In a variable ('var') expansion, if the variable is defined, then substitute the value of
  * the variable, otherwise substitute the default value.
- * If no default value is given then substitute with the empty string.&quot;
+ * If no default value is given, then substitute with the empty string.&quot;
  * </pre>
  *
  * <p>Syntax for variables:
@@ -106,7 +106,7 @@ public class Variable {
    * Indicate that the variable's value should be processed as a list ("@") or an associative array ("%").
    *
    * <p>This variable type is an instruction for the template processor.
-   * It is not an indication of language or implementation type.
+   * It is not an indication of a language or implementation type.
    */
   public enum Form {
 
@@ -148,7 +148,7 @@ public class Variable {
    * Indicate that the variable's value should be processed as a list ("@") or an associative array ("%").
    *
    * <p>This variable type is an instruction for the template processor.
-   * It is not an indication of language or implementation type.
+   * It is not an indication of a language or implementation type.
    */
   public enum Modifier {
 
@@ -170,7 +170,7 @@ public class Variable {
   private static final Pattern VALID_NAME = Pattern.compile("[a-zA-Z0-9][\\w.-]*");
 
   /**
-   * The pattern for a valid normalised variable value: any unreserved character or an escape
+   * The pattern for a valid normalized variable value: any unreserved character or an escape
    * sequence. This pattern contains non-capturing parentheses to make it easier to get variable
    * values as a group.
    */

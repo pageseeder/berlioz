@@ -33,9 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple war or zip file which can be unpacked on top of the existing application.
+ * A simple war or zip file that can be unpacked on top of the existing application.
  *
- * <p>A simple way to modularise aspect of the app.
+ * <p>A simple way to modularize an aspect of the app.
  *
  * @author Christophe Lauret
  * @version 0.12.3
@@ -179,7 +179,7 @@ final class Overlays {
      *
      * @param root The root of the web application (context path)
      *
-     * @return the number of file that have been unpacked
+     * @return the number of files that have been unpacked
      *
      * @throws IOException Should any error occur.
      */

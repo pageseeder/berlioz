@@ -94,10 +94,10 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /** Any attached message (String). */
   public static final String ERROR_MESSAGE        = "javax.servlet.error.message";
 
-  /** The offending request URI (String) .*/
+  /** The offending request URI (String). */
   public static final String ERROR_REQUEST_URI    = "javax.servlet.error.request_uri";
 
-  /** The name of offending servlet (String). */
+  /** The name of the offending servlet (String). */
   public static final String ERROR_SERVLET_NAME   = "javax.servlet.error.servlet_name";
 
   /** The HTTP Status code (Integer). */
@@ -179,7 +179,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
-   * Handle the errors using the fail safe options and templates.
+   * Handle the errors using the fail-safe options and templates.
    *
    * @param req The servlet request.
    * @param res The servlet response.
@@ -229,11 +229,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
         ext = defaultExtension;
       }
 
-      // Replace the .auto by the original extension (.html, .xml, .json, etc...)
+      // Replace the '.auto' by the original extension (.html, .xml, .json, etc...)
       String to = replaceAutoURI(uri, ext, req.getContextPath());
       to = Paths.get(to).normalize().toString();
 
-      // If we do not detect a loop we forward the request
+      // If we do not detect a loop, we forward the request
       if (!uri.equals(to)) {
 
         // Let's forward the request
@@ -247,7 +247,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // Generate error details as XML
     String xml = toXML(req);
 
-    // Reset the response (in case the ETag, etc.. has been set...)
+    // Reset the response (in case the ETag, etc. has been set...)
     res.reset();
     res.setCharacterEncoding("utf-8");
     res.setStatus(code);
@@ -367,7 +367,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     Map<?, ?> parameters = req.getParameterMap();
     for (Entry<?, ?> entry : parameters.entrySet()) {
       String name = entry.getKey().toString();
-      // Must be an array according to Servlet Specifications
+      // Must be an array, according to Servlet Specifications
       String[] values = (String[])entry.getValue();
       if (values != null) {
         for (String value : values) {
@@ -451,7 +451,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
-   * Replace the .auto by the original extension (.html, .xml, .json, etc...)
+   * Replace the '.auto' by the original extension (.html, .xml, .json, etc...)
    *
    * <p>The application context is removed from the request URI as the RequestDiscpatcher will automatically add it.
    *

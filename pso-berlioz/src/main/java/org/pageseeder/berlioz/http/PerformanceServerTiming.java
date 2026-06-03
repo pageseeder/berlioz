@@ -35,16 +35,17 @@ import java.util.regex.Pattern;
 public final class PerformanceServerTiming {
 
   /**
-   * A valid <code>token</code> according to https://tools.ietf.org/html/rfc7230#section-3.2.6
+   * A valid <code>token</code> according to <a href="https://tools.ietf.org/html/rfc7230#section-3.2.6">
+   *   https://tools.ietf.org/html/rfc7230#section-3.2.6</a>
    *
-   * <pre>
+   * <pre>{@code
    * token          = 1*tchar
    * tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
    *                / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
    *                / DIGIT / ALPHA
-   * </pre>
+   * }</pre>
    *
-   * To be safe we don't allow characters outside ASCII range.
+   * To be safe, we don't allow characters outside the ASCII range.
    */
   private static final Pattern VALID_TOKEN = Pattern.compile("^[!#$%&'*+\\-.^_`|~0-9a-zA-Z]+$");
 
@@ -69,7 +70,7 @@ public final class PerformanceServerTiming {
    * @param name     The metric name.
    * @param duration The server-specified metric duration in milliseconds
    *
-   * @throws NullPointerException if name is null
+   * @throws NullPointerException if the name is null
    */
   public PerformanceServerTiming(String name, double duration) {
     this(name, "", duration);
@@ -82,7 +83,7 @@ public final class PerformanceServerTiming {
    * @param description The server-specified metric description.
    * @param duration    The server-specified metric duration in milliseconds
    *
-   * @throws NullPointerException if name is null
+   * @throws NullPointerException if the name is null
    */
   public PerformanceServerTiming(String name, @Nullable String description, double duration) {
     this.name = checkName(name);
@@ -100,7 +101,7 @@ public final class PerformanceServerTiming {
   }
 
   /**
-   * Returns the metric description, or an empty string when no description was supplied.
+   * Returns the metric description or an empty string when no description was supplied.
    *
    * @return the server-specified metric description.
    */
@@ -120,7 +121,7 @@ public final class PerformanceServerTiming {
   /**
    * Generate the header value string for the "Server-Timing" header.
    *
-   * <p>This method ensure that only valid characters are used to prevent HTTP header attacks such as header splitting.
+   * <p>This method ensures that only valid characters are used to prevent HTTP header attacks such as header splitting.
    *
    * @return the header value string.
    */
@@ -142,7 +143,7 @@ public final class PerformanceServerTiming {
   }
 
   /**
-   * Check that the server timing parameter value is a valid.
+   * Check that the server timing parameter value is valid.
    *
    * @return A valid name with invalid characters replaced by '_'
    *
@@ -159,7 +160,7 @@ public final class PerformanceServerTiming {
 
   /**
    * Check that the server timing parameter value is a valid <code>token</code> / <code>quoted-string</code>
-   * according to https://tools.ietf.org/html/rfc7230#section-3.2.6
+   * according to <a href="https://tools.ietf.org/html/rfc7230#section-3.2.6">https://tools.ietf.org/html/rfc7230#section-3.2.6</a>
    *
    * @return A valid description with invalid characters replaced by '_'
    */

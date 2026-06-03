@@ -24,7 +24,7 @@ import java.io.*;
 import java.util.Map;
 
 /**
- * A simpler version of the XML config file to improve readability of Berlioz configuration.
+ * A simpler version of the XML config file to improve the readability of Berlioz configuration.
  *
  * <p>The XML is not required to validate a specific schema but will be parsed according to the
  * following rules:
@@ -118,7 +118,7 @@ public final class XMLConfig implements Serializable, XMLWritable {
   }
 
   /**
-   * Reads a XML property list from the input stream.
+   * Reads an XML property list from the input stream.
    *
    * @param in The XML input stream to parse.
    *

@@ -18,7 +18,7 @@ package org.pageseeder.berlioz.content;
 import org.pageseeder.xmlwriter.XMLWritable;
 
 /**
- * This class provides information about the location of resource associated with the content request.
+ * This class provides information about the location of a resource associated with the content request.
  *
  * @author Christophe Lauret
  *

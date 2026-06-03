@@ -55,7 +55,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
   private final ConcurrentHashMap<Class<?>, BasicStats> stats = new ConcurrentHashMap<>();
 
   /**
-   * When did we start collecting statistics
+   * When we started collecting statistics
    */
   private long since = System.currentTimeMillis();
 
@@ -167,7 +167,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
     private final LinkedBlockingDeque<Long> lastProcess = new LinkedBlockingDeque<>(10);
 
     /**
-     * Creates a instance with the specified initial status and time values.
+     * Creates an instance with the specified initial status and time values.
      *
      * @param name    The name of the generator
      * @param status  The first content status
@@ -193,8 +193,8 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
      * Update the statistics.
      *
      * @param status  The content status
-     * @param etag    The getEtag() function time in nano seconds
-     * @param process The process() function time in nano seconds
+     * @param etag    The getEtag() function time in nanoseconds
+     * @param process The process() function time in nanoseconds
      */
     public synchronized void update(ContentStatus status, long etag, long process) {
       // Status

@@ -55,7 +55,7 @@ abstract class ConfigLoader<T> extends DefaultHandler {
   protected T config;
 
   /**
-   * Create a new handler initialised with the specified config item.
+   * Create a new handler initialized with the specified config item.
    *
    * @param config Config item to create (must not be null)
    */

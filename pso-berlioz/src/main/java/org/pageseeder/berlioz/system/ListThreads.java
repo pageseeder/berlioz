@@ -29,8 +29,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * Returns information about the threads running in the system.
  *
  * <ul>
- *   <li><code>NEW</code>. The thread has been created, but hasn't run yet.</li>
- *   <li><code>TERMINATED</code>. The thread has run to completion, but hasn't been deleted yet by the JVM.</li>
+ *   <li><code>NEW</code>. The thread has been created but hasn't run yet.</li>
+ *   <li><code>TERMINATED</code>. The thread has run to completion but hasn't been deleted yet by the JVM.</li>
  *   <li><code>RUNNABLE</code>. The thread is running.</li>
  *   <li><code>BLOCKED</code>. The thread is blocked waiting on a lock (such as in a synchronized block or method).</li>
  *   <li><code>WAITING</code>. The thread is waiting until another thread calls notify().</li>
@@ -74,8 +74,8 @@ public final class ListThreads implements ContentGenerator {
   /**
    * Display the specified thread.
    *
-   * @param thread The thread to serialise as XML
-   * @param bean  The management bean for CPU time (may be <code>null</code>)
+   * @param thread The thread to serialize as XML
+   * @param bean  The management bean for CPU time (might be <code>null</code>)
    * @param xml   The XML Writer
    *
    * @throws IOException Should an error occur while writing the XML
@@ -100,9 +100,9 @@ public final class ListThreads implements ContentGenerator {
   /**
    * Return all the threads with stack traces
    *
-   * @param thread     The thread information to serialise as XML
-   * @param stacktrace The stack trace (may be <code>null</code>)
-   * @param bean       The management bean for CPU time (may be <code>null</code>)
+   * @param thread     The thread information to serialize as XML
+   * @param stacktrace The stack trace (might be <code>null</code>)
+   * @param bean       The management bean for CPU time (might be <code>null</code>)
    * @param xml The XML writer
    *
    * @throws IOException If thrown while writing XML.
@@ -112,7 +112,7 @@ public final class ListThreads implements ContentGenerator {
     xml.openElement("thread", true);
     writeThreadAttributes(thread, xml);
 
-    // If the management bean is available include times
+    // If the management bean is available, include times
     if (bean != null) {
       final long cpu = bean.getThreadCpuTime(thread.getThreadId());
       final long user = bean.getThreadUserTime(thread.getThreadId());

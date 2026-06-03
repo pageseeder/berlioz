@@ -53,8 +53,8 @@ public final class MediaTypes {
    *
    * <p>The media type is only based on the file extension.
    *
-   * <p>This method uses the the 'mime.properties' resource file from the classpath which maps
-   * file extensions to the corresponding Media Type. This file is loaded once.
+   * <p>This method uses the 'mime.properties' resource file from the classpath which maps
+   * file extensions to the corresponding Media Type. This file is loaded only once.
    *
    * @see <a href="http://tools.ietf.org/html/rfc2046">MIME Part Two: Media Types</a>
    * @see <a href="http://tools.ietf.org/html/rfc3023">XML Media Types</a>
@@ -67,7 +67,7 @@ public final class MediaTypes {
     if (MEDIA_TYPES.isEmpty()) {
       loadMediaTypes();
     }
-    // Lookup extension in properties file
+    // Look up extension in properties file
     String name = f.getName();
     int dot = name.lastIndexOf(".");
     if (dot >= 0) return MEDIA_TYPES.getProperty(name.substring(dot+1));

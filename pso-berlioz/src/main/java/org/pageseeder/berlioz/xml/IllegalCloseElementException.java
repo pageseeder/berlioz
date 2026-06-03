@@ -27,7 +27,7 @@ package org.pageseeder.berlioz.xml;
 public final class IllegalCloseElementException extends IllegalStateException {
 
   /**
-   * Version number for the serialised class.
+   * Version number for the serialized class.
    */
   private static final long serialVersionUID = 7264175736386596167L;
 

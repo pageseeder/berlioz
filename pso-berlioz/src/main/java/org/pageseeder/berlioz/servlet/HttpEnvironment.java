@@ -42,7 +42,7 @@ public final class HttpEnvironment implements Environment {
   private final File privateFolder;
 
   /**
-   * The cache control directives for the environment (may be overridden by individual services)
+   * The cache control directives for the environment (might be overridden by individual services)
    */
   private final String cacheControl;
 

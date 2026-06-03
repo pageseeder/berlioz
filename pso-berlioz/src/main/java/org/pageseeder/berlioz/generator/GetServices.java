@@ -56,7 +56,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *                         name="[name]" target="[target]"/>}</pre>
  *
  * <h3>Etag</h3>
- * <p>This generator uses a etag based on the name, length and last modified date of the file.
+ * <p>This generator uses an etag based on the name, length, and last modified date of the file.
  *
  * @author Christophe Lauret
  *

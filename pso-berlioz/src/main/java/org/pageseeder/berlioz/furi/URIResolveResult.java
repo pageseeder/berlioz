@@ -53,7 +53,7 @@ public final class URIResolveResult implements ResolvedVariables {
   private Status status = Status.UNRESOLVED;
 
   /**
-   * Constructs an instance of this class with fields initialised to null.
+   * Constructs an instance of this class with fields initialized to null.
    */
   URIResolveResult(URIPattern pattern) {
     this.pattern = pattern;
@@ -79,7 +79,7 @@ public final class URIResolveResult implements ResolvedVariables {
   }
 
   /**
-   * Returns the URI Pattern that was used to produce this result.
+   * Returns the URI Pattern used to produce this result.
    *
    * @return The URI Pattern that was used to produce this result.
    */

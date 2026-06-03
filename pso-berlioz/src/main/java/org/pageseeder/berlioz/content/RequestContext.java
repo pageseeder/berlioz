@@ -29,7 +29,7 @@ import org.pageseeder.berlioz.Beta;
  * attributes, cookies, and environment context.
  *
  * <p>This is the clean interface that content generators should prefer. It carries only
- * request-reading concerns; response signalling ({@code setStatus}, {@code setRedirect})
+ * request-reading concerns; response signaling ({@code setStatus}, {@code setRedirect})
  * remains on {@link ContentRequest} pending a future generator API change.
  *
  * <p>New collection-returning methods ({@link #parameterNames()}, {@link #parameterValues(String)},
@@ -87,7 +87,7 @@ public interface RequestContext {
   /**
    * Resolves a request parameter using the given spec.
    *
-   * <p>The spec encodes the parameter name, type conversion, constraints, and terminal behaviour.
+   * <p>The spec encodes the parameter name, type conversion, constraints, and terminal behavior.
    * Define specs as {@code public static final} fields and share them across generators:
    *
    * <pre>{@code
@@ -103,7 +103,7 @@ public interface RequestContext {
    * @param <T>  the resolved type
    * @param spec the parameter spec
    * @return the resolved value
-   * @throws InvalidParameterException if the spec's resolver throws (e.g. a required parameter is absent)
+   * @throws InvalidParameterException if the spec's resolver throws (e.g., a required parameter is absent)
    */
   default <T> T parameter(ParameterSpec<T> spec) {
     return spec.resolve(parameter(spec.name()));

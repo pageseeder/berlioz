@@ -20,7 +20,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Interface to define basic information that can be held about a resource to be served via HTTP.
  *
- * <p>Objects implementing this interface can be used to determine the caching behaviour in the
+ * <p>Objects implementing this interface can be used to determine the caching behavior in the
  * HTTP response.
  *
  * @author Christophe Lauret

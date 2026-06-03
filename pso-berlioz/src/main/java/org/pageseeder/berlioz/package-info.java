@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * High level classes used by Berlioz.
+ * High-level classes used by Berlioz.
  */
 @org.jspecify.annotations.NullMarked
 package org.pageseeder.berlioz;

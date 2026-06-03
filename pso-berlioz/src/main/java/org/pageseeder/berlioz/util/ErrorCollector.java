@@ -68,7 +68,7 @@ public class ErrorCollector<T extends Throwable>  {
   }
 
   /**
-   * Set the threshold to set to rise the error flag.
+   * Set the threshold to set to raise the error flag.
    *
    * @param threshold the level at which the next collect call set the error flag to <code>true</code>.
    * @throws NullPointerException If the threshold argument is <code>null</code>.
@@ -86,7 +86,7 @@ public class ErrorCollector<T extends Throwable>  {
    * @param level     The level of the exception.
    * @param exception The exception thrown by the underlying process.
    *
-   * @throws T If the exception threshold has been reached, the exception passed as argument is thrown.
+   * @throws T If the exception threshold has been reached, the exception passed as the argument is thrown.
    * @throws NullPointerException If either argument is <code>null</code>.
    */
   public final void collect(Level level, T exception) throws T {

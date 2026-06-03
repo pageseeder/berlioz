@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A utility class to help dealing with the HTTP/1.1 request headers such as 'Accept', 'Accept-Language',
+ * A utility class to help deal with the HTTP/1.1 request headers such as 'Accept', 'Accept-Language',
  * 'Accept-Encoding', 'Accept-Charset'.
  *
  * <p>The quality values returned are floats from 0.0f to 1.0f.
@@ -60,7 +60,7 @@ public final class HttpAcceptHeader { // NO_UCD
   private static final int MAX_SIZE = 96;
 
   /**
-   * The pattern matching an accept header with a Q value.
+   * The pattern matching an 'Accept' header with a Q value.
    */
   private static final Pattern ACCEPT_WITH_QVALUE = Pattern.compile("([^;]+);\\s*q=(\\d\\.?\\d*)\\s*");
 
@@ -74,14 +74,14 @@ public final class HttpAcceptHeader { // NO_UCD
    * Returns the list of accepted content types mapped to their quality level.
    *
    * @param accept The 'Accept' HTTP/1.1 header.
-   * @return an unmodifiable map of the accept header.
+   * @return an unmodifiable map of the 'Accept' header.
    */
   public static Map<String, Float> get(@Nullable String accept) {
     // no value, return an empty map
     if (accept == null || accept.isEmpty()) return Collections.emptyMap();
     // Try to see if this has been processed already
     Map<String, Float> map = MAPS.get(accept);
-    // Parse the accept header.
+    // Parse the 'Accept' header.
     if (map == null) {
       map = Collections.unmodifiableMap(parse(accept));
       if (MAPS.size() < MAX_SIZE) {
@@ -102,7 +102,7 @@ public final class HttpAcceptHeader { // NO_UCD
    * @param accept The 'Accept' or 'Accept-*' HTTP/1.1 header.
    * @param value  The value to look for.
    *
-   * @return <code>true</code> if the specified value has a Q value  strictly greater than 0;
+   * @return <code>true</code> if the specified value has a Q value strictly greater than 0;
    *         <code>false</code> otherwise.
    */
   public static boolean accepts(@Nullable String accept, String value) {
@@ -115,10 +115,10 @@ public final class HttpAcceptHeader { // NO_UCD
    * <p>To be acceptable, the value must either be listed explicitly, match a wildcard entry,
    * or match a media-type wildcard with a quality value strictly greater than zero.
    *
-   * @param accept An accept map produced by this class.
+   * @param accept An 'Accept' map produced by this class.
    * @param value  The value to look for.
    *
-   * @return <code>true</code> if the specified value has a Q value  strictly greater than 0;
+   * @return <code>true</code> if the specified value has a Q value strictly greater than 0;
    *         <code>false</code> otherwise.
    */
   public static boolean accepts(Map<String, Float> accept, String value) {
@@ -141,7 +141,7 @@ public final class HttpAcceptHeader { // NO_UCD
   }
 
   /**
-   * Parses the accept header and returns the corresponding map.
+   * Parses the 'Accept' header and returns the corresponding map.
    *
    * @param accept The 'Accept' or 'Accept-*' HTTP/1.1 header.
    * @return the accepted content types mapped to their quality value (0 to 1000).

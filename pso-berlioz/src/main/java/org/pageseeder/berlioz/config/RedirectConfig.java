@@ -52,7 +52,7 @@ public final class RedirectConfig {
   private static final Logger LOGGER = LoggerFactory.getLogger(RedirectConfig.class);
 
   /**
-   * Maps URI patterns to redirect to URI pattern target.
+   * Maps URI patterns to redirect to the URI pattern target.
    */
   private final List<RedirectPattern> patterns;
 

@@ -15,12 +15,10 @@
  */
 package org.pageseeder.berlioz.bundler;
 
-import org.jspecify.annotations.NonNull;
-
 /**
  * Class of exceptions occurring while parsing content for minimization.
  *
- * <p>This class is used a base class.
+ * <p>This class is used as a base class.
  *
  * @author Christophe Lauret
  *
@@ -72,7 +70,7 @@ public class ParsingException extends Exception {
   }
 
   @Override
-  public @NonNull String getMessage() {
+  public String getMessage() {
     return super.getMessage()+" at line "+this.line +" and column "+this.column;
   }
 }

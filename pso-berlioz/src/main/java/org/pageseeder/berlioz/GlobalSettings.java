@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Berlioz global settings.
  *
- * <p>This class provides a global access to the settings for the application.
- * It needs to be setup prior to using most of the classes used in this
+ * <p>This class provides global access to the settings for the application.
+ * It needs to be set up prior to using most of the classes used in this
  * application.
  *
  * <p>This class uses two main access points:
@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  *
  *   <li><var>appdata</var>: is the directory that contains the application
  *   data that is not part of the application distribution such as a WAR file
- *   and that needs to survive redeployments and updates. This folder default
+ *   and that needs to survive redeployments and updates. This folder defaults
  *   to the same as the <i>webinf</i> folder.</li>
  *
  *   <li><var>configuration</var>: is the file that contains all the global properties used
@@ -89,7 +89,7 @@ public final class GlobalSettings {
   // --------------------------------------------------------------------------
 
   /**
-   * Name of the directory containing the configuration files for Berlioz
+   * Name of the directory containing the configuration files for Berlioz,
    * including the global settings, services, logging, etc...
    *
    * @deprecated since 0.11.4, use {@link InitEnvironment#DEFAULT_CONFIG_DIRECTORY} instead
@@ -150,7 +150,7 @@ public final class GlobalSettings {
   // --------------------------------------------------------------------------
 
   /**
-   * Returns the main repository or <code>null</code> if it has not been setup.
+   * Returns the main repository or <code>null</code> if it has not been set up.
    *
    * @return The directory used as a repository or <code>null</code>.
    */
@@ -174,8 +174,8 @@ public final class GlobalSettings {
   }
 
   /**
-   * note: If the appData is different of webInf then maybe the mode config could be in other folder. Therefore in this
-   * case should be worth to check in {appData}/config
+   * note: If the appData is different of webInf then maybe the mode config could be in another folder.
+   * Therefore, in this case it should be worth checking in {appData}/config
    *
    * @return The configuration directory containing all configuration files for Berlioz.
    */

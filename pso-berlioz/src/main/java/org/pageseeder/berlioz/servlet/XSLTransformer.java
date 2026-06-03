@@ -72,7 +72,7 @@ import org.xml.sax.XMLReader;
  * Performs the XSLT transformation from the generated XML content.
  *
  * <p>By default, all XSLT templates are cached, use the global property <code>berlioz.cache.xslt</code>
- * to change this behaviour.
+ * to change this behavior.
  *
  * @author Christophe Lauret
  *
@@ -92,7 +92,7 @@ public final class XSLTransformer {
   private static final Map<File, Templates> CACHE = new ConcurrentHashMap<>();
 
   /**
-   * Identity templates for worse case scenario!
+   * Identity templates for the worse case scenario!
    */
   private static final Templates IDENTITY_TEMPLATES = new Templates() {
     @Override
@@ -162,10 +162,10 @@ public final class XSLTransformer {
       // Creates a transformer from the templates
       templates = getTemplates(this.templatesFile);
 
-      // Setup the source
+      // Set up the source
       Source source = toXMLSource(content, req, service);
 
-      // Setup the result
+      // Set up the result
       StreamResult result = new StreamResult(buffer);
 
       // Transform!
@@ -187,7 +187,7 @@ public final class XSLTransformer {
   }
 
   /**
-   * Performs a fail safe transformation using the internal templates.
+   * Performs a fail-safe transformation using the internal templates.
    *
    * @param content The XML to transform.
    * @param url     The URL to use.
@@ -291,7 +291,7 @@ public final class XSLTransformer {
   }
 
   /**
-   * Utility function to transforms the specified XML source and returns the results as XML.
+   * Utility function to transform the specified XML source and returns the results as XML.
    *
    * <p>Problems will be reported in the logs, the output will simply produce results as a comment.
    *
@@ -344,7 +344,7 @@ public final class XSLTransformer {
    *
    * @return The corresponding templates
    *
-   * @throws TransformerException If the templates could not parsed.
+   * @throws TransformerException If the templates could not parse.
    */
   private synchronized Templates getTemplates(File f) throws TransformerException {
     boolean store = GlobalSettings.has(BerliozOption.XSLT_CACHE);
@@ -515,7 +515,7 @@ public final class XSLTransformer {
   }
 
   /**
-   * Loads the fail safe templates.
+   * Loads the fail-safe templates.
    * @param url The URL to load (within Berlioz Package)
    * @return templates or <code>null</code>.
    */
@@ -537,9 +537,9 @@ public final class XSLTransformer {
   }
 
   /**
-   * Perform a fail safe transformation using the built-in stylesheet.
+   * Perform a fail-safe transformation using the built-in stylesheet.
    *
-   * <p>Note: If the transformation fails the source XML is returned verbatim as there is nothing
+   * <p>Note: If the transformation fails, the source XML is returned verbatim as there is nothing
    * more we can do.
    *
    * @param xml       The XML to transform
@@ -548,7 +548,7 @@ public final class XSLTransformer {
    * @return The results of the transformation.
    */
   private static String transformFailSafe(String xml, Templates templates) {
-    // No need to process, let's copy directly the output
+    // No need to process, let's directly copy the output
     if (templates == IDENTITY_TEMPLATES) return xml;
     // Let's try to format it
     String out;
@@ -673,7 +673,7 @@ public final class XSLTransformer {
       case TRANSFORM_INVALID:              return "XSLT Static Error";
       case TRANSFORM_DYNAMIC_ERROR:        return "XSLT Dynamic Error";
       case TRANSFORM_MALFORMED_SOURCE_XML: return "XML is not well formed";
-      default: return "Unindentified XSLT error!";
+      default: return "Unidentified XSLT error!";
     }
   }
 

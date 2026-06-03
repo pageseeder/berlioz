@@ -149,8 +149,8 @@ public final class URIPattern extends URITemplate implements Matchable {
   /**
    * Compute the Regular Expression pattern for this URI Pattern.
    *
-   * <p>Important note: the regular expression contain the same number of capturing groups as the
-   * number of token to facilitate the resolve process.
+   * <p>Important note: the regular expression contains the same number of capturing groups as the
+   * number of tokens to facilitate the resolve process.
    *
    * @param tokens The list of tokens to compute the pattern.
    *

@@ -19,7 +19,7 @@ public class Xml {
   }
 
   /**
-   * Always return a XML Writer.
+   * Always return an XML Writer.
    *
    * @param writer The writer receiving the XML output.
    *
@@ -46,6 +46,7 @@ public class Xml {
    * @throws ParserConfigurationException if a parser cannot be created.
    * @throws SAXException if a parser feature cannot be configured.
    */
+  @SuppressWarnings("HttpUrlsUsage")
   public static SAXParser newSafeParser(boolean validating) throws ParserConfigurationException, SAXException {
     // use the SAX parser factory to ensure validation
     SAXParserFactory factory = SAXParserFactory.newInstance();

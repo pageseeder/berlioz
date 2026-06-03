@@ -40,7 +40,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * Returns HTTP error details as XML.
  *
  * <p>This content generator is designed for use in error-handling services, where it reads
- * the standard servlet error request attributes and serialises them as XML.
+ * the standard servlet error request attributes and serializes them as XML.
  *
  * <h3>Configuration</h3>
  * <p>There is no configuration directly associated with this generator.</p>

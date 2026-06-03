@@ -4,7 +4,7 @@ import java.io.IOException;
 
 /**
  * Wraps I/O exceptions for classes where the occurrence is unlikely because the
- * underlying data stream never actually throw any IOException.
+ * underlying data stream never actually throws any IOException.
  *
  * @author Christophe Lauret
  */

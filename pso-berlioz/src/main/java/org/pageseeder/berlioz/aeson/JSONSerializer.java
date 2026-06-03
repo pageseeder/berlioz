@@ -312,7 +312,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   private void handleElement(String localName, Attributes atts) {
     String name = atts.getValue(NS_URI, "name");
 
-    // If the element name matches of the types, it's a property
+    // If the element name matches one of the types, it's a property
     if (this.state.getType(localName) != JSONType.DEFAULT) {
       if (hasProperty(atts)) {
         warning(new SAXParseException("Element "+localName+" is mapped to a property, also has properties!", this.locator));
@@ -386,7 +386,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Attempts to write the specified name/value pair as a number.
    *
-   * <p>Will fallback on a string and report a warning if unable to convert to a number.
+   * <p>Will fall back on a string and report a warning if unable to convert to a number.
    *
    * @param name  The JSON name to write.
    * @param value The JSON value to write.
@@ -417,7 +417,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Attempts to write the specified name/value pair as a boolean.
    *
-   * <p>Will fallback on a string and report a warning if unable to convert to a boolean.
+   * <p>Will fall back on a string and report a warning if unable to convert to a boolean.
    *
    * @param name  The JSON name to write (may be <code>null</code>)
    * @param value The JSON value to write.

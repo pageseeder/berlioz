@@ -23,8 +23,8 @@ import java.io.Serializable;
  * <p>A bundle definition has:
  * <ul>
  *   <li>A name (e.g. "global", "group", "service")</li>
- *   <li>A filename which may include tokens (e.g. "global", "{GROUP}", "{SERVICE}")</li>
- *   <li>A list of web paths included as part of this bundle which may also include dynamic tokens.</li>
+ *   <li>A filename that may include tokens (e.g. "global", "{GROUP}", "{SERVICE}")</li>
+ *   <li>A list of web paths included as part of this bundle, which may also include dynamic tokens.</li>
  * </ul>
  *
  * <p>When a bundle definition is instantiated for a specific service, the tokens are resolved and fixed.

@@ -45,7 +45,7 @@ public class TokenVariable extends TokenBase implements Token, Matchable {
   /**
    * Creates a new variable token.
    *
-   * @param exp The expression to create a new.
+   * @param exp The expression.
    *
    * @throws NullPointerException If the specified expression is <code>null</code>.
    * @throws URITemplateSyntaxException If the specified expression could not be parsed as a

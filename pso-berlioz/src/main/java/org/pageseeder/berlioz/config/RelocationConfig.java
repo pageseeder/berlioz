@@ -52,7 +52,7 @@ public final class RelocationConfig {
   private static final Logger LOGGER = LoggerFactory.getLogger(RelocationConfig.class);
 
   /**
-   * Maps URI patterns to relocate to URI pattern target.
+   * Maps URI patterns to relocate to the URI pattern target.
    */
   private final List<MovedLocationPattern> mapping;
 

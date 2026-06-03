@@ -40,11 +40,11 @@ final class GsonJsonWriter implements JsonWriter {
   /** Either '}' or ']' for objects and arrays respectively. */
   private char[] closer = new char[32];
 
-  /** Array index is current depth level, 0 is top level Object or Array. */
+  /** Array index is the current depth level, 0 is top level Object or Array. */
   private int level = -1;
 
   /**
-   * Creates new JSON writer.
+   * Creates a new JSON writer.
    *
    * @param json The generator to use.
    */

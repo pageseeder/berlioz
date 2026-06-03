@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.util;
 
 import java.io.File;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -52,7 +51,7 @@ public class FileEntityInfo implements EntityInfo {
   private final String mime;
 
   /**
-   * Creates a new entity info for the specified file.
+   * Creates new entity info for the specified file.
    *
    * @param file     The file representing the bundle.
    * @param mimeType The content type of the file.
@@ -78,7 +77,7 @@ public class FileEntityInfo implements EntityInfo {
   }
 
   @Override
-  public final @NonNull String getMimeType() {
+  public final String getMimeType() {
     return this.mime;
   }
 

@@ -64,7 +64,7 @@ public final class ServiceRegistry {
    * Register the content generator.
    *
    * @param service the service to register.
-   * @param pattern the URL pattern to associate to this content generator.
+   * @param pattern the URL pattern to associate with this content generator.
    * @param method  the method for this URL pattern.
    *
    * @throws NullPointerException If any argument is <code>null</code>
@@ -252,7 +252,7 @@ public final class ServiceRegistry {
   }
 
   /**
-   * Returns the HTTP method for the specified value (case insensitive)
+   * Returns the HTTP method for the specified value (case-insensitive)
    *
    * @param method The method to find
    * @return The corresponding instance or <code>null</code> if no match.
@@ -266,7 +266,7 @@ public final class ServiceRegistry {
 
   private ServiceMap getMapping(HttpMethod method) {
     ServiceMap mapping = this.registry.get(method);
-    // this should never happen since we initialise method
+    // this should never happen since we initialize method
     if (mapping == null) throw new IllegalStateException("Failure to initialize service registry");
     return mapping;
   }
@@ -319,7 +319,7 @@ public final class ServiceRegistry {
      * @return the content generator for the specified URL.
      */
     public @Nullable MatchingService match(String url) {
-      // Attempt to the find service directly
+      // Attempt to find the service directly
       MatchingService match = null;
       Service service = this.mapping.get(url);
       if (service != null) {

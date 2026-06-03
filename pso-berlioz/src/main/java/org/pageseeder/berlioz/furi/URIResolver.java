@@ -66,7 +66,7 @@ public final class URIResolver {
 
     /**
      * Indicates that the best matching pattern should be returned when finding a match in a list
-     * of patterns. The best matching patterns is determined by the longest common string.
+     * of patterns. The best matching pattern is determined by the longest common string.
      */
     BEST_MATCH
   }
@@ -109,7 +109,7 @@ public final class URIResolver {
    * Returns the first URI pattern in the list which matches the underlying URI.
    *
    * @param patterns The URI patterns available.
-   * @param rule     The rule used to select the matching patterns in case of multiple matches.
+   * @param rule     The rule used to select the matching patterns in the case of multiple matches.
    *
    * @return The first URI pattern that matches or <code>null</code>.
    */
@@ -166,7 +166,7 @@ public final class URIResolver {
     Matcher mx = pattern.pattern().matcher(this.uri);
     boolean match = mx.matches();
     // it is an error condition if there is no match
-    // or if the number of capturing groups is not the same as the number of tokens
+    // or if the number of capturing groups is different from the number of tokens
     if (!match || mx.groupCount() != pattern.tokens().size()) {
       result.setStatus(Status.ERROR);
       return result;
@@ -187,7 +187,7 @@ public final class URIResolver {
   // private helpers ----------------------------------------------------------
 
   /**
-   * Lookup the variable values using the variable resolvers specified in the bindings from the
+   * Look up the variable values using the variable resolvers specified in the bindings from the
    * values mapped to the variables.
    *
    * <p>Set the status of the result accordingly.

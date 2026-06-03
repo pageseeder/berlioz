@@ -152,7 +152,7 @@ public final class HttpLocation implements Location, Serializable {
   /**
    * Returns the base URL as a string builder.
    *
-   * <p>This method construct the base URL using the following methods:
+   * <p>This method constructs the base URL using the following methods:
    * <ul>
    *   <li><code>getScheme</code></li>
    *   <li><code>getServerName</code></li>
@@ -178,18 +178,18 @@ public final class HttpLocation implements Location, Serializable {
   /**
    * Returns the scheme (http or https).
    *
-   * <p>Check if this information is in the reverse proxy header otherwise get from expected header
+   * <p>Check if this information is in the reverse proxy header otherwise get from the expected header
    *
    * <p>The reason it tries to get the original scheme is to avoid multiple redirecting. The scenario we found is:
    * <ol>
    *   <li>User access https</li>
    *   <li>If there is a NGINX reverse proxy, the request will be sent to jetty using http probably</li>
    *   <li>If the berlioz redirect is used, it will redirect over the http</li>
-   *   <li>And NGINX may be set to not accept http then it redirects again to https</li>
+   *   <li>And NGINX may be set to not accept http, then it redirects again to https</li>
    * </ol>
    *
-   * <p>By getting the original scheme (used in above step 1) the step 3 will redirect to the correct scheme and the step 4
-   * will not happen.
+   * <p>By getting the original scheme (used in above step 1), step 3 will redirect to the correct scheme
+   * and step 4 will not happen.
    *
    * @param req the HTTP servlet request to use to build the base URL
    * @return the corresponding scheme
@@ -207,16 +207,16 @@ public final class HttpLocation implements Location, Serializable {
   /**
    * Returns the port used in this request
    *
-   * <p>Check if this information is in the reverse proxy header otherwise get from expected header
+   * <p>Check if this information is in the reverse proxy header otherwise get from the expected header
    *
    * @param req the HTTP servlet request to use to build the base URL
    * @return the corresponding port or -1 if the reverse proxy host does not have the port. Then it should use the
-   * default according the scheme.
+   * default according to the scheme.
    */
   private static int getPort(HttpServletRequest req) {
     int port = req.getServerPort();
 
-    // If there is a reverse proxy, the original port may be in X-Forwarded-Host header.
+    // If there is a reverse proxy, the original port may be in the X-Forwarded-Host header.
     // It is not compulsory to have the port in the host.
     String reverseProxyScheme = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
 

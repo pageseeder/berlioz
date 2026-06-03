@@ -44,7 +44,7 @@ public final class WebBundle {
   private final String id;
 
   /**
-   * The list of file in the bundle.
+   * The list of files in the bundle.
    */
   private final List<File> files;
 
@@ -64,7 +64,7 @@ public final class WebBundle {
   private volatile @Nullable String etag;
 
   /**
-   * Creates a new bundles of files.
+   * Creates a new bundle of files.
    *
    * @param name      The name of the bundle.
    * @param files     The files to bundle.
@@ -95,7 +95,7 @@ public final class WebBundle {
   }
 
   /**
-   * Returns an ID for that bundle based on the names list of files.
+   * Returns an ID for that bundle based on the name list of files.
    *
    * <p>The ID of the bundle remain constant.
    *
@@ -138,7 +138,7 @@ public final class WebBundle {
   }
 
   /**
-   * Calculates whether the bundles is still fresh by comparing the etag.
+   * Calculates whether the bundle is still fresh by comparing the etag.
    *
    * @return <code>true</code> if still fresh;
    *         <code>false</code> otherwise.
@@ -211,7 +211,7 @@ public final class WebBundle {
   }
 
   /**
-   * Calculate the etag for the specified lists of files based on the absolute path, length
+   * Calculate the etag for the specified lists of files based on the absolute path, length,
    * and last modified date.
    *
    * @param files    the list of files.
@@ -243,7 +243,7 @@ public final class WebBundle {
   }
 
   /**
-   * Appends the key based on absolute path, length and last modified date for for one file.
+   * Appends the key based on the absolute path, length, and last modified date for one file.
    *
    * @param f   The file which
    * @param key Key to append.

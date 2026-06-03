@@ -62,7 +62,7 @@ public abstract class AppInitializer {
   private enum Phase {INIT, STOP}
 
   /**
-   * Create a new application initializer using the
+   * Create a new application initializer.
    *
    * @param webInf    The application WEB-INF configuration.
    * @param listeners The list of lifecycle listeners to use
@@ -97,7 +97,7 @@ public abstract class AppInitializer {
     // Set the WEB-INF
     InitEnvironment env = InitEnvironment.create(this.webInf);
 
-    // Setup config folder
+    // Set up config folder
     String configFolder = setupConfigFolder(this.webInf);
     env = env.configFolder(configFolder);
 
@@ -111,7 +111,7 @@ public abstract class AppInitializer {
     String mode = configureMode(appData != null? appData : this.webInf, configFolder);
     env = env.mode(mode);
 
-    // Setup the Global settings
+    // Set up the Global settings
     GlobalSettings.setup(env);
 
     // Check for overlays
@@ -140,7 +140,7 @@ public abstract class AppInitializer {
   /**
    * Stop the Berlioz application.
    *
-   * <p>The lifecycle listener are stopped with {@link LifecycleListener#stop()}.
+   * <p>The lifecycle listeners are stopped with {@link LifecycleListener#stop()}.
    */
   public final void destroy() {
     console(Phase.STOP, CONSOLE_RULE);
@@ -563,7 +563,7 @@ public abstract class AppInitializer {
   /**
    * Tries to guess the mode based on the configuration files available in a directory.
    *
-   * <p>This method look for a configuration file matching <code>"config-<i>[mode]</i>.xml"</code>.
+   * <p>This method looks for a configuration file matching <code>"config-<i>[mode]</i>.xml"</code>.
    *
    * <p>If there is only one such file, this method will use this mode, otherwise this method will
    * return <code>null</code>.
@@ -649,7 +649,7 @@ public abstract class AppInitializer {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Attempts to configure logger through reflection.
+   * Attempts to configure the logger through reflection.
    *
    * <p>This method will look for logging configuration in the following order:
    * <ol>
@@ -701,7 +701,7 @@ public abstract class AppInitializer {
   }
 
   /**
-   * Attempts to configure logger through reflection.
+   * Attempts to configure the logger through reflection.
    *
    * @param configuration The logback configuration file.
    * @return <code>true</code> if configuration was successful;
@@ -754,7 +754,7 @@ public abstract class AppInitializer {
   }
 
   /**
-   * Attempts to configure logger through reflection.
+   * Attempts to configure the logger through reflection.
    *
    * @param configuration The log4j configuration file.
    * @return <code>true</code> if configuration was successful;
@@ -788,7 +788,7 @@ public abstract class AppInitializer {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Checking that the global setting are loaded properly.
+   * Checking that the global setting is loaded properly.
    */
   private static void loadSettings() {
     File modeConfigFile = GlobalSettings.getModeConfigFile();
@@ -825,7 +825,7 @@ public abstract class AppInitializer {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Checking that the global setting are loaded properly.
+   * Checking that the global settings are loaded properly.
    *
    * @param listenerClass The lifecycle listener class.
    */
@@ -862,7 +862,7 @@ public abstract class AppInitializer {
   }
 
   /**
-   * Checking that the global setting are loaded properly.
+   * Checking that the global settings are loaded properly.
    */
   private void startListeners() {
     // Start
@@ -905,12 +905,12 @@ public abstract class AppInitializer {
   }
 
   /**
-   * Log what the initializer is doing on the console.
+   * Log what the initializer is doing in the console.
    *
    * @param phase   the initialization phase.
    * @param message the message to log.
    */
-  @SuppressWarnings("java:S106") // Writing to System.out is intentional here, logging isn't configured yet!
+  @SuppressWarnings("java:S106") // Writing to System.out is intentional here; logging isn't configured yet!
   private static void console(Phase phase, String message) {
     System.out.println("[BERLIOZ_"+phase+"] "+message);
   }

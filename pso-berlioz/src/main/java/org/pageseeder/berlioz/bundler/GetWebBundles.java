@@ -35,18 +35,18 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * This generator returns the list of timestamped scripts and styles for a given service.
  *
  * <p>It will assemble and minimize the scripts and styles together as much as possible and return the
- * list of bundles. Because the name each bundle includes unique stamp, they can be cached for a long periods.
+ * list of bundles. Because each bundle name includes a unique stamp, they can be cached for long periods.
  * When files included in a bundle are modified, this generator will automatically produce a new bundle
  * with a new stamp so that it results in a different URL.
  *
  * <h2>Bundling</h2>
  * <p>Scripts are simply concatenated. Styles are concatenated and import rules will automatically include
- * the imported styles into the main file.
+ * the imported styles in the main file.
  *
  * <h2>Minimization</h2>
- * <p>Both styles and scripts can be minimised after the bundling. Minimized bundles will be saved using the
+ * <p>Both styles and scripts can be minimized after the bundling. Minimized bundles will be saved using the
  * following extensions <code>.min.js</code> and <code>.min.css</code>. If files to be bundled already use the
- * <code>*.min.*</code> extension, it will be considered to be already minimised and won't be minimised again.
+ * <code>*.min.*</code> extension, it will be considered to be already minimized and won't be minimized again.
  *
  * <h2>File naming</h2>
  * <p>Bundled files are automatically named as:</p>
@@ -56,7 +56,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * minimization options.
  *
  * <h3>Configuration</h3>
- * <p>This generator is highly configurable and the configuration properties are specific (but similar)
+ * <p>This generator is highly configurable, and the configuration properties are specific (but similar)
  * for styles and scripts.
  *
  * <p>Properties pertaining to scripts and styles are prefixed by respectively <code>berlioz.jsbundler</code>

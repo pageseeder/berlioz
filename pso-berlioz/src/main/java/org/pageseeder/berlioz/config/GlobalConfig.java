@@ -30,7 +30,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 /**
- * A simpler version of the XML config file to improve readability of Berlioz configuration.
+ * A simpler version of the XML config file to improve the readability of Berlioz configuration.
  *
  * <p>The XML is not required to validate a specific schema but will be parsed according to the
  * following rules:
@@ -126,7 +126,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
   }
 
   /**
-   * Reads a XML property list from the input stream.
+   * Reads an XML property list from the input stream.
    *
    * @param in The XML input stream to parse.
    *
@@ -181,7 +181,7 @@ public final class GlobalConfig implements Serializable, XMLWritable {
   }
 
   /**
-   * Writes attributes for the current node onto the XML including only properties
+   * Writes attributes for the current node onto the XML, including only properties
    * without a '.'
    *
    * @param xml The XML writer

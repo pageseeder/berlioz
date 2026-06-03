@@ -406,7 +406,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     abstract boolean isResolvable(List<Variable> vars);
 
     /**
-     * Apply the expansion rules defined for the operator given the specified argument, variable and
+     * Apply the expansion rules defined for the operator given the specified argument, variable, and
      * parameters.
      *
      * @param vars The variables for the operator.
@@ -422,7 +422,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
     abstract Pattern pattern(List<Variable> variables);
 
     /**
-     * Returns the map of the string to values given  the specified data.
+     * Returns the map of the string to values given the specified data.
      */
     abstract boolean resolve(List<Variable> vars, String value, Map<Variable, Object> values);
 
@@ -593,7 +593,7 @@ public class BerliozTokenOperator extends TokenBase implements TokenOperator, Ma
   }
 
   /**
-   * Generate the expression corresponding to the specified operator, argument and variables.
+   * Generate the expression corresponding to the specified operator, argument, and variables.
    *
    * @param op The operator.
    * @param variables The variables.

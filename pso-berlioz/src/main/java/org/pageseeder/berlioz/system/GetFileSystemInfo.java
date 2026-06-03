@@ -70,7 +70,7 @@ public final class GetFileSystemInfo implements ContentGenerator {
 
   /**
    * Analyzes the specified root directory, collect total file size and count information
-   * for each direct subdirectory and print it on the XML.
+   * for each direct subdirectory, and print it on the XML.
    *
    * @param dir   The actual directory to scan.
    * @param name  The name of the directory object gathering information.
@@ -237,7 +237,7 @@ public final class GetFileSystemInfo implements ContentGenerator {
     }
 
     /**
-     * @return the number of files found in this directory and its descendants).
+     * @return the number of files found in this directory and its descendants.
      */
     public long getCount() {
       return this.count;

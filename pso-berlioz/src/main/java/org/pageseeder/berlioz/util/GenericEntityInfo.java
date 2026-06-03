@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.util;
 
 import java.util.Date;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -77,7 +76,7 @@ public class GenericEntityInfo implements EntityInfo {
   }
 
   @Override
-  public final @NonNull String getMimeType() {
+  public final String getMimeType() {
     return this.mime;
   }
 

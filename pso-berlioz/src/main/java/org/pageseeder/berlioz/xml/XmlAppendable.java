@@ -539,7 +539,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   /**
    * Writes the end of the open element tag.
    *
-   * <p>After this method is invoked it is not possible to write attributes
+   * <p>After this method is invoked, it is not possible to write attributes
    * for an element.
    */
   private void deNude() {
@@ -570,7 +570,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   }
 
   /**
-   * Insert the correct amount of space characters depending on the depth and if
+   * Insert the correct number of space characters depending on the depth and if
    * the <code>indent</code> flag is set to <code>true</code>.
    */
   void indent() {

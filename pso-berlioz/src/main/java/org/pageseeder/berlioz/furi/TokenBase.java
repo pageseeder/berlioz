@@ -53,7 +53,7 @@ abstract class TokenBase implements Token {
   /**
    * {@inheritDoc}
    *
-   * By default a token is resolvable if it can be matched.
+   * By default, a token is resolvable if it can be matched.
    */
   @Override
   public boolean isResolvable() {

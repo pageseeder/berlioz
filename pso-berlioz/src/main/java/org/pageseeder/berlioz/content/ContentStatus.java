@@ -20,7 +20,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * An enumeration of status codes supported by Berlioz generators.
  *
- * <p>These are based on HTTP response code, and are used to determine the HTTP code that will be
+ * <p>These are based on HTTP response code and are used to determine the HTTP code that will be
  * returned by the service.
  *
  * @author Christophe Lauret
@@ -55,7 +55,7 @@ public enum ContentStatus {
   ACCEPTED(202),
 
   /**
-   * The request was successful but the enclosed payload has been modified from that of the
+   * The request was successful, but the enclosed payload has been modified from that of the
    * origin server's 200 OK response by a transforming proxy.
    *
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.3.4">HTTP/1.1 - 6.3.4. 203 Non-Authoritative Information</a>
@@ -72,7 +72,7 @@ public enum ContentStatus {
   NO_CONTENT(204),
 
   /**
-   * The server has fulfilled the request and the user agent SHOULD reset the document view which
+   * The server has fulfilled the request, and the user agent SHOULD reset the document view which
    * caused the request to be sent.
    *
    * <p>Berlioz will not send any content with the request.
@@ -131,7 +131,7 @@ public enum ContentStatus {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * The request could not be understood by the server due to malformed syntax.
+   * The server could not understand the request due to malformed syntax.
    *
    * <p>The client SHOULD NOT repeat the request without modifications.
    *
@@ -140,7 +140,7 @@ public enum ContentStatus {
   BAD_REQUEST(400),
 
   /**
-   * The server understood the request, but is refusing to fulfill it.
+   * The server understood the request but is refusing to fulfill it.
    *
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.5.3">HTTP/1.1 - 6.5.3. 403 Forbidden</a>
    */
@@ -155,7 +155,7 @@ public enum ContentStatus {
 
   /**
    * The target resource does not have a current representation that would be acceptable to the
-   * user agent and the server is unwilling to supply a default representation.
+   * user agent, and the server is unwilling to supply a default representation.
    *
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.5.6">HTTP/1.1 - 6.5.6. 406 Not Acceptable</a>
    */
@@ -176,7 +176,7 @@ public enum ContentStatus {
   CONFLICT(409),
 
   /**
-   * The requested resource is no longer available at the server and no forwarding address is known.
+   * The requested resource is no longer available at the server, and no forwarding address is known.
    *
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.5.9">HTTP/1.1 - 6.5.9. 410 Gone</a>
    */
@@ -244,7 +244,7 @@ public enum ContentStatus {
    * GETs a resource's state, modifies it, and PUTs it back to the server,
    * when meanwhile a third party has modified the state on the server,
    * leading to a conflict.  By requiring requests to be conditional, the
-   * server can assure that clients are working with the correct copies.
+   * server can ensure that clients are working with the correct copies.
    *
    * @see <a href="https://tools.ietf.org/html/rfc6585#section-3">Additional HTTP Status Codes - 3. 428 Precondition Required</a>
    */
@@ -358,7 +358,7 @@ public enum ContentStatus {
    */
   public static @Nullable ContentStatus forCode(int code) {
     for (ContentStatus status : values()) {
-      // First match (all content status have a different HTTP code)
+      // First match (all content statuses have a different HTTP code)
       if (status.code() == code) return status;
     }
     // Could not be found.
@@ -368,7 +368,7 @@ public enum ContentStatus {
   /**
    * Indicates whether the specified status corresponds to an HTTP redirect code.
    *
-   * @param status The  content status
+   * @param status The content status
    * @return <code>true</code> if the content status greater than or equal to 300 and less than 400;
    *         <code>false</code> otherwise.
    *

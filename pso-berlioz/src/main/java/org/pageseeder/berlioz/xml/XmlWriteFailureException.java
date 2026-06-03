@@ -5,7 +5,7 @@ import org.pageseeder.berlioz.util.WriteFailureException;
 import java.io.IOException;
 
 /**
- * Wraps an IO exception occurring while writing the Xml.
+ * Wraps an IO exception occurring while writing the XML.
  *
  * @author Christophe Lauret
  *

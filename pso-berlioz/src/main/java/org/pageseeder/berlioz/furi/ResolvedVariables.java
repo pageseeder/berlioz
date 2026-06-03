@@ -20,7 +20,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Holds the values of a resolved variables.
+ * Holds the values of resolved variables.
  *
  * @author Christophe Lauret
  *
@@ -32,7 +32,7 @@ public interface ResolvedVariables {
   /**
    * Returns the names of the variables which have been resolved.
    *
-   * @return The names of the variables which have been resolved.
+   * @return The names of the variables that have been resolved.
    */
   Set<String> names();
 

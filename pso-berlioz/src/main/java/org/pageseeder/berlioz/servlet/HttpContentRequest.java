@@ -25,8 +25,8 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Service;
 
 /**
- * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods to access the parameters and attributes in
- * a consistent manner.
+ * Wraps a {@link javax.servlet.ServletRequest} instance and provide methods to access the parameters
+ * and attributes consistently.
  *
  * @author Christophe Lauret
  *
@@ -152,7 +152,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   /**
    * Returns the URL to redirect to.
    *
-   * @return the URL to redirect to (may be <code>null</code>).
+   * @return the URL to redirect to (might be <code>null</code>).
    */
   public @Nullable String getRedirectURL() {
     return this.redirectTo;

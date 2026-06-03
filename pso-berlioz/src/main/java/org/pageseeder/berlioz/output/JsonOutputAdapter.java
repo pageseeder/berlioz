@@ -28,7 +28,7 @@ import java.io.Writer;
  * <p>Field names are automatically converted to camelCase via {@link Json#camelify(String)}.
  * Fields and contexts flagged as {@link FieldOption#XML_ONLY} are silently skipped.</p>
  *
- * <p>By default output is buffered in an internal {@link java.io.StringWriter} and can be
+ * <p>By default, output is buffered in an internal {@link java.io.StringWriter} and can be
  * retrieved via {@link #toString()}. Supply a custom {@link java.io.Writer} to direct output
  * elsewhere.</p>
  *

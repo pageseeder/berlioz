@@ -237,7 +237,7 @@ public final class XMLResponse {
       toXML(request, ++position, service, xml);
     }
 
-    // Close 'root' and finalise
+    // Close 'root' and finalize
     xml.closeElement();
     xml.flush();
     return writer.toString();
@@ -378,7 +378,7 @@ public final class XMLResponse {
         requests.add(new HttpContentRequest(core, common, generator, match.service(), order));
 
       } else {
-        // Some specific parameters, recompute the parameters
+        // Some specific parameters recompute the parameters
         Map<String, String> specific = new HashMap<>(common);
         for (Parameter p : pconfig) {
           specific.put(p.name(), p.value(common));
@@ -394,7 +394,7 @@ public final class XMLResponse {
    * Handles an exception thrown by a generator.
    *
    * @param exception The exception to handle.
-   * @param generator The generator which caused the exception.
+   * @param generator The generator that caused the exception.
    *
    * @return a Berlioz exception for immediate use.
    */

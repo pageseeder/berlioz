@@ -23,8 +23,8 @@ import java.util.Objects;
  * Defines an immutable initialization environment for Berlioz.
  *
  * <p>The initialization environment includes:
- * - the `WEB-INF` folder
- * - the Web application data folder
+ * - The `WEB-INF` folder
+ * - The Web application data folder
  * - The name of the berlioz config folder
  * - The Berlioz mode
  *
@@ -41,7 +41,7 @@ public final class InitEnvironment {
   public static final String DEFAULT_MODE = "default";
 
   /**
-   * Default name of the directory containing the configuration files for Berlioz
+   * Default name of the directory containing the configuration files for Berlioz,
    * including the global settings, services, logging, etc...
    *
    * <p>This can be overridden using a system property or environment variable
@@ -97,7 +97,7 @@ public final class InitEnvironment {
 
   /**
    * @param webInf The WEB-INF folder.
-   * @return An instance initialised with the specified folder.
+   * @return An instance initialized with the specified folder.
    */
   public static InitEnvironment create(File webInf) {
     return new InitEnvironment(webInf);

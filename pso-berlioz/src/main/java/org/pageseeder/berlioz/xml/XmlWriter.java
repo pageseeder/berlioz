@@ -22,22 +22,22 @@ import java.util.Map;
 /**
  * Defines a writer for XML data.
  *
- * <p>The purpose of this interface is to provide a simple, efficient and convenient set of
+ * <p>The purpose of this interface is to provide a simple, efficient, and convenient set of
  * methods for writing XML.</p>
  *
  * <p>Most implementations should wrap a writer or an output stream. Implementations can be focused
- * on performance, reliability, error reporting, etc... Generally a compromise will be required
+ * on performance, reliability, error reporting, etc. Generally, a compromise will be required
  * to balance the performance with the simplicity of the code.</p>
  *
- * <p>The design principle has been to favour simplicity and efficiency for the most common cases
- * rather that cover the full spectrum of XML features.</p>
+ * <p>The design principle has been to favor simplicity and efficiency for the most common cases
+ * rather than cover the full spectrum of XML features.</p>
  *
  * <p>Here are the recommendations for implementation:</p>
  * <ul>
  *   <li>All implementations MUST escape text nodes and attributes values appropriately;</li>
  *   <li>Implementations SHOULD check correct nesting of elements to help detect and debug runtime
  *   errors;</li>
- *   <li>Implementations SHOULD NOT check that name of an element or attribute is valid, developers
+ *   <li>Implementations SHOULD NOT check that the name of an element or attribute is valid; developers
  *   are expected to send the correct names since name are not expected to be variable;</li>
  *   <li>Implementations MAY check that raw XML is well-formed, the {@link #xml(String)}; and
  *   {@link #xml(char[], int, int)} methods are provided as an escape hatch in case an XML can be
@@ -54,7 +54,7 @@ import java.util.Map;
  *
  * <p>Other implementations might want to wrap a SAX content handler.
  *
- * <p>This interface follow the fluent-style API for easy method chaining.</p>
+ * <p>This interface follows the fluent-style API for easy method chaining.</p>
  *
  * @author Christophe Lauret
  *
@@ -124,7 +124,7 @@ public interface XmlWriter {
   /**
    * Writes the given XML data.
    *
-   * <p>The text is appended as is, therefore it should be escaped properly for the
+   * <p>The text is appended as is, therefore, it should be escaped properly for the
    * encoding used by the underlying stream writer.
    *
    * @param xml The raw XML content to write.
@@ -137,7 +137,7 @@ public interface XmlWriter {
   /**
    * Write the given XML data.
    *
-   * <p>The text is appended as is, therefore it should be escaped properly for the
+   * <p>The text is appended as is, therefore, it should be escaped properly for the
    * encoding used by the underlying stream writer.
    *
    * @param text The text to write.
@@ -165,7 +165,7 @@ public interface XmlWriter {
    *
    * <p>Comments are not indented.
    *
-   * <p>Does not write anything if the comment if <code>null</code>.
+   * <p>Does not write anything if the comment is <code>null</code>.
    *
    * @param comment The comment to be written
    *
@@ -214,7 +214,7 @@ public interface XmlWriter {
    * <p>It is followed by a new line character if the indentation is turned on.
    *
    * @throws IllegalStateException If this method is called after the writer has started
-   *                               writing elements nodes.
+   *                               writing element nodes.
    *
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */

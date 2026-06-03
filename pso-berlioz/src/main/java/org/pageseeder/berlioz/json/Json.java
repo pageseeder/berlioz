@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An utility class for JSON.
+ * A utility class for JSON.
  *
  * @author Christophe Lauret
  *
@@ -218,7 +218,7 @@ public class Json {
    *
    * @param name the hyphenated name to convert
    * @return the camelCase equivalent
-   * @throws NullPointerException if name is null
+   * @throws NullPointerException if the name is null
    */
   public static String camelify(String name) {
     int dash = name.indexOf('-');

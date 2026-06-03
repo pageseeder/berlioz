@@ -46,10 +46,10 @@ import java.io.*;
 import java.nio.file.Files;
 
 /**
- * A JavaScript minimiser.
+ * A JavaScript minimizer.
  *
  * <p>This class is a slightly modified version of the work done by John Reilly who initially
- * adapted Douglas Crockford's C version of his JavaScript minimiser.
+ * adapted Douglas Crockford's C version of his JavaScript minimizer.
  *
  * @author Christophe Lauret
  *
@@ -78,7 +78,7 @@ public final class JSMin {
   private final PushbackInputStream in;
 
   /**
-   * The minimised version.
+   * The minimized version.
    */
   private final OutputStream out;
 
@@ -99,10 +99,10 @@ public final class JSMin {
   private int column;
 
   /**
-   * Creates a new JavaScript minimiser for the specified I/O.
+   * Creates a new JavaScript minimizer for the specified I/O.
    *
-   * @param in  The JavaScript to minimise.
-   * @param out The minimised script.
+   * @param in  The JavaScript to minimize.
+   * @param out The minimized script.
    */
   public JSMin(InputStream in, OutputStream out) {
     this.in = new PushbackInputStream(in);
@@ -124,7 +124,7 @@ public final class JSMin {
   /**
    * Returns the next character from the input.
    *
-   * <p>Watch out for lookahead. If the character is a control character, translate it to a space
+   * <p>Watch out for a lookahead. If the character is a control character, translate it to a space
    * or linefeed.
    *
    * @return the next character from the input.
@@ -489,7 +489,7 @@ public final class JSMin {
   /**
    * To invoke the minimizer on the command line.
    *
-   * @param args first argument is path to file to minimize
+   * @param args The first argument is a path to file to minimize
    *
    * @throws IOException if an input/output error occurs.
    */

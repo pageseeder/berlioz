@@ -28,17 +28,17 @@ import org.pageseeder.berlioz.Beta;
  * or directly on the generator class — and pass them to
  * {@link RequestContext#parameter(ParameterSpec)}:
  *
- * <pre>
+ * <pre>{@code
  * // Defined once, shared across generators
  * interface AppParameters {
- *   ParameterSpec&lt;Integer&gt; PAGE   = ParameterSpec.of("page",   b -&gt; b.asInt().clamp(1, 10000).defaultValue(1));
- *   ParameterSpec&lt;Status&gt;  STATUS = ParameterSpec.of("status", b -&gt; b.asEnum(Status.class).orDefault(Status.ACTIVE));
+ *   ParameterSpec<Integer> PAGE   = ParameterSpec.of("page",   b -> b.asInt().clamp(1, 10000).defaultValue(1));
+ *   ParameterSpec<Status>  STATUS = ParameterSpec.of("status", b -> b.asEnum(Status.class).orDefault(Status.ACTIVE));
  * }
  *
  * // Used in any generator
  * int    page   = req.parameter(AppParameters.PAGE);
  * Status status = req.parameter(AppParameters.STATUS);
- * </pre>
+ * }</pre>
  *
  * <p>The resolver lambda must include a terminal call ({@code .defaultValue()},
  * {@code .required()}, {@code .orDefault()}, or {@code .nullable()}) so that

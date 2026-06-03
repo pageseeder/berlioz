@@ -87,11 +87,11 @@ public final class RelocationFilter implements Filter {
   private @Nullable RelocationConfig config = null;
 
   /**
-   * Initialises the Relocation Servlet.
+   * Initializes the Relocation Servlet.
    *
    * <p>This servlet accepts the following init parameters:
    * <ul>
-   *   <li><code>config</code> path to the URI relocation mapping XML file (eg. '/config/relocation.xml')</li>
+   *   <li><code>config</code> path to the URI relocation mapping XML file (e.g. '/config/relocation.xml')</li>
    * </ul>
    *
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
@@ -108,7 +108,7 @@ public final class RelocationFilter implements Filter {
 
     this.controlKey = GlobalSettings.get(BerliozOption.XML_CONTROL_KEY);
 
-    // Mapping not specified
+    // Mapping isn't specified
     if (mapping == null) {
       LOGGER.warn("Missing 'config' init-parameter - filter will have no effect");
       return;
@@ -144,13 +144,13 @@ public final class RelocationFilter implements Filter {
   }
 
   /**
-   * Do the filtering for a HTTP request.
+   * Do the filtering for an HTTP request.
    *
    * @param req   The HTTP servlet request.
    * @param res   The HTTP servlet response.
    * @param chain The filter chain.
    *
-   * @throws IOException      Should an error occurs while writing the response.
+   * @throws IOException      Should an error occur while writing the response.
    * @throws ServletException If thrown by the filter chain.
    */
   public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)

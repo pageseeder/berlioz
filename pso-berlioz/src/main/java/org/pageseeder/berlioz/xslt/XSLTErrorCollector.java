@@ -49,7 +49,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
   /**
    * @see ErrorListener#fatalError(TransformerException)
    *
-   * @param exception An fatal error reported by the transformer.
+   * @param exception A fatal error reported by the transformer.
    *
    * @throws TransformerException If thrown by the underlying {@link ErrorCollector}.
    */
@@ -75,7 +75,7 @@ public final class XSLTErrorCollector extends ErrorCollector<TransformerExceptio
   /**
    * @see ErrorListener#warning(TransformerException)
    *
-   * @param exception An warning reported by the transformer.
+   * @param exception A warning reported by the transformer.
    *
    * @throws TransformerException If thrown by the underlying {@link ErrorCollector}.
    */

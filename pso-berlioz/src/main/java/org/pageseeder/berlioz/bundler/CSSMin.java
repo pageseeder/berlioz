@@ -77,7 +77,7 @@ import org.slf4j.LoggerFactory;
  *   <li>Pedro Pinheiro</li>
  *   <li>Asier Lostal</li>
  * </ul>
- * Portions of the code is based on the YUI CssCompressor code, by Julien Lecomte.
+ * Portions of the code are based on the YUI CssCompressor code, by Julien Lecomte.
  *
  * @author Christophe Lauret
  *
@@ -549,7 +549,7 @@ public final class CSSMin {
     /**
      * Parses out the properties of a selector's body.
      *
-     * @param contents The body; for example, "border: solid 1px red; color: blue;"
+     * @param contents The body, for example, {@code "border: solid 1px red; color: blue;" }
      * @return An array of properties parsed from this selector.
      */
     private Property[] parseProperties(String contents) {
@@ -812,17 +812,17 @@ public final class CSSMin {
       if (params.isEmpty() || isQuoted(params.get(0))) return value;
 
       // We can drop off the fourth item if the second and fourth items match
-      // ie turn 3px 0 3px 0 into 3px 0 3px
+      // i.e. turn 3px 0 3px 0 into 3px 0 3px
       if (params.size() == 4 && params.get(1).equalsIgnoreCase(params.get(3))) {
         params = new ArrayList<>(params.subList(0, 3));
       }
       // We can drop off the third item if the first and third items match
-      // ie turn 3px 0 3px into 3px 0
+      // i.e. turn 3px 0 3px into 3px 0
       if (params.size() == 3 && params.get(0).equalsIgnoreCase(params.get(2))) {
         params = new ArrayList<>(params.subList(0, 2));
       }
       // We can drop off the second item if the first and second items match
-      // ie turn 3px 3px into 3px
+      // i.e. turn 3px 3px into 3px
       if (params.size() == 2 && params.get(0).equalsIgnoreCase(params.get(1))) {
         params = new ArrayList<>(params.subList(0, 1));
       }
@@ -1059,7 +1059,7 @@ public final class CSSMin {
   }
 
   /**
-   * Main entry point for CSSMin from the command-line.
+   * The main entry point for CSSMin from the command-line.
    *
    * <p><b>Usage:</b> CSSMin <i>[Input file]</i>, <i>[Output file]</i>
    *
@@ -1094,7 +1094,7 @@ public final class CSSMin {
     private Constants() {}
 
     /**
-     * Color name - index must match color codes below.
+     * Color name - index must match the color codes below.
      */
     static final String[] HTML_COLOR_NAMES = {
         "aliceblue",

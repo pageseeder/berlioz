@@ -16,7 +16,7 @@ public enum Directive {
    * The default policy for fetching resources such as JavaScript, Images, CSS, Fonts, AJAX requests,
    * Frames, HTML5 Media.
    *
-   * <p>Used as fallback for other directives, except for the following
+   * <p>Used as a fallback for other directives, except for the following
    * (failing to set them is the same as allowing anything):
    * <ul>
    *  <li>base-uri</li>
@@ -38,7 +38,7 @@ public enum Directive {
 
   /**
    * {@code connect-src} limits the origins that you can connect to via XMLHttpRequest (AJAX), WebSocket,
-   * fetch(), {@code <a ping>} or EventSource).
+   * fetch(), {@code <a ping>} or EventSource.
    *
    * <p>Falls back to {@code default-src} directive.
    */
@@ -84,7 +84,7 @@ public enum Directive {
   MANIFEST_SRC("manifest-src"),
 
   /**
-   * {@code media-src} restricts the origins allowed to deliver video and audio
+   * {@code media-src} restricts the origins allowed delivering video and audio
    * via {@code <audio>} and {@code <video>} elements.
    *
    * <p>Falls back to {@code default-src} directive.
@@ -177,7 +177,7 @@ public enum Directive {
   /**
    * Enables a sandbox for the requested resource similar to the iframe sandbox attribute.
    *
-   * <p>The sandbox applies a same origin policy, prevents popups, plugins and script execution is blocked.
+   * <p>The sandbox applies the same origin policy, prevents popups, plugins, and script execution is blocked.
    *
    * <p>You can keep the sandbox value empty to keep all restrictions in place, or add values:
    * allow-forms allow-same-origin allow-scripts allow-popups, allow-modals, allow-orientation-lock, allow-pointer-lock, allow-presentation, allow-popups-to-escape-sandbox, and allow-top-navigation

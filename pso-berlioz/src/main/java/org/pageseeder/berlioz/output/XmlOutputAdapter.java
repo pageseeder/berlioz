@@ -33,7 +33,7 @@ import java.util.Deque;
  * Contexts (objects/arrays) flagged as {@link ContextOption#JSON_ONLY} have their wrapper
  * element omitted but their children are still written at the enclosing level.</p>
  *
- * <p>By default output is buffered in an internal {@link java.io.StringWriter} and can be
+ * <p>By default, output is buffered in an internal {@link java.io.StringWriter} and can be
  * retrieved via {@link #toString()}. Supply a {@link java.io.Writer} or an existing
  * {@link XmlWriter} to direct output elsewhere.</p>
  *

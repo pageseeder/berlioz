@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * Default Berlioz servlet.
  *
  * <p>A berlioz servlet can only generate one content type and use one set of XSLT templates, these are defined at
- * initialisation. See {@link #init(ServletConfig)} for details.
+ * initialization. See {@link #init(ServletConfig)} for details.
  *
  * <p>This servlet will pass on HTTP parameters to the underlying generators for the service it matches.
  *
@@ -62,7 +62,7 @@ import org.slf4j.LoggerFactory;
  * <h3>HTTP Caching</h3>
  *
  * <p>The response is considered cacheable if all the generators in the matching service are cacheable; that is if
- * they implement the {@link org.pageseeder.berlioz.content.Cacheable} interface).
+ * they implement the {@link org.pageseeder.berlioz.content.Cacheable} interface.
  *
  * <p>For cacheable responses, Berlioz will return the following Headers:
  * <pre>
@@ -77,15 +77,15 @@ import org.slf4j.LoggerFactory;
  * <p>The <code>Etag</code> is computed from the list of Etags of each generator and an Etag generated for the
  * XSLT templates.
  *
- * <p>Non cacheable responses, always return:
+ * <p>Non cacheable responses always return:
  * <pre>
  *   Expires: 0
  *   Cache-Control: no-cache
  * </pre>
  *
- * <p>For security, the Berlioz administration parameters can be secures using a Berlioz control key.
+ * <p>For security, the Berlioz administration parameters can be secured using a Berlioz control key.
  * The control key is a string that must be supplied as a parameter whenever one of the admin
- * parameters is used. Use the initialisation parameters to define a control key.
+ * parameters is used. Use the initialization parameters to define a control key.
  *
  * @author Christophe Lauret
  *
@@ -125,7 +125,7 @@ public final class BerliozServlet extends HttpServlet {
 // servlet methods --------------------------------------------------------------------------------
 
   /**
-   * Initialises the Berlioz Servlet.
+   * Initializes the Berlioz Servlet.
    *
    * <p>This servlet accepts the following init parameters:
    * <ul>
@@ -331,7 +331,7 @@ public final class BerliozServlet extends HttpServlet {
       res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
     }
 
-    // Compute the ETag for the request if cacheable and method GET or HEAD
+    // Compute the ETag for the request if cacheable and methods GET or HEAD
     String etag = null;
     boolean cacheable = code == null && match.isCacheable();
     if (cacheable && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
@@ -430,14 +430,14 @@ public final class BerliozServlet extends HttpServlet {
    *
    * @param req     The HTTP servlet request.
    * @param config  The Berlioz configuration.
-   * @param loader  The service loader (may be cleared on reload).
+   * @param loader  The service loader (might be cleared on reload).
    * @param profile Whether profiling was already enabled via global settings.
    * @return {@code true} if profiling should be active for this request.
    */
   private boolean applyBerliozControl(HttpServletRequest req, BerliozConfig config, ServiceLoader loader, boolean profile) {
     if (!config.hasControl(req)) return profile;
 
-    // A "reload" triggers all of the sub-operations below
+    // A "reload" triggers all the sub-operations below
     boolean reload = isTrue(req.getParameter("berlioz-reload"));
 
     // Clear the XSLT cache if requested
@@ -457,7 +457,7 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   /**
-   * Applies the XSLT transformer to the XML content, or returns the raw XML when no transformer
+   * Applies the XSLT transformer to the XML content or returns the raw XML when no transformer
    * is configured. Also records profiling and server-timing metrics when enabled.
    *
    * @param content       The XML content to transform.
@@ -544,7 +544,7 @@ public final class BerliozServlet extends HttpServlet {
    * @param res     The HTTP Servlet response.
    * @param code    The HTTP status response code.
    * @param message The message for the message.
-   * @param ex      Any caught exception (may be <code>null</code>).
+   * @param ex      Any caught exception (might be <code>null</code>).
    */
   private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex) {
     // Is Berlioz already handling an error? (set by the servlet container per javax.servlet error dispatch contract)
@@ -626,7 +626,7 @@ public final class BerliozServlet extends HttpServlet {
   // ==============================================================================================
 
   /**
-   * Provide a simple entity information for the service.
+   * Provide simple entity information for the service.
    */
   private static final class ServiceInfo implements EntityInfo {
 

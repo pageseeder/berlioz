@@ -60,7 +60,7 @@ public final class GetThreadInfo implements ContentGenerator {
   /**
    * Return all the threads with stack traces
    *
-   * @param thread The thread information to serialise as XML
+   * @param thread The thread information to serialize as XML
    * @param xml The XML writer
    *
    * @throws IOException If thrown while writing XML.

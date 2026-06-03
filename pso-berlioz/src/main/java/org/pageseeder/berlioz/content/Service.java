@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * A list of of content generators or content instructions.
+ * A list of content generators or content instructions.
  *
  * @author Christophe Lauret
  *
@@ -69,7 +69,7 @@ public final class Service {
   private final String flags;
 
   /**
-   * How the status code this service is calculated.
+   * How the status code of this service is calculated.
    */
   private final ServiceStatusRule rule;
 
@@ -193,7 +193,7 @@ public final class Service {
    * Returns the target of the given generator.
    *
    * @param generator the content generator for which we need the target.
-   * @return the target if any (may be <code>null</code>).
+   * @return the target if any (might be <code>null</code>).
    */
   public @Nullable String target(ContentGenerator generator) {
     return this.targets.get(generator);
@@ -232,7 +232,7 @@ public final class Service {
   }
 
   /**
-   * Serialises the specified service as XML.
+   * Serializes the specified service as XML.
    *
    * @param xml     the XML writer
    * @param method  the HTTP method the service is mapped to.
@@ -246,7 +246,7 @@ public final class Service {
   }
 
   /**
-   * Serialises the specified service as XML.
+   * Serializes the specified service as XML.
    *
    * @param xml          the XML writer
    * @param method       the HTTP method the service is mapped to.
@@ -316,7 +316,7 @@ public final class Service {
   }
 
   /**
-   * Indicates whether the list of generators are all cacheable.
+   * Indicates whether the generators are all cacheable.
    *
    * @param generators the list of generators to evaluate.
    * @return <code>true</code> if all generators implement the {@link Cacheable} interface;

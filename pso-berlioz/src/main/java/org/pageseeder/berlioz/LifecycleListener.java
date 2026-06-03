@@ -18,8 +18,8 @@ package org.pageseeder.berlioz;
 /**
  * An interface that can be used to provide methods for when Berlioz starts and stop.
  *
- * <p>Implementations can be used to initialise database connections, indexes and other I/O
- * resources which are common to many generators.
+ * <p>Implementations can be used to initialize database connections, indexes, and other I/O
+ *  resources, which are common to many generators.
  *
  * <p>Implementations must provide an <code>public</code> empty constructor for the init servlet
  * to invoke through reflection.
@@ -33,7 +33,7 @@ package org.pageseeder.berlioz;
 public interface LifecycleListener {
 
   /**
-   * This method is called when Berlioz starts by the BerliozInit servlet's initialisation method.
+   * This method is called when Berlioz starts by the BerliozInit servlet's initialization method.
    *
    * <p>It is called after the system properties and global settings have been loaded.
    *
@@ -43,8 +43,8 @@ public interface LifecycleListener {
    * <code>[BERLIOZ_INIT] </code>. For example:
    * <pre>
    *   [BERLIOZ_INIT] Checking required properties - OK
-   *   [BERLIOZ_INIT] Initialising index in /WEB-INF/index - OK
-   *   [BERLIOZ_INIT] Initialising database in /WEB-INF/db - OK
+   *   [BERLIOZ_INIT] Initializing index in /WEB-INF/index - OK
+   *   [BERLIOZ_INIT] Initializing database in /WEB-INF/db - OK
    * </pre>
    *
    * @return <code>true</code> if the start was successful.
@@ -52,7 +52,7 @@ public interface LifecycleListener {
   boolean start();
 
   /**
-   * This method is called when Berlioz stops by the BerliozInit servlet's destroy method.
+   * This method is called when the destroy method of the BerliozInit servlet is invoked.
    *
    * <p>This method should not throw any error. Errors must be handled internally.
    *

@@ -35,13 +35,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Accept' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept         = "Accept" ":" #( media-range [ accept-params ] )
    *
    *   media-range    = ( "*&#47;*" | ( type "/" "*" ) | ( type "/" subtype ) ) *( ";" parameter )
    *   accept-params  = ";" "q" "=" qvalue *( accept-extension )
    *   accept-extension = ";" token [ "=" ( token | quoted-string ) ]
-   * </pre>
+   * }</pre>
    * <p>Examples:</p>
    * <pre>
    *   Accept: audio/*; q=0.2, audio/basic
@@ -58,13 +58,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Accept-Charset' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Charset = "Accept-Charset" ":" 1#( ( charset | "*" )[ ";" "q" "=" qvalue ] )
-   * </pre>
+   * }</pre>
    * <p>Examples:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Charset: iso-8859-5, unicode-1-1;q=0.8
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.2">HTTP/1.1 - 14.2 Accept-Charset</a>
    */
@@ -74,18 +74,18 @@ public final class HttpHeaders { // NO_UCD
    * 'Accept-Encoding' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Encoding  = "Accept-Encoding" ":" 1#( codings [ ";" "q" "=" qvalue ] )
    *   codings          = ( content-coding | "*" )
-   * </pre>
+   * }</pre>
    * <p>Examples of its use are:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Encoding: compress, gzip
    *   Accept-Encoding:
    *   Accept-Encoding: *
    *   Accept-Encoding: compress;q=0.5, gzip;q=1.0
    *   Accept-Encoding: gzip;q=1.0, identity; q=0.5, *;q=0
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.3">HTTP/1.1 - 14.3 Accept-Encoding</a>
    */
@@ -95,14 +95,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Accept-Language' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Language = "Accept-Language" ":" 1#( language-range [ ";" "q" "=" qvalue ] )
    *   language-range  = ( ( 1*8ALPHA *( "-" 1*8ALPHA ) ) | "*" )
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Language: da, en-gb;q=0.8, en;q=0.7
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.4">HTTP/1.1 - 14.4 Accept-Language</a>
    */
@@ -112,15 +112,15 @@ public final class HttpHeaders { // NO_UCD
    * 'Accept-Ranges' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Ranges     = "Accept-Ranges" ":" acceptable-ranges
    *   acceptable-ranges = 1#range-unit | "none"
-   * </pre>
+   * }</pre>
    * <p>Examples:</p>
-   * <pre>
+   * <pre>{@code
    *   Accept-Ranges: bytes
    *   Accept-Ranges: none
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.5">HTTP/1.1 - 14.5 Accept-Ranges</a>
    */
@@ -130,10 +130,10 @@ public final class HttpHeaders { // NO_UCD
    * 'Age' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Age       = "Age" ":" age-value
    *   age-value = delta-seconds
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.6">HTTP/1.1 - 14.6 Age</a>
    */
@@ -143,13 +143,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Allow' entity header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Allow   = "Allow" ":" #Method
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Allow: GET, HEAD, PUT
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.7">HTTP/1.1 - 14.7 Allow</a>
    */
@@ -159,13 +159,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Authorization' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Authorization  = "Authorization" ":" credentials
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-   * </pre>
+   * }</pre>
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.8">HTTP/1.1 - 14.8 Authorization</a>
    */
   public static final String AUTHORIZATION = "Authorization";
@@ -209,14 +209,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Connection' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Connection = "Connection" ":" 1#(connection-token)
    *   connection-token  = token
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Connection: close
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.10">HTTP/1.1 - 14.10 Connection</a>
    */
@@ -242,14 +242,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Content-Language' entity header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Content-Language  = "Content-Language" ":" 1#language-tag
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Content-Language: da
    *   Content-Language: mi, en
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.12">HTTP/1.1 - 14.12 Content-Language</a>
    */
@@ -309,12 +309,12 @@ public final class HttpHeaders { // NO_UCD
    *   instance-length         = 1*DIGIT
    * }</pre>
    * <p>Examples:</p>
-   * <pre>
+   * <pre>{@code
    *   Content-Range: bytes 0-499/1234    ; The first 500 bytes
    *   Content-Range: bytes 500-999/1234  ; The second 500 bytes
    *   Content-Range: bytes 500-1233/1234 ; All except for the first 500 bytes
    *   Content-Range: bytes 500-1233/1234 ; The last 500 bytes
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.16">HTTP/1.1 - 14.16 Content-Range</a>
    */
@@ -343,13 +343,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Date' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Date  = "Date" ":" HTTP-date
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Date: Tue, 15 Nov 1994 08:12:31 GMT
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.18">HTTP/1.1 - 14.18 Date</a>
    */
@@ -377,16 +377,16 @@ public final class HttpHeaders { // NO_UCD
    * 'Expect' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Expect       =  "Expect" ":" 1#expectation
    *   expectation  =  "100-continue" | expectation-extension
    *   expectation-extension =  token [ "=" ( token | quoted-string ) *expect-params ]
    *   expect-params =  ";" token [ "=" ( token | quoted-string ) ]
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Expect: 100-continue
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.20">HTTP/1.1 - 14.20 Expect</a>
    */
@@ -412,13 +412,13 @@ public final class HttpHeaders { // NO_UCD
    * 'From' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   From   = "From" ":" mailbox
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   From: webmaster@w3.org
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.22">HTTP/1.1 - 14.22 From</a>
    */
@@ -444,15 +444,15 @@ public final class HttpHeaders { // NO_UCD
    * 'If-Match' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   If-Match = "If-Match" ":" ( "*" | 1#entity-tag )
-   * </pre>
+   * }</pre>
    * <p>Examples</p>
-   * <pre>
+   * <pre>{@code
    *   If-Match: "xyzzy"
    *   If-Match: "xyzzy", "r2d2xhyxx", "c3piozw4zz"
    *   If-Match: *
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.24">HTTP/1.1 - 14.24 If-Match</a>
    */
@@ -478,17 +478,17 @@ public final class HttpHeaders { // NO_UCD
    * 'If-None-Match' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   If-None-Match = "If-None-Match" ":" ( "*" | 1#entity-tag )
-   * </pre>
+   * }</pre>
    * <p>Examples:</p>
-   * <pre>
+   * <pre>{@code
    *   If-None-Match: "xyzzy"
    *   If-None-Match: W/"xyzzy"
    *   If-None-Match: "xyzzy", "r2d2xhyxx", "c3piozw4zz"
    *   If-None-Match: W/"xyzzy", W/"r2d2xhyxx", W/"c3piozw4zz"
    *   If-None-Match: *
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.26">HTTP/1.1 - 14.26 If-None-Match</a>
    */
@@ -498,9 +498,9 @@ public final class HttpHeaders { // NO_UCD
    * 'If-Range' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   If-Range = "If-Range" ":" ( entity-tag | HTTP-date )
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.27">HTTP/1.1 - 14.27 If-Range</a>
    */
@@ -510,13 +510,13 @@ public final class HttpHeaders { // NO_UCD
    * 'If-Unmodified-Since' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   If-Unmodified-Since = "If-Unmodified-Since" ":" HTTP-date
-   * </pre>
+   * }</pre>
    * <p>An example of the field is:</p>
-   * <pre>
+   * <pre>{@code
    *   If-Unmodified-Since: Sat, 29 Oct 1994 19:43:31 GMT
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.28">HTTP/1.1 - 14.28 If-Unmodified-Since</a>
    */
@@ -526,13 +526,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Last-Modified' entity header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Last-Modified  = "Last-Modified" ":" HTTP-date
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Last-Modified: Tue, 15 Nov 1994 12:45:26 GMT
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.29">HTTP/1.1 - 14.29 Last-Modified</a>
    */
@@ -542,13 +542,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Location' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Location       = "Location" ":" absoluteURI
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Location: http://www.w3.org/pub/WWW/People.html
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.30">HTTP/1.1 - 14.30 Location</a>
    */
@@ -558,14 +558,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Max-Forwards' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Max-Forwards   = "Max-Forwards" ":" 1*DIGIT
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Max-Forwards: 0
    *   Max-Forwards: 5
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.31">HTTP/1.1 - 14.31 Max-Forwards</a>
    */
@@ -575,15 +575,15 @@ public final class HttpHeaders { // NO_UCD
    * 'Pragma' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Pragma            = "Pragma" ":" 1#pragma-directive
    *   pragma-directive  = "no-cache" | extension-pragma
    *   extension-pragma  = token [ "=" ( token | quoted-string ) ]
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Pragma: no-cache
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.32">HTTP/1.1 - 14.32 Pragma</a>
    */
@@ -593,9 +593,9 @@ public final class HttpHeaders { // NO_UCD
    * 'Proxy-Authenticate' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Proxy-Authenticate  = "Proxy-Authenticate" ":" 1#challenge
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.33">HTTP/1.1 - 14.33 Proxy-Authenticate</a>
    */
@@ -605,9 +605,9 @@ public final class HttpHeaders { // NO_UCD
    * 'Proxy-Authorization' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Proxy-Authorization     = "Proxy-Authorization" ":" credentials
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.34">HTTP/1.1 - 14.34 Proxy-Authorization</a>
    */
@@ -617,7 +617,7 @@ public final class HttpHeaders { // NO_UCD
    * 'Range' header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Range = "Range" ":" ranges-specifier
    *   ranges-specifier = byte-ranges-specifier
    *   byte-ranges-specifier = bytes-unit "=" byte-range-set
@@ -627,9 +627,9 @@ public final class HttpHeaders { // NO_UCD
    *   last-byte-pos   = 1*DIGIT
    *   suffix-byte-range-spec = "-" suffix-length
    *   suffix-length = 1*DIGIT
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Range: bytes=0-499       // The first 500 bytes (byte offsets 0-499, inclusive)
    *   Range: bytes=500-999     // The second 500 bytes (byte offsets 500-999, inclusive)
    *   Range: bytes=-500        // The final 500 bytes
@@ -638,7 +638,7 @@ public final class HttpHeaders { // NO_UCD
    *
    *   Range: bytes=500-600,601-999      // legal but non canonical specifications of the...
    *   Range: bytes=500-700,601-999      // ...second 500 bytes (byte offsets 500-999, inclusive):
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.35">HTTP/1.1 - 14.35 Range</a>
    */
@@ -648,9 +648,9 @@ public final class HttpHeaders { // NO_UCD
    * 'Referer' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Referer        = "Referer" ":" ( absoluteURI | relativeURI )
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
    * <pre>{@code
    *   Referer: http://www.w3.org/hypertext/DataSources/Overview.html
@@ -664,14 +664,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Retry-After' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Retry-After  = "Retry-After" ":" ( HTTP-date | delta-seconds )
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Retry-After: Fri, 31 Dec 1999 23:59:59 GMT
    *   Retry-After: 120                              // 2 minutes
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.37">HTTP/1.1 - 14.37 Retry-After</a>
    */
@@ -681,13 +681,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Server' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Server         = "Server" ":" 1*( product | comment )
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Server: CERN/3.0 libwww/2.17
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.38">HTTP/1.1 - 14.38 Server</a>
    */
@@ -704,16 +704,16 @@ public final class HttpHeaders { // NO_UCD
    * 'TE' request header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   TE        = "TE" ":" #( t-codings )
    *   t-codings = "trailers" | ( transfer-extension [ accept-params ] )
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *    TE: deflate
    *    TE:
    *    TE: trailers, deflate;q=0.5
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.39">HTTP/1.1 - 14.39 TE</a>
    */
@@ -723,9 +723,9 @@ public final class HttpHeaders { // NO_UCD
    * 'Trailer' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Trailer  = "Trailer" ":" 1#field-name
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.40">HTTP/1.1 - 14.40 Trailer</a>
    */
@@ -735,13 +735,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Transfer-Encoding' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Transfer-Encoding       = "Transfer-Encoding" ":" 1#transfer-coding
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Transfer-Encoding: chunked
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.41">HTTP/1.1 - 14.41 Transfer-Encoding</a>
    */
@@ -751,13 +751,13 @@ public final class HttpHeaders { // NO_UCD
    * 'Upgrade' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Upgrade        = "Upgrade" ":" 1#product
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Upgrade: HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.42">HTTP/1.1 - 14.42 Upgrade</a>
    */
@@ -767,13 +767,13 @@ public final class HttpHeaders { // NO_UCD
    * 'User-Agent' header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   User-Agent     = "User-Agent" ":" 1*( product | comment )
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   User-Agent: CERN-LineMode/2.15 libwww/2.17b3
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.43">HTTP/1.1 - 14.43 User-Agent</a>
    */
@@ -783,14 +783,14 @@ public final class HttpHeaders { // NO_UCD
    * 'Vary' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Vary  = "Vary" ":" ( "*" | 1#field-name )
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Vary: Accept-Encoding
    *   Vary: *
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.44">HTTP/1.1 - 14.44 Vary</a>
    */
@@ -800,20 +800,20 @@ public final class HttpHeaders { // NO_UCD
    * 'Via' general header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   Via =  "Via" ":" 1#( received-protocol received-by [ comment ] )
    *   received-protocol = [ protocol-name "/" ] protocol-version
    *   protocol-name     = token
    *   protocol-version  = token
    *   received-by       = ( host [ ":" port ] ) | pseudonym
    *   pseudonym         = token
-   * </pre>
+   * }</pre>
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   Via: 1.0 fred, 1.1 nowhere.com (Apache/1.1)
    *   Via: 1.0 ricky, 1.1 ethel, 1.1 fred, 1.0 lucy
    *   Via: 1.0 ricky, 1.1 mertz, 1.0 lucy
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.45">HTTP/1.1 - 14.45 Via</a>
    */
@@ -842,9 +842,9 @@ public final class HttpHeaders { // NO_UCD
    * 'WWW-Authenticate' response header.
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   WWW-Authenticate  = "WWW-Authenticate" ":" 1#challenge
-   * </pre>
+   * }</pre>
    *
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.47">HTTP/1.1 - 14.47 WWW-Authenticate</a>
    */
@@ -894,20 +894,20 @@ public final class HttpHeaders { // NO_UCD
    * 'x-forwarded-proto' request header (HTTP reverse proxy).
    *
    * <p>Augmented BNF:</p>
-   * <pre>
+   * <pre>{@code
    *   host=( host [ ":" port ] )
-   * </pre>
+   * }</pre>
    *
    * <p>Example:</p>
-   * <pre>
+   * <pre>{@code
    *   host=example.com
-   * </pre>
+   * }</pre>
    *
    * or
    *
-   * <pre>
+   * <pre>{@code
    *   host=example.com:443
-   * </pre>
+   * }</pre>
    *
    * @see <a href="https://datatracker.ietf.org/doc/html/rfc7239#section-5.3">Forwarded HTTP Extension - 5.3 Forwarded Host</a>
    */

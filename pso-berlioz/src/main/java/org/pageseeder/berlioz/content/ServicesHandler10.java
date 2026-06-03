@@ -64,7 +64,7 @@ final class ServicesHandler10 extends DefaultHandler {
   private final SAXErrorCollector collector;
 
   /**
-   * The elements used recognised by this handler.
+   * The elements used recognized by this handler.
    */
   private enum Element {
 
@@ -313,12 +313,12 @@ final class ServicesHandler10 extends DefaultHandler {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Creates a parameter specifications from the given attributes.
+   * Creates the parameter specifications from the given attributes.
    *
    * @param atts the attributes of the parameter element.
    * @return a new <code>Parameter</code> instance or <code>null</code>.
    *
-   * @throws SAXException Only if thrown by error handler
+   * @throws SAXException Only if thrown by the error handler
    */
   private @Nullable Parameter toParameter(Attributes atts) throws SAXException {
     String name = atts.getValue("name");
@@ -335,7 +335,7 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @param pattern The URI pattern string to parse.
    *
-   * @throws SAXException Only if thrown by underlying error handler.
+   * @throws SAXException Only if thrown by the underlying error handler.
    */
   private void handlePattern(@Nullable String pattern) throws SAXException {
     if (pattern == null) {
@@ -361,7 +361,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * @param use  The 'use' attribute
    * @param rule The 'rule' attribute
    *
-   * @throws SAXException Only if thrown by underlying error handler.
+   * @throws SAXException Only if thrown by the underlying error handler.
    */
   private void handleResponseCode(@Nullable String use, @Nullable String rule) throws SAXException {
     if (use == null) {
@@ -380,7 +380,7 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @param method  The 'method' attribute
    *
-   * @throws SAXException Only if thrown by underlying error handler.
+   * @throws SAXException Only if thrown by the underlying error handler.
    */
   private void handleMethod(@Nullable String method) throws SAXException {
     if (method == null) {
@@ -400,7 +400,7 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @param atts The attributes of the 'content-generator' element.
    *
-   * @throws SAXException Only if thrown by underlying error handler.
+   * @throws SAXException Only if thrown by the underlying error handler.
    */
   @SuppressWarnings("java:S1192") //No need to create a constant for parts of the warning message
   private void handleGenerator(Attributes atts) throws SAXException {
@@ -439,7 +439,7 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * @param message The message for the warning.
    *
-   * @throws SAXException Only if thrown by underlying error handler.
+   * @throws SAXException Only if thrown by the underlying error handler.
    */
   public void warning(String message) throws SAXException {
     SAXParseException warning = new SAXParseException(message, this.locator);
@@ -454,7 +454,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * @param message The message for the warning.
    * @param ex      Any associated exception.
    *
-   * @throws SAXException Only if thrown by underlying error handler.
+   * @throws SAXException Only if thrown by the underlying error handler.
    */
   public void warning(String message, @Nullable Exception ex) throws SAXException {
     SAXParseException warning = new SAXParseException(message, this.locator, ex);

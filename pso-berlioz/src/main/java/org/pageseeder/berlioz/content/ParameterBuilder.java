@@ -31,13 +31,13 @@ import org.pageseeder.berlioz.Beta;
  * <p>Obtained via {@link ContentRequest#parameter(String)}. Call a type-conversion method
  * to get a {@link TypedParameter}, then call a terminal method to resolve the final value:
  *
- * <pre>
+ * <pre>{@code
  * int page       = request.parameter("page").asInt().clamp(1, 10000).defaultValue(1);
  * int count      = request.parameter("count").asInt().required(0);
  * LocalDate from = request.parameter("from").asLocalDate().optional();
  * Status status  = request.parameter("status").asEnum(Status.class).optional(Status.ACTIVE);
  * String sort    = request.parameter("sort").oneOf("name", "date", "title").required();
- * </pre>
+ * }</pre>
  *
  * @author Christophe Lauret
  *
@@ -163,10 +163,10 @@ public final class ParameterBuilder {
   }
 
   /**
-   * Interprets the parameter as an enum constant, matching against normalised constant names.
+   * Interprets the parameter as an enum constant, matching against normalized constant names.
    *
    * <p>The {@code nameMapper} is applied to each constant's {@link Enum#name()} to produce the
-   * string the client is expected to send. The submitted value must equal that normalised name
+   * string the client is expected to send. The submitted value must equal that normalized name
    * exactly — no further transformation is applied to the input. This means each constant has
    * exactly one accepted string, which keeps cache keys unambiguous.
    *
@@ -178,7 +178,7 @@ public final class ParameterBuilder {
    * Status s = request.parameter("status").asEnum(Status.class, n -> n.toLowerCase(Locale.ROOT).replace('_', '-')).required();
    * </pre>
    *
-   * <p>The error message lists the accepted (normalised) names so the client knows exactly what
+   * <p>The error message lists the accepted (normalized) names, so the client knows exactly what
    * values to send.
    *
    * @param <E>        the enum type
@@ -206,10 +206,10 @@ public final class ParameterBuilder {
    * <p>The type's {@linkplain Class#getSimpleName() simple name} is used in error messages.
    * Prefer this overload when the class name is a sufficient description of the expected value.
    *
-   * <pre>
+   * <pre>{@code
    * ID   id    = request.parameter("id").as(ID.class, ID::of).required();
    * UUID token = request.parameter("token").as(UUID.class, UUID::fromString).optional();
-   * </pre>
+   * }</pre>
    *
    * <p>If the parser throws a {@link RuntimeException} the parameter is marked invalid with
    * an {@link InvalidParameterException.Reason#INVALID_FORMAT} error.
@@ -228,11 +228,11 @@ public final class ParameterBuilder {
    * Parses the parameter into a custom type using the given parser function and type description.
    *
    * <p>Use this overload when the class simple name is a poor description of the expected value
-   * — for example when a more specific format hint improves the error message.
+   * — for example, when a more specific format hint improves the error message.
    *
-   * <pre>
+   * <pre>{@code
    * Slug slug = request.parameter("slug").as(Slug::parse, "URL slug (lowercase, hyphens only)").required();
-   * </pre>
+   * }</pre>
    *
    * <p>If the parser throws a {@link RuntimeException} the parameter is marked invalid with
    * an {@link InvalidParameterException.Reason#INVALID_FORMAT} error.

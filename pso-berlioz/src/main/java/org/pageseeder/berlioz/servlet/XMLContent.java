@@ -19,7 +19,7 @@ package org.pageseeder.berlioz.servlet;
  * Holds the results of a transformation process.
  *
  * <p>This class holds information about a process such as its content, processing time (in ms),
- * status and exception.
+ * status, and exception.
  *
  * @author Christophe Lauret
  *

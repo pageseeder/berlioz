@@ -16,7 +16,7 @@
 package org.pageseeder.berlioz;
 
 /**
- * A enumeration of errors known by Berlioz, so that it is easier to identify the type of error which occurred.
+ * An enumeration of errors known by Berlioz, so that it is easier to identify the type of error that occurred.
  *
  * <p>These are included in error responses whenever Berlioz is able to identify the error.
  *
@@ -68,22 +68,22 @@ package org.pageseeder.berlioz;
   TRANSFORM_MALFORMED_SOURCE_XML,
 
   /**
-   * A dynamic transform error occurred (for example because the XSLT function expected a different data type).
+   * A dynamic transform error occurred (for example, because the XSLT function expected a different data type).
    */
   TRANSFORM_DYNAMIC_ERROR,
 
   /**
-   * An unchecked exception was thrown by a generator.
+   * A generator threw an unchecked exception.
    */
   GENERATOR_ERROR_UNCHECKED,
 
   /**
-   * An exception was thrown deliberately by a generator.
+   * A generator threw an exception deliberately.
    */
   GENERATOR_ERROR_UNFORCED,
 
   /**
-   * Multiple errors were thrown by a generator.
+   * A generator threw multiple errors.
    */
   GENERATOR_ERROR_MULTIPLE,
 
@@ -113,7 +113,6 @@ package org.pageseeder.berlioz;
 
   /**
    * Returns the same as the <code>id()</code> method.
-   *
    * {@inheritDoc}
    */
   @Override

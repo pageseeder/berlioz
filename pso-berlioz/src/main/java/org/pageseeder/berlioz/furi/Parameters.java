@@ -60,7 +60,7 @@ public interface Parameters {
   boolean exists(String name);
 
   /**
-   * Indicates whether the parameters for the given name has a value.
+   * Indicates whether the parameters for the given name have a value.
    *
    * <p>A parameter has a value if:
    * <ul>

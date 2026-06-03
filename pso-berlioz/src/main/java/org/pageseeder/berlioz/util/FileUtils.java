@@ -56,8 +56,8 @@ public final class FileUtils {
    *
    * <p>The media type is only based on the file extension.
    *
-   * <p>This method uses the the 'mime.properties' resource file from the classpath which maps
-   * file extensions to the corresponding Media Type. This file is loaded once.
+   * <p>This method uses the 'mime.properties' resource file from the classpath which maps
+   * file extensions to the corresponding Media Type. This file is loaded only once.
    *
    * @see <a href="http://tools.ietf.org/html/rfc2046">MIME Part Two: Media Types</a>
    * @see <a href="http://tools.ietf.org/html/rfc3023">XML Media Types</a>
@@ -70,7 +70,7 @@ public final class FileUtils {
     if (MEDIATYPES.isEmpty()) {
       loadMIMEProperties();
     }
-    // Lookup extension in properties file
+    // Look up extension in properties file
     String name = f.getName();
     int dot = name.lastIndexOf(".");
     if (dot >= 0) return MEDIATYPES.getProperty(name.substring(dot+1));
@@ -100,7 +100,7 @@ public final class FileUtils {
   /**
    * Returns the path from the root file to the specified file.
    *
-   * <p>Note: implementation note, only works if the root contains the specified file.
+   * <p>Note: implementation note only works if the root contains the specified file.
    *
    * @param root the container
    * @param file the file to check.

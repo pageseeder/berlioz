@@ -40,7 +40,7 @@ public final class GetSystemProperties implements ContentGenerator {
 
     xml.openElement("system");
 
-    // Enumerate the system properties
+    // List the system properties
     Properties properties = System.getProperties();
     for (Entry<Object, Object> p : properties.entrySet()) {
       xml.openElement("property");

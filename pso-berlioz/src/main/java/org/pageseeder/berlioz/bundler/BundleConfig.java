@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The configuration for the bundling for a given type.
  *
- * <p>Stores the bundles definitions and instantiate bundles.
+ * <p>Stores the bundle definitions and instantiate bundles.
  *
  * @author Christophe Lauret
  *
@@ -249,7 +249,7 @@ public final class BundleConfig implements Serializable {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Creates new instance of a bundle configuration.
+   * Creates a new instance of a bundle configuration.
    *
    * @param name The name of the config.
    * @param type The type "js" or "css".
@@ -325,9 +325,9 @@ public final class BundleConfig implements Serializable {
     List<BundleDefinition> bundles = new ArrayList<>();
     for (String name : names) {
       BundleDefinition bc = defaults.get(name);
-      // Same as the name if the 'filename' sub-property isn't defined
+      // Same as the name if the 'filename' subproperty isn't defined
       String filename = GlobalSettings.get(prefix + name + ".filename", bc != null? bc.filename() : name);
-      // The value of the property if the 'paths' sub-property isn't defined.
+      // The value of the property if the 'paths' subproperty isn't defined.
       String paths = GlobalSettings.get(prefix + name + ".include", GlobalSettings.get(prefix + name, ""));
       if (!paths.isBlank()) {
         bc = new BundleDefinition(name, filename, paths);

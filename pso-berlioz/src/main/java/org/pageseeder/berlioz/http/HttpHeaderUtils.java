@@ -76,7 +76,7 @@ public final class HttpHeaderUtils {
    *   <li><code>If-Unmodified-Since</code></li>
    * </ul>
    *
-   * <p>When an entity info is available, this method should be used in the servlet as follows:
+   * <p>When the entity info is available, this method should be used in the servlet as follows:
    * <pre>
    *   if (!HttpHeaderUtils.checkIfHeaders(request, response, info)) {
    *     return;
@@ -87,8 +87,8 @@ public final class HttpHeaderUtils {
    * @param response The servlet response we are creating.
    * @param info     The entity information.
    *
-   * @return <code>true</code> if the entity info fail to meet all the specified conditions, continue processing;
-   *         <code>false</code> if the any entity info meets any the specified conditions,
+   * @return <code>true</code> if the entity info fails to meet all the specified conditions, continue processing;
+   *         <code>false</code> if any entity info meets any the specified conditions,
    *         further processing is unnecessary.
    *
    * @throws IOException If thrown during checking.
@@ -207,7 +207,7 @@ public final class HttpHeaderUtils {
     Boolean gzipMatch = findETagMatch(headerValue, eTag);
     if (gzipMatch == null) return true;
 
-    // For GET and HEAD respond with 304 Not Modified; for all other methods 412 Precondition Failed.
+    // For GET and HEAD respond with 304 Not Modified; for all other methods, 412 Precondition Failed.
     if ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod())) {
       String responseETag = Boolean.TRUE.equals(gzipMatch) ? getETagForGZip(eTag) : eTag;
       res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
@@ -300,7 +300,7 @@ public final class HttpHeaderUtils {
     if (contentLength < Integer.MAX_VALUE) {
       response.setContentLength((int)contentLength);
     } else {
-      // Set the content-length as String to be able to use a long
+      // Set the content-length as String to be able to use a long value
       response.setHeader(HttpHeaders.CONTENT_LENGTH, "" + contentLength);
     }
   }
@@ -337,7 +337,7 @@ public final class HttpHeaderUtils {
    * Returns the entity tag for an uncompressed response by stripping the GZip suffix.
    *
    * <p>For example, {@code "abc-gzip"} becomes {@code "abc"}.
-   * If the ETag does not carry the GZip suffix it is returned unchanged.
+   * If the ETag does not carry the GZip suffix, it is returned unchanged.
    *
    * @param etag the entity tag, possibly carrying the GZip suffix.
    * @return the base entity tag without the GZip suffix, or the original ETag unchanged.

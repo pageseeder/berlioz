@@ -16,11 +16,11 @@
 package org.pageseeder.berlioz.xml;
 
 /**
- * Exception thrown when an XML writer is closed but there is still and open
- * element tag without it closing element.
+ * Exception thrown when an XML writer is closed, but there is still an open
+ * element tag without its corresponding closing element.
  *
- * <p>This exception simply notifies that the XML will not be well-formed, if
- * writer is closed before the remaining open elements are closed.
+ * <p>This exception simply notifies that the XML will not be well-formed if
+ * the writer is closed before the remaining open elements are closed.
  *
  * @author Christophe Lauret
  *
@@ -30,7 +30,7 @@ package org.pageseeder.berlioz.xml;
 public final class UnclosedElementException extends IllegalStateException {
 
   /**
-   * Version number for the serialised class.
+   * Version number for the serialized class.
    */
   private static final long serialVersionUID = -186657976801720211L;
 

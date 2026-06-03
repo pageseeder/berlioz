@@ -48,7 +48,7 @@ public interface ContentGenerator {
    * @param xml The XML output.
    *
    * @throws BerliozException If an exception is thrown, it should be wrapped into a Berlioz
-   *                         exception in order to provide additional details.
+   *                         exception to provide additional details.
    *
    * @throws IOException    If an I/O error occurs while writing to the XML writer.
    */

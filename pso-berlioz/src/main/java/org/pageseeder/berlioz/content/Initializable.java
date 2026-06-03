@@ -16,11 +16,11 @@
 package org.pageseeder.berlioz.content;
 
 /**
- * Generators implementing this interface can be initialised and destroyed.
+ * Generators implementing this interface can be initialized and destroyed.
  *
  * <p>They must provide <code>init</code> and <code>destroy</code> methods.
  *
- * <p>Use this interface when the initialisation of a generator may yield exception
+ * <p>Use this interface when the initialization of a generator may yield an exception
  * or is processor intensive.
  *
  * @author Christophe Lauret
@@ -31,7 +31,7 @@ package org.pageseeder.berlioz.content;
 public interface Initializable {
 
   /**
-   * Initialises this generator.
+   * Initializes this generator.
    */
   void init();
 

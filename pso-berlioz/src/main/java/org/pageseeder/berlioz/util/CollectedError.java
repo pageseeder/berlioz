@@ -22,7 +22,7 @@ import org.pageseeder.xmlwriter.XMLWritable;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
- * A simple class to associate an error collected by a parser to a level or seriousness.
+ * A simple class to associate an error collected by a parser with a level or seriousness.
  *
  * <p>This class is designed to be used with an {@link org.xml.sax.ErrorHandler}
  * or an {@link javax.xml.transform.ErrorListener} so that errors can be collected in a simple list.

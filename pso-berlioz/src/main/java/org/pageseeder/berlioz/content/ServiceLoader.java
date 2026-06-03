@@ -173,7 +173,7 @@ public enum ServiceLoader {
    */
   public synchronized void load(File xml) throws BerliozException {
     Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
-    // OK Let's start
+    // Okay, let's start
     SAXParser parser = XMLUtils.getParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
     if (GlobalSettings.has(BerliozOption.XML_PARSE_STRICT)) {
@@ -260,7 +260,7 @@ public enum ServiceLoader {
      *
      * {@inheritDoc}
      *
-     * @throws SAXException if the the file being parsed is not a service configuration.
+     * @throws SAXException if the file being parsed is not a service configuration.
      */
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
@@ -269,7 +269,7 @@ public enum ServiceLoader {
       Locator loc = this.locator;
       if (loc != null)
         handler.setDocumentLocator(loc);
-      // re-trigger events on handler to ensure proper initialisation
+      // re-trigger events on handler to ensure proper initialization
       handler.startDocument();
       handler.startElement(uri, localName, qName, atts);
       this.reader.setContentHandler(handler);
@@ -283,7 +283,7 @@ public enum ServiceLoader {
      *
      * @return The corresponding handler
      *
-     * @throws SAXException if the the file being parsed is not a service configuration.
+     * @throws SAXException if the file being parsed is not a service configuration.
      */
     private ContentHandler getHandler(String name, Attributes atts) throws SAXException {
       SAXErrorCollector collector = getErrorCollector(this.reader);

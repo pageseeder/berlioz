@@ -28,25 +28,24 @@ import org.jspecify.annotations.Nullable;
  * <p>To assign a {@link VariableResolver} to variables of a specific type, use {@link #bindType(String, VariableResolver)}.
  *
  * <p>The following example will bind all variables typed <code>int</code> to return the corresponding integer value.
- * <pre>
+ * <pre>{@code
  *   VariableBinder binder = new VariableBinder();
  *   b.bindType("int", new VariableResolver(){
  *     public boolean exists(String v) {return v.matches("\\d+");}
  *     public Integer resolve(String v) {return exists(v)? Integer.valueOf(v) : null;};
  *   });
- * </pre>
+ * }</pre>
  *
  * <p>To assign a {@link VariableResolver} to variables of a specific name, use {@link #bindName(String, VariableResolver)}.
  *
  * <p>The following example will bind all variables typed <code>int</code> to return the corresponding integer value.
- * <pre>
+ * <pre>{@code
  *   VariableBinder binder = new VariableBinder();
  *   b.bindName("name", new VariableResolver(){
  *     public boolean exists(String v) {return true;}
  *     public Integer resolve(String v) {return exists(v)? Integer.valueOf(v) : null;};
  *   });
- * </pre>
- *
+ * }</pre>
  *
  * @author Christophe Lauret
  *
@@ -66,12 +65,12 @@ public class VariableBinder {
   };
 
   /**
-   * Maps a variable names to a resolver.
+   * Maps variable names to a resolver.
    */
   private final Map<String,VariableResolver> byName = new HashMap<>();
 
   /**
-   * Maps a variable types to a resolver.
+   * Maps variable types to a resolver.
    */
   private final Map<String,VariableResolver> byType = new HashMap<>();
 
@@ -102,7 +101,7 @@ public class VariableBinder {
    * is bound to the variable name, it will return the resolver bound to the given variable type.
    *
    * <p>This method does not return <code>null</code>. If the specified variable name or type is not
-   * bound to any resolver the default resolver if returned instead.
+   * bound to any resolver, the default resolver is returned instead.
    *
    * @param name The name of the variable.
    * @param type The type of the variable.
@@ -122,8 +121,8 @@ public class VariableBinder {
   /**
    * Returns the resolver used for the variable of the specified name.
    *
-   * <p>This method does not return <code>null</code>. If the specified variable name is no bound
-   * to any resolver the default resolver if returned instead.
+   * <p>This method does not return <code>null</code>. If the specified variable name is not bound
+   * to any resolver, the default resolver is returned instead.
    *
    * @param name The name of the variables.
    *
@@ -137,8 +136,8 @@ public class VariableBinder {
   /**
    * Returns the resolver used for the variable of the specified type.
    *
-   * <p>This method does not return <code>null</code>. If the specified variable name is no bound
-   * to any resolver the default resolver if returned instead.
+   * <p>This method does not return <code>null</code>. If the specified variable name is not bound
+   * to any resolver, the default resolver is returned instead.
    *
    * @param type The type of the variable.
    *
@@ -156,7 +155,7 @@ public class VariableBinder {
    * @param name The variable name.
    *
    * @return <code>true</code> if a given variable resolver is bound to the specific name;
-   *         <code>false</code> otherwise (including if the name is <code>null</code>.
+   *         <code>false</code> otherwise (including if the name is <code>null</code>).
    */
   public boolean isNameBound(@Nullable String name) {
     if (name == null) return false;
@@ -169,7 +168,7 @@ public class VariableBinder {
    * @param type The variable type.
    *
    * @return <code>true</code> if a given variable resolver is bound to the specific type;
-   *         <code>false</code> otherwise (including if the type is <code>null</code>.
+   *         <code>false</code> otherwise (including if the type is <code>null</code>).
    */
   public boolean isTypeBound(@Nullable String type) {
     if (type == null) return false;
