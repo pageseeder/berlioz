@@ -312,7 +312,7 @@ public final class WebBundleTool {
    *
    * @throws IOException if an input/output error occurs.
    */
-  protected static void expandStyles(WebBundle bundle, Writer writer, File virtual, boolean minimize, long threshold) throws IOException {
+  static void expandStyles(WebBundle bundle, Writer writer, File virtual, boolean minimize, long threshold) throws IOException {
 
     // Copy the input stream to the output stream
     IOException exception = null;
@@ -431,11 +431,8 @@ public final class WebBundleTool {
    * @param threshold the file size threshold for images not to be included using data URIs
    *
    * @return IOException if an input/output error occurs
-   *
-   * @throws IOException if unable to read the file.
    */
-  private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, Writer out, List<File> processed, boolean minimize, long threshold)
-      throws IOException {
+  private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, Writer out, List<File> processed, boolean minimize, long threshold) {
     // prevent circular references
     if (processed.contains(file)) return null;
     processed.add(file);
