@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
@@ -158,7 +159,7 @@ public final class ParameterBuilder {
    * @return a typed parameter resolving to an {@code E}
    */
   public <E extends Enum<E>> TypedParameter<E> asEnum(Class<E> enumClass) {
-    return asEnum(enumClass, Function.identity());
+    return asEnum(enumClass, UnaryOperator.identity());
   }
 
   /**
@@ -185,7 +186,7 @@ public final class ParameterBuilder {
    * @param nameMapper applied to each constant's name to derive its accepted string
    * @return a typed parameter resolving to an {@code E}
    */
-  public <E extends Enum<E>> TypedParameter<E> asEnum(Class<E> enumClass, Function<String, String> nameMapper) {
+  public <E extends Enum<E>> TypedParameter<E> asEnum(Class<E> enumClass, UnaryOperator<String> nameMapper) {
     String raw = this.rawValue;
     if (raw == null) return new TypedParameter<>(this.name, null, null);
     for (E constant : enumClass.getEnumConstants()) {
