@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.1
  * @since 0.8.1
  */
 public final class BerliozConfig {
@@ -445,10 +445,10 @@ public final class BerliozConfig {
     String path = this.stylePath
         .replace("{GROUP}", service.group())
         .replace("{SERVICE}", service.id());
-    File styleSheet = this.env.getPrivateFile(path);
+    Path styleSheet = this.env.getPrivateFile(path).toPath();
     try {
       Path base = this.env.getPrivateFolder().getCanonicalFile().toPath();
-      Path resolved = styleSheet.getCanonicalFile().toPath();
+      Path resolved = styleSheet.toAbsolutePath().normalize();
       if (!resolved.startsWith(base)) {
         throw new IllegalStateException("Stylesheet for service '" + service.id() + "' resolves outside the private folder");
       }

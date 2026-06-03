@@ -16,15 +16,14 @@
 package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +32,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
@@ -72,12 +73,12 @@ import org.xml.sax.XMLReader;
 /**
  * Performs the XSLT transformation from the generated XML content.
  *
- * <p>By default, all XSLT templates are cached, use the global property <code>berlioz.cache.xslt</code>
+ * <p>By default, all XSLT templates are cached; use the global property {@code berlioz.xslt.cache}
  * to change this behavior.
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.1
  * @since 0.7
  */
 public final class XSLTransformer {
@@ -93,12 +94,12 @@ public final class XSLTransformer {
   private static final long AUTO_CHECK_INTERVAL_MS = 500L;
 
   /**
-   * Maps XSLT templates to their cached entry for easy retrieval.
+   * Maps XSLT template paths to their cached entry for easy retrieval.
    */
-  private static final Map<File, CachedEntry> CACHE = new ConcurrentHashMap<>();
+  private static final Map<Path, CachedEntry> CACHE = new ConcurrentHashMap<>();
 
   /**
-   * Identity templates for the worse case scenario!
+   * Identity templates for the worst-case scenario.
    */
   private static final Templates IDENTITY_TEMPLATES = new Templates() {
     @Override
@@ -116,7 +117,7 @@ public final class XSLTransformer {
    *
    * <p>For example, "/WEB-INF/xslt/html/global.xsl"
    */
-  private final File templatesFile;
+  private final Path templatesPath;
 
   /**
    * The URL to a fallback template.
@@ -133,7 +134,7 @@ public final class XSLTransformer {
    *
    * @param templates The location of the templates.
    */
-  public XSLTransformer(File templates) {
+  public XSLTransformer(Path templates) {
     this(templates, null);
   }
 
@@ -143,14 +144,37 @@ public final class XSLTransformer {
    * @param templates The location of the templates.
    * @param fallback  The URL to the fallback templates (optional)
    */
-  public XSLTransformer(File templates, @Nullable URL fallback) {
-    this.templatesFile = Objects.requireNonNull(templates, "The template file is required");
+  public XSLTransformer(Path templates, @Nullable URL fallback) {
+    this.templatesPath = Objects.requireNonNull(templates, "The template path is required");
     this.fallback = fallback;
     this.etag = computeEtag(templates, fallback);
   }
 
   /**
-   * Transforms the Specified content using XSLT.
+   * Creates a new XSLT Transformer with no fallback templates.
+   *
+   * @param templates The location of the templates.
+   * @deprecated Use {@link #XSLTransformer(Path)} instead.
+   */
+  @Deprecated(since = "0.13.1")
+  public XSLTransformer(File templates) {
+    this(templates.toPath(), null);
+  }
+
+  /**
+   * Creates a new XSLT Transformer.
+   *
+   * @param templates The location of the templates.
+   * @param fallback  The URL to the fallback templates (optional)
+   * @deprecated Use {@link #XSLTransformer(Path, URL)} instead.
+   */
+  @Deprecated(since = "0.13.1")
+  public XSLTransformer(File templates, @Nullable URL fallback) {
+    this(templates.toPath(), fallback);
+  }
+
+  /**
+   * Transforms the specified content using XSLT.
    *
    * @param content The XML content to transform.
    * @param req     The HTTP Servlet request.
@@ -166,18 +190,17 @@ public final class XSLTransformer {
 
     try {
       // Creates a transformer from the templates
-      templates = getTemplates(this.templatesFile);
+      templates = getTemplates(this.templatesPath);
 
       // Set up the source
       Source source = toXMLSource(content, req, service);
 
       // Set up the result
       StreamResult result = new StreamResult(buffer);
-
       // Transform!
       time = transform(source, result, templates, parameters);
 
-    // very likely to be an error in the XML or a dynamic error
+      // very likely to be an error in the XML or a dynamic error
     } catch (TransformerException ex) {
       String error = toXML(ex, parameters);
       ClassLoader loader = XSLTransformer.class.getClassLoader();
@@ -206,12 +229,23 @@ public final class XSLTransformer {
   }
 
   /**
+   * Returns the path used by this transformer to locate the templates.
+   *
+   * @return the path to the templates file.
+   */
+  public Path templatesPath() {
+    return this.templatesPath;
+  }
+
+  /**
    * Returns the file used by this transformer to produce the templates.
    *
-   * @return  the file used by this transformer to produce the templates.
+   * @return the file used by this transformer to produce the templates.
+   * @deprecated Use {@link #templatesPath()} instead.
    */
+  @Deprecated(since = "0.13.1")
   public File templates() {
-    return this.templatesFile;
+    return this.templatesPath.toFile();
   }
 
   /**
@@ -224,46 +258,43 @@ public final class XSLTransformer {
   }
 
   /**
-   * Clears the internal XSLT cache.
+   * Clears the cached entry for this transformer's stylesheet.
    */
   public synchronized void clearCache() {
     LOGGER.debug("Clearing XSLT cache.");
-    CACHE.remove(this.templatesFile);
+    CACHE.remove(this.templatesPath);
   }
 
   /**
-   * Clears the internal XSLT cache.
+   * Clears the entire XSLT template cache.
    */
   public static synchronized void clearAllCache() {
-    LOGGER.debug("Clearing XSLT cache.");
+    LOGGER.debug("Clearing ALL XSLT cache.");
     CACHE.clear();
   }
 
 // private helpers --------------------------------------------------------------------------------
 
   /**
-   * Computes the etag for the templates.
-   * @param templates The main file for the templates.
-   * @return The corresponding etag.
+   * Computes the etag for the templates by hashing the path, size, and last-modified timestamp
+   * of every file in the template directory tree. Falls back to hashing the fallback URL string
+   * if the templates file does not exist.
    */
-  private static @Nullable String computeEtag(File templates, @Nullable URL fallback) {
-    if (!templates.exists()) {
+  private static @Nullable String computeEtag(Path templates, @Nullable URL fallback) {
+    if (!Files.exists(templates)) {
       if (fallback != null) return SHA256.hash(fallback.toString());
-      else {
-        LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getName());
-        LOGGER.error("Create a stylesheet at the path below:");
-        LOGGER.error(templates.getPath());
-        return null;
-      }
+      LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getFileName());
+      LOGGER.error("Create a stylesheet at the path below: {}", templates);
+      return null;
     }
-    List<File> files = new ArrayList<>();
-    File parent = templates.getParentFile();
-    if (parent != null) {
-      listTemplateFiles(parent, files);
-    }
+    Path parent = templates.getParent();
+    if (parent == null) return null;
     StringBuilder b = new StringBuilder();
-    try {
-      for (File f : files) { b.append(SHA256.hash(f, false)); }
+    try (Stream<Path> stream = Files.walk(parent)) {
+      List<Path> files = stream.filter(Files::isRegularFile).collect(Collectors.toList());
+      for (Path f : files) {
+        b.append(SHA256.hash(f, false));
+      }
     } catch (IOException ex) {
       LOGGER.warn("Error thrown while trying to calculate template etag", ex);
       return null;
@@ -272,34 +303,7 @@ public final class XSLTransformer {
   }
 
   /**
-   * Lists all the files in the specified directory and its descendants.
-   *
-   * @param dir      the root directory to scan.
-   * @param collected files collected so far.
-   */
-  private static void listTemplateFiles(File dir, List<File> collected) {
-    // get all the files in the current directory
-    File[] files = dir.listFiles();
-    if (files != null) {
-      // iterate over the files, collect
-      for (File f : files) {
-        // scan directories
-        if (f.isDirectory()) {
-          listTemplateFiles(f, collected);
-        } else {
-          // collect files only
-          collected.add(f);
-        }
-      }
-    } else {
-      LOGGER.warn("Unable to list files from directory {}", dir.getName());
-    }
-  }
-
-  /**
-   * Utility function to transform the specified XML source and returns the results as XML.
-   *
-   * <p>Problems will be reported in the logs, the output will simply produce results as a comment.
+   * Utility function to transform the specified XML source and return the result.
    *
    * @param source     The Source XML data.
    * @param result     The Result XHTML data.
@@ -308,7 +312,7 @@ public final class XSLTransformer {
    *
    * @return The nano time it took to process the stylesheet.
    *
-   * @throws TransformerException For XSLT Transformation errors or XSLT config errors
+   * @throws TransformerException For XSLT transformation errors or XSLT config errors.
    */
   private static long transform(Source source, StreamResult result, Templates templates, @Nullable Map<String, String> parameters)
     throws TransformerException {
@@ -342,111 +346,115 @@ public final class XSLTransformer {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Returns the templates corresponding to the specified file.
+   * Returns the templates corresponding to the specified path.
    *
    * <p>This method uses the caching mechanism controlled by {@link BerliozOption#XSLT_CACHE}.
    *
-   * @param f The path to the XSLT style sheet.
+   * @param p The path to the XSLT stylesheet.
    *
-   * @return The corresponding templates
+   * @return The corresponding templates.
    *
-   * @throws TransformerException If the templates could not parse.
+   * @throws TransformerException If the templates could not be parsed.
    */
-  private synchronized Templates getTemplates(File f) throws TransformerException {
+  private synchronized Templates getTemplates(Path p) throws TransformerException {
     XSLTCacheMode mode = XSLTCacheMode.from(GlobalSettings.get(BerliozOption.XSLT_CACHE));
-    String stylesheet = toWebPath(f.getAbsolutePath());
+    String stylesheet = toWebPath(p.toAbsolutePath().toString());
 
     if (mode == XSLTCacheMode.NO) {
       LOGGER.info("Loading XSLT stylesheet '{}' [caching disabled]", stylesheet);
-      return loadTemplates(f);
+      return loadTemplates(p);
     }
 
-    CachedEntry cached = CACHE.get(f);
+    CachedEntry cached = CACHE.get(p);
     if (cached != null) {
-      if (mode == XSLTCacheMode.MANUAL || !isStale(f, cached)) {
+      if (mode == XSLTCacheMode.MANUAL || !isStale(p, cached)) {
         return cached.templates;
       }
       LOGGER.info("XSLT stylesheet '{}' changed, reloading", stylesheet);
-      CACHE.remove(f);
+      CACHE.remove(p);
     } else {
       LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", stylesheet, mode);
     }
 
-    Templates templates = loadTemplates(f);
-    CACHE.put(f, new CachedEntry(templates, maxLastModified(f.getParentFile())));
+    Templates templates = loadTemplates(p);
+    CACHE.put(p, new CachedEntry(templates, maxLastModified(p.getParent())));
     return templates;
   }
 
   /**
-   * Loads templates from the given file and updates the etag.
+   * Loads and compiles templates from the given path and updates the etag.
    */
-  private Templates loadTemplates(File f) throws TransformerException {
+  private Templates loadTemplates(Path p) throws TransformerException {
     long t0 = System.currentTimeMillis();
-    Templates templates = toTemplates(f, this.fallback);
+    Templates templates = toTemplates(p, this.fallback);
     LOGGER.debug("Templates loaded in {}ms", System.currentTimeMillis() - t0);
-    this.etag = computeEtag(f, this.fallback);
+    this.etag = computeEtag(p, this.fallback);
     return templates;
   }
 
   /**
    * Returns whether the cached entry is stale by comparing the max last-modified timestamp
-   * across all files in the template directory. Updates {@code checkedAt} on every call so
-   * the filesystem scan is debounced to at most once per {@link #AUTO_CHECK_INTERVAL_MS}.
+   * across all files in the template directory. Updates {@code checkedAt} on every call so the
+   * filesystem scan is debounced to at most once per {@link #AUTO_CHECK_INTERVAL_MS}.
    */
-  private static boolean isStale(File f, CachedEntry entry) {
+  private static boolean isStale(Path p, CachedEntry entry) {
     long now = System.currentTimeMillis();
     if (now - entry.checkedAt < AUTO_CHECK_INTERVAL_MS) return false;
     entry.checkedAt = now;
-    return maxLastModified(f.getParentFile()) != entry.maxLastModified;
+    return maxLastModified(p.getParent()) != entry.maxLastModified;
   }
 
   /**
-   * Returns the highest {@code lastModified} value across all files in the given directory tree,
-   * or {@code 0} if the directory is {@code null} or empty.
+   * Returns the highest last-modified time (in ms) across all regular files under {@code dir},
+   * or {@code 0} if the directory is {@code null}, empty, or cannot be read.
    */
-  private static long maxLastModified(@Nullable File dir) {
+  private static long maxLastModified(@Nullable Path dir) {
     if (dir == null) return 0L;
-    List<File> files = new ArrayList<>();
-    listTemplateFiles(dir, files);
-    long max = 0L;
-    for (File file : files) {
-      long lm = file.lastModified();
-      if (lm > max) max = lm;
+    try (Stream<Path> stream = Files.walk(dir)) {
+      return stream
+          .filter(Files::isRegularFile)
+          .mapToLong(f -> {
+            try { return Files.getLastModifiedTime(f).toMillis(); }
+            catch (IOException e) { return 0L; }
+          })
+          .max()
+          .orElse(0L);
+    } catch (IOException ex) {
+      LOGGER.warn("Unable to scan template directory {}", dir, ex);
+      return 0L;
     }
-    return max;
   }
 
   /**
-   * Return the XSLT templates from the given style.
+   * Returns the compiled XSLT templates from the given path, falling back to the fallback URL
+   * if the path does not exist.
    *
-   * @param stylepath The path to the XSLT style sheet
-   * @param fallback  The URL to the fallback XSLT style sheet
+   * @param stylepath The path to the XSLT stylesheet.
+   * @param fallback  The URL to the fallback XSLT stylesheet.
    *
-   * @return the corresponding XSLT templates object
+   * @return the corresponding XSLT templates object.
    *
    * @throws TransformerException If the loading fails.
    */
-  private static Templates toTemplates(File stylepath, @Nullable URL fallback) throws TransformerException {
-    // load the templates from the source file
+  private static Templates toTemplates(Path stylepath, @Nullable URL fallback) throws TransformerException {
     Templates templates;
-    try (InputStream in = new FileInputStream(stylepath)) {
+    try (InputStream in = Files.newInputStream(stylepath)) {
       Source source = new StreamSource(in);
-      source.setSystemId(stylepath.toURI().toString());
+      source.setSystemId(stylepath.toUri().toString());
       TransformerFactory factory = newTransformerFactory();
       XSLTErrorCollector listener = new XSLTErrorCollector(LOGGER);
       factory.setErrorListener(listener);
       templates = newTemplates(factory, source, listener);
-    } catch (FileNotFoundException ex) {
-      // The file does not exist
+    } catch (NoSuchFileException ex) {
       if (fallback != null) {
         LOGGER.warn("Unable to find template file: {} using fallback templates {}", stylepath, fallback);
         templates = toTemplates(fallback);
       } else {
         LOGGER.warn("Unable to find template file: {}", stylepath);
-        throw new TransformerConfigurationException("Unable to find stylesheet: "+toWebPath(stylepath.getPath()), ex);
+        throw new TransformerConfigurationException("Unable to find stylesheet: "+toWebPath(stylepath.toString()), ex);
       }
     } catch (IOException ex) {
-      throw new TransformerConfigurationException("Unable to read stylesheet: "+toWebPath(stylepath.getPath()), ex);
+      throw new TransformerConfigurationException("Unable to read stylesheet: "+toWebPath(stylepath.toString()), ex);
     }
     return templates;
   }
@@ -481,19 +489,18 @@ public final class XSLTransformer {
       }
     }
     // Return parameters
-    if (p != null) return p;
-    else return Collections.emptyMap();
+    return p != null ? p : Map.of();
   }
 
   // Error Handling
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Handles transformation errors - to be used in catch blocks.
+   * Handles transformation errors — to be used in catch blocks.
    *
    * @param ex         An error occurring during an XSLT transformation.
-   * @param parameters The XSLT parameters passed to the transformer
-   * @return the error details as XML
+   * @param parameters The XSLT parameters passed to the transformer.
+   * @return the error details as XML.
    */
   private static String toXML(TransformerException ex, @Nullable Map<String, String> parameters) {
     // Remove all double dash so that it may be inserted in the XML comment
@@ -565,33 +572,31 @@ public final class XSLTransformer {
 
   /**
    * Loads the fail-safe templates.
-   * @param url The URL to load (within Berlioz Package)
-   * @return templates or <code>null</code>.
+   *
+   * @param url The URL to load (within Berlioz package).
+   * @return templates, or the identity templates if loading fails.
    */
   private static Templates toTemplates(@Nullable URL url) {
     if (url == null) return IDENTITY_TEMPLATES;
     // load the templates from the URL
-    Templates templates;
     try (InputStream in = url.openStream()) {
       Source source = new StreamSource(in);
       source.setSystemId(url.toString());
       TransformerFactory factory = newTransformerFactory();
-      templates = factory.newTemplates(source);
+      return factory.newTemplates(source);
       // Any error we need to give up...
     } catch (IOException | TransformerException ex) {
       LOGGER.warn("Unable to load fallback/failsafe templates!", ex);
       return IDENTITY_TEMPLATES;
     }
-    return templates;
   }
 
   /**
-   * Perform a fail-safe transformation using the built-in stylesheet.
+   * Performs a fail-safe transformation using the built-in stylesheet.
    *
-   * <p>Note: If the transformation fails, the source XML is returned verbatim as there is nothing
-   * more we can do.
+   * <p>If the transformation fails, the source XML is returned verbatim.
    *
-   * @param xml       The XML to transform
+   * @param xml       The XML to transform.
    * @param templates The fail-safe templates to use.
    *
    * @return The results of the transformation.
@@ -600,23 +605,21 @@ public final class XSLTransformer {
     // No need to process, let's directly copy the output
     if (templates == IDENTITY_TEMPLATES) return xml;
     // Let's try to format it
-    String out;
     try {
       Source source = toXMLSource(xml);
       StringWriter html = new StringWriter();
       Result result = new StreamResult(html);
       templates.newTransformer().transform(source, result);
-      out = html.toString();
+      return html.toString();
     } catch (TransformerException disaster) {
       LOGGER.error("Fail-safe stylesheet failed! - returning error details as XML: {}", disaster.getMessageAndLocation());
       // Fail-safe failed!
-      out = xml;
+      return xml;
     } catch (Exception catastrophe) {
       LOGGER.error("Fail-safe stylesheet failed! - returning error details as XML", catastrophe);
       // Fail-safe failed!
-      out = xml;
+      return xml;
     }
-    return out;
   }
 
   /**
@@ -682,8 +685,8 @@ public final class XSLTransformer {
   /**
    * Displays the path to the file from the web application (for debugging).
    *
-   * @param s the file path.
-   * @return The path from the "WEB-INF" directory
+   * @param s the file path string.
+   * @return The path from the "WEB-INF" directory.
    */
   private static String toWebPath(String s) {
     String from = "WEB-INF";
@@ -692,7 +695,7 @@ public final class XSLTransformer {
   }
 
   /**
-   * Guess the Berlioz Error ID from the exception thrown.
+   * Guesses the Berlioz Error ID from the exception thrown.
    *
    * @param ex The captured Transformer exception.
    *
@@ -701,20 +704,19 @@ public final class XSLTransformer {
   private static BerliozErrorID toErrorID(TransformerException ex) {
     // Let's guess the Berlioz internal code
     if (ex instanceof TransformerConfigurationException) {
-      if (ex.getCause() instanceof FileNotFoundException) return BerliozErrorID.TRANSFORM_NOT_FOUND;
-      else
-        return BerliozErrorID.TRANSFORM_INVALID;
+      Throwable cause = ex.getCause();
+      if (cause instanceof NoSuchFileException) return BerliozErrorID.TRANSFORM_NOT_FOUND;
+      else return BerliozErrorID.TRANSFORM_INVALID;
     }
     if (ex.getCause() instanceof SAXParseException) return BerliozErrorID.TRANSFORM_MALFORMED_SOURCE_XML;
-    else
-      return BerliozErrorID.TRANSFORM_DYNAMIC_ERROR;
+    return BerliozErrorID.TRANSFORM_DYNAMIC_ERROR;
   }
 
   /**
-   * Return the title ID based on the ID.
+   * Returns a display title based on the error ID.
    *
-   * @param id the ID
-   * @return the corresponding message
+   * @param id the error ID.
+   * @return the corresponding message.
    */
   private static String toTitle(BerliozErrorID id) {
     switch (id) {
@@ -738,7 +740,7 @@ public final class XSLTransformer {
     /** The compiled templates. */
     final Templates templates;
 
-    /** Highest {@code lastModified} across all files in the template directory at load time. */
+    /** Highest last-modified time (ms) across all files in the template directory at load time. */
     final long maxLastModified;
 
     /** Timestamp of the last staleness check; volatile so reads across instances are coherent. */
