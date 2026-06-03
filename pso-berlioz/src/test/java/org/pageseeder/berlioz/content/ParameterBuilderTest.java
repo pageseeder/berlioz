@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.content;
 
 import java.time.LocalDate;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -365,6 +366,110 @@ final class ParameterBuilderTest {
     TypedParameter<Integer> p = builder("page", null).asInt().inRange(1, 1000);
     InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(1));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  // --- matching --------------------------------------------------------------
+
+  @Test
+  void matching_validSatisfiesPredicate_returnsValue() {
+    int result = builder("count", "4").asInt().matching(n -> n % 2 == 0, "must be even").required();
+    Assertions.assertEquals(4, result);
+  }
+
+  @Test
+  void matching_validFailsPredicate_required_throws() {
+    TypedParameter<Integer> p = builder("count", "3").asInt().matching(n -> n % 2 == 0, "must be even");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.NOT_ALLOWED, ex.getReason());
+    Assertions.assertEquals("3", ex.getParameterValue());
+  }
+
+  @Test
+  void matching_validFailsPredicate_defaultValue_returnsDefault() {
+    int result = builder("count", "3").asInt().matching(n -> n % 2 == 0, "must be even").defaultValue(0);
+    Assertions.assertEquals(0, result);
+  }
+
+  @Test
+  void matching_absent_passesThroughForTerminal() {
+    int result = builder("count", null).asInt().matching(n -> n % 2 == 0, "must be even").defaultValue(0);
+    Assertions.assertEquals(0, result);
+  }
+
+  @Test
+  void matching_invalidFormat_passesThroughForTerminal() {
+    TypedParameter<Integer> p = builder("count", "abc").asInt().matching(n -> n % 2 == 0, "must be even");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
+  }
+
+  @Test
+  void matching_onString_satisfiesPredicate() {
+    String result = builder("sku", "SKU-001").asString().matching(s -> s.startsWith("SKU-"), "must start with SKU-").required();
+    Assertions.assertEquals("SKU-001", result);
+  }
+
+  @Test
+  void matching_onString_failsPredicate_throws() {
+    TypedParameter<String> p = builder("sku", "ABC-001").asString().matching(s -> s.startsWith("SKU-"), "must start with SKU-");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.NOT_ALLOWED, ex.getReason());
+  }
+
+  // --- matchingRegex ---------------------------------------------------------
+
+  @Test
+  void matchingRegex_string_valid_returnsValue() {
+    String result = builder("slug", "hello-world").matchingRegex("[a-z0-9-]+").required();
+    Assertions.assertEquals("hello-world", result);
+  }
+
+  @Test
+  void matchingRegex_string_invalid_required_throws() {
+    TypedParameter<String> p = builder("slug", "Hello World").matchingRegex("[a-z0-9-]+");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
+    Assertions.assertEquals("Hello World", ex.getParameterValue());
+  }
+
+  @Test
+  void matchingRegex_string_invalid_defaultValue_returnsDefault() {
+    String result = builder("slug", "Hello World").matchingRegex("[a-z0-9-]+").defaultValue("fallback");
+    Assertions.assertEquals("fallback", result);
+  }
+
+  @Test
+  void matchingRegex_string_absent_required_throws() {
+    TypedParameter<String> p = builder("slug", null).matchingRegex("[a-z0-9-]+");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void matchingRegex_string_absent_defaultValue_returnsDefault() {
+    String result = builder("slug", null).matchingRegex("[a-z0-9-]+").defaultValue("fallback");
+    Assertions.assertEquals("fallback", result);
+  }
+
+  @Test
+  void matchingRegex_pattern_valid_returnsValue() {
+    Pattern digits = Pattern.compile("\\d{4}");
+    String result = builder("code", "1234").matchingRegex(digits).required();
+    Assertions.assertEquals("1234", result);
+  }
+
+  @Test
+  void matchingRegex_pattern_invalid_throws() {
+    Pattern digits = Pattern.compile("\\d{4}");
+    TypedParameter<String> p = builder("code", "12X4").matchingRegex(digits);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
+  }
+
+  @Test
+  void matchingRegex_doesNotMatchPartially() {
+    TypedParameter<String> p = builder("slug", "abc!").matchingRegex("[a-z]+");
+    Assertions.assertThrows(InvalidParameterException.class, p::required);
   }
 
   // --- helpers ---------------------------------------------------------------

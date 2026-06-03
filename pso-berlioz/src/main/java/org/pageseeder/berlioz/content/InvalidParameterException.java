@@ -146,4 +146,18 @@ public final class InvalidParameterException extends RuntimeException {
         name, value, Reason.NOT_ALLOWED);
   }
 
+  /**
+   * Creates an exception for a parameter whose value failed a custom constraint check.
+   *
+   * @param name        the parameter name
+   * @param value       the raw value that failed the check
+   * @param description a short description of the constraint (e.g. {@code "must be even"})
+   * @return the exception
+   */
+  public static InvalidParameterException constraintFailed(String name, String value, String description) {
+    return new InvalidParameterException(
+        "Parameter '" + name + "' value '" + value + "': " + description,
+        name, value, Reason.NOT_ALLOWED);
+  }
+
 }

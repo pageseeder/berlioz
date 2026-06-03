@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
+import java.util.function.Predicate;
+
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 
@@ -38,6 +40,7 @@ import org.pageseeder.berlioz.Beta;
  * <ul>
  *   <li>{@link #clamp(Object, Object)} — silently coerces an out-of-range value to the nearest bound.</li>
  *   <li>{@link #inRange(Object, Object)} — marks an out-of-range value as invalid ({@link InvalidParameterException.Reason#OUT_OF_RANGE}).</li>
+ *   <li>{@link #matching(Predicate, String)} — marks a value that fails a predicate as invalid ({@link InvalidParameterException.Reason#NOT_ALLOWED}).</li>
  * </ul>
  *
  * <p>Terminal method behaviour:
@@ -117,6 +120,33 @@ public final class TypedParameter<T> {
       return new TypedParameter<>(this.parameterName, null,
           InvalidParameterException.outOfRange(this.parameterName, v.toString(),
               "must be between " + min + " and " + max));
+    }
+    return this;
+  }
+
+  /**
+   * Marks the value as invalid when it fails the given predicate.
+   *
+   * <p>Absent and already-invalid states are passed through unchanged so the terminal method
+   * handles them normally.
+   *
+   * <pre>
+   * int n  = request.parameter("count").asInt().matching(v -> v % 2 == 0, "must be even").required();
+   * String s = request.parameter("sku").asString().matching(v -> v.startsWith("SKU-"), "must start with SKU-").required();
+   * </pre>
+   *
+   * @param predicate   the constraint the value must satisfy
+   * @param description a short description used in the error message when the predicate fails
+   *                    (e.g. {@code "must be even"}, {@code "must start with SKU-"})
+   * @return a typed parameter with a {@link InvalidParameterException.Reason#NOT_ALLOWED} error if the predicate
+   *         fails, or the same state if the predicate passes, is absent, or is already invalid
+   */
+  public TypedParameter<T> matching(Predicate<T> predicate, String description) {
+    T v = this.parsedValue;
+    if (v == null) return this;
+    if (!predicate.test(v)) {
+      return new TypedParameter<>(this.parameterName, null,
+          InvalidParameterException.constraintFailed(this.parameterName, v.toString(), description));
     }
     return this;
   }

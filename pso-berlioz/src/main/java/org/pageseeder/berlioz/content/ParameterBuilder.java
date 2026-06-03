@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.content;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
@@ -141,6 +142,37 @@ public final class ParameterBuilder {
       if (v.equals(raw)) return new TypedParameter<>(this.name, raw, null);
     }
     return new TypedParameter<>(this.name, null, InvalidParameterException.notAllowed(this.name, raw, allowed));
+  }
+
+  /**
+   * Accepts the parameter only if its value matches the given compiled pattern (full match).
+   *
+   * <p>Equivalent to {@code asString()} with a regex format constraint. Prefer this overload
+   * when the same pattern is reused across requests — compile it once at class-load time
+   * and pass it here.
+   *
+   * @param pattern the compiled regex the value must fully match
+   * @return a typed parameter resolving to a {@code String}
+   */
+  public TypedParameter<String> matchingRegex(Pattern pattern) {
+    String raw = this.rawValue;
+    if (raw == null) return new TypedParameter<>(this.name, null, null);
+    if (pattern.matcher(raw).matches()) return new TypedParameter<>(this.name, raw, null);
+    return new TypedParameter<>(this.name, null,
+        InvalidParameterException.invalidFormat(this.name, raw, "text matching /" + pattern.pattern() + "/"));
+  }
+
+  /**
+   * Accepts the parameter only if its value matches the given regex (full match).
+   *
+   * <p>Compiles the pattern on every call. For hot-path parameters, prefer
+   * {@link #matchingRegex(Pattern)} with a pre-compiled constant.
+   *
+   * @param regex the regular expression the value must fully match
+   * @return a typed parameter resolving to a {@code String}
+   */
+  public TypedParameter<String> matchingRegex(String regex) {
+    return matchingRegex(Pattern.compile(regex));
   }
 
 }
