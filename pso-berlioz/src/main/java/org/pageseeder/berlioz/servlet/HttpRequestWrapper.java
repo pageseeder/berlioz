@@ -141,7 +141,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   @Override
   public final List<Cookie> cookies() {
     Cookie[] arr = this.req.getCookies();
-    return arr != null ? Collections.unmodifiableList(Arrays.asList(arr)) : Collections.emptyList();
+    return arr != null ? List.of(arr) : Collections.emptyList();
   }
 
   /**
