@@ -144,8 +144,13 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     return arr != null ? Collections.unmodifiableList(Arrays.asList(arr)) : Collections.emptyList();
   }
 
+  /**
+   * {@inheritDoc}
+   * @deprecated Use {@link #parameterValues(String)} instead.
+   */
   @Override
   @Deprecated(since = "0.13.1")
+  @SuppressWarnings("java:S1133")
   public final String @Nullable [] getParameterValues(String name) {
     String value = this.parameters.get(name);
     if (value != null)
@@ -154,8 +159,13 @@ public abstract class HttpRequestWrapper implements ContentRequest {
       return this.req.getParameterValues(name);
   }
 
+  /**
+   * {@inheritDoc}
+   * @deprecated Use {@link #parameterNames()} instead.
+   */
   @Override
   @Deprecated(since = "0.13.1")
+  @SuppressWarnings("java:S1133")
   public final Enumeration<String> getParameterNames() {
     return Collections.enumeration(this.parameters.keySet());
   }
@@ -191,7 +201,13 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * @deprecated Use {@code parameter(name).asLocalDate()} instead.
+   */
   @Override
+  @Deprecated(since = "0.13.1")
+  @SuppressWarnings("java:S1133")
   public final @Nullable Date getDateParameter(String name) {
     String value = this.getParameter(name);
     if (value == null) return null;
@@ -207,8 +223,13 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     return this.req.getPathInfo();
   }
 
+  /**
+   * {@inheritDoc}
+   * @deprecated Use {@link #cookies()} instead.
+   */
   @Override
   @Deprecated(since = "0.13.1")
+  @SuppressWarnings("java:S1133")
   public final Cookie @Nullable [] getCookies() {
     return this.req.getCookies();
   }
