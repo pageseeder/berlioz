@@ -54,6 +54,7 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.XSLTCacheMode;
 import org.pageseeder.berlioz.aeson.JSONResult;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.util.*;
@@ -87,9 +88,14 @@ public final class XSLTransformer {
   private static final Logger LOGGER = LoggerFactory.getLogger(XSLTransformer.class);
 
   /**
-   * Maps XSLT templates to their name for easy retrieval.
+   * How long (ms) to wait between filesystem staleness checks in AUTO mode.
    */
-  private static final Map<File, Templates> CACHE = new ConcurrentHashMap<>();
+  private static final long AUTO_CHECK_INTERVAL_MS = 500L;
+
+  /**
+   * Maps XSLT templates to their cached entry for easy retrieval.
+   */
+  private static final Map<File, CachedEntry> CACHE = new ConcurrentHashMap<>();
 
   /**
    * Identity templates for the worse case scenario!
@@ -338,7 +344,7 @@ public final class XSLTransformer {
   /**
    * Returns the templates corresponding to the specified file.
    *
-   * <p>This method uses the caching mechanism.
+   * <p>This method uses the caching mechanism controlled by {@link BerliozOption#XSLT_CACHE}.
    *
    * @param f The path to the XSLT style sheet.
    *
@@ -347,24 +353,67 @@ public final class XSLTransformer {
    * @throws TransformerException If the templates could not parse.
    */
   private synchronized Templates getTemplates(File f) throws TransformerException {
-    boolean store = GlobalSettings.has(BerliozOption.XSLT_CACHE);
+    XSLTCacheMode mode = XSLTCacheMode.from(GlobalSettings.get(BerliozOption.XSLT_CACHE));
     String stylesheet = toWebPath(f.getAbsolutePath());
-    Templates templates = store? CACHE.get(f) : null;
-    if (templates == null) {
-      LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", stylesheet, store? "enabled" : "disabled");
-      // Generate the templates if necessary
-      long t0 = System.currentTimeMillis();
-      templates = toTemplates(f, this.fallback);
-      long t1 = System.currentTimeMillis();
-      LOGGER.debug("Templates loaded in {}ms", (t1 - t0));
-      // Recalculate the Etag
-      this.etag = computeEtag(f, this.fallback);
-      if (store) {
-        CACHE.put(f, templates);
-        LOGGER.info("Caching XSLT stylesheet '{}'", stylesheet);
-      }
+
+    if (mode == XSLTCacheMode.NO) {
+      LOGGER.info("Loading XSLT stylesheet '{}' [caching disabled]", stylesheet);
+      return loadTemplates(f);
     }
+
+    CachedEntry cached = CACHE.get(f);
+    if (cached != null) {
+      if (mode == XSLTCacheMode.MANUAL || !isStale(f, cached)) {
+        return cached.templates;
+      }
+      LOGGER.info("XSLT stylesheet '{}' changed, reloading", stylesheet);
+      CACHE.remove(f);
+    } else {
+      LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", stylesheet, mode);
+    }
+
+    Templates templates = loadTemplates(f);
+    CACHE.put(f, new CachedEntry(templates, maxLastModified(f.getParentFile())));
     return templates;
+  }
+
+  /**
+   * Loads templates from the given file and updates the etag.
+   */
+  private Templates loadTemplates(File f) throws TransformerException {
+    long t0 = System.currentTimeMillis();
+    Templates templates = toTemplates(f, this.fallback);
+    LOGGER.debug("Templates loaded in {}ms", System.currentTimeMillis() - t0);
+    this.etag = computeEtag(f, this.fallback);
+    return templates;
+  }
+
+  /**
+   * Returns whether the cached entry is stale by comparing the max last-modified timestamp
+   * across all files in the template directory. Updates {@code checkedAt} on every call so
+   * the filesystem scan is debounced to at most once per {@link #AUTO_CHECK_INTERVAL_MS}.
+   */
+  private static boolean isStale(File f, CachedEntry entry) {
+    long now = System.currentTimeMillis();
+    if (now - entry.checkedAt < AUTO_CHECK_INTERVAL_MS) return false;
+    entry.checkedAt = now;
+    return maxLastModified(f.getParentFile()) != entry.maxLastModified;
+  }
+
+  /**
+   * Returns the highest {@code lastModified} value across all files in the given directory tree,
+   * or {@code 0} if the directory is {@code null} or empty.
+   */
+  private static long maxLastModified(@Nullable File dir) {
+    if (dir == null) return 0L;
+    List<File> files = new ArrayList<>();
+    listTemplateFiles(dir, files);
+    long max = 0L;
+    for (File file : files) {
+      long lm = file.lastModified();
+      if (lm > max) max = lm;
+    }
+    return max;
   }
 
   /**
@@ -677,8 +726,30 @@ public final class XSLTransformer {
     }
   }
 
-  // Listeners and exceptions for better reporting of errors
+  // Inner types
   // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Holds a compiled {@link Templates} object alongside the metadata used by AUTO mode to
+   * detect source file changes without reading file content.
+   */
+  private static final class CachedEntry {
+
+    /** The compiled templates. */
+    final Templates templates;
+
+    /** Highest {@code lastModified} across all files in the template directory at load time. */
+    final long maxLastModified;
+
+    /** Timestamp of the last staleness check; volatile so reads across instances are coherent. */
+    volatile long checkedAt;
+
+    CachedEntry(Templates templates, long maxLastModified) {
+      this.templates = templates;
+      this.maxLastModified = maxLastModified;
+      this.checkedAt = System.currentTimeMillis();
+    }
+  }
 
   /**
    * Extends the transformer exception to preserve API and include additional details.

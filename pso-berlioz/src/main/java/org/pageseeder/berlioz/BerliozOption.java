@@ -246,7 +246,19 @@ public enum BerliozOption {
   PROFILE("berlioz.profile", Boolean.FALSE),
 
   /**
-   * A boolean global option to indicate whether to enable the caching of XSLT templates.
+   * A string global option to control the caching behavior of XSLT templates.
+   *
+   * <p>Three modes are available:
+   * <ul>
+   *   <li><code>no</code> — disable XSLT caching; templates are always recompiled from source.</li>
+   *   <li><code>auto</code> — monitor XSLT source files for changes and automatically invalidate
+   *       the cache when a change is detected. Recommended for development.</li>
+   *   <li><code>manual</code> — only update the cache when explicitly cleared via the
+   *       {@code clear-xsl-cache} control parameter. Recommended for production.</li>
+   * </ul>
+   *
+   * <p>For backward compatibility, {@code true} is treated as {@code manual} and
+   * {@code false} as {@code no}.
    *
    * <h3>Property</h3>
    * <table>
@@ -254,7 +266,7 @@ public enum BerliozOption {
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.xslt.cache</code></td>
-   *     <td><code>true</code></td>
+   *     <td><code>manual</code></td>
    *   </tr>
    * </table>
    *
@@ -262,14 +274,13 @@ public enum BerliozOption {
    * <table>
    *   <caption>XSLT cache recommended value</caption>
    *   <tr><th>Development</th><th>Production</th></tr>
-   *   <tbody><tr><td><code>false</code></td><td><code>true</code></td></tr></tbody>
+   *   <tbody><tr><td><code>auto</code></td><td><code>manual</code></td></tr></tbody>
    * </table>
-   * <p>It is easier to test the XSLT files during development when caching is disabled; caching
-   * should be enabled in production mode.</p>
    *
+   * @see XSLTCacheMode
    * @since 0.8.3
    */
-  XSLT_CACHE("berlioz.xslt.cache", Boolean.TRUE),
+  XSLT_CACHE("berlioz.xslt.cache", "manual"),
 
   /**
    * Indicates the version of the XML header format berlioz should use.
