@@ -5,8 +5,10 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Environment;
 
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 final class GeneratorTestSupport {
@@ -55,6 +57,11 @@ final class GeneratorTestSupport {
               case "setAttribute":       self.attributes.put((String) args[0], args[1]); return null;
               case "getParameterNames":  return Collections.enumeration(self.parameters.keySet());
               case "getParameterValues": return self.parameters.get(args[0]);
+              case "parameterNames":     return new java.util.ArrayList<>(self.parameters.keySet());
+              case "parameterValues": {
+                String[] vals = self.parameters.get(args[0]);
+                return vals != null ? Arrays.asList(vals) : List.of();
+              }
               case "getParameter": {
                 String[] vals = self.parameters.get(args[0]);
                 String first = (vals != null && vals.length > 0 && !vals[0].isEmpty()) ? vals[0] : null;
