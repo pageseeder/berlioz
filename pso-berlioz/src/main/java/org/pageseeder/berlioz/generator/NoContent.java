@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import org.jspecify.annotations.NonNull;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -62,17 +61,15 @@ public final class NoContent implements ContentGenerator, Cacheable {
 
   /**
    * Always returns the <code>"nocontent"</code>.
-   *
    * {@inheritDoc}
    */
   @Override
-  public @NonNull String getETag(ContentRequest req) {
+  public String getETag(ContentRequest req) {
     return "nocontent";
   }
 
   /**
    * Do nothing.
-   *
    * {@inheritDoc}
    */
   @Override
