@@ -275,6 +275,98 @@ final class ParameterBuilderTest {
     Assertions.assertEquals("name", result);
   }
 
+  // --- clamp -----------------------------------------------------------------
+
+  @Test
+  void clamp_validInRange_returnsValue() {
+    int result = builder("page", "5").asInt().clamp(1, 1000).required();
+    Assertions.assertEquals(5, result);
+  }
+
+  @Test
+  void clamp_validBelowMin_returnsMin() {
+    int result = builder("page", "0").asInt().clamp(1, 1000).required();
+    Assertions.assertEquals(1, result);
+  }
+
+  @Test
+  void clamp_validAboveMax_returnsMax() {
+    int result = builder("page", "9999").asInt().clamp(1, 1000).required();
+    Assertions.assertEquals(1000, result);
+  }
+
+  @Test
+  void clamp_absent_passesThroughForTerminal() {
+    int result = builder("page", null).asInt().clamp(1, 1000).defaultValue(1);
+    Assertions.assertEquals(1, result);
+  }
+
+  @Test
+  void clamp_invalidFormat_passesThroughForTerminal() {
+    int result = builder("page", "abc").asInt().clamp(1, 1000).defaultValue(1);
+    Assertions.assertEquals(1, result);
+  }
+
+  @Test
+  void clamp_validWithLong_clampsCorrectly() {
+    long result = builder("id", "5000000000").asLong().clamp(1L, 9999999999L).required();
+    Assertions.assertEquals(5000000000L, result);
+  }
+
+  // --- inRange ---------------------------------------------------------------
+
+  @Test
+  void inRange_validInRange_returnsValue() {
+    int result = builder("page", "5").asInt().inRange(1, 1000).required();
+    Assertions.assertEquals(5, result);
+  }
+
+  @Test
+  void inRange_validBelowMin_required_throws() {
+    TypedParameter<Integer> p = builder("page", "0").asInt().inRange(1, 1000);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.OUT_OF_RANGE, ex.getReason());
+  }
+
+  @Test
+  void inRange_validAboveMax_required_throws() {
+    TypedParameter<Integer> p = builder("page", "9999").asInt().inRange(1, 1000);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.OUT_OF_RANGE, ex.getReason());
+  }
+
+  @Test
+  void inRange_outOfRange_defaultValue_returnsDefault() {
+    int result = builder("page", "9999").asInt().inRange(1, 1000).defaultValue(1);
+    Assertions.assertEquals(1, result);
+  }
+
+  @Test
+  void inRange_absent_passesThroughForTerminal() {
+    int result = builder("page", null).asInt().inRange(1, 1000).defaultValue(1);
+    Assertions.assertEquals(1, result);
+  }
+
+  @Test
+  void inRange_invalidFormat_passesThroughForTerminal() {
+    TypedParameter<Integer> p = builder("page", "abc").asInt().inRange(1, 1000);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
+  }
+
+  @Test
+  void inRange_outOfRange_orDefault_returnsDefault() {
+    int result = builder("page", "9999").asInt().inRange(1, 1000).orDefault(1);
+    Assertions.assertEquals(1, result);
+  }
+
+  @Test
+  void inRange_absent_orDefault_throws() {
+    TypedParameter<Integer> p = builder("page", null).asInt().inRange(1, 1000);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(1));
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
   // --- helpers ---------------------------------------------------------------
 
   private static ParameterBuilder builder(String name, String value) {

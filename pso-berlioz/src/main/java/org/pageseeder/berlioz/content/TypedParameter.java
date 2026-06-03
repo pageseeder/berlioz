@@ -33,6 +33,13 @@ import org.pageseeder.berlioz.Beta;
  *       {@code parsedValue} is null and {@code formatError} is set.</li>
  * </ul>
  *
+ * <p>Chainable constraint/transform methods refine the value before a terminal is called.
+ * They pass absent and already-invalid states through unchanged:
+ * <ul>
+ *   <li>{@link #clamp(Object, Object)} — silently coerces an out-of-range value to the nearest bound.</li>
+ *   <li>{@link #inRange(Object, Object)} — marks an out-of-range value as invalid ({@link InvalidParameterException.Reason#OUT_OF_RANGE}).</li>
+ * </ul>
+ *
  * <p>Terminal method behaviour:
  * <ul>
  *   <li>{@link #required()} — throws on absent or invalid.</li>
@@ -59,6 +66,59 @@ public final class TypedParameter<T> {
     this.parameterName = parameterName;
     this.parsedValue = parsedValue;
     this.formatError = formatError;
+  }
+
+  /**
+   * Silently coerces the value to the nearest bound when it falls outside {@code [min, max]}.
+   *
+   * <p>Absent and already-invalid states are passed through unchanged so the terminal method
+   * handles them normally. {@code T} must implement {@link Comparable}.
+   *
+   * <pre>
+   * int page = request.parameter("page").asInt().clamp(1, 1000).defaultValue(1);
+   * </pre>
+   *
+   * @param min the lower bound (inclusive)
+   * @param max the upper bound (inclusive)
+   * @return a typed parameter whose value is within {@code [min, max]}, or the same state if absent/invalid
+   */
+  @SuppressWarnings("unchecked")
+  public TypedParameter<T> clamp(T min, T max) {
+    T v = this.parsedValue;
+    if (v == null) return this;
+    Comparable<T> c = (Comparable<T>) v;
+    if (c.compareTo(min) < 0) return new TypedParameter<>(this.parameterName, min, null);
+    if (c.compareTo(max) > 0) return new TypedParameter<>(this.parameterName, max, null);
+    return this;
+  }
+
+  /**
+   * Marks the value as invalid when it falls outside {@code [min, max]}.
+   *
+   * <p>Absent and already-invalid states are passed through unchanged so the terminal method
+   * handles them normally. {@code T} must implement {@link Comparable}.
+   *
+   * <pre>
+   * int page = request.parameter("page").asInt().inRange(1, 1000).required();       // throw if out of range
+   * int page = request.parameter("page").asInt().inRange(1, 1000).defaultValue(1);  // default if out of range
+   * </pre>
+   *
+   * @param min the lower bound (inclusive)
+   * @param max the upper bound (inclusive)
+   * @return a typed parameter with an {@link InvalidParameterException.Reason#OUT_OF_RANGE} error if out of range,
+   *         or the same state if in range, absent, or already invalid
+   */
+  @SuppressWarnings("unchecked")
+  public TypedParameter<T> inRange(T min, T max) {
+    T v = this.parsedValue;
+    if (v == null) return this;
+    Comparable<T> c = (Comparable<T>) v;
+    if (c.compareTo(min) < 0 || c.compareTo(max) > 0) {
+      return new TypedParameter<>(this.parameterName, null,
+          InvalidParameterException.outOfRange(this.parameterName, v.toString(),
+              "must be between " + min + " and " + max));
+    }
+    return this;
   }
 
   /**
