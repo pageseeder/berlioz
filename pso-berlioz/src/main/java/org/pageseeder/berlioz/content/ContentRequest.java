@@ -15,193 +15,161 @@
  */
 package org.pageseeder.berlioz.content;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpSession;
 
 import org.jspecify.annotations.Nullable;
 
 /**
  * Provides a generic and uniform mechanism for the content generator to access parameters
- * and attributes from a request.
+ * and attributes from a request, and to signal the desired response status.
  *
- * <p>All methods will return a <code>NullPointerException</code> if the specified
- * parameter name, attribute name or object name is <code>null</code>.
+ * <p>This interface extends {@link RequestContext}, which carries the clean, read-only
+ * request-reading API. New code should prefer {@link RequestContext} where response
+ * signalling is not needed.
+ *
+ * <p>{@link #getParameterNames()}, {@link #getParameterValues(String)}, and {@link #getCookies()}
+ * are deprecated in favour of their {@link RequestContext} equivalents.
+ * {@link #getDateParameter(String)} is deprecated because {@link java.util.Date} is a legacy type;
+ * use {@code request.parameter(name).asLocalDate()} instead.
+ * {@link #getIntParameter(String, int)} and {@link #getLongParameter(String, long)} are retained
+ * as ergonomic shorthands and are not deprecated.
  *
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version 0.11.0
+ * @version 0.13.1
  * @since 0.6
  */
-public interface ContentRequest {
+public interface ContentRequest extends RequestContext {
+
+  // --- Bridge defaults from RequestContext -----------------------------------
 
   /**
-   * Returns the dynamic path of the Berlioz request.
+   * Returns the named parameter parsed as an {@code int}, or {@code def} on failure.
    *
-   * <p>The Berlioz path corresponds to:
-   * <ul>
-   *   <li>the <code>pathInfo</code> when the Berlioz Servlet is mapped using a prefix servlet
-   *   (for example <code>/html/*</code>);</li>
-   *   <li>the <code>servletPath</code> when the Berlioz Servlet is mapped using a suffix servlet
-   *   (for example <code>*.html</code>);</li>
-   * </ul>
-   *
-   * @return The path information of this request.
-   */
-  String getBerliozPath();
-
-  /**
-   * Returns the specified parameter value or <code>null</code>.
-   *
-   * <p>This method guarantees that the returned value is not equal to an empty string.
-   *
-   * @param name The name of the requested parameter.
-   *
-   * @return A <code>String</code> or <code>null</code>.
-   */
-  @Nullable String getParameter(String name);
-
-  /**
-   * Returns the specified parameter value or the specified default if <code>null</code>.
-   *
-   * <p>This method guarantees that a value is returned.
-   *
-   * @param name The name of the requested parameter.
-   * @param def  A default value if the value is <code>null</code> or empty string.
-   *
-   * @return A value of the parameter or the default value if missing.
-   */
-  String getParameter(String name, String def);
-
-  /**
-   * Returns the specified parameter value.
-   *
-   * <p>This method guarantees that a value is returned.
-   *
-   * @param name The name of the requested parameter.
-   * @param def  A default value if the value is <code>null</code> or empty string.
-   *
-   * @return A value of the parameter or the default value if missing or could not be parsed.
+   * @param name the parameter name
+   * @param def  fallback value when absent or unparseable
+   * @return the parsed value, or {@code def}
    */
   int getIntParameter(String name, int def);
 
   /**
-   * Returns the specified parameter value.
+   * Returns the named parameter parsed as a {@code long}, or {@code def} on failure.
    *
-   * <p>This method guarantees that a value is returned.
-   *
-   * @param name The name of the requested parameter.
-   * @param def  A default value if the value is <code>null</code> or empty string.
-   *
-   * @return A value of the parameter or the default value if missing or could not be parsed.
+   * @param name the parameter name
+   * @param def  fallback value when absent or unparseable
+   * @return the parsed value, or {@code def}
    */
   long getLongParameter(String name, long def);
 
   /**
-   * Returns an array of String objects containing all the values the given request parameter
-   * has, or <code>null</code> if the parameter does not exist.
+   * {@inheritDoc}
    *
-   * <p>If the parameter has a single value, the array has a length of 1.
-   *
-   * @param name A String containing the name of the parameter whose value is requested
-   *
-   * @return An array of String objects containing the parameter's values
+   * <p>Default implementation delegates to the deprecated {@link #getParameterNames()}.
+   * Implementations should override this directly.
    */
-  String @Nullable[] getParameterValues(String name);
+  @Override
+  default Collection<String> parameterNames() {
+    return Collections.list(getParameterNames());
+  }
 
   /**
-   * Returns an <code>Enumeration</code> of <code>String</code> objects containing the names of
-   * the parameters contained in this request.
+   * {@inheritDoc}
    *
-   * <p>If the request has no parameters, the method returns an empty Enumeration.
-   *
-   * @return An <code>Enumeration</code> of the names of each parameters as <code>String</code>s;
-   *          or an empty <code>Enumeration</code> if the request has no parameters.
+   * <p>Default implementation delegates to the deprecated {@link #getParameterValues(String)}.
+   * Implementations should override this directly.
    */
+  @Override
+  default List<String> parameterValues(String name) {
+    String[] values = getParameterValues(name);
+    return values != null ? Arrays.asList(values) : Collections.emptyList();
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Default implementation delegates to the deprecated {@link #getCookies()}.
+   * Implementations should override this directly.
+   */
+  @Override
+  default List<Cookie> cookies() {
+    Cookie[] arr = getCookies();
+    return arr != null ? Arrays.asList(arr) : List.of();
+  }
+
+  // --- Deprecated legacy methods --------------------------------------------
+
+  /**
+   * Returns the names of all parameters in this request.
+   *
+   * @return an enumeration of parameter names
+   *
+   * @deprecated Use {@link #parameterNames()} instead.
+   */
+  @Deprecated(since = "0.13.1")
   Enumeration<String> getParameterNames();
 
   /**
-   * Returns the specified attribute object or <code>null</code>.
+   * Returns all values submitted for the named parameter, or {@code null} if absent.
    *
-   * @param name The name of the attribute.
+   * @param name the parameter name
+   * @return an array of values, or {@code null}
    *
-   * @return the specified attribute object or <code>null</code>.
+   * @deprecated Use {@link #parameterValues(String)} instead.
    */
-  @Nullable Object getAttribute(String name);
+  @Deprecated(since = "0.13.1")
+  String @Nullable[] getParameterValues(String name);
 
   /**
-   * Sets the specified attribute object or <code>null</code>.
+   * Returns the cookies sent with this request, or {@code null} if none.
    *
-   * @param name The name of the attribute.
-   * @param o    The object for this attribute.
+   * @return an array of cookies, or {@code null}
+   *
+   * @deprecated Use {@link #cookies()} instead.
    */
-  void setAttribute(String name, Object o);
-
-  /**
-   * Returns a <code>Date</code> instance from the specified parameter.
-   *
-   * <p><b>Important note</b>: incompatible change, since Berlioz 0.8, dates are parsed as ISO 8601.
-   *
-   * @param name The name of the parameter.
-   *
-   * @return A <code>Date</code> instance or <code>null</code> if not specified.
-   */
-  @Nullable Date getDateParameter(String name);
-
-  /**
-   * Returns an array containing all the Cookie objects the client sent with this request.
-   *
-   * This method returns <code>null</code> if no cookies were sent.
-   *
-   * @return An array of all the Cookies included with this request,
-   *         or <code>null</code> if the request has no cookies
-   */
+  @Deprecated(since = "0.13.1")
   Cookie @Nullable[] getCookies();
 
   /**
-   * Returns the session of the wrapped HTTP servlet request.
+   * Returns the named parameter parsed as a {@link Date} (ISO 8601), or {@code null} if absent or unparseable.
    *
-   * @return The session of the HTTP servlet request.
+   * @param name the parameter name
+   * @return a {@code Date} instance, or {@code null}
+   *
+   * @deprecated Use {@code request.parameter(name).asLocalDate()} instead.
    */
-  @Nullable HttpSession getSession();
+  @Deprecated(since = "0.13.1")
+  @Nullable Date getDateParameter(String name);
+
+  // --- Response signalling --------------------------------------------------
+  // These remain here pending a future generator API change that introduces
+  // a dedicated ContentResponse parameter.
 
   /**
-   * Returns the environment of the request.
+   * Sets the desired HTTP status for this request's response.
    *
-   * @return The environment of the request.
-   */
-  Environment getEnvironment();
-
-  /**
-   * Returns information about the location of the request.
+   * @param code the status code
    *
-   * <p>This includes information about the request URI.
-   *
-   * @return information about the location of the request.
-   */
-  Location getLocation();
-
-  /**
-   * Sets the status of this request.
-   *
-   * @param code The status code to use.
-   *
-   * @throws NullPointerException if the status is <code>null</code>.
-   * @throws IllegalArgumentException if the status is a redirect status.
+   * @throws NullPointerException     if {@code code} is {@code null}
+   * @throws IllegalArgumentException if {@code code} is a redirect status
    */
   void setStatus(ContentStatus code);
 
   /**
-   * Sets the status of this request for redirection.
+   * Sets the desired redirect target and status for this request's response.
    *
-   * @param code The status code to use (required).
-   * @param url  The URL to redirect to.
+   * @param url  the redirect URL
+   * @param code the redirect status
    *
-   * @throws NullPointerException if the URL is <code>null</code>.
-   * @throws IllegalArgumentException if the status is not a redirect status.
+   * @throws NullPointerException     if {@code url} is {@code null}
+   * @throws IllegalArgumentException if {@code code} is not a redirect status
    */
   void setRedirect(String url, ContentStatus code);
 

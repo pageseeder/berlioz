@@ -85,7 +85,12 @@ package org.pageseeder.berlioz;
   /**
    * Multiple errors were thrown by a generator.
    */
-  GENERATOR_ERROR_MULTIPLE;
+  GENERATOR_ERROR_MULTIPLE,
+
+  /**
+   * A request parameter failed a type or constraint check.
+   */
+  INVALID_PARAMETER;
 
   /**
    * Returns a string representation of this error code.

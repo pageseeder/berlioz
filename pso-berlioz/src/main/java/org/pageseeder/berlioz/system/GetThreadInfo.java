@@ -60,7 +60,7 @@ public final class GetThreadInfo implements ContentGenerator {
   /**
    * Return all the threads with stack traces
    *
-   * @param thread     The thread information to serialise as XML
+   * @param thread The thread information to serialise as XML
    * @param xml The XML writer
    *
    * @throws IOException If thrown while writing XML.
@@ -68,7 +68,7 @@ public final class GetThreadInfo implements ContentGenerator {
   private static void toXML(ThreadInfo thread, XMLWriter xml)
       throws IOException {
     xml.openElement("thread", true);
-    xml.attribute("id", Long.toString(thread.getThreadId()));
+    xml.attribute("id", thread.getThreadId());
     xml.attribute("name", thread.getThreadName());
     xml.attribute("priority", thread.getPriority());
     xml.attribute("state", thread.getThreadState().name());

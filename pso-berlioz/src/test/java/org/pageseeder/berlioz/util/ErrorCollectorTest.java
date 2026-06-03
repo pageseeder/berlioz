@@ -65,7 +65,7 @@ class ErrorCollectorTest {
   }
 
   @Test
-  void testSetException_changesThrowThreshold() throws Exception {
+  void testSetException_changesThrowThreshold() {
     ErrorCollector<Exception> collector = new ErrorCollector<>();
     collector.setException(Level.WARNING);
     Exception ex = new Exception("warn");

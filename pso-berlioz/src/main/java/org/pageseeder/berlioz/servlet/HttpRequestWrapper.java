@@ -16,10 +16,13 @@
 package org.pageseeder.berlioz.servlet;
 
 import java.text.ParseException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -45,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * @author Christophe Lauret
  * @author Tu Tak Tran
  *
- * @version 0.11.2
+ * @version 0.13.1
  * @since 0.7
  */
 public abstract class HttpRequestWrapper implements ContentRequest {
@@ -123,6 +126,26 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   }
 
   @Override
+  public final Collection<String> parameterNames() {
+    return Collections.unmodifiableSet(this.parameters.keySet());
+  }
+
+  @Override
+  public final List<String> parameterValues(String name) {
+    String value = this.parameters.get(name);
+    if (value != null) return Collections.singletonList(value);
+    String[] values = this.req.getParameterValues(name);
+    return values != null ? Arrays.asList(values) : Collections.emptyList();
+  }
+
+  @Override
+  public final List<Cookie> cookies() {
+    Cookie[] arr = this.req.getCookies();
+    return arr != null ? Collections.unmodifiableList(Arrays.asList(arr)) : Collections.emptyList();
+  }
+
+  @Override
+  @Deprecated(since = "0.13.1")
   public final String @Nullable [] getParameterValues(String name) {
     String value = this.parameters.get(name);
     if (value != null)
@@ -132,6 +155,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   }
 
   @Override
+  @Deprecated(since = "0.13.1")
   public final Enumeration<String> getParameterNames() {
     return Collections.enumeration(this.parameters.keySet());
   }
@@ -184,6 +208,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   }
 
   @Override
+  @Deprecated(since = "0.13.1")
   public final Cookie @Nullable [] getCookies() {
     return this.req.getCookies();
   }

@@ -78,8 +78,9 @@ class FileUtilsTest {
   void testPath_outsideRoot_throws() throws IOException {
     Path outside = Files.createTempDirectory("outside");
     try {
-      assertThrows(IllegalArgumentException.class,
-          () -> FileUtils.path(tempDir.toFile(), outside.toFile()));
+      File tmp = tempDir.toFile();
+      File out = outside.toFile();
+      assertThrows(IllegalArgumentException.class, () -> FileUtils.path(tmp, out));
     } finally {
       Files.deleteIfExists(outside);
     }

@@ -34,6 +34,7 @@ import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.GeneratorListener;
+import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Service;
@@ -311,6 +312,9 @@ public final class XMLResponse {
       generator.process(request, ok);
       result = writer.toString();
       generatorStatus = request.getStatus();
+    } catch (InvalidParameterException ex) {
+      error = handleError(ex, generator);
+      generatorStatus = ContentStatus.BAD_REQUEST;
     } catch (Exception ex) {
       // We wrap any exception in a Berlioz Exception
       error = handleError(ex, generator);
@@ -406,6 +410,11 @@ public final class XMLResponse {
       BerliozException bex = (BerliozException) exception;
       if (bex.id() == null) bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
       return bex;
+    }
+    if (exception instanceof InvalidParameterException) {
+      InvalidParameterException ipe = (InvalidParameterException) exception;
+      return new BerliozException("Invalid parameter '" + ipe.getParameterName() + "': " + ipe.getMessage(),
+          ipe, BerliozErrorID.INVALID_PARAMETER);
     }
     return new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
   }

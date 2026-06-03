@@ -27,14 +27,13 @@ class CollectedErrorTest {
 
   @Test
   void testNullLevelThrows() {
-    assertThrows(NullPointerException.class,
-        () -> new CollectedError<>(null, new Exception()));
+    Exception ex = new Exception();
+    assertThrows(NullPointerException.class, () -> new CollectedError<>(null, ex));
   }
 
   @Test
   void testNullErrorThrows() {
-    assertThrows(NullPointerException.class,
-        () -> new CollectedError<>(Level.ERROR, null));
+    assertThrows(NullPointerException.class, () -> new CollectedError<>(Level.ERROR, null));
   }
 
   @Test

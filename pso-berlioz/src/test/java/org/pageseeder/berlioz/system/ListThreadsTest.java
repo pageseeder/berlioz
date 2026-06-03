@@ -65,7 +65,7 @@ class ListThreadsTest {
     XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
     new ListThreads().process(request(false, true), xml);
     // CPU time support is JVM-dependent; just verify it doesn't throw
-    assertDoesNotThrow(() -> xml.toString());
+    assertDoesNotThrow(xml::toString);
   }
 
   @Test
