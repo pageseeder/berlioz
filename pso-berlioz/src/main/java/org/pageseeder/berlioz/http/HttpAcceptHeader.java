@@ -146,7 +146,7 @@ public final class HttpAcceptHeader { // NO_UCD
    * @param accept The 'Accept' or 'Accept-*' HTTP/1.1 header.
    * @return the accepted content types mapped to their quality value (0 to 1000).
    */
-  protected static Map<String, Float> parse(String accept) {
+  static Map<String, Float> parse(String accept) {
     Map<String, Float> values = new LinkedHashMap<>();
     StringTokenizer t = new StringTokenizer(accept, ",");
     while (t.hasMoreElements()) {
@@ -164,7 +164,7 @@ public final class HttpAcceptHeader { // NO_UCD
   /**
    * Clears the internal cache.
    */
-  protected synchronized void clear() {
+  synchronized void clear() {
     MAPS.clear();
   }
 }

@@ -310,7 +310,7 @@ public class Variable {
   /**
    * Returns the default value for this variable.
    *
-   * This method never return <code>null</code>.
+   * <p>This method never return <code>null</code>.
    *
    * @return The default value for this variable.
    */

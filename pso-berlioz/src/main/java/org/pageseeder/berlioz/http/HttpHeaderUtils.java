@@ -115,7 +115,7 @@ public final class HttpHeaderUtils {
    *
    * @throws IOException If thrown while setting the response status code.
    */
-  protected static boolean checkIfMatch(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
+  private static boolean checkIfMatch(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
      throws IOException {
 
     String eTag = info.getETag();
@@ -160,7 +160,7 @@ public final class HttpHeaderUtils {
    *         <code>false</code> if the condition is not satisfied, in which case request processing is stopped.
    *
    */
-  protected static boolean checkIfModifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info) {
+  private static boolean checkIfModifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info) {
     try {
       long headerValue = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
       long lastModified = info.getLastModified();
@@ -198,7 +198,7 @@ public final class HttpHeaderUtils {
    *
    * @throws IOException If thrown while setting the response status code.
    */
-  protected static boolean checkIfNoneMatch(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
+  private static boolean checkIfNoneMatch(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
       throws IOException {
     String eTag = info.getETag();
     String headerValue = req.getHeader(HttpHeaders.IF_NONE_MATCH);
@@ -259,7 +259,7 @@ public final class HttpHeaderUtils {
    *
    * @throws IOException If thrown while setting the response status code.
    */
-  protected static boolean checkIfUnmodifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
+  private static boolean checkIfUnmodifiedSince(HttpServletRequest req, HttpServletResponse res, EntityInfo info)
       throws IOException {
     try {
       long lastModified = info.getLastModified();
