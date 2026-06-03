@@ -23,6 +23,16 @@ import org.junit.jupiter.api.Test;
 
 final class ParameterBuilderTest {
 
+  enum Status { ACTIVE, INACTIVE, PENDING }
+
+  static final class UserId {
+    final int value;
+    UserId(int value) { this.value = value; }
+    static UserId parse(String s) { return new UserId(Integer.parseInt(s)); }
+    @Override public boolean equals(Object o) { return o instanceof UserId && ((UserId) o).value == value; }
+    @Override public int hashCode() { return value; }
+  }
+
   // --- asInt -----------------------------------------------------------------
 
   @Test
@@ -64,33 +74,33 @@ final class ParameterBuilderTest {
   }
 
   @Test
-  void asInt_invalid_nullable_throws() {
+  void asInt_invalid_optional_throws() {
     TypedParameter<?> p = builder("page", "abc").asInt();
-    Assertions.assertThrows(InvalidParameterException.class, p::nullable);
+    Assertions.assertThrows(InvalidParameterException.class, p::optional);
   }
 
   @Test
-  void asInt_absent_nullable_returnsNull() {
-    Integer result = builder("page", null).asInt().nullable();
+  void asInt_absent_optional_returnsNull() {
+    Integer result = builder("page", null).asInt().optional();
     Assertions.assertNull(result);
   }
 
   @Test
-  void asInt_valid_orDefault_returnsValue() {
-    int result = builder("page", "7").asInt().orDefault(1);
+  void asInt_valid_required_def_returnsValue() {
+    int result = builder("page", "7").asInt().required(1);
     Assertions.assertEquals(7, result);
   }
 
   @Test
-  void asInt_absent_orDefault_throws() {
+  void asInt_absent_required_def_throws() {
     TypedParameter<Integer> p = builder("page", null).asInt();
-    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(1));
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required(1));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
   }
 
   @Test
-  void asInt_invalid_orDefault_returnsDefault() {
-    int result = builder("page", "abc").asInt().orDefault(1);
+  void asInt_invalid_required_def_returnsDefault() {
+    int result = builder("page", "abc").asInt().required(1);
     Assertions.assertEquals(1, result);
   }
 
@@ -109,21 +119,21 @@ final class ParameterBuilderTest {
   }
 
   @Test
-  void asLong_valid_orDefault_returnsValue() {
-    long result = builder("id", "9999999999").asLong().orDefault(0L);
+  void asLong_valid_required_def_returnsValue() {
+    long result = builder("id", "9999999999").asLong().required(0L);
     Assertions.assertEquals(9999999999L, result);
   }
 
   @Test
-  void asLong_absent_orDefault_throws() {
+  void asLong_absent_required_def_throws() {
     TypedParameter<Long> p = builder("id", null).asLong();
-    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(0L));
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required(0L));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
   }
 
   @Test
-  void asLong_invalid_orDefault_returnsDefault() {
-    long result = builder("id", "notanumber").asLong().orDefault(-1L);
+  void asLong_invalid_required_def_returnsDefault() {
+    long result = builder("id", "notanumber").asLong().required(-1L);
     Assertions.assertEquals(-1L, result);
   }
 
@@ -153,21 +163,21 @@ final class ParameterBuilderTest {
   }
 
   @Test
-  void asBoolean_valid_orDefault_returnsValue() {
-    boolean result = builder("flag", "true").asBoolean().orDefault(false);
+  void asBoolean_valid_required_def_returnsValue() {
+    boolean result = builder("flag", "true").asBoolean().required(false);
     Assertions.assertTrue(result);
   }
 
   @Test
-  void asBoolean_absent_orDefault_throws() {
+  void asBoolean_absent_required_def_throws() {
     TypedParameter<Boolean> p = builder("flag", null).asBoolean();
-    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(false));
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required(false));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
   }
 
   @Test
-  void asBoolean_invalid_orDefault_returnsDefault() {
-    boolean result = builder("flag", "yes").asBoolean().orDefault(false);
+  void asBoolean_invalid_required_def_returnsDefault() {
+    boolean result = builder("flag", "yes").asBoolean().required(false);
     Assertions.assertFalse(result);
   }
 
@@ -194,24 +204,24 @@ final class ParameterBuilderTest {
   }
 
   @Test
-  void asLocalDate_valid_orDefault_returnsValue() {
+  void asLocalDate_valid_required_def_returnsValue() {
     LocalDate def = LocalDate.of(2024, 1, 1);
-    LocalDate result = builder("from", "2024-03-15").asLocalDate().orDefault(def);
+    LocalDate result = builder("from", "2024-03-15").asLocalDate().required(def);
     Assertions.assertEquals(LocalDate.of(2024, 3, 15), result);
   }
 
   @Test
-  void asLocalDate_absent_orDefault_throws() {
+  void asLocalDate_absent_required_def_throws() {
     LocalDate def = LocalDate.of(2024, 1, 1);
     TypedParameter<LocalDate> p = builder("from", null).asLocalDate();
-    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(def));
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required(def));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
   }
 
   @Test
-  void asLocalDate_invalid_orDefault_returnsDefault() {
+  void asLocalDate_invalid_required_def_returnsDefault() {
     LocalDate def = LocalDate.of(2024, 1, 1);
-    LocalDate result = builder("from", "15-03-2024").asLocalDate().orDefault(def);
+    LocalDate result = builder("from", "15-03-2024").asLocalDate().required(def);
     Assertions.assertEquals(def, result);
   }
 
@@ -258,21 +268,21 @@ final class ParameterBuilderTest {
   }
 
   @Test
-  void oneOf_valid_orDefault_returnsValue() {
-    String result = builder("sort", "date").oneOf("name", "date", "title").orDefault("name");
+  void oneOf_valid_required_def_returnsValue() {
+    String result = builder("sort", "date").oneOf("name", "date", "title").required("name");
     Assertions.assertEquals("date", result);
   }
 
   @Test
-  void oneOf_absent_orDefault_throws() {
+  void oneOf_absent_required_def_throws() {
     TypedParameter<String> p = builder("sort", null).oneOf("name", "date", "title");
-    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault("name"));
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required("name"));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
   }
 
   @Test
-  void oneOf_invalid_orDefault_returnsDefault() {
-    String result = builder("sort", "score").oneOf("name", "date", "title").orDefault("name");
+  void oneOf_invalid_required_def_returnsDefault() {
+    String result = builder("sort", "score").oneOf("name", "date", "title").required("name");
     Assertions.assertEquals("name", result);
   }
 
@@ -356,16 +366,228 @@ final class ParameterBuilderTest {
   }
 
   @Test
-  void inRange_outOfRange_orDefault_returnsDefault() {
-    int result = builder("page", "9999").asInt().inRange(1, 1000).orDefault(1);
+  void inRange_outOfRange_required_def_returnsDefault() {
+    int result = builder("page", "9999").asInt().inRange(1, 1000).required(1);
     Assertions.assertEquals(1, result);
   }
 
   @Test
-  void inRange_absent_orDefault_throws() {
+  void inRange_absent_required_def_throws() {
     TypedParameter<Integer> p = builder("page", null).asInt().inRange(1, 1000);
-    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(1));
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required(1));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  // --- asEnum (no mapper) ----------------------------------------------------
+
+  @Test
+  void asEnum_exactMatch_returnsConstant() {
+    Status result = builder("status", "ACTIVE").asEnum(Status.class).required();
+    Assertions.assertEquals(Status.ACTIVE, result);
+  }
+
+  @Test
+  void asEnum_lowercase_throws() {
+    TypedParameter<Status> p = builder("status", "active").asEnum(Status.class);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.NOT_ALLOWED, ex.getReason());
+  }
+
+  @Test
+  void asEnum_unknown_throws() {
+    TypedParameter<Status> p = builder("status", "UNKNOWN").asEnum(Status.class);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.NOT_ALLOWED, ex.getReason());
+    Assertions.assertEquals("UNKNOWN", ex.getParameterValue());
+  }
+
+  @Test
+  void asEnum_absent_required_throws() {
+    TypedParameter<Status> p = builder("status", null).asEnum(Status.class);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void asEnum_absent_defaultValue_returnsDefault() {
+    Status result = builder("status", null).asEnum(Status.class).defaultValue(Status.ACTIVE);
+    Assertions.assertEquals(Status.ACTIVE, result);
+  }
+
+  @Test
+  void asEnum_invalid_defaultValue_returnsDefault() {
+    Status result = builder("status", "unknown").asEnum(Status.class).defaultValue(Status.ACTIVE);
+    Assertions.assertEquals(Status.ACTIVE, result);
+  }
+
+  // --- asEnum (with nameMapper) ----------------------------------------------
+
+  @Test
+  void asEnum_nameMapper_lowercase_accepted() {
+    Status result = builder("status", "active").asEnum(Status.class, String::toLowerCase).required();
+    Assertions.assertEquals(Status.ACTIVE, result);
+  }
+
+  @Test
+  void asEnum_nameMapper_uppercase_rejected() {
+    TypedParameter<Status> p = builder("status", "ACTIVE").asEnum(Status.class, String::toLowerCase);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.NOT_ALLOWED, ex.getReason());
+  }
+
+  @Test
+  void asEnum_nameMapper_mixedCase_rejected() {
+    TypedParameter<Status> p = builder("status", "Active").asEnum(Status.class, String::toLowerCase);
+    Assertions.assertThrows(InvalidParameterException.class, p::required);
+  }
+
+  @Test
+  void asEnum_nameMapper_errorListsNormalisedNames() {
+    TypedParameter<Status> p = builder("status", "ACTIVE").asEnum(Status.class, String::toLowerCase);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    String message = ex.getMessage();
+    Assertions.assertTrue(message.contains("active"),    "should list normalised name 'active'");
+    Assertions.assertTrue(message.contains("inactive"),  "should list normalised name 'inactive'");
+    Assertions.assertTrue(message.contains("pending"),   "should list normalised name 'pending'");
+    Assertions.assertFalse(message.contains("INACTIVE"), "should not list Java constant name 'INACTIVE'");
+    Assertions.assertFalse(message.contains("PENDING"),  "should not list Java constant name 'PENDING'");
+  }
+
+  @Test
+  void asEnum_nameMapper_absent_defaultValue_returnsDefault() {
+    Status result = builder("status", null).asEnum(Status.class, String::toLowerCase).defaultValue(Status.ACTIVE);
+    Assertions.assertEquals(Status.ACTIVE, result);
+  }
+
+  @Test
+  void asEnum_nameMapper_invalid_required_def_returnsDefault() {
+    Status result = builder("status", "ACTIVE").asEnum(Status.class, String::toLowerCase).required(Status.INACTIVE);
+    Assertions.assertEquals(Status.INACTIVE, result);
+  }
+
+  @Test
+  void asEnum_nameMapper_absent_required_def_throws() {
+    TypedParameter<Status> p = builder("status", null).asEnum(Status.class, String::toLowerCase);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required(Status.ACTIVE));
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  // --- optional(def) ---------------------------------------------------------
+
+  @Test
+  void optional_def_valid_returnsValue() {
+    int result = builder("page", "7").asInt().optional(1);
+    Assertions.assertEquals(7, result);
+  }
+
+  @Test
+  void optional_def_absent_returnsDefault() {
+    int result = builder("page", null).asInt().optional(1);
+    Assertions.assertEquals(1, result);
+  }
+
+  @Test
+  void optional_def_invalid_throws() {
+    TypedParameter<Integer> p = builder("page", "abc").asInt();
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.optional(1));
+    Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
+  }
+
+  @Test
+  void optional_def_outOfRange_throws() {
+    TypedParameter<Integer> p = builder("page", "9999").asInt().inRange(1, 1000);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.optional(1));
+    Assertions.assertEquals(InvalidParameterException.Reason.OUT_OF_RANGE, ex.getReason());
+  }
+
+  @Test
+  void optional_def_notAllowed_throws() {
+    TypedParameter<Status> p = builder("status", "UNKNOWN").asEnum(Status.class);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.optional(Status.ACTIVE));
+    Assertions.assertEquals(InvalidParameterException.Reason.NOT_ALLOWED, ex.getReason());
+  }
+
+  @Test
+  void optional_def_enum_absent_returnsDefault() {
+    Status result = builder("status", null).asEnum(Status.class).optional(Status.ACTIVE);
+    Assertions.assertEquals(Status.ACTIVE, result);
+  }
+
+  // --- as(Class, Function) ---------------------------------------------------
+
+  @Test
+  void as_class_valid_returnsValue() {
+    UserId result = builder("id", "42").as(UserId.class, UserId::parse).required();
+    Assertions.assertEquals(new UserId(42), result);
+  }
+
+  @Test
+  void as_class_absent_optional_returnsNull() {
+    UserId result = builder("id", null).as(UserId.class, UserId::parse).optional();
+    Assertions.assertNull(result);
+  }
+
+  @Test
+  void as_class_absent_required_throws() {
+    TypedParameter<UserId> p = builder("id", null).as(UserId.class, UserId::parse);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void as_class_invalid_required_throws() {
+    TypedParameter<UserId> p = builder("id", "abc").as(UserId.class, UserId::parse);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
+    Assertions.assertEquals("abc", ex.getParameterValue());
+  }
+
+  @Test
+  void as_class_invalid_usesSimpleNameInMessage() {
+    TypedParameter<UserId> p = builder("id", "abc").as(UserId.class, UserId::parse);
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertTrue(ex.getMessage().contains("UserId"), "error message should contain class simple name");
+  }
+
+  @Test
+  void as_class_invalid_defaultValue_returnsDefault() {
+    UserId result = builder("id", "abc").as(UserId.class, UserId::parse).defaultValue(new UserId(0));
+    Assertions.assertEquals(new UserId(0), result);
+  }
+
+  // --- as(Function, String) --------------------------------------------------
+
+  @Test
+  void as_typeName_valid_returnsValue() {
+    UserId result = builder("id", "7").as(UserId::parse, "user identifier").required();
+    Assertions.assertEquals(new UserId(7), result);
+  }
+
+  @Test
+  void as_typeName_absent_optional_returnsNull() {
+    UserId result = builder("id", null).as(UserId::parse, "user identifier").optional();
+    Assertions.assertNull(result);
+  }
+
+  @Test
+  void as_typeName_invalid_required_throws() {
+    TypedParameter<UserId> p = builder("id", "abc").as(UserId::parse, "user identifier");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
+    Assertions.assertEquals("abc", ex.getParameterValue());
+  }
+
+  @Test
+  void as_typeName_invalid_usesProvidedNameInMessage() {
+    TypedParameter<UserId> p = builder("id", "abc").as(UserId::parse, "user identifier");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, p::required);
+    Assertions.assertTrue(ex.getMessage().contains("user identifier"), "error message should contain provided type name");
+  }
+
+  @Test
+  void as_typeName_invalid_defaultValue_returnsDefault() {
+    UserId result = builder("id", "abc").as(UserId::parse, "user identifier").defaultValue(new UserId(0));
+    Assertions.assertEquals(new UserId(0), result);
   }
 
   // --- matching --------------------------------------------------------------

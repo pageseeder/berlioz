@@ -24,13 +24,13 @@ import org.pageseeder.berlioz.Beta;
  * A typed, optionally-constrained view of a single request parameter.
  *
  * <p>Obtained by calling {@link ParameterBuilder#asString()}, {@link ParameterBuilder#asInt()},
- * and similar methods. Terminal methods ({@link #required()}, {@link #defaultValue(Object)},
- * {@link #nullable()}) resolve the final value or throw {@link InvalidParameterException}.
+ * and similar methods. Terminal methods resolve the final value or throw
+ * {@link InvalidParameterException}.
  *
  * <p>Three states are possible:
  * <ul>
  *   <li><b>Present and valid</b> — {@code parsedValue} is non-null.</li>
- *   <li><b>Absent</b> — the parameter was not submitted; {@code rawValue} and {@code formatError} are null.</li>
+ *   <li><b>Absent</b> — the parameter was not submitted; {@code parsedValue} and {@code formatError} are null.</li>
  *   <li><b>Present but invalid</b> — the parameter was submitted but could not be parsed or failed a constraint;
  *       {@code parsedValue} is null and {@code formatError} is set.</li>
  * </ul>
@@ -43,13 +43,15 @@ import org.pageseeder.berlioz.Beta;
  *   <li>{@link #matching(Predicate, String)} — marks a value that fails a predicate as invalid ({@link InvalidParameterException.Reason#NOT_ALLOWED}).</li>
  * </ul>
  *
- * <p>Terminal method behaviour:
- * <ul>
- *   <li>{@link #required()} — throws on absent or invalid.</li>
- *   <li>{@link #defaultValue(Object)} — returns the default on absent or invalid.</li>
- *   <li>{@link #orDefault(Object)} — throws on absent; returns the default on invalid.</li>
- *   <li>{@link #nullable()} — returns {@code null} on absent; throws on invalid.</li>
- * </ul>
+ * <p>Terminal methods — behaviour by state:
+ * <table>
+ *   <tr><th>Terminal</th>          <th>Absent</th>       <th>Invalid</th></tr>
+ *   <tr><td>{@link #required()}</td>        <td>throws</td>  <td>throws</td></tr>
+ *   <tr><td>{@link #required(Object)}</td>  <td>throws</td>  <td>{@code def}</td></tr>
+ *   <tr><td>{@link #optional()}</td>        <td>{@code null}</td> <td>throws</td></tr>
+ *   <tr><td>{@link #optional(Object)}</td>  <td>{@code def}</td>  <td>throws</td></tr>
+ *   <tr><td>{@link #defaultValue(Object)}</td> <td>{@code def}</td> <td>{@code def}</td></tr>
+ * </table>
  *
  * @param <T> the resolved type of the parameter value
  *
@@ -70,6 +72,10 @@ public final class TypedParameter<T> {
     this.parsedValue = parsedValue;
     this.formatError = formatError;
   }
+
+  // ---------------------------------------------------------------------------
+  // Constraint methods
+  // ---------------------------------------------------------------------------
 
   /**
    * Silently coerces the value to the nearest bound when it falls outside {@code [min, max]}.
@@ -102,8 +108,8 @@ public final class TypedParameter<T> {
    * handles them normally. {@code T} must implement {@link Comparable}.
    *
    * <pre>
-   * int page = request.parameter("page").asInt().inRange(1, 1000).required();       // throw if out of range
-   * int page = request.parameter("page").asInt().inRange(1, 1000).defaultValue(1);  // default if out of range
+   * int page = request.parameter("page").asInt().inRange(1, 1000).required();      // throw if out of range
+   * int page = request.parameter("page").asInt().inRange(1, 1000).defaultValue(1); // default if out of range
    * </pre>
    *
    * @param min the lower bound (inclusive)
@@ -131,7 +137,7 @@ public final class TypedParameter<T> {
    * handles them normally.
    *
    * <pre>
-   * int n  = request.parameter("count").asInt().matching(v -> v % 2 == 0, "must be even").required();
+   * int n    = request.parameter("count").asInt().matching(v -> v % 2 == 0, "must be even").required();
    * String s = request.parameter("sku").asString().matching(v -> v.startsWith("SKU-"), "must start with SKU-").required();
    * </pre>
    *
@@ -151,8 +157,16 @@ public final class TypedParameter<T> {
     return this;
   }
 
+  // ---------------------------------------------------------------------------
+  // Terminal methods
+  // ---------------------------------------------------------------------------
+
   /**
    * Returns the value, throwing {@link InvalidParameterException} if absent or invalid.
+   *
+   * <pre>
+   * LocalDate from = request.parameter("from").asLocalDate().required();
+   * </pre>
    *
    * @return the parameter value
    * @throws InvalidParameterException if the parameter is absent ({@link InvalidParameterException.Reason#REQUIRED})
@@ -166,29 +180,20 @@ public final class TypedParameter<T> {
   }
 
   /**
-   * Returns the value, or {@code def} if the parameter is absent or invalid.
-   *
-   * @param def the fallback value
-   * @return the parameter value, or {@code def}
-   */
-  public T defaultValue(T def) {
-    T v = this.parsedValue;
-    return v != null ? v : def;
-  }
-
-  /**
    * Returns the value, or {@code def} if the parameter was submitted but is invalid; throws if absent.
    *
-   * <p>Use this when the parameter is required to be present, but a malformed value should
-   * fall back to a safe default rather than surfacing an error — the same behaviour as
-   * {@link ContentRequest#getIntParameter(String, int)} and
-   * {@link ContentRequest#getLongParameter(String, long)}.
+   * <p>Use this when the parameter must be present but a malformed value should fall back to a
+   * safe default rather than surfacing an error.
+   *
+   * <pre>
+   * int page = request.parameter("page").asInt().required(1); // throws if absent, 1 if malformed
+   * </pre>
    *
    * @param def the fallback value used when the parameter is present but invalid
    * @return the parameter value, or {@code def} if present but invalid
    * @throws InvalidParameterException if the parameter is absent ({@link InvalidParameterException.Reason#REQUIRED})
    */
-  public T orDefault(T def) {
+  public T required(T def) {
     if (this.formatError != null) return def;
     T v = this.parsedValue;
     if (v == null) throw InvalidParameterException.required(this.parameterName);
@@ -196,14 +201,58 @@ public final class TypedParameter<T> {
   }
 
   /**
-   * Returns the value or {@code null} if absent, throwing {@link InvalidParameterException} if invalid.
+   * Returns the value, or {@code null} if absent; throws if the parameter was submitted but is invalid.
+   *
+   * <p>Use this when the parameter is optional but must be well-formed if provided.
+   *
+   * <pre>
+   * LocalDate from = request.parameter("from").asLocalDate().optional(); // null if not provided
+   * </pre>
    *
    * @return the parameter value, or {@code null} if absent
    * @throws InvalidParameterException if the parameter was submitted but could not be parsed or failed a constraint
    */
-  public @Nullable T nullable() {
+  public @Nullable T optional() {
     if (this.formatError != null) throw this.formatError;
     return this.parsedValue;
+  }
+
+  /**
+   * Returns the value, or {@code def} if absent; throws if the parameter was submitted but is invalid.
+   *
+   * <p>Use this when the parameter is optional but must be well-formed if provided.
+   *
+   * <pre>
+   * Status s = request.parameter("status").asEnum(Status.class).optional(Status.ACTIVE);
+   * </pre>
+   *
+   * @param def the fallback value used when the parameter is absent
+   * @return the parameter value, or {@code def} if absent
+   * @throws InvalidParameterException if the parameter is present but invalid
+   *         ({@link InvalidParameterException.Reason#INVALID_FORMAT},
+   *         {@link InvalidParameterException.Reason#NOT_ALLOWED}, etc.)
+   */
+  public T optional(T def) {
+    if (this.formatError != null) throw this.formatError;
+    T v = this.parsedValue;
+    return v != null ? v : def;
+  }
+
+  /**
+   * Returns the value, or {@code def} if the parameter is absent or invalid.
+   *
+   * <p>Use this when any missing or unrecognised value should silently fall back to a default.
+   *
+   * <pre>
+   * int page = request.parameter("page").asInt().clamp(1, 1000).defaultValue(1);
+   * </pre>
+   *
+   * @param def the fallback value
+   * @return the parameter value, or {@code def}
+   */
+  public T defaultValue(T def) {
+    T v = this.parsedValue;
+    return v != null ? v : def;
   }
 
 }

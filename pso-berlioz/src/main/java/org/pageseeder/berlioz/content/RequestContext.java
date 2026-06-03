@@ -72,9 +72,9 @@ public interface RequestContext {
    * Returns a builder for typed, validating access to the named parameter.
    *
    * <pre>{@code
-   * int page     = request.parameter("page").asInt().defaultValue(1);
-   * LocalDate from = request.parameter("from").asLocalDate().required();
-   * String sort  = request.parameter("sort").oneOf("name","date","title").defaultValue("name");
+   * int page       = request.parameter("page").asInt().clamp(1, 10000).defaultValue(1);
+   * LocalDate from = request.parameter("from").asLocalDate().optional();
+   * String sort    = request.parameter("sort").oneOf("name","date","title").required();
    * }</pre>
    *
    * @param name the parameter name
@@ -82,6 +82,31 @@ public interface RequestContext {
    */
   default ParameterBuilder parameter(String name) {
     return new ParameterBuilder(name, getParameter(name));
+  }
+
+  /**
+   * Resolves a request parameter using the given spec.
+   *
+   * <p>The spec encodes the parameter name, type conversion, constraints, and terminal behaviour.
+   * Define specs as {@code public static final} fields and share them across generators:
+   *
+   * <pre>{@code
+   * interface AppParameters {
+   *   ParameterSpec<Integer> PAGE   = ParameterSpec.of("page",   b -> b.asInt().clamp(1, 10000).defaultValue(1));
+   *   ParameterSpec<Status>  STATUS = ParameterSpec.of("status", b -> b.asEnum(Status.class).optional(Status.ACTIVE));
+   * }
+   *
+   * int    page   = req.parameter(AppParameters.PAGE);
+   * Status status = req.parameter(AppParameters.STATUS);
+   * }</pre>
+   *
+   * @param <T>  the resolved type
+   * @param spec the parameter spec
+   * @return the resolved value
+   * @throws InvalidParameterException if the spec's resolver throws (e.g. a required parameter is absent)
+   */
+  default <T> T parameter(ParameterSpec<T> spec) {
+    return spec.resolve(parameter(spec.name()));
   }
 
   /**
