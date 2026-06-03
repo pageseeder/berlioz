@@ -16,7 +16,6 @@
 package org.pageseeder.berlioz.generator;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
@@ -43,7 +42,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.1
  * @since 0.7
  */
 public final class GetParameters implements ContentGenerator, Cacheable {
@@ -51,38 +50,26 @@ public final class GetParameters implements ContentGenerator, Cacheable {
   @Override
   public String getETag(ContentRequest req) {
     StringBuilder hash = new StringBuilder("?");
-    Enumeration<String> names = req.getParameterNames();
-    while (names.hasMoreElements()) {
-      String name = names.nextElement();
-      String[] values = req.getParameterValues(name);
-      if (values != null) {
-        for (String value : values) {
-          hash.append(name).append('=').append(value).append('&');
-        }
+    for (String name : req.parameterNames()) {
+      for (String value : req.parameterValues(name)) {
+        hash.append(name).append('=').append(value).append('&');
       }
     }
-    // Returns a hash of the query string
     return SHA256.hash(hash.toString());
   }
 
   @Override
   public void process(ContentRequest req, XMLWriter xml) throws IOException {
-    // write the http parameters
     xml.openElement("parameters", true);
-    Enumeration<String> names = req.getParameterNames();
-    while (names.hasMoreElements()) {
-      String paramName = names.nextElement();
-      String[] values = req.getParameterValues(paramName);
-      if (values != null) {
-        for (String value : values) {
-          xml.openElement("parameter", false);
-          xml.attribute("name", paramName);
-          xml.writeText(value);
-          xml.closeElement();
-        }
+    for (String name : req.parameterNames()) {
+      for (String value : req.parameterValues(name)) {
+        xml.openElement("parameter", false);
+        xml.attribute("name", name);
+        xml.writeText(value);
+        xml.closeElement();
       }
     }
-    xml.closeElement(); // close parameters
+    xml.closeElement();
   }
 
 }
