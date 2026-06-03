@@ -63,7 +63,7 @@ final class JSONState {
   private final Deque<String> names = new ArrayDeque<>();
 
   /**
-   * Initialise the state with the ROOT context.
+   * Initialize the state with the ROOT context.
    */
   public void pushState() {
     this.context.push(JSONContext.ROOT);
@@ -200,7 +200,7 @@ final class JSONState {
      *
      * <p>If there is no attribute specifying the type, then the same map is returned.
      *
-     * @param inherited The property type map to inherit (may be <code>null</code>)
+     * @param inherited The property type map to inherit (might be <code>null</code>)
      * @param atts      The attributes to scan.
      *
      * @return the updated map or the inherited one if no attributes changed the types.

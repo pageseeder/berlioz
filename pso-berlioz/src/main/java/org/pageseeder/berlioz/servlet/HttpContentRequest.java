@@ -104,7 +104,6 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
 
   /**
    * Sets the status of this request.
-   *
    * {@inheritDoc}
    *
    * @throws NullPointerException if the URL is <code>null</code>.

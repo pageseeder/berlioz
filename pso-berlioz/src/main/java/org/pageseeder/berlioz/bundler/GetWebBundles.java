@@ -238,7 +238,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
   }
 
   /**
-   * @param name The name of the config ("defaut")
+   * @param name The name of the config ("default")
    * @param type The type (JS or CSS)
    * @param root The root of the public folder
    *

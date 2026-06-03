@@ -87,7 +87,7 @@ public final class WebBundle {
   }
 
   /**
-   * Returns the list of files to bundle.
+   * Returns the list of files to the bundle.
    * @return the list of files to bundle.
    */
   public List<File> files() {
@@ -212,7 +212,7 @@ public final class WebBundle {
 
   /**
    * Calculate the etag for the specified lists of files based on the absolute path, length,
-   * and last modified date.
+   * and last-modified date.
    *
    * @param files    the list of files.
    * @param imported the list of imported files (CSS only).

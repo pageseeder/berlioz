@@ -95,7 +95,7 @@ public enum ContentStatus {
   MULTIPLE_CHOICE(300),
 
   /**
-   * The requested resource has been assigned a new permanent URI and any future references to this
+   * The requested resource has been assigned a new permanent URI, and any future references to this
    * resource SHOULD use one of the returned URIs.
    *
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.4.2">HTTP/1.1 - 6.4.2. 301 Moved Permanently</a>

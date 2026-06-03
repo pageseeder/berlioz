@@ -257,7 +257,6 @@ public enum ServiceLoader {
 
     /**
      * Once the first element is matched, the reader is assigned the appropriate handler.
-     *
      * {@inheritDoc}
      *
      * @throws SAXException if the file being parsed is not a service configuration.

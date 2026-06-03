@@ -42,11 +42,11 @@ public final class Aeson {
    * To invoke this library on the command line.
    *
    * <p>The options are as follows:
-   * <pre>
+   * <pre>{@code
    * -s:[source]       File or directory containing files to process (XML)
    * -xsl:[stylesheet] Stylesheet to process the files (XSLT)
    * -o:[output]       File or directory receiving transformation results (optional if source is file)
-   * </pre>
+   * }</pre>
    *
    * @param args command-line arguments
    * @throws TransformerException should anything go wrong.

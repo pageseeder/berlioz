@@ -58,8 +58,8 @@ public class JSONResult extends SAXResult implements Result {
   /**
    * Construct a JSONResult from a character stream.
    *
-   * <p>It is generally preferable to use a byte stream so that the encoding can controlled by the xsl:output
-   * declaration; but can be convenient when using StringWriter
+   * <p>It is generally preferable to use a byte stream so that the encoding can controlled by the
+   * <code>xsl:output</code> declaration; but can be convenient when using StringWriter
    *
    * @param writer A valid character stream.
    */

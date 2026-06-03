@@ -52,6 +52,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Namespace used for instructions understood by this serializer.
    */
+  @SuppressWarnings("HttpUrlsUsage")
   public static final String NS_URI = "http://pageseeder.org/JSON";
 
   /**
@@ -363,7 +364,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Write the property
    *
-   * @param name  The name of the property (may be <code>null</code>)
+   * @param name  The name of the property (might be <code>null</code>)
    * @param value The value of the property
    * @param type  The type of property
    */
@@ -419,7 +420,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    *
    * <p>Will fall back on a string and report a warning if unable to convert to a boolean.
    *
-   * @param name  The JSON name to write (may be <code>null</code>)
+   * @param name  The JSON name to write (might be <code>null</code>)
    * @param value The JSON value to write.
    */
   private void asBoolean(@Nullable String name, String value) {
@@ -444,7 +445,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Attempts to write the specified name/value pair as a <code>null</code>.
    *
-   * @param name  The JSON name to write (may be <code>null</code>)
+   * @param name  The JSON name to write (might be <code>null</code>)
    */
   private void asNull(@Nullable String name) {
     if (name != null) {
@@ -457,7 +458,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Writes the specified string property as a string.
    *
-   * @param name  The JSON name to write (may be <code>null</code>)
+   * @param name  The JSON name to write (might be <code>null</code>)
    * @param value The JSON value to write.
    */
   private void asString(@Nullable String name, String value) {

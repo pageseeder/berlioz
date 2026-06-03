@@ -100,6 +100,7 @@ abstract class ConfigLoader<T> extends DefaultHandler {
    *
    * @throws ConfigException If an error occurred when reading from the input stream.
    */
+  @SuppressWarnings("HttpUrlsUsage")
   public static <X> X parse(ConfigHandler<X> handler, InputStream in) throws ConfigException {
     byte[] bytes;
     try {

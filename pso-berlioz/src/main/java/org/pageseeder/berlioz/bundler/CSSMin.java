@@ -70,7 +70,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>It removes unnecessary whitespace and comments.
  *
- * <p>Originally by Barry van Oudtshoorn and released under BSD licence, with bug
+ * <p>Originally by Barry van Oudtshoorn and released under BSD license, with bug
  * reports, fixes, and contributions by
  * <ul>
  *   <li>Kevin de Groote</li>
@@ -796,7 +796,7 @@ public final class CSSMin {
       // Strip unnecessary quotes from url() and single-word parts, and make as much lowercase as possible.
       result = simplifyQuotesAndCaps(result);
 
-      // Simplify colours
+      // Simplify colors
       result = simplifyColourNames(result);
       result = simplifyHexColours(result);
 
@@ -822,7 +822,7 @@ public final class CSSMin {
         params = new ArrayList<>(params.subList(0, 2));
       }
       // We can drop off the second item if the first and second items match
-      // i.e. turn 3px 3px into 3px
+      // i.e. turn '3px 3px' into '3px'
       if (params.size() == 2 && params.get(0).equalsIgnoreCase(params.get(1))) {
         params = new ArrayList<>(params.subList(0, 1));
       }

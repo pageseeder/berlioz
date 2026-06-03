@@ -420,7 +420,7 @@ public final class WebBundleTool {
   }
 
   /**
-   * Copy the contents of the specified input stream to the specified output stream, and ensure that both streams are
+   * Copy the contents of the specified input stream to the specified output stream and ensure that both streams are
    * closed before returning (even in the face of an exception).
    *
    * @param bundle    The bundle being processed.

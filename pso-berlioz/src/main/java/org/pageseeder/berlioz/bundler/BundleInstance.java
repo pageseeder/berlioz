@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 final class BundleInstance implements Serializable {
 
-  /** As per requirement for Serializable. */
+  /** As per requirements for Serializable. */
   private static final long serialVersionUID = -2444096252988163408L;
 
   /**
