@@ -21,8 +21,8 @@ import java.util.Objects;
 /**
  * Specifications for a parameter to send to a content generator.
  *
- * <p>The parameters that content generators can take is fixed, this class allows content
- * generators to receives parameters from different sources and effectively remap the parameters
+ * <p>The parameters that content generators can take are fixed, this class allows content
+ * generators to receive parameters from different sources and effectively remap the parameters
  * send to a generator.
  *
  * @author Christophe Lauret
