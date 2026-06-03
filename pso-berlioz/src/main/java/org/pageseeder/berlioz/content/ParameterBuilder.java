@@ -29,6 +29,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * <pre>
  * int page     = request.parameter("page").asInt().defaultValue(1);
+ * int page     = request.parameter("page").asInt().orDefault(1);
  * LocalDate from = request.parameter("from").asLocalDate().required();
  * String sort  = request.parameter("sort").oneOf("name", "date", "title").defaultValue("name");
  * </pre>

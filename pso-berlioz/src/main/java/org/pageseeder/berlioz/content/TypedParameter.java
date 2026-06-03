@@ -37,6 +37,7 @@ import org.pageseeder.berlioz.Beta;
  * <ul>
  *   <li>{@link #required()} — throws on absent or invalid.</li>
  *   <li>{@link #defaultValue(Object)} — returns the default on absent or invalid.</li>
+ *   <li>{@link #orDefault(Object)} — throws on absent; returns the default on invalid.</li>
  *   <li>{@link #nullable()} — returns {@code null} on absent; throws on invalid.</li>
  * </ul>
  *
@@ -83,6 +84,25 @@ public final class TypedParameter<T> {
   public T defaultValue(T def) {
     T v = this.parsedValue;
     return v != null ? v : def;
+  }
+
+  /**
+   * Returns the value, or {@code def} if the parameter was submitted but is invalid; throws if absent.
+   *
+   * <p>Use this when the parameter is required to be present, but a malformed value should
+   * fall back to a safe default rather than surfacing an error — the same behaviour as
+   * {@link ContentRequest#getIntParameter(String, int)} and
+   * {@link ContentRequest#getLongParameter(String, long)}.
+   *
+   * @param def the fallback value used when the parameter is present but invalid
+   * @return the parameter value, or {@code def} if present but invalid
+   * @throws InvalidParameterException if the parameter is absent ({@link InvalidParameterException.Reason#REQUIRED})
+   */
+  public T orDefault(T def) {
+    if (this.formatError != null) return def;
+    T v = this.parsedValue;
+    if (v == null) throw InvalidParameterException.required(this.parameterName);
+    return v;
   }
 
   /**

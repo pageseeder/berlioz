@@ -74,6 +74,25 @@ final class ParameterBuilderTest {
     Assertions.assertNull(result);
   }
 
+  @Test
+  void asInt_valid_orDefault_returnsValue() {
+    int result = builder("page", "7").asInt().orDefault(1);
+    Assertions.assertEquals(7, result);
+  }
+
+  @Test
+  void asInt_absent_orDefault_throws() {
+    TypedParameter<Integer> p = builder("page", null).asInt();
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(1));
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void asInt_invalid_orDefault_returnsDefault() {
+    int result = builder("page", "abc").asInt().orDefault(1);
+    Assertions.assertEquals(1, result);
+  }
+
   // --- asLong ----------------------------------------------------------------
 
   @Test
@@ -86,6 +105,25 @@ final class ParameterBuilderTest {
   void asLong_invalid_throws() {
     TypedParameter<?> p = builder("id", "notanumber").asLong();
     Assertions.assertThrows(InvalidParameterException.class, p::required);
+  }
+
+  @Test
+  void asLong_valid_orDefault_returnsValue() {
+    long result = builder("id", "9999999999").asLong().orDefault(0L);
+    Assertions.assertEquals(9999999999L, result);
+  }
+
+  @Test
+  void asLong_absent_orDefault_throws() {
+    TypedParameter<Long> p = builder("id", null).asLong();
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(0L));
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void asLong_invalid_orDefault_returnsDefault() {
+    long result = builder("id", "notanumber").asLong().orDefault(-1L);
+    Assertions.assertEquals(-1L, result);
   }
 
   // --- asBoolean -------------------------------------------------------------
@@ -113,6 +151,25 @@ final class ParameterBuilderTest {
     Assertions.assertEquals(InvalidParameterException.Reason.INVALID_FORMAT, ex.getReason());
   }
 
+  @Test
+  void asBoolean_valid_orDefault_returnsValue() {
+    boolean result = builder("flag", "true").asBoolean().orDefault(false);
+    Assertions.assertTrue(result);
+  }
+
+  @Test
+  void asBoolean_absent_orDefault_throws() {
+    TypedParameter<Boolean> p = builder("flag", null).asBoolean();
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(false));
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void asBoolean_invalid_orDefault_returnsDefault() {
+    boolean result = builder("flag", "yes").asBoolean().orDefault(false);
+    Assertions.assertFalse(result);
+  }
+
   // --- asLocalDate -----------------------------------------------------------
 
   @Test
@@ -132,6 +189,28 @@ final class ParameterBuilderTest {
   void asLocalDate_absent_defaultValue() {
     LocalDate def = LocalDate.of(2024, 1, 1);
     LocalDate result = builder("from", null).asLocalDate().defaultValue(def);
+    Assertions.assertEquals(def, result);
+  }
+
+  @Test
+  void asLocalDate_valid_orDefault_returnsValue() {
+    LocalDate def = LocalDate.of(2024, 1, 1);
+    LocalDate result = builder("from", "2024-03-15").asLocalDate().orDefault(def);
+    Assertions.assertEquals(LocalDate.of(2024, 3, 15), result);
+  }
+
+  @Test
+  void asLocalDate_absent_orDefault_throws() {
+    LocalDate def = LocalDate.of(2024, 1, 1);
+    TypedParameter<LocalDate> p = builder("from", null).asLocalDate();
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault(def));
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void asLocalDate_invalid_orDefault_returnsDefault() {
+    LocalDate def = LocalDate.of(2024, 1, 1);
+    LocalDate result = builder("from", "15-03-2024").asLocalDate().orDefault(def);
     Assertions.assertEquals(def, result);
   }
 
@@ -175,6 +254,25 @@ final class ParameterBuilderTest {
   void oneOf_absent_required_throws() {
     TypedParameter<?> p = builder("sort", null).oneOf("name", "date");
     Assertions.assertThrows(InvalidParameterException.class, p::required);
+  }
+
+  @Test
+  void oneOf_valid_orDefault_returnsValue() {
+    String result = builder("sort", "date").oneOf("name", "date", "title").orDefault("name");
+    Assertions.assertEquals("date", result);
+  }
+
+  @Test
+  void oneOf_absent_orDefault_throws() {
+    TypedParameter<String> p = builder("sort", null).oneOf("name", "date", "title");
+    InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.orDefault("name"));
+    Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
+  }
+
+  @Test
+  void oneOf_invalid_orDefault_returnsDefault() {
+    String result = builder("sort", "score").oneOf("name", "date", "title").orDefault("name");
+    Assertions.assertEquals("name", result);
   }
 
   // --- helpers ---------------------------------------------------------------
