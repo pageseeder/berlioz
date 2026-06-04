@@ -44,7 +44,8 @@ import org.pageseeder.berlioz.Beta;
  * </ul>
  *
  * <p>Terminal methods — behavior by state:
- * <table>
+ * <table class="striped">
+ *   <caption>Terminal method behavior by parameter state</caption>
  *   <tr><th>Terminal</th>          <th>Absent</th>       <th>Invalid</th></tr>
  *   <tr><td>{@link #required()}</td>        <td>throws</td>  <td>throws</td></tr>
  *   <tr><td>{@link #required(Object)}</td>  <td>throws</td>  <td>{@code def}</td></tr>

@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>See {@link #init} for details about configuration options.
  *
- * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.14">HTTP 1.1
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-3.1.4.2">HTTP 1.1 - Content-Location</a>
  *
  * @author Christophe Lauret
  * @author Jean-Baptiste Reure

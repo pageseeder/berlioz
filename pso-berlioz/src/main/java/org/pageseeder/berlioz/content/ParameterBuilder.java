@@ -170,13 +170,13 @@ public final class ParameterBuilder {
    * exactly — no further transformation is applied to the input. This means each constant has
    * exactly one accepted string, which keeps cache keys unambiguous.
    *
-   * <pre>
+   * <pre>{@code
    * // Only "active", "inactive", "pending" are accepted
    * Status s = request.parameter("status").asEnum(Status.class, String::toLowerCase).required();
    *
    * // Only "active-status", "inactive-status" are accepted (kebab-case)
    * Status s = request.parameter("status").asEnum(Status.class, n -> n.toLowerCase(Locale.ROOT).replace('_', '-')).required();
-   * </pre>
+   * }</pre>
    *
    * <p>The error message lists the accepted (normalized) names, so the client knows exactly what
    * values to send.
