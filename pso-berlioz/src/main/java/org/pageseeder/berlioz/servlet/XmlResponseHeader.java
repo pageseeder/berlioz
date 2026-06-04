@@ -62,7 +62,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * @version 0.13.0
  * @since 0.6.0
  */
-public final class XMLResponseHeader implements XMLWritable {
+public final class XmlResponseHeader implements XMLWritable {
 
   /**
    * Check that it is a valid attribute name in XML.
@@ -100,7 +100,7 @@ public final class XMLResponseHeader implements XMLWritable {
    * @param service  The service object.
    * @param results  The result of URI resolution.
    */
-  XMLResponseHeader(CoreHttpRequest core, Service service, URIResolveResult results) {
+  XmlResponseHeader(CoreHttpRequest core, Service service, URIResolveResult results) {
     this.core = Objects.requireNonNull(core, "core HTTP info cannot be null");
     this.service = service.id();
     this.group = service.group();

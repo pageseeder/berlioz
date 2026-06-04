@@ -330,7 +330,7 @@ public final class BerliozConfig {
    */
   @Beta
   public static synchronized void setListener(GeneratorListener listener) {
-    XMLResponse.setListener(listener);
+    XmlResponse.setListener(listener);
   }
 
   /**
@@ -338,7 +338,7 @@ public final class BerliozConfig {
    */
   @Beta
   public static synchronized @Nullable GeneratorListener getListener() {
-    return XMLResponse.getListener();
+    return XmlResponse.getListener();
   }
 
   // private helpers

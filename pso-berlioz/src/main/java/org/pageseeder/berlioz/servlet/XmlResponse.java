@@ -60,12 +60,12 @@ import org.slf4j.LoggerFactory;
  * @version 0.13.0
  * @since 0.7
  */
-public final class XMLResponse {
+public final class XmlResponse {
 
   /**
    * Displays debug information.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(XMLResponse.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(XmlResponse.class);
 
   /**
    * May be used to collect information about how generators perform.
@@ -123,7 +123,7 @@ public final class XMLResponse {
    * @param match   The matching service
    * @param profile Whether to enable profiling.
    */
-  public XMLResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, MatchingService match,
+  public XmlResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, MatchingService match,
       boolean profile) {
     this.core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
@@ -228,7 +228,7 @@ public final class XMLResponse {
       xml.attribute("flags", service.flags());
     }
 
-    XMLResponseHeader header = new XMLResponseHeader(this.core, service, this.match.result());
+    XmlResponseHeader header = new XmlResponseHeader(this.core, service, this.match.result());
     header.toXML(xml);
 
     // Call each generator in turn
@@ -251,7 +251,7 @@ public final class XMLResponse {
    */
   @Beta
   static void setListener(@Nullable GeneratorListener listener) {
-    XMLResponse.listener.set(listener);
+    XmlResponse.listener.set(listener);
   }
 
   /**

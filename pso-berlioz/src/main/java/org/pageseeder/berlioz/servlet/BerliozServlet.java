@@ -310,7 +310,7 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Prepare the XML Response
-    XMLResponse xml = new XMLResponse(req, res, config, match, profile);
+    XmlResponse xml = new XmlResponse(req, res, config, match, profile);
     if (serverTiming) xml.enableServerTiming();
 
     // Include the service as a header for information
@@ -469,9 +469,9 @@ public final class BerliozServlet extends HttpServlet {
    * @param serverTiming  Whether to add a Server-Timing header entry.
    * @return The transformed (or raw XML) output.
    */
-  private BerliozOutput executeTransform(String content, HttpServletRequest req, XMLResponse xml,
+  private BerliozOutput executeTransform(String content, HttpServletRequest req, XmlResponse xml,
                                          @Nullable XsltTransformer transformer, HttpServletResponse res, boolean profile, boolean serverTiming) {
-    if (transformer == null) return new XMLContent(content);
+    if (transformer == null) return new XmlContent(content);
 
     XsltTransformResult xslresult = transformer.transform(content, req, xml.getService());
     if (profile && LOGGER.isInfoEnabled()) {

@@ -4,32 +4,32 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class XMLContentTest {
+class XmlContentTest {
 
   @Test
   void testContent() {
-    XMLContent c = new XMLContent("<root/>");
+    XmlContent c = new XmlContent("<root/>");
     assertEquals("<root/>", c.content().toString());
   }
 
   @Test
   void testGetMediaType() {
-    assertEquals("application/xml", new XMLContent("").getMediaType());
+    assertEquals("application/xml", new XmlContent("").getMediaType());
   }
 
   @Test
   void testGetEncoding() {
-    assertEquals("utf-8", new XMLContent("").getEncoding());
+    assertEquals("utf-8", new XmlContent("").getEncoding());
   }
 
   @Test
   void testImplementsBerliozOutput() {
-    assertInstanceOf(BerliozOutput.class, new XMLContent("data"));
+    assertInstanceOf(BerliozOutput.class, new XmlContent("data"));
   }
 
   @Test
   void testEmptyContent() {
-    XMLContent c = new XMLContent("");
+    XmlContent c = new XmlContent("");
     assertEquals("", c.content().toString());
   }
 }
