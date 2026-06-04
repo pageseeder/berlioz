@@ -13,7 +13,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.2
  * @since 0.13.0
  */
 @Beta
@@ -27,7 +27,15 @@ public enum OutputType {
   /**
    * JSON: <code>application/json</code>
    */
-  JSON("application/json");
+  JSON("application/json"),
+
+  /**
+   * Raw bytes: <code>application/octet-stream</code>
+   *
+   * <p>This is the default media type for raw output. A {@code RawGenerator} may override it
+   * with a more specific type via {@code Response.header("Content-Type", "image/png")}.</p>
+   */
+  RAW("application/octet-stream");
 
   /**
    * The mediatype for the format
