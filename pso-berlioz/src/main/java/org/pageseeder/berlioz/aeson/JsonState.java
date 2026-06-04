@@ -40,12 +40,12 @@ final class JsonState {
   /**
    * How property values should be serialized.
    */
-  public enum JsonType { STRING, NUMBER, BOOLEAN, NULL, DEFAULT }
+  enum JsonType { STRING, NUMBER, BOOLEAN, NULL, DEFAULT }
 
   /**
    * The current context.
    */
-  public enum JsonContext { ROOT, OBJECT, ARRAY, NULL, VALUE }
+  enum JsonContext { ROOT, OBJECT, ARRAY, NULL, VALUE }
 
   /**
    * Keeps track of the context.
