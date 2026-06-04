@@ -63,6 +63,13 @@ public final class InvalidParameterException extends RuntimeException {
     this.reason = reason;
   }
 
+  private InvalidParameterException(String message, String parameterName, @Nullable String parameterValue, Reason reason, Throwable cause) {
+    super(message, cause);
+    this.parameterName = parameterName;
+    this.parameterValue = parameterValue;
+    this.reason = reason;
+  }
+
   /**
    * Suppresses stack trace capture — this exception is a request-level signal, not a bug.
    */
@@ -116,6 +123,22 @@ public final class InvalidParameterException extends RuntimeException {
     return new InvalidParameterException(
         paramValue(name, value) + " is not a valid " + targetType,
         name, value, Reason.INVALID_FORMAT);
+  }
+
+  /**
+   * Creates an exception for a parameter whose value could not be parsed, preserving the
+   * original parse exception as the cause for diagnostic purposes.
+   *
+   * @param name        the parameter name
+   * @param value       the raw value that could not be parsed
+   * @param targetType  a short description of the expected type (e.g. {@code "integer"}, {@code "date"})
+   * @param cause       the exception thrown by the parser
+   * @return the exception
+   */
+  public static InvalidParameterException invalidFormat(String name, String value, String targetType, Throwable cause) {
+    return new InvalidParameterException(
+        paramValue(name, value) + " is not a valid " + targetType,
+        name, value, Reason.INVALID_FORMAT, cause);
   }
 
   /**

@@ -250,7 +250,7 @@ public final class ParameterBuilder {
       return new TypedParameter<>(this.name, parser.apply(raw), null);
     } catch (RuntimeException ex) {
       return new TypedParameter<>(this.name, null,
-          InvalidParameterException.invalidFormat(this.name, raw, typeName));
+          InvalidParameterException.invalidFormat(this.name, raw, typeName, ex));
     }
   }
 
