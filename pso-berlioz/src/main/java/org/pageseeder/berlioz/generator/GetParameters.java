@@ -65,13 +65,7 @@ public final class GetParameters implements ContentGenerator, Cacheable {
     int paramCount = 0;
     for (String name : req.parameterNames()) {
       if (++paramCount > MAX_PARAMETERS) break;
-      if (name.length() > MAX_NAME_LENGTH) continue;
-      int valueCount = 0;
-      for (String value : req.parameterValues(name)) {
-        if (++valueCount > MAX_VALUES) break;
-        String effective = value.length() > MAX_VALUE_LENGTH ? value.substring(0, MAX_VALUE_LENGTH) : value;
-        hash.append(name).append('=').append(effective).append('&');
-      }
+      if (name.length() <= MAX_NAME_LENGTH) appendValuesToHash(hash, name, req.parameterValues(name));
     }
     return SHA256.hash(hash.toString());
   }
@@ -82,22 +76,34 @@ public final class GetParameters implements ContentGenerator, Cacheable {
     int paramCount = 0;
     for (String name : req.parameterNames()) {
       if (++paramCount > MAX_PARAMETERS) break;
-      if (name.length() > MAX_NAME_LENGTH) continue;
-      int valueCount = 0;
-      for (String value : req.parameterValues(name)) {
-        if (++valueCount > MAX_VALUES) break;
-        xml.openElement("parameter", false);
-        xml.attribute("name", name);
-        if (value.length() > MAX_VALUE_LENGTH) {
-          xml.attribute("truncated", "true");
-          xml.writeText(value.substring(0, MAX_VALUE_LENGTH));
-        } else {
-          xml.writeText(value);
-        }
-        xml.closeElement();
-      }
+      if (name.length() <= MAX_NAME_LENGTH) writeParameterValues(xml, name, req.parameterValues(name));
     }
     xml.closeElement();
+  }
+
+  private static void appendValuesToHash(StringBuilder hash, String name, Iterable<String> values) {
+    int valueCount = 0;
+    for (String value : values) {
+      if (++valueCount > MAX_VALUES) break;
+      String effective = value.length() > MAX_VALUE_LENGTH ? value.substring(0, MAX_VALUE_LENGTH) : value;
+      hash.append(name).append('=').append(effective).append('&');
+    }
+  }
+
+  private static void writeParameterValues(XMLWriter xml, String name, Iterable<String> values) throws IOException {
+    int valueCount = 0;
+    for (String value : values) {
+      if (++valueCount > MAX_VALUES) break;
+      xml.openElement("parameter", false);
+      xml.attribute("name", name);
+      if (value.length() > MAX_VALUE_LENGTH) {
+        xml.attribute("truncated", "true");
+        xml.writeText(value.substring(0, MAX_VALUE_LENGTH));
+      } else {
+        xml.writeText(value);
+      }
+      xml.closeElement();
+    }
   }
 
 }
