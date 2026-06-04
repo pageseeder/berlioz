@@ -24,8 +24,8 @@ import org.pageseeder.berlioz.json.Json;
 import org.pageseeder.berlioz.json.JsonWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.pageseeder.berlioz.aeson.JSONState.JSONContext;
-import org.pageseeder.berlioz.aeson.JSONState.JSONType;
+import org.pageseeder.berlioz.aeson.JsonState.JsonContext;
+import org.pageseeder.berlioz.aeson.JsonState.JsonType;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -63,7 +63,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   /**
    * Maintains the state of the serialization.
    */
-  private final JSONState state = new JSONState();
+  private final JsonState state = new JsonState();
 
   /**
    * The buffer for property values.
@@ -124,14 +124,14 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   @Override
   public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
     try {
-      if (!this.state.isContext(JSONContext.NULL)) {
+      if (!this.state.isContext(JsonContext.NULL)) {
         if (NS_URI.equals(uri)) {
           handleJSONElement(localName, atts);
         } else {
           handleElement(localName, atts);
         }
       } else {
-        this.state.pushState(JSONContext.NULL, atts, "");
+        this.state.pushState(JsonContext.NULL, atts, "");
         warning(new SAXParseException("Ignoring element "+qName+" in null context", this.locator));
       }
     } catch (Exception ex) {
@@ -143,13 +143,13 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   public void endElement(String uri, String localName, String qName) throws SAXException {
     try {
       // Preserve what we need of previous context
-      JSONContext wasContext = this.state.currentContext();
+      JsonContext wasContext = this.state.currentContext();
       String wasName = this.state.currentName();
 
       // Then return to parent
       this.state.popState();
 
-      if (wasContext != JSONContext.NULL) {
+      if (wasContext != JsonContext.NULL) {
         if (NS_URI.equals(uri)) {
 
           // One of the json elements
@@ -157,12 +157,12 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
             endContainer(wasContext);
           }
 
-        } else if (wasContext == JSONContext.VALUE) {
+        } else if (wasContext == JsonContext.VALUE) {
 
           // A property
-          String name = this.state.isContext(JSONContext.OBJECT)? wasName : null;
+          String name = this.state.isContext(JsonContext.OBJECT)? wasName : null;
           String value = this.buffer.toString();
-          JSONType type = this.state.getType(localName);
+          JsonType type = this.state.getType(localName);
           writeProperty(name, value, type);
           this.buffer.setLength(0);
 
@@ -201,7 +201,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
 
   @Override
   public void characters(char[] ch, int start, int len) {
-    if (this.state.isContext(JSONContext.VALUE)) {
+    if (this.state.isContext(JsonContext.VALUE)) {
       this.buffer.append(ch, start, len);
     }
   }
@@ -258,7 +258,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
     } else if ("null".equals(localName)) {
       writeJsonNull(name, atts);
     } else {
-      this.state.pushState(JSONContext.OBJECT, atts, name);
+      this.state.pushState(JsonContext.OBJECT, atts, name);
       warning(new SAXParseException("Unknown JSON element:" + localName, this.locator));
     }
   }
@@ -266,42 +266,42 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
   private String resolveJsonName(String localName, Attributes atts) {
     String name = atts.getValue(NS_URI, "name");
     if (name != null) return name;
-    if (this.state.isContext(JSONContext.OBJECT)) {
+    if (this.state.isContext(JsonContext.OBJECT)) {
       warning(new SAXParseException("Attribute json:name must be used to specify array/object name", this.locator));
     }
     return localName;
   }
 
   private void startJsonArray(String name, Attributes atts) {
-    if (this.state.isContext(JSONContext.OBJECT)) {
+    if (this.state.isContext(JsonContext.OBJECT)) {
       this.json.startArray(name);
     } else {
       this.json.startArray();
     }
-    this.state.pushState(JSONContext.ARRAY, atts, name);
+    this.state.pushState(JsonContext.ARRAY, atts, name);
   }
 
   private void startJsonObject(String name, Attributes atts) {
-    if (this.state.isContext(JSONContext.OBJECT)) {
+    if (this.state.isContext(JsonContext.OBJECT)) {
       this.json.startObject(name);
     } else {
       this.json.startObject();
     }
-    this.state.pushState(JSONContext.OBJECT, atts, name);
+    this.state.pushState(JsonContext.OBJECT, atts, name);
     handleValuePairs(atts);
   }
 
   private void writeJsonNull(String name, Attributes atts) {
-    if (this.state.isContext(JSONContext.ROOT)) {
+    if (this.state.isContext(JsonContext.ROOT)) {
       warning(new SAXParseException("Illegal null as root, substituting for empty object", this.locator));
       this.json.startObject();
       this.json.endObject();
-    } else if (this.state.isContext(JSONContext.OBJECT)) {
+    } else if (this.state.isContext(JsonContext.OBJECT)) {
       this.json.nullValue(name);
     } else {
       this.json.nullValue();
     }
-    this.state.pushState(JSONContext.NULL, atts, name);
+    this.state.pushState(JsonContext.NULL, atts, name);
   }
 
   /**
@@ -314,18 +314,18 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
     String name = atts.getValue(NS_URI, "name");
 
     // If the element name matches one of the types, it's a property
-    if (this.state.getType(localName) != JSONType.DEFAULT) {
+    if (this.state.getType(localName) != JsonType.DEFAULT) {
       if (hasProperty(atts)) {
         warning(new SAXParseException("Element "+localName+" is mapped to a property, also has properties!", this.locator));
       }
       if (name == null) {
         name = localName;
       }
-      this.state.pushState(JSONContext.VALUE, atts, name);
+      this.state.pushState(JsonContext.VALUE, atts, name);
 
     } else {
       // Start object
-      if (this.state.isContext(JSONContext.OBJECT)) {
+      if (this.state.isContext(JsonContext.OBJECT)) {
         if (name == null) {
           name = localName;
         }
@@ -336,7 +336,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
         }
         this.json.startObject();
       }
-      this.state.pushState(JSONContext.OBJECT, atts, name);
+      this.state.pushState(JsonContext.OBJECT, atts, name);
 
       // Serialize the attributes as value pairs
       handleValuePairs(atts);
@@ -355,7 +355,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
       if (filterNamespace(atts.getURI(i))) {
         String name = Objects.requireNonNull(atts.getLocalName(i));
         String value = Objects.requireNonNull(atts.getValue(i));
-        JSONType type = this.state.getType(name);
+        JsonType type = this.state.getType(name);
         writeProperty(name, value, type);
       }
     }
@@ -368,7 +368,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
    * @param value The value of the property
    * @param type  The type of property
    */
-  private void writeProperty(@Nullable String name, String value, JSONType type) {
+  private void writeProperty(@Nullable String name, String value, JsonType type) {
     switch (type) {
       case NUMBER:
         asNumber(name, value);
@@ -469,8 +469,8 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
     }
   }
 
-  private void endContainer(JSONContext context) {
-    if (context == JSONContext.ARRAY) {
+  private void endContainer(JsonContext context) {
+    if (context == JsonContext.ARRAY) {
       this.json.endArray();
     } else {
       this.json.endObject();

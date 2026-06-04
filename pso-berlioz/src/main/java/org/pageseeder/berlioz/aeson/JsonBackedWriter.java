@@ -23,7 +23,7 @@ import org.pageseeder.berlioz.json.JsonWriter;
  * Adapter from the Aeson writer contract to the canonical Berlioz JSON writer.
  */
 @SuppressWarnings("deprecation")
-final class JsonBackedJSONWriter implements JSONWriter {
+final class JsonBackedWriter implements JSONWriter {
 
   /**
    * Underlying JSON writer.
@@ -40,7 +40,7 @@ final class JsonBackedJSONWriter implements JSONWriter {
    */
   private int level = -1;
 
-  JsonBackedJSONWriter(JsonWriter json) {
+  JsonBackedWriter(JsonWriter json) {
     this.json = json;
   }
 

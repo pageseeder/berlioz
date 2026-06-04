@@ -51,7 +51,7 @@ public final class JSONWriterFactory {
    * @return a ready-to-use JSON writer
    */
   public static JSONWriter newInstance(OutputStream out) {
-    return new JsonBackedJSONWriter(Json.newWriter(out));
+    return new JsonBackedWriter(Json.newWriter(out));
   }
 
   /**
@@ -61,7 +61,7 @@ public final class JSONWriterFactory {
    * @return a ready-to-use JSON writer
    */
   public static JSONWriter newInstance(Writer writer) {
-    return new JsonBackedJSONWriter(Json.newWriter(writer));
+    return new JsonBackedWriter(Json.newWriter(writer));
   }
 
   /**

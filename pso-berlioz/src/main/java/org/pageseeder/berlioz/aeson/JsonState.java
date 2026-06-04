@@ -35,27 +35,27 @@ import org.xml.sax.Attributes;
  * @version 0.13.0
  * @since 0.9.32
  */
-final class JSONState {
+final class JsonState {
 
   /**
    * How property values should be serialized.
    */
-  public enum JSONType { STRING, NUMBER, BOOLEAN, NULL, DEFAULT }
+  public enum JsonType { STRING, NUMBER, BOOLEAN, NULL, DEFAULT }
 
   /**
    * The current context.
    */
-  public enum JSONContext { ROOT, OBJECT, ARRAY, NULL, VALUE }
+  public enum JsonContext { ROOT, OBJECT, ARRAY, NULL, VALUE }
 
   /**
    * Keeps track of the context.
    */
-  private final Deque<JSONContext> context = new ArrayDeque<>();
+  private final Deque<JsonContext> context = new ArrayDeque<>();
 
   /**
    * Maintains instructions for the JSON serialization at each level of the structure.
    */
-  private final Deque<JSONTypeMap> types = new ArrayDeque<>();
+  private final Deque<JsonTypeMap> types = new ArrayDeque<>();
 
   /**
    * Keeps track of the name of the current context.
@@ -66,8 +66,8 @@ final class JSONState {
    * Initialize the state with the ROOT context.
    */
   public void pushState() {
-    this.context.push(JSONContext.ROOT);
-    this.types.push(JSONTypeMap.EMPTY);
+    this.context.push(JsonContext.ROOT);
+    this.types.push(JsonTypeMap.EMPTY);
     this.names.push("");
   }
 
@@ -78,9 +78,9 @@ final class JSONState {
    * @param atts    The attributes (may affect types)
    * @param name    The name of the context.
    */
-  public void pushState(JSONContext context, Attributes atts, @Nullable String name) {
+  public void pushState(JsonContext context, Attributes atts, @Nullable String name) {
     this.context.push(context);
-    JSONTypeMap map = JSONTypeMap.make(currentTypeMap(), atts);
+    JsonTypeMap map = JsonTypeMap.make(currentTypeMap(), atts);
     this.types.push(map);
     this.names.push(name != null? name : "");
   }
@@ -97,8 +97,8 @@ final class JSONState {
   /**
    * @return the current context.
    */
-  public JSONContext currentContext() {
-    JSONContext c = this.context.peek();
+  public JsonContext currentContext() {
+    JsonContext c = this.context.peek();
     if (c == null) throw new IllegalStateException("No JSON context!");
     return c;
   }
@@ -110,7 +110,7 @@ final class JSONState {
    * @return <code>true</code> if strictly equal;
    *         <code>false</code> otherwise.
    */
-  public boolean isContext(JSONContext context) {
+  public boolean isContext(JsonContext context) {
     return currentContext() == context;
   }
 
@@ -126,8 +126,8 @@ final class JSONState {
   /**
    * @return the name of the current context.
    */
-  private JSONTypeMap currentTypeMap() {
-    JSONTypeMap type = this.types.peek();
+  private JsonTypeMap currentTypeMap() {
+    JsonTypeMap type = this.types.peek();
     if (type == null) throw new IllegalStateException("No JSON type map");
     return type;
   }
@@ -138,7 +138,7 @@ final class JSONState {
    * @param name the name of the property
    * @return The corresponding type (never <code>null</code>)
    */
-  public JSONType getType(String name) {
+  public JsonType getType(String name) {
     return currentTypeMap().getType(name);
   }
 
@@ -156,22 +156,22 @@ final class JSONState {
   /**
    * Stores instructions about the type of JSON values to be stored by name.
    */
-  private static final class JSONTypeMap {
+  private static final class JsonTypeMap {
 
     /**
      * An empty set of instructions.
      */
-    public static final JSONTypeMap EMPTY = new JSONTypeMap();
+    public static final JsonTypeMap EMPTY = new JsonTypeMap();
 
     /**
      * Names of elements to be converted to JavaScript types other than string.
      */
-    private final Map<String, JSONType> map;
+    private final Map<String, JsonType> map;
 
     /**
      * Keep private - only to create an empty set of instructions.
      */
-    private JSONTypeMap() {
+    private JsonTypeMap() {
       this.map = Collections.emptyMap();
     }
 
@@ -180,7 +180,7 @@ final class JSONState {
      *
      * @param map the internal mapping to use.
      */
-    private JSONTypeMap(Map<String, JSONType> map) {
+    private JsonTypeMap(Map<String, JsonType> map) {
       this.map = map;
     }
 
@@ -190,9 +190,9 @@ final class JSONState {
      * @param name the name of the property
      * @return The type this name is mapped to.
      */
-    public JSONType getType(String name) {
-      JSONType type = this.map.get(name);
-      return type != null? type : JSONType.DEFAULT;
+    public JsonType getType(String name) {
+      JsonType type = this.map.get(name);
+      return type != null? type : JsonType.DEFAULT;
     }
 
     /**
@@ -205,22 +205,22 @@ final class JSONState {
      *
      * @return the updated map or the inherited one if no attributes changed the types.
      */
-    public static JSONTypeMap make(JSONTypeMap inherited, Attributes atts) {
+    public static JsonTypeMap make(JsonTypeMap inherited, Attributes atts) {
       String toBoolean = atts.getValue(JSONSerializer.NS_URI, "boolean");
       String toNumber = atts.getValue(JSONSerializer.NS_URI, "number");
       String toString = atts.getValue(JSONSerializer.NS_URI, "string");
       String toNull = atts.getValue(JSONSerializer.NS_URI, "null");
       if (toBoolean == null && toNumber == null && toString == null && toNull == null)
         return inherited;
-      Map<String, JSONType> updated = new HashMap<>(inherited.map);
-      applyMapping(updated, toBoolean, JSONType.BOOLEAN);
-      applyMapping(updated, toNumber, JSONType.NUMBER);
-      applyMapping(updated, toString, JSONType.STRING);
-      applyMapping(updated, toNull, JSONType.NULL);
-      return new JSONTypeMap(updated);
+      Map<String, JsonType> updated = new HashMap<>(inherited.map);
+      applyMapping(updated, toBoolean, JsonType.BOOLEAN);
+      applyMapping(updated, toNumber, JsonType.NUMBER);
+      applyMapping(updated, toString, JsonType.STRING);
+      applyMapping(updated, toNull, JsonType.NULL);
+      return new JsonTypeMap(updated);
     }
 
-    private static void applyMapping(Map<String, JSONType> map, @Nullable String names, JSONType type) {
+    private static void applyMapping(Map<String, JsonType> map, @Nullable String names, JsonType type) {
       if (names != null) {
         for (String name : names.split(" ")) {
           map.put(name, type);
