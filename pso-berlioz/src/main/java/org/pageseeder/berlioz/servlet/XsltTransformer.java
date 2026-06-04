@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.io.FileNotFoundException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Enumeration;
@@ -417,7 +418,7 @@ public final class XsltTransformer {
   private static BerliozErrorID toErrorID(TransformerException ex) {
     if (ex instanceof TransformerConfigurationException) {
       Throwable cause = ex.getCause();
-      if (cause instanceof NoSuchFileException) return BerliozErrorID.TRANSFORM_NOT_FOUND;
+      if (cause instanceof NoSuchFileException || cause instanceof FileNotFoundException) return BerliozErrorID.TRANSFORM_NOT_FOUND;
       return BerliozErrorID.TRANSFORM_INVALID;
     }
     if (ex.getCause() instanceof SAXParseException) return BerliozErrorID.TRANSFORM_MALFORMED_SOURCE_XML;
