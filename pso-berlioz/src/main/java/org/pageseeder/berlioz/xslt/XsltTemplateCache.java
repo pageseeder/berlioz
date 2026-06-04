@@ -263,7 +263,7 @@ public final class XsltTemplateCache {
       if (fallback != null) return SHA256.hash(fallback.toString());
       LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getFileName());
       LOGGER.error("Create a stylesheet at the path below:");
-      LOGGER.error(templates.toString());
+      LOGGER.error("{}", templates);
       return null;
     }
     Path parent = templates.getParent();
