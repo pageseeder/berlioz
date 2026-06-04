@@ -150,6 +150,12 @@ public class Xml {
 
   /**
    * Creates a safe parser, converting checked exceptions to {@link BerliozException}.
+   *
+   * @param validating {@code true} to create a validating parser; {@code false} otherwise
+   *
+   * @return a new SAX parser instance
+   *
+   * @throws BerliozException if the parser could not be configured or initialised
    */
   public static SAXParser safeParser(boolean validating) throws BerliozException {
     try {
