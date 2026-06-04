@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.generator;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
@@ -41,11 +42,15 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * <pre>{@code
  * <properties source="[source]">
  *   <property name="[nameA]" value="[valueA]"/>
- *   <property name="[nameB]" value="[valueB]"/>
+ *   <property name="[nameB]" value="[REDACTED]"/>
  *   <property name="[nameC]" value="[valueC]"/>
  *   ...
  * </properties>
  * }</pre>
+ *
+ * <p>Property values whose names match a sensitive keyword pattern (e.g. {@code password},
+ * {@code secret}, {@code token}, {@code apikey}, {@code credential}, {@code privatekey})
+ * are replaced with {@code [REDACTED]} to avoid exposing secrets via misconfiguration.
  *
  * <h3>Etag</h3>
  * <p>This generator uses an etag based on the name, length and last modified date of the
@@ -53,10 +58,15 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.13.1
  * @since 0.8
  */
 public final class GetGlobalConfig implements ContentGenerator, Cacheable {
+
+  private static final Pattern SENSITIVE_NAME = Pattern.compile(
+      "(?i)(password|passwd|secret|api[._\\-]?key|token|credential|private[._\\-]?key)");
+
+  static final String REDACTED = "[REDACTED]";
 
   @Override
   public @Nullable String getETag(ContentRequest req) {
@@ -74,10 +84,9 @@ public final class GetGlobalConfig implements ContentGenerator, Cacheable {
       xml.attribute("source", global.getName());
     }
 
-    // Iterate over properties
     for (Entry<String, String> e : GlobalSettings.getAll().entrySet()) {
       String name = e.getKey();
-      String value = e.getValue();
+      String value = SENSITIVE_NAME.matcher(name).find() ? REDACTED : e.getValue();
       xml.openElement("property", false);
       xml.attribute("name", name);
       xml.attribute("value", value);
