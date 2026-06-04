@@ -28,7 +28,7 @@ import org.xml.sax.ContentHandler;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.1
  * @since 0.6
  *
  * @deprecated since 0.13.1. Use {@link Xml} instead.
@@ -40,33 +40,56 @@ public final class XMLUtils {
   }
 
   /**
-   * @deprecated since 0.13.0. Use {@link Xml#parse(ContentHandler, File)} instead.
+   * @param handler the content handler to use
+   * @param xml     the XML file to parse
+   *
+   * @throws BerliozException if the parsing fails
+   *
+   * @deprecated since 0.13.1. Use {@link Xml#parse(ContentHandler, File)} instead.
    */
-  @Deprecated(since = "0.13.0", forRemoval = true)
+  @Deprecated(since = "0.13.1", forRemoval = true)
   public static void parse(ContentHandler handler, File xml) throws BerliozException {
     Xml.parse(handler, xml);
   }
 
   /**
-   * @deprecated since 0.13.0. Use {@link Xml#parse(ContentHandler, Reader, boolean)} instead.
+   * @param handler  the content handler to use
+   * @param reader   the reader to parse from
+   * @param validate whether to validate the XML
+   *
+   * @throws BerliozException if the parsing fails
+   *
+   * @deprecated since 0.13.1. Use {@link Xml#parse(ContentHandler, Reader, boolean)} instead.
    */
-  @Deprecated(since = "0.13.0", forRemoval = true)
+  @Deprecated(since = "0.13.1", forRemoval = true)
   public static void parse(ContentHandler handler, Reader reader, boolean validate) throws BerliozException {
     Xml.parse(handler, reader, validate);
   }
 
   /**
-   * @deprecated since 0.13.0. Use {@link Xml#parse(ContentHandler, File, boolean)} instead.
+   * @param handler  the content handler to use
+   * @param xml      the XML file to parse
+   * @param validate whether to validate the XML
+   *
+   * @throws BerliozException if the parsing fails
+   *
+   * @deprecated since 0.13.1. Use {@link Xml#parse(ContentHandler, File, boolean)} instead.
    */
-  @Deprecated(since = "0.13.0", forRemoval = true)
+  @Deprecated(since = "0.13.1", forRemoval = true)
   public static void parse(ContentHandler handler, File xml, boolean validate) throws BerliozException {
     Xml.parse(handler, xml, validate);
   }
 
   /**
-   * @deprecated since 0.13.0. Use {@link Xml#newSafeParser(boolean)} instead.
+   * @param validating whether the parser should validate the XML
+   *
+   * @return a new SAX parser
+   *
+   * @throws BerliozException if the parser cannot be created
+   *
+   * @deprecated since 0.13.1. Use {@link Xml#newSafeParser(boolean)} instead.
    */
-  @Deprecated(since = "0.13.0", forRemoval = true)
+  @Deprecated(since = "0.13.1", forRemoval = true)
   public static SAXParser getParser(boolean validating) throws BerliozException {
     try {
       return Xml.newSafeParser(validating);
