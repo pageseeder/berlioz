@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 
 import org.jspecify.annotations.Nullable;
@@ -316,12 +315,7 @@ public final class XMLCopy extends DefaultHandler implements ContentHandler, Lex
    * @throws BerliozException Should something unexpected happen.
    */
   private static void parse(XMLCopy copier, InputSource source) throws BerliozException {
-    SAXParser parser;
-    try {
-      parser = Xml.newSafeParser(false);
-    } catch (ParserConfigurationException | SAXException ex) {
-      throw new BerliozException("Could not configure SAX parser.", ex);
-    }
+    SAXParser parser = Xml.safeParser(false);
     try {
       // get the reader
       XMLReader xmlreader = parser.getXMLReader();

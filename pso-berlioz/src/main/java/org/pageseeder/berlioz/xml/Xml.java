@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.URI;
 
 /**
  *
@@ -100,21 +101,18 @@ public class Xml {
    */
   @SuppressWarnings("HttpUrlsUsage")
   public static void parse(ContentHandler handler, File xml, boolean validate) throws BerliozException {
+    if (xml.isDirectory())
+      throw new BerliozException("Cannot parse a directory");
     SAXParser parser = safeParser(validate);
     try {
       XMLReader reader = parser.getXMLReader();
-      // Secure reader to prevent XXE
       reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-      reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
-      reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
       reader.setContentHandler(handler);
       reader.setEntityResolver(BerliozEntityResolver.getInstance());
       reader.setErrorHandler(BerliozErrorHandler.getInstance());
-      if (xml.isDirectory())
-        throw new BerliozException("Cannot parse a directory");
-      LOGGER.info("Parsing file {}", xml.toURI());
-      reader.parse(new InputSource(xml.toURI().toString()));
+      URI uri = xml.toURI();
+      LOGGER.info("Parsing file {}", uri);
+      reader.parse(new InputSource(uri.toString()));
     } catch (SAXException ex) {
       throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
     } catch (FileNotFoundException ex) {
@@ -153,7 +151,7 @@ public class Xml {
   /**
    * Creates a safe parser, converting checked exceptions to {@link BerliozException}.
    */
-  private static SAXParser safeParser(boolean validating) throws BerliozException {
+  public static SAXParser safeParser(boolean validating) throws BerliozException {
     try {
       return newSafeParser(validating);
     } catch (ParserConfigurationException ex) {

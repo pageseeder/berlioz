@@ -18,10 +18,12 @@ package org.pageseeder.berlioz.xml;
 import java.io.File;
 import java.io.Reader;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 
 import org.pageseeder.berlioz.BerliozException;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A utility class to help with some simple XML operations.
@@ -93,7 +95,7 @@ public final class XMLUtils {
   public static SAXParser getParser(boolean validating) throws BerliozException {
     try {
       return Xml.newSafeParser(validating);
-    } catch (Exception ex) {
+    } catch (ParserConfigurationException | SAXException ex) {
       throw new BerliozException("Could not configure SAX parser.", ex);
     }
   }

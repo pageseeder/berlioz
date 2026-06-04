@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 
 import org.jspecify.annotations.Nullable;
@@ -175,12 +174,7 @@ public enum ServiceLoader {
   public synchronized void load(File xml) throws BerliozException {
     Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
     // Okay, let's start
-    SAXParser parser;
-    try {
-      parser = Xml.newSafeParser(true);
-    } catch (ParserConfigurationException | SAXException ex) {
-      throw new BerliozException("Could not configure SAX parser.", ex);
-    }
+    SAXParser parser = Xml.safeParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
     if (GlobalSettings.has(BerliozOption.XML_PARSE_STRICT)) {
       collector.setErrorFlag(Level.WARNING);
