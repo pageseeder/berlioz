@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 
 import org.jspecify.annotations.Nullable;
@@ -34,7 +35,7 @@ import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.xml.BerliozEntityResolver;
 import org.pageseeder.berlioz.xml.SAXErrorCollector;
-import org.pageseeder.berlioz.xml.XMLUtils;
+import org.pageseeder.berlioz.xml.Xml;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -174,7 +175,12 @@ public enum ServiceLoader {
   public synchronized void load(File xml) throws BerliozException {
     Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
     // Okay, let's start
-    SAXParser parser = XMLUtils.getParser(true);
+    SAXParser parser;
+    try {
+      parser = Xml.newSafeParser(true);
+    } catch (ParserConfigurationException | SAXException ex) {
+      throw new BerliozException("Could not configure SAX parser.", ex);
+    }
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
     if (GlobalSettings.has(BerliozOption.XML_PARSE_STRICT)) {
       collector.setErrorFlag(Level.WARNING);
