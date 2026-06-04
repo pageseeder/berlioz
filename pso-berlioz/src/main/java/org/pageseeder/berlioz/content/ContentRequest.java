@@ -37,7 +37,8 @@ import org.jspecify.annotations.Nullable;
  * <p>{@link #getParameterNames()}, {@link #getParameterValues(String)}, and {@link #getCookies()}
  * are deprecated in favor of their {@link RequestContext} equivalents.
  * {@link #getDateParameter(String)} is deprecated because {@link java.util.Date} is a legacy type;
- * use {@code request.parameter(name).asLocalDate()} instead.
+ * use {@code request.parameter(name).asLocalDate()} for date-only values ({@code yyyy-MM-dd}),
+ * or a custom parser via {@code request.parameter(name).as(...)} for datetime strings.
  * {@link #getIntParameter(String, int)} and {@link #getLongParameter(String, long)} are retained
  * as ergonomic shorthands and are not deprecated.
  *
@@ -147,6 +148,10 @@ public interface ContentRequest extends RequestContext {
    * @return a {@code Date} instance, or {@code null}
    *
    * @deprecated Use {@code request.parameter(name).asLocalDate()} instead.
+   *             Note that {@code asLocalDate()} only accepts {@code yyyy-MM-dd}; if your
+   *             clients submit datetime strings (e.g. {@code 2024-06-04T12:00:00}) use
+   *             {@code request.parameter(name).as(LocalDateTime::parse, "datetime")} or a
+   *             custom parser instead.
    */
   @Deprecated(since = "0.13.1")
   @Nullable Date getDateParameter(String name);
