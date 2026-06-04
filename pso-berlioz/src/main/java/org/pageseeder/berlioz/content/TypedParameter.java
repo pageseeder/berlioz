@@ -92,11 +92,12 @@ public final class TypedParameter<T> {
    * @param max the upper bound (inclusive)
    * @return a typed parameter whose value is within {@code [min, max]}, or the same state if absent/invalid
    */
-  @SuppressWarnings("unchecked")
   public TypedParameter<T> clamp(T min, T max) {
     T v = this.parsedValue;
     if (v == null) return this;
-    Comparable<T> c = (Comparable<T>) v;
+    if (!(v instanceof Comparable))
+      throw new UnsupportedOperationException("clamp() requires T to implement Comparable; got " + v.getClass().getName());
+    @SuppressWarnings("unchecked") Comparable<T> c = (Comparable<T>) v;
     if (c.compareTo(min) < 0) return new TypedParameter<>(this.parameterName, min, null);
     if (c.compareTo(max) > 0) return new TypedParameter<>(this.parameterName, max, null);
     return this;
@@ -118,11 +119,12 @@ public final class TypedParameter<T> {
    * @return a typed parameter with an {@link InvalidParameterException.Reason#OUT_OF_RANGE} error if out of range,
    *         or the same state if in range, absent, or already invalid
    */
-  @SuppressWarnings("unchecked")
   public TypedParameter<T> inRange(T min, T max) {
     T v = this.parsedValue;
     if (v == null) return this;
-    Comparable<T> c = (Comparable<T>) v;
+    if (!(v instanceof Comparable))
+      throw new UnsupportedOperationException("inRange() requires T to implement Comparable; got " + v.getClass().getName());
+    @SuppressWarnings("unchecked") Comparable<T> c = (Comparable<T>) v;
     if (c.compareTo(min) < 0 || c.compareTo(max) > 0) {
       return new TypedParameter<>(this.parameterName, null,
           InvalidParameterException.outOfRange(this.parameterName, v.toString(),
