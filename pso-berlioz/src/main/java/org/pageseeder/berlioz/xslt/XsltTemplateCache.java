@@ -270,7 +270,7 @@ public final class XsltTemplateCache {
     if (parent == null) return null;
     StringBuilder b = new StringBuilder();
     try (Stream<Path> stream = Files.walk(parent)) {
-      List<Path> files = stream.filter(Files::isRegularFile).collect(Collectors.toList());
+      List<Path> files = stream.filter(Files::isRegularFile).sorted().collect(Collectors.toList());
       for (Path f : files) {
         b.append(SHA256.hash(f, false));
       }
