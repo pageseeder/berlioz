@@ -80,6 +80,16 @@ public final class XsltTransformer {
   private static final Logger LOGGER = LoggerFactory.getLogger(XsltTransformer.class);
 
   /**
+   * Compiled failsafe stylesheet — loaded once from the classpath, never changes.
+   */
+  private static final Templates FAILSAFE_TEMPLATES;
+  static {
+    ClassLoader loader = XsltTransformer.class.getClassLoader();
+    URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
+    FAILSAFE_TEMPLATES = XsltTemplateCache.compile(url);
+  }
+
+  /**
    * Handles template compilation and caching for this transformer's stylesheet.
    */
   private final XsltTemplateCache cache;
@@ -158,12 +168,9 @@ public final class XsltTransformer {
       // very likely to be an error in the XML or a dynamic error
     } catch (TransformerException ex) {
       String error = toXML(ex, parameters);
-      ClassLoader loader = XsltTransformer.class.getClassLoader();
-      URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
-      Templates failsafe = XsltTemplateCache.compile(url);
       // Try to use the fail-safe template to present the error
-      error = transformFailSafe(error, failsafe);
-      return new XsltTransformResult(error, ex, failsafe);
+      error = transformFailSafe(error, FAILSAFE_TEMPLATES);
+      return new XsltTransformResult(error, ex, FAILSAFE_TEMPLATES);
     }
 
     // All good!
