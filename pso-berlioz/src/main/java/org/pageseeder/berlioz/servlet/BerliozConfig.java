@@ -448,7 +448,7 @@ public final class BerliozConfig {
     Path styleSheet = this.env.getPrivateFile(path).toPath();
     try {
       Path base = this.env.getPrivateFolder().getCanonicalFile().toPath();
-      Path resolved = styleSheet.toAbsolutePath().normalize();
+      Path resolved = styleSheet.toFile().getCanonicalFile().toPath();
       if (!resolved.startsWith(base)) {
         throw new IllegalStateException("Stylesheet for service '" + service.id() + "' resolves outside the private folder");
       }
