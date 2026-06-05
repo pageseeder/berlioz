@@ -37,7 +37,6 @@ import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
-import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
@@ -46,7 +45,6 @@ import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
 import org.pageseeder.berlioz.util.CollectedError.Level;
-import org.pageseeder.berlioz.util.Errors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,12 +81,13 @@ public final class JsonResponse {
   private @Nullable String redirect = null;
   private @Nullable BerliozException exception = null;
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
+  private final Map<String, String> responseHeadersView = Collections.unmodifiableMap(this.responseHeaders);
 
   public JsonResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
       MatchingService match, boolean profile) {
     this.core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
-    this.requests = configure(this.core, match);
+    this.requests = GeneratorDispatch.configure(this.core, match);
     this.profile = profile;
   }
 
@@ -110,7 +109,7 @@ public final class JsonResponse {
   }
 
   public Map<String, String> getHeaders() {
-    return Collections.unmodifiableMap(this.responseHeaders);
+    return this.responseHeadersView;
   }
 
   /**
@@ -185,7 +184,7 @@ public final class JsonResponse {
     if (wasSet && response.isRedirect()) {
       this.redirect = response.redirectLocation();
     }
-    response.headers().forEach((headerName, value) -> this.responseHeaders.put(headerName, value));
+    GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
 
     GeneratorListener l = listener.get();
     if (l != null) l.generate(service, generator, generatorStatus, 0, end - start);
@@ -223,49 +222,15 @@ public final class JsonResponse {
   }
 
   private static String errorJson(BerliozException ex) {
-    String msg = ex.getMessage();
-    if (msg == null) msg = ex.getClass().getName();
-    // Minimal safe JSON — message is escaped below
-    return "{\"error\":" + jsonString(msg) + "}";
-  }
-
-  private static String jsonString(String value) {
-    StringBuilder sb = new StringBuilder(value.length() + 2).append('"');
-    for (int i = 0; i < value.length(); i++) {
-      char c = value.charAt(i);
-      switch (c) {
-        case '"':  sb.append("\\\""); break;
-        case '\\': sb.append("\\\\"); break;
-        case '\n': sb.append("\\n");  break;
-        case '\r': sb.append("\\r");  break;
-        case '\t': sb.append("\\t");  break;
-        default:
-          if (c < 0x20) { sb.append(String.format("\\u%04x", (int) c)); }
-          else { sb.append(c); }
-      }
-    }
-    return sb.append('"').toString();
+    String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName();
+    return JsonStringBuilder.create().startObject().field("error", msg).endObject().toString();
   }
 
   private BerliozException handleError(Exception ex, BerliozGenerator generator) {
     LOGGER.warn("Handling {} thrown by {}", ex.getClass().getName(), generator.getClass().getName());
-    BerliozException bex = toBerliozException(ex);
+    BerliozException bex = GeneratorDispatch.toBerliozException(ex);
     accumulateError(bex);
     return bex;
-  }
-
-  private static BerliozException toBerliozException(Exception ex) {
-    if (ex instanceof BerliozException) {
-      BerliozException bex = (BerliozException) ex;
-      if (bex.id() == null) bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
-      return bex;
-    }
-    if (ex instanceof InvalidParameterException) {
-      InvalidParameterException ipe = (InvalidParameterException) ex;
-      return new BerliozException("Invalid parameter '" + ipe.getParameterName() + "': " + ipe.getMessage(),
-          ipe, BerliozErrorID.INVALID_PARAMETER);
-    }
-    return new BerliozException("Unexpected exception caught", ex, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
   }
 
   private void accumulateError(BerliozException bex) {
@@ -297,27 +262,6 @@ public final class JsonResponse {
         || (rule == CodeRule.LOWEST  && status.code() < current.code());
     if (update) this.status = status;
     return update;
-  }
-
-  private static List<HttpContentRequest> configure(CoreHttpRequest core, MatchingService match) {
-    Map<String, String> common = HttpRequestWrapper.toParameters(core.request(), match.result());
-    Service service = match.service();
-    List<HttpContentRequest> requests = new ArrayList<>();
-    int order = 0;
-    for (BerliozGenerator generator : service.generators()) {
-      List<Parameter> pconfig = service.parameters(generator);
-      if (pconfig.isEmpty()) {
-        requests.add(new HttpContentRequest(core, common, generator, service, order));
-      } else {
-        Map<String, String> specific = new java.util.HashMap<>(common);
-        for (Parameter p : pconfig) {
-          specific.put(p.name(), p.value(common));
-        }
-        requests.add(new HttpContentRequest(core, specific, generator, service, order));
-      }
-      order++;
-    }
-    return requests;
   }
 
   // Simple holder for a generator's captured output

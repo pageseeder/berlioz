@@ -18,14 +18,11 @@ package org.pageseeder.berlioz.servlet;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +40,6 @@ import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.MatchingService;
-import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
@@ -74,25 +70,6 @@ import org.slf4j.LoggerFactory;
 public final class XmlResponse {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(XmlResponse.class);
-
-  /**
-   * Headers that generators should not set directly — they are owned by the framework,
-   * servlet filters, or service-level configuration. Setting them via {@code Response.header()}
-   * is logged as a warning.
-   */
-  private static final Set<String> FRAMEWORK_HEADERS = new HashSet<>(Arrays.asList(
-      "Location",           // use Response.redirect()
-      "ETag",               // use Cacheable interface
-      "Last-Modified",      // framework caching concern
-      "Cache-Control",      // service-level cache="" attribute
-      "Expires",            // framework caching concern
-      "Vary",               // framework content-negotiation concern
-      "Set-Cookie",         // security layer, not generator scope
-      "Content-Encoding",   // compression layer (BerliozOption.HTTP_COMPRESSION)
-      "Transfer-Encoding",  // container concern
-      "Server",             // container concern
-      "Date"                // container concern
-  ));
 
   /**
    * May be used to collect information about how generators perform.
@@ -144,6 +121,7 @@ public final class XmlResponse {
    * Applied via {@code HttpServletResponse.setHeader}.
    */
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
+  private final Map<String, String> responseHeadersView = Collections.unmodifiableMap(this.responseHeaders);
 
   private boolean serverTiming;
 
@@ -160,7 +138,7 @@ public final class XmlResponse {
       boolean profile) {
     this.core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
-    this.requests = configure(this.core, match);
+    this.requests = GeneratorDispatch.configure(this.core, match);
     this.profile = profile;
   }
 
@@ -244,7 +222,7 @@ public final class XmlResponse {
    * @return an unmodifiable map; never {@code null}
    */
   public Map<String, String> getHeaders() {
-    return Collections.unmodifiableMap(this.responseHeaders);
+    return this.responseHeadersView;
   }
 
   /**
@@ -385,16 +363,8 @@ public final class XmlResponse {
       this.redirect = response.redirectLocation();
     }
 
-    // Accumulate response headers (last-writer-wins). Warn on headers that belong
-    // to the framework, service config, or security layers rather than generators.
-    response.headers().forEach((headerName, value) -> {
-      if (FRAMEWORK_HEADERS.contains(headerName)) {
-        LOGGER.warn("Generator {} set header '{}' which is managed by the framework — ignoring",
-            generator.getClass().getName(), headerName);
-      } else {
-        this.responseHeaders.put(headerName, value);
-      }
-    });
+    // Accumulate response headers (last-writer-wins). Framework-owned headers are warned and dropped.
+    GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
     xml.attribute("status", generatorStatus.toString());
     if (this.profile) {
       xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));
@@ -425,66 +395,11 @@ public final class XmlResponse {
     xml.closeElement();
   }
 
-  /**
-   * Returns the list of content generator requests to process.
-   *
-   * @param core  The core HTTP details
-   * @param match The matching service
-   * @return the list of content generator requests to process.
-   */
-  private static List<HttpContentRequest> configure(CoreHttpRequest core, MatchingService match) {
-    // Get the list of parameters
-    Map<String, String> common = HttpRequestWrapper.toParameters(core.request(), match.result());
-    // Create a request for each generator
-    Service service = match.service();
-    List<HttpContentRequest> requests = new ArrayList<>();
-    int order = 0;
-    for (BerliozGenerator generator : service.generators()) {
-      List<Parameter> pconfig = service.parameters(generator);
-      if (pconfig.isEmpty()) {
-        // No specific parameters, return a request using the common parameters
-        requests.add(new HttpContentRequest(core, common, generator, match.service(), order));
-
-      } else {
-        // Some specific parameters recompute the parameters
-        Map<String, String> specific = new HashMap<>(common);
-        for (Parameter p : pconfig) {
-          specific.put(p.name(), p.value(common));
-        }
-        requests.add(new HttpContentRequest(core, specific, generator, match.service(), order));
-      }
-      order++;
-    }
-    return requests;
-  }
-
-  /**
-   * Handles an exception thrown by a generator.
-   *
-   * @param exception The exception to handle.
-   * @param generator The generator that caused the exception.
-   *
-   * @return a Berlioz exception for immediate use.
-   */
   private BerliozException handleError(Exception exception, BerliozGenerator generator) {
     LOGGER.warn("Handling {} thrown by {}", exception.getClass().getName(), generator.getClass().getName());
-    BerliozException bex = toBerliozException(exception);
+    BerliozException bex = GeneratorDispatch.toBerliozException(exception);
     accumulateError(bex);
     return bex;
-  }
-
-  private static BerliozException toBerliozException(Exception exception) {
-    if (exception instanceof BerliozException) {
-      BerliozException bex = (BerliozException) exception;
-      if (bex.id() == null) bex.setId(BerliozErrorID.GENERATOR_ERROR_UNFORCED);
-      return bex;
-    }
-    if (exception instanceof InvalidParameterException) {
-      InvalidParameterException ipe = (InvalidParameterException) exception;
-      return new BerliozException("Invalid parameter '" + ipe.getParameterName() + "': " + ipe.getMessage(),
-          ipe, BerliozErrorID.INVALID_PARAMETER);
-    }
-    return new BerliozException("Unexpected exception caught", exception, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
   }
 
   private void accumulateError(BerliozException bex) {
