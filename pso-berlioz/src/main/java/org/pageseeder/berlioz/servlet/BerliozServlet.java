@@ -322,8 +322,9 @@ public final class BerliozServlet extends HttpServlet {
     // Detect whether a direct JSON response is appropriate:
     // the request targets a .json URL AND the service supports direct JSON output.
     String servletPath = req.getServletPath();
+    // TODO We need something more solid to determine whether it is a JSON request than just the extension
     boolean jsonRequest = servletPath != null && servletPath.endsWith(".json");
-    boolean serviceSupportsJson = match.service().supported().contains(OutputType.JSON);
+    boolean serviceSupportsJson = jsonRequest && match.service().supported().contains(OutputType.JSON);
 
     if (jsonRequest && serviceSupportsJson) {
       processJson(req, res, config, match, method, code, profile, serverTiming, includeContent);
