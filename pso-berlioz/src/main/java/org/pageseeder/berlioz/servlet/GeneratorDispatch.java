@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.servlet;
 
-import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.BerliozGenerator;

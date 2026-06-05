@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.servlet;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -70,7 +69,6 @@ public final class JsonResponse {
   private final CoreHttpRequest core;
   private final MatchingService match;
   private final List<HttpContentRequest> requests;
-  private final boolean profile;
 
   private final GeneratorOutcome outcome = new GeneratorOutcome();
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
@@ -81,7 +79,6 @@ public final class JsonResponse {
     this.core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
     this.requests = GeneratorDispatch.configure(this.core, match);
-    this.profile = profile;
   }
 
   public Service getService() {
@@ -111,9 +108,8 @@ public final class JsonResponse {
    * Multi-generator service: outputs are assembled as {@code {"name": <json>, ...}}.</p>
    *
    * @return the JSON body string
-   * @throws IOException if an I/O error occurs
    */
-  public String generate() throws IOException {
+  public String generate() {
     Service service = this.match.service();
     List<GeneratorResult> results = new ArrayList<>(this.requests.size());
 
@@ -149,8 +145,7 @@ public final class JsonResponse {
     BerliozException error = null;
     long start = System.nanoTime();
 
-    try {
-      JsonStringBuilder jb = JsonStringBuilder.create();
+    try (JsonStringBuilder jb = JsonStringBuilder.create()) {
       if (generator instanceof JsonGenerator) {
         response = ((JsonGenerator) generator).generate(request, jb);
         jb.flush();
@@ -192,22 +187,31 @@ public final class JsonResponse {
     }
 
     // Envelope: {"name1": <json1>, "name2": <json2>} — even for a single generator
-    JsonStringBuilder jb = JsonStringBuilder.create();
-    jb.startObject();
-    for (GeneratorResult r : results) {
-      String value = r.error != null ? errorJson(r.error)
-          : r.json != null && !r.json.isEmpty() ? r.json
-          : "null";
-      jb.fieldRaw(r.name, value);
+    try (JsonStringBuilder jb = JsonStringBuilder.create()) {
+      jb.startObject();
+      for (GeneratorResult r : results) {
+        String value;
+        if (r.error != null) {
+          value = errorJson(r.error);
+        } else if (r.json != null && !r.json.isEmpty()) {
+          value = r.json;
+        } else {
+          value = "null";
+        }
+        jb.fieldRaw(r.name, value);
+      }
+      jb.endObject();
+      jb.flush();
+      return jb.toString();
     }
-    jb.endObject();
-    jb.flush();
-    return jb.toString();
   }
 
   private static String errorJson(BerliozException ex) {
     String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName();
-    return JsonStringBuilder.create().startObject().field("error", msg).endObject().toString();
+    try (JsonStringBuilder jb = JsonStringBuilder.create()) {
+      jb.startObject().field("error", msg).endObject();
+      return jb.toString();
+    }
   }
 
   // Simple holder for a generator's captured output
