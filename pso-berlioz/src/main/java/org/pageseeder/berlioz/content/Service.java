@@ -599,18 +599,12 @@ public final class Service {
    * @return a new identical immutable map.
    */
   private static Map<BerliozGenerator, List<Parameter>> immutableMap(Map<BerliozGenerator, List<Parameter>> original) {
-    if (original.isEmpty())
-      return Map.of();
-    else if (original.size() == 1) {
-      Entry<BerliozGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
-      return Map.of(entry.getKey(), immutableList(entry.getValue()));
-    } else {
-      Map<BerliozGenerator, List<Parameter>> map = new HashMap<>();
-      for (Entry<BerliozGenerator, List<Parameter>> entry : original.entrySet()) {
-        map.put(entry.getKey(), immutableList(entry.getValue()));
-      }
-      return Map.copyOf(map);
+    if (original.isEmpty()) return Map.of();
+    Map<BerliozGenerator, List<Parameter>> map = new HashMap<>(original.size());
+    for (Entry<BerliozGenerator, List<Parameter>> entry : original.entrySet()) {
+      map.put(entry.getKey(), immutableList(entry.getValue()));
     }
+    return Map.copyOf(map);
   }
 
   /**
@@ -620,13 +614,6 @@ public final class Service {
    * @return a new identical immutable map.
    */
   private static Map<BerliozGenerator, String> immutable3(Map<BerliozGenerator, String> original) {
-    if (original.isEmpty())
-      return Map.of();
-    else if (original.size() == 1) {
-      Entry<BerliozGenerator, String> entry = original.entrySet().iterator().next();
-      return Map.of(entry.getKey(), entry.getValue());
-    } else {
-      return Map.copyOf(original);
-    }
+    return original.isEmpty() ? Map.of() : Map.copyOf(original);
   }
 }
