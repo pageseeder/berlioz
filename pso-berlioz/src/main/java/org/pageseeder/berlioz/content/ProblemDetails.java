@@ -69,7 +69,8 @@ public final class ProblemDetails {
     this.title = title;
     this.detail = detail;
     this.instance = instance;
-    this.extensions = Collections.unmodifiableMap(new LinkedHashMap<>(extensions));
+    this.extensions = extensions.isEmpty() ? Map.of()
+        : Collections.unmodifiableMap(new LinkedHashMap<>(extensions));
   }
 
   /**
