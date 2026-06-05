@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.pageseeder.berlioz.content.ContentGenerator;
+import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
@@ -38,7 +38,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.2
  * @since 0.9.32
  */
 @SuppressWarnings("java:S6548") // intentional framework-level singleton; package-private and eagerly initialized
@@ -66,7 +66,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
   }
 
   @Override
-  public void generate(Service service, ContentGenerator generator, ContentStatus status, long etag, long process) {
+  public void generate(Service service, BerliozGenerator generator, ContentStatus status, long etag, long process) {
     BasicStats basic = this.stats.get(generator.getClass());
 
     // Create entry if it does not exist

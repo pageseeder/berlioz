@@ -25,7 +25,7 @@ class HttpContentRequestTest {
   static Path tmp;
 
   private HttpContentRequest request;
-  private ContentGenerator generator;
+  private BerliozGenerator generator;
   private Service service;
 
   @BeforeAll

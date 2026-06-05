@@ -18,15 +18,18 @@ package org.pageseeder.berlioz.content;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.util.Strings;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.slf4j.Logger;
@@ -38,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.2
  * @since 0.7
  */
 public final class Service {
@@ -76,22 +79,27 @@ public final class Service {
   /**
    * The list of generators associated with this service.
    */
-  private final List<ContentGenerator> generators;
+  private final List<BerliozGenerator> generators;
+
+  /**
+   * The union of output formats supported by all generators in this service.
+   */
+  private final Set<OutputType> supported;
 
   /**
    * Maps parameter specifications to a given generator instance.
    */
-  private final Map<ContentGenerator, List<Parameter>> allParameters;
+  private final Map<BerliozGenerator, List<Parameter>> allParameters;
 
   /**
    * Maps targets to a given generator instance.
    */
-  private final Map<ContentGenerator, String> targets;
+  private final Map<BerliozGenerator, String> targets;
 
   /**
    * Maps names to a given generator instance.
    */
-  private final Map<ContentGenerator, String> names;
+  private final Map<BerliozGenerator, String> names;
 
   /**
    * Creates a new service.
@@ -107,6 +115,7 @@ public final class Service {
     this.generators = immutableList(builder.generators);
     this.allParameters = immutableMap(builder.allParameters);
     this.cacheable = isCacheable(this.generators);
+    this.supported = computeSupported(this.generators);
     this.names = immutable3(builder.names);
     this.targets = immutable3(builder.targets);
   }
@@ -173,17 +182,29 @@ public final class Service {
    *
    * @return the list of generators for this service.
    */
-  public List<ContentGenerator> generators() {
+  public List<BerliozGenerator> generators() {
     return this.generators;
+  }
+
+  /**
+   * Returns the set of output formats supported by this service.
+   *
+   * <p>This is the intersection of the {@link BerliozGenerator#supported()} sets of all
+   * generators in this service. An empty set indicates a misconfigured service.</p>
+   *
+   * @return the supported output types; never {@code null}
+   */
+  public Set<OutputType> supported() {
+    return this.supported;
   }
 
   /**
    * Returns the list of parameter specifications for the given generator.
    *
-   * @param generator the content generator for which we need to parameters.
+   * @param generator the generator for which we need the parameters.
    * @return the list of parameter specifications for the given generator.
    */
-  public List<Parameter> parameters(ContentGenerator generator) {
+  public List<Parameter> parameters(BerliozGenerator generator) {
     List<Parameter> parameters = this.allParameters.get(generator);
     if (parameters == null) return List.of();
     return parameters;
@@ -192,20 +213,20 @@ public final class Service {
   /**
    * Returns the target of the given generator.
    *
-   * @param generator the content generator for which we need the target.
+   * @param generator the generator for which we need the target.
    * @return the target if any (might be <code>null</code>).
    */
-  public @Nullable String target(ContentGenerator generator) {
+  public @Nullable String target(BerliozGenerator generator) {
     return this.targets.get(generator);
   }
 
   /**
    * Returns the name of the given generator.
    *
-   * @param generator the content generator for which we need the name.
+   * @param generator the generator for which we need the name.
    * @return the name.
    */
-  public String name(ContentGenerator generator) {
+  public String name(BerliozGenerator generator) {
     String name = this.names.get(generator);
     return name != null ? name : Strings.toKebabCase(generator.getClass().getSimpleName(), "generator");
   }
@@ -216,7 +237,7 @@ public final class Service {
    * @return <code>true</code> if the generator affects the status of the service;
    *         <code>false</code> otherwise.
    */
-  public boolean affectStatus(ContentGenerator generator) {
+  public boolean affectStatus(BerliozGenerator generator) {
     if (this.rule.appliesToAll()) return true;
     SelectType use = this.rule.use();
     switch (use) {
@@ -292,7 +313,7 @@ public final class Service {
     }
 
     // Generators
-    for (ContentGenerator generator : this.generators) {
+    for (BerliozGenerator generator : this.generators) {
       String target = target(generator);
       List<Parameter> parameters = parameters(generator);
       xml.openElement("generator", !parameters.isEmpty());
@@ -322,11 +343,27 @@ public final class Service {
    * @return <code>true</code> if all generators implement the {@link Cacheable} interface;
    *         <code>false</code> otherwise.
    */
-  static boolean isCacheable(List<ContentGenerator> generators) {
-    for (ContentGenerator g : generators) {
+  static boolean isCacheable(List<BerliozGenerator> generators) {
+    for (BerliozGenerator g : generators) {
       if (!(g instanceof Cacheable)) return false;
     }
     return true;
+  }
+
+  /**
+   * Computes the intersection of supported output formats across all generators.
+   *
+   * @param generators the list of generators.
+   * @return the intersection of their supported sets; empty if any generator's set is disjoint.
+   */
+  static Set<OutputType> computeSupported(List<BerliozGenerator> generators) {
+    if (generators.isEmpty()) return Set.of();
+    Set<OutputType> result = new HashSet<>(generators.get(0).supported());
+    for (int i = 1; i < generators.size(); i++) {
+      result.retainAll(generators.get(i).supported());
+      if (result.isEmpty()) return Set.of();
+    }
+    return Set.copyOf(result);
   }
 
   /**
@@ -366,22 +403,22 @@ public final class Service {
     /**
      * The list of generators associated with this service.
      */
-    private final List<ContentGenerator> generators = new ArrayList<>();
+    private final List<BerliozGenerator> generators = new ArrayList<>();
 
     /**
      * Maps parameter specifications to a given generator instance.
      */
-    private final Map<ContentGenerator, List<Parameter>> allParameters = new HashMap<>();
+    private final Map<BerliozGenerator, List<Parameter>> allParameters = new HashMap<>();
 
     /**
      * Maps names to a given generator instance.
      */
-    private final Map<ContentGenerator, String> names = new HashMap<>();
+    private final Map<BerliozGenerator, String> names = new HashMap<>();
 
     /**
      * Maps targets to a given generator instance.
      */
-    private final Map<ContentGenerator, String> targets = new HashMap<>();
+    private final Map<BerliozGenerator, String> targets = new HashMap<>();
 
     /**
      * Returns the ID of the service to build.
@@ -464,7 +501,7 @@ public final class Service {
      */
     public Builder parameter(@Nullable Parameter p) {
       if (!this.generators.isEmpty() && p != null) {
-        ContentGenerator generator = this.generators.get(this.generators.size() - 1);
+        BerliozGenerator generator = this.generators.get(this.generators.size() - 1);
         List<Parameter> parameters = this.allParameters.computeIfAbsent(generator, k -> new ArrayList<>());
         parameters.add(p);
       }
@@ -472,39 +509,39 @@ public final class Service {
     }
 
     /**
-     * Adds a content generator to this service.
+     * Adds a generator to this service.
      *
-     * @param g the content generator to add to this service.
+     * @param g the generator to add to this service.
      * @return this builder for easy chaining.
      */
-    public Builder add(ContentGenerator g) {
+    public Builder add(BerliozGenerator g) {
       this.generators.add(g);
       return this;
     }
 
     /**
-     * Sets the target of the latest content generator added.
+     * Sets the target of the latest generator added.
      *
-     * @param target the target for the latest content generator.
+     * @param target the target for the latest generator.
      * @return this builder for easy chaining.
      */
     public Builder target(@Nullable String target) {
       if (!this.generators.isEmpty() && target != null) {
-        ContentGenerator generator = this.generators.get(this.generators.size() - 1);
+        BerliozGenerator generator = this.generators.get(this.generators.size() - 1);
         this.targets.put(generator, target);
       }
       return this;
     }
 
     /**
-     * Sets the name of the latest content generator added.
+     * Sets the name of the latest generator added.
      *
-     * @param name the name for the latest content generator.
+     * @param name the name for the latest generator.
      * @return this builder for easy chaining.
      */
     public Builder name(@Nullable String name) {
       if (!this.generators.isEmpty() && name != null) {
-        ContentGenerator generator = this.generators.get(this.generators.size() - 1);
+        BerliozGenerator generator = this.generators.get(this.generators.size() - 1);
         this.names.put(generator, name);
       }
       return this;
@@ -561,15 +598,15 @@ public final class Service {
    * @param original the map maintained by the builder.
    * @return a new identical immutable map.
    */
-  private static Map<ContentGenerator, List<Parameter>> immutableMap(Map<ContentGenerator, List<Parameter>> original) {
+  private static Map<BerliozGenerator, List<Parameter>> immutableMap(Map<BerliozGenerator, List<Parameter>> original) {
     if (original.isEmpty())
       return Map.of();
     else if (original.size() == 1) {
-      Entry<ContentGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
+      Entry<BerliozGenerator, List<Parameter>> entry = original.entrySet().iterator().next();
       return Map.of(entry.getKey(), immutableList(entry.getValue()));
     } else {
-      Map<ContentGenerator, List<Parameter>> map = new HashMap<>();
-      for (Entry<ContentGenerator, List<Parameter>> entry : original.entrySet()) {
+      Map<BerliozGenerator, List<Parameter>> map = new HashMap<>();
+      for (Entry<BerliozGenerator, List<Parameter>> entry : original.entrySet()) {
         map.put(entry.getKey(), immutableList(entry.getValue()));
       }
       return Map.copyOf(map);
@@ -582,11 +619,11 @@ public final class Service {
    * @param original the map maintained by the builder.
    * @return a new identical immutable map.
    */
-  private static Map<ContentGenerator, String> immutable3(Map<ContentGenerator, String> original) {
+  private static Map<BerliozGenerator, String> immutable3(Map<BerliozGenerator, String> original) {
     if (original.isEmpty())
       return Map.of();
     else if (original.size() == 1) {
-      Entry<ContentGenerator, String> entry = original.entrySet().iterator().next();
+      Entry<BerliozGenerator, String> entry = original.entrySet().iterator().next();
       return Map.of(entry.getKey(), entry.getValue());
     } else {
       return Map.copyOf(original);

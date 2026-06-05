@@ -139,7 +139,8 @@ final class ServiceTest {
 
   @Test
   void testIsCacheable_mixedGenerators() {
-    Service s = defaultBuilder("svc").add(new NoContent()).add((req, xml) -> {}).build();
+    ContentGenerator nonCacheable2 = (req, xml) -> {};
+    Service s = defaultBuilder("svc").add(new NoContent()).add(nonCacheable2).build();
     Assertions.assertFalse(s.isCacheable());
   }
 

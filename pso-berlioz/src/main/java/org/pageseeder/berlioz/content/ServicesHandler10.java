@@ -43,7 +43,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.2
  * @since 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
@@ -405,13 +405,19 @@ final class ServicesHandler10 extends DefaultHandler {
   @SuppressWarnings("java:S1192") //No need to create a constant for parts of the warning message
   private void handleGenerator(Attributes atts) throws SAXException {
     String className = atts.getValue("class");
-    ContentGenerator generator;
+    BerliozGenerator generator;
     try {
       // Allow unspecified class (defaults to no content)
       if (className == null || className.isEmpty()) {
         generator = new NoContent();
       } else {
-        generator = (ContentGenerator)Class.forName(className).getDeclaredConstructor().newInstance();
+        Object instance = Class.forName(className).getDeclaredConstructor().newInstance();
+        if (instance instanceof BerliozGenerator) {
+          generator = (BerliozGenerator) instance;
+        } else {
+          warning("Class " + className + " does not implement BerliozGenerator or ContentGenerator — skipping");
+          return;
+        }
       }
       this.builder.add(generator);
       this.builder.target(atts.getValue("target"));

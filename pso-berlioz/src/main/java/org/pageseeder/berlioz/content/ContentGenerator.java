@@ -16,22 +16,34 @@
 package org.pageseeder.berlioz.content;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
- * An interface to generate XML content.
+ * A legacy interface to generate XML content by writing to an {@link XMLWriter}.
  *
  * <p>Each content generator performs a particular function and should write the results onto
  * the given XML writer.
  *
+ * <p>This interface is preserved for backward compatibility. New generators should implement
+ * one of the typed generator interfaces ({@link XmlGenerator}, {@link JsonGenerator},
+ * {@link Generator}, or {@link RawGenerator}) and return a {@link Response} instead of
+ * signalling state via the request object.
+ *
  * @author Christophe Lauret
  *
- * @version 0.9.3
+ * @version 0.13.2
  * @since 0.6
  */
-public interface ContentGenerator {
+public interface ContentGenerator extends BerliozGenerator {
+
+  @Override
+  default Set<OutputType> supported() {
+    return Set.of(OutputType.XML);
+  }
 
   /**
    * Produces the actual content.

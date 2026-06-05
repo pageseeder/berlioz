@@ -22,7 +22,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version 0.9.16
+ * @version 0.13.2
  * @since 0.9.16
  */
 @Beta
@@ -37,6 +37,6 @@ public interface GeneratorListener {
    * @param etag      The time taken to generate the etag in nanoseconds
    * @param process   The time taken to process the request in nanoseconds
    */
-  void generate(Service service, ContentGenerator generator, ContentStatus status, long etag, long process);
+  void generate(Service service, BerliozGenerator generator, ContentStatus status, long etag, long process);
 
 }

@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.content.ContentGenerator;
+import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Service;
@@ -30,7 +30,7 @@ import org.pageseeder.berlioz.content.Service;
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.13.2
  * @since 0.9
  */
 public final class HttpContentRequest extends HttpRequestWrapper implements ContentRequest {
@@ -38,7 +38,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
   /**
    * Generator for which the request is designed for.
    */
-  private final ContentGenerator generator;
+  private final BerliozGenerator generator;
 
   /**
    * Service the generator is part of.
@@ -79,7 +79,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    * @throws IllegalArgumentException If the request is <code>null</code>.
    */
   protected HttpContentRequest(CoreHttpRequest core, Map<String, String> parameters,
-      ContentGenerator generator, Service service, int order) {
+      BerliozGenerator generator, Service service, int order) {
     super(core, parameters);
     this.generator = Objects.requireNonNull(generator, "The generator is required");
     this.service = Objects.requireNonNull(service, "The service is required");
@@ -135,7 +135,7 @@ public final class HttpContentRequest extends HttpRequestWrapper implements Cont
    *
    * @return the generator for which this request is used for.
    */
-  public ContentGenerator generator() {
+  public BerliozGenerator generator() {
     return this.generator;
   }
 

@@ -30,21 +30,27 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Parameter;
+import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.http.ServerTimingHeader;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ProfileFormat;
+import org.pageseeder.berlioz.xml.XmlAppendable;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
@@ -57,7 +63,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.2
  * @since 0.7
  */
 public final class XmlResponse {
@@ -162,7 +168,7 @@ public final class XmlResponse {
     StringBuilder etag = new StringBuilder();
     if (cacheable) {
       for (HttpContentRequest request : this.requests) {
-        ContentGenerator generator = request.generator();
+        BerliozGenerator generator = request.generator();
         // Check if cacheable
         if (generator instanceof Cacheable) {
           String localTag = retrieveETag(request);
@@ -181,7 +187,6 @@ public final class XmlResponse {
    * Returns the status of this service response.
    *
    * @return the status of this service response.
-   * @since 0.8.2
    */
   public ContentStatus getStatus() {
     ContentStatus s = this.status;
@@ -276,7 +281,7 @@ public final class XmlResponse {
    * @throws IOException Should an I/O error occur while writing XML.
    */
   private void toXML(HttpContentRequest request, int position, Service service, XMLWriter xml) throws IOException {
-    ContentGenerator generator = request.generator();
+    BerliozGenerator generator = request.generator();
     // Generate the main element
     xml.openElement("content", true);
     xml.attribute("generator", generator.getClass().getName());
@@ -300,33 +305,48 @@ public final class XmlResponse {
       xml.attribute("deprecated", "true");
     }
 
-    // Let's invoke the generator
+    // Invoke the generator
     String result = null;
     BerliozException error = null;
-    ContentStatus generatorStatus = ContentStatus.OK;
+    Response response = Response.ok();
     long start = System.nanoTime();
     try {
-      // Normal response
-      StringWriter writer = new StringWriter();
-      XMLWriter ok = new XMLWriterImpl(writer);
-      generator.process(request, ok);
-      result = writer.toString();
-      generatorStatus = request.getStatus();
+      StringWriter sw = new StringWriter();
+      if (generator instanceof XmlGenerator) {
+        XmlAppendable<StringWriter> xw = new XmlAppendable<>(sw);
+        response = ((XmlGenerator) generator).generate(request, xw);
+        xw.flush();
+      } else if (generator instanceof Generator) {
+        XmlOutputAdapter oa = new XmlOutputAdapter(new XmlAppendable<>(sw));
+        response = ((Generator) generator).generate(request, oa);
+        oa.flush();
+      } else if (generator instanceof ContentGenerator) {
+        XMLWriter legacyXml = new XMLWriterImpl(sw);
+        ((ContentGenerator) generator).process(request, legacyXml);
+        legacyXml.flush();
+        response = legacyResponse(request);
+      } else {
+        LOGGER.warn("Unsupported generator type {} — no content written", generator.getClass().getName());
+      }
+      result = sw.toString();
     } catch (InvalidParameterException ex) {
       error = handleError(ex, generator);
-      generatorStatus = ContentStatus.BAD_REQUEST;
+      response = Response.status(ContentStatus.BAD_REQUEST);
     } catch (Exception ex) {
-      // We wrap any exception in a Berlioz Exception
       error = handleError(ex, generator);
-      generatorStatus = ContentStatus.INTERNAL_SERVER_ERROR;
+      response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
     }
 
     long end = System.nanoTime();
 
-    // Update Status
+    // Aggregate this generator's response into the service-level outcome.
+    // handleStatus applies ServiceStatusRule (highest/lowest code wins) and returns
+    // true only if this generator's status became the new service status. The redirect
+    // is kept only from the generator whose status actually won.
+    ContentStatus generatorStatus = response.status();
     boolean wasSet = handleStatus(generatorStatus, generator, service);
-    if (wasSet && ContentStatus.isRedirect(generatorStatus)) {
-      this.redirect = request.getRedirectURL();
+    if (wasSet && response.isRedirect()) {
+      this.redirect = response.redirectLocation();
     }
     xml.attribute("status", generatorStatus.toString());
     if (this.profile) {
@@ -344,6 +364,7 @@ public final class XmlResponse {
     if (l != null) {
       l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
     }
+
 
     // Write the XML
     if (error != null) {
@@ -371,7 +392,7 @@ public final class XmlResponse {
     Service service = match.service();
     List<HttpContentRequest> requests = new ArrayList<>();
     int order = 0;
-    for (ContentGenerator generator : service.generators()) {
+    for (BerliozGenerator generator : service.generators()) {
       List<Parameter> pconfig = service.parameters(generator);
       if (pconfig.isEmpty()) {
         // No specific parameters, return a request using the common parameters
@@ -398,7 +419,7 @@ public final class XmlResponse {
    *
    * @return a Berlioz exception for immediate use.
    */
-  private BerliozException handleError(Exception exception, ContentGenerator generator) {
+  private BerliozException handleError(Exception exception, BerliozGenerator generator) {
     LOGGER.warn("Handling {} thrown by {}", exception.getClass().getName(), generator.getClass().getName());
     BerliozException bex = toBerliozException(exception);
     accumulateError(bex);
@@ -449,7 +470,7 @@ public final class XmlResponse {
    * @return <code>true</code> if the overall status was set as a result of this method;
    *         <code>false</code> otherwise.
    */
-  private boolean handleStatus(ContentStatus status, ContentGenerator generator, Service service) {
+  private boolean handleStatus(ContentStatus status, BerliozGenerator generator, Service service) {
     if (!service.affectStatus(generator)) return false;
     CodeRule rule = service.rule().rule();
     ContentStatus current = this.status;
@@ -459,6 +480,20 @@ public final class XmlResponse {
         || (rule == CodeRule.LOWEST && status.code() < current.code());
     if (update) this.status = status;
     return update;
+  }
+
+  /**
+   * Converts the status set by a legacy {@link ContentGenerator} on the request into a {@link Response}.
+   *
+   * @param request the request the legacy generator wrote its status to.
+   * @return the corresponding {@code Response}
+   */
+  private static Response legacyResponse(HttpContentRequest request) {
+    ContentStatus status = request.getStatus();
+    String redirect = request.getRedirectURL();
+    if (redirect != null) return Response.redirect(status, redirect);
+    if (status == ContentStatus.OK) return Response.ok();
+    return Response.status(status);
   }
 
   /**
@@ -473,7 +508,7 @@ public final class XmlResponse {
     if (this.etags.containsKey(key)) {
       etag = this.etags.get(key);
     } else {
-      ContentGenerator generator = request.generator();
+      BerliozGenerator generator = request.generator();
       if (generator instanceof Cacheable) {
         long start = System.nanoTime();
         etag = ((Cacheable)generator).getETag(request);
