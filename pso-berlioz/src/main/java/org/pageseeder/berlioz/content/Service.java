@@ -72,6 +72,11 @@ public final class Service {
   private final String flags;
 
   /**
+   * Whether this service returns generator output directly, without a Berlioz envelope.
+   */
+  private final boolean direct;
+
+  /**
    * How the status code of this service is calculated.
    */
   private final ServiceStatusRule rule;
@@ -112,6 +117,7 @@ public final class Service {
     this.rule = Objects.requireNonNull(builder.rule, "There must be a rule for this service");
     this.cache = Objects.requireNonNull(builder.cache, "The cache configuration cannot be null, use empty string for no cache");
     this.flags = Objects.requireNonNull(builder.flags, "The flags configuration cannot be null, use empty string for no flags");
+    this.direct = builder.direct;
     this.generators = immutableList(builder.generators);
     this.allParameters = immutableMap(builder.allParameters);
     this.cacheable = isCacheable(this.generators);
@@ -154,6 +160,19 @@ public final class Service {
    */
   public String flags() {
     return this.flags;
+  }
+
+  /**
+   * Returns whether this service returns generator output directly, without a Berlioz envelope.
+   *
+   * <p>When {@code true}, the single generator's output becomes the complete response body.
+   * The {@code <root>} service wrapper, {@code XmlResponseHeader}, and {@code <content>} elements
+   * are omitted for XML; the generator name wrapper is omitted for JSON.</p>
+   *
+   * @return {@code true} if the service is configured as direct; {@code false} otherwise.
+   */
+  public boolean isDirect() {
+    return this.direct;
   }
 
   /**
@@ -285,6 +304,9 @@ public final class Service {
     if (!this.flags.isEmpty()) {
       xml.attribute("flags", this.flags);
     }
+    if (this.direct) {
+      xml.attribute("direct", "true");
+    }
 
     // Caching information
     xml.attribute("cacheable", Boolean.toString(this.cacheable));
@@ -396,6 +418,11 @@ public final class Service {
     private String flags = "";
 
     /**
+     * Whether this service returns generator output directly, without a Berlioz envelope.
+     */
+    private boolean direct = false;
+
+    /**
      * Maps targets to a given generator instance.
      */
     private @Nullable ServiceStatusRule rule;
@@ -479,6 +506,17 @@ public final class Service {
      */
     public Builder flags(@Nullable String flags) {
       this.flags = flags != null ? flags : "";
+      return this;
+    }
+
+    /**
+     * Sets whether this service returns generator output directly, without a Berlioz envelope.
+     *
+     * @param direct {@code true} for direct output; {@code false} (default) for a wrapped response.
+     * @return this builder for easy chaining.
+     */
+    public Builder direct(boolean direct) {
+      this.direct = direct;
       return this;
     }
 
@@ -570,6 +608,7 @@ public final class Service {
       this.id = null;
       this.cache = "";
       this.flags = "";
+      this.direct = false;
       this.generators.clear();
       this.allParameters.clear();
       this.names.clear();

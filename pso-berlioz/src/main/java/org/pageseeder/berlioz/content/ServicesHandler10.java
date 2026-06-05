@@ -213,6 +213,7 @@ final class ServicesHandler10 extends DefaultHandler {
         this.builder.id(id != null? id : "");
         this.builder.cache(atts.getValue("cache-control"));
         this.builder.flags(atts.getValue("flags"));
+        this.builder.direct("true".equals(atts.getValue("direct")));
         handleMethod(atts.getValue("method"));
         break;
 
@@ -265,6 +266,9 @@ final class ServicesHandler10 extends DefaultHandler {
       HttpMethod httpMethod = this.method;
       if (!service.generators().isEmpty() && service.supported().isEmpty()) {
         warning("Service "+service.id()+" has generators with disjoint output formats — no format can be served (e.g. XmlGenerator mixed with JsonGenerator)");
+      }
+      if (service.isDirect() && service.generators().size() != 1) {
+        warning("Service "+service.id()+" is configured as direct but has "+service.generators().size()+" generators — direct requires exactly one generator");
       }
       if (this.patterns.isEmpty()) {
         warning("No URI pattern match service "+service.id()+" - service will be ignored");
