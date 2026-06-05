@@ -28,10 +28,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Package-private utilities shared between {@link XmlResponse} and {@link JsonResponse}.
@@ -45,20 +47,27 @@ final class GeneratorDispatch {
   /**
    * Headers that generators must not set — owned by the framework, service config, or security layer.
    * Any header in this set will be logged as a warning and dropped when a generator tries to set it.
+   *
+   * <p>Lookups are case-insensitive because HTTP header names are case-insensitive (RFC 7230 §3.2).</p>
    */
-  static final Set<String> FRAMEWORK_HEADERS = Set.of(
-      "Location",           // use Response.redirect()
-      "ETag",               // use Cacheable interface
-      "Last-Modified",      // framework caching concern
-      "Cache-Control",      // service-level cache="" attribute
-      "Expires",            // framework caching concern
-      "Vary",               // framework content-negotiation concern
-      "Set-Cookie",         // security layer, not generator scope
-      "Content-Encoding",   // compression layer (BerliozOption.HTTP_COMPRESSION)
-      "Transfer-Encoding",  // container concern
-      "Server",             // container concern
-      "Date"                // container concern
-  );
+  static final Set<String> FRAMEWORK_HEADERS;
+  static {
+    TreeSet<String> s = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    Collections.addAll(s,
+        "Location",           // use Response.redirect()
+        "ETag",               // use Cacheable interface
+        "Last-Modified",      // framework caching concern
+        "Cache-Control",      // service-level cache="" attribute
+        "Expires",            // framework caching concern
+        "Vary",               // framework content-negotiation concern
+        "Set-Cookie",         // security layer, not generator scope
+        "Content-Encoding",   // compression layer (BerliozOption.HTTP_COMPRESSION)
+        "Transfer-Encoding",  // container concern
+        "Server",             // container concern
+        "Date"                // container concern
+    );
+    FRAMEWORK_HEADERS = Collections.unmodifiableSet(s);
+  }
 
   /**
    * Creates the list of per-generator HTTP requests for a matched service.
