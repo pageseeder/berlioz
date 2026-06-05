@@ -326,7 +326,7 @@ public final class BerliozServlet extends HttpServlet {
     boolean jsonRequest = servletPath != null && servletPath.endsWith(".json");
     boolean serviceSupportsJson = jsonRequest && match.service().supported().contains(OutputType.JSON);
 
-    if (jsonRequest && serviceSupportsJson) {
+    if (serviceSupportsJson) {
       processJson(req, res, config, match, method, code, profile, serverTiming, includeContent);
     } else {
       processXml(req, res, config, match, method, code, profile, serverTiming, includeContent);
@@ -347,9 +347,17 @@ public final class BerliozServlet extends HttpServlet {
       res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
     }
 
-    // No caching support on the JSON path yet
-    res.setDateHeader(HttpHeaders.EXPIRES, 0);
-    res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+    // Apply cache headers based on service configuration (no ETag-based conditional requests yet)
+    boolean cacheable = code == null && match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD);
+    if (cacheable) {
+      res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
+      String cc = match.service().cache();
+      if (cc.isEmpty()) cc = config.getCacheControl();
+      res.setHeader(HttpHeaders.CACHE_CONTROL, toSafeHeader(cc));
+    } else {
+      res.setDateHeader(HttpHeaders.EXPIRES, 0);
+      res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+    }
 
     // Generate JSON content
     long start = System.nanoTime();
