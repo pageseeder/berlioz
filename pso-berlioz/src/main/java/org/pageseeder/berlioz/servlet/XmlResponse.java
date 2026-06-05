@@ -252,22 +252,7 @@ public final class XmlResponse {
     Response response = Response.ok();
     long start = System.nanoTime();
     try {
-      if (generator instanceof XmlGenerator) {
-        XmlAppendable<StringWriter> xw = new XmlAppendable<>(sw);
-        response = ((XmlGenerator) generator).generate(request, xw);
-        xw.flush();
-      } else if (generator instanceof Generator) {
-        XmlOutputAdapter oa = new XmlOutputAdapter(new XmlAppendable<>(sw));
-        response = ((Generator) generator).generate(request, oa);
-        oa.flush();
-      } else if (generator instanceof ContentGenerator) {
-        XMLWriter legacyXml = new XMLWriterImpl(sw);
-        ((ContentGenerator) generator).process(request, legacyXml);
-        legacyXml.flush();
-        response = legacyResponse(request);
-      } else {
-        LOGGER.warn("Unsupported generator type {} — no content written", generator.getClass().getName());
-      }
+      response = dispatchXml(generator, request, sw);
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.BAD_REQUEST);
@@ -281,6 +266,35 @@ public final class XmlResponse {
     GeneratorListener l = listener.get();
     if (l != null) l.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
     return sw.toString();
+  }
+
+  /**
+   * Dispatches a single generator for XML output, writing its content into {@code sw} and
+   * returning the generator's {@link Response}. Handles all typed generator subtypes and the
+   * legacy {@link ContentGenerator}.
+   */
+  private static Response dispatchXml(BerliozGenerator generator, HttpContentRequest request,
+      StringWriter sw) throws IOException, BerliozException {
+    if (generator instanceof XmlGenerator) {
+      XmlAppendable<StringWriter> xw = new XmlAppendable<>(sw);
+      Response resp = ((XmlGenerator) generator).generate(request, xw);
+      xw.flush();
+      return resp;
+    }
+    if (generator instanceof Generator) {
+      XmlOutputAdapter oa = new XmlOutputAdapter(new XmlAppendable<>(sw));
+      Response resp = ((Generator) generator).generate(request, oa);
+      oa.flush();
+      return resp;
+    }
+    if (generator instanceof ContentGenerator) {
+      XMLWriter legacyXml = new XMLWriterImpl(sw);
+      ((ContentGenerator) generator).process(request, legacyXml);
+      legacyXml.flush();
+      return legacyResponse(request);
+    }
+    LOGGER.warn("Unsupported generator type {} — no content written", generator.getClass().getName());
+    return Response.ok();
   }
 
   // Static configuration
@@ -345,24 +359,9 @@ public final class XmlResponse {
     BerliozException error = null;
     Response response = Response.ok();
     long start = System.nanoTime();
+    StringWriter sw = new StringWriter();
     try {
-      StringWriter sw = new StringWriter();
-      if (generator instanceof XmlGenerator) {
-        XmlAppendable<StringWriter> xw = new XmlAppendable<>(sw);
-        response = ((XmlGenerator) generator).generate(request, xw);
-        xw.flush();
-      } else if (generator instanceof Generator) {
-        XmlOutputAdapter oa = new XmlOutputAdapter(new XmlAppendable<>(sw));
-        response = ((Generator) generator).generate(request, oa);
-        oa.flush();
-      } else if (generator instanceof ContentGenerator) {
-        XMLWriter legacyXml = new XMLWriterImpl(sw);
-        ((ContentGenerator) generator).process(request, legacyXml);
-        legacyXml.flush();
-        response = legacyResponse(request);
-      } else {
-        LOGGER.warn("Unsupported generator type {} — no content written", generator.getClass().getName());
-      }
+      response = dispatchXml(generator, request, sw);
       result = sw.toString();
     } catch (InvalidParameterException ex) {
       error = outcome.handleError(ex, generator);
@@ -418,7 +417,18 @@ public final class XmlResponse {
   private static Response legacyResponse(HttpContentRequest request) {
     ContentStatus status = request.getStatus();
     String redirect = request.getRedirectURL();
-    if (redirect != null) return Response.redirect(status, redirect);
+    if (redirect != null && ContentStatus.isRedirect(status)) {
+      return Response.redirect(status, redirect);
+    }
+    if (redirect != null) {
+      // Redirect URL set without a redirect status — discard the URL (old behaviour: URL was ignored)
+      LOGGER.warn("Legacy generator set redirect URL with non-redirect status {} — URL ignored", status);
+    }
+    if (ContentStatus.isRedirect(status)) {
+      // Redirect status set without a URL — cannot construct a valid redirect response
+      LOGGER.warn("Legacy generator set redirect status {} without a redirect URL", status);
+      return Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+    }
     if (status == ContentStatus.OK) return Response.ok();
     return Response.status(status);
   }
