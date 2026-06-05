@@ -123,9 +123,22 @@ public enum ContentStatus {
   /**
    * The requested resource resides temporarily under a different URI.
    *
+   * <p>Unlike {@link #FOUND}, the request method and body must not change when reissuing the request.</p>
+   *
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.4.7">HTTP/1.1 - 6.4.7. 307 Temporary Redirect</a>
    */
   TEMPORARY_REDIRECT(307),
+
+  /**
+   * The requested resource has been permanently moved to a new URI, and the request method must not change.
+   *
+   * <p>This is the method-preserving counterpart of {@link #MOVED_PERMANENTLY}: use it when the
+   * redirect target should always be used for future requests <em>and</em> the original method
+   * (e.g. POST) must be repeated at the new URI rather than changed to GET.</p>
+   *
+   * @see <a href="https://tools.ietf.org/html/rfc7538">RFC 7538 – 308 Permanent Redirect</a>
+   */
+  PERMANENT_REDIRECT(308),
 
   // Client Error 4xx
   // ----------------------------------------------------------------------------------------------

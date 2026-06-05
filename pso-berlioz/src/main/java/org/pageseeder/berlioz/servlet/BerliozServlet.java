@@ -378,8 +378,8 @@ public final class BerliozServlet extends HttpServlet {
       if (HttpRequests.isSafeRedirectURL(url, req)) {
         LOGGER.debug("Redirecting to: {} with {}", url, status.code());
         res.reset();
-        res.sendRedirect(url);
         res.setStatus(status.code());
+        res.setHeader("Location", res.encodeRedirectURL(url));
       } else {
         LOGGER.warn("Blocked unsafe redirect URL: {}", url);
         sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
@@ -478,8 +478,8 @@ public final class BerliozServlet extends HttpServlet {
       if (HttpRequests.isSafeRedirectURL(url, req)) {
         LOGGER.debug("Redirecting to: {} with {}", url, status.code());
         res.reset();
-        res.sendRedirect(url);
         res.setStatus(status.code());
+        res.setHeader("Location", res.encodeRedirectURL(url));
       } else {
         LOGGER.warn("Blocked unsafe redirect URL: {}", url);
         sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
