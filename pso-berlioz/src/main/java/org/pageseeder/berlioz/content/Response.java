@@ -66,7 +66,7 @@ public final class Response {
     this.status = status;
     this.redirectLocation = redirectLocation;
     this.problem = problem;
-    this.headers = Collections.unmodifiableMap(headers);
+    this.headers = headers; // all callers guarantee immutability
   }
 
   // --- Factories -------------------------------------------------------------------------------
@@ -147,7 +147,7 @@ public final class Response {
     Objects.requireNonNull(value, "value");
     Map<String, String> copy = new LinkedHashMap<>(this.headers);
     copy.put(name, value);
-    return new Response(this.status, this.redirectLocation, this.problem, copy);
+    return new Response(this.status, this.redirectLocation, this.problem, Map.copyOf(copy));
   }
 
   // --- Accessors -------------------------------------------------------------------------------
