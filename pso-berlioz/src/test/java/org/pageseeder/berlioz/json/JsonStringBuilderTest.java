@@ -69,4 +69,35 @@ class JsonStringBuilderTest {
     Assertions.assertEquals("{\"x\":1}", builder.toString());
   }
 
+  @Test
+  void testFieldRaw_singleEntry() {
+    JsonStringBuilder builder = JsonStringBuilder.create();
+    builder.startObject();
+    builder.fieldRaw("result", "{\"a\":1}");
+    builder.endObject();
+    builder.flush();
+    Assertions.assertEquals("{\"result\":{\"a\":1}}", builder.toString());
+  }
+
+  @Test
+  void testFieldRaw_multipleEntries() {
+    JsonStringBuilder builder = JsonStringBuilder.create();
+    builder.startObject();
+    builder.fieldRaw("gen-a", "[1,2]");
+    builder.fieldRaw("gen-b", "null");
+    builder.endObject();
+    builder.flush();
+    Assertions.assertEquals("{\"gen-a\":[1,2],\"gen-b\":null}", builder.toString());
+  }
+
+  @Test
+  void testFieldRaw_escapesNameSpecialChars() {
+    JsonStringBuilder builder = JsonStringBuilder.create();
+    builder.startObject();
+    builder.fieldRaw("k\"ey", "true");
+    builder.endObject();
+    builder.flush();
+    Assertions.assertEquals("{\"k\\\"ey\":true}", builder.toString());
+  }
+
 }

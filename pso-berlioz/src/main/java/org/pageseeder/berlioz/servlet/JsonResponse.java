@@ -192,22 +192,17 @@ public final class JsonResponse {
     }
 
     // Envelope: {"name1": <json1>, "name2": <json2>} — even for a single generator
-    StringBuilder sb = new StringBuilder("{");
-    boolean first = true;
+    JsonStringBuilder jb = JsonStringBuilder.create();
+    jb.startObject();
     for (GeneratorResult r : results) {
-      if (!first) sb.append(',');
-      first = false;
-      sb.append('"').append(r.name).append("\":");
-      if (r.error != null) {
-        sb.append(errorJson(r.error));
-      } else if (r.json != null && !r.json.isEmpty()) {
-        sb.append(r.json);
-      } else {
-        sb.append("null");
-      }
+      String value = r.error != null ? errorJson(r.error)
+          : r.json != null && !r.json.isEmpty() ? r.json
+          : "null";
+      jb.fieldRaw(r.name, value);
     }
-    sb.append('}');
-    return sb.toString();
+    jb.endObject();
+    jb.flush();
+    return jb.toString();
   }
 
   private static String errorJson(BerliozException ex) {

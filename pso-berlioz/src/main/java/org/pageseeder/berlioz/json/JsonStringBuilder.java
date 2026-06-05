@@ -35,6 +35,9 @@ public final class JsonStringBuilder implements JsonWriter {
 
   private final JsonWriter json;
 
+  /** Tracks whether a comma is needed before the next {@link #fieldRaw} entry. */
+  private boolean rawCommaNeeded = false;
+
   private JsonStringBuilder() {
     this.sw = new StringWriter();
     this.json = Json.newWriter(this.sw);
@@ -148,6 +151,38 @@ public final class JsonStringBuilder implements JsonWriter {
   @Override
   public JsonWriter field(String name, long value) {
     this.json.field(name, value);
+    return this;
+  }
+
+  /**
+   * Writes a JSON field whose value is a pre-serialized JSON fragment directly into the buffer.
+   *
+   * <p>Intended for assembling envelope objects where each value is already a complete JSON
+   * fragment (object, array, or scalar). The field name is properly escaped; the value is
+   * written verbatim — callers must ensure it is valid JSON.</p>
+   *
+   * <p>Do not mix with the regular {@link #name}/{@link #value} methods in the same object
+   * context; comma tracking for {@code fieldRaw} is independent of the inner writer's state.</p>
+   *
+   * @param name    the field name; special characters are JSON-escaped.
+   * @param rawJson a valid, pre-serialized JSON fragment used as the field value.
+   * @return this instance.
+   */
+  public JsonStringBuilder fieldRaw(String name, String rawJson) {
+    // Flush any buffered structural tokens (e.g. '{' from startObject) before raw-writing.
+    this.json.flush();
+    if (this.rawCommaNeeded) this.sw.append(',');
+    this.rawCommaNeeded = true;
+    this.sw.append('"');
+    for (int i = 0, len = name.length(); i < len; i++) {
+      char c = name.charAt(i);
+      if      (c == '"')  this.sw.append("\\\"");
+      else if (c == '\\') this.sw.append("\\\\");
+      else if (c < 0x20)  this.sw.append(String.format("\\u%04x", (int) c));
+      else                this.sw.append(c);
+    }
+    this.sw.append("\":");
+    this.sw.append(rawJson);
     return this;
   }
 
