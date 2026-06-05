@@ -184,14 +184,14 @@ public final class JsonResponse {
   private String assemble(List<GeneratorResult> results, Service service) {
     if (results.isEmpty()) return "{}";
 
-    // Single generator: return its output directly, or a problem JSON if it failed
-    if (results.size() == 1) {
+    // Direct service: generator output IS the response body — no name wrapper
+    if (service.isDirect()) {
       GeneratorResult r = results.get(0);
       if (r.error != null) return errorJson(r.error);
       return r.json != null && !r.json.isEmpty() ? r.json : "null";
     }
 
-    // Multiple generators: {"name1": <json1>, "name2": <json2>}
+    // Envelope: {"name1": <json1>, "name2": <json2>} — even for a single generator
     StringBuilder sb = new StringBuilder("{");
     boolean first = true;
     for (GeneratorResult r : results) {

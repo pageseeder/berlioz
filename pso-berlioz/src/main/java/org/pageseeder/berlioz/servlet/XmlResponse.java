@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -214,14 +213,14 @@ public final class XmlResponse {
    * @throws IOException Should an I/O error occur.
    */
   public String generate() throws IOException {
-    // Initialise the writer
+    Service service = this.match.service();
+    if (service.isDirect()) return generateDirect(service);
+
+    // Envelope path: <?xml ...><root service="..." group="..."><header>...</header><content>...</content></root>
     StringWriter writer = new StringWriter();
     XMLWriter xml = new XMLWriterImpl(writer);
     xml.xmlDecl();
     xml.openElement("root", true);
-
-    // Get service
-    Service service = this.match.service();
     xml.attribute("service", service.id());
     xml.attribute("group", service.group());
     if (!service.flags().isEmpty()) {
@@ -231,16 +230,57 @@ public final class XmlResponse {
     XmlResponseHeader header = new XmlResponseHeader(this.core, service, this.match.result());
     header.toXML(xml);
 
-    // Call each generator in turn
     int position = 0;
     for (HttpContentRequest request : this.requests) {
       toXML(request, ++position, service, xml);
     }
 
-    // Close 'root' and finalize
     xml.closeElement();
     xml.flush();
     return writer.toString();
+  }
+
+  /**
+   * Direct path: single generator output IS the complete response — no {@code <root>} wrapper,
+   * no {@link XmlResponseHeader}, no {@code <content>} element.
+   */
+  private String generateDirect(Service service) throws IOException {
+    if (this.requests.isEmpty()) return "";
+    HttpContentRequest request = this.requests.get(0);
+    BerliozGenerator generator = request.generator();
+    StringWriter sw = new StringWriter();
+    Response response = Response.ok();
+    long start = System.nanoTime();
+    try {
+      if (generator instanceof XmlGenerator) {
+        XmlAppendable<StringWriter> xw = new XmlAppendable<>(sw);
+        response = ((XmlGenerator) generator).generate(request, xw);
+        xw.flush();
+      } else if (generator instanceof Generator) {
+        XmlOutputAdapter oa = new XmlOutputAdapter(new XmlAppendable<>(sw));
+        response = ((Generator) generator).generate(request, oa);
+        oa.flush();
+      } else if (generator instanceof ContentGenerator) {
+        XMLWriter legacyXml = new XMLWriterImpl(sw);
+        ((ContentGenerator) generator).process(request, legacyXml);
+        legacyXml.flush();
+        response = legacyResponse(request);
+      } else {
+        LOGGER.warn("Unsupported generator type {} — no content written", generator.getClass().getName());
+      }
+    } catch (InvalidParameterException ex) {
+      outcome.handleError(ex, generator);
+      response = Response.status(ContentStatus.BAD_REQUEST);
+    } catch (Exception ex) {
+      outcome.handleError(ex, generator);
+      response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+    }
+    long end = System.nanoTime();
+    outcome.handleStatus(response, generator, service);
+    GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
+    GeneratorListener l = listener.get();
+    if (l != null) l.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
+    return sw.toString();
   }
 
   // Static configuration
