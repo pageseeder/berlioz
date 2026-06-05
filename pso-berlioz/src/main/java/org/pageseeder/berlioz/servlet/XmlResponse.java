@@ -29,7 +29,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.BerliozGenerator;
@@ -42,13 +41,9 @@ import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
-import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
 import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
-import org.pageseeder.berlioz.util.CollectedError.Level;
-import org.pageseeder.berlioz.util.CompoundBerliozException;
-import org.pageseeder.berlioz.util.ErrorCollector;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ProfileFormat;
 import org.pageseeder.berlioz.xml.XmlAppendable;
@@ -101,20 +96,7 @@ public final class XmlResponse {
    */
   private final boolean profile;
 
-  /**
-   * The request to send to the generators.
-   */
-  private @Nullable ContentStatus status = null;
-
-  /**
-   * The redirect URL.
-   */
-  private @Nullable String redirect = null;
-
-  /**
-   * Any exception caught while invoking the generators.
-   */
-  private @Nullable BerliozException exception = null;
+  private final GeneratorOutcome outcome = new GeneratorOutcome();
 
   /**
    * Response headers accumulated from generator {@link Response} objects (last-writer-wins).
@@ -194,8 +176,7 @@ public final class XmlResponse {
    * @return the status of this service response.
    */
   public ContentStatus getStatus() {
-    ContentStatus s = this.status;
-    return s == null? ContentStatus.OK : s;
+    return this.outcome.getStatus();
   }
 
   /**
@@ -204,7 +185,7 @@ public final class XmlResponse {
    * @return a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
    */
   public @Nullable BerliozException getError() {
-    return this.exception;
+    return this.outcome.getError();
   }
 
   /**
@@ -213,7 +194,7 @@ public final class XmlResponse {
    * @return the URL to redirect to.
    */
   public @Nullable String getRedirectURL() {
-    return this.redirect;
+    return this.outcome.getRedirectURL();
   }
 
   /**
@@ -344,24 +325,17 @@ public final class XmlResponse {
       }
       result = sw.toString();
     } catch (InvalidParameterException ex) {
-      error = handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.BAD_REQUEST);
     } catch (Exception ex) {
-      error = handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
     }
 
     long end = System.nanoTime();
 
-    // Aggregate this generator's response into the service-level outcome.
-    // handleStatus applies ServiceStatusRule (highest/lowest code wins) and returns
-    // true only if this generator's status became the new service status. The redirect
-    // is kept only from the generator whose status actually won.
     ContentStatus generatorStatus = response.status();
-    boolean wasSet = handleStatus(generatorStatus, generator, service);
-    if (wasSet && response.isRedirect()) {
-      this.redirect = response.redirectLocation();
-    }
+    outcome.handleStatus(response, generator, service);
 
     // Accumulate response headers (last-writer-wins). Framework-owned headers are warned and dropped.
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
@@ -393,55 +367,6 @@ public final class XmlResponse {
     }
 
     xml.closeElement();
-  }
-
-  private BerliozException handleError(Exception exception, BerliozGenerator generator) {
-    LOGGER.warn("Handling {} thrown by {}", exception.getClass().getName(), generator.getClass().getName());
-    BerliozException bex = GeneratorDispatch.toBerliozException(exception);
-    accumulateError(bex);
-    return bex;
-  }
-
-  private void accumulateError(BerliozException bex) {
-    if (this.exception == null) {
-      this.exception = bex;
-    } else if (this.exception instanceof CompoundBerliozException) {
-      collectCause(((CompoundBerliozException) this.exception).getCollector(), bex);
-    } else {
-      ErrorCollector<Throwable> collector = new ErrorCollector<>();
-      BerliozException first = this.exception;
-      this.exception = new CompoundBerliozException(
-          "Multiple errors thrown by generators", BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
-      collectCause(collector, first);
-      collectCause(collector, bex);
-    }
-  }
-
-  private static void collectCause(ErrorCollector<Throwable> collector, BerliozException bex) {
-    Throwable cause = bex.getCause();
-    collector.collectQuietly(Level.ERROR, cause != null ? cause : bex);
-  }
-
-  /**
-   * Handles the status of this generator.
-   *
-   * @param status    The status of the generator after it has been invoked.
-   * @param generator The generator.
-   * @param service   The service that the generator is part of.
-   *
-   * @return <code>true</code> if the overall status was set as a result of this method;
-   *         <code>false</code> otherwise.
-   */
-  private boolean handleStatus(ContentStatus status, BerliozGenerator generator, Service service) {
-    if (!service.affectStatus(generator)) return false;
-    CodeRule rule = service.rule().rule();
-    ContentStatus current = this.status;
-    // No status yet, or the new status wins under the configured rule (highest/lowest HTTP code)
-    boolean update = current == null
-        || (rule == CodeRule.HIGHEST && status.code() > current.code())
-        || (rule == CodeRule.LOWEST && status.code() < current.code());
-    if (update) this.status = status;
-    return update;
   }
 
   /**

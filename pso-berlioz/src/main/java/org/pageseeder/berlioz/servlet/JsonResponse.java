@@ -27,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.BerliozGenerator;
@@ -39,12 +38,8 @@ import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
-import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
-import org.pageseeder.berlioz.util.CompoundBerliozException;
-import org.pageseeder.berlioz.util.ErrorCollector;
-import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,9 +72,7 @@ public final class JsonResponse {
   private final List<HttpContentRequest> requests;
   private final boolean profile;
 
-  private @Nullable ContentStatus status = null;
-  private @Nullable String redirect = null;
-  private @Nullable BerliozException exception = null;
+  private final GeneratorOutcome outcome = new GeneratorOutcome();
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
   private final Map<String, String> responseHeadersView = Collections.unmodifiableMap(this.responseHeaders);
 
@@ -96,16 +89,15 @@ public final class JsonResponse {
   }
 
   public ContentStatus getStatus() {
-    ContentStatus s = this.status;
-    return s == null ? ContentStatus.OK : s;
+    return this.outcome.getStatus();
   }
 
   public @Nullable BerliozException getError() {
-    return this.exception;
+    return this.outcome.getError();
   }
 
   public @Nullable String getRedirectURL() {
-    return this.redirect;
+    return this.outcome.getRedirectURL();
   }
 
   public Map<String, String> getHeaders() {
@@ -171,19 +163,16 @@ public final class JsonResponse {
       }
       json = jb.toString();
     } catch (InvalidParameterException ex) {
-      error = handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.BAD_REQUEST);
     } catch (Exception ex) {
-      error = handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
     }
 
     long end = System.nanoTime();
     ContentStatus generatorStatus = response.status();
-    boolean wasSet = handleStatus(generatorStatus, generator, service);
-    if (wasSet && response.isRedirect()) {
-      this.redirect = response.redirectLocation();
-    }
+    outcome.handleStatus(response, generator, service);
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
 
     GeneratorListener l = listener.get();
@@ -224,44 +213,6 @@ public final class JsonResponse {
   private static String errorJson(BerliozException ex) {
     String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName();
     return JsonStringBuilder.create().startObject().field("error", msg).endObject().toString();
-  }
-
-  private BerliozException handleError(Exception ex, BerliozGenerator generator) {
-    LOGGER.warn("Handling {} thrown by {}", ex.getClass().getName(), generator.getClass().getName());
-    BerliozException bex = GeneratorDispatch.toBerliozException(ex);
-    accumulateError(bex);
-    return bex;
-  }
-
-  private void accumulateError(BerliozException bex) {
-    if (this.exception == null) {
-      this.exception = bex;
-    } else if (this.exception instanceof CompoundBerliozException) {
-      collectCause(((CompoundBerliozException) this.exception).getCollector(), bex);
-    } else {
-      ErrorCollector<Throwable> collector = new ErrorCollector<>();
-      BerliozException first = this.exception;
-      this.exception = new CompoundBerliozException(
-          "Multiple errors thrown by generators", BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
-      collectCause(collector, first);
-      collectCause(collector, bex);
-    }
-  }
-
-  private static void collectCause(ErrorCollector<Throwable> collector, BerliozException bex) {
-    Throwable cause = bex.getCause();
-    collector.collectQuietly(Level.ERROR, cause != null ? cause : bex);
-  }
-
-  private boolean handleStatus(ContentStatus status, BerliozGenerator generator, Service service) {
-    if (!service.affectStatus(generator)) return false;
-    CodeRule rule = service.rule().rule();
-    ContentStatus current = this.status;
-    boolean update = current == null
-        || (rule == CodeRule.HIGHEST && status.code() > current.code())
-        || (rule == CodeRule.LOWEST  && status.code() < current.code());
-    if (update) this.status = status;
-    return update;
   }
 
   // Simple holder for a generator's captured output
