@@ -18,9 +18,14 @@ package org.pageseeder.berlioz.servlet;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletRequest;
@@ -68,10 +73,26 @@ import org.slf4j.LoggerFactory;
  */
 public final class XmlResponse {
 
-  /**
-   * Displays debug information.
-   */
   private static final Logger LOGGER = LoggerFactory.getLogger(XmlResponse.class);
+
+  /**
+   * Headers that generators should not set directly — they are owned by the framework,
+   * servlet filters, or service-level configuration. Setting them via {@code Response.header()}
+   * is logged as a warning.
+   */
+  private static final Set<String> FRAMEWORK_HEADERS = new HashSet<>(Arrays.asList(
+      "Location",           // use Response.redirect()
+      "ETag",               // use Cacheable interface
+      "Last-Modified",      // framework caching concern
+      "Cache-Control",      // service-level cache="" attribute
+      "Expires",            // framework caching concern
+      "Vary",               // framework content-negotiation concern
+      "Set-Cookie",         // security layer, not generator scope
+      "Content-Encoding",   // compression layer (BerliozOption.HTTP_COMPRESSION)
+      "Transfer-Encoding",  // container concern
+      "Server",             // container concern
+      "Date"                // container concern
+  ));
 
   /**
    * May be used to collect information about how generators perform.
@@ -117,6 +138,12 @@ public final class XmlResponse {
    * Any exception caught while invoking the generators.
    */
   private @Nullable BerliozException exception = null;
+
+  /**
+   * Response headers accumulated from generator {@link Response} objects (last-writer-wins).
+   * Applied via {@code HttpServletResponse.setHeader}.
+   */
+  private final Map<String, String> responseHeaders = new LinkedHashMap<>();
 
   private boolean serverTiming;
 
@@ -209,6 +236,15 @@ public final class XmlResponse {
    */
   public @Nullable String getRedirectURL() {
     return this.redirect;
+  }
+
+  /**
+   * Returns the response headers accumulated from generators (last-writer-wins per name).
+   *
+   * @return an unmodifiable map; never {@code null}
+   */
+  public Map<String, String> getHeaders() {
+    return Collections.unmodifiableMap(this.responseHeaders);
   }
 
   /**
@@ -348,6 +384,17 @@ public final class XmlResponse {
     if (wasSet && response.isRedirect()) {
       this.redirect = response.redirectLocation();
     }
+
+    // Accumulate response headers (last-writer-wins). Warn on headers that belong
+    // to the framework, service config, or security layers rather than generators.
+    response.headers().forEach((headerName, value) -> {
+      if (FRAMEWORK_HEADERS.contains(headerName)) {
+        LOGGER.warn("Generator {} set header '{}' which is managed by the framework — ignoring",
+            generator.getClass().getName(), headerName);
+      } else {
+        this.responseHeaders.put(headerName, value);
+      }
+    });
     xml.attribute("status", generatorStatus.toString());
     if (this.profile) {
       xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));

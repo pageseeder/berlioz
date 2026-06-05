@@ -26,30 +26,28 @@ import java.util.*;
  * RFC 9457 problem details, and any extra response headers the generator wants to set.
  * It does not carry the body — generators write the body directly to their writer.</p>
  *
+ * <h2>Headers</h2>
+ *
+ * <p>{@link #header(String, String)} follows replace semantics: if the same name is set
+ * twice within one {@code Response} chain, the last value wins. The same rule applies when
+ * merging headers across multiple generators in a service.</p>
+ *
+ * <p>Only headers that a generator has a genuine reason to set belong here. Framework concerns
+ * ({@code ETag}, {@code Cache-Control}, {@code Vary}, {@code Content-Encoding}, CORS headers,
+ * {@code Set-Cookie}) are handled by other layers and will be flagged with a warning if set.
+ * Use {@link #redirect(ContentStatus, String)} instead of setting {@code Location} directly.</p>
+ *
  * <p>Typical usage:</p>
  * <pre>{@code
- * // Success
  * return Response.ok();
- *
- * // Client error
  * return Response.status(ContentStatus.NOT_FOUND);
- *
- * // Redirect
  * return Response.redirect(ContentStatus.SEE_OTHER, "/login");
- *
- * // RFC 9457 problem
  * return Response.problem(ProblemDetails.of(NOT_FOUND).detail("Article 42 not found"));
- *
- * // With a custom header
- * return Response.ok().header("Cache-Control", "no-store");
+ * return Response.ok().header("Content-Location", "/articles/42");
+ * return Response.status(UNAUTHORIZED).header("WWW-Authenticate", "Bearer realm=\"api\"");
  * }</pre>
  *
  * <p>All methods return a new instance; this class is immutable.</p>
- *
- * <p>When a service has multiple generators, Berlioz merges their {@code Response} objects:
- * the status code is resolved by the service's {@code ServiceStatusRule}; headers are
- * merged (last writer wins per header name); a problem response from any generator
- * overrides the combined status.</p>
  *
  * @author Christophe Lauret
  *
@@ -61,15 +59,17 @@ public final class Response {
   private final ContentStatus status;
   private final @Nullable String redirectLocation;
   private final @Nullable ProblemDetails problem;
-  private final Map<String, List<String>> headers;
+  private final Map<String, String> headers;
 
   private Response(ContentStatus status, @Nullable String redirectLocation,
-      @Nullable ProblemDetails problem, Map<String, List<String>> headers) {
+      @Nullable ProblemDetails problem, Map<String, String> headers) {
     this.status = status;
     this.redirectLocation = redirectLocation;
     this.problem = problem;
     this.headers = Collections.unmodifiableMap(headers);
   }
+
+  // --- Factories -------------------------------------------------------------------------------
 
   /**
    * Creates a {@code 200 OK} response with no extra headers.
@@ -126,27 +126,28 @@ public final class Response {
   // --- Fluent modifier -------------------------------------------------------------------------
 
   /**
-   * Returns a copy of this response with an additional HTTP response header.
+   * Returns a copy of this response with the named header set to the given value.
    *
-   * <p>If the header name already exists, the value is appended to the existing values
-   * (multi-value header). Header names are case-sensitive in this API; the servlet layer
-   * is responsible for case-insensitive handling.</p>
+   * <p>If this name was already set, the previous value is replaced (last-call-wins).
+   * The same rule applies when merging headers across generators in the same service.</p>
+   *
+   * <p>Only headers that a generator genuinely owns belong here — for example:
+   * {@code Content-Location}, {@code Content-Disposition}, {@code WWW-Authenticate},
+   * {@code Retry-After}, or application-specific {@code X-*} headers.
+   * Headers managed by the framework ({@code ETag}, {@code Cache-Control}, {@code Vary},
+   * {@code Set-Cookie}, etc.) should not be set here; the dispatch layer will log a warning
+   * if it encounters them.</p>
    *
    * @param name  the header name
    * @param value the header value
-   * @return a new {@code Response} with the additional header
+   * @return a new {@code Response} with the header set
    */
   public Response header(String name, String value) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(value, "value");
-    Map<String, List<String>> copy = new LinkedHashMap<>(this.headers);
-    copy.compute(name, (k, existing) -> {
-      List<String> list = existing != null ? new ArrayList<>(existing) : new ArrayList<>();
-      list.add(value);
-      return Collections.unmodifiableList(list);
-    });
-    return new Response(this.status, this.redirectLocation, this.problem,
-        Collections.unmodifiableMap(copy));
+    Map<String, String> copy = new LinkedHashMap<>(this.headers);
+    copy.put(name, value);
+    return new Response(this.status, this.redirectLocation, this.problem, copy);
   }
 
   // --- Accessors -------------------------------------------------------------------------------
@@ -160,8 +161,12 @@ public final class Response {
   /** @return the RFC 9457 problem details, or {@code null} if this is not a problem response */
   public @Nullable ProblemDetails problem() { return this.problem; }
 
-  /** @return an unmodifiable map of extra response headers; empty if none were set */
-  public Map<String, List<String>> headers() { return this.headers; }
+  /**
+   * Returns the response headers set by the generator.
+   *
+   * @return an unmodifiable map of header names to values; empty if none were set
+   */
+  public Map<String, String> headers() { return this.headers; }
 
   /** @return {@code true} if this response carries RFC 9457 problem details */
   public boolean isProblem() { return this.problem != null; }
