@@ -399,6 +399,9 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
+    // Apply response headers set by generators
+    xml.getHeaders().forEach((name, values) -> values.forEach(v -> res.addHeader(name, v)));
+
     // Produce the output (XSLT transform or pass through raw XML)
     BerliozOutput result = executeTransform(content, req, xml, transformer, res, profile, serverTiming);
 
