@@ -331,6 +331,7 @@ public final class BerliozConfig {
   @Beta
   public static synchronized void setListener(GeneratorListener listener) {
     XmlResponse.setListener(listener);
+    JsonResponse.setListener(listener);
   }
 
   /**
