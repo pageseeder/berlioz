@@ -87,7 +87,7 @@ public final class Service {
   private final List<BerliozGenerator> generators;
 
   /**
-   * The union of output formats supported by all generators in this service.
+   * The intersection of output formats supported by all generators in this service.
    */
   private final Set<OutputType> supported;
 
