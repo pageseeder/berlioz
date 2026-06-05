@@ -39,6 +39,7 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
+import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.http.*;
 import org.pageseeder.berlioz.servlet.XsltTransformResult.Status;
 import org.pageseeder.berlioz.util.*;
@@ -309,10 +310,6 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
-    // Prepare the XML Response
-    XmlResponse xml = new XmlResponse(req, res, config, match, profile);
-    if (serverTiming) xml.enableServerTiming();
-
     // Include the service as a header for information
     if (serviceHeader) {
       res.setHeader("X-Berlioz-Service", toSafeHeader(match.service().id()));
@@ -321,6 +318,96 @@ public final class BerliozServlet extends HttpServlet {
 
     // Is Berlioz used to handle an error?
     Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
+
+    // Detect whether a direct JSON response is appropriate:
+    // the request targets a .json URL AND the service supports direct JSON output.
+    String servletPath = req.getServletPath();
+    boolean jsonRequest = servletPath != null && servletPath.endsWith(".json");
+    boolean serviceSupportsJson = match.service().supported().contains(OutputType.JSON);
+
+    if (jsonRequest && serviceSupportsJson) {
+      processJson(req, res, config, match, method, code, profile, serverTiming, includeContent);
+    } else {
+      processXml(req, res, config, match, method, code, profile, serverTiming, includeContent);
+    }
+  }
+
+  /**
+   * Handles requests whose service supports direct JSON output, bypassing the XSLT pipeline.
+   */
+  private void processJson(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
+      MatchingService match, HttpMethod method, @Nullable Integer code,
+      boolean profile, boolean serverTiming, boolean includeContent) throws IOException {
+
+    JsonResponse json = new JsonResponse(req, res, config, match, profile);
+
+    // Indicate that the representation may vary depending on the encoding
+    if (config.enableCompression()) {
+      res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
+    }
+
+    // No caching support on the JSON path yet
+    res.setDateHeader(HttpHeaders.EXPIRES, 0);
+    res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+
+    // Generate JSON content
+    long start = System.nanoTime();
+    String content = json.generate();
+    long end = System.nanoTime();
+    if (profile && LOGGER.isInfoEnabled()) {
+      LOGGER.info("JSON content generated in {} ms", ProfileFormat.format(end - start));
+    }
+    if (serverTiming) {
+      ServerTimingHeader.addMetricNano(res, "json", "JSON Response", end - start);
+    }
+
+    // Examine status
+    ContentStatus status = json.getStatus();
+    res.setStatus(Objects.requireNonNullElseGet(code, status::code));
+
+    // If errors occurred and should percolate
+    if (json.getError() != null && !GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) {
+      sendError(req, res, status.code(), "The service failed because of errors thrown by generators", json.getError());
+      return;
+    }
+
+    // Redirection
+    if (ContentStatus.isRedirect(status)) {
+      String url = json.getRedirectURL();
+      if (HttpRequests.isSafeRedirectURL(url, req)) {
+        LOGGER.debug("Redirecting to: {} with {}", url, status.code());
+        res.reset();
+        res.sendRedirect(url);
+        res.setStatus(status.code());
+      } else {
+        LOGGER.warn("Blocked unsafe redirect URL: {}", url);
+        sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
+      }
+      return;
+    }
+
+    // Apply generator response headers
+    json.getHeaders().forEach(res::setHeader);
+
+    // Write JSON directly — no XSLT
+    res.setContentType("application/json;charset=UTF-8");
+    res.setCharacterEncoding("UTF-8");
+    if (includeContent) {
+      res.getWriter().write(content);
+      res.getWriter().flush();
+    }
+  }
+
+  /**
+   * Handles requests via the XML content generation + XSLT pipeline (the original Berlioz path).
+   */
+  private void processXml(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
+      MatchingService match, HttpMethod method, @Nullable Integer code,
+      boolean profile, boolean serverTiming, boolean includeContent) throws IOException {
+
+    // Prepare the XML Response
+    XmlResponse xml = new XmlResponse(req, res, config, match, profile);
+    if (serverTiming) xml.enableServerTiming();
 
     // Identify the transformer
     XsltTransformer transformer = config.getTransformer(match.service());
@@ -399,8 +486,8 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
-    // Apply response headers set by generators
-    xml.getHeaders().forEach((name, values) -> values.forEach(v -> res.addHeader(name, v)));
+    // Apply response headers set by generators (last-writer-wins per name).
+    xml.getHeaders().forEach(res::setHeader);
 
     // Produce the output (XSLT transform or pass through raw XML)
     BerliozOutput result = executeTransform(content, req, xml, transformer, res, profile, serverTiming);
