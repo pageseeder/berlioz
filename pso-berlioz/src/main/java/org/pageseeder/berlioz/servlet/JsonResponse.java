@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.servlet;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +30,14 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.BerliozGenerator;
+import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.RequestContext;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
@@ -71,6 +74,7 @@ public final class JsonResponse {
   private final List<HttpContentRequest> requests;
 
   private final GeneratorOutcome outcome = new GeneratorOutcome();
+  private final Map<Integer, String> etags = new HashMap<>();
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
   private final Map<String, String> responseHeadersView = Collections.unmodifiableMap(this.responseHeaders);
 
@@ -99,6 +103,34 @@ public final class JsonResponse {
 
   public Map<String, String> getHeaders() {
     return this.responseHeadersView;
+  }
+
+  /**
+   * Returns the ETag for this response.
+   *
+   * <p>The ETag is computed from the ETags returned by each generator. If any generator is not
+   * cacheable or returns a blank ETag, the response is not cacheable and {@code null} is returned.
+   *
+   * @return the combined ETag if all generators are cacheable; {@code null} otherwise
+   */
+  public @Nullable String getEtag() {
+    Service service = this.match.service();
+    boolean cacheable = service.isCacheable();
+    StringBuilder etag = new StringBuilder();
+    if (cacheable) {
+      for (HttpContentRequest request : this.requests) {
+        BerliozGenerator generator = request.generator();
+        if (generator instanceof Cacheable) {
+          String localTag = retrieveETag(request);
+          if (localTag.isEmpty()) return null;
+          etag.append(localTag).append('/');
+        } else {
+          cacheable = false;
+          break;
+        }
+      }
+    }
+    return cacheable ? etag.toString() : null;
   }
 
   /**
@@ -204,6 +236,19 @@ public final class JsonResponse {
       jb.flush();
       return jb.toString();
     }
+  }
+
+  private String retrieveETag(HttpContentRequest request) {
+    Integer key = request.order();
+    if (this.etags.containsKey(key)) return this.etags.get(key);
+    BerliozGenerator generator = request.generator();
+    String etag = null;
+    if (generator instanceof Cacheable) {
+      etag = ((Cacheable) generator).getETag((RequestContext) request);
+    }
+    String result = etag != null ? etag : "";
+    this.etags.put(key, result);
+    return result;
   }
 
   private static String errorJson(BerliozException ex) {

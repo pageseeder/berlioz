@@ -347,14 +347,30 @@ public final class BerliozServlet extends HttpServlet {
       res.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_ENCODING);
     }
 
-    // Apply cache headers based on service configuration (no ETag-based conditional requests yet)
+    // Compute the ETag for the request if cacheable and method is GET or HEAD
+    String etag = null;
     boolean cacheable = code == null && match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD);
     if (cacheable) {
-      res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
-      String cc = match.service().cache();
-      if (cc.isEmpty()) cc = config.getCacheControl();
-      res.setHeader(HttpHeaders.CACHE_CONTROL, toSafeHeader(cc));
-    } else {
+      String etagJSON = json.getEtag();
+      if (etagJSON != null) {
+        etag = '"' + SHA256.hash(config.getETagSeed() + "~" + etagJSON) + '"';
+
+        res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
+        String cc = match.service().cache();
+        if (cc.isEmpty()) cc = config.getCacheControl();
+        res.setHeader(HttpHeaders.CACHE_CONTROL, toSafeHeader(cc));
+        res.setHeader(HttpHeaders.ETAG, etag);
+
+        // Check conditional request headers (may return 304 without generating content)
+        ServiceInfo info = new ServiceInfo(etag);
+        if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
+
+      } else {
+        cacheable = false;
+      }
+    }
+
+    if (!cacheable) {
       res.setDateHeader(HttpHeaders.EXPIRES, 0);
       res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
     }
@@ -398,13 +414,15 @@ public final class BerliozServlet extends HttpServlet {
     // Apply generator response headers
     json.getHeaders().forEach(res::setHeader);
 
-    // Write JSON directly — no XSLT
+    // Write JSON — with optional GZip compression
     res.setContentType("application/json;charset=UTF-8");
     res.setCharacterEncoding("UTF-8");
-    if (includeContent) {
-      res.getWriter().write(content);
-      res.getWriter().flush();
-    }
+    BerliozOutput jsonOutput = new BerliozOutput() {
+      public CharSequence content() { return content; }
+      public String getMediaType() { return "application/json"; }
+      public String getEncoding() { return "UTF-8"; }
+    };
+    writeOutput(req, res, jsonOutput, etag, StandardCharsets.UTF_8, config, includeContent);
   }
 
   /**
