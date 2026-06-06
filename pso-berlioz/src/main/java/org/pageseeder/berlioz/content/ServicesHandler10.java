@@ -522,9 +522,8 @@ final class ServicesHandler10 extends DefaultHandler {
     int colon = className.indexOf(':');
     String prefix = colon >= 0 ? className.substring(0, colon) : "";
     String simpleName = colon >= 0 ? className.substring(colon + 1) : className;
-    String pkg = this.servicesNamespaces.containsKey(prefix)
-        ? this.servicesNamespaces.get(prefix)
-        : this.configNamespaces.get(prefix);
+    String pkg = this.servicesNamespaces.get(prefix);
+    if (pkg == null) pkg = this.configNamespaces.get(prefix);
     return pkg != null ? pkg + "." + simpleName : className;
   }
 
