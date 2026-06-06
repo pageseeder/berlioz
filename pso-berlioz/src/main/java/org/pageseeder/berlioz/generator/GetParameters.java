@@ -20,7 +20,7 @@ import java.io.IOException;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.berlioz.content.RequestContext;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.xmlwriter.XMLWriter;
 
@@ -61,7 +61,7 @@ public final class GetParameters implements ContentGenerator, Cacheable {
   private static final int MAX_VALUE_LENGTH = 2_000;
 
   @Override
-  public String getETag(RequestContext req) {
+  public String getETag(Request req) {
     StringBuilder hash = new StringBuilder("?");
     int paramCount = 0;
     for (String name : req.parameterNames()) {
@@ -73,7 +73,7 @@ public final class GetParameters implements ContentGenerator, Cacheable {
 
   @Override @Deprecated
   public String getETag(ContentRequest req) {
-    return getETag((RequestContext) req);
+    return getETag((Request) req);
   }
 
   @Override

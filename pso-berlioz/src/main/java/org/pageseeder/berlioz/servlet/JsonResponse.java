@@ -37,7 +37,7 @@ import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
-import org.pageseeder.berlioz.content.RequestContext;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
@@ -244,7 +244,7 @@ public final class JsonResponse {
     BerliozGenerator generator = request.generator();
     String etag = null;
     if (generator instanceof Cacheable) {
-      etag = ((Cacheable) generator).getETag((RequestContext) request);
+      etag = ((Cacheable) generator).getETag((Request) request);
     }
     String result = etag != null ? etag : "";
     this.etags.put(key, result);

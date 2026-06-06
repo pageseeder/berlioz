@@ -42,7 +42,7 @@ import org.pageseeder.berlioz.Beta;
  * @since 0.13.1
  */
 @Beta
-public interface RequestContext {
+public interface Request {
 
   /**
    * Returns the dynamic path of the Berlioz request.

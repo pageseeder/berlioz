@@ -26,7 +26,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * <p>Define specs as {@code public static final} fields — in an interface for grouping,
  * or directly on the generator class — and pass them to
- * {@link RequestContext#parameter(ParameterSpec)}:
+ * {@link Request#parameter(ParameterSpec)}:
  *
  * <pre>{@code
  * // Defined once, shared across generators
@@ -42,7 +42,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * <p>The resolver lambda must include a terminal call ({@code .defaultValue()},
  * {@code .required()}, {@code .orDefault()}, or {@code .nullable()}) so that
- * {@link RequestContext#parameter(ParameterSpec)} returns {@code T} directly.
+ * {@link Request#parameter(ParameterSpec)} returns {@code T} directly.
  *
  * @param <T> the resolved type returned by this spec
  *

@@ -54,6 +54,6 @@ public interface XmlGenerator extends BerliozGenerator {
    * @param xml the XML writer to write content to
    * @return the response describing the HTTP status, headers, or problem details
    */
-  Response generate(RequestContext req, XmlWriter xml);
+  Response generate(Request req, XmlWriter xml);
 
 }

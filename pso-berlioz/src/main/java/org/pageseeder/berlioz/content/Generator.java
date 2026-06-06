@@ -58,6 +58,6 @@ public interface Generator extends BerliozGenerator {
    * @param out the output writer; call {@link OutputWriter#isJson()} to branch on format if needed
    * @return the response describing the HTTP status, headers, or problem details
    */
-  Response generate(RequestContext req, OutputWriter out);
+  Response generate(Request req, OutputWriter out);
 
 }

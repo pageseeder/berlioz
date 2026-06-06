@@ -58,6 +58,6 @@ public interface RawGenerator extends BerliozGenerator {
    * @return the response describing the HTTP status and headers; body is written directly to {@code out}
    * @throws IOException if an I/O error occurs while writing to the output stream
    */
-  Response generate(RequestContext req, OutputStream out) throws IOException;
+  Response generate(Request req, OutputStream out) throws IOException;
 
 }

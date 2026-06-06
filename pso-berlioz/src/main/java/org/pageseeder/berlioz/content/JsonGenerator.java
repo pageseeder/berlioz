@@ -55,6 +55,6 @@ public interface JsonGenerator extends BerliozGenerator {
    * @param json the JSON writer to write content to
    * @return the response describing the HTTP status, headers, or problem details
    */
-  Response generate(RequestContext req, JsonWriter json);
+  Response generate(Request req, JsonWriter json);
 
 }

@@ -22,7 +22,7 @@ import java.util.List;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.berlioz.content.RequestContext;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.berlioz.xml.XMLCopy;
@@ -67,7 +67,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class GetServices implements ContentGenerator, Cacheable {
 
   @Override
-  public String getETag(RequestContext req) {
+  public String getETag(Request req) {
     StringBuilder etag = new StringBuilder();
     for (File f : ServiceLoader.getInstance().listServiceFiles()) {
       etag.append('~').append(f.length()).append('!').append(f.lastModified());
@@ -77,7 +77,7 @@ public final class GetServices implements ContentGenerator, Cacheable {
 
   @Override @Deprecated
   public String getETag(ContentRequest req) {
-    return getETag((RequestContext) req);
+    return getETag((Request) req);
   }
 
   @Override

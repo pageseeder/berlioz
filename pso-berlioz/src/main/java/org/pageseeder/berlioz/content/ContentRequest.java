@@ -30,12 +30,12 @@ import org.jspecify.annotations.Nullable;
  * Provides a generic and uniform mechanism for the content generator to access parameters
  * and attributes from a request and to signal the desired response status.
  *
- * <p>This interface extends {@link RequestContext}, which carries the clean, read-only
- * request-reading API. New code should prefer {@link RequestContext} where response
+ * <p>This interface extends {@link Request}, which carries the clean, read-only
+ * request-reading API. New code should prefer {@link Request} where response
  * signaling is not needed.
  *
  * <p>{@link #getParameterNames()}, {@link #getParameterValues(String)}, and {@link #getCookies()}
- * are deprecated in favor of their {@link RequestContext} equivalents.
+ * are deprecated in favor of their {@link Request} equivalents.
  * {@link #getDateParameter(String)} is deprecated because {@link java.util.Date} is a legacy type;
  * use {@code request.parameter(name).asLocalDate()} for date-only values ({@code yyyy-MM-dd}),
  * or a custom parser via {@code request.parameter(name).as(...)} for datetime strings.
@@ -48,9 +48,9 @@ import org.jspecify.annotations.Nullable;
  * @version 0.13.1
  * @since 0.6
  */
-public interface ContentRequest extends RequestContext {
+public interface ContentRequest extends Request {
 
-  // --- Bridge defaults from RequestContext -----------------------------------
+  // --- Bridge defaults from Request -----------------------------------------
 
   /**
    * Returns the named parameter parsed as an {@code int}, or {@code def} on failure.

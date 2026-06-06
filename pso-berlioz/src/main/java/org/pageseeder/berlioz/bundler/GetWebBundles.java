@@ -27,7 +27,7 @@ import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
-import org.pageseeder.berlioz.content.RequestContext;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.servlet.HttpContentRequest;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -140,7 +140,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
   private static volatile Writable writable = Writable.UNKNOWN;
 
   @Override
-  public @Nullable String getETag(RequestContext req) {
+  public @Nullable String getETag(Request req) {
     HttpContentRequest hreq = (HttpContentRequest)req;
     Service service = hreq.getService();
     Environment env = req.getEnvironment();
@@ -161,7 +161,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
 
   @Override @Deprecated
   public @Nullable String getETag(ContentRequest req) {
-    return getETag((RequestContext) req);
+    return getETag((Request) req);
   }
 
   @Override

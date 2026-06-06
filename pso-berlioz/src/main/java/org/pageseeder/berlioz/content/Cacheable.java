@@ -40,10 +40,10 @@ public interface Cacheable {
    * <p>New implementations should override this method. The default delegates to the deprecated
    * {@link #getETag(ContentRequest)} when the context is a {@link ContentRequest}.
    *
-   * @param req the request context
+   * @param req the request
    * @return the corresponding ETag, or {@code null}
    */
-  default @Nullable String getETag(RequestContext req) {
+  default @Nullable String getETag(Request req) {
     if (req instanceof ContentRequest) return getETag((ContentRequest) req);
     return null;
   }
@@ -54,7 +54,7 @@ public interface Cacheable {
    * @param req the content request
    * @return the corresponding ETag, or {@code null}
    *
-   * @deprecated Override {@link #getETag(RequestContext)} instead.
+   * @deprecated Override {@link #getETag(Request)} instead.
    */
   @Deprecated(since = "0.13.2", forRemoval = true)
   @Nullable String getETag(ContentRequest req);
