@@ -33,6 +33,33 @@ class RelocationFilterTest {
     return filter;
   }
 
+  private void assertProtectedTargetIgnored(String target) throws Exception {
+    RelocationFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><relocation-mapping>"
+        + "<relocation from=\"/old\" to=\"" + target + "\"/>"
+        + "</relocation-mapping>");
+
+    boolean[] forwardCalled = {false};
+    RequestDispatcher dispatcher = (RequestDispatcher) Proxy.newProxyInstance(
+        RequestDispatcher.class.getClassLoader(),
+        new Class<?>[]{RequestDispatcher.class},
+        (proxy, m, args) -> {
+          if ("forward".equals(m.getName())) forwardCalled[0] = true;
+          return null;
+        });
+
+    boolean[] chainInvoked = {false};
+    HttpServletRequest req = ServletTestSupport.request()
+        .uri("/old").dispatcher(dispatcher).build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+
+    Assertions.assertFalse(forwardCalled[0], "Dispatcher.forward should not expose protected paths");
+    Assertions.assertTrue(chainInvoked[0], "Chain should continue when relocation target is unsafe");
+    Assertions.assertNull(recorder.header("Content-Location"), "Unsafe target must not be exposed");
+  }
+
   // Pass-through
   // ---------------------------------------------------------------------------
 
@@ -113,5 +140,25 @@ class RelocationFilterTest {
 
     Assertions.assertTrue(chainInvoked[0], "Chain should be invoked even when dispatcher is null");
     Assertions.assertNull(recorder.header("Content-Location"), "Content-Location should not be set when dispatcher is null");
+  }
+
+  @Test
+  void testRelocationRejectsProtectedAbsolutePath() throws Exception {
+    assertProtectedTargetIgnored("/WEB-INF/web.xml");
+  }
+
+  @Test
+  void testRelocationRejectsProtectedRelativePath() throws Exception {
+    assertProtectedTargetIgnored("WEB-INF/web.xml");
+  }
+
+  @Test
+  void testRelocationRejectsEncodedProtectedPath() throws Exception {
+    assertProtectedTargetIgnored("%2fWEB-INF%2fweb.xml");
+  }
+
+  @Test
+  void testRelocationRejectsTraversalToProtectedPath() throws Exception {
+    assertProtectedTargetIgnored("/safe/../WEB-INF/web.xml");
   }
 }

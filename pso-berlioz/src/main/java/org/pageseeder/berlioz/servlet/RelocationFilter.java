@@ -17,6 +17,8 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 import javax.servlet.Filter;
@@ -207,11 +209,35 @@ public final class RelocationFilter implements Filter {
   }
 
   private @Nullable String ensureSafeTarget(String to) {
-    String normalized = Paths.get(to.replaceAll("[\\n\\r]*", "")).normalize().toString();
-    if (normalized.startsWith("/WEB-INF") || normalized.startsWith("/META-INF")) {
+    String sanitized = to.replaceAll("[\\n\\r]+", "");
+    String normalized = normalizeTarget(sanitized);
+    String decoded;
+    try {
+      decoded = URLDecoder.decode(sanitized, StandardCharsets.UTF_8);
+    } catch (IllegalArgumentException ex) {
+      LOGGER.warn("Relocation target '{}' is not a valid encoded path, ignoring", to);
+      return null;
+    }
+
+    if (isProtectedTarget(normalizeTargetForCheck(sanitized)) || isProtectedTarget(normalizeTargetForCheck(decoded))) {
       LOGGER.warn("Relocation target '{}' resolves to protected path, ignoring", to);
       return null;
     }
     return normalized;
+  }
+
+  private static String normalizeTarget(String target) {
+    return Paths.get(target).normalize().toString().replace('\\', '/');
+  }
+
+  private static String normalizeTargetForCheck(String target) {
+    String check = target.startsWith("/") ? target : "/" + target;
+    return normalizeTarget(check);
+  }
+
+  /** @param normalizedAbsPath an already-normalized absolute path (output of {@link #normalizeTargetForCheck}) */
+  private static boolean isProtectedTarget(String normalizedAbsPath) {
+    return "/WEB-INF".equals(normalizedAbsPath) || normalizedAbsPath.startsWith("/WEB-INF/")
+        || "/META-INF".equals(normalizedAbsPath) || normalizedAbsPath.startsWith("/META-INF/");
   }
 }
