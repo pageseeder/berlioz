@@ -27,6 +27,7 @@ import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
+import org.pageseeder.berlioz.content.RequestContext;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.servlet.HttpContentRequest;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -139,23 +140,28 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
   private static volatile Writable writable = Writable.UNKNOWN;
 
   @Override
-  public @Nullable String getETag(ContentRequest req) {
+  public @Nullable String getETag(RequestContext req) {
     HttpContentRequest hreq = (HttpContentRequest)req;
     Service service = hreq.getService();
     Environment env = req.getEnvironment();
-    String config = getConfig(req);
+    String config = getConfig(hreq);
     // Get the bundle configurations
     BundleConfig js = getConfig(config, BundleType.JS, env.getPublicFolder());
     BundleConfig css =  getConfig(config, BundleType.CSS, env.getPublicFolder());
     // Ensure that we can use bundles
     ensureWritableChecked(js.store());
-    boolean doBundle = canBundle(req);
+    boolean doBundle = canBundle(hreq);
     if (doBundle) {
       long etagJS = js.getLastModifiedBundle(service);
       long etagCSS = css.getLastModifiedBundle(service);
       return Long.toString(Math.max(etagJS, etagCSS));
     }
     return null;
+  }
+
+  @Override @Deprecated
+  public @Nullable String getETag(ContentRequest req) {
+    return getETag((RequestContext) req);
   }
 
   @Override

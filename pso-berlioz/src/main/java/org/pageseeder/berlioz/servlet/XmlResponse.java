@@ -38,6 +38,7 @@ import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.RequestContext;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.XmlGenerator;
@@ -448,7 +449,7 @@ public final class XmlResponse {
       BerliozGenerator generator = request.generator();
       if (generator instanceof Cacheable) {
         long start = System.nanoTime();
-        etag = ((Cacheable)generator).getETag(request);
+        etag = ((Cacheable)generator).getETag((RequestContext)request);
         long end = System.nanoTime();
         request.setProfileEtag(end-start);
       }

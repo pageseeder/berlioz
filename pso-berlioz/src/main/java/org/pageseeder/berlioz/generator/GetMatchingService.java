@@ -23,6 +23,7 @@ import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.RequestContext;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Service;
@@ -74,9 +75,14 @@ import org.pageseeder.xmlwriter.XMLWriter;
 public final class GetMatchingService implements ContentGenerator, Cacheable {
 
   @Override
-  public String getETag(ContentRequest req) {
+  public String getETag(RequestContext req) {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     return Long.toString(registry.version());
+  }
+
+  @Override @Deprecated
+  public String getETag(ContentRequest req) {
+    return getETag((RequestContext) req);
   }
 
   @Override

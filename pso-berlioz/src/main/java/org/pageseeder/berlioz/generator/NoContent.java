@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.generator;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.RequestContext;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 /**
@@ -59,13 +60,14 @@ import org.pageseeder.xmlwriter.XMLWriter;
  */
 public final class NoContent implements ContentGenerator, Cacheable {
 
-  /**
-   * Always returns the <code>"nocontent"</code>.
-   * {@inheritDoc}
-   */
   @Override
-  public String getETag(ContentRequest req) {
+  public String getETag(RequestContext req) {
     return "nocontent";
+  }
+
+  @Override @Deprecated
+  public String getETag(ContentRequest req) {
+    return getETag((RequestContext) req);
   }
 
   /**

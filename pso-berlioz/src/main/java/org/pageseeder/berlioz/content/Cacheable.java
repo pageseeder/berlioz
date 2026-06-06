@@ -29,17 +29,34 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version 0.9.3
+ * @version 0.13.2
  * @since 0.6
  */
 public interface Cacheable {
 
   /**
+   * Returns the ETag for the specified request context.
+   *
+   * <p>New implementations should override this method. The default delegates to the deprecated
+   * {@link #getETag(ContentRequest)} when the context is a {@link ContentRequest}.
+   *
+   * @param req the request context
+   * @return the corresponding ETag, or {@code null}
+   */
+  default @Nullable String getETag(RequestContext req) {
+    if (req instanceof ContentRequest) return getETag((ContentRequest) req);
+    return null;
+  }
+
+  /**
    * Returns the ETag for the specified content request.
    *
-   * @param req the content request.
-   * @return The corresponding ETag.
+   * @param req the content request
+   * @return the corresponding ETag, or {@code null}
+   *
+   * @deprecated Override {@link #getETag(RequestContext)} instead.
    */
+  @Deprecated(since = "0.13.2", forRemoval = true)
   @Nullable String getETag(ContentRequest req);
 
 }
