@@ -240,7 +240,8 @@ public final class JsonResponse {
 
   private String retrieveETag(HttpContentRequest request) {
     Integer key = request.order();
-    if (this.etags.containsKey(key)) return this.etags.get(key);
+    String cached = this.etags.get(key);
+    if (cached != null) return cached;
     BerliozGenerator generator = request.generator();
     String etag = null;
     if (generator instanceof Cacheable) {
