@@ -742,4 +742,16 @@ public interface OutputWriter extends AutoCloseable, Flushable {
     return this;
   }
 
+  /**
+   * Flushes any buffered content to the underlying target.
+   */
+  @Override
+  void flush();
+
+  /**
+   * Closes this writer and flushes any buffered content to the underlying target.
+   */
+  @Override
+  void close();
+
 }
