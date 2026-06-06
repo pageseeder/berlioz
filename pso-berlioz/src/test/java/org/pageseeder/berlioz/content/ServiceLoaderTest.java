@@ -24,6 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.generator.GetServices;
+import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
 
 class ServiceLoaderTest {
@@ -87,5 +89,72 @@ class ServiceLoaderTest {
     Assertions.assertFalse(files.isEmpty(), "Expected at least one services file");
     boolean hasServicesXml = files.stream().anyMatch(f -> f.getName().equals("services.xml"));
     Assertions.assertTrue(hasServicesXml, "Expected services.xml in the list");
+  }
+
+  // Namespace tests
+
+  @Test
+  void testNamespace_defaultResolvesSimpleName() throws BerliozException {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-namespaces.xml"));
+
+    MatchingService match = loader.getDefaultRegistry().get("/ns/simple", HttpMethod.GET);
+    Assertions.assertNotNull(match, "Expected ns-simple service to match");
+    List<BerliozGenerator> generators = match.service().generators();
+    Assertions.assertEquals(1, generators.size());
+    Assertions.assertInstanceOf(NoContent.class, generators.get(0),
+        "Simple name 'NoContent' should resolve via default namespace");
+  }
+
+  @Test
+  void testNamespace_prefixedResolvesName() throws BerliozException {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-namespaces.xml"));
+
+    MatchingService match = loader.getDefaultRegistry().get("/ns/prefixed", HttpMethod.GET);
+    Assertions.assertNotNull(match, "Expected ns-prefixed service to match");
+    List<BerliozGenerator> generators = match.service().generators();
+    Assertions.assertEquals(1, generators.size());
+    Assertions.assertInstanceOf(GetServices.class, generators.get(0),
+        "'gen:GetServices' should resolve via 'gen' prefix namespace");
+  }
+
+  @Test
+  void testNamespace_fullyQualifiedPassesThrough() throws BerliozException {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-namespaces.xml"));
+
+    MatchingService match = loader.getDefaultRegistry().get("/ns/qualified", HttpMethod.GET);
+    Assertions.assertNotNull(match, "Expected ns-qualified service to match");
+    List<BerliozGenerator> generators = match.service().generators();
+    Assertions.assertEquals(1, generators.size());
+    Assertions.assertInstanceOf(NoContent.class, generators.get(0),
+        "Fully-qualified class name should pass through unchanged");
+  }
+
+  @Test
+  void testNamespace_servicesLevelOverrideApplies() throws BerliozException {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-namespaces.xml"));
+
+    MatchingService match = loader.getDefaultRegistry().get("/ns/override/simple", HttpMethod.GET);
+    Assertions.assertNotNull(match, "Expected ns-override-simple service to match");
+    List<BerliozGenerator> generators = match.service().generators();
+    Assertions.assertEquals(1, generators.size());
+    Assertions.assertInstanceOf(NoContent.class, generators.get(0),
+        "Services-level namespace override should resolve 'NoContent'");
+  }
+
+  @Test
+  void testNamespace_servicesLevelPrefixApplies() throws BerliozException {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-namespaces.xml"));
+
+    MatchingService match = loader.getDefaultRegistry().get("/ns/override/prefixed", HttpMethod.GET);
+    Assertions.assertNotNull(match, "Expected ns-override-prefixed service to match");
+    List<BerliozGenerator> generators = match.service().generators();
+    Assertions.assertEquals(1, generators.size());
+    Assertions.assertInstanceOf(GetServices.class, generators.get(0),
+        "Services-level 'gen' prefix should resolve 'gen:GetServices'");
   }
 }

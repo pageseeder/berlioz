@@ -25,7 +25,7 @@
 
   @attribute version The version of service configuration always "1.0"
 -->
-<!ELEMENT service-config                        ( response-code?, services* ) >
+<!ELEMENT service-config                        ( namespace*, response-code?, services* ) >
 <!ATTLIST service-config     version            CDATA            #FIXED "1.0" >
 
 <!--
@@ -33,7 +33,28 @@
 
   @attribute group A name to group these services together.
 -->
-<!ELEMENT services                               ( response-code?, service* ) >
+<!ELEMENT services                               ( namespace*, response-code?, service* ) >
+
+<!--
+  A namespace declaration that maps a short prefix (or no prefix) to a Java package,
+  allowing generator class names to be written without the full package path.
+
+  A declaration with no prefix attribute defines the default namespace: unqualified
+  class names (no '.' or ':') are resolved against it.  A declaration with a prefix
+  attribute defines a named namespace: class names written as "prefix:ClassName" are
+  resolved to "package.ClassName".
+
+  Declarations under <service-config> apply to all contained <services> groups.
+  Declarations under <services> apply only to that group and override any same-prefix
+  declaration inherited from <service-config>.
+
+  @attribute package The Java package name (e.g. "com.example.app.generators").
+  @attribute prefix  The short prefix used before ':' in class attributes; omit for the
+                     default (unqualified) namespace.
+-->
+<!ELEMENT namespace                                                            EMPTY >
+<!ATTLIST namespace          package            CDATA               #REQUIRED
+                             prefix             CDATA                #IMPLIED >
 <!ATTLIST services           group              NMTOKEN             #REQUIRED >
 
 <!--

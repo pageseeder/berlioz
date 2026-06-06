@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE service-config PUBLIC "-//Berlioz//DTD::Services 1.0//EN"
+    "https://pageseeder.org/schema/berlioz/services-1.0.dtd">
+<service-config version="1.0">
+
+  <!-- Default namespace (no prefix): unqualified class names resolve here -->
+  <namespace package="org.pageseeder.berlioz.generator"/>
+  <!-- Named prefix: "gen:ClassName" resolves to org.pageseeder.berlioz.generator.ClassName -->
+  <namespace package="org.pageseeder.berlioz.generator" prefix="gen"/>
+
+  <!-- Services group using the config-level default namespace -->
+  <services group="ns-default">
+    <service id="ns-simple" method="get">
+      <url pattern="/ns/simple"/>
+      <generator class="NoContent"/>
+    </service>
+    <service id="ns-prefixed" method="get">
+      <url pattern="/ns/prefixed"/>
+      <generator class="gen:GetServices"/>
+    </service>
+    <service id="ns-qualified" method="get">
+      <url pattern="/ns/qualified"/>
+      <generator class="org.pageseeder.berlioz.generator.NoContent"/>
+    </service>
+  </services>
+
+  <!-- Services group whose namespace overrides the config-level default -->
+  <services group="ns-override">
+    <!-- Override default namespace to a different package — still resolves NoContent via prefix -->
+    <namespace package="org.pageseeder.berlioz.generator" prefix="gen"/>
+    <!-- Override the default namespace with the same package (harmless, but verifies override path) -->
+    <namespace package="org.pageseeder.berlioz.generator"/>
+    <service id="ns-override-simple" method="get">
+      <url pattern="/ns/override/simple"/>
+      <generator class="NoContent"/>
+    </service>
+    <service id="ns-override-prefixed" method="get">
+      <url pattern="/ns/override/prefixed"/>
+      <generator class="gen:GetServices"/>
+    </service>
+  </services>
+
+</service-config>

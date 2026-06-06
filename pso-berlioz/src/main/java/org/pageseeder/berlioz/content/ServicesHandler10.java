@@ -18,7 +18,9 @@ package org.pageseeder.berlioz.content;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -85,6 +87,9 @@ final class ServicesHandler10 extends DefaultHandler {
 
     /** 'service' element name */
     SERVICE,
+
+    /** 'namespace' element name */
+    NAMESPACE,
 
     /** 'response-code' element name */
     RESPONSE_CODE,
@@ -161,6 +166,24 @@ final class ServicesHandler10 extends DefaultHandler {
   private final Set<String> groups = new HashSet<>();
 
   /**
+   * Namespace declarations from the 'service-config' level (prefix → package).
+   * Empty string key represents the default (no-prefix) namespace.
+   */
+  private final Map<String, String> configNamespaces = new LinkedHashMap<>();
+
+  /**
+   * Namespace declarations from the current 'services' group (prefix → package).
+   * Overrides same-prefix entries in {@link #configNamespaces} for that group.
+   */
+  private final Map<String, String> servicesNamespaces = new LinkedHashMap<>();
+
+  /**
+   * True while parsing inside a 'services' element; used to route namespace
+   * declarations to the correct scope map.
+   */
+  private boolean inServicesGroup = false;
+
+  /**
    * Creates a new handler that will update the specified registry and use the given error handler.
    *
    * <p>Note: it is more efficient to pass the generators rather than access the outer class.
@@ -196,6 +219,7 @@ final class ServicesHandler10 extends DefaultHandler {
         break;
 
       case SERVICES:
+        this.inServicesGroup = true;
         String group = atts.getValue("group");
         this.builder.group(group);
         if (!this.groups.add(this.builder.group())) {
@@ -205,6 +229,10 @@ final class ServicesHandler10 extends DefaultHandler {
         if (this.rules.isEmpty()) {
           this.rules.add(ServiceStatusRule.DEFAULT_RULE);
         }
+        break;
+
+      case NAMESPACE:
+        handleNamespace(atts);
         break;
 
       case SERVICE:
@@ -255,6 +283,8 @@ final class ServicesHandler10 extends DefaultHandler {
         popRuleIfAdded(3);
         break;
       case SERVICES:
+        this.servicesNamespaces.clear();
+        this.inServicesGroup = false;
         popRuleIfAdded(2);
         break;
       case SERVICE_CONFIG:
@@ -418,7 +448,8 @@ final class ServicesHandler10 extends DefaultHandler {
    */
   @SuppressWarnings("java:S1192") //No need to create a constant for parts of the warning message
   private void handleGenerator(Attributes atts) throws SAXException {
-    String className = atts.getValue("class");
+    String raw = atts.getValue("class");
+    String className = (raw != null && !raw.isEmpty()) ? resolveClass(raw) : raw;
     BerliozGenerator generator;
     try {
       // Allow unspecified class (defaults to no content)
@@ -450,6 +481,51 @@ final class ServicesHandler10 extends DefaultHandler {
     } catch (InvocationTargetException ex) {
       warning("Constructor of generator "+className+" threw an exception for service "+this.builder.id(), ex);
     }
+  }
+
+  /**
+   * Handles a 'namespace' element, routing the declaration to the correct scope map.
+   *
+   * @param atts The attributes of the 'namespace' element.
+   *
+   * @throws SAXException Only if thrown by the underlying error handler.
+   */
+  private void handleNamespace(Attributes atts) throws SAXException {
+    String pkg = atts.getValue("package");
+    if (pkg == null || pkg.isEmpty()) {
+      warning("Ignoring <namespace> without a package attribute");
+      return;
+    }
+    String prefix = atts.getValue("prefix");
+    String key = prefix != null ? prefix : "";
+    if (this.inServicesGroup) {
+      this.servicesNamespaces.put(key, pkg);
+    } else {
+      this.configNamespaces.put(key, pkg);
+    }
+  }
+
+  /**
+   * Resolves a generator class name against the active namespace declarations.
+   *
+   * <p>Names that already contain a '.' are returned unchanged (already qualified).
+   * Names of the form "prefix:ClassName" are resolved via the named namespace for
+   * that prefix.  Plain names (no '.' and no ':') are resolved via the default
+   * namespace (empty-string prefix).  If no matching namespace is found the name
+   * is returned as-is so that the normal ClassNotFoundException fires.
+   *
+   * @param className The class name as written in the XML attribute.
+   * @return The fully-qualified class name, or the original string if unresolvable.
+   */
+  private String resolveClass(String className) {
+    if (className.contains(".")) return className;
+    int colon = className.indexOf(':');
+    String prefix = colon >= 0 ? className.substring(0, colon) : "";
+    String simpleName = colon >= 0 ? className.substring(colon + 1) : className;
+    String pkg = this.servicesNamespaces.containsKey(prefix)
+        ? this.servicesNamespaces.get(prefix)
+        : this.configNamespaces.get(prefix);
+    return pkg != null ? pkg + "." + simpleName : className;
   }
 
   /**
