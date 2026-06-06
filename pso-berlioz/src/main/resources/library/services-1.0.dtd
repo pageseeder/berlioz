@@ -2,7 +2,7 @@
 <!--                                                                        -->
 <!-- Title:         Berlioz DTD for Web Services                            -->
 <!-- System:        Berlioz                                                 -->
-<!-- Status:        Beta 5                                                  -->
+<!-- Status:        Beta 6                                                  -->
 <!-- Description:   A schema for the defining the URL patterns and          -->
 <!--                associated content generators.                          -->
 <!-- Version:       1.0                                                     -->
@@ -19,9 +19,6 @@
 
 <!-- The rule to use to compute the response code                           -->
 <!ENTITY  % CODE_RULE        "(highest | lowest | first)"                     >
-
-<!-- The Boolean true|false                                                 -->
-<!ENTITY  % BOOLEAN          "(true | false)"                                 >
 
 <!--
   Top level element.
@@ -47,11 +44,10 @@
   @attribute flags  A list of values that can be used to qualify the service
   @attribute cache-control The cache-control header value
 -->
-<!ELEMENT service                        ( url+, response-code?, generator* ) >
+<!ELEMENT service            ( url+, response-code?, ( generator* | handler ) ) >
 <!ATTLIST service            id                 ID                  #REQUIRED
                              method             %HTTP_METHOD;       #REQUIRED
                              flags              NMTOKENS             #IMPLIED
-                             direct             %BOOLEAN;            #IMPLIED
                              cache-control      CDATA                #IMPLIED >
 
 <!--
@@ -80,6 +76,19 @@
 <!ATTLIST generator         class               CDATA                #IMPLIED
                             name                NMTOKEN              #IMPLIED
                             target              NMTOKEN              #IMPLIED >
+
+<!--
+  A single content generator that writes its output directly to the HTTP response,
+  bypassing the XSLT transformation step. At most one handler may be defined per service.
+
+  The class must implement the ContentGenerator interface defined in Berlioz.
+  When omitted, the NoContent generator is used.
+
+  @attribute class  The fully qualified Java class to load for this handler;
+                    defaults to NoContent when omitted.
+-->
+<!ELEMENT handler                                              ( parameter* ) >
+<!ATTLIST handler           class               CDATA                #IMPLIED >
 
 <!--
   A parameter to pass to the content generator.

@@ -71,6 +71,9 @@ final class ServicesHandler10 extends DefaultHandler {
     /** 'generator' element name */
     GENERATOR,
 
+    /** 'handler' element name */
+    HANDLER,
+
     /** 'parameter' element name */
     PARAMETER,
 
@@ -213,7 +216,6 @@ final class ServicesHandler10 extends DefaultHandler {
         this.builder.id(id != null? id : "");
         this.builder.cache(atts.getValue("cache-control"));
         this.builder.flags(atts.getValue("flags"));
-        this.builder.direct("true".equals(atts.getValue("direct")));
         handleMethod(atts.getValue("method"));
         break;
 
@@ -231,6 +233,11 @@ final class ServicesHandler10 extends DefaultHandler {
 
       case GENERATOR:
         handleGenerator(atts);
+        break;
+
+      case HANDLER:
+        handleGenerator(atts);
+        this.builder.direct(true);
         break;
       default:
 
