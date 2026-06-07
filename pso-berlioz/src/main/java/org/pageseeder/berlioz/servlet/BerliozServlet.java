@@ -310,11 +310,13 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
+    var service = match.service();
+
     // Include the service as a header for information
     if (serviceHeader) {
-      res.setHeader("X-Berlioz-Service", toSafeHeader(match.service().id()));
+      res.setHeader("X-Berlioz-Service", toSafeHeader(service.id()));
     }
-    LOGGER.debug("{} -> {}", path, match.service());
+    LOGGER.debug("{} -> {}", path, service);
 
     // Is Berlioz used to handle an error?
     Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
@@ -324,7 +326,7 @@ public final class BerliozServlet extends HttpServlet {
     String servletPath = req.getServletPath();
     // TODO We need something more solid to determine whether it is a JSON request than just the extension
     boolean jsonRequest = servletPath != null && servletPath.endsWith(".json");
-    boolean serviceSupportsJson = jsonRequest && match.service().supported().contains(OutputType.JSON);
+    boolean serviceSupportsJson = jsonRequest && service.supported().contains(OutputType.JSON);
 
     if (serviceSupportsJson) {
       processJson(req, res, config, match, method, code, profile, serverTiming, includeContent);
