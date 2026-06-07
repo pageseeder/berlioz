@@ -428,7 +428,7 @@ public final class XmlResponse {
     if (ContentStatus.isRedirect(status)) {
       // Redirect status set without a URL — cannot construct a valid redirect response
       LOGGER.warn("Legacy generator set redirect status {} without a redirect URL", status);
-      return Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+      return Response.status(ContentStatus.BAD_REQUEST);
     }
     if (status == ContentStatus.OK) return Response.ok();
     return Response.status(status);
