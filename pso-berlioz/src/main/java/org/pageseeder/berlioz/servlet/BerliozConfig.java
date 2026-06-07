@@ -22,7 +22,8 @@ import java.nio.file.Path;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
@@ -48,7 +49,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.13.2
  * @since 0.8.1
  */
 public final class BerliozConfig {
@@ -209,9 +210,7 @@ public final class BerliozConfig {
    * @return One year into the future.
    */
   public long getExpiryDate() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.roll(Calendar.YEAR, 1);
-    return calendar.getTimeInMillis();
+    return Instant.now().plus(365, ChronoUnit.DAYS).toEpochMilli();
   }
 
   /**
