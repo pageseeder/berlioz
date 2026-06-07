@@ -41,8 +41,8 @@ public final class HttpRequests {
 
   private HttpRequests() {}
 
-  /** Cached {@link RedirectPolicy} instances, loaded once via {@link ServiceLoader}. */
-  private static volatile @Nullable List<RedirectPolicy> policies = null;
+  private static final String HTTP = "http";
+  private static final String HTTPS = "https";
 
   /**
    * Returns {@code true} only for URLs that are safe to use as redirect targets.
@@ -107,7 +107,7 @@ public final class HttpRequests {
    */
   static String effectiveScheme(HttpServletRequest req) {
     String forwarded = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
-    return ("http".equals(forwarded) || "https".equals(forwarded)) ? forwarded : req.getScheme();
+    return (HTTP.equals(forwarded) || HTTPS.equals(forwarded)) ? forwarded : req.getScheme();
   }
 
   /**
@@ -119,17 +119,13 @@ public final class HttpRequests {
    */
   static int effectivePort(HttpServletRequest req) {
     String forwardedProto = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
-    if ("http".equals(forwardedProto) || "https".equals(forwardedProto)) {
+    if (HTTP.equals(forwardedProto) || HTTPS.equals(forwardedProto)) {
       String forwardedHost = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
       if (forwardedHost != null) {
         int colon = forwardedHost.indexOf(':');
         if (colon > 0) {
-          String portStr = forwardedHost.substring(colon + 1).strip();
-          try {
-            int port = Integer.parseInt(portStr);
-            if (port > 0 && port <= 65535) return port;
-          } catch (NumberFormatException ignored) {
-          }
+          int port = parsePort(forwardedHost.substring(colon + 1).strip());
+          if (port != -1) return port;
         }
       }
       return -1;
@@ -153,7 +149,7 @@ public final class HttpRequests {
     if (uriPort == -1 || uriPort == reqPort) return true;
     // Allow HTTP→HTTPS upgrade even when the ports differ
     String uriScheme = uri.getScheme();
-    return "https".equalsIgnoreCase(uriScheme) && "http".equalsIgnoreCase(effectiveScheme(req));
+    return HTTPS.equalsIgnoreCase(uriScheme) && HTTP.equalsIgnoreCase(effectiveScheme(req));
   }
 
   /**
@@ -174,21 +170,28 @@ public final class HttpRequests {
     return false;
   }
 
+  private static int parsePort(String portStr) {
+    try {
+      int port = Integer.parseInt(portStr);
+      if (port > 0 && port <= 65535) return port;
+    } catch (NumberFormatException ignored) {
+      // invalid port string
+    }
+    return -1;
+  }
+
   /** Returns the cached list of {@link RedirectPolicy} instances from {@link ServiceLoader}. */
   private static List<RedirectPolicy> policies() {
-    List<RedirectPolicy> p = policies;
-    if (p == null) {
-      synchronized (HttpRequests.class) {
-        p = policies;
-        if (p == null) {
-          List<RedirectPolicy> loaded = new ArrayList<>();
-          ServiceLoader.load(RedirectPolicy.class).forEach(loaded::add);
-          p = Collections.unmodifiableList(loaded);
-          policies = p;
-        }
-      }
+    return PoliciesHolder.INSTANCE;
+  }
+
+  private static final class PoliciesHolder {
+    static final List<RedirectPolicy> INSTANCE;
+    static {
+      List<RedirectPolicy> loaded = new ArrayList<>();
+      ServiceLoader.load(RedirectPolicy.class).forEach(loaded::add);
+      INSTANCE = Collections.unmodifiableList(loaded);
     }
-    return p;
   }
 
 }
