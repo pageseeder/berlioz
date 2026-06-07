@@ -436,8 +436,9 @@ public final class BerliozServlet extends HttpServlet {
     XmlResponse xml = new XmlResponse(req, res, config, match, profile);
     if (serverTiming) xml.enableServerTiming();
 
-    // Identify the transformer
-    XsltTransformer transformer = config.getTransformer(match.service());
+    // Identify the transformer; direct services bypass XSLT entirely
+    XsltTransformer transformer = match.service().isDirect() ? null : config.getTransformer(match.service());
+    // TODO Maybe we should use transformer but only if a custom one exist (no fallback)
     long start = System.nanoTime();
 
     // Indicate that the representation may vary depending on the encoding
