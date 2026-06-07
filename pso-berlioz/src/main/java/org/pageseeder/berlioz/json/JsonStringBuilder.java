@@ -178,12 +178,17 @@ public final class JsonStringBuilder implements JsonWriter {
       char c = name.charAt(i);
       if      (c == '"')  this.sw.append("\\\"");
       else if (c == '\\') this.sw.append("\\\\");
-      else if (c < 0x20)  this.sw.append(String.format("\\u%04x", (int) c));
+      else if (c < 0x20)  this.sw.append(toUnicodeEscape(c));
       else                this.sw.append(c);
     }
     this.sw.append("\":");
     this.sw.append(rawJson);
     return this;
+  }
+
+  private static String toUnicodeEscape(char c) {
+    char[] hex = "0123456789abcdef".toCharArray();
+    return "\\u" + hex[(c >> 12) & 0xf] + hex[(c >> 8) & 0xf] + hex[(c >> 4) & 0xf] + hex[c & 0xf];
   }
 
   @Override
