@@ -32,6 +32,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Accumulates generator-level outcomes (status, redirect, errors) across all generators in a
  * single service invocation. Shared by {@link XmlResponse} and {@link JsonResponse}.
+ *
+ * @author Christophe Lauret
+ *
+ * @version 0.13.2
+ * @since 0.13.2
  */
 final class GeneratorOutcome {
 
@@ -71,14 +76,14 @@ final class GeneratorOutcome {
    */
   void handleStatus(Response response, BerliozGenerator generator, Service service) {
     if (!service.affectStatus(generator)) return;
-    ContentStatus status = response.status();
+    ContentStatus incoming = response.status();
     CodeRule rule = service.rule().rule();
     ContentStatus current = this.status;
     boolean update = current == null
-        || (rule == CodeRule.HIGHEST && status.code() > current.code())
-        || (rule == CodeRule.LOWEST  && status.code() < current.code());
+        || (rule == CodeRule.HIGHEST && incoming.code() > current.code())
+        || (rule == CodeRule.LOWEST  && incoming.code() < current.code());
     if (update) {
-      this.status = status;
+      this.status = incoming;
       if (response.isRedirect()) this.redirect = response.redirectLocation();
     }
   }
