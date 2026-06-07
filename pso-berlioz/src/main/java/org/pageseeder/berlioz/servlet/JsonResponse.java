@@ -42,6 +42,7 @@ import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.util.ProfileFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +74,7 @@ public final class JsonResponse {
   private final MatchingService match;
   private final List<HttpContentRequest> requests;
 
+  private final boolean profile;
   private final GeneratorOutcome outcome = new GeneratorOutcome();
   private final Map<Integer, String> etags = new HashMap<>();
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
@@ -83,6 +85,7 @@ public final class JsonResponse {
     this.core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
     this.requests = GeneratorDispatch.configure(this.core, match);
+    this.profile = profile;
   }
 
   public Service getService() {
@@ -203,9 +206,9 @@ public final class JsonResponse {
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
 
     GeneratorListener l = listener.get();
-    if (l != null) l.generate(service, generator, generatorStatus, 0, end - start);
+    if (l != null) l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
 
-    return new GeneratorResult(name, json, error);
+    return new GeneratorResult(name, json, error, request.getProfileEtag(), end - start);
   }
 
   private String assemble(List<GeneratorResult> results, Service service) {
@@ -232,6 +235,17 @@ public final class JsonResponse {
         }
         jb.fieldRaw(r.name, value);
       }
+      if (this.profile) {
+        jb.startObject("_profile");
+        for (GeneratorResult r : results) {
+          jb.startObject(r.name);
+          jb.field("etag", ProfileFormat.format(r.profileEtag));
+          jb.field("process", ProfileFormat.format(r.profileProcess));
+          jb.field("total", ProfileFormat.format(r.profileEtag + r.profileProcess));
+          jb.endObject();
+        }
+        jb.endObject();
+      }
       jb.endObject();
       jb.flush();
       return jb.toString();
@@ -245,7 +259,10 @@ public final class JsonResponse {
     BerliozGenerator generator = request.generator();
     String etag = null;
     if (generator instanceof Cacheable) {
+      long start = System.nanoTime();
       etag = ((Cacheable) generator).getETag((Request) request);
+      long end = System.nanoTime();
+      request.setProfileEtag(end - start);
     }
     String result = etag != null ? etag : "";
     this.etags.put(key, result);
@@ -260,16 +277,20 @@ public final class JsonResponse {
     }
   }
 
-  // Simple holder for a generator's captured output
   private static final class GeneratorResult {
     final String name;
     final @Nullable String json;
     final @Nullable BerliozException error;
+    final long profileEtag;
+    final long profileProcess;
 
-    GeneratorResult(String name, @Nullable String json, @Nullable BerliozException error) {
+    GeneratorResult(String name, @Nullable String json, @Nullable BerliozException error,
+        long profileEtag, long profileProcess) {
       this.name = name;
       this.json = json;
       this.error = error;
+      this.profileEtag = profileEtag;
+      this.profileProcess = profileProcess;
     }
   }
 
