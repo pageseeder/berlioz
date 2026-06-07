@@ -278,7 +278,7 @@ public final class WebBundleTool {
 
         bundle.clearImport();
         StringWriter writer = new StringWriter();
-        expandStyles(bundle, writer, new File(this.virtual, file.getName()), filesRoot, minimize, threshold);
+        expandStyles(bundle, writer, new File(this.virtual, file.getName()), filesRoot, threshold);
         bundle.getETag(true);
         filename = bundle.getFileName();
 
@@ -327,13 +327,12 @@ public final class WebBundleTool {
    * @param bundle    The list of files to concatenate.
    * @param writer    The bundle to write to.
    * @param virtual   The virtual location of the bundle.
-   * @param minimize  Whether to minimize the expanded styles.
    * @param threshold The threshold for data URIs
    *
    * @throws IOException if an input/output error occurs.
    */
-  static void expandStyles(WebBundle bundle, Writer writer, File virtual, boolean minimize, long threshold) throws IOException {
-    expandStyles(bundle, writer, virtual, inferRoot(bundle.files()), minimize, threshold);
+  static void expandStyles(WebBundle bundle, Writer writer, File virtual, long threshold) throws IOException {
+    expandStyles(bundle, writer, virtual, inferRoot(bundle.files()), threshold);
   }
 
   /**
@@ -343,12 +342,11 @@ public final class WebBundleTool {
    * @param writer    The bundle to write to.
    * @param virtual   The virtual location of the bundle.
    * @param root      The public web root for CSS references.
-   * @param minimize  Whether to minimize the expanded styles.
    * @param threshold The threshold for data URIs
    *
    * @throws IOException if an input/output error occurs.
    */
-  static void expandStyles(WebBundle bundle, Writer writer, File virtual, File root, boolean minimize, long threshold) throws IOException {
+  static void expandStyles(WebBundle bundle, Writer writer, File virtual, File root, long threshold) throws IOException {
 
     // Copy the input stream to the output stream
     IOException exception = null;
