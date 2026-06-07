@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.content;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Assertions;
@@ -186,7 +187,7 @@ final class ParameterBuilderTest {
   @Test
   void asLocalDate_validIso() {
     LocalDate result = builder("from", "2024-03-15").asLocalDate().required();
-    Assertions.assertEquals(LocalDate.of(2024, 3, 15), result);
+    Assertions.assertEquals(LocalDate.of(2024, Month.MARCH, 15), result);
   }
 
   @Test
@@ -198,21 +199,21 @@ final class ParameterBuilderTest {
 
   @Test
   void asLocalDate_absent_defaultValue() {
-    LocalDate def = LocalDate.of(2024, 1, 1);
+    LocalDate def = LocalDate.of(2024, Month.JANUARY, 1);
     LocalDate result = builder("from", null).asLocalDate().defaultValue(def);
     Assertions.assertEquals(def, result);
   }
 
   @Test
   void asLocalDate_valid_required_def_returnsValue() {
-    LocalDate def = LocalDate.of(2024, 1, 1);
+    LocalDate def = LocalDate.of(2024, Month.JANUARY, 1);
     LocalDate result = builder("from", "2024-03-15").asLocalDate().required(def);
-    Assertions.assertEquals(LocalDate.of(2024, 3, 15), result);
+    Assertions.assertEquals(LocalDate.of(2024, Month.MARCH, 15), result);
   }
 
   @Test
   void asLocalDate_absent_required_def_throws() {
-    LocalDate def = LocalDate.of(2024, 1, 1);
+    LocalDate def = LocalDate.of(2024, Month.JANUARY, 1);
     TypedParameter<LocalDate> p = builder("from", null).asLocalDate();
     InvalidParameterException ex = Assertions.assertThrows(InvalidParameterException.class, () -> p.required(def));
     Assertions.assertEquals(InvalidParameterException.Reason.REQUIRED, ex.getReason());
@@ -220,7 +221,7 @@ final class ParameterBuilderTest {
 
   @Test
   void asLocalDate_invalid_required_def_returnsDefault() {
-    LocalDate def = LocalDate.of(2024, 1, 1);
+    LocalDate def = LocalDate.of(2024, Month.JANUARY, 1);
     LocalDate result = builder("from", "15-03-2024").asLocalDate().required(def);
     Assertions.assertEquals(def, result);
   }
