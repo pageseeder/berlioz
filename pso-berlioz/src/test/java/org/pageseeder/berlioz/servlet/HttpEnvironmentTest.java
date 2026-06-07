@@ -40,6 +40,14 @@ class HttpEnvironmentTest {
   }
 
   @Test
+  void testGetPublicFileResolvesRootRelativePath() throws Exception {
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
+    HttpEnvironment env = new HttpEnvironment(pub, priv, "");
+    Assertions.assertEquals(new File(pub, "images/logo.png"), env.getPublicFile("/images/logo.png"));
+  }
+
+  @Test
   void testGetPrivateFileResolvesRelativePath() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
@@ -48,10 +56,38 @@ class HttpEnvironmentTest {
   }
 
   @Test
+  void testGetPrivateFileResolvesRootRelativePath() throws Exception {
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
+    HttpEnvironment env = new HttpEnvironment(pub, priv, "");
+    Assertions.assertEquals(new File(priv, "xslt/html/global.xsl"), env.getPrivateFile("/xslt/html/global.xsl"));
+  }
+
+  @Test
   void testGetPublicFileAndPrivateFileAreIndependent() throws Exception {
     File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
     File priv = Files.createDirectory(tmp.resolve("private")).toFile();
     HttpEnvironment env = new HttpEnvironment(pub, priv, "");
     Assertions.assertNotEquals(env.getPublicFile("data.xml"), env.getPrivateFile("data.xml"));
+  }
+
+  @Test
+  void testGetPublicFileRejectsSamePrefixSiblingTraversal() throws Exception {
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
+    Files.createDirectory(tmp.resolve("public-sibling"));
+    HttpEnvironment env = new HttpEnvironment(pub, priv, "");
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> env.getPublicFile("../public-sibling/secret.txt"));
+  }
+
+  @Test
+  void testGetPrivateFileRejectsSamePrefixSiblingTraversal() throws Exception {
+    File pub  = Files.createDirectory(tmp.resolve("public")).toFile();
+    File priv = Files.createDirectory(tmp.resolve("private")).toFile();
+    Files.createDirectory(tmp.resolve("private-sibling"));
+    HttpEnvironment env = new HttpEnvironment(pub, priv, "");
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> env.getPrivateFile("../private-sibling/secret.txt"));
   }
 }

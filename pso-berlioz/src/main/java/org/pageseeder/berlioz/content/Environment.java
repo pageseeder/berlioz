@@ -46,16 +46,26 @@ public interface Environment {
   /**
    * Returns the file pointing to the public area of the website.
    *
+   * <p>Implementations should resolve the path within the public folder, treat leading separators
+   * as folder-relative, and reject paths that resolve outside it.
+   *
    * @param path The path of the requested file.
    * @return the requested file.
+   *
+   * @throws IllegalArgumentException if the path resolves outside the public folder.
    */
   File getPublicFile(String path);
 
   /**
    * Returns the file pointing to the private area of the website (that is within WEB-INF).
    *
+   * <p>Implementations should resolve the path within the private folder, treat leading separators
+   * as folder-relative, and reject paths that resolve outside it.
+   *
    * @param path The path of the requested file.
    * @return the requested file.
+   *
+   * @throws IllegalArgumentException if the path resolves outside the private folder.
    */
   File getPrivateFile(String path);
 

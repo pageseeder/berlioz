@@ -20,6 +20,7 @@ import java.io.File;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Environment;
+import org.pageseeder.berlioz.util.FileUtils;
 
 /**
  * Provides the environment common to all services.
@@ -71,12 +72,12 @@ public final class HttpEnvironment implements Environment {
 
   @Override
   public File getPrivateFile(String path) {
-    return new File(this.privateFolder, path);
+    return getContainedFile(this.privateFolder, path);
   }
 
   @Override
   public File getPublicFile(String path) {
-    return new File(this.publicFolder, path);
+    return getContainedFile(this.publicFolder, path);
   }
 
   @Override
@@ -104,5 +105,21 @@ public final class HttpEnvironment implements Environment {
    */
   public String getCacheControl() {
     return this.cacheControl;
+  }
+
+  private static File getContainedFile(File root, String path) {
+    File file = new File(root, toRootRelativePath(path));
+    if (FileUtils.contains(root, file)) return file;
+    throw new IllegalArgumentException("Path resolves outside the configured folder: " + path);
+  }
+
+  private static String toRootRelativePath(String path) {
+    int start = 0;
+    while (start < path.length()) {
+      char c = path.charAt(start);
+      if (c != '/' && c != '\\') break;
+      start++;
+    }
+    return path.substring(start);
   }
 }
