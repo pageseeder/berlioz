@@ -19,12 +19,15 @@ class GetGeneratorStatisticsTest {
 
   @BeforeEach
   void setup() {
-    BerliozConfig.setListener(null);
-    StatisticsCollector.getInstance().clear();
+    reset();
   }
 
   @AfterEach
   void teardown() {
+    reset();
+  }
+
+  private void reset() {
     BerliozConfig.setListener(null);
     StatisticsCollector.getInstance().clear();
   }
