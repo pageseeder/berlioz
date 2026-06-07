@@ -210,7 +210,6 @@ public final class RelocationFilter implements Filter {
 
   private @Nullable String ensureSafeTarget(String to) {
     String sanitized = to.replaceAll("[\\n\\r]+", "");
-    String normalized = normalizeTarget(sanitized);
     String decoded;
     try {
       decoded = URLDecoder.decode(sanitized, StandardCharsets.UTF_8);
@@ -218,12 +217,34 @@ public final class RelocationFilter implements Filter {
       LOGGER.warn("Relocation target '{}' is not a valid encoded path, ignoring", to);
       return null;
     }
-
-    if (isProtectedTarget(normalizeTargetForCheck(sanitized)) || isProtectedTarget(normalizeTargetForCheck(decoded))) {
+    // Decode to fixed point for the protection check only — catches any encoding depth
+    // (%2fWEB-INF, %252fWEB-INF, %25252fWEB-INF, …) without discarding legitimate
+    // percent-encoding in the path we actually dispatch (e.g. %20, %C3%A9).
+    String fullyDecoded = fullyDecode(decoded);
+    if (fullyDecoded == null || isProtectedTarget(normalizeTargetForCheck(fullyDecoded))) {
       LOGGER.warn("Relocation target '{}' resolves to protected path, ignoring", to);
       return null;
     }
-    return normalized;
+    // Return single-decoded normalised path; other percent-encoded characters are preserved.
+    return normalizeTarget(decoded);
+  }
+
+  /**
+   * Repeatedly URL-decodes {@code s} until the result is stable (idempotent).
+   * Returns {@code null} if any decode step produces a malformed sequence.
+   */
+  private static @Nullable String fullyDecode(String s) {
+    String current = s;
+    while (true) {
+      String next;
+      try {
+        next = URLDecoder.decode(current, StandardCharsets.UTF_8);
+      } catch (IllegalArgumentException ex) {
+        return null;
+      }
+      if (next.equals(current)) return current;
+      current = next;
+    }
   }
 
   private static String normalizeTarget(String target) {
