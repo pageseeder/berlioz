@@ -55,7 +55,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.9.0
+ * @version 0.13.2
  * @since 0.7
  */
 public final class NoContent implements ContentGenerator, Cacheable {
@@ -63,11 +63,6 @@ public final class NoContent implements ContentGenerator, Cacheable {
   @Override
   public String getETag(Request req) {
     return "nocontent";
-  }
-
-  @Override @Deprecated
-  public String getETag(ContentRequest req) {
-    return getETag((Request) req);
   }
 
   /**

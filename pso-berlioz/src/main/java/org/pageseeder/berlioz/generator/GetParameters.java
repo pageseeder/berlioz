@@ -50,7 +50,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.13.2
  * @since 0.7
  */
 public final class GetParameters implements ContentGenerator, Cacheable {
@@ -69,11 +69,6 @@ public final class GetParameters implements ContentGenerator, Cacheable {
       if (name.length() <= MAX_NAME_LENGTH) appendValuesToHash(hash, name, req.parameterValues(name));
     }
     return SHA256.hash(hash.toString());
-  }
-
-  @Override @Deprecated
-  public String getETag(ContentRequest req) {
-    return getETag((Request) req);
   }
 
   @Override

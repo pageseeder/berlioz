@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
@@ -50,7 +51,7 @@ class GetLiveServicesTest {
   void testETagReflectsRegistryVersion() {
     GetLiveServices gen = new GetLiveServices();
     ContentRequest req = GeneratorTestSupport.request().build();
-    String etag = gen.getETag(req);
+    String etag = gen.getETag((Request) req);
     Assertions.assertNotNull(etag);
     Assertions.assertFalse(etag.isEmpty());
   }

@@ -45,7 +45,7 @@ import org.jspecify.annotations.Nullable;
  * @author Tu Tak Tran
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.13.2
  * @since 0.6
  */
 public interface ContentRequest extends Request {

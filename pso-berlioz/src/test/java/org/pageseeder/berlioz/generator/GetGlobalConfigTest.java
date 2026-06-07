@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 
@@ -48,7 +49,7 @@ class GetGlobalConfigTest {
   void testETagNotNullWhenConfigFileExists() {
     GetGlobalConfig gen = new GetGlobalConfig();
     ContentRequest req = GeneratorTestSupport.request().build();
-    String etag = gen.getETag(req);
+    String etag = gen.getETag((Request) req);
     Assertions.assertNotNull(etag, "ETag should not be null when a properties file is found");
     Assertions.assertFalse(etag.isEmpty());
   }
@@ -58,7 +59,7 @@ class GetGlobalConfigTest {
     GlobalSettings.setup((InitEnvironment) null);
     GetGlobalConfig gen = new GetGlobalConfig();
     ContentRequest req = GeneratorTestSupport.request().build();
-    Assertions.assertNull(gen.getETag(req), "ETag should be null when no properties file is configured");
+    Assertions.assertNull(gen.getETag((Request) req), "ETag should be null when no properties file is configured");
   }
 
   // helpers

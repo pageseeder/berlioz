@@ -61,7 +61,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.10.7
+ * @version 0.13.2
  * @since 0.8
  */
 public final class GetServices implements ContentGenerator, Cacheable {
@@ -73,11 +73,6 @@ public final class GetServices implements ContentGenerator, Cacheable {
       etag.append('~').append(f.length()).append('!').append(f.lastModified());
     }
     return SHA256.hash(etag.toString());
-  }
-
-  @Override @Deprecated
-  public String getETag(ContentRequest req) {
-    return getETag((Request) req);
   }
 
   @Override

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
@@ -53,8 +54,8 @@ class GetServicesTest {
     GlobalSettings.setup(WEB_INF);
     GetServices gen = new GetServices();
     ContentRequest req = GeneratorTestSupport.request().build();
-    String etag1 = gen.getETag(req);
-    String etag2 = gen.getETag(req);
+    String etag1 = gen.getETag((Request) req);
+    String etag2 = gen.getETag((Request) req);
     Assertions.assertEquals(etag1, etag2, "ETag should be stable for unchanged files");
     Assertions.assertNotNull(etag1);
   }

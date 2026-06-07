@@ -117,7 +117,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.13.2
  * @since 0.9.32
  */
 public final class GetWebBundles implements ContentGenerator, Cacheable {
@@ -157,11 +157,6 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
       return Long.toString(Math.max(etagJS, etagCSS));
     }
     return null;
-  }
-
-  @Override @Deprecated
-  public @Nullable String getETag(ContentRequest req) {
-    return getETag((Request) req);
   }
 
   @Override

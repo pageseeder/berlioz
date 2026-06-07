@@ -37,8 +37,10 @@ public interface Cacheable {
   /**
    * Returns the ETag for the specified request context.
    *
-   * <p>New implementations should override this method. The default delegates to the deprecated
-   * {@link #getETag(ContentRequest)} when the context is a {@link ContentRequest}.
+   * <p>Non-{@link ContentGenerator} generators must override this method.
+   * The default dispatches to {@link #getETag(ContentRequest)} when the request is a
+   * {@link ContentRequest}, allowing legacy {@link ContentGenerator} implementations to
+   * override only the narrower method.
    *
    * @param req the request
    * @return the corresponding ETag, or {@code null}
@@ -51,12 +53,18 @@ public interface Cacheable {
   /**
    * Returns the ETag for the specified content request.
    *
+   * <p>{@link ContentGenerator} implementations should override this method.
+   * The default returns {@code null}, which the primary {@link #getETag(Request)} default
+   * interprets as "no ETag" when the request is not a {@link ContentRequest}.
+   *
    * @param req the content request
    * @return the corresponding ETag, or {@code null}
    *
-   * @deprecated Override {@link #getETag(Request)} instead.
+   * @deprecated Override {@link #getETag(Request)} instead (required for non-{@link ContentGenerator} generators).
    */
-  @Deprecated(since = "0.13.2", forRemoval = true)
-  @Nullable String getETag(ContentRequest req);
+  @Deprecated(since = "0.13.2")
+  default @Nullable String getETag(ContentRequest req) {
+    return null;
+  }
 
 }

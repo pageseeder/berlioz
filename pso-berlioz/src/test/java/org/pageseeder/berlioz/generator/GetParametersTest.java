@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.generator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 
@@ -61,8 +62,8 @@ class GetParametersTest {
   void testETagWithNoParametersIsStable() {
     GetParameters gen = new GetParameters();
     ContentRequest req = GeneratorTestSupport.request().build();
-    String etag1 = gen.getETag(req);
-    String etag2 = gen.getETag(req);
+    String etag1 = gen.getETag((Request) req);
+    String etag2 = gen.getETag((Request) req);
     Assertions.assertEquals(etag1, etag2, "ETag should be stable for same request");
     Assertions.assertNotNull(etag1);
     Assertions.assertFalse(etag1.isEmpty());
@@ -73,7 +74,7 @@ class GetParametersTest {
     GetParameters gen = new GetParameters();
     ContentRequest empty  = GeneratorTestSupport.request().build();
     ContentRequest withParam = GeneratorTestSupport.request().parameter("q", "test").build();
-    Assertions.assertNotEquals(gen.getETag(empty), gen.getETag(withParam));
+    Assertions.assertNotEquals(gen.getETag((Request) empty), gen.getETag((Request) withParam));
   }
 
   @Test
@@ -81,7 +82,7 @@ class GetParametersTest {
     GetParameters gen = new GetParameters();
     ContentRequest req1 = GeneratorTestSupport.request().parameter("q", "foo").build();
     ContentRequest req2 = GeneratorTestSupport.request().parameter("q", "foo").build();
-    Assertions.assertEquals(gen.getETag(req1), gen.getETag(req2));
+    Assertions.assertEquals(gen.getETag((Request) req1), gen.getETag((Request) req2));
   }
 
   // helpers

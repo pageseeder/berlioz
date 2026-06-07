@@ -373,6 +373,40 @@ public final class Service {
   }
 
   /**
+   * Warns when a {@link Cacheable} generator has overridden the wrong {@code getETag} method.
+   *
+   * <p>The rule is:
+   * <ul>
+   *   <li>{@link ContentGenerator} implementations should override {@code getETag(ContentRequest)}</li>
+   *   <li>All other generator types must override {@code getETag(Request)}</li>
+   * </ul>
+   *
+   * @param generator the generator to check
+   * @param logger the logger to use for warnings
+   */
+  static void warnCacheableMethod(BerliozGenerator generator, Logger logger) {
+    if (!(generator instanceof Cacheable)) return;
+    Class<?> cls = generator.getClass();
+    boolean hasRequest = overridesMethod(cls, "getETag", Request.class);
+    boolean hasContentRequest = overridesMethod(cls, "getETag", ContentRequest.class);
+    if (!hasRequest && !hasContentRequest) {
+      logger.warn("{} implements Cacheable but overrides neither getETag method — ETag will always be null.", cls.getName());
+    } else if (generator instanceof ContentGenerator && hasRequest && !hasContentRequest) {
+      logger.warn("{} is a ContentGenerator implementing Cacheable via getETag(Request) — override getETag(ContentRequest) instead.", cls.getName());
+    } else if (!(generator instanceof ContentGenerator) && hasContentRequest && !hasRequest) {
+      logger.warn("{} implements Cacheable via getETag(ContentRequest) but is not a ContentGenerator — override getETag(Request) instead.", cls.getName());
+    }
+  }
+
+  private static boolean overridesMethod(Class<?> cls, String name, Class<?> paramType) {
+    try {
+      return !cls.getMethod(name, paramType).getDeclaringClass().isInterface();
+    } catch (NoSuchMethodException e) {
+      return false;
+    }
+  }
+
+  /**
    * Computes the intersection of supported output formats across all generators.
    *
    * @param generators the list of generators.
@@ -593,10 +627,12 @@ public final class Service {
      * @return a new service instance.
      */
     public Service build() {
-      // warn when attempting to use cache control with uncacheable service
+      Logger logger = LoggerFactory.getLogger(Builder.class);
       if (!this.cache.isEmpty() && !isCacheable(this.generators)) {
-        Logger logger = LoggerFactory.getLogger(Builder.class);
         logger.warn("Building non-cacheable service {} - cache control ignored.", this.id);
+      }
+      for (BerliozGenerator g : this.generators) {
+        warnCacheableMethod(g, logger);
       }
       return new Service(this);
     }

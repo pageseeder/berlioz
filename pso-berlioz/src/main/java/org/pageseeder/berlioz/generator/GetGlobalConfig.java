@@ -59,7 +59,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.13.2
  * @since 0.8
  */
 public final class GetGlobalConfig implements ContentGenerator, Cacheable {
@@ -74,11 +74,6 @@ public final class GetGlobalConfig implements ContentGenerator, Cacheable {
     File global = GlobalSettings.getPropertiesFile();
     if (global == null) return null;
     return SHA256.hash(global.length()+"x"+global.lastModified());
-  }
-
-  @Override @Deprecated
-  public @Nullable String getETag(ContentRequest req) {
-    return getETag((Request) req);
   }
 
   @Override

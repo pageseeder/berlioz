@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 
@@ -21,7 +22,7 @@ class NoContentTest {
   void testETagIsAlwaysNocontent() {
     NoContent gen = new NoContent();
     ContentRequest req = GeneratorTestSupport.request().build();
-    Assertions.assertEquals("nocontent", gen.getETag(req));
+    Assertions.assertEquals("nocontent", gen.getETag((Request) req));
   }
 
   @Test

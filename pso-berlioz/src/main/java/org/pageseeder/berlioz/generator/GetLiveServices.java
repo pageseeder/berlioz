@@ -63,7 +63,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.10.7
+ * @version 0.13.2
  * @since 0.9.3
  */
 @Beta
@@ -73,11 +73,6 @@ public final class GetLiveServices implements ContentGenerator, Cacheable {
   public String getETag(Request req) {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     return Long.toString(registry.version());
-  }
-
-  @Override @Deprecated
-  public String getETag(ContentRequest req) {
-    return getETag((Request) req);
   }
 
   @Override
