@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -535,7 +536,7 @@ public final class WebBundleTool {
       return null;
     }
     File imported = new File(file.getParentFile(), path);
-    if (!isInRoot(root, imported)) {
+    if (!FileUtils.contains(root, imported)) {
       LOGGER.warn("Ignoring CSS import outside public root: {}", path);
       writeLine(out, line);
       return null;
@@ -636,7 +637,7 @@ public final class WebBundleTool {
     try {
       // Locate the referenced URL
       File ftarget = new File(source.getParentFile(), path);
-      if (!isInRoot(root, ftarget)) {
+      if (!FileUtils.contains(root, ftarget)) {
         LOGGER.warn("Ignoring CSS URL outside public root: {}", path);
         return path;
       }
@@ -695,25 +696,13 @@ public final class WebBundleTool {
     try {
       File left = first.getCanonicalFile();
       File right = second.getCanonicalFile();
-      while (left != null && !isInRoot(left, right)) {
+      while (left != null && !FileUtils.contains(left, right)) {
         left = left.getParentFile();
       }
       return left != null? left : first;
     } catch (IOException ex) {
       LOGGER.warn("Error while calculating common parent", ex);
       return first;
-    }
-  }
-
-  /**
-   * Returns whether the file resolves inside the public root.
-   */
-  private static boolean isInRoot(File root, File file) {
-    try {
-      return file.getCanonicalFile().toPath().startsWith(root.getCanonicalFile().toPath());
-    } catch (IOException ex) {
-      LOGGER.warn("Error while checking CSS path", ex);
-      return false;
     }
   }
 
