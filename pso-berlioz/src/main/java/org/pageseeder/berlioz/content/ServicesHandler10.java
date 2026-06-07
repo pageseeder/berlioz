@@ -300,15 +300,16 @@ final class ServicesHandler10 extends DefaultHandler {
     } else {
       Service service = this.builder.build();
       HttpMethod httpMethod = this.method;
+      String sid = "Service " + service.id();
       if (!service.generators().isEmpty() && service.supported().isEmpty()) {
-        warning("Service "+service.id()+" has generators with disjoint output formats — no format can be served (e.g. XmlGenerator mixed with JsonGenerator)");
+        warning(sid + " has generators with disjoint output formats - no format can be served (e.g. XmlGenerator mixed with JsonGenerator)");
       }
       if (service.generators().isEmpty()) {
-        warning("Service "+service.id()+" has no generators (handler failed to load?) — service will not be registered");
+        warning(sid + " has no generators (handler failed to load?) - service will not be registered");
       } else if (service.isDirect() && service.generators().size() != 1) {
-        warning("Service "+service.id()+" is configured as direct but has "+service.generators().size()+" generators — direct requires exactly one generator; service will not be registered");
+        warning(sid + " is configured as direct but has " + service.generators().size() + " generators - direct requires exactly one generator; service will not be registered");
       } else if (this.patterns.isEmpty()) {
-        warning("No URI pattern match service "+service.id()+" - service will be ignored");
+        warning(sid + " has no URI patterns - service will not be registered");
       } else {
         for (URIPattern pattern : this.patterns) {
           this.registry.register(service, pattern, httpMethod);
