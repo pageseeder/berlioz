@@ -89,6 +89,11 @@ public final class WebBundleTool {
   private File virtual;
 
   /**
+   * The public web root containing CSS imports and URL targets.
+   */
+  private @Nullable File root;
+
+  /**
    * The maximum size for converting the content of an image in CSS into a data URI.
    */
   private volatile long dataURIThreshold = DATA_URI_MAX_SIZE;
@@ -124,6 +129,18 @@ public final class WebBundleTool {
    */
   public void setVirtual(File virtual) {
     this.virtual = Objects.requireNonNull(virtual, "The virtual location of bundles must not be null");
+  }
+
+  /**
+   * Sets the public web root used to constrain CSS imports and URL references.
+   *
+   * <p>Relative CSS {@code @import} and {@code url(...)} references are only read from this directory. References
+   * resolving outside the public root are kept in the generated CSS but are not expanded or embedded.
+   *
+   * @param root the public web root.
+   */
+  public void setRoot(File root) {
+    this.root = Objects.requireNonNull(root, "The public web root must not be null");
   }
 
   /**
@@ -246,7 +263,9 @@ public final class WebBundleTool {
    */
   public @Nullable File bundleStyles(List<File> files, String name, boolean minimize) throws IOException {
     if (files.isEmpty()) return null;
-    String key = cacheKey(name, files, minimize);
+    File root = getRoot(files);
+    long threshold = this.dataURIThreshold;
+    String key = cacheKey(name, files, root, minimize, threshold);
     WebBundle bundle = instances.computeIfAbsent(key, unused -> new WebBundle(name, files, minimize));
     synchronized (bundle) {
       String filename = bundle.getFileName();
@@ -258,7 +277,7 @@ public final class WebBundleTool {
 
         bundle.clearImport();
         StringWriter writer = new StringWriter();
-        expandStyles(bundle, writer, new File(this.virtual, file.getName()), minimize, this.dataURIThreshold);
+        expandStyles(bundle, writer, new File(this.virtual, file.getName()), root, minimize, threshold);
         bundle.getETag(true);
         filename = bundle.getFileName();
 
@@ -313,12 +332,28 @@ public final class WebBundleTool {
    * @throws IOException if an input/output error occurs.
    */
   static void expandStyles(WebBundle bundle, Writer writer, File virtual, boolean minimize, long threshold) throws IOException {
+    expandStyles(bundle, writer, virtual, inferRoot(bundle.files()), minimize, threshold);
+  }
+
+  /**
+   * Concatenate the contents of each file in the bundle.
+   *
+   * @param bundle    The list of files to concatenate.
+   * @param writer    The bundle to write to.
+   * @param virtual   The virtual location of the bundle.
+   * @param root      The public web root for CSS references.
+   * @param minimize  Whether to minimize the expanded styles.
+   * @param threshold The threshold for data URIs
+   *
+   * @throws IOException if an input/output error occurs.
+   */
+  static void expandStyles(WebBundle bundle, Writer writer, File virtual, File root, boolean minimize, long threshold) throws IOException {
 
     // Copy the input stream to the output stream
     IOException exception = null;
     List<File> processed = new ArrayList<>();
     for (File f : bundle.files()) {
-      exception = expandStylesTo(bundle, f, virtual, writer, processed, minimize, threshold);
+      exception = expandStylesTo(bundle, f, virtual, root, writer, processed, minimize, threshold);
       writer.write('\n'); // insert new line
     }
 
@@ -331,12 +366,14 @@ public final class WebBundleTool {
    *
    * @param name     the bundle name.
    * @param files    the files included in the bundle.
+   * @param root     the public web root for CSS references.
    * @param minimize whether the generated bundle is minimized.
+   * @param threshold the data URI threshold.
    *
    * @return the cache key.
    */
-  private static String cacheKey(String name, List<File> files, boolean minimize) {
-    return name + '|' + minimize + '|' + WebBundle.id(files);
+  private static String cacheKey(String name, List<File> files, File root, boolean minimize, long threshold) {
+    return name + '|' + minimize + '|' + threshold + '|' + canonicalPath(root) + '|' + WebBundle.id(files);
   }
 
   /**
@@ -432,7 +469,7 @@ public final class WebBundleTool {
    *
    * @return IOException if an input/output error occurs
    */
-  private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, Writer out, List<File> processed, boolean minimize, long threshold) {
+  private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, File root, Writer out, List<File> processed, boolean minimize, long threshold) {
     // prevent circular references
     if (processed.contains(file)) return null;
     processed.add(file);
@@ -441,7 +478,7 @@ public final class WebBundleTool {
     try (BufferedReader reader = newBufferedReader(file)) {
       String line = reader.readLine();
       while (line != null) {
-        IOException lineException = expandStyleLine(bundle, file, virtual, out, line, minimize, threshold, processed);
+        IOException lineException = expandStyleLine(bundle, file, virtual, root, out, line, minimize, threshold, processed);
         if (exception == null) {
           exception = lineException;
         }
@@ -472,7 +509,7 @@ public final class WebBundleTool {
    * @throws IOException if writing to the bundle fails.
    */
   @SuppressWarnings("java:S107")
-  private static @Nullable IOException expandStyleLine(WebBundle bundle, File file, File virtual, Writer out, String line, boolean minimize, long threshold,
+  private static @Nullable IOException expandStyleLine(WebBundle bundle, File file, File virtual, File root, Writer out, String line, boolean minimize, long threshold,
       List<File> processed) throws IOException {
     Matcher matcher = CSS_URL.matcher(line);
     if (!matcher.find()) {
@@ -480,9 +517,9 @@ public final class WebBundleTool {
       return null;
     }
     if (line.trim().toLowerCase().startsWith("@import")) {
-      return expandImport(bundle, file, virtual, out, line, matcher, minimize, threshold, processed);
+      return expandImport(bundle, file, virtual, root, out, line, matcher, minimize, threshold, processed);
     }
-    out.write(rewriteStyleUrls(file, virtual, matcher, threshold));
+    out.write(rewriteStyleUrls(file, virtual, root, matcher, threshold));
     return null;
   }
 
@@ -490,7 +527,7 @@ public final class WebBundleTool {
    * Expands an import rule or writes it unchanged when the imported URL is not relative.
    */
   @SuppressWarnings("java:S107")
-  private static @Nullable IOException expandImport(WebBundle bundle, File file, File virtual, Writer out, String line, Matcher matcher, boolean minimize,
+  private static @Nullable IOException expandImport(WebBundle bundle, File file, File virtual, File root, Writer out, String line, Matcher matcher, boolean minimize,
       long threshold, List<File> processed) throws IOException {
     String path = unquote(matcher.group(1));
     if (!isRelative(path)) {
@@ -498,25 +535,30 @@ public final class WebBundleTool {
       return null;
     }
     File imported = new File(file.getParentFile(), path);
+    if (!isInRoot(root, imported)) {
+      LOGGER.warn("Ignoring CSS import outside public root: {}", path);
+      writeLine(out, line);
+      return null;
+    }
     if (!imported.exists()) {
       writeMissingImport(out, line, path);
       return null;
     }
-    return writeImportedStyle(bundle, imported, virtual, out, path, minimize, threshold, processed);
+    return writeImportedStyle(bundle, imported, virtual, root, out, path, minimize, threshold, processed);
   }
 
   /**
    * Writes an expanded CSS import.
    */
   @SuppressWarnings("java:S107")
-  private static @Nullable IOException writeImportedStyle(WebBundle bundle, File imported, File virtual, Writer out, String path, boolean minimize, long threshold,
+  private static @Nullable IOException writeImportedStyle(WebBundle bundle, File imported, File virtual, File root, Writer out, String path, boolean minimize, long threshold,
       List<File> processed) throws IOException {
     if (minimize && path.endsWith("min.css")) {
       out.write("/*!nomin*/\n");
     }
     out.write("/* START import "+path+" */\n");
     bundle.addImport(imported);
-    IOException exception = expandStylesTo(bundle, imported, virtual, out, processed, minimize, threshold);
+    IOException exception = expandStylesTo(bundle, imported, virtual, root, out, processed, minimize, threshold);
     out.write("/* END import "+path+ " */\n");
     if (minimize && path.endsWith("min.css")) {
       out.write("/*!min*/\n");
@@ -536,7 +578,7 @@ public final class WebBundleTool {
   /**
    * Rewrites relative CSS URLs in a line.
    */
-  private static String rewriteStyleUrls(File file, File virtual, Matcher matcher, long threshold) {
+  private static String rewriteStyleUrls(File file, File virtual, File root, Matcher matcher, long threshold) {
     matcher.reset();
     StringBuilder sb = new StringBuilder();
     while (matcher.find()) {
@@ -547,7 +589,7 @@ public final class WebBundleTool {
         query = url.substring(q);
         url = url.substring(0, q);
       }
-      String location = "url("+getLocation(file, virtual, url, threshold)+query+")";
+      String location = "url("+getLocation(root, file, virtual, url, threshold)+query+")";
       matcher.appendReplacement(sb, Matcher.quoteReplacement(location));
     }
     matcher.appendTail(sb);
@@ -573,12 +615,31 @@ public final class WebBundleTool {
    * @return The location based on the target file.
    */
   static String getLocation(File source, File target, String path, long threshold) {
+    return getLocation(inferRoot(List.of(source)), source, target, path, threshold);
+  }
+
+  /**
+   * Recalculates the specified path from the original file (source) to the new file (target).
+   *
+   * @param root   The public web root for CSS references.
+   * @param source The source file.
+   * @param target The target file.
+   * @param path   The location based on the source file.
+   * @param threshold the file size threshold for images not to be included using data URIs
+   *
+   * @return The location based on the target file.
+   */
+  static String getLocation(File root, File source, File target, String path, long threshold) {
     // Ignore data URIs, full URLs and absolute paths
     if (!isRelative(path)) return path;
     StringBuilder location = new StringBuilder();
     try {
       // Locate the referenced URL
       File ftarget = new File(source.getParentFile(), path);
+      if (!isInRoot(root, ftarget)) {
+        LOGGER.warn("Ignoring CSS URL outside public root: {}", path);
+        return path;
+      }
       boolean isImage = path.endsWith(".png") || path.endsWith(".jpg") || path.endsWith(".gif");
       if (isImage && ftarget.exists() && ftarget.length() < threshold) {
         // Replace short images by data uri
@@ -603,6 +664,69 @@ public final class WebBundleTool {
       LOGGER.warn("Error while calculating location", ex);
     }
     return location.toString();
+  }
+
+  /**
+   * Returns the configured public root or a conservative root inferred from the bundled stylesheets.
+   */
+  private File getRoot(List<File> files) {
+    File configured = this.root;
+    return configured != null? configured : inferRoot(files);
+  }
+
+  /**
+   * Infers a conservative root from the parent directories of bundled files.
+   */
+  private static File inferRoot(List<File> files) {
+    File root = null;
+    for (File file : files) {
+      File parent = file.getParentFile();
+      if (parent != null) {
+        root = root == null? parent : commonParent(root, parent);
+      }
+    }
+    return root != null? root : new File(".");
+  }
+
+  /**
+   * Returns the closest common parent directory.
+   */
+  private static File commonParent(File first, File second) {
+    try {
+      File left = first.getCanonicalFile();
+      File right = second.getCanonicalFile();
+      while (left != null && !isInRoot(left, right)) {
+        left = left.getParentFile();
+      }
+      return left != null? left : first;
+    } catch (IOException ex) {
+      LOGGER.warn("Error while calculating common parent", ex);
+      return first;
+    }
+  }
+
+  /**
+   * Returns whether the file resolves inside the public root.
+   */
+  private static boolean isInRoot(File root, File file) {
+    try {
+      return file.getCanonicalFile().toPath().startsWith(root.getCanonicalFile().toPath());
+    } catch (IOException ex) {
+      LOGGER.warn("Error while checking CSS path", ex);
+      return false;
+    }
+  }
+
+  /**
+   * Returns the canonical path, falling back to the absolute path if canonicalization fails.
+   */
+  private static String canonicalPath(File file) {
+    try {
+      return file.getCanonicalPath();
+    } catch (IOException ex) {
+      LOGGER.warn("Error while resolving CSS root", ex);
+      return file.getAbsolutePath();
+    }
   }
 
   /**

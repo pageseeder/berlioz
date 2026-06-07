@@ -113,6 +113,7 @@ final class WebBundleToolTest {
     File root = Files.createDirectory(this.temporary.resolve("web")).toFile();
     File bundles = mkdir(root, "style/_");
     WebBundleTool tool = new WebBundleTool(bundles);
+    tool.setRoot(root);
     tool.setVirtual(bundles);
     tool.setDataURIThreshold(0);
 
@@ -138,6 +139,7 @@ final class WebBundleToolTest {
     File root = Files.createDirectory(this.temporary.resolve("data-uri-web")).toFile();
     File bundles = mkdir(root, "style/_");
     WebBundleTool tool = new WebBundleTool(bundles);
+    tool.setRoot(root);
     tool.setDataURIThreshold(1024);
     writeFile(root, "img/logo.png", "image");
     File style = writeFile(root, "style/main.css", ".main { background: url('../img/logo.png'); }");
@@ -145,6 +147,43 @@ final class WebBundleToolTest {
     File bundle = tool.bundleStyles(List.of(style), "theme", false);
 
     Assertions.assertTrue(read(bundle).contains("url(data:image/png;base64,"));
+  }
+
+  @Test
+  void testBundleStylesDoesNotExpandImportsOutsideRoot() throws IOException {
+    File root = Files.createDirectory(this.temporary.resolve("import-root")).toFile();
+    File bundles = mkdir(root, "style/_");
+    WebBundleTool tool = new WebBundleTool(bundles);
+    tool.setRoot(root);
+    File outside = writeFile(this.temporary.toFile(), "outside.css", ".secret { color: red; }");
+    File style = writeFile(root, "style/main.css", "@import url('../../outside.css');\n.main { color: black; }");
+
+    File bundle = tool.bundleStyles(List.of(style), "theme", false);
+    String css = read(bundle);
+
+    Assertions.assertTrue(outside.exists());
+    Assertions.assertFalse(css.contains(".secret { color: red; }"));
+    Assertions.assertFalse(css.contains("/* START import ../../outside.css */"));
+    Assertions.assertTrue(css.contains("@import url('../../outside.css');"));
+    Assertions.assertTrue(css.contains(".main { color: black; }"));
+  }
+
+  @Test
+  void testBundleStylesDoesNotEmbedImagesOutsideRoot() throws IOException {
+    File root = Files.createDirectory(this.temporary.resolve("url-root")).toFile();
+    File bundles = mkdir(root, "style/_");
+    WebBundleTool tool = new WebBundleTool(bundles);
+    tool.setRoot(root);
+    tool.setDataURIThreshold(1024);
+    File outside = writeFile(this.temporary.toFile(), "outside.png", "image");
+    File style = writeFile(root, "style/main.css", ".main { background: url('../../outside.png'); }");
+
+    File bundle = tool.bundleStyles(List.of(style), "theme", false);
+    String css = read(bundle);
+
+    Assertions.assertTrue(outside.exists());
+    Assertions.assertFalse(css.contains("url(data:image/png;base64,"));
+    Assertions.assertTrue(css.contains(".main { background: url(../../outside.png); }"));
   }
 
   @Test

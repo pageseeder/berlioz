@@ -290,6 +290,7 @@ public final class BundleConfig implements Serializable {
   private WebBundleTool initBundler() {
     // Initialize the bundler
     WebBundleTool tool = new WebBundleTool(new File(this.root, this.location));
+    tool.setRoot(this.root);
     if (this.type == BundleType.CSS) {
       int threshold = GlobalSettings.get("berlioz.cssbundler.datauris.threshold", 4096);
       tool.setDataURIThreshold(threshold);
