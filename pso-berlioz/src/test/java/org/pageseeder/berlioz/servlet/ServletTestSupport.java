@@ -6,9 +6,13 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 final class ServletTestSupport {
@@ -57,6 +61,7 @@ final class ServletTestSupport {
     private String queryString = null;
     private final Map<String, String> headers = new LinkedHashMap<>();
     private final Map<String, String> parameters = new LinkedHashMap<>();
+    private final Map<String, Object> attributes = new LinkedHashMap<>();
     private RequestDispatcher dispatcher = null;
 
     RequestBuilder method(String v)      { this.method = v; return this; }
@@ -68,8 +73,9 @@ final class ServletTestSupport {
     RequestBuilder pathInfo(String v)    { this.pathInfo = v; return this; }
     RequestBuilder uri(String v)         { this.requestURI = v; return this; }
     RequestBuilder query(String v)       { this.queryString = v; return this; }
-    RequestBuilder header(String n, String v) { this.headers.put(n, v); return this; }
+    RequestBuilder header(String n, String v)    { this.headers.put(n, v); return this; }
     RequestBuilder parameter(String n, String v) { this.parameters.put(n, v); return this; }
+    RequestBuilder attribute(String n, Object v) { this.attributes.put(n, v); return this; }
     RequestBuilder dispatcher(RequestDispatcher d) { this.dispatcher = d; return this; }
 
     HttpServletRequest build() {
@@ -85,7 +91,18 @@ final class ServletTestSupport {
           case "getRequestURI":   return requestURI;
           case "getQueryString":  return queryString;
           case "getHeader":       return headers.get(args[0]);
+          case "getHeaders": {
+            String val = headers.get(args[0]);
+            return Collections.enumeration(val != null ? List.of(val) : Collections.emptyList());
+          }
+          case "getHeaderNames":  return Collections.enumeration(headers.keySet());
           case "getParameter":    return parameters.get(args[0]);
+          case "getParameterMap": {
+            Map<String, String[]> map = new LinkedHashMap<>();
+            parameters.forEach((k, v) -> map.put(k, new String[]{v}));
+            return map;
+          }
+          case "getAttribute":    return attributes.get(args[0]);
           case "getRequestDispatcher": return dispatcher;
           case "toString":   return "Request[" + method + " " + requestURI + "]";
           case "hashCode":   return System.identityHashCode(proxy);
@@ -102,25 +119,33 @@ final class ServletTestSupport {
   static final class ResponseRecorder {
     int status = 200;
     boolean resetCalled = false;
+    String contentType = null;
+    final StringWriter body = new StringWriter();
+    final PrintWriter writer = new PrintWriter(body);
     final Map<String, String> headers = new LinkedHashMap<>();
 
     String header(String name) { return headers.get(name); }
+    String content() { return body.toString(); }
 
     HttpServletResponse build() {
       InvocationHandler h = (proxy, m, args) -> {
         switch (m.getName()) {
-          case "setStatus":          status = (Integer) args[0]; return null;
+          case "setStatus":            status = (Integer) args[0]; return null;
           case "setHeader":
-          case "addHeader":          headers.put((String) args[0], (String) args[1]); return null;
-          case "reset":              resetCalled = true; headers.clear(); return null;
-          case "setContentLength":   return null;
-          case "setCharacterEncoding": return null;
-          case "getStatus":          return status;
-          case "getHeader":          return headers.get(args[0]);
-          case "toString":   return "ResponseRecorder";
-          case "hashCode":   return System.identityHashCode(proxy);
-          case "equals":     return proxy == args[0];
-          default:           return defaultValue(m.getReturnType());
+          case "addHeader":            headers.put((String) args[0], (String) args[1]); return null;
+          case "reset":                resetCalled = true; headers.clear(); return null;
+          case "setContentLength":
+          case "setCharacterEncoding":
+          case "setIntHeader":
+          case "flushBuffer":          return null;
+          case "setContentType":       contentType = (String) args[0]; return null;
+          case "getStatus":            return status;
+          case "getWriter":            return writer;
+          case "getHeader":            return headers.get(args[0]);
+          case "toString":             return "ResponseRecorder";
+          case "hashCode":             return System.identityHashCode(proxy);
+          case "equals":               return proxy == args[0];
+          default:                     return defaultValue(m.getReturnType());
         }
       };
       return (HttpServletResponse) Proxy.newProxyInstance(

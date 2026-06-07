@@ -3,8 +3,6 @@ package org.pageseeder.berlioz.servlet;
 import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.Proxy;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,12 +24,12 @@ class ErrorHandlerServletTest {
   // getErrorCode() - accessible indirectly through doGet; tested via attribute behaviour
 
   @Test
-  void testGetErrorCode_nullAttribute_returns200() {
-    // When ERROR_STATUS_CODE is null, status defaults to 200 OK
-    HttpServletRequest req = attributeRequest(Map.of());
-    // Exercise indirectly: if we reach doGet without exception, the code parses cleanly.
-    // Direct static method is private; verify the observable constant instead.
-    assertNotNull(ErrorHandlerServlet.ERROR_STATUS_CODE);
+  void testGetErrorCode_nullAttribute_returns200() throws Exception {
+    // When ERROR_STATUS_CODE attribute is absent, handle() must respond with 200 OK
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html").build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+    new ErrorHandlerServlet().handle(req, res.build());
+    assertEquals(200, res.status);
   }
 
   // Servlet instantiation
@@ -49,15 +47,4 @@ class ErrorHandlerServletTest {
     assertFalse(ErrorHandlerServlet.BERLIOZ_ERROR_ID.isEmpty());
   }
 
-  private static HttpServletRequest attributeRequest(Map<String, Object> attributes) {
-    return (HttpServletRequest) Proxy.newProxyInstance(
-        HttpServletRequest.class.getClassLoader(),
-        new Class<?>[]{HttpServletRequest.class},
-        (proxy, m, args) -> {
-          if ("getAttribute".equals(m.getName())) return attributes.get(args[0]);
-          if ("hashCode".equals(m.getName())) return System.identityHashCode(proxy);
-          if ("equals".equals(m.getName())) return proxy == args[0];
-          return ServletTestSupport.defaultValue(m.getReturnType());
-        });
-  }
 }
