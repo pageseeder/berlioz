@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+
 final class HttpTestSupport {
 
   private HttpTestSupport() {
@@ -31,6 +32,7 @@ final class HttpTestSupport {
     private String method = "GET";
     private String serverName = "example.org";
     private int serverPort = 80;
+    private String scheme = null;
 
     RequestBuilder method(String value) {
       this.method = value;
@@ -40,6 +42,11 @@ final class HttpTestSupport {
     RequestBuilder server(String name, int port) {
       this.serverName = name;
       this.serverPort = port;
+      return this;
+    }
+
+    RequestBuilder scheme(String value) {
+      this.scheme = value;
       return this;
     }
 
@@ -59,6 +66,7 @@ final class HttpTestSupport {
         if ("getHeader".equals(name)) return this.headers.get(args[0]);
         if ("getDateHeader".equals(name)) return this.dateHeaders.getOrDefault(args[0], -1L);
         if ("getMethod".equals(name)) return this.method;
+        if ("getScheme".equals(name)) return this.scheme;
         if ("getServerName".equals(name)) return this.serverName;
         if ("getServerPort".equals(name)) return this.serverPort;
         if ("toString".equals(name)) return "RequestBuilder";

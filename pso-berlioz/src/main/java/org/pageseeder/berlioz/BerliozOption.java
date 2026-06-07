@@ -416,7 +416,34 @@ public enum BerliozOption {
    *
    * @since 0.12.5
    */
-  NONCE_ENABLE("berlioz.nonce.enable", Boolean.FALSE);
+  NONCE_ENABLE("berlioz.nonce.enable", Boolean.FALSE),
+
+  /**
+   * A string global option specifying a comma-separated list of external host names that are
+   * permitted as redirect targets, in addition to the application's own host.
+   *
+   * <p>By default no external hosts are allowed. Add entries here for domains the application
+   * may legitimately redirect to, such as an external identity provider or a partner site.
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>Redirect allowed hosts usage</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.redirect.allowed-hosts</code></td>
+   *     <td><code>""</code><i>(Empty — no external hosts allowed)</i></td>
+   *   </tr>
+   * </table>
+   *
+   * <p>Example: {@code berlioz.redirect.allowed-hosts=auth.example.com,partner.example.org}
+   *
+   * <p>For dynamic allowlists (e.g. OAuth clients loaded at runtime) implement
+   * {@link org.pageseeder.berlioz.http.RedirectPolicy} and register it via
+   * {@link java.util.ServiceLoader}.
+   *
+   * @since 0.13.2
+   */
+  REDIRECT_ALLOWED_HOSTS("berlioz.redirect.allowed-hosts", "");
 
   /**
    * The name of the property in the global settings.

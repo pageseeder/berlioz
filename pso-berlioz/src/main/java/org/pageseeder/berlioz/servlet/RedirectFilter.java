@@ -36,6 +36,7 @@ import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.RedirectConfig;
 import org.pageseeder.berlioz.config.RedirectLocation;
 import org.pageseeder.berlioz.http.HttpHeaders;
+import org.pageseeder.berlioz.http.HttpRequests;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -227,6 +228,10 @@ public final class RedirectFilter implements Filter, Serializable {
    */
   private static void sendRedirect(HttpServletRequest req, HttpServletResponse res, String location, boolean permanent)
       throws ServletException {
+    if (!HttpRequests.isSafeRedirectURL(location, req) || location.startsWith("//")) {
+      throw new ServletException("Unsafe redirect URL: "+location);
+    }
+
     String url = location;
 
     // Must use absolute URI
@@ -240,7 +245,7 @@ public final class RedirectFilter implements Filter, Serializable {
 
     // Reset response and sent new location
     res.reset();
-    res.setHeader(HttpHeaders.LOCATION, url.replaceAll("[\\n\\r]+", ""));
+    res.setHeader(HttpHeaders.LOCATION, url);
     res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=86400, must-revalidate");
     if (permanent) {
       res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);

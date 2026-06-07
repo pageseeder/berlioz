@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -124,6 +125,39 @@ class RedirectFilterTest {
     filter.doHTTPFilter(req, recorder.build(), (r, s) -> {});
 
     Assertions.assertNotNull(recorder.header("Cache-Control"), "Cache-Control header must be set on redirect");
+  }
+
+  @Test
+  void testRedirectAllowsSameOriginAbsoluteLocation() throws Exception {
+    RedirectFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><redirect-mapping>"
+        + "<redirect from=\"/old\" to=\"https://example.org:8443/new\"/>"
+        + "</redirect-mapping>");
+
+    HttpServletRequest req = ServletTestSupport.request()
+        .uri("/old").scheme("https").host("example.org").port(8443).build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    filter.doHTTPFilter(req, recorder.build(), (r, s) -> {});
+
+    Assertions.assertEquals("https://example.org:8443/new", recorder.header("Location"));
+    Assertions.assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, recorder.status);
+  }
+
+  @Test
+  void testRedirectRejectsOffOriginAbsoluteLocation() throws Exception {
+    RedirectFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><redirect-mapping>"
+        + "<redirect from=\"/old\" to=\"https://evil.example/new\"/>"
+        + "</redirect-mapping>");
+
+    HttpServletRequest req = ServletTestSupport.request()
+        .uri("/old").scheme("https").host("example.org").port(443).build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    Assertions.assertThrows(ServletException.class,
+        () -> filter.doHTTPFilter(req, recorder.build(), (r, s) -> {}));
+    Assertions.assertNull(recorder.header("Location"), "Unsafe redirect target must not be written");
   }
 
   // Permanent redirect (301)
