@@ -446,17 +446,13 @@ public final class BerliozConfig {
     String path = this.stylePath
         .replace("{GROUP}", service.group())
         .replace("{SERVICE}", service.id());
-    Path styleSheet = this.env.getPrivateFile(path).toPath();
     try {
-      Path base = this.env.getPrivateFolder().getCanonicalFile().toPath();
-      Path resolved = styleSheet.toFile().getCanonicalFile().toPath();
-      if (!resolved.startsWith(base)) {
-        throw new IllegalStateException("Stylesheet for service '" + service.id() + "' resolves outside the private folder");
-      }
-    } catch (IOException ex) {
-      LOGGER.warn("Unable to verify stylesheet path for service '{}': {}", service.id(), ex.getMessage());
+      Path styleSheet = this.env.getPrivateFile(path).toPath();
+      return new XsltTransformer(styleSheet, toURL(this.fallbackStyleSheet));
+    } catch (IllegalArgumentException ex) {
+      LOGGER.warn("Stylesheet '{}' for service '{}' resolves outside private folder — using fallback", path, service.id());
+      return new XsltTransformer(this.env.getPrivateFolder().toPath(), toURL(this.fallbackStyleSheet));
     }
-    return new XsltTransformer(styleSheet, toURL(this.fallbackStyleSheet));
   }
 
   /**
