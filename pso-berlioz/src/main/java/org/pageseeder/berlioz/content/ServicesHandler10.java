@@ -264,8 +264,7 @@ final class ServicesHandler10 extends DefaultHandler {
         break;
 
       case HANDLER:
-        handleGenerator(atts);
-        this.builder.direct(true);
+        if (handleGenerator(atts)) this.builder.direct(true);
         break;
       default:
 
@@ -304,10 +303,11 @@ final class ServicesHandler10 extends DefaultHandler {
       if (!service.generators().isEmpty() && service.supported().isEmpty()) {
         warning("Service "+service.id()+" has generators with disjoint output formats — no format can be served (e.g. XmlGenerator mixed with JsonGenerator)");
       }
-      if (service.isDirect() && service.generators().size() != 1) {
-        warning("Service "+service.id()+" is configured as direct but has "+service.generators().size()+" generators — direct requires exactly one generator");
-      }
-      if (this.patterns.isEmpty()) {
+      if (service.generators().isEmpty()) {
+        warning("Service "+service.id()+" has no generators (handler failed to load?) — service will not be registered");
+      } else if (service.isDirect() && service.generators().size() != 1) {
+        warning("Service "+service.id()+" is configured as direct but has "+service.generators().size()+" generators — direct requires exactly one generator; service will not be registered");
+      } else if (this.patterns.isEmpty()) {
         warning("No URI pattern match service "+service.id()+" - service will be ignored");
       } else {
         for (URIPattern pattern : this.patterns) {
@@ -447,7 +447,7 @@ final class ServicesHandler10 extends DefaultHandler {
    * @throws SAXException Only if thrown by the underlying error handler.
    */
   @SuppressWarnings("java:S1192") //No need to create a constant for parts of the warning message
-  private void handleGenerator(Attributes atts) throws SAXException {
+  private boolean handleGenerator(Attributes atts) throws SAXException {
     String raw = atts.getValue("class");
     String className = (raw != null && !raw.isEmpty()) ? resolveClass(raw) : raw;
     BerliozGenerator generator;
@@ -461,12 +461,13 @@ final class ServicesHandler10 extends DefaultHandler {
           generator = (BerliozGenerator) instance;
         } else {
           warning("Class " + className + " does not implement BerliozGenerator or ContentGenerator — skipping");
-          return;
+          return false;
         }
       }
       this.builder.add(generator);
       this.builder.target(atts.getValue("target"));
       this.builder.name(atts.getValue("name"));
+      return true;
     } catch (NoClassDefFoundError error) {
       ClassNotFoundException ex = new ClassNotFoundException("Class definition problem", error);
       warning("Failed to create generator "+className+" for service "+this.builder.id(), ex);
@@ -481,6 +482,7 @@ final class ServicesHandler10 extends DefaultHandler {
     } catch (InvocationTargetException ex) {
       warning("Constructor of generator "+className+" threw an exception for service "+this.builder.id(), ex);
     }
+    return false;
   }
 
   /**

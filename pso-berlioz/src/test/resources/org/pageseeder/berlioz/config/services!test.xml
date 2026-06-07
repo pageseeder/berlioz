@@ -6,6 +6,7 @@
   <services group="test">
     <service id="test-page" method="get">
       <url pattern="/test"/>
+      <generator class="org.pageseeder.berlioz.generator.NoContent"/>
     </service>
   </services>
 
