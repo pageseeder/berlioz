@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import org.jspecify.annotations.Nullable;
@@ -90,8 +91,10 @@ public final class FileUtils {
   public static boolean contains(@Nullable File root, @Nullable File file) {
     if (root == null || file == null) return false;
     try {
-      String prefix = root.getCanonicalPath();
-      return file.getCanonicalPath().startsWith(prefix);
+      Path container = root.getCanonicalFile().toPath();
+      Path candidate = file.getCanonicalFile().toPath();
+      // Safer to use Path.startsWith() instead of string prefix
+      return candidate.startsWith(container);
     } catch (IOException | SecurityException ex) {
       return false;
     }
@@ -109,11 +112,11 @@ public final class FileUtils {
    */
   public static @Nullable String path(File root, File file) {
     try {
-      String from = root.getCanonicalPath();
-      String to = file.getCanonicalPath();
+      Path from = root.getCanonicalFile().toPath();
+      Path to = file.getCanonicalFile().toPath();
+      // Safer to use Path.startsWith() instead of string prefix
       if (to.startsWith(from)) {
-        String path = to.substring(from.length()).replace("\\", "/");
-        return path.startsWith("/")? path.substring(1) : path;
+        return from.relativize(to).toString().replace("\\", "/");
       } else
         throw new IllegalArgumentException("Cannot determine the path between the specified files.");
     } catch (IOException | SecurityException ex) {

@@ -54,6 +54,20 @@ class FileUtilsTest {
     }
   }
 
+  @Test
+  void testContains_samePrefixSiblingOutsideRoot() throws IOException {
+    Path sibling = tempDir.resolveSibling(tempDir.getFileName() + "-sibling");
+    Files.createDirectory(sibling);
+    Path siblingFile = sibling.resolve("file.txt");
+    Files.createFile(siblingFile);
+    try {
+      assertFalse(FileUtils.contains(tempDir.toFile(), siblingFile.toFile()));
+    } finally {
+      Files.deleteIfExists(siblingFile);
+      Files.deleteIfExists(sibling);
+    }
+  }
+
   // path()
 
   @Test
@@ -83,6 +97,22 @@ class FileUtilsTest {
       assertThrows(IllegalArgumentException.class, () -> FileUtils.path(tmp, out));
     } finally {
       Files.deleteIfExists(outside);
+    }
+  }
+
+  @Test
+  void testPath_samePrefixSiblingOutsideRoot_throws() throws IOException {
+    Path sibling = tempDir.resolveSibling(tempDir.getFileName() + "-sibling");
+    Files.createDirectory(sibling);
+    Path siblingFile = sibling.resolve("file.txt");
+    Files.createFile(siblingFile);
+    try {
+      File tmp = tempDir.toFile();
+      File out = siblingFile.toFile();
+      assertThrows(IllegalArgumentException.class, () -> FileUtils.path(tmp, out));
+    } finally {
+      Files.deleteIfExists(siblingFile);
+      Files.deleteIfExists(sibling);
     }
   }
 }
