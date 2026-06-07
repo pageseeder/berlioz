@@ -264,9 +264,9 @@ public final class WebBundleTool {
    */
   public @Nullable File bundleStyles(List<File> files, String name, boolean minimize) throws IOException {
     if (files.isEmpty()) return null;
-    File root = getRoot(files);
+    File filesRoot = getRoot(files);
     long threshold = this.dataURIThreshold;
-    String key = cacheKey(name, files, root, minimize, threshold);
+    String key = cacheKey(name, files, filesRoot, minimize, threshold);
     WebBundle bundle = instances.computeIfAbsent(key, unused -> new WebBundle(name, files, minimize));
     synchronized (bundle) {
       String filename = bundle.getFileName();
@@ -278,7 +278,7 @@ public final class WebBundleTool {
 
         bundle.clearImport();
         StringWriter writer = new StringWriter();
-        expandStyles(bundle, writer, new File(this.virtual, file.getName()), root, minimize, threshold);
+        expandStyles(bundle, writer, new File(this.virtual, file.getName()), filesRoot, minimize, threshold);
         bundle.getETag(true);
         filename = bundle.getFileName();
 
@@ -354,7 +354,7 @@ public final class WebBundleTool {
     IOException exception = null;
     List<File> processed = new ArrayList<>();
     for (File f : bundle.files()) {
-      exception = expandStylesTo(bundle, f, virtual, root, writer, processed, minimize, threshold);
+      exception = expandStylesTo(bundle, f, virtual, root, writer, processed, threshold);
       writer.write('\n'); // insert new line
     }
 
@@ -470,7 +470,7 @@ public final class WebBundleTool {
    *
    * @return IOException if an input/output error occurs
    */
-  private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, File root, Writer out, List<File> processed, boolean minimize, long threshold) {
+  private static @Nullable IOException expandStylesTo(WebBundle bundle, File file, File virtual, File root, Writer out, List<File> processed, long threshold) {
     // prevent circular references
     if (processed.contains(file)) return null;
     processed.add(file);
@@ -479,7 +479,7 @@ public final class WebBundleTool {
     try (BufferedReader reader = newBufferedReader(file)) {
       String line = reader.readLine();
       while (line != null) {
-        IOException lineException = expandStyleLine(bundle, file, virtual, root, out, line, minimize, threshold, processed);
+        IOException lineException = expandStyleLine(bundle, file, virtual, root, out, line, bundle.isMinimized(), threshold, processed);
         if (exception == null) {
           exception = lineException;
         }
@@ -559,7 +559,7 @@ public final class WebBundleTool {
     }
     out.write("/* START import "+path+" */\n");
     bundle.addImport(imported);
-    IOException exception = expandStylesTo(bundle, imported, virtual, root, out, processed, minimize, threshold);
+    IOException exception = expandStylesTo(bundle, imported, virtual, root, out, processed, threshold);
     out.write("/* END import "+path+ " */\n");
     if (minimize && path.endsWith("min.css")) {
       out.write("/*!min*/\n");
