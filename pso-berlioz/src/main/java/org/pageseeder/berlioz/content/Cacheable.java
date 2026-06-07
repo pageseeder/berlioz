@@ -45,6 +45,7 @@ public interface Cacheable {
    * @param req the request
    * @return the corresponding ETag, or {@code null}
    */
+  @SuppressWarnings("java:S1874") // intentional bridge to the deprecated narrower overload
   default @Nullable String getETag(Request req) {
     if (req instanceof ContentRequest) return getETag((ContentRequest) req);
     return null;
