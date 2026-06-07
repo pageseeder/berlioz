@@ -12,6 +12,7 @@ import org.pageseeder.mock.servlet.MockHttpServletRequest;
 import java.io.File;
 import java.net.URI;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Collection;
 import java.util.List;
 
@@ -139,7 +140,7 @@ class MockContentRequestTest {
 
     LocalDate from = request.parameter("from").asLocalDate().required();
 
-    Assertions.assertEquals(LocalDate.of(2024, 6, 1), from);
+    Assertions.assertEquals(LocalDate.of(2024, Month.JUNE, 1), from);
   }
 
   @Test
