@@ -55,7 +55,8 @@ final class ResponseTest {
     };
 
     for (String name : names) {
-      Assertions.assertThrows(IllegalArgumentException.class, () -> Response.ok().header(name, "value"), name);
+      Response response = Response.ok();
+      Assertions.assertThrows(IllegalArgumentException.class, () -> response.header(name, "value"), name);
     }
   }
 
@@ -71,7 +72,8 @@ final class ResponseTest {
     };
 
     for (String value : values) {
-      Assertions.assertThrows(IllegalArgumentException.class, () -> Response.ok().header("X-Test", value), value);
+      Response response = Response.ok();
+      Assertions.assertThrows(IllegalArgumentException.class, () -> response.header("X-Test", value), value);
     }
   }
 
