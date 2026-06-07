@@ -141,13 +141,60 @@ public final class Response {
    * @param name  the header name
    * @param value the header value
    * @return a new {@code Response} with the header set
+   * @throws IllegalArgumentException if the header name or value is not valid for HTTP
    */
   public Response header(String name, String value) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(value, "value");
+    if (!isValidHeaderName(name))
+      throw new IllegalArgumentException("Invalid HTTP header name");
+    if (!isValidHeaderValue(value))
+      throw new IllegalArgumentException("Invalid HTTP header value for: " + name);
     Map<String, String> copy = new LinkedHashMap<>(this.headers);
     copy.put(name, value);
     return new Response(this.status, this.redirectLocation, this.problem, Map.copyOf(copy));
+  }
+
+  private static boolean isValidHeaderName(String name) {
+    if (name.isEmpty()) return false;
+    for (int i = 0; i < name.length(); i++) {
+      if (!isHeaderNameChar(name.charAt(i))) return false;
+    }
+    return true;
+  }
+
+  private static boolean isHeaderNameChar(char c) {
+    if (c >= 'a' && c <= 'z') return true;
+    if (c >= 'A' && c <= 'Z') return true;
+    if (c >= '0' && c <= '9') return true;
+    switch (c) {
+      case '!':
+      case '#':
+      case '$':
+      case '%':
+      case '&':
+      case '\'':
+      case '*':
+      case '+':
+      case '-':
+      case '.':
+      case '^':
+      case '_':
+      case '`':
+      case '|':
+      case '~':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private static boolean isValidHeaderValue(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if ((c < 0x20 && c != '\t') || c == 0x7f) return false;
+    }
+    return true;
   }
 
   // --- Accessors -------------------------------------------------------------------------------
