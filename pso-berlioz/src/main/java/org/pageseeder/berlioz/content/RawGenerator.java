@@ -35,6 +35,11 @@ import java.util.Set;
  * with any other generator type produces an empty supported-format intersection and
  * triggers a startup error.</p>
  *
+ * <p><strong>Future use:</strong> this interface is reserved for future servlet support and
+ * is not currently dispatched by the Berlioz servlet pipeline. Implementing this interface
+ * alone will not make a service produce raw HTTP output until the servlet infrastructure
+ * includes a dedicated raw response path.</p>
+ *
  * <p>Unlike the other generator types, {@code IOException} is declared on {@link #generate}
  * because {@link OutputStream} is a raw Java type with no abstraction layer to suppress it.</p>
  *
