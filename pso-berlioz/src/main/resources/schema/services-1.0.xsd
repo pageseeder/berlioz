@@ -20,6 +20,7 @@
       <xs:enumeration value="put"/>
       <xs:enumeration value="delete"/>
       <xs:enumeration value="post"/>
+      <xs:enumeration value="patch"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -40,10 +41,11 @@
   <xs:element name="service-config">
     <xs:complexType>
       <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="namespace"/>
         <xs:element minOccurs="0" ref="response-code"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="services"/>
       </xs:sequence>
-      <xs:attribute name="version" default="1.0">
+      <xs:attribute name="version" fixed="1.0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
             <xs:enumeration value="1.0"/>
@@ -61,10 +63,26 @@
   <xs:element name="services">
     <xs:complexType>
       <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="namespace"/>
         <xs:element minOccurs="0" ref="response-code"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="service"/>
       </xs:sequence>
       <xs:attribute name="group" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    A namespace declaration that maps a short prefix (or no prefix) to a Java package,
+    allowing generator class names to be written without the full package path.
+
+    @attribute package The Java package name.
+    @attribute prefix  The short prefix used before ':' in class attributes; omit for the
+                       default (unqualified) namespace.
+  -->
+  <xs:element name="namespace">
+    <xs:complexType>
+      <xs:attribute name="package" use="required"/>
+      <xs:attribute name="prefix"/>
     </xs:complexType>
   </xs:element>
 
@@ -81,7 +99,10 @@
       <xs:sequence>
         <xs:element maxOccurs="unbounded" ref="url"/>
         <xs:element minOccurs="0" ref="response-code"/>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="generator"/>
+        <xs:choice minOccurs="0">
+          <xs:element maxOccurs="unbounded" ref="generator"/>
+          <xs:element ref="handler"/>
+        </xs:choice>
       </xs:sequence>
       <xs:attribute name="id" use="required" type="xs:ID"/>
       <xs:attribute name="method" use="required" type="http-method"/>
@@ -105,11 +126,13 @@
     The content generator.
 
     The class must implement the ContentGenerator interface defined in Berlioz.
+    When omitted, the NoContent generator is used.
 
     The name and target are preserved and can be used in the XSLT to determine
     what to do with the generated content.
 
-    @attribute class  The fully qualified Java class to load for this generator.
+    @attribute class  The fully qualified Java class to load for this generator;
+                      defaults to NoContent when omitted.
     @attribute name   A name for this generator.
     @attribute target A target for the content generated in the output.
   -->
@@ -121,6 +144,25 @@
       <xs:attribute name="class"/>
       <xs:attribute name="name" type="xs:NMTOKEN"/>
       <xs:attribute name="target" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    A single content generator that writes its output directly to the HTTP response,
+    bypassing the XSLT transformation step. At most one handler may be defined per service.
+
+    The class must implement the ContentGenerator interface defined in Berlioz.
+    When omitted, the NoContent generator is used.
+
+    @attribute class  The fully qualified Java class to load for this handler;
+                      defaults to NoContent when omitted.
+  -->
+  <xs:element name="handler">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="parameter"/>
+      </xs:sequence>
+      <xs:attribute name="class"/>
     </xs:complexType>
   </xs:element>
 
@@ -138,10 +180,11 @@
   </xs:element>
 
   <!--
-    Top level element.
+    Defines how the HTTP response code is determined when multiple generators
+    return different codes.
 
-    @version The version of service configuration.
-    @version The version of service configuration.
+    @attribute use   The default response code to use.
+    @attribute rule  The rule to apply when generators return different codes.
   -->
   <xs:element name="response-code">
     <xs:complexType>
