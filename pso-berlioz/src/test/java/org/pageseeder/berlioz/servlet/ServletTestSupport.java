@@ -4,12 +4,19 @@ import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,6 +66,7 @@ final class ServletTestSupport {
     private String pathInfo = null;
     private String requestURI = "/";
     private String queryString = null;
+    private String characterEncoding = null;
     private final Map<String, String> headers = new LinkedHashMap<>();
     private final Map<String, String> parameters = new LinkedHashMap<>();
     private final Map<String, Object> attributes = new LinkedHashMap<>();
@@ -89,20 +97,31 @@ final class ServletTestSupport {
           case "getServletPath":  return servletPath;
           case "getPathInfo":     return pathInfo;
           case "getRequestURI":   return requestURI;
+          case "getRequestURL":   return requestURL();
           case "getQueryString":  return queryString;
           case "getHeader":       return headers.get(args[0]);
+          case "getDateHeader":   return dateHeader((String) args[0]);
+          case "setCharacterEncoding": characterEncoding = (String) args[0]; return null;
+          case "getCharacterEncoding": return characterEncoding;
           case "getHeaders": {
             String val = headers.get(args[0]);
             return Collections.enumeration(val != null ? List.of(val) : Collections.emptyList());
           }
           case "getHeaderNames":  return Collections.enumeration(headers.keySet());
           case "getParameter":    return parameters.get(args[0]);
+          case "getParameterNames": return Collections.enumeration(parameters.keySet());
+          case "getParameterValues": {
+            String val = parameters.get(args[0]);
+            return val != null ? new String[]{val} : null;
+          }
           case "getParameterMap": {
             Map<String, String[]> map = new LinkedHashMap<>();
             parameters.forEach((k, v) -> map.put(k, new String[]{v}));
             return map;
           }
           case "getAttribute":    return attributes.get(args[0]);
+          case "setAttribute":    attributes.put((String) args[0], args[1]); return null;
+          case "getAttributeNames": return Collections.enumeration(attributes.keySet());
           case "getRequestDispatcher": return dispatcher;
           case "toString":   return "Request[" + method + " " + requestURI + "]";
           case "hashCode":   return System.identityHashCode(proxy);
@@ -114,18 +133,45 @@ final class ServletTestSupport {
           HttpServletRequest.class.getClassLoader(),
           new Class<?>[]{HttpServletRequest.class}, h);
     }
+
+    private StringBuffer requestURL() {
+      StringBuilder url = new StringBuilder();
+      url.append(scheme).append("://").append(host);
+      if (("http".equals(scheme) && port != 80) || ("https".equals(scheme) && port != 443)) {
+        url.append(':').append(port);
+      }
+      url.append(requestURI);
+      return new StringBuffer(url.toString());
+    }
+
+    private long dateHeader(String name) {
+      String value = headers.get(name);
+      if (value == null) return -1L;
+      try {
+        return ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli();
+      } catch (DateTimeParseException ex) {
+        throw new IllegalArgumentException("Invalid date header: " + name, ex);
+      }
+    }
   }
 
   static final class ResponseRecorder {
     int status = 200;
     boolean resetCalled = false;
+    String errorMessage = null;
     String contentType = null;
+    String characterEncoding = null;
     final StringWriter body = new StringWriter();
     final PrintWriter writer = new PrintWriter(body);
+    final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
     final Map<String, String> headers = new LinkedHashMap<>();
 
     String header(String name) { return headers.get(name); }
-    String content() { return body.toString(); }
+    String content() {
+      writer.flush();
+      if (body.getBuffer().length() > 0) return body.toString();
+      return bytes.toString(StandardCharsets.UTF_8);
+    }
 
     HttpServletResponse build() {
       InvocationHandler h = (proxy, m, args) -> {
@@ -133,15 +179,25 @@ final class ServletTestSupport {
           case "setStatus":            status = (Integer) args[0]; return null;
           case "setHeader":
           case "addHeader":            headers.put((String) args[0], (String) args[1]); return null;
-          case "reset":                resetCalled = true; headers.clear(); return null;
+          case "setDateHeader":        headers.put((String) args[0], String.valueOf(args[1])); return null;
+          case "setIntHeader":         headers.put((String) args[0], String.valueOf(args[1])); return null;
+          case "reset":                resetCalled = true; headers.clear(); body.getBuffer().setLength(0); bytes.reset(); return null;
+          case "sendError":            status = (Integer) args[0]; errorMessage = args.length > 1 ? (String) args[1] : null; return null;
           case "setContentLength":
-          case "setCharacterEncoding":
-          case "setIntHeader":
+          case "setContentLengthLong":  headers.put("Content-Length", String.valueOf(args[0])); return null;
+          case "setCharacterEncoding":  characterEncoding = String.valueOf(args[0]); return null;
           case "flushBuffer":          return null;
           case "setContentType":       contentType = (String) args[0]; return null;
           case "getStatus":            return status;
           case "getWriter":            return writer;
+          case "getOutputStream":       return new ServletOutputStream() {
+            @Override public void write(int b) { bytes.write(b); }
+            @Override public boolean isReady() { return true; }
+            @Override public void setWriteListener(WriteListener writeListener) {}
+          };
           case "getHeader":            return headers.get(args[0]);
+          case "encodeRedirectURL":     return args[0];
+          case "encodeURL":             return args[0];
           case "toString":             return "ResponseRecorder";
           case "hashCode":             return System.identityHashCode(proxy);
           case "equals":               return proxy == args[0];

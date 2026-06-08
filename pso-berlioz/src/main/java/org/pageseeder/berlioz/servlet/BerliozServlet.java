@@ -230,6 +230,13 @@ public final class BerliozServlet extends HttpServlet {
 
   @Override
   public void doOptions(HttpServletRequest req, HttpServletResponse res) {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    try {
+      loader.loadIfRequired();
+    } catch (BerliozException ex) {
+      sendError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
+      return;
+    }
     ServiceRegistry services = getServiceRegistry();
     String path = HttpRequestWrapper.getBerliozPath(req);
     List<String> methods = services.allows(path);
