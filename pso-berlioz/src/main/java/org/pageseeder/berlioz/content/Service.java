@@ -373,11 +373,12 @@ public final class Service {
   }
 
   /**
-   * Warns when a {@link Cacheable} generator has overridden the wrong {@code getETag} method.
+   * Warns when a {@link Cacheable} generator has no usable {@code getETag} method.
    *
    * <p>The rule is:
    * <ul>
-   *   <li>{@link ContentGenerator} implementations should override {@code getETag(ContentRequest)}</li>
+   *   <li>Any generator may override {@code getETag(Request)}</li>
+   *   <li>Legacy {@link ContentGenerator} implementations may also override {@code getETag(ContentRequest)}</li>
    *   <li>All other generator types must override {@code getETag(Request)}</li>
    * </ul>
    *
@@ -385,17 +386,22 @@ public final class Service {
    * @param logger the logger to use for warnings
    */
   static void warnCacheableMethod(BerliozGenerator generator, Logger logger) {
-    if (!(generator instanceof Cacheable)) return;
+    String warning = cacheableMethodWarning(generator);
+    if (warning != null) logger.warn(warning);
+  }
+
+  static @Nullable String cacheableMethodWarning(BerliozGenerator generator) {
+    if (!(generator instanceof Cacheable)) return null;
     Class<?> cls = generator.getClass();
     boolean hasRequest = overridesMethod(cls, "getETag", Request.class);
     boolean hasContentRequest = overridesMethod(cls, "getETag", ContentRequest.class);
     if (!hasRequest && !hasContentRequest) {
-      logger.warn("{} implements Cacheable but overrides neither getETag method — ETag will always be null.", cls.getName());
-    } else if (generator instanceof ContentGenerator && hasRequest && !hasContentRequest) {
-      logger.warn("{} is a ContentGenerator implementing Cacheable via getETag(Request) — override getETag(ContentRequest) instead.", cls.getName());
-    } else if (!(generator instanceof ContentGenerator) && hasContentRequest && !hasRequest) {
-      logger.warn("{} implements Cacheable via getETag(ContentRequest) but is not a ContentGenerator — override getETag(Request) instead.", cls.getName());
+      return cls.getName() + " implements Cacheable but overrides neither getETag method - ETag will always be null.";
     }
+    if (!(generator instanceof ContentGenerator) && hasContentRequest && !hasRequest) {
+      return cls.getName() + " implements Cacheable via getETag(ContentRequest) but is not a ContentGenerator - override getETag(Request) instead.";
+    }
+    return null;
   }
 
   private static boolean overridesMethod(Class<?> cls, String name, Class<?> paramType) {

@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.content;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -27,6 +28,7 @@ import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.xmlwriter.XMLWriter;
 
 final class ServiceTest {
 
@@ -164,6 +166,49 @@ final class ServiceTest {
   void testIsCacheable_static_notCacheable() {
     ContentGenerator nonCacheable = (req, xml) -> {};
     Assertions.assertFalse(Service.isCacheable(List.of(nonCacheable)));
+  }
+
+  @Test
+  void testCacheable_contentGenerator_getETagRequestOverrideWorks() {
+    CacheableContentByRequest generator = new CacheableContentByRequest();
+
+    Assertions.assertEquals("request", generator.getETag((Request) contentRequest()));
+    Assertions.assertNull(Service.cacheableMethodWarning(generator));
+  }
+
+  @Test
+  void testCacheable_contentGenerator_getETagContentRequestOverrideWorks() {
+    CacheableContentByContentRequest generator = new CacheableContentByContentRequest();
+
+    Assertions.assertEquals("content-request", generator.getETag((Request) contentRequest()));
+    Assertions.assertNull(Service.cacheableMethodWarning(generator));
+  }
+
+  @Test
+  void testCacheable_nonContentGenerator_getETagRequestOverrideWorks() {
+    CacheableGeneratorByRequest generator = new CacheableGeneratorByRequest();
+
+    Assertions.assertEquals("request", generator.getETag(request()));
+    Assertions.assertNull(Service.cacheableMethodWarning(generator));
+  }
+
+  @Test
+  void testCacheable_nonContentGenerator_getETagContentRequestOverrideWarnsAndIsNotUsed() {
+    CacheableGeneratorByContentRequest generator = new CacheableGeneratorByContentRequest();
+
+    Assertions.assertNull(generator.getETag((Request) contentRequest()));
+    String warning = Service.cacheableMethodWarning(generator);
+    Assertions.assertNotNull(warning);
+    Assertions.assertTrue(warning.contains("override getETag(Request)"), warning);
+  }
+
+  @Test
+  void testCacheable_noGetETagOverrideWarns() {
+    CacheableGeneratorWithoutETag generator = new CacheableGeneratorWithoutETag();
+
+    String warning = Service.cacheableMethodWarning(generator);
+    Assertions.assertNotNull(warning);
+    Assertions.assertTrue(warning.contains("overrides neither getETag method"), warning);
   }
 
   // --- Name and Target ---
@@ -448,6 +493,63 @@ final class ServiceTest {
   void testToString() {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
     Assertions.assertEquals("service:test/svc", s.toString());
+  }
+
+  private static Request request() {
+    return (Request) Proxy.newProxyInstance(
+        Request.class.getClassLoader(),
+        new Class<?>[]{Request.class},
+        (proxy, method, args) -> ServletDefaults.defaultValue(method.getReturnType()));
+  }
+
+  private static ContentRequest contentRequest() {
+    return (ContentRequest) Proxy.newProxyInstance(
+        ContentRequest.class.getClassLoader(),
+        new Class<?>[]{ContentRequest.class},
+        (proxy, method, args) -> ServletDefaults.defaultValue(method.getReturnType()));
+  }
+
+  private static final class CacheableContentByRequest implements ContentGenerator, Cacheable {
+    @Override public String getETag(Request req) { return "request"; }
+    @Override public void process(ContentRequest req, XMLWriter xml) {}
+  }
+
+  private static final class CacheableContentByContentRequest implements ContentGenerator, Cacheable {
+    @SuppressWarnings("deprecation")
+    @Override public String getETag(ContentRequest req) { return "content-request"; }
+    @Override public void process(ContentRequest req, XMLWriter xml) {}
+  }
+
+  private static final class CacheableGeneratorByRequest implements Generator, Cacheable {
+    @Override public String getETag(Request req) { return "request"; }
+    @Override public Response generate(Request req, org.pageseeder.berlioz.output.OutputWriter out) { return Response.ok(); }
+  }
+
+  private static final class CacheableGeneratorByContentRequest implements Generator, Cacheable {
+    @SuppressWarnings("deprecation")
+    @Override public String getETag(ContentRequest req) { return "content-request"; }
+    @Override public Response generate(Request req, org.pageseeder.berlioz.output.OutputWriter out) { return Response.ok(); }
+  }
+
+  private static final class CacheableGeneratorWithoutETag implements Generator, Cacheable {
+    @Override public Response generate(Request req, org.pageseeder.berlioz.output.OutputWriter out) { return Response.ok(); }
+  }
+
+  private static final class ServletDefaults {
+    private ServletDefaults() {}
+
+    static Object defaultValue(Class<?> type) {
+      if (!type.isPrimitive()) return null;
+      if (type == boolean.class) return false;
+      if (type == byte.class) return (byte) 0;
+      if (type == short.class) return (short) 0;
+      if (type == int.class) return 0;
+      if (type == long.class) return 0L;
+      if (type == float.class) return 0F;
+      if (type == double.class) return 0D;
+      if (type == char.class) return '\0';
+      return null;
+    }
   }
 
 }

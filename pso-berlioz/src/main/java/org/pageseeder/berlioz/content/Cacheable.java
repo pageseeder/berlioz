@@ -37,31 +37,36 @@ public interface Cacheable {
   /**
    * Returns the ETag for the specified request context.
    *
-   * <p>Non-{@link ContentGenerator} generators must override this method.
-   * The default dispatches to {@link #getETag(ContentRequest)} when the request is a
-   * {@link ContentRequest}, allowing legacy {@link ContentGenerator} implementations to
-   * override only the narrower method.
+   * <p>All generator types may override this method. The default dispatches to
+   * {@link #getETag(ContentRequest)} only when this cacheable object is a legacy
+   * {@link ContentGenerator} and the request is a {@link ContentRequest}, allowing old
+   * content generators to keep overriding only the narrower method.
+   *
+   * <p>Non-{@link ContentGenerator} generators must override this method directly.
    *
    * @param req the request
    * @return the corresponding ETag, or {@code null}
    */
-  @SuppressWarnings("java:S1874") // intentional bridge to the deprecated narrower overload
+  @SuppressWarnings({"deprecation", "java:S1874"}) // intentional bridge to the deprecated narrower overload
   default @Nullable String getETag(Request req) {
-    if (req instanceof ContentRequest) return getETag((ContentRequest) req);
+    if (this instanceof ContentGenerator && req instanceof ContentRequest) {
+      return getETag((ContentRequest) req);
+    }
     return null;
   }
 
   /**
    * Returns the ETag for the specified content request.
    *
-   * <p>{@link ContentGenerator} implementations should override this method.
-   * The default returns {@code null}, which the primary {@link #getETag(Request)} default
-   * interprets as "no ETag" when the request is not a {@link ContentRequest}.
+   * <p>Legacy {@link ContentGenerator} implementations may override this method.
+   * Other generator types must override {@link #getETag(Request)} instead.
+   * The default returns {@code null}.
    *
    * @param req the content request
    * @return the corresponding ETag, or {@code null}
    *
-   * @deprecated Override {@link #getETag(Request)} instead (required for non-{@link ContentGenerator} generators).
+   * @deprecated Override {@link #getETag(Request)} instead. This overload remains as a
+   * legacy bridge for {@link ContentGenerator} implementations only.
    */
   @Deprecated(since = "0.13.2")
   default @Nullable String getETag(ContentRequest req) {
