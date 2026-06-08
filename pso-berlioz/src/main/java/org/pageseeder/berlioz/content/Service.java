@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -318,6 +319,16 @@ public final class Service {
       }
     }
 
+    // Supported output types (intersection across all generators)
+    StringBuilder supported = new StringBuilder();
+    for (OutputType t : OutputType.values()) {
+      if (this.supported.contains(t)) {
+        if (supported.length() > 0) supported.append(',');
+        supported.append(t.name().toLowerCase(Locale.ROOT));
+      }
+    }
+    xml.attribute("supported", supported.toString());
+
     // How the response code is calculated
     xml.openElement("response-code", true);
     xml.attribute("use", this.rule.use().toString().toLowerCase());
@@ -344,6 +355,7 @@ public final class Service {
       if (target != null) {
         xml.attribute("target", target);
       }
+      xml.attribute("type", generatorType(generator));
       xml.attribute("cacheable", Boolean.toString(generator instanceof Cacheable));
       xml.attribute("affect-status", Boolean.toString(affectStatus(generator)));
       for (Parameter p : parameters) {
@@ -426,6 +438,31 @@ public final class Service {
       if (result.isEmpty()) return Set.of();
     }
     return Set.copyOf(result);
+  }
+
+  /**
+   * Returns a string label identifying the most specific {@link BerliozGenerator} subtype.
+   *
+   * <ul>
+   *   <li>{@code "generator"} — implements {@link Generator}</li>
+   *   <li>{@code "raw"} — implements {@link RawGenerator}</li>
+   *   <li>{@code "xml-json"} — implements both {@link XmlGenerator} and {@link JsonGenerator}</li>
+   *   <li>{@code "xml"} — implements {@link XmlGenerator} only</li>
+   *   <li>{@code "json"} — implements {@link JsonGenerator} only</li>
+   *   <li>{@code "content"} — implements legacy {@link ContentGenerator}</li>
+   *   <li>{@code "custom"} — direct {@link BerliozGenerator} implementation</li>
+   * </ul>
+   */
+  static String generatorType(BerliozGenerator generator) {
+    if (generator instanceof Generator) return "generator";
+    if (generator instanceof RawGenerator) return "raw";
+    boolean isXml = generator instanceof XmlGenerator;
+    boolean isJson = generator instanceof JsonGenerator;
+    if (isXml && isJson) return "xml-json";
+    if (isXml) return "xml";
+    if (isJson) return "json";
+    if (generator instanceof ContentGenerator) return "content";
+    return "custom";
   }
 
   /**

@@ -25,8 +25,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.json.JsonWriter;
 import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -488,6 +490,86 @@ final class ServiceTest {
     Assertions.assertTrue(out.contains("value=\"10\""), out);
   }
 
+  @Test
+  void testToXML_supportedAttributeForContentGenerator() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("supported=\"xml\""), out);
+  }
+
+  @Test
+  void testToXML_supportedAttributeForGenerator() throws IOException {
+    CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
+    Service s = defaultBuilder("svc").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("supported=\"xml,json\""), out);
+  }
+
+  @Test
+  void testToXML_generatorTypeContent() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("type=\"content\""), out);
+  }
+
+  @Test
+  void testToXML_generatorTypeGenerator() throws IOException {
+    CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
+    Service s = defaultBuilder("svc").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("type=\"generator\""), out);
+  }
+
+  // --- generatorType ---
+
+  @Test
+  void testGeneratorType_content() {
+    Assertions.assertEquals("content", Service.generatorType(new NoContent()));
+  }
+
+  @Test
+  void testGeneratorType_generator() {
+    Assertions.assertEquals("generator", Service.generatorType(new CacheableGeneratorByRequest()));
+  }
+
+  @Test
+  void testGeneratorType_xml() {
+    BerliozGenerator g = new XmlOnlyGenerator();
+    Assertions.assertEquals("xml", Service.generatorType(g));
+  }
+
+  @Test
+  void testGeneratorType_json() {
+    BerliozGenerator g = new JsonOnlyGenerator();
+    Assertions.assertEquals("json", Service.generatorType(g));
+  }
+
+  @Test
+  void testGeneratorType_xmlJson() {
+    BerliozGenerator g = new XmlAndJsonGenerator();
+    Assertions.assertEquals("xml-json", Service.generatorType(g));
+  }
+
+  @Test
+  void testGeneratorType_custom() {
+    BerliozGenerator g = () -> Set.of(OutputType.XML);
+    Assertions.assertEquals("custom", Service.generatorType(g));
+  }
+
   // --- toString ---
 
   @Test
@@ -538,6 +620,20 @@ final class ServiceTest {
 
   private static final class CacheableGeneratorWithoutETag implements Generator, Cacheable {
     @Override public Response generate(Request req, OutputWriter out) { return Response.ok(); }
+  }
+
+  private static final class XmlOnlyGenerator implements XmlGenerator {
+    @Override public Response generate(Request req, XmlWriter xml) { return Response.ok(); }
+  }
+
+  private static final class JsonOnlyGenerator implements JsonGenerator {
+    @Override public Response generate(Request req, JsonWriter json) { return Response.ok(); }
+  }
+
+  private static final class XmlAndJsonGenerator implements XmlGenerator, JsonGenerator {
+    @Override public Set<OutputType> supported() { return Set.of(OutputType.XML, OutputType.JSON); }
+    @Override public Response generate(Request req, XmlWriter xml) { return Response.ok(); }
+    @Override public Response generate(Request req, JsonWriter json) { return Response.ok(); }
   }
 
   private static final class ServletDefaults {
