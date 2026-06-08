@@ -39,6 +39,7 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
+import org.pageseeder.berlioz.json.Json;
 import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.http.*;
 import org.pageseeder.berlioz.servlet.XsltTransformResult.Status;
@@ -306,10 +307,8 @@ public final class BerliozServlet extends HttpServlet {
     Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
 
     // Detect whether a direct JSON response is appropriate:
-    // the request targets a .json URL AND the service supports direct JSON output.
-    String servletPath = req.getServletPath();
-    // TODO We need something more solid to determine whether it is a JSON request than just the extension
-    boolean jsonRequest = servletPath != null && servletPath.endsWith(".json");
+    // the servlet is configured with a JSON media type AND the service supports direct JSON output.
+    boolean jsonRequest = Json.isJsonMediaType(config.getMediaType());
     boolean serviceSupportsJson = jsonRequest && service.supported().contains(OutputType.JSON);
 
     ProcessingContext ctx = new ProcessingContext(match, method, code, profile, serverTiming, includeContent);
@@ -549,7 +548,7 @@ public final class BerliozServlet extends HttpServlet {
    * @return {@code true} when a redirect was handled and the caller must return immediately.
    */
   private boolean handleRedirect(HttpServletRequest req, HttpServletResponse res,
-      ContentStatus status, String url) {
+      ContentStatus status, @Nullable String url) {
     if (!ContentStatus.isRedirect(status)) return false;
     if (HttpRequests.isSafeRedirectURL(url, req)) {
       LOGGER.debug("Redirecting to: {} with {}", url, status.code());

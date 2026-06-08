@@ -18,14 +18,19 @@ package org.pageseeder.berlioz.servlet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,9 +99,19 @@ public final class BerliozConfig {
   private final ServletConfig servletConfig;
 
   /**
-   * Set the default content type for this Berlioz instance.
+   * The media type (without parameters) for responses from this Berlioz instance.
    */
-  private String contentType;
+  private String mediaType;
+
+  /**
+   * The character set for responses from this Berlioz instance.
+   *
+   * <p>Of the parameters allowed in a {@code Content-Type} header (RFC 2045), only {@code charset}
+   * is relevant for Berlioz responses. {@code boundary} applies to multipart types that Berlioz
+   * never produces; all other parameters ({@code format}, {@code type}, etc.) are type-specific
+   * and not applicable here.</p>
+   */
+  private Charset charset;
 
   /**
    * Set the default cache control for this Berlioz instance.
@@ -159,9 +174,11 @@ public final class BerliozConfig {
     this.allocation = toAllocation(this.stylePath);
     this.fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", "");
     this.transformers = this.allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Collections.emptyMap();
-    this.contentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
-    if (IDENTITY_TRANSFORM.equals(this.stylePath) && !this.contentType.contains("xml")) {
-      LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this.contentType);
+    String rawContentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
+    this.mediaType = parseMediaType(rawContentType);
+    this.charset = parseCharset(rawContentType);
+    if (IDENTITY_TRANSFORM.equals(this.stylePath) && !this.mediaType.contains("xml")) {
+      LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this.mediaType);
     }
     String defaultCacheControl = GlobalSettings.get(BerliozOption.HTTP_CACHE_CONTROL);
     if (defaultCacheControl.isEmpty()) {
@@ -223,12 +240,31 @@ public final class BerliozConfig {
   }
 
   /**
-   * Returns the content type.
+   * Returns the media type without parameters (e.g. {@code text/html}).
+   *
+   * @return the media type.
+   */
+  public String getMediaType() {
+    return this.mediaType;
+  }
+
+  /**
+   * Returns the character set for responses.
+   *
+   * @return the charset, never {@code null}; defaults to UTF-8.
+   */
+  public Charset getCharset() {
+    return this.charset;
+  }
+
+  /**
+   * Returns the full content type as a {@code type;charset=NAME} string suitable for use in
+   * the {@code Content-Type} HTTP response header.
    *
    * @return the content type.
    */
   public String getContentType() {
-    return this.contentType;
+    return this.mediaType + ";charset=" + this.charset.name();
   }
 
   /**
@@ -242,11 +278,13 @@ public final class BerliozConfig {
   }
 
   /**
-   * Sets the content type.
-   * @param contentType the content type.
+   * Updates the content type, typically called when the XSLT output overrides the configured type.
+   *
+   * @param contentType the new content type, which may include a {@code charset} parameter.
    */
   public void setContentType(String contentType) {
-    this.contentType = contentType;
+    this.mediaType = parseMediaType(contentType);
+    this.charset = parseCharset(contentType);
   }
 
   /**
@@ -343,6 +381,39 @@ public final class BerliozConfig {
 
   // private helpers
   // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Extracts the bare media type from a {@code Content-Type} value, discarding parameters.
+   *
+   * <p>For example, {@code "text/html;charset=utf-8"} returns {@code "text/html"}.</p>
+   */
+  private static String parseMediaType(String contentType) {
+    int semi = contentType.indexOf(';');
+    return (semi < 0 ? contentType : contentType.substring(0, semi)).trim();
+  }
+
+  /**
+   * Extracts the {@code charset} parameter from a {@code Content-Type} value.
+   *
+   * <p>Returns {@link StandardCharsets#UTF_8} when the parameter is absent or the named charset
+   * is not supported. Quoted-string values (RFC 2045 §5.1) are unquoted before lookup.</p>
+   */
+  private static Charset parseCharset(String contentType) {
+    int idx = contentType.toLowerCase(Locale.ROOT).indexOf("charset=");
+    if (idx < 0) return StandardCharsets.UTF_8;
+    int start = idx + 8;
+    int end = contentType.indexOf(';', start);
+    String name = (end < 0 ? contentType.substring(start) : contentType.substring(start, end)).trim();
+    if (name.startsWith("\"") && name.endsWith("\"") && name.length() > 1) {
+      name = name.substring(1, name.length() - 1);
+    }
+    try {
+      return Charset.forName(name);
+    } catch (IllegalCharsetNameException | UnsupportedCharsetException ex) {
+      LOGGER.warn("Unknown charset '{}' in content type '{}', defaulting to UTF-8", name, contentType);
+      return StandardCharsets.UTF_8;
+    }
+  }
 
   /**
    * Returns the value for the specified init parameter name.
