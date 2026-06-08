@@ -322,6 +322,7 @@ public final class BerliozServlet extends HttpServlet {
   /**
    * Handles requests whose service supports direct JSON output, bypassing the XSLT pipeline.
    */
+  @SuppressWarnings("java:S3776") // sequential HTTP protocol steps; splitting would harm readability
   private void processJson(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
       ProcessingContext ctx) throws IOException {
 
@@ -390,6 +391,7 @@ public final class BerliozServlet extends HttpServlet {
   /**
    * Handles requests via the XML content generation + XSLT pipeline (the original Berlioz path).
    */
+  @SuppressWarnings("java:S3776") // sequential HTTP protocol steps; splitting would harm readability
   private void processXml(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
       ProcessingContext ctx) throws IOException {
 
