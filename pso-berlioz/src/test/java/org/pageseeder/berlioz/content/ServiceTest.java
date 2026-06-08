@@ -15,12 +15,18 @@
  */
 package org.pageseeder.berlioz.content;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.generator.NoContent;
+import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.output.OutputType;
+import org.pageseeder.xmlwriter.XML.NamespaceAware;
+import org.pageseeder.xmlwriter.XMLStringWriter;
 
 final class ServiceTest {
 
@@ -249,6 +255,193 @@ final class ServiceTest {
     Assertions.assertFalse(s.affectStatus(g));
   }
 
+  // --- rule ---
+
+  @Test
+  void testRule_returnsBuilderRule() {
+    Service s = defaultBuilder("svc").add(new NoContent()).build();
+    Assertions.assertSame(ServiceStatusRule.DEFAULT_RULE, s.rule());
+  }
+
+  // --- isDirect ---
+
+  @Test
+  void testIsDirect_defaultFalse() {
+    Service s = defaultBuilder("svc").add(new NoContent()).build();
+    Assertions.assertFalse(s.isDirect());
+  }
+
+  @Test
+  void testIsDirect_true() {
+    Service s = defaultBuilder("svc").direct(true).add(new NoContent()).build();
+    Assertions.assertTrue(s.isDirect());
+  }
+
+  // --- supported ---
+
+  @Test
+  void testSupported_contentGenerator_xmlOnly() {
+    ContentGenerator g = (req, xml) -> {};
+    Service s = defaultBuilder("svc").add(g).build();
+    Assertions.assertEquals(Set.of(OutputType.XML), s.supported());
+  }
+
+  @Test
+  void testSupported_jsonGenerator_jsonOnly() {
+    JsonGenerator g = (req, json) -> Response.ok();
+    Service s = defaultBuilder("svc").add(g).build();
+    Assertions.assertEquals(Set.of(OutputType.JSON), s.supported());
+  }
+
+  @Test
+  void testSupported_generator_xmlAndJson() {
+    Generator g = (req, out) -> Response.ok();
+    Service s = defaultBuilder("svc").add(g).build();
+    Assertions.assertEquals(Set.of(OutputType.XML, OutputType.JSON), s.supported());
+  }
+
+  @Test
+  void testSupported_intersection_contentAndGenerator_xmlOnly() {
+    ContentGenerator cg = (req, xml) -> {};
+    Generator g = (req, out) -> Response.ok();
+    Service s = defaultBuilder("svc").add(cg).add(g).build();
+    Assertions.assertEquals(Set.of(OutputType.XML), s.supported());
+  }
+
+  @Test
+  void testSupported_intersection_disjoint_emptyResult() {
+    ContentGenerator cg = (req, xml) -> {};
+    JsonGenerator jg = (req, json) -> Response.ok();
+    Service s = defaultBuilder("svc").add(cg).add(jg).build();
+    Assertions.assertTrue(s.supported().isEmpty());
+  }
+
+  // --- computeSupported (static) ---
+
+  @Test
+  void testComputeSupported_emptyList() {
+    Assertions.assertTrue(Service.computeSupported(Collections.emptyList()).isEmpty());
+  }
+
+  // --- parameters for unknown generator ---
+
+  @Test
+  void testParameters_unknownGenerator_returnsEmpty() {
+    NoContent registered = new NoContent();
+    NoContent other = new NoContent();
+    Service s = defaultBuilder("svc").add(registered).build();
+    Assertions.assertTrue(s.parameters(other).isEmpty());
+  }
+
+  // --- affectStatus by target ---
+
+  @Test
+  void testAffectStatus_byTarget_matching() {
+    NoContent g = new NoContent();
+    ServiceStatusRule rule = ServiceStatusRule.newInstance("target:main", "HIGHEST");
+    Service s = new Service.Builder()
+        .id("svc").group("test").rule(rule)
+        .add(g).target("main")
+        .build();
+    Assertions.assertTrue(s.affectStatus(g));
+  }
+
+  @Test
+  void testAffectStatus_byTarget_notMatching() {
+    NoContent g = new NoContent();
+    ServiceStatusRule rule = ServiceStatusRule.newInstance("target:main", "HIGHEST");
+    Service s = new Service.Builder()
+        .id("svc").group("test").rule(rule)
+        .add(g).target("sidebar")
+        .build();
+    Assertions.assertFalse(s.affectStatus(g));
+  }
+
+  // --- toXML ---
+
+  @Test
+  void testToXML_basicAttributes() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/articles/{id}"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("id=\"svc\""), out);
+    Assertions.assertTrue(out.contains("group=\"test\""), out);
+    Assertions.assertTrue(out.contains("method=\"get\""), out);
+  }
+
+  @Test
+  void testToXML_urlPatterns() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/articles/{id}", "/news/{id}"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("pattern=\"/articles/{id}\""), out);
+    Assertions.assertTrue(out.contains("pattern=\"/news/{id}\""), out);
+  }
+
+  @Test
+  void testToXML_generatorElement() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).name("my-gen").build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("name=\"my-gen\""), out);
+    Assertions.assertTrue(out.contains("class=\"" + NoContent.class.getName() + "\""), out);
+  }
+
+  @Test
+  void testToXML_cacheControlOverload() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"), "max-age=600");
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("cache-control=\"max-age=600\""), out);
+  }
+
+  @Test
+  void testToXML_flagsAttribute() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").flags("secure").add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("flags=\"secure\""), out);
+  }
+
+  @Test
+  void testToXML_directAttribute() throws IOException {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").direct(true).add(g).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("direct=\"true\""), out);
+  }
+
+  @Test
+  void testToXML_generatorParameterElement() throws IOException {
+    NoContent g = new NoContent();
+    Parameter p = new Parameter("limit", "10");
+    Service s = defaultBuilder("svc").add(g).parameter(p).build();
+    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("name=\"limit\""), out);
+    Assertions.assertTrue(out.contains("value=\"10\""), out);
+  }
+
   // --- toString ---
 
   @Test
@@ -256,4 +449,5 @@ final class ServiceTest {
     Service s = defaultBuilder("svc").add(new NoContent()).build();
     Assertions.assertEquals("service:test/svc", s.toString());
   }
+
 }
