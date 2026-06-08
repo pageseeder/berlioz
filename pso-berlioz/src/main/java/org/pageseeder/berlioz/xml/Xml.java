@@ -1,5 +1,6 @@
 package org.pageseeder.berlioz.xml;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
+import java.util.Locale;
 
 /**
  *
@@ -29,6 +31,29 @@ public class Xml {
   private static final Logger LOGGER = LoggerFactory.getLogger(Xml.class);
 
   private Xml() {
+  }
+
+  /**
+   * Indicates whether the specified bare media type identifies XML content.
+   *
+   * <p>A media type is considered XML if:</p>
+   * <ul>
+   *   <li>it is {@code application/xml} or {@code text/xml}, the canonical XML media types
+   *       (RFC 7303 §4.1); or</li>
+   *   <li>its subtype ends with the {@code +xml} structured syntax suffix (RFC 6839 §3.2),
+   *       covering types such as {@code application/atom+xml} or {@code application/rss+xml}.</li>
+   * </ul>
+   *
+   * <p>The comparison is case-insensitive as required by RFC 2045 §5.1.
+   * Media type parameters (e.g. {@code ;charset=utf-8}) must be stripped before calling this method.</p>
+   *
+   * @param mediaType the bare media type to test, without parameters
+   * @return {@code true} if the media type represents XML content; {@code false} for {@code null} or non-XML
+   */
+  public static boolean isXmlMediaType(@Nullable String mediaType) {
+    if (mediaType == null) return false;
+    String type = mediaType.trim().toLowerCase(Locale.ROOT);
+    return "application/xml".equals(type) || "text/xml".equals(type) || type.endsWith("+xml");
   }
 
   /**

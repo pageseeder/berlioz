@@ -67,4 +67,52 @@ class JsonTest {
     Assertions.assertEquals(Json.providerName(), Json.providerName());
   }
 
+  // isJsonMediaType
+
+  @Test
+  void testIsJsonMediaType_null() {
+    Assertions.assertFalse(Json.isJsonMediaType(null));
+  }
+
+  @Test
+  void testIsJsonMediaType_applicationJson() {
+    Assertions.assertTrue(Json.isJsonMediaType("application/json"));
+  }
+
+  @Test
+  void testIsJsonMediaType_caseInsensitive() {
+    Assertions.assertTrue(Json.isJsonMediaType("Application/JSON"));
+  }
+
+  @Test
+  void testIsJsonMediaType_plusJsonSuffix() {
+    Assertions.assertTrue(Json.isJsonMediaType("application/problem+json"));
+  }
+
+  @Test
+  void testIsJsonMediaType_geoJson() {
+    Assertions.assertTrue(Json.isJsonMediaType("application/geo+json"));
+  }
+
+  @Test
+  void testIsJsonMediaType_applicationXml() {
+    Assertions.assertFalse(Json.isJsonMediaType("application/xml"));
+  }
+
+  @Test
+  void testIsJsonMediaType_textHtml() {
+    Assertions.assertFalse(Json.isJsonMediaType("text/html"));
+  }
+
+  @Test
+  void testIsJsonMediaType_empty() {
+    Assertions.assertFalse(Json.isJsonMediaType(""));
+  }
+
+  @Test
+  void testIsJsonMediaType_parametersNotStripped() {
+    // parameters are a separate concern; callers must strip them first
+    Assertions.assertFalse(Json.isJsonMediaType("application/json;charset=utf-8"));
+  }
+
 }

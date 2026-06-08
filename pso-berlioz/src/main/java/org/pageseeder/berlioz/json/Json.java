@@ -20,7 +20,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -209,6 +211,28 @@ public class Json {
       init();
     }
     return provider.newWriter(writer);
+  }
+
+  /**
+   * Indicates whether the specified bare media type identifies JSON content.
+   *
+   * <p>A media type is considered JSON if:</p>
+   * <ul>
+   *   <li>it is {@code application/json}, the canonical JSON media type (RFC 8259 §8.1); or</li>
+   *   <li>its subtype ends with the {@code +json} structured syntax suffix (RFC 6839 §3.1),
+   *       covering types such as {@code application/geo+json} or {@code application/problem+json}.</li>
+   * </ul>
+   *
+   * <p>The comparison is case-insensitive as required by RFC 2045 §5.1.
+   * Media type parameters (e.g. {@code ;charset=utf-8}) must be stripped before calling this method.</p>
+   *
+   * @param mediaType the bare media type to test, without parameters
+   * @return {@code true} if the media type represents JSON content; {@code false} for {@code null} or non-JSON
+   */
+  public static boolean isJsonMediaType(@Nullable String mediaType) {
+    if (mediaType == null) return false;
+    String type = mediaType.trim().toLowerCase(Locale.ROOT);
+    return "application/json".equals(type) || type.endsWith("+json");
   }
 
   /**

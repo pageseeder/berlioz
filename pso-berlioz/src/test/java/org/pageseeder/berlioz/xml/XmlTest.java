@@ -107,4 +107,57 @@ class XmlTest {
     assertThrows(BerliozException.class,
         () -> Xml.parse(handler, tempDir.toFile(), false));
   }
+
+  // isXmlMediaType
+
+  @Test
+  void testIsXmlMediaType_null() {
+    assertFalse(Xml.isXmlMediaType(null));
+  }
+
+  @Test
+  void testIsXmlMediaType_applicationXml() {
+    assertTrue(Xml.isXmlMediaType("application/xml"));
+  }
+
+  @Test
+  void testIsXmlMediaType_textXml() {
+    assertTrue(Xml.isXmlMediaType("text/xml"));
+  }
+
+  @Test
+  void testIsXmlMediaType_caseInsensitive() {
+    assertTrue(Xml.isXmlMediaType("Application/XML"));
+  }
+
+  @Test
+  void testIsXmlMediaType_plusXmlSuffix() {
+    assertTrue(Xml.isXmlMediaType("application/atom+xml"));
+  }
+
+  @Test
+  void testIsXmlMediaType_rssXml() {
+    assertTrue(Xml.isXmlMediaType("application/rss+xml"));
+  }
+
+  @Test
+  void testIsXmlMediaType_applicationJson() {
+    assertFalse(Xml.isXmlMediaType("application/json"));
+  }
+
+  @Test
+  void testIsXmlMediaType_textHtml() {
+    assertFalse(Xml.isXmlMediaType("text/html"));
+  }
+
+  @Test
+  void testIsXmlMediaType_empty() {
+    assertFalse(Xml.isXmlMediaType(""));
+  }
+
+  @Test
+  void testIsXmlMediaType_parametersNotStripped() {
+    // parameters are a separate concern; callers must strip them first
+    assertFalse(Xml.isXmlMediaType("application/xml;charset=utf-8"));
+  }
 }
