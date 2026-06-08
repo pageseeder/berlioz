@@ -3,7 +3,6 @@ package org.pageseeder.berlioz.servlet;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.output.OutputWriter;
