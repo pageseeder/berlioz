@@ -286,27 +286,11 @@ public final class BerliozServlet extends HttpServlet {
 
     // Start handling XML content
     String path = HttpRequestWrapper.getBerliozPath(req);
-    MatchingService match = services.get(path, method);
+    MatchingService match = findMatch(services, path, method);
 
-    // No matching service (backward compatibility)
-    if (match == null && method == HttpMethod.POST && GlobalSettings.has(BerliozOption.HTTP_GET_VIA_POST)) {
-      match = services.get(path, HttpMethod.GET);
-    }
-
-    // Still no matching service
+    // No matching service
     if (match == null) {
-      // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
-      if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
-        List<String> methods = services.allows(path);
-        if (!methods.isEmpty()) {
-          res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
-          String message = "Only the following are allowed: "+HttpHeaderUtils.allow(methods);
-          sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, message, null);
-          return;
-        }
-      }
-      sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
-      LOGGER.debug("No matching service for: {}", req.getRequestURI());
+      handleNoMatch(req, res, services, path, method);
       return;
     }
 
@@ -328,10 +312,11 @@ public final class BerliozServlet extends HttpServlet {
     boolean jsonRequest = servletPath != null && servletPath.endsWith(".json");
     boolean serviceSupportsJson = jsonRequest && service.supported().contains(OutputType.JSON);
 
+    ProcessingContext ctx = new ProcessingContext(match, method, code, profile, serverTiming, includeContent);
     if (serviceSupportsJson) {
-      processJson(req, res, config, match, method, code, profile, serverTiming, includeContent);
+      processJson(req, res, config, ctx);
     } else {
-      processXml(req, res, config, match, method, code, profile, serverTiming, includeContent);
+      processXml(req, res, config, ctx);
     }
   }
 
@@ -339,10 +324,9 @@ public final class BerliozServlet extends HttpServlet {
    * Handles requests whose service supports direct JSON output, bypassing the XSLT pipeline.
    */
   private void processJson(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
-      MatchingService match, HttpMethod method, @Nullable Integer code,
-      boolean profile, boolean serverTiming, boolean includeContent) throws IOException {
+      ProcessingContext ctx) throws IOException {
 
-    JsonResponse json = new JsonResponse(req, res, config, match, profile);
+    JsonResponse json = new JsonResponse(req, res, config, ctx.match, ctx.profile);
 
     // Indicate that the representation may vary depending on the encoding
     if (config.enableCompression()) {
@@ -351,67 +335,44 @@ public final class BerliozServlet extends HttpServlet {
 
     // Compute the ETag for the request if cacheable and method is GET or HEAD
     String etag = null;
-    boolean cacheable = code == null && match.isCacheable() && (method == HttpMethod.GET || method == HttpMethod.HEAD);
+    boolean cacheable = ctx.errorCode == null && ctx.match.isCacheable()
+        && (ctx.method == HttpMethod.GET || ctx.method == HttpMethod.HEAD);
     if (cacheable) {
       String etagJSON = json.getEtag();
       if (etagJSON != null) {
         etag = '"' + SHA256.hash(config.getETagSeed() + "~" + etagJSON) + '"';
-
-        res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
-        String cc = match.service().cache();
-        if (cc.isEmpty()) cc = config.getCacheControl();
-        res.setHeader(HttpHeaders.CACHE_CONTROL, toSafeHeader(cc));
-        res.setHeader(HttpHeaders.ETAG, etag);
+        applyCacheHeaders(res, config, ctx.match, etag);
 
         // Check conditional request headers (may return 304 without generating content)
-        ServiceInfo info = new ServiceInfo(etag);
-        if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
+        if (!HttpHeaderUtils.checkIfHeaders(req, res, new ServiceInfo(etag))) return;
 
       } else {
         cacheable = false;
       }
     }
 
-    if (!cacheable) {
-      res.setDateHeader(HttpHeaders.EXPIRES, 0);
-      res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
-    }
+    if (!cacheable) applyNoCacheHeaders(res);
 
     // Generate JSON content
     long start = System.nanoTime();
     String content = json.generate();
     long end = System.nanoTime();
-    if (profile && LOGGER.isInfoEnabled()) {
+    if (ctx.profile && LOGGER.isInfoEnabled()) {
       LOGGER.info("JSON content generated in {} ms", ProfileFormat.format(end - start));
     }
-    if (serverTiming) {
+    if (ctx.serverTiming) {
       ServerTimingHeader.addMetricNano(res, "json", "JSON Response", end - start);
     }
 
     // Examine status
     ContentStatus status = json.getStatus();
-    res.setStatus(Objects.requireNonNullElseGet(code, status::code));
+    res.setStatus(Objects.requireNonNullElseGet(ctx.errorCode, status::code));
 
     // If errors occurred and should percolate
-    if (json.getError() != null && !GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) {
-      sendError(req, res, status.code(), "The service failed because of errors thrown by generators", json.getError());
-      return;
-    }
+    if (checkAndSendError(req, res, status, json.getError())) return;
 
     // Redirection
-    if (ContentStatus.isRedirect(status)) {
-      String url = json.getRedirectURL();
-      if (HttpRequests.isSafeRedirectURL(url, req)) {
-        LOGGER.debug("Redirecting to: {} with {}", url, status.code());
-        res.reset();
-        res.setStatus(status.code());
-        res.setHeader("Location", res.encodeRedirectURL(url));
-      } else {
-        LOGGER.warn("Blocked unsafe redirect URL: {}", url);
-        sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
-      }
-      return;
-    }
+    if (handleRedirect(req, res, status, json.getRedirectURL())) return;
 
     // Apply generator response headers
     json.getHeaders().forEach(res::setHeader);
@@ -424,22 +385,21 @@ public final class BerliozServlet extends HttpServlet {
       public String getMediaType() { return "application/json"; }
       public String getEncoding() { return "UTF-8"; }
     };
-    writeOutput(req, res, jsonOutput, etag, StandardCharsets.UTF_8, config, includeContent);
+    writeOutput(req, res, jsonOutput, etag, StandardCharsets.UTF_8, config, ctx.includeContent);
   }
 
   /**
    * Handles requests via the XML content generation + XSLT pipeline (the original Berlioz path).
    */
   private void processXml(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
-      MatchingService match, HttpMethod method, @Nullable Integer code,
-      boolean profile, boolean serverTiming, boolean includeContent) throws IOException {
+      ProcessingContext ctx) throws IOException {
 
     // Prepare the XML Response
-    XmlResponse xml = new XmlResponse(req, res, config, match, profile);
-    if (serverTiming) xml.enableServerTiming();
+    XmlResponse xml = new XmlResponse(req, res, config, ctx.match, ctx.profile);
+    if (ctx.serverTiming) xml.enableServerTiming();
 
     // Identify the transformer; direct services bypass XSLT entirely
-    XsltTransformer transformer = match.service().isDirect() ? null : config.getTransformer(match.service());
+    XsltTransformer transformer = ctx.match.service().isDirect() ? null : config.getTransformer(ctx.match.service());
     // TODO Maybe we should use transformer but only if a custom one exist (no fallback)
     long start = System.nanoTime();
 
@@ -450,25 +410,18 @@ public final class BerliozServlet extends HttpServlet {
 
     // Compute the ETag for the request if cacheable and methods GET or HEAD
     String etag = null;
-    boolean cacheable = code == null && match.isCacheable();
-    if (cacheable && (method == HttpMethod.GET || method == HttpMethod.HEAD)) {
+    boolean cacheable = ctx.errorCode == null && ctx.match.isCacheable();
+    if (cacheable && (ctx.method == HttpMethod.GET || ctx.method == HttpMethod.HEAD)) {
       String etagXML = xml.getEtag();
       if (etagXML != null) {
         String etagXSL = transformer != null? transformer.getEtag() : null;
         etag = '"'+ SHA256.hash(config.getETagSeed()+"~"+etagXML+"--"+etagXSL)+'"';
 
         // Update the headers (they should also be included in case of redirect)
-        res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
-        String cc = xml.getService().cache();
-        if (cc.isEmpty()) {
-          cc = config.getCacheControl();
-        }
-        res.setHeader(HttpHeaders.CACHE_CONTROL, toSafeHeader(cc));
-        res.setHeader(HttpHeaders.ETAG, etag);
+        applyCacheHeaders(res, config, ctx.match, etag);
 
         // Check if the conditions specified in the optional If headers are satisfied.
-        ServiceInfo info = new ServiceInfo(etag);
-        if (!HttpHeaderUtils.checkIfHeaders(req, res, info)) return;
+        if (!HttpHeaderUtils.checkIfHeaders(req, res, new ServiceInfo(etag))) return;
 
       } else {
         cacheable = false;
@@ -476,60 +429,36 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Prevents caching
-    if (!cacheable) {
-      res.setDateHeader(HttpHeaders.EXPIRES, 0);
-      res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
-    }
+    if (!cacheable) applyNoCacheHeaders(res);
 
     // Generate the XML content
     String content = xml.generate();
     long end = System.nanoTime();
-    if (profile && LOGGER.isInfoEnabled()) {
+    if (ctx.profile && LOGGER.isInfoEnabled()) {
       LOGGER.info("Content generated in {} ms", ProfileFormat.format(end - start));
     }
-    if (serverTiming) {
+    if (ctx.serverTiming) {
       ServerTimingHeader.addMetricNano(res,"xml", "XML Response", end - start);
     }
 
     // Examine the status
     ContentStatus status = xml.getStatus();
-    res.setStatus(Objects.requireNonNullElseGet(code, status::code));
+    res.setStatus(Objects.requireNonNullElseGet(ctx.errorCode, status::code));
 
     // If errors occurred and should percolate
-    if (xml.getError() != null && !GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) {
-      sendError(req, res, status.code(), "The service failed because of errors thrown by generators", xml.getError());
-      return;
-    }
+    if (checkAndSendError(req, res, status, xml.getError())) return;
 
     // Redirection (Beta)
-    if (ContentStatus.isRedirect(status)) {
-      String url = xml.getRedirectURL();
-      if (HttpRequests.isSafeRedirectURL(url, req)) {
-        LOGGER.debug("Redirecting to: {} with {}", url, status.code());
-        res.reset();
-        res.setStatus(status.code());
-        res.setHeader("Location", res.encodeRedirectURL(url));
-      } else {
-        LOGGER.warn("Blocked unsafe redirect URL: {}", url);
-        sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
-      }
-      return;
-    }
+    if (handleRedirect(req, res, status, xml.getRedirectURL())) return;
 
     // Apply response headers set by generators (last-writer-wins per name).
     xml.getHeaders().forEach(res::setHeader);
 
     // Produce the output (XSLT transform or pass through raw XML)
-    BerliozOutput result = executeTransform(content, req, xml, transformer, res, profile, serverTiming);
+    BerliozOutput result = executeTransform(content, req, xml, transformer, res, ctx.profile, ctx.serverTiming);
 
     // Resolve and validate encoding from XSLT output; canonical name is safe for HTTP headers
-    Charset charset;
-    try {
-      charset = Charset.forName(result.getEncoding());
-    } catch (UnsupportedCharsetException ex) {
-      LOGGER.warn("Unsupported encoding '{}' from XSLT output, falling back to UTF-8", result.getEncoding());
-      charset = StandardCharsets.UTF_8;
-    }
+    Charset charset = resolveCharset(result.getEncoding());
 
     // Update content type from XSLT transform result (MUST be specified before the output is requested)
     String ctype = result.getMediaType()+";charset="+charset.name();
@@ -541,7 +470,110 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // Write the response body, applying GZip compression when appropriate
-    writeOutput(req, res, result, etag, charset, config, includeContent);
+    writeOutput(req, res, result, etag, charset, config, ctx.includeContent);
+  }
+
+  /**
+   * Returns the service matching {@code path} and {@code method}, falling back to GET when the
+   * global option {@link BerliozOption#HTTP_GET_VIA_POST} allows POST requests to be treated as GET
+   * (backward compatibility).
+   */
+  private static @Nullable MatchingService findMatch(ServiceRegistry services, String path, HttpMethod method) {
+    // No matching service (backward compatibility)
+    MatchingService match = services.get(path, method);
+    if (match == null && method == HttpMethod.POST && GlobalSettings.has(BerliozOption.HTTP_GET_VIA_POST)) {
+      match = services.get(path, HttpMethod.GET);
+    }
+    return match;
+  }
+
+  /**
+   * Sends the appropriate error response when no service matches the request. For non-GET/HEAD
+   * methods Berlioz first checks whether the path is known for other methods and replies with
+   * {@code 405 Method Not Allowed} instead of {@code 404} when it is.
+   */
+  private void handleNoMatch(HttpServletRequest req, HttpServletResponse res,
+      ServiceRegistry services, String path, HttpMethod method) {
+    // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
+    if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
+      List<String> methods = services.allows(path);
+      if (!methods.isEmpty()) {
+        String allowed = HttpHeaderUtils.allow(methods);
+        res.setHeader(HttpHeaders.ALLOW, allowed);
+        sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only the following are allowed: " + allowed, null);
+        return;
+      }
+    }
+    sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+    LOGGER.debug("No matching service for: {}", req.getRequestURI());
+  }
+
+  /**
+   * Writes the standard cache-control headers for a cacheable response: {@code Expires},
+   * {@code Cache-Control}, and {@code ETag}. The cache-control value is taken from the service
+   * definition when present, otherwise from the global configuration.
+   */
+  private static void applyCacheHeaders(HttpServletResponse res, BerliozConfig config, MatchingService match, String etag) {
+    res.setDateHeader(HttpHeaders.EXPIRES, config.getExpiryDate());
+    String cc = match.service().cache();
+    if (cc.isEmpty()) cc = config.getCacheControl();
+    res.setHeader(HttpHeaders.CACHE_CONTROL, toSafeHeader(cc));
+    res.setHeader(HttpHeaders.ETAG, etag);
+  }
+
+  /**
+   * Writes the standard cache-control headers that prevent caching.
+   */
+  private static void applyNoCacheHeaders(HttpServletResponse res) {
+    res.setDateHeader(HttpHeaders.EXPIRES, 0);
+    res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+  }
+
+  /**
+   * Forwards an error to the client when a generator threw an exception and the global option
+   * {@link BerliozOption#ERROR_GENERATOR_CATCH} is not set.
+   *
+   * @return {@code true} when an error was sent and the caller must return immediately.
+   */
+  private boolean checkAndSendError(HttpServletRequest req, HttpServletResponse res,
+      ContentStatus status, @Nullable Exception error) {
+    if (error == null || GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) return false;
+    sendError(req, res, status.code(), "The service failed because of errors thrown by generators", error);
+    return true;
+  }
+
+  /**
+   * Sends a redirect (or a {@code 400} when the URL is unsafe) when the content status indicates
+   * a redirect.
+   *
+   * @return {@code true} when a redirect was handled and the caller must return immediately.
+   */
+  private boolean handleRedirect(HttpServletRequest req, HttpServletResponse res,
+      ContentStatus status, String url) {
+    if (!ContentStatus.isRedirect(status)) return false;
+    if (HttpRequests.isSafeRedirectURL(url, req)) {
+      LOGGER.debug("Redirecting to: {} with {}", url, status.code());
+      res.reset();
+      res.setStatus(status.code());
+      res.setHeader("Location", res.encodeRedirectURL(url));
+    } else {
+      LOGGER.warn("Blocked unsafe redirect URL: {}", url);
+      sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
+    }
+    return true;
+  }
+
+  /**
+   * Resolves the charset from the XSLT output encoding name, falling back to UTF-8 when the name
+   * is not recognised by the JVM.
+   */
+  private static Charset resolveCharset(String encoding) {
+    try {
+      return Charset.forName(encoding);
+    } catch (UnsupportedCharsetException ex) {
+      LOGGER.warn("Unsupported encoding '{}' from XSLT output, falling back to UTF-8", encoding);
+      return StandardCharsets.UTF_8;
+    }
   }
 
   /**
@@ -742,8 +774,33 @@ public final class BerliozServlet extends HttpServlet {
     return Objects.requireNonNull(this.serviceRegistry, "Berlioz services are not configured!");
   }
 
-  // Private internal class
+  // Private internal classes
   // ==============================================================================================
+
+  /**
+   * Bundles the per-request processing flags resolved once in {@link #process} and shared between
+   * {@link #processJson} and {@link #processXml}, reducing the number of parameters on those
+   * methods.
+   */
+  private static final class ProcessingContext {
+
+    final MatchingService match;
+    final HttpMethod method;
+    final @Nullable Integer errorCode;
+    final boolean profile;
+    final boolean serverTiming;
+    final boolean includeContent;
+
+    ProcessingContext(MatchingService match, HttpMethod method, @Nullable Integer errorCode,
+        boolean profile, boolean serverTiming, boolean includeContent) {
+      this.match = match;
+      this.method = method;
+      this.errorCode = errorCode;
+      this.profile = profile;
+      this.serverTiming = serverTiming;
+      this.includeContent = includeContent;
+    }
+  }
 
   /**
    * Provide simple entity information for the service.
