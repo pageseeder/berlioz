@@ -70,7 +70,6 @@ public final class JsonResponse {
 
   private static final AtomicReference<@Nullable GeneratorListener> listener = new AtomicReference<>(null);
 
-  private final CoreHttpRequest core;
   private final MatchingService match;
   private final List<HttpContentRequest> requests;
 
@@ -82,9 +81,9 @@ public final class JsonResponse {
 
   public JsonResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
       MatchingService match, boolean profile) {
-    this.core = new CoreHttpRequest(req, res, config.getEnvironment());
+    CoreHttpRequest core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
-    this.requests = GeneratorDispatch.configure(this.core, match);
+    this.requests = GeneratorDispatch.configure(core, match);
     this.profile = profile;
   }
 
@@ -216,40 +215,39 @@ public final class JsonResponse {
 
     // Direct service: generator output IS the response body — no name wrapper
     if (service.isDirect()) {
-      GeneratorResult r = results.get(0);
-      if (r.error != null) return errorJson(r.error);
-      return r.json != null && !r.json.isEmpty() ? r.json : "null";
+      return resolveValue(results.get(0));
     }
 
     // Envelope: {"name1": <json1>, "name2": <json2>} — even for a single generator
     try (JsonStringBuilder jb = JsonStringBuilder.create()) {
       jb.startObject();
       for (GeneratorResult r : results) {
-        String value;
-        if (r.error != null) {
-          value = errorJson(r.error);
-        } else if (r.json != null && !r.json.isEmpty()) {
-          value = r.json;
-        } else {
-          value = "null";
-        }
-        jb.fieldRaw(r.name, value);
+        jb.fieldRaw(r.name, resolveValue(r));
       }
       if (this.profile) {
-        jb.startObject("_profile");
-        for (GeneratorResult r : results) {
-          jb.startObject(r.name);
-          jb.field("etag", ProfileFormat.format(r.profileEtag));
-          jb.field("process", ProfileFormat.format(r.profileProcess));
-          jb.field("total", ProfileFormat.format(r.profileEtag + r.profileProcess));
-          jb.endObject();
-        }
-        jb.endObject();
+        appendProfile(jb, results);
       }
       jb.endObject();
       jb.flush();
       return jb.toString();
     }
+  }
+
+  private static String resolveValue(GeneratorResult r) {
+    if (r.error != null) return errorJson(r.error);
+    return r.json != null && !r.json.isEmpty() ? r.json : "null";
+  }
+
+  private static void appendProfile(JsonStringBuilder jb, List<GeneratorResult> results) {
+    jb.startObject("_profile");
+    for (GeneratorResult r : results) {
+      jb.startObject(r.name);
+      jb.field("etag", ProfileFormat.format(r.profileEtag));
+      jb.field("process", ProfileFormat.format(r.profileProcess));
+      jb.field("total", ProfileFormat.format(r.profileEtag + r.profileProcess));
+      jb.endObject();
+    }
+    jb.endObject();
   }
 
   private String retrieveETag(HttpContentRequest request) {
