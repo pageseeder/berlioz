@@ -179,7 +179,7 @@ final class ServletTestSupport {
           case "setStatus":            status = (Integer) args[0]; return null;
           case "setHeader":
           case "addHeader":            headers.put((String) args[0], (String) args[1]); return null;
-          case "setDateHeader":        headers.put((String) args[0], String.valueOf(args[1])); return null;
+          case "setDateHeader":
           case "setIntHeader":         headers.put((String) args[0], String.valueOf(args[1])); return null;
           case "reset":                resetCalled = true; headers.clear(); body.getBuffer().setLength(0); bytes.reset(); return null;
           case "sendError":            status = (Integer) args[0]; errorMessage = args.length > 1 ? (String) args[1] : null; return null;
@@ -193,7 +193,7 @@ final class ServletTestSupport {
           case "getOutputStream":       return new ServletOutputStream() {
             @Override public void write(int b) { bytes.write(b); }
             @Override public boolean isReady() { return true; }
-            @Override public void setWriteListener(WriteListener writeListener) {}
+            @Override public void setWriteListener(WriteListener writeListener) { throw new UnsupportedOperationException(); }
           };
           case "getHeader":            return headers.get(args[0]);
           case "encodeRedirectURL":     return args[0];
