@@ -229,9 +229,70 @@ final class ServiceRegistryTest {
   }
 
   @Test
+  void testVersion_initialValueIsPositive() {
+    Assertions.assertTrue(registry.version() > 0);
+  }
+
+  @Test
   void testVersion_changesAfterTouch() {
     long before = registry.version();
     registry.touch();
     Assertions.assertTrue(registry.version() >= before);
+  }
+
+  @Test
+  void testGet_anyMethod_noMatch() {
+    registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
+    Assertions.assertNull(registry.get("/other"));
+  }
+
+  @Test
+  void testGet_byMethodAndUrl_nullMethod() {
+    registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
+    Assertions.assertNull(registry.get("/home", (HttpMethod) null));
+  }
+
+  @Test
+  void testGet_templatePattern_variablesResolved() {
+    Service svc = buildService("detail");
+    registry.register(svc, new URIPattern("/items/{id}"), HttpMethod.GET);
+
+    MatchingService match = registry.get("/items/42", HttpMethod.GET);
+    Assertions.assertNotNull(match);
+    Assertions.assertEquals("42", match.result().get("id"));
+  }
+
+  @Test
+  void testAllows_multipleMethodsSameUrl() {
+    registry.register(buildService("get-home"),  new URIPattern("/home"), HttpMethod.GET);
+    registry.register(buildService("post-home"), new URIPattern("/home"), HttpMethod.POST);
+    List<String> methods = registry.allows("/home");
+    Assertions.assertTrue(methods.contains("GET"),  methods.toString());
+    Assertions.assertTrue(methods.contains("HEAD"), methods.toString());
+    Assertions.assertTrue(methods.contains("POST"), methods.toString());
+  }
+
+  @Test
+  void testGetServiceMap_isUnmodifiable() {
+    registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
+    Map<String, Service> map = registry.getServiceMap(HttpMethod.GET);
+    Assertions.assertThrows(UnsupportedOperationException.class,
+        () -> map.put("/other", buildService("other")));
+  }
+
+  @Test
+  void testGetServices_empty() {
+    Assertions.assertTrue(registry.getServices().isEmpty());
+  }
+
+  @Test
+  void testMatches_multiplePatterns() {
+    Service svc = buildService("multi");
+    registry.register(svc, new URIPattern("/a"), HttpMethod.GET);
+    registry.register(svc, new URIPattern("/b"), HttpMethod.GET);
+    List<String> patterns = registry.matches(svc);
+    Assertions.assertEquals(2, patterns.size());
+    Assertions.assertTrue(patterns.contains("/a"), patterns.toString());
+    Assertions.assertTrue(patterns.contains("/b"), patterns.toString());
   }
 }
