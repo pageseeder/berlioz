@@ -104,7 +104,7 @@ final class ContentRequestTest {
       @Override public String getParameter(String name) { return null; }
       @Override public String getParameter(String name, String def) { return def; }
       @Override public Object getAttribute(String name) { return null; }
-      @Override public void setAttribute(String name, Object o) {}
+      @Override public void setAttribute(String name, Object o) { throw new UnsupportedOperationException(); }
       @Override public HttpSession getSession() { return null; }
       @Override public Environment getEnvironment() { return null; }
       @Override public Location getLocation() { return null; }
@@ -118,8 +118,8 @@ final class ContentRequestTest {
       @Override public String[] getParameterValues(String name) { return valuesArr; }
       @Override public Cookie[] getCookies() { return cookiesArr; }
       @Override public Date getDateParameter(String name) { return null; }
-      @Override public void setStatus(ContentStatus code) {}
-      @Override public void setRedirect(String url, ContentStatus code) {}
+      @Override public void setStatus(ContentStatus code) { throw new UnsupportedOperationException(); }
+      @Override public void setRedirect(String url, ContentStatus code) { throw new UnsupportedOperationException(); }
     };
   }
 }

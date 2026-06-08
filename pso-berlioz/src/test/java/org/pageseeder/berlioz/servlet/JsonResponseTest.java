@@ -33,7 +33,7 @@ class JsonResponseTest {
   private static BerliozConfig config;
 
   @BeforeAll
-  static void setup() throws BerliozException {
+  static void setup() {
     GlobalSettings.setup(WEB_INF);
     config = buildConfig(tmp.toFile());
   }
@@ -282,8 +282,9 @@ class JsonResponseTest {
     Service service = singleGenerator(new NoContent());
     JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
 
+    var headers = jr.getHeaders();
     assertThrows(UnsupportedOperationException.class,
-        () -> jr.getHeaders().put("X-Intruder", "value"));
+        () -> headers.put("X-Intruder", "value"));
   }
 
   // getEtag --------------------------------------------------------------------------------------

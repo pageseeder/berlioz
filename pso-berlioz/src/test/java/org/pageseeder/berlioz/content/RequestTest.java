@@ -59,7 +59,7 @@ final class RequestTest {
       }
 
       @Override public Object getAttribute(String name) { return null; }
-      @Override public void setAttribute(String name, Object o) {}
+      @Override public void setAttribute(String name, Object o) { throw new UnsupportedOperationException(); }
       @Override public List<Cookie> cookies() { return List.of(); }
       @Override public HttpSession getSession() { return null; }
       @Override public Environment getEnvironment() { return null; }

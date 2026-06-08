@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.GlobalSettings;
 
 import java.io.File;
@@ -16,7 +15,7 @@ class MediaTypesTest {
   private static final File WEB_INF = new File("./src/test/resources/org/pageseeder/berlioz");
 
   @BeforeAll
-  static void setup() throws BerliozException {
+  static void setup() {
     GlobalSettings.setup(WEB_INF);
   }
 

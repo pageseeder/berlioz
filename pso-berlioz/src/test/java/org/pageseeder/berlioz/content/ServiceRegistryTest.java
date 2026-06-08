@@ -276,8 +276,9 @@ final class ServiceRegistryTest {
   void testGetServiceMap_isUnmodifiable() {
     registry.register(buildService("home"), new URIPattern("/home"), HttpMethod.GET);
     Map<String, Service> map = registry.getServiceMap(HttpMethod.GET);
+    Service other = buildService("other");
     Assertions.assertThrows(UnsupportedOperationException.class,
-        () -> map.put("/other", buildService("other")));
+        () -> map.put("/other", other));
   }
 
   @Test
