@@ -47,6 +47,8 @@ import org.slf4j.LoggerFactory;
  */
 public final class Service {
 
+  private static final String GENERATOR = "generator";
+
   /**
    * The ID of this service.
    */
@@ -248,7 +250,7 @@ public final class Service {
    */
   public String name(BerliozGenerator generator) {
     String name = this.names.get(generator);
-    return name != null ? name : Strings.toKebabCase(generator.getClass().getSimpleName(), "generator");
+    return name != null ? name : Strings.toKebabCase(generator.getClass().getSimpleName(), GENERATOR);
   }
 
   /**
@@ -319,15 +321,7 @@ public final class Service {
       }
     }
 
-    // Supported output types (intersection across all generators)
-    StringBuilder supported = new StringBuilder();
-    for (OutputType t : OutputType.values()) {
-      if (this.supported.contains(t)) {
-        if (supported.length() > 0) supported.append(',');
-        supported.append(t.name().toLowerCase(Locale.ROOT));
-      }
-    }
-    xml.attribute("supported", supported.toString());
+    xml.attribute("supported", supportedAttribute());
 
     // How the response code is calculated
     xml.openElement("response-code", true);
@@ -349,7 +343,7 @@ public final class Service {
     for (BerliozGenerator generator : this.generators) {
       String target = target(generator);
       List<Parameter> parameters = parameters(generator);
-      xml.openElement("generator", !parameters.isEmpty());
+      xml.openElement(GENERATOR, !parameters.isEmpty());
       xml.attribute("class", generator.getClass().getName());
       xml.attribute("name", name(generator));
       if (target != null) {
@@ -368,6 +362,17 @@ public final class Service {
     }
 
     xml.closeElement();
+  }
+
+  private String supportedAttribute() {
+    StringBuilder sb = new StringBuilder();
+    for (OutputType t : OutputType.values()) {
+      if (this.supported.contains(t)) {
+        if (sb.length() > 0) sb.append(',');
+        sb.append(t.name().toLowerCase(Locale.ROOT));
+      }
+    }
+    return sb.toString();
   }
 
   /**
@@ -454,7 +459,7 @@ public final class Service {
    * </ul>
    */
   static String generatorType(BerliozGenerator generator) {
-    if (generator instanceof Generator) return "generator";
+    if (generator instanceof Generator) return GENERATOR;
     if (generator instanceof RawGenerator) return "raw";
     boolean isXml = generator instanceof XmlGenerator;
     boolean isJson = generator instanceof JsonGenerator;
