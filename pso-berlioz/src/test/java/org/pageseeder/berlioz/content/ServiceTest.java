@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.output.OutputType;
+import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.xmlwriter.XML.NamespaceAware;
 import org.pageseeder.xmlwriter.XMLStringWriter;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -511,28 +512,32 @@ final class ServiceTest {
 
   private static final class CacheableContentByRequest implements ContentGenerator, Cacheable {
     @Override public String getETag(Request req) { return "request"; }
-    @Override public void process(ContentRequest req, XMLWriter xml) {}
+    @Override public void process(ContentRequest req, XMLWriter xml) {
+      // Nothing to do here
+    }
   }
 
   private static final class CacheableContentByContentRequest implements ContentGenerator, Cacheable {
     @SuppressWarnings("deprecation")
     @Override public String getETag(ContentRequest req) { return "content-request"; }
-    @Override public void process(ContentRequest req, XMLWriter xml) {}
+    @Override public void process(ContentRequest req, XMLWriter xml) {
+      // Nothing to do here
+    }
   }
 
   private static final class CacheableGeneratorByRequest implements Generator, Cacheable {
     @Override public String getETag(Request req) { return "request"; }
-    @Override public Response generate(Request req, org.pageseeder.berlioz.output.OutputWriter out) { return Response.ok(); }
+    @Override public Response generate(Request req, OutputWriter out) { return Response.ok(); }
   }
 
   private static final class CacheableGeneratorByContentRequest implements Generator, Cacheable {
     @SuppressWarnings("deprecation")
     @Override public String getETag(ContentRequest req) { return "content-request"; }
-    @Override public Response generate(Request req, org.pageseeder.berlioz.output.OutputWriter out) { return Response.ok(); }
+    @Override public Response generate(Request req, OutputWriter out) { return Response.ok(); }
   }
 
   private static final class CacheableGeneratorWithoutETag implements Generator, Cacheable {
-    @Override public Response generate(Request req, org.pageseeder.berlioz.output.OutputWriter out) { return Response.ok(); }
+    @Override public Response generate(Request req, OutputWriter out) { return Response.ok(); }
   }
 
   private static final class ServletDefaults {
