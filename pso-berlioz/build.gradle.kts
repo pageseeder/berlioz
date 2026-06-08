@@ -20,7 +20,6 @@ dependencies {
   optional(libs.jakarta.json.api)
 
   testImplementation(libs.junit.jupiter)
-  testRuntimeOnly(libs.junit.platform.launcher)
   testImplementation(libs.servlet.api)
   testImplementation(libs.slf4j.simple)
   testImplementation(libs.glassfish.javax.json)
@@ -28,6 +27,8 @@ dependencies {
   testImplementation(libs.parsson)
   testImplementation(libs.jackson.core)
   testImplementation(libs.gson)
+
+  testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 publishing {

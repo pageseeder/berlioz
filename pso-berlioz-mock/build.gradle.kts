@@ -6,6 +6,7 @@ dependencies {
   compileOnly(libs.servlet.api)
 
   testImplementation(libs.junit.jupiter)
-  testRuntimeOnly(libs.junit.platform.launcher)
   testImplementation(libs.servlet.api)
+
+  testRuntimeOnly(libs.junit.platform.launcher)
 }
