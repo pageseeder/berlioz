@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.13.2
  * @since 0.9.32
  */
 public final class WebBundleTool {
@@ -284,10 +284,12 @@ public final class WebBundleTool {
 
         StringReader reader = new StringReader(writer.toString());
         file = new File(this.bundles, filename);
-        if (minimize && bundle.isCSSMinimizable()) {
-          CSSMin.minimize(reader, new FileOutputStream(file));
-        } else {
-          copyTo(reader, new FileOutputStream(file));
+        try (FileOutputStream out = new FileOutputStream(file)) {
+          if (minimize && bundle.isCSSMinimizable()) {
+            CSSMin.minimize(reader, out);
+          } else {
+            copyTo(reader, out);
+          }
         }
         file.deleteOnExit();
       }
@@ -432,16 +434,17 @@ public final class WebBundleTool {
    * @throws IOException if an input/output error occurs
    */
   private static void copyTo(StringReader reader, OutputStream out) throws IOException {
-    OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-    char[] buffer = new char[1024];
-    while (true) {
-      int length = reader.read(buffer);
-      if (length < 0) {
-        break;
+    try (OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
+      char[] buffer = new char[1024];
+      while (true) {
+        int length = reader.read(buffer);
+        if (length < 0) {
+          break;
+        }
+        writer.write(buffer, 0, length);
       }
-      writer.write(buffer, 0, length);
+      writer.flush();
     }
-    writer.flush();
   }
 
   /**
