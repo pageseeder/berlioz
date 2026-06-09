@@ -1,4 +1,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/org.pageseeder.berlioz/pso-berlioz.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22org.pageseeder.berlioz%22%20AND%20a:%22pso-berlioz%22)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pageseeder_berlioz&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=pageseeder_berlioz)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=pageseeder_berlioz&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=pageseeder_berlioz)
+[![javadoc](https://javadoc.io/badge2/org.pageseeder.berlioz/pso-berlioz/javadoc.svg)](https://javadoc.io/doc/org.pageseeder.berlioz/pso-berlioz)
+
 
 # Berlioz
 A light Web framework built on URI templates and XSLT
@@ -28,7 +32,7 @@ Let us know if there is anything that we can do to help you use Berlioz. We want
 
 ## API Documentation
 
-The Java API documentation can be found [here](http://pageseeder.org/apidocs/berlioz/latest/index.html)
+The Java API documentation can be found [here](https://javadoc.io/doc/org.pageseeder.berlioz/pso-berlioz)
 
 ## Roadmap
 
