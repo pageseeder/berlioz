@@ -154,7 +154,7 @@ public final class XmlWriterAdapter implements XMLWriter {
 
   @Override
   public void attribute(String name, int value) throws IOException {
-    try { this.xml.attribute(name, (long) value); } catch (XmlWriteFailureException e) { throw cause(e); }
+    try { this.xml.attribute(name, value); } catch (XmlWriteFailureException e) { throw cause(e); }
   }
 
   @Override
