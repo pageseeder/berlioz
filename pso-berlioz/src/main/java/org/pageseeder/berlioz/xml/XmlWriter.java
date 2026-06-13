@@ -177,6 +177,27 @@ public interface XmlWriter {
     return this;
   }
 
+  /**
+   * Writes a legacy {@link org.pageseeder.xmlwriter.XMLWritable} to this writer.
+   *
+   * <p>Bridges the legacy {@link org.pageseeder.xmlwriter.XMLWriter} API (checked
+   * {@link java.io.IOException}) to this unchecked writer by routing calls through an
+   * {@link XmlWriterAdapter}. Any {@link java.io.IOException} thrown by the writable
+   * is re-wrapped as an {@link XmlWriteFailureException}.</p>
+   *
+   * @param legacy the legacy writable object
+   * @return this writer
+   * @throws XmlWriteFailureException if an I/O error occurs while writing.
+   */
+  default XmlWriter asXml(org.pageseeder.xmlwriter.XMLWritable legacy) {
+    try {
+      legacy.toXML(new XmlWriterAdapter(this));
+    } catch (java.io.IOException e) {
+      throw new XmlWriteFailureException(e);
+    }
+    return this;
+  }
+
   // Comments, CDATA, PIs and XML declaration
   // ----------------------------------------------------------------------------------------------
 
