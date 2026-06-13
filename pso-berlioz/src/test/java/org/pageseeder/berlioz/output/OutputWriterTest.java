@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.output;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringWriter;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.pageseeder.berlioz.output.OutputWriter.FieldOption;
@@ -404,6 +405,40 @@ class OutputWriterTest {
     out.endObject();
     out.flush();
     assertEquals("<root><ids>100</ids><ids>200</ids></root>", sw.toString());
+  }
+
+  // ---------------------------------------------------------------------------
+  // write(Iterable<OutputWritable>)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void write_iterable_delegatesToEachWritable() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    List<OutputWritable> items = List.of(
+        w -> w.startObject("item").field("id", 1L).endObject(),
+        w -> w.startObject("item").field("id", 2L).endObject()
+    );
+    out.startArray("items").write(items).endArray();
+    out.flush();
+    assertEquals("[{\"id\":1},{\"id\":2}]", sw.toString());
+  }
+
+  @Test
+  void write_iterable_empty_writesNothing() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    out.startArray("items").write(List.<OutputWritable>of()).endArray();
+    out.flush();
+    assertEquals("[]", sw.toString());
+  }
+
+  @Test
+  void write_iterable_returnsThis() {
+    JsonOutputAdapter out = new JsonOutputAdapter(new StringWriter());
+    out.startArray("items");
+    assertSame(out, out.write(List.<OutputWritable>of()));
+    out.endArray();
   }
 
   // ---------------------------------------------------------------------------

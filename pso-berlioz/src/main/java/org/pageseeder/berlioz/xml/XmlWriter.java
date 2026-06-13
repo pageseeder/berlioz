@@ -150,7 +150,32 @@ public interface XmlWriter {
   XmlWriter xml(char[] text, int off, int len);
 
 
-  XmlWriter asXml(XmlWritable object);
+  /**
+   * Writes a {@link XmlWritable} to this writer.
+   *
+   * <p>Equivalent to calling {@code object.toXml(this)} but keeps the fluent chain intact.</p>
+   *
+   * @param object the object to write
+   * @return this writer
+   * @throws XmlWriteFailureException if an I/O error occurs while writing.
+   */
+  default XmlWriter asXml(XmlWritable object) {
+    return object.toXml(this);
+  }
+
+  /**
+   * Writes each element in the iterable using its {@link XmlWritable#toXml(XmlWriter)} method.
+   *
+   * <p>Equivalent to calling {@link #asXml(XmlWritable)} for each element in order.</p>
+   *
+   * @param objects the objects to write
+   * @return this writer
+   * @throws XmlWriteFailureException if an I/O error occurs while writing.
+   */
+  default XmlWriter asXml(Iterable<? extends XmlWritable> objects) {
+    for (XmlWritable o : objects) o.toXml(this);
+    return this;
+  }
 
   // Comments, CDATA, PIs and XML declaration
   // ----------------------------------------------------------------------------------------------

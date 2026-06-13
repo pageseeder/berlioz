@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.StringWriter;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -483,6 +484,34 @@ abstract class JsonWriterTestBase {
     w.endArray();
     Assertions.assertTrue(w.inObject());
     w.endObject().flush();
+  }
+
+  // asJson(JsonWritable) / asJson(Iterable) -------------------------------------------------------
+
+  @Test
+  void testAsJsonSingleWritable() {
+    StringWriter json = new StringWriter();
+    JsonWritable writable = w -> w.field("x", 1L);
+    newJsonWriter(json).startObject().asJson(writable).endObject().flush();
+    Assertions.assertEquals("{\"x\":1}", json.toString());
+  }
+
+  @Test
+  void testAsJsonIterableWritables() {
+    StringWriter json = new StringWriter();
+    List<JsonWritable> items = List.of(
+        w -> w.startObject().field("id", 1L).endObject(),
+        w -> w.startObject().field("id", 2L).endObject()
+    );
+    newJsonWriter(json).startArray().asJson(items).endArray().flush();
+    Assertions.assertEquals("[{\"id\":1},{\"id\":2}]", json.toString());
+  }
+
+  @Test
+  void testAsJsonIterableEmpty() {
+    StringWriter json = new StringWriter();
+    newJsonWriter(json).startArray().asJson(List.<JsonWritable>of()).endArray().flush();
+    Assertions.assertEquals("[]", json.toString());
   }
 
 }

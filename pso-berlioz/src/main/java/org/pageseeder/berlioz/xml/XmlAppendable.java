@@ -211,7 +211,8 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    */
   public XmlAppendable<T> asXml(@Nullable Object o) {
     if (o instanceof XmlWritable) {
-      return asXml((XmlWritable)o);
+      ((XmlWritable) o).toXml(this);
+      return this;
     }
     if (o != null) {
       this.xml(o.toString());
@@ -235,12 +236,6 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
     Objects.requireNonNull(xml, "XML must not be null.");
     deNude();
     append(CharBuffer.wrap(xml, off, len));
-    return this;
-  }
-
-  @Override
-  public XmlAppendable<T> asXml(XmlWritable object) {
-    object.toXml(this);
     return this;
   }
 

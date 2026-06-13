@@ -235,6 +235,33 @@ public interface JsonWriter extends AutoCloseable, Flushable {
   }
 
   /**
+   * Writes a {@link JsonWritable} to this writer.
+   *
+   * <p>Equivalent to calling {@code object.toJson(this)} but keeps the fluent chain intact.</p>
+   *
+   * @param object the object to write
+   * @return this instance.
+   * @throws JsonWriteFailureException if an I/O error occurs while writing.
+   */
+  default JsonWriter asJson(JsonWritable object) {
+    return object.toJson(this);
+  }
+
+  /**
+   * Writes each element in the iterable using its {@link JsonWritable#toJson(JsonWriter)} method.
+   *
+   * <p>Equivalent to calling {@link #asJson(JsonWritable)} for each element in order.</p>
+   *
+   * @param objects the objects to write
+   * @return this instance.
+   * @throws JsonWriteFailureException if an I/O error occurs while writing.
+   */
+  default JsonWriter asJson(Iterable<? extends JsonWritable> objects) {
+    for (JsonWritable o : objects) o.toJson(this);
+    return this;
+  }
+
+  /**
    * Writes a map of string name/value pairs into the current object context.
    *
    * @param map  a map of name/value pairs.

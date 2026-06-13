@@ -270,6 +270,7 @@ final class BuiltinJsonWriter implements JsonWriter {
   private void maybeAppendComma(boolean newContext) {
     if (this.needComma) {
       this.json.append(',');
+      this.needComma = !newContext;
     } else if (!newContext) {
       this.needComma = true;
     }

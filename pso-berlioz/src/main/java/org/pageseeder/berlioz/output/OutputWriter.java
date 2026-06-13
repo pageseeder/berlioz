@@ -743,6 +743,19 @@ public interface OutputWriter extends AutoCloseable, Flushable {
   }
 
   /**
+   * Writes each element in the iterable using its {@link OutputWritable#writeTo(OutputWriter)} method.
+   *
+   * <p>Equivalent to calling {@link #write(OutputWritable)} for each element in order.</p>
+   *
+   * @param writables the objects to write
+   * @return this writer
+   */
+  default OutputWriter write(Iterable<? extends OutputWritable> writables) {
+    for (OutputWritable w : writables) w.writeTo(this);
+    return this;
+  }
+
+  /**
    * Flushes any buffered content to the underlying target.
    */
   @Override

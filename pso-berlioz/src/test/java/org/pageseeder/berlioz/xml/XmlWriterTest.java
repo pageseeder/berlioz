@@ -1,6 +1,7 @@
 package org.pageseeder.berlioz.xml;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
@@ -77,5 +78,53 @@ final class XmlWriterTest {
     XmlWriter xml = new XmlStringBuilder();
     xml.openElement("root");
     Assertions.assertThrows(UnclosedElementException.class, xml::close);
+  }
+
+  // asXml(XmlWritable) / asXml(Iterable) -------------------------------------------------------
+
+  @Test
+  void testAsXmlSingleWritable() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    XmlWriter xml = out;
+    XmlWritable writable = w -> w.emptyElement("item");
+    xml.openElement("root").asXml(writable).closeElement();
+    Assertions.assertEquals("<root><item/></root>", out.toString());
+  }
+
+  @Test
+  void testAsXmlSingleWritableReturnsThis() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    XmlWritable writable = w -> w.emptyElement("x");
+    out.openElement("root");
+    Assertions.assertSame(out, out.asXml(writable));
+    out.closeElement();
+  }
+
+  @Test
+  void testAsXmlIterableWritables() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    XmlWriter xml = out;
+    List<XmlWritable> items = List.of(
+        w -> w.element("a", "1"),
+        w -> w.element("b", "2")
+    );
+    xml.openElement("root").asXml(items).closeElement();
+    Assertions.assertEquals("<root><a>1</a><b>2</b></root>", out.toString());
+  }
+
+  @Test
+  void testAsXmlIterableEmpty() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    XmlWriter xml = out;
+    xml.openElement("root").asXml(List.<XmlWritable>of()).closeElement();
+    Assertions.assertEquals("<root/>", out.toString());
+  }
+
+  @Test
+  void testAsXmlIterableReturnsThis() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    out.openElement("root");
+    Assertions.assertSame(out, out.asXml(List.<XmlWritable>of()));
+    out.closeElement();
   }
 }
