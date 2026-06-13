@@ -35,14 +35,7 @@ class VariableTest {
    */
   @Test
   void testNew_NullName() {
-    boolean nullThrown = false;
-    try {
-      new Variable(null, null);
-    } catch (NullPointerException ex) {
-      nullThrown = true;
-    } finally {
-      Assertions.assertTrue(nullThrown);
-    }
+    Assertions.assertThrows(NullPointerException.class, () -> new Variable(null, null));
   }
 
   /**
@@ -50,14 +43,7 @@ class VariableTest {
    */
   @Test
   void testNew_EmptyString() {
-    boolean illegalThrown = false;
-    try {
-      new Variable("", null);
-    } catch (IllegalArgumentException ex) {
-      illegalThrown = true;
-    } finally {
-      Assertions.assertTrue(illegalThrown);
-    }
+    Assertions.assertThrows(IllegalArgumentException.class, () -> new Variable("", null));
   }
 
   /**
@@ -144,7 +130,7 @@ class VariableTest {
     Assertions.assertEquals(t, Variable.parse("t:x=").type());
     Assertions.assertEquals(t, Variable.parse("t:x=y").type());
 
-    Assertions.assertEquals(null,  Variable.parse(":x=y").type());
+    Assertions.assertNull(Variable.parse(":x=y").type());
   }
 
   /**
@@ -152,12 +138,7 @@ class VariableTest {
    */
   @Test
   void testParse_ErrorNull() {
-    try {
-      Variable.parse(null);
-      Assertions.fail("No exception was thrown");
-    } catch (Exception ex) {
-      Assertions.assertEquals(NullPointerException.class, ex.getClass());
-    }
+    Assertions.assertThrows(NullPointerException.class, () -> Variable.parse(null));
   }
 
   /**
@@ -165,12 +146,7 @@ class VariableTest {
    */
   @Test
   void testParse_ErrorSyntax() {
-    try {
-      Variable.parse("=y");
-      Assertions.fail("No exception was thrown");
-    } catch (Exception ex) {
-      Assertions.assertEquals(URITemplateSyntaxException.class, ex.getClass());
-    }
+    Assertions.assertThrows(URITemplateSyntaxException.class, () -> Variable.parse("=y"));
   }
 
   /**

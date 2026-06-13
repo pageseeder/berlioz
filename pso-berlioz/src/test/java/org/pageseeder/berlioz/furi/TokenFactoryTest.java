@@ -37,12 +37,7 @@ final class TokenFactoryTest {
    */
   @Test
   void testNewToken_Null() {
-    try {
-      TokenFactory.newToken(null);
-      Assertions.fail("Expected NullPointerException");
-    } catch (NullPointerException e) {
-      // expected
-    }
+    Assertions.assertThrows(NullPointerException.class, () -> TokenFactory.newToken(null));
   }
 
   /**

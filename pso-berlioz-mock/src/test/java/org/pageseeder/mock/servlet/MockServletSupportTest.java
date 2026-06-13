@@ -33,11 +33,7 @@ class MockServletSupportTest {
 
     session.invalidate();
 
-    try {
-      session.getAttribute("name");
-      Assertions.fail("Invalidated session should reject access");
-    } catch (IllegalStateException ex) {
-      Assertions.assertEquals("HttpSession is no longer valid", ex.getMessage());
-    }
+    IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class, () -> session.getAttribute("name"));
+    Assertions.assertEquals("HttpSession is no longer valid", ex.getMessage());
   }
 }

@@ -9,12 +9,7 @@ final class ParameterTemplateTest {
 
   @Test
   void testParameter_Null() {
-    try {
-      ParameterTemplate.parameter(null, "x");
-      Assertions.fail("Expected NullPointerException");
-    } catch (NullPointerException e) {
-      // expected
-    }
+    Assertions.assertThrows(NullPointerException.class, () -> ParameterTemplate.parameter(null, "x"));
   }
 
   @SuppressWarnings("java:S5976")
@@ -52,12 +47,7 @@ final class ParameterTemplateTest {
 
   @Test
   void testValue_Null() {
-    try {
-      ParameterTemplate.value(null);
-      Assertions.fail("Expected NullPointerException");
-    } catch (NullPointerException e) {
-      // expected
-    }
+    Assertions.assertThrows(NullPointerException.class, () -> ParameterTemplate.value(null));
   }
 
   @Test

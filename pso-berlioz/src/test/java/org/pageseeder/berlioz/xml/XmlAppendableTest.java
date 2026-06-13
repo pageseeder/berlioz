@@ -329,12 +329,7 @@ final class XmlAppendableTest {
   @Test
   void testCloseElementWithNoOpenElementLeavesWriterUsable() {
     XmlStringBuilder xml = new XmlStringBuilder();
-    try {
-      xml.closeElement();
-      Assertions.fail("Expected IllegalCloseElementException");
-    } catch (IllegalCloseElementException e) {
-      // writer must still be functional
-    }
+    Assertions.assertThrows(IllegalCloseElementException.class, xml::closeElement);
     xml.openElement("x").closeElement();
     Assertions.assertEquals("<x/>", xml.toString());
   }
