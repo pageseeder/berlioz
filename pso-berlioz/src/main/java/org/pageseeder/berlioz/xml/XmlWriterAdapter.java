@@ -19,6 +19,7 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Adapts a {@link XmlWriter} to the legacy {@link XMLWriter} interface.
@@ -51,7 +52,7 @@ public final class XmlWriterAdapter implements XMLWriter {
    * @param xml the writer to wrap; must not be {@code null}
    */
   public XmlWriterAdapter(XmlWriter xml) {
-    this.xml = xml;
+    this.xml = Objects.requireNonNull(xml, "xml");
   }
 
   @Override
