@@ -19,6 +19,7 @@ import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.InvalidParameterException;
+import org.pageseeder.berlioz.content.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Response;
@@ -105,6 +106,14 @@ final class GeneratorDispatch {
       InvalidParameterException ipe = (InvalidParameterException) ex;
       return new BerliozException("Invalid parameter '" + ipe.getParameterName() + "': " + ipe.getMessage(),
           ipe, BerliozErrorID.INVALID_PARAMETER);
+    }
+    if (ex instanceof UpstreamException) {
+      UpstreamException ue = (UpstreamException) ex;
+      String service = ue.getUpstreamService();
+      String msg = service != null
+          ? "Upstream service '" + service + "' unavailable: " + ue.getMessage()
+          : "Upstream service unavailable: " + ue.getMessage();
+      return new BerliozException(msg, ue, BerliozErrorID.UPSTREAM_ERROR);
     }
     return new BerliozException("Unexpected exception caught", ex, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
   }

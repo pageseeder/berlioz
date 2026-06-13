@@ -187,6 +187,20 @@ class JsonResponseTest {
   }
 
   @Test
+  void generate_generatorThrowsUpstreamException_setsBadGatewayStatus() {
+    JsonGenerator gen = (req, json) -> {
+      throw new UpstreamException("connection refused");
+    };
+    Service service = directGenerator(gen);
+    JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
+
+    jr.generate();
+
+    assertNotNull(jr.getError());
+    assertEquals(ContentStatus.BAD_GATEWAY, jr.getStatus());
+  }
+
+  @Test
   void generate_generatorThrowsRuntimeException_setsInternalError() {
     JsonGenerator gen = (req, json) -> {
       throw new RuntimeException("unexpected");

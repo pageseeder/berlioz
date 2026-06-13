@@ -227,6 +227,34 @@ class XmlResponseTest {
   }
 
   @Test
+  void generate_directService_upstreamException_badGatewayStatus() throws IOException {
+    XmlGenerator gen = (req, xml) -> {
+      throw new UpstreamException("connection refused");
+    };
+    Service service = directGenerator(gen);
+    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+    xr.generate();
+
+    assertNotNull(xr.getError());
+    assertEquals(ContentStatus.BAD_GATEWAY, xr.getStatus());
+  }
+
+  @Test
+  void generate_envelopeService_upstreamException_badGatewayStatus() throws IOException {
+    XmlGenerator gen = (req, xml) -> {
+      throw new UpstreamException("timeout", "search-api");
+    };
+    Service service = singleGenerator(gen);
+    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+    xr.generate();
+
+    assertNotNull(xr.getError());
+    assertEquals(ContentStatus.BAD_GATEWAY, xr.getStatus());
+  }
+
+  @Test
   void generate_directService_runtimeException_internalServerError() throws IOException {
     XmlGenerator gen = (req, xml) -> {
       throw new RuntimeException("boom");

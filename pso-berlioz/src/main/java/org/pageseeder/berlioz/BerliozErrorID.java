@@ -90,7 +90,12 @@ package org.pageseeder.berlioz;
   /**
    * A request parameter failed a type or constraint check.
    */
-  INVALID_PARAMETER;
+  INVALID_PARAMETER,
+
+  /**
+   * A generator could not reach an upstream service it depends on.
+   */
+  UPSTREAM_ERROR;
 
   /**
    * Returns a string representation of this error code.

@@ -5,6 +5,7 @@ import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.InvalidParameterException;
+import org.pageseeder.berlioz.content.UpstreamException;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.generator.NoContent;
 
@@ -64,6 +65,25 @@ class GeneratorDispatchTest {
     assertEquals(BerliozErrorID.INVALID_PARAMETER, result.id());
     assertTrue(result.getMessage().contains("myParam"));
     assertSame(ipe, result.getCause());
+  }
+
+  @Test
+  void toBerliozException_upstreamException_wrapsWithUpstreamErrorId() {
+    UpstreamException ue = new UpstreamException("connection refused");
+    BerliozException result = GeneratorDispatch.toBerliozException(ue);
+    assertNotNull(result);
+    assertEquals(BerliozErrorID.UPSTREAM_ERROR, result.id());
+    assertSame(ue, result.getCause());
+    assertTrue(result.getMessage().contains("connection refused"));
+  }
+
+  @Test
+  void toBerliozException_upstreamExceptionWithService_includesServiceName() {
+    UpstreamException ue = new UpstreamException("timeout", "search-api");
+    BerliozException result = GeneratorDispatch.toBerliozException(ue);
+    assertNotNull(result);
+    assertEquals(BerliozErrorID.UPSTREAM_ERROR, result.id());
+    assertTrue(result.getMessage().contains("search-api"));
   }
 
   @Test

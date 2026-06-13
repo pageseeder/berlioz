@@ -37,6 +37,7 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
+import org.pageseeder.berlioz.content.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
@@ -257,6 +258,9 @@ public final class XmlResponse {
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.BAD_REQUEST);
+    } catch (UpstreamException ex) {
+      outcome.handleError(ex, generator);
+      response = Response.status(ContentStatus.BAD_GATEWAY);
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
@@ -367,6 +371,9 @@ public final class XmlResponse {
     } catch (InvalidParameterException ex) {
       error = outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.BAD_REQUEST);
+    } catch (UpstreamException ex) {
+      error = outcome.handleError(ex, generator);
+      response = Response.status(ContentStatus.BAD_GATEWAY);
     } catch (Exception ex) {
       error = outcome.handleError(ex, generator);
       response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
