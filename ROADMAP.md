@@ -64,14 +64,16 @@ The 0.13.2 cycle completed much of the output-aware generator model:
 
 `ProblemDetails` and `Response.problem(...)` now exist, but framework-generated errors still need a complete negotiated rendering model.
 
+Already done:
+
+- `400 Bad Request` for invalid typed parameters (via `InvalidParameterException`).
+- `404 Not Found` for unmatched services.
+- `405 Method Not Allowed` when a URI matches but the method does not (with `Allow` header).
+- `500 Internal Server Error` for unexpected generator failures (forwarded to error handler).
+
 Next work:
 
 - Render problem responses consistently for JSON, XML, and transformed HTML.
-- Use `400 Bad Request` for invalid typed parameters.
-- Use `404 Not Found` for unmatched services.
-- Use `405 Method Not Allowed` when a URI matches but the method does not.
-- Use `406 Not Acceptable` when the requested output format is unsupported.
-- Use `500 Internal Server Error` for unexpected generator failures.
 - Define Berlioz problem `type` URIs and decide whether they resolve to public documentation.
 - Decide how parameter validation failures should expose field-level details.
 - Decide whether request validation should fail immediately or collect all parameter errors first.
@@ -90,7 +92,18 @@ Next work:
 - Keep the direct service rule simple: one handler, one complete response body.
 - Document how `<handler>` differs from `<generator>`.
 
-### 3. Service Metadata And Diagnostics
+### 3. Content Negotiation
+
+Berlioz currently determines the output format from the URL extension (`.xml`, `.json`, `.html`) via servlet mappings. Adding support for the `Accept` header would allow a single endpoint to serve multiple formats based on client preference.
+
+Next work:
+
+- Support `Accept` header content negotiation as an alternative to extension-based format selection.
+- Use `406 Not Acceptable` when the requested format is not supported by the service.
+- Decide how `Accept`-based negotiation interacts with extension-based format selection (precedence, override, fallback).
+- Decide whether content negotiation should be opt-in per service or enabled globally.
+
+### 4. Service Metadata And Diagnostics
 
 Service inspection is becoming more important now that services can expose different output formats and response modes.
 
@@ -116,7 +129,7 @@ Potential output channels:
 
 This should make services easier to inspect, document, test, and debug without adding heavy runtime machinery.
 
-### 4. Authentication And Authorization Guards
+### 5. Authentication And Authorization Guards
 
 Berlioz should make it easy for applications to guard services and generators without becoming responsible for authentication itself.
 
@@ -145,7 +158,7 @@ The core model should not force role-based, permission-based, attribute-based, o
 - Forbidden.
 - Custom problem response.
 
-### 5. Interceptors And Observability
+### 6. Interceptors And Observability
 
 `GeneratorListener` already provides a focused generator timing hook. The next step is deciding whether Berlioz needs a broader interceptor model.
 
@@ -175,7 +188,7 @@ Natural optional integrations:
 
 The core should expose a small lifecycle model. Metrics and tracing dependencies should stay in optional modules.
 
-### 6. Optional Integration Modules
+### 7. Optional Integration Modules
 
 Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
 
@@ -190,7 +203,7 @@ Possible modules:
 
 These integrations should support Berlioz rather than replace its URI template, generator, and XSLT model.
 
-### 7. Jakarta Servlet Support
+### 8. Jakarta Servlet Support
 
 Move Berlioz to the Jakarta Servlet namespace for modern servlet containers when the application migration window is clear.
 
@@ -224,25 +237,30 @@ Likely outcome:
 
 - Wire `ProblemDetails` into framework-generated errors.
 - Define negotiated problem response rendering for JSON, XML, and HTML.
-- Add tests for `400`, `404`, `405`, `406`, and generator failure behavior.
 - Decide immediate versus collected parameter validation failures.
 - Define problem type URI conventions.
 
-### Milestone 3: Metadata And Diagnostics
+### Milestone 3: Content Negotiation
+
+- Support `Accept` header content negotiation.
+- Use `406 Not Acceptable` when the requested format is not supported.
+- Define interaction with extension-based format selection.
+
+### Milestone 4: Metadata And Diagnostics
 
 - Add supported-output metadata to source or diagnostic output.
 - Expose direct handler and generator capability information.
 - Improve service registry diagnostic warnings.
 - Add tests for metadata stability.
 
-### Milestone 4: Raw Output
+### Milestone 5: Raw Output
 
 - Implement servlet dispatch for `RawGenerator`.
 - Define raw content type and cache behavior.
 - Add tests for raw response status, headers, ETags, and body writing.
 - Document raw output constraints.
 
-### Milestone 5: Authorization And Interceptors
+### Milestone 6: Authorization And Interceptors
 
 - Define a small authorization result model.
 - Add programmatic guard support for services or generators.
@@ -250,14 +268,14 @@ Likely outcome:
 - Decide whether interceptor hooks belong in core or an optional module.
 - Add tests for `401` and `403` early-return behavior.
 
-### Milestone 6: Integration And Instrumentation
+### Milestone 7: Integration And Instrumentation
 
 - Add optional Spring or CDI generator resolution.
 - Add optional Spring Security or application authorization adapters.
 - Add optional metrics/tracing integration.
 - Keep integration modules separate from the core runtime.
 
-### Milestone 7: Jakarta Migration
+### Milestone 8: Jakarta Migration
 
 - Decide final Jakarta migration strategy.
 - Release a Jakarta-based line with migration notes.
