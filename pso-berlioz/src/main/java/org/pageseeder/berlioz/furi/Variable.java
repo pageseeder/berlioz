@@ -65,7 +65,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.4
  * @since 0.9.32
  */
 public class Variable {
@@ -174,7 +174,7 @@ public class Variable {
    * sequence. This pattern contains non-capturing parentheses to make it easier to get variable
    * values as a group.
    */
-  protected static final Pattern VALID_VALUE = Pattern.compile("(?:[\\w.~@-]|%[0-9A-F]{2})++");
+  protected static final Pattern VALID_VALUE = Pattern.compile("(?:[\\w.~@-]|%[0-9A-F]{2}){1,1024}");
 
   /**
    * The default value is an empty string.

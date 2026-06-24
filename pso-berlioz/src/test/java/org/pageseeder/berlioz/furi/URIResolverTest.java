@@ -202,6 +202,20 @@ class URIResolverTest {
   }
 
   @Test
+  void testFind_BestWithCompoundVariable() {
+    URIResolver resolver = new URIResolver("/path/a.b");
+    List<URIPattern> patterns = new ArrayList<URIPattern>();
+    patterns.add(new URIPattern("/path/{var}"));
+    patterns.add(new URIPattern("/path/{var1}.{var2}"));
+    URIPattern best = resolver.find(patterns, MatchRule.BEST_MATCH);
+    Assertions.assertEquals(new URIPattern("/path/{var1}.{var2}"), best);
+    URIResolveResult r = resolver.resolve(best);
+    Assertions.assertEquals(URIResolveResult.Status.RESOLVED, r.getStatus());
+    Assertions.assertEquals("a", r.get("var1"));
+    Assertions.assertEquals("b", r.get("var2"));
+  }
+
+  @Test
   void testSample() {
     // setting up the patterns when parsing the configuration
     List<URIPattern> patterns = new ArrayList<URIPattern>();
