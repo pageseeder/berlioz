@@ -318,6 +318,15 @@ public final class BerliozServlet extends HttpServlet {
     boolean jsonRequest = Json.isJsonMediaType(config.getMediaType());
     boolean serviceSupportsJson = jsonRequest && service.supported().contains(OutputType.JSON);
 
+    // Check whether the service can produce the requested output format.
+    // JSON requests fall back to XML+XSLT when the service doesn't support JSON directly,
+    // but if the service doesn't support XML either, nothing can be produced.
+    if (!serviceSupportsJson && !service.supported().contains(OutputType.XML)) {
+      sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+      LOGGER.debug("Service {} does not support the requested output format for: {}", service.id(), req.getRequestURI());
+      return;
+    }
+
     ProcessingContext ctx = new ProcessingContext(match, method, code, profile, serverTiming, includeContent);
     if (serviceSupportsJson) {
       processJson(req, res, config, ctx);

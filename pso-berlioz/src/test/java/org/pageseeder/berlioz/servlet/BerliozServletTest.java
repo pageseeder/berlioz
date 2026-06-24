@@ -187,6 +187,42 @@ class BerliozServletTest {
   }
 
   @Test
+  void doGet_jsonOnlyHandlerOnXmlServletReturnsNotFound() throws Exception {
+    writeServices(service("json-only", "get", "/json-only", "handler", DIRECT_JSON));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request("GET", "/json-only.xml"), recorder.build());
+
+    assertEquals(404, recorder.status);
+  }
+
+  @Test
+  void doGet_xmlOnlyGeneratorOnJsonServletFallsBackToXslt() throws Exception {
+    writeServices(service("xml-only", "get", "/xml-only", "generator", ECHO_XML));
+    writeStylesheet();
+    initServlet(Map.of("stylesheet", "transform.xsl", "content-type", "application/json;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request("GET", "/xml-only.json"), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertTrue(recorder.content().contains("transformed:hello"), recorder.content());
+  }
+
+  @Test
+  void doGet_jsonOnlyHandlerOnJsonServletReturnsOk() throws Exception {
+    writeServices(service("json-ok", "get", "/json-ok", "handler", DIRECT_JSON));
+    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request("GET", "/json-ok.json"), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertTrue(recorder.content().contains("\"message\""), recorder.content());
+  }
+
+  @Test
   void doGet_redirectResponseSetsLocation() throws Exception {
     writeServices(service("redirect", "get", "/redirect", "generator", REDIRECT_XML));
     initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
