@@ -205,13 +205,24 @@ final class GlobalSettingsTest {
 
   @Test
   void testLoad_VariablesWithDefaults() {
-    // Don't set any system properties — defaults should be used
+    // Don't set any system properties; defaults should be used
     GlobalSettings.setMode("variables");
     GlobalSettings.load();
     Assertions.assertEquals("jdbc:postgresql://localhost/default", GlobalSettings.get("database.url"));
     Assertions.assertEquals("30", GlobalSettings.get("database.timeout"));
     Assertions.assertEquals("test-dev-app", GlobalSettings.get("app.name"));
-    // No default, unresolved — token kept as-is
+    // No default, unresolved; token kept as-is
+    Assertions.assertEquals("${BERLIOZ_TEST_DB_PASSWORD}", GlobalSettings.get("database.password"));
+    Assertions.assertEquals("${BERLIOZ_TEST_ENDPOINT}", GlobalSettings.get("service.endpoint"));
+  }
+
+  @Test
+  void testLoad_PropertyFileVariablesWithDefaults() {
+    GlobalSettings.setMode("propsvariables");
+    GlobalSettings.load();
+    Assertions.assertEquals("jdbc:postgresql://localhost/default", GlobalSettings.get("database.url"));
+    Assertions.assertEquals("30", GlobalSettings.get("database.timeout"));
+    Assertions.assertEquals("test-dev-app", GlobalSettings.get("app.name"));
     Assertions.assertEquals("${BERLIOZ_TEST_DB_PASSWORD}", GlobalSettings.get("database.password"));
     Assertions.assertEquals("${BERLIOZ_TEST_ENDPOINT}", GlobalSettings.get("service.endpoint"));
   }
@@ -220,7 +231,7 @@ final class GlobalSettingsTest {
   void testReload_VariablesPickUpNewValues() {
     GlobalSettings.setMode("variables");
 
-    // First load — use defaults
+    // First load; use defaults
     GlobalSettings.load();
     Assertions.assertEquals("jdbc:postgresql://localhost/default", GlobalSettings.get("database.url"));
 
@@ -233,7 +244,7 @@ final class GlobalSettingsTest {
       System.clearProperty("BERLIOZ_TEST_DB_URL");
     }
 
-    // Reload again — back to default
+    // Reload again; back to default
     GlobalSettings.load();
     Assertions.assertEquals("jdbc:postgresql://localhost/default", GlobalSettings.get("database.url"));
   }
