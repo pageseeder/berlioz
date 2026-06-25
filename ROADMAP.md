@@ -80,7 +80,28 @@ Next work:
 
 The goal is not a large exception-mapping framework. The goal is a small, predictable error model that works across the existing output pipeline.
 
-### 2. Finish Direct Output And Raw Output Support
+### 2. Error Handling Pipeline
+
+Berlioz's error handling currently works but lacks user control over error presentation, leaks internal details by default, and handles static and dynamic XSLT errors with less distinction than it could.
+
+Already done:
+
+- `BerliozErrorID` classifies errors semantically (transform not found, invalid, dynamic error, malformed source XML, etc.).
+- `XsltErrorCollector` collects warnings, errors, and fatals during XSLT processing.
+- `ErrorHandlerServlet` generates error XML and applies the failsafe template.
+- `XsltTransformer` catches both `TransformerConfigurationException` (static) and `TransformerException` (dynamic) and falls back to the failsafe template.
+- The built-in failsafe XSLT renders error details with contextual help for known error IDs.
+
+Next work:
+
+- Allow applications to provide a custom error XSLT via a configuration option, with automatic fallback to the built-in failsafe when the custom template itself fails.
+- Introduce an error detail level option to control how much information is included in error responses (stack traces, exception messages, source locations, HTTP headers and parameters).
+- Improve the distinction between static XSLT errors (compilation failures) and dynamic XSLT errors (runtime failures), particularly around recoverability and the context included in the error output.
+- Modernize the built-in failsafe template with current CSS practices, responsive layout, collapsible stack traces, and a structure aligned with Problem Details.
+
+The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage.
+
+### 3. Finish Direct Output And Raw Output Support
 
 Direct JSON and direct XML services are now part of the pipeline. `RawGenerator` exists as an API shape, but servlet dispatch support is still future work.
 
@@ -92,7 +113,7 @@ Next work:
 - Keep the direct service rule simple: one handler, one complete response body.
 - Document how `<handler>` differs from `<generator>`.
 
-### 3. Content Negotiation
+### 4. Content Negotiation
 
 Berlioz currently determines the output format from the URL extension (`.xml`, `.json`, `.html`) via servlet mappings. Adding support for the `Accept` header would allow a single endpoint to serve multiple formats based on client preference.
 
@@ -103,7 +124,7 @@ Next work:
 - Decide how `Accept`-based negotiation interacts with extension-based format selection (precedence, override, fallback).
 - Decide whether content negotiation should be opt-in per service or enabled globally.
 
-### 4. Service Metadata And Diagnostics
+### 5. Service Metadata And Diagnostics
 
 Service inspection is becoming more important now that services can expose different output formats and response modes.
 
@@ -129,7 +150,7 @@ Potential output channels:
 
 This should make services easier to inspect, document, test, and debug without adding heavy runtime machinery.
 
-### 5. Authentication And Authorization Guards
+### 6. Authentication And Authorization Guards
 
 Berlioz should make it easy for applications to guard services and generators without becoming responsible for authentication itself.
 
@@ -158,7 +179,7 @@ The core model should not force role-based, permission-based, attribute-based, o
 - Forbidden.
 - Custom problem response.
 
-### 6. Interceptors And Observability
+### 7. Interceptors And Observability
 
 `GeneratorListener` already provides a focused generator timing hook. The next step is deciding whether Berlioz needs a broader interceptor model.
 
@@ -188,7 +209,7 @@ Natural optional integrations:
 
 The core should expose a small lifecycle model. Metrics and tracing dependencies should stay in optional modules.
 
-### 7. Optional Integration Modules
+### 8. Optional Integration Modules
 
 Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
 
@@ -203,7 +224,7 @@ Possible modules:
 
 These integrations should support Berlioz rather than replace its URI template, generator, and XSLT model.
 
-### 8. Jakarta Servlet Support
+### 9. Jakarta Servlet Support
 
 Move Berlioz to the Jakarta Servlet namespace for modern servlet containers when the application migration window is clear.
 
@@ -240,27 +261,36 @@ Likely outcome:
 - Decide immediate versus collected parameter validation failures.
 - Define problem type URI conventions.
 
-### Milestone 3: Content Negotiation
+### Milestone 3: Error Handling Pipeline
+
+- Add `berlioz.errors.stylesheet` option for custom error XSLT with fallback chain (custom → failsafe → raw XML).
+- Add `berlioz.errors.detail` option with `full`, `standard`, and `minimal` levels controlling what is serialized into error responses.
+- Refine static vs. dynamic XSLT error handling: surface non-fatal warnings without breaking the page, include source context for dynamic errors in development mode.
+- Modernize the failsafe XSLT template with responsive layout, `<details>`/`<summary>` for stack traces, CSS variables, and Problem Details-aligned structure.
+- Ensure error detail levels apply consistently across `XsltTransformer`, `ErrorHandlerServlet`, and `ProblemDetails` rendering.
+- Add test coverage for error detail filtering, custom error template resolution, and failsafe fallback behavior.
+
+### Milestone 4: Content Negotiation
 
 - Support `Accept` header content negotiation.
 - Use `406 Not Acceptable` when the requested format is not supported.
 - Define interaction with extension-based format selection.
 
-### Milestone 4: Metadata And Diagnostics
+### Milestone 5: Metadata And Diagnostics
 
 - Add supported-output metadata to source or diagnostic output.
 - Expose direct handler and generator capability information.
 - Improve service registry diagnostic warnings.
 - Add tests for metadata stability.
 
-### Milestone 5: Raw Output
+### Milestone 6: Raw Output
 
 - Implement servlet dispatch for `RawGenerator`.
 - Define raw content type and cache behavior.
 - Add tests for raw response status, headers, ETags, and body writing.
 - Document raw output constraints.
 
-### Milestone 6: Authorization And Interceptors
+### Milestone 7: Authorization And Interceptors
 
 - Define a small authorization result model.
 - Add programmatic guard support for services or generators.
@@ -268,14 +298,14 @@ Likely outcome:
 - Decide whether interceptor hooks belong in core or an optional module.
 - Add tests for `401` and `403` early-return behavior.
 
-### Milestone 7: Integration And Instrumentation
+### Milestone 8: Integration And Instrumentation
 
 - Add optional Spring or CDI generator resolution.
 - Add optional Spring Security or application authorization adapters.
 - Add optional metrics/tracing integration.
 - Keep integration modules separate from the core runtime.
 
-### Milestone 8: Jakarta Migration
+### Milestone 9: Jakarta Migration
 
 - Decide final Jakarta migration strategy.
 - Release a Jakarta-based line with migration notes.
@@ -295,3 +325,6 @@ Likely outcome:
 - Should authorization checks run at service level, generator level, or both?
 - Should interceptor hooks be added to core, or should they wait for optional observability modules?
 - Which integrations are valuable enough to maintain as official modules?
+- Should the custom error XSLT be a single global stylesheet, or should it support per-group error templates (like the normal XSLT resolution)?
+- Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
+- Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses, or only suppress framework-internal information like stack traces?
