@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<global>
+
+  <database url="${BERLIOZ_TEST_DB_URL:jdbc:postgresql://localhost/default}"
+            password="${BERLIOZ_TEST_DB_PASSWORD}"
+            timeout="${BERLIOZ_TEST_DB_TIMEOUT:30}"/>
+
+  <app name="test-${BERLIOZ_TEST_APP_ENV:dev}-app"/>
+
+  <service endpoint="${BERLIOZ_TEST_ENDPOINT}"/>
+
+</global>

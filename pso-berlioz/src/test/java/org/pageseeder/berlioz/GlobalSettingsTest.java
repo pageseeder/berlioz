@@ -117,6 +117,128 @@ final class GlobalSettingsTest {
   }
 
   @Test
+  void testResolveValue_SystemProperty() {
+    System.setProperty("BERLIOZ_TEST_PROP", "from-sysprop");
+    try {
+      Assertions.assertEquals("from-sysprop", GlobalSettings.resolveValue("${BERLIOZ_TEST_PROP}"));
+      Assertions.assertEquals("from-sysprop", GlobalSettings.resolveValue("${BERLIOZ_TEST_PROP:fallback}"));
+      Assertions.assertEquals("prefix-from-sysprop-suffix", GlobalSettings.resolveValue("prefix-${BERLIOZ_TEST_PROP}-suffix"));
+    } finally {
+      System.clearProperty("BERLIOZ_TEST_PROP");
+    }
+  }
+
+  @Test
+  void testResolveValue_EnvironmentVariable() {
+    // PATH is available on all platforms
+    String path = System.getenv("PATH");
+    Assertions.assertNotNull(path);
+    Assertions.assertEquals(path, GlobalSettings.resolveValue("${PATH}"));
+    Assertions.assertEquals(path, GlobalSettings.resolveValue("${PATH:fallback}"));
+  }
+
+  @Test
+  void testResolveValue_DefaultValue() {
+    Assertions.assertEquals("my-default", GlobalSettings.resolveValue("${BERLIOZ_UNDEFINED_VAR_12345:my-default}"));
+    Assertions.assertEquals("", GlobalSettings.resolveValue("${BERLIOZ_UNDEFINED_VAR_12345:}"));
+  }
+
+  @Test
+  void testResolveValue_UnresolvedKeptAsIs() {
+    Assertions.assertEquals("${BERLIOZ_UNDEFINED_VAR_12345}", GlobalSettings.resolveValue("${BERLIOZ_UNDEFINED_VAR_12345}"));
+  }
+
+  @Test
+  void testResolveValue_NoTokens() {
+    Assertions.assertEquals("plain-value", GlobalSettings.resolveValue("plain-value"));
+    Assertions.assertEquals("", GlobalSettings.resolveValue(""));
+  }
+
+  @Test
+  void testResolveValue_MultipleTokens() {
+    System.setProperty("BERLIOZ_TEST_A", "alpha");
+    System.setProperty("BERLIOZ_TEST_B", "beta");
+    try {
+      Assertions.assertEquals("alpha-beta", GlobalSettings.resolveValue("${BERLIOZ_TEST_A}-${BERLIOZ_TEST_B}"));
+      Assertions.assertEquals("alpha-fallback", GlobalSettings.resolveValue("${BERLIOZ_TEST_A}-${BERLIOZ_UNDEFINED_VAR_12345:fallback}"));
+    } finally {
+      System.clearProperty("BERLIOZ_TEST_A");
+      System.clearProperty("BERLIOZ_TEST_B");
+    }
+  }
+
+  @Test
+  void testResolveValue_SystemPropertyOverridesEnv() {
+    // PATH exists as env var; setting it as system property should take precedence
+    System.setProperty("PATH", "sysprop-path");
+    try {
+      Assertions.assertEquals("sysprop-path", GlobalSettings.resolveValue("${PATH}"));
+    } finally {
+      System.clearProperty("PATH");
+    }
+  }
+
+  @Test
+  void testLoad_Variables() {
+    System.setProperty("BERLIOZ_TEST_DB_URL", "jdbc:postgresql://prod/mydb");
+    System.setProperty("BERLIOZ_TEST_DB_PASSWORD", "secret123");
+    System.setProperty("BERLIOZ_TEST_ENDPOINT", "https://api.example.com");
+    try {
+      GlobalSettings.setMode("variables");
+      GlobalSettings.load();
+      // System property overrides default
+      Assertions.assertEquals("jdbc:postgresql://prod/mydb", GlobalSettings.get("database.url"));
+      // System property used directly (no default)
+      Assertions.assertEquals("secret123", GlobalSettings.get("database.password"));
+      // Default used when system property not set
+      Assertions.assertEquals("30", GlobalSettings.get("database.timeout"));
+      // Token embedded in larger value
+      Assertions.assertEquals("test-dev-app", GlobalSettings.get("app.name"));
+      // System property used directly
+      Assertions.assertEquals("https://api.example.com", GlobalSettings.get("service.endpoint"));
+    } finally {
+      System.clearProperty("BERLIOZ_TEST_DB_URL");
+      System.clearProperty("BERLIOZ_TEST_DB_PASSWORD");
+      System.clearProperty("BERLIOZ_TEST_ENDPOINT");
+    }
+  }
+
+  @Test
+  void testLoad_VariablesWithDefaults() {
+    // Don't set any system properties — defaults should be used
+    GlobalSettings.setMode("variables");
+    GlobalSettings.load();
+    Assertions.assertEquals("jdbc:postgresql://localhost/default", GlobalSettings.get("database.url"));
+    Assertions.assertEquals("30", GlobalSettings.get("database.timeout"));
+    Assertions.assertEquals("test-dev-app", GlobalSettings.get("app.name"));
+    // No default, unresolved — token kept as-is
+    Assertions.assertEquals("${BERLIOZ_TEST_DB_PASSWORD}", GlobalSettings.get("database.password"));
+    Assertions.assertEquals("${BERLIOZ_TEST_ENDPOINT}", GlobalSettings.get("service.endpoint"));
+  }
+
+  @Test
+  void testReload_VariablesPickUpNewValues() {
+    GlobalSettings.setMode("variables");
+
+    // First load — use defaults
+    GlobalSettings.load();
+    Assertions.assertEquals("jdbc:postgresql://localhost/default", GlobalSettings.get("database.url"));
+
+    // Set system property and reload
+    System.setProperty("BERLIOZ_TEST_DB_URL", "jdbc:postgresql://staging/mydb");
+    try {
+      GlobalSettings.load();
+      Assertions.assertEquals("jdbc:postgresql://staging/mydb", GlobalSettings.get("database.url"));
+    } finally {
+      System.clearProperty("BERLIOZ_TEST_DB_URL");
+    }
+
+    // Reload again — back to default
+    GlobalSettings.load();
+    Assertions.assertEquals("jdbc:postgresql://localhost/default", GlobalSettings.get("database.url"));
+  }
+
+  @Test
   void testSetMode() {
     Assertions.assertEquals("default", GlobalSettings.getMode());
     GlobalSettings.setMode("test");

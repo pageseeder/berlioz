@@ -32,6 +32,8 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.ConfigException;
@@ -79,6 +81,11 @@ public final class GlobalSettings {
    * Errors about loading the properties are reported here.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalSettings.class);
+
+  /**
+   * Matches <code>${name}</code> or <code>${name:default}</code> tokens in property values.
+   */
+  private static final Pattern VARIABLE_TOKEN = Pattern.compile("\\$\\{([^}]+)}");
 
   /**
    * The format of configuration used.
@@ -645,6 +652,8 @@ public final class GlobalSettings {
       LOGGER.warn("Unable to load the configuration file", ex);
       properties.clear(); // Let's not load dirty properties
     } finally {
+      // Resolve ${variable} and ${variable:default} tokens against system properties and env vars
+      resolveVariables(properties);
       // Reset after loading
       SETTINGS.set(properties);
       NODES.set(new ConcurrentHashMap<>());
@@ -802,6 +811,65 @@ public final class GlobalSettings {
       return file.toPath();
     }
     throw new IOException("Config file must be located within webinf or appdata folder");
+  }
+
+  /**
+   * Resolves all <code>${name}</code> and <code>${name:default}</code> tokens in the property
+   * values against system properties and environment variables.
+   *
+   * <p>For each token, resolution is attempted in this order:
+   * <ol>
+   *   <li>Java system property ({@link System#getProperty(String)})</li>
+   *   <li>Environment variable ({@link System#getenv(String)})</li>
+   *   <li>Default value (if specified after <code>:</code>)</li>
+   * </ol>
+   *
+   * <p>If none of these sources provide a value, the token is left as-is and a warning is logged.
+   *
+   * @param properties The properties map to resolve in place.
+   */
+  private static void resolveVariables(Map<String, String> properties) {
+    for (Entry<String, String> entry : properties.entrySet()) {
+      String value = entry.getValue();
+      if (value.contains("${")) {
+        String resolved = resolveValue(value);
+        if (!resolved.equals(value)) {
+          entry.setValue(resolved);
+        }
+      }
+    }
+  }
+
+  /**
+   * Resolves all <code>${...}</code> tokens in a single value string.
+   *
+   * @param value The value potentially containing tokens.
+   * @return The value with all resolvable tokens replaced.
+   */
+  static String resolveValue(String value) {
+    Matcher matcher = VARIABLE_TOKEN.matcher(value);
+    StringBuilder result = new StringBuilder();
+    while (matcher.find()) {
+      String token = matcher.group(1);
+      int colon = token.indexOf(':');
+      String name = colon >= 0 ? token.substring(0, colon) : token;
+      String defaultValue = colon >= 0 ? token.substring(colon + 1) : null;
+      String resolved = System.getProperty(name);
+      if (resolved == null) {
+        resolved = System.getenv(name);
+      }
+      if (resolved == null) {
+        resolved = defaultValue;
+      }
+      if (resolved != null) {
+        matcher.appendReplacement(result, Matcher.quoteReplacement(resolved));
+      } else {
+        LOGGER.warn("Unresolved variable in config: ${{}}", name);
+        matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group()));
+      }
+    }
+    matcher.appendTail(result);
+    return result.toString();
   }
 
   /**
