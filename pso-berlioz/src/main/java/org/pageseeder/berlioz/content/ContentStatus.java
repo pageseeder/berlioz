@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.8.2
  */
 public enum ContentStatus {
@@ -165,6 +165,15 @@ public enum ContentStatus {
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.5.4">HTTP/1.1 - 6.5.4. 404 Not Found</a>
    */
   NOT_FOUND(404),
+
+  /**
+   * The method specified in the request is not allowed for the resource identified by the URI.
+   *
+   * <p>The response MUST include an {@code Allow} header containing a list of valid methods.
+   *
+   * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.5.5">HTTP/1.1 - 6.5.5. 405 Method Not Allowed</a>
+   */
+  METHOD_NOT_ALLOWED(405),
 
   /**
    * The target resource does not have a current representation that would be acceptable to the
