@@ -17,7 +17,11 @@ package org.pageseeder.berlioz.content;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
@@ -235,6 +239,231 @@ final class ProblemDetailsTest {
     Assertions.assertNull(base.detail());
     Assertions.assertEquals("The resource was not found.", withDetail.detail());
     Assertions.assertEquals("Not Found", withDetail.title());
+  }
+
+  // --- toJson() ---
+
+  @Test
+  void testToJson_minimalStatus() {
+    String json = ProblemDetails.of(ContentStatus.NOT_FOUND).toJson();
+    Assertions.assertTrue(json.contains("\"status\":404"));
+    Assertions.assertFalse(json.contains("\"type\""));
+    Assertions.assertFalse(json.contains("\"title\""));
+    Assertions.assertFalse(json.contains("\"detail\""));
+    Assertions.assertFalse(json.contains("\"instance\""));
+  }
+
+  @Test
+  void testToJson_allStandardFields() {
+    String json = ProblemDetails.of(ContentStatus.NOT_FOUND)
+        .type("https://example.com/not-found")
+        .title("Not Found")
+        .detail("Resource missing.")
+        .instance("/items/42")
+        .toJson();
+    Assertions.assertTrue(json.contains("\"type\":\"https://example.com/not-found\""));
+    Assertions.assertTrue(json.contains("\"status\":404"));
+    Assertions.assertTrue(json.contains("\"title\":\"Not Found\""));
+    Assertions.assertTrue(json.contains("\"detail\":\"Resource missing.\""));
+    Assertions.assertTrue(json.contains("\"instance\":\"/items/42\""));
+  }
+
+  @Test
+  void testToJson_extensionString() {
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("trace", "abc123").toJson();
+    Assertions.assertTrue(json.contains("\"trace\":\"abc123\""));
+  }
+
+  @Test
+  void testToJson_extensionLong() {
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("count", 42L).toJson();
+    Assertions.assertTrue(json.contains("\"count\":42"));
+  }
+
+  @Test
+  void testToJson_extensionInteger() {
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("page", 3).toJson();
+    Assertions.assertTrue(json.contains("\"page\":3"));
+  }
+
+  @Test
+  void testToJson_extensionDouble() {
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("ratio", 0.5d).toJson();
+    Assertions.assertTrue(json.contains("\"ratio\":0.5"));
+  }
+
+  @Test
+  void testToJson_extensionBoolean() {
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("retryable", true).toJson();
+    Assertions.assertTrue(json.contains("\"retryable\":true"));
+  }
+
+  @Test
+  void testToJson_extensionList() {
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("errors", List.of("name required", "email invalid")).toJson();
+    Assertions.assertTrue(json.contains("\"errors\":["));
+    Assertions.assertTrue(json.contains("name required"));
+    Assertions.assertTrue(json.contains("email invalid"));
+  }
+
+  @Test
+  void testToJson_extensionFallback() {
+    // ContentStatus is an enum — not String/Long/Integer/Double/Boolean/List, so falls through to toString()
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("origin", ContentStatus.BAD_REQUEST).toJson();
+    Assertions.assertTrue(json.contains("\"origin\":"));
+  }
+
+  // --- toXml(XmlWriter) ---
+
+  @Test
+  void testToXml_minimalStatus() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    ProblemDetails.of(ContentStatus.NOT_FOUND).toXml(out);
+    String xml = out.toString();
+    Assertions.assertTrue(xml.contains("<problem>"));
+    Assertions.assertTrue(xml.contains("<status>404</status>"));
+    Assertions.assertFalse(xml.contains("<type>"));
+    Assertions.assertFalse(xml.contains("<title>"));
+  }
+
+  @Test
+  void testToXml_allStandardFields() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    ProblemDetails.of(ContentStatus.NOT_FOUND)
+        .type("https://example.com/not-found")
+        .title("Not Found")
+        .detail("Resource missing.")
+        .instance("/items/42")
+        .toXml(out);
+    String xml = out.toString();
+    Assertions.assertTrue(xml.contains("<type>https://example.com/not-found</type>"));
+    Assertions.assertTrue(xml.contains("<status>404</status>"));
+    Assertions.assertTrue(xml.contains("<title>Not Found</title>"));
+    Assertions.assertTrue(xml.contains("<detail>Resource missing.</detail>"));
+    Assertions.assertTrue(xml.contains("<instance>/items/42</instance>"));
+  }
+
+  @Test
+  void testToXml_extensionScalar() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("trace", "abc123").toXml(out);
+    Assertions.assertTrue(out.toString().contains("<trace>abc123</trace>"));
+  }
+
+  @Test
+  void testToXml_extensionList() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("error", List.of("name required", "email invalid")).toXml(out);
+    String xml = out.toString();
+    Assertions.assertTrue(xml.contains("<error>name required</error>"));
+    Assertions.assertTrue(xml.contains("<error>email invalid</error>"));
+  }
+
+  // --- writeTo(OutputWriter) ---
+
+  @Test
+  void testWriteTo_xmlAdapter_minimalStatus() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    ProblemDetails.of(ContentStatus.NOT_FOUND).writeTo(out);
+    out.flush();
+    String xml = sw.toString();
+    Assertions.assertTrue(xml.contains("<status>404</status>"));
+    Assertions.assertFalse(xml.contains("<type>"));
+  }
+
+  @Test
+  void testWriteTo_xmlAdapter_allStandardFields() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    ProblemDetails.of(ContentStatus.NOT_FOUND)
+        .type("https://example.com/not-found")
+        .title("Not Found")
+        .detail("Missing.")
+        .instance("/x/42")
+        .writeTo(out);
+    out.flush();
+    String xml = sw.toString();
+    Assertions.assertTrue(xml.contains("<type>https://example.com/not-found</type>"));
+    Assertions.assertTrue(xml.contains("<title>Not Found</title>"));
+    Assertions.assertTrue(xml.contains("<detail>Missing.</detail>"));
+    Assertions.assertTrue(xml.contains("<instance>/x/42</instance>"));
+  }
+
+  @Test
+  void testWriteTo_xmlAdapter_extensionTypes() {
+    StringWriter sw = new StringWriter();
+    XmlOutputAdapter out = new XmlOutputAdapter(sw);
+    ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension("strField", "hello")
+        .extension("longField", 10L)
+        .extension("intField", 5)
+        .extension("dblField", 1.5d)
+        .extension("boolField", false)
+        .extension("listField", List.of("x", "y"))
+        .extension("otherField", ContentStatus.BAD_REQUEST)
+        .writeTo(out);
+    out.flush();
+    String xml = sw.toString();
+    Assertions.assertTrue(xml.contains("strField"));
+    Assertions.assertTrue(xml.contains("longField"));
+    Assertions.assertTrue(xml.contains("intField"));
+    Assertions.assertTrue(xml.contains("dblField"));
+    Assertions.assertTrue(xml.contains("boolField"));
+    Assertions.assertTrue(xml.contains("listField"));
+    Assertions.assertTrue(xml.contains("otherField"));
+  }
+
+  @Test
+  void testWriteTo_jsonAdapter_minimalStatus() {
+    StringWriter sw = new StringWriter();
+    JsonOutputAdapter out = new JsonOutputAdapter(sw);
+    ProblemDetails.of(ContentStatus.NOT_FOUND).writeTo(out);
+    out.flush();
+    Assertions.assertTrue(sw.toString().contains("\"status\":404"));
+  }
+
+  // --- forInvalidParameter() ---
+
+  @Test
+  void testForInvalidParameter_required() {
+    InvalidParameterException ex = InvalidParameterException.required("username");
+    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
+    Assertions.assertEquals(ContentStatus.BAD_REQUEST, p.status());
+    Assertions.assertEquals("urn:berlioz:problem:invalid-parameter", p.type());
+    Assertions.assertEquals("Invalid Request Parameter", p.title());
+    Assertions.assertEquals("username", p.extensions().get("parameter"));
+    Assertions.assertEquals("required", p.extensions().get("reason"));
+  }
+
+  @Test
+  void testForInvalidParameter_invalidFormat() {
+    InvalidParameterException ex = InvalidParameterException.invalidFormat("age", "abc", "integer");
+    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
+    Assertions.assertEquals("invalid-format", p.extensions().get("reason"));
+  }
+
+  @Test
+  void testForInvalidParameter_outOfRange() {
+    InvalidParameterException ex = InvalidParameterException.outOfRange("page", "-1", "must be >= 1");
+    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
+    Assertions.assertEquals("out-of-range", p.extensions().get("reason"));
+  }
+
+  @Test
+  void testForInvalidParameter_notAllowed() {
+    InvalidParameterException ex = InvalidParameterException.notAllowed("sort", "random", "asc", "desc");
+    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
+    Assertions.assertEquals("not-allowed", p.extensions().get("reason"));
   }
 
 }
