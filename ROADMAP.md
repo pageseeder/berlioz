@@ -209,7 +209,29 @@ Natural optional integrations:
 
 The core should expose a small lifecycle model. Metrics and tracing dependencies should stay in optional modules.
 
-### 8. Optional Integration Modules
+### 8. Classpath Overlay Discovery
+
+Berlioz currently requires all service configurations and XSLT templates to be present on the filesystem under `WEB-INF/`. This means reusable admin or utility overlays must be distributed as WAR overlays — ZIP archives that are merged into the host application at build time. A classpath-based discovery model would allow an overlay to be packaged as a plain JAR dependency, with no file-system merging step required.
+
+Already done:
+
+- `BerliozConfig.toURL()` supports a `resource:` prefix for loading fallback and kickstart XSLT templates from the classpath.
+- The failsafe error stylesheet is already loaded from the classpath via `ClassLoader.getResource()`.
+- `web-fragment.xml` in `pso-berlioz-kickstart` already registers servlet mappings without requiring changes to the host application's `web.xml`.
+- `java.util.ServiceLoader` is already used for `RedirectPolicy` discovery via `META-INF/services/`, establishing a workable SPI pattern.
+
+Next work:
+
+- Define a `META-INF/berlioz/services/` convention for service configuration files contributed by JARs on the classpath.
+- Extend `ServiceLoader` to enumerate classpath resources under that path using `ClassLoader.getResources()` and merge them with filesystem-loaded configurations.
+- Define load ordering and override behavior when the same service group is declared both on the classpath and on the filesystem.
+- Extend XSLT template resolution to support a `classpath:` prefix on primary templates, generalizing the existing `resource:` fallback mechanism in `BerliozConfig`.
+- Decide how the XSLT cache handles staleness for classpath resources, where `File.lastModified()` is not available.
+- Keep filesystem-first as the default: classpath discovery should supplement, not replace, the existing `WEB-INF/config/` resolution path.
+
+The goal is to allow a self-contained Berlioz overlay — XSLT templates, service configuration, static assets via `META-INF/resources/`, and a servlet filter via `web-fragment.xml` — to be distributed and consumed as a single JAR dependency.
+
+### 9. Optional Integration Modules
 
 Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
 
@@ -324,6 +346,16 @@ Likely outcome:
 - Add optional metrics/tracing integration.
 - Keep integration modules separate from the core runtime.
 
+### Milestone 8b: Classpath Overlay Discovery
+
+- Define the `META-INF/berlioz/services/` classpath convention for service configuration files.
+- Extend `ServiceLoader` to enumerate and merge classpath service configurations alongside filesystem ones.
+- Document load ordering and override behavior between classpath and filesystem sources.
+- Extend XSLT template resolution to support a `classpath:` prefix as a first-class option, not just a fallback mechanism.
+- Decide and implement staleness/cache-invalidation behavior for classpath-resident templates.
+- Add test coverage for classpath service discovery, XSLT classpath loading, and mixed classpath/filesystem configurations.
+- Verify that an overlay packaged as a JAR — with `META-INF/berlioz/services/`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT — deploys correctly without any host application changes beyond adding the dependency.
+
 ### Milestone 9: Jakarta Migration
 
 - Decide final Jakarta migration strategy.
@@ -345,5 +377,9 @@ Likely outcome:
 - Should interceptor hooks be added to core, or should they wait for optional observability modules?
 - Which integrations are valuable enough to maintain as official modules?
 - Should the custom error XSLT be a single global stylesheet, or should it support per-group error templates (like the normal XSLT resolution)?
+- Should classpath service discovery be enabled by default or require an explicit opt-in configuration flag?
+- Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?
+- Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?
+- Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?
 - Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
 - Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses, or only suppress framework-internal information like stack traces?
