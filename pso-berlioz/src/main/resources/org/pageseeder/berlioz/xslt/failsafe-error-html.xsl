@@ -59,6 +59,21 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
 
 .help {border: 1px solid #ffe; background: #ffe; border-radius: 3px; box-shadow: 0 0 4px #ec9; font-style: italic;}
 .help p {margin: 4px}
+
+.problem        {border-color: #666;}
+.problem.s5xx   {border-color: #c01;}
+.problem.s4xx   {border-color: #e60;}
+.problem.s3xx   {border-color: #146;}
+.problem.s2xx   {border-color: #292;}
+
+.problem-type     {font-size: 80%; color: #666; margin: 0 0 8px}
+.problem-instance {font-size: 80%; color: #666; margin: 4px 0}
+
+details.extensions {margin-top: 16px; border: 1px solid #ddd; border-radius: 3px; padding: 4px 8px}
+details.extensions summary {cursor: pointer; color: #06a; font-size: 90%}
+details.extensions dl {margin: 8px 0 4px; font-size: 85%}
+details.extensions dt {float: left; clear: left; width: 160px; font-weight: bold; color: #444}
+details.extensions dd {margin-left: 168px; color: #222}
   </style>
 </head>
 <body class="{name(*)}">
@@ -176,6 +191,45 @@ li     {list-style-type: none; display: block; clear: both; font-size: 12px; fon
     <h3><xsl:value-of select="message"/></h3>
     <xsl:apply-templates select="stack-trace" />
     <xsl:apply-templates select="cause[not(message = current()/message)]"/>
+  </div>
+</xsl:template>
+
+<!-- Problem Details (RFC 9457) =============================================================== -->
+
+<xsl:template match="problem">
+  <xsl:variable name="s" select="number(status)"/>
+  <xsl:variable name="range">
+    <xsl:choose>
+      <xsl:when test="$s >= 500">s5xx</xsl:when>
+      <xsl:when test="$s >= 400">s4xx</xsl:when>
+      <xsl:when test="$s >= 300">s3xx</xsl:when>
+      <xsl:when test="$s >= 200">s2xx</xsl:when>
+    </xsl:choose>
+  </xsl:variable>
+  <div class="container problem {$range}">
+    <h1><xsl:value-of select="status"/> - <xsl:value-of select="if (title != '') then title else 'Error'"/></h1>
+    <xsl:if test="detail != ''">
+      <p class="message"><xsl:value-of select="detail"/></p>
+    </xsl:if>
+    <xsl:if test="type != ''">
+      <p class="problem-type">Type: <code><xsl:value-of select="type"/></code></p>
+    </xsl:if>
+    <xsl:if test="instance != ''">
+      <p class="problem-instance">Instance: <code><xsl:value-of select="instance"/></code></p>
+    </xsl:if>
+    <xsl:variable name="extensions" select="*[not(self::type|self::status|self::title|self::detail|self::instance)]"/>
+    <xsl:if test="$extensions">
+      <details class="extensions">
+        <summary>Additional details</summary>
+        <dl>
+          <xsl:for-each select="$extensions">
+            <dt><xsl:value-of select="local-name()"/></dt>
+            <dd><code><xsl:value-of select="."/></code></dd>
+          </xsl:for-each>
+        </dl>
+      </details>
+    </xsl:if>
+    <div class="footer"/>
   </div>
 </xsl:template>
 
