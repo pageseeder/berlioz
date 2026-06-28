@@ -38,6 +38,7 @@ import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.UpstreamException;
 import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.Problems;
 import org.pageseeder.berlioz.content.ProblemDetails;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
@@ -211,13 +212,13 @@ public final class JsonResponse {
       json = jb.toString();
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forInvalidParameter(ex));
+      response = Response.problem(Problems.forInvalidParameter(ex));
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forUpstreamException(ex));
+      response = Response.problem(Problems.forUpstreamException(ex));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forGeneratorError());
+      response = Response.problem(Problems.forGeneratorError());
     }
 
     long end = System.nanoTime();

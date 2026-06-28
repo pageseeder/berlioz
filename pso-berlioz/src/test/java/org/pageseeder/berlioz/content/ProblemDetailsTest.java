@@ -455,38 +455,4 @@ final class ProblemDetailsTest {
     Assertions.assertTrue(sw.toString().contains("\"status\":404"));
   }
 
-  // --- forInvalidParameter() ---
-
-  @Test
-  void testForInvalidParameter_required() {
-    InvalidParameterException ex = InvalidParameterException.required("username");
-    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
-    Assertions.assertEquals(400, p.status());
-    Assertions.assertEquals("urn:berlioz:problem:invalid-parameter", p.type());
-    Assertions.assertEquals("Invalid Request Parameter", p.title());
-    Assertions.assertEquals("username", p.extensions().get("parameter"));
-    Assertions.assertEquals("required", p.extensions().get("reason"));
-  }
-
-  @Test
-  void testForInvalidParameter_invalidFormat() {
-    InvalidParameterException ex = InvalidParameterException.invalidFormat("age", "abc", "integer");
-    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
-    Assertions.assertEquals("invalid-format", p.extensions().get("reason"));
-  }
-
-  @Test
-  void testForInvalidParameter_outOfRange() {
-    InvalidParameterException ex = InvalidParameterException.outOfRange("page", "-1", "must be >= 1");
-    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
-    Assertions.assertEquals("out-of-range", p.extensions().get("reason"));
-  }
-
-  @Test
-  void testForInvalidParameter_notAllowed() {
-    InvalidParameterException ex = InvalidParameterException.notAllowed("sort", "random", "asc", "desc");
-    ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
-    Assertions.assertEquals("not-allowed", p.extensions().get("reason"));
-  }
-
 }

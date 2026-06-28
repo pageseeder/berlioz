@@ -39,6 +39,7 @@ import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.Problems;
 import org.pageseeder.berlioz.content.ProblemDetails;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
@@ -278,13 +279,13 @@ public final class XmlResponse {
       response = dispatchXml(generator, request, sw);
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forInvalidParameter(ex));
+      response = Response.problem(Problems.forInvalidParameter(ex));
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forUpstreamException(ex));
+      response = Response.problem(Problems.forUpstreamException(ex));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forGeneratorError());
+      response = Response.problem(Problems.forGeneratorError());
     }
     long end = System.nanoTime();
     outcome.handleStatus(response, generator, service);
@@ -401,13 +402,13 @@ public final class XmlResponse {
       result = sw.toString();
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forInvalidParameter(ex));
+      response = Response.problem(Problems.forInvalidParameter(ex));
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forUpstreamException(ex));
+      response = Response.problem(Problems.forUpstreamException(ex));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(ProblemDetails.forGeneratorError());
+      response = Response.problem(Problems.forGeneratorError());
     }
 
     long end = System.nanoTime();

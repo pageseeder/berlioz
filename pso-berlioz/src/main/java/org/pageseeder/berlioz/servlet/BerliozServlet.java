@@ -37,6 +37,7 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.Problems;
 import org.pageseeder.berlioz.content.ProblemDetails;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
@@ -737,7 +738,7 @@ public final class BerliozServlet extends HttpServlet {
     // For JSON-configured servlets with ERROR_HANDLER=true, produce application/problem+json directly
     // instead of dispatching to ErrorHandlerServlet (which always renders XML/HTML).
     if (error == null && Json.isJsonMediaType(getBerliozConfig().getMediaType())) {
-      ProblemDetails problem = buildFrameworkProblem(code, message);
+      ProblemDetails problem = Problems.forHttpError(code, message);
       if (problem != null) {
         logError(code, message, ex, "Berlioz sending problem JSON {} [{}]");
         writeProblemJson(res, problem);
@@ -776,34 +777,6 @@ public final class BerliozServlet extends HttpServlet {
     } catch (IOException | ServletException e) {
       LOGGER.error("Failed to dispatch error response {} [{}]", message, code, e);
     }
-  }
-
-  /**
-   * Builds a {@link ProblemDetails} for a framework-generated HTTP error (404, 405, 400, 503, etc.).
-   * Returns {@code null} if {@code code} does not map to a known {@link ContentStatus}.
-   */
-  private static @Nullable ProblemDetails buildFrameworkProblem(int code, String message) {
-    ContentStatus status = ContentStatus.forCode(code);
-    if (status == null) return null;
-    String type;
-    if      (code == 400) type = "urn:berlioz:problem:bad-request";
-    else if (code == 404) type = "urn:berlioz:problem:not-found";
-    else if (code == 405) type = "urn:berlioz:problem:method-not-allowed";
-    else if (code == 503) type = "urn:berlioz:problem:service-unavailable";
-    else                  type = "urn:berlioz:problem:error";
-    return ProblemDetails.of(status).type(type).title(toTitle(status)).detail(message);
-  }
-
-  /** Converts a {@link ContentStatus} name to a human-readable title, e.g. NOT_FOUND → "Not Found". */
-  private static String toTitle(ContentStatus status) {
-    String[] words = status.name().split("_");
-    StringBuilder sb = new StringBuilder();
-    for (String word : words) {
-      if (sb.length() > 0) sb.append(' ');
-      sb.append(Character.toUpperCase(word.charAt(0)));
-      sb.append(word.substring(1).toLowerCase());
-    }
-    return sb.toString();
   }
 
   /** Writes a complete {@code application/problem+json} response directly to {@code res}. */
