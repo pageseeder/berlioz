@@ -32,7 +32,7 @@ final class ProblemDetailsTest {
   @Test
   void testOf_setsStatus() {
     ProblemDetails p = ProblemDetails.of(ContentStatus.NOT_FOUND);
-    Assertions.assertEquals(ContentStatus.NOT_FOUND, p.status());
+    Assertions.assertEquals(404, p.status());
   }
 
   @Test
@@ -53,6 +53,29 @@ final class ProblemDetailsTest {
   @Test
   void testOf_nullStatusThrows() {
     Assertions.assertThrows(NullPointerException.class, () -> ProblemDetails.of(null));
+  }
+
+  // --- of(int) ---
+
+  @Test
+  void testOfInt_setsStatus() {
+    Assertions.assertEquals(429, ProblemDetails.of(429).status());
+  }
+
+  @Test
+  void testOfInt_boundaries() {
+    Assertions.assertEquals(100, ProblemDetails.of(100).status());
+    Assertions.assertEquals(599, ProblemDetails.of(599).status());
+  }
+
+  @Test
+  void testOfInt_belowRangeThrows() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> ProblemDetails.of(99));
+  }
+
+  @Test
+  void testOfInt_aboveRangeThrows() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> ProblemDetails.of(600));
   }
 
   // --- type() ---
@@ -77,7 +100,7 @@ final class ProblemDetailsTest {
     ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST)
         .title("Bad input")
         .type("https://example.com/problems/bad-input");
-    Assertions.assertEquals(ContentStatus.BAD_REQUEST, p.status());
+    Assertions.assertEquals(400, p.status());
     Assertions.assertEquals("Bad input", p.title());
   }
 
@@ -223,7 +246,7 @@ final class ProblemDetailsTest {
         .instance("/log/events/789")
         .extension("traceId", "xyz-456");
 
-    Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR, p.status());
+    Assertions.assertEquals(500, p.status());
     Assertions.assertEquals("https://example.com/problems/internal", p.type());
     Assertions.assertEquals("Internal Server Error", p.title());
     Assertions.assertEquals("An unexpected condition was encountered.", p.detail());
@@ -438,7 +461,7 @@ final class ProblemDetailsTest {
   void testForInvalidParameter_required() {
     InvalidParameterException ex = InvalidParameterException.required("username");
     ProblemDetails p = ProblemDetails.forInvalidParameter(ex);
-    Assertions.assertEquals(ContentStatus.BAD_REQUEST, p.status());
+    Assertions.assertEquals(400, p.status());
     Assertions.assertEquals("urn:berlioz:problem:invalid-parameter", p.type());
     Assertions.assertEquals("Invalid Request Parameter", p.title());
     Assertions.assertEquals("username", p.extensions().get("parameter"));

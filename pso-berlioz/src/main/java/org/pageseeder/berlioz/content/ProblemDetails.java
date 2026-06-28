@@ -70,14 +70,14 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   private static final String FIELD_DETAIL   = "detail";
   private static final String FIELD_INSTANCE = "instance";
 
-  private final ContentStatus status;
+  private final int status;
   private final @Nullable String type;
   private final @Nullable String title;
   private final @Nullable String detail;
   private final @Nullable String instance;
   private final Map<String, Object> extensions;
 
-  private ProblemDetails(ContentStatus status, @Nullable String type, @Nullable String title,
+  private ProblemDetails(int status, @Nullable String type, @Nullable String title,
       @Nullable String detail, @Nullable String instance, Map<String, Object> extensions) {
     this.status = status;
     this.type = type;
@@ -89,14 +89,26 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   }
 
   /**
-   * Creates a minimal problem with only a status code.
+   * Creates a minimal problem with the given HTTP status code.
+   *
+   * @param code an HTTP status code in the range 100–599
+   * @return a new {@code ProblemDetails} instance
+   * @throws IllegalArgumentException if {@code code} is outside 100–599
+   */
+  public static ProblemDetails of(int code) {
+    if (code < 100 || code > 599) throw new IllegalArgumentException("Invalid HTTP status code: " + code);
+    return new ProblemDetails(code, null, null, null, null, Map.of());
+  }
+
+  /**
+   * Creates a minimal problem with the given content status.
    *
    * @param status the HTTP status; must not be {@code null}
    * @return a new {@code ProblemDetails} instance
    */
   public static ProblemDetails of(ContentStatus status) {
     Objects.requireNonNull(status, FIELD_STATUS);
-    return new ProblemDetails(status, null, null, null, null, Map.of());
+    return of(status.code());
   }
 
   /**
@@ -163,7 +175,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   }
 
   /** @return the HTTP status code */
-  public ContentStatus status() { return this.status; }
+  public int status() { return this.status; }
 
   /** @return the problem type URI, or {@code null} if not set */
   public @Nullable String type() { return this.type; }
@@ -185,7 +197,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   public JsonWriter toJson(JsonWriter json) {
     json.startObject();
     if (this.type   != null) json.field(FIELD_TYPE,     this.type);
-    json.field(FIELD_STATUS, (long) this.status.code());
+    json.field(FIELD_STATUS, (long) this.status);
     if (this.title  != null) json.field(FIELD_TITLE,    this.title);
     if (this.detail != null) json.field(FIELD_DETAIL,   this.detail);
     if (this.instance != null) json.field(FIELD_INSTANCE, this.instance);
@@ -244,7 +256,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   public XmlWriter toXml(XmlWriter xml) {
     xml.openElement("problem", true);
     writeTextElement(xml, FIELD_TYPE,     this.type);
-    xml.element(FIELD_STATUS, this.status.code());
+    xml.element(FIELD_STATUS, this.status);
     writeTextElement(xml, FIELD_TITLE,    this.title);
     writeTextElement(xml, FIELD_DETAIL,   this.detail);
     writeTextElement(xml, FIELD_INSTANCE, this.instance);
@@ -289,7 +301,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   public OutputWriter writeTo(OutputWriter out) {
     out.startObject("problem");
     out.optionalField(FIELD_TYPE,     this.type,             FieldOption.XML_ELEMENT);
-    out.field        (FIELD_STATUS,   this.status.code(),    FieldOption.XML_ELEMENT);
+    out.field        (FIELD_STATUS,   this.status,           FieldOption.XML_ELEMENT);
     out.optionalField(FIELD_TITLE,    this.title,            FieldOption.XML_ELEMENT);
     out.optionalField(FIELD_DETAIL,   this.detail,           FieldOption.XML_ELEMENT);
     out.optionalField(FIELD_INSTANCE, this.instance,         FieldOption.XML_ELEMENT);

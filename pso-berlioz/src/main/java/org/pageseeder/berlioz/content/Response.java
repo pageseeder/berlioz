@@ -120,7 +120,8 @@ public final class Response {
    */
   public static Response problem(ProblemDetails problem) {
     Objects.requireNonNull(problem, "problem");
-    return new Response(problem.status(), null, problem, Map.of());
+    ContentStatus cs = ContentStatus.forCode(problem.status());
+    return new Response(cs != null ? cs : ContentStatus.INTERNAL_SERVER_ERROR, null, problem, Map.of());
   }
 
   // --- Fluent modifier -------------------------------------------------------------------------
