@@ -294,7 +294,7 @@ class XmlResponseTest {
   }
 
   @Test
-  void generate_envelopeError_writesberliozExceptionElement() throws IOException {
+  void generate_envelopeError_writesProblemElement() throws IOException {
     XmlGenerator gen = (req, xml) -> {
       throw new RuntimeException("gen-error");
     };
@@ -303,7 +303,8 @@ class XmlResponseTest {
 
     String result = xr.generate();
 
-    assertTrue(result.contains("berlioz-exception"), "Expected berlioz-exception element: " + result);
+    assertTrue(result.contains("<problem>"), "Expected inline <problem> element: " + result);
+    assertTrue(result.contains("generator-error"), "Expected problem type in element: " + result);
   }
 
   // generate() - profile -------------------------------------------------------------------------

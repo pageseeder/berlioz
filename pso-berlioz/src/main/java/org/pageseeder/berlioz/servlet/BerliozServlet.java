@@ -37,6 +37,7 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.ProblemDetails;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.json.Json;
@@ -91,7 +92,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -393,8 +394,10 @@ public final class BerliozServlet extends HttpServlet {
     // Apply generator response headers
     json.getHeaders().forEach(res::setHeader);
 
-    // Write JSON — with optional GZip compression
-    res.setContentType("application/json;charset=UTF-8");
+    // Write JSON — with optional GZip compression; use problem+json when a top-level problem was signalled
+    ProblemDetails topLevelProblem = json.getProblem();
+    String jsonMediaType = topLevelProblem != null ? "application/problem+json" : "application/json";
+    res.setContentType(jsonMediaType + ";charset=UTF-8");
     res.setCharacterEncoding("UTF-8");
     BerliozOutput jsonOutput = new BerliozOutput() {
       public CharSequence content() { return content; }
@@ -476,8 +479,11 @@ public final class BerliozServlet extends HttpServlet {
     // Resolve and validate encoding from XSLT output; canonical name is safe for HTTP headers
     Charset charset = resolveCharset(result.getEncoding());
 
-    // Update content type from XSLT transform result (MUST be specified before the output is requested)
-    String ctype = result.getMediaType()+";charset="+charset.name();
+    // Update content type: use problem+xml for direct-service problem responses, otherwise honour XSLT output
+    ProblemDetails topLevelXmlProblem = xml.getProblem();
+    String ctype = topLevelXmlProblem != null
+        ? "application/problem+xml;charset=" + charset.name()
+        : result.getMediaType() + ";charset=" + charset.name();
     res.setContentType(ctype);
     res.setCharacterEncoding(charset.name());
     if (!config.getContentType().equals(ctype)) {
@@ -728,6 +734,17 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
+    // For JSON-configured servlets with ERROR_HANDLER=true, produce application/problem+json directly
+    // instead of dispatching to ErrorHandlerServlet (which always renders XML/HTML).
+    if (error == null && Json.isJsonMediaType(getBerliozConfig().getMediaType())) {
+      ProblemDetails problem = buildFrameworkProblem(code, message);
+      if (problem != null) {
+        logError(code, message, ex, "Berlioz sending problem JSON {} [{}]");
+        writeProblemJson(res, problem);
+        return;
+      }
+    }
+
     // Preserve the original error code when already handling an error; clamp to valid HTTP range to satisfy taint analysis
     int statusCode = Math.max(100, Math.min(599, error != null ? error : code));
     req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, statusCode);
@@ -758,6 +775,48 @@ public final class BerliozServlet extends HttpServlet {
       }
     } catch (IOException | ServletException e) {
       LOGGER.error("Failed to dispatch error response {} [{}]", message, code, e);
+    }
+  }
+
+  /**
+   * Builds a {@link ProblemDetails} for a framework-generated HTTP error (404, 405, 400, 503, etc.).
+   * Returns {@code null} if {@code code} does not map to a known {@link ContentStatus}.
+   */
+  private static @Nullable ProblemDetails buildFrameworkProblem(int code, String message) {
+    ContentStatus status = ContentStatus.forCode(code);
+    if (status == null) return null;
+    String type;
+    if      (code == 400) type = "urn:berlioz:problem:bad-request";
+    else if (code == 404) type = "urn:berlioz:problem:not-found";
+    else if (code == 405) type = "urn:berlioz:problem:method-not-allowed";
+    else if (code == 503) type = "urn:berlioz:problem:service-unavailable";
+    else                  type = "urn:berlioz:problem:error";
+    return ProblemDetails.of(status).type(type).title(toTitle(status)).detail(message);
+  }
+
+  /** Converts a {@link ContentStatus} name to a human-readable title, e.g. NOT_FOUND → "Not Found". */
+  private static String toTitle(ContentStatus status) {
+    String[] words = status.name().split("_");
+    StringBuilder sb = new StringBuilder();
+    for (String word : words) {
+      if (sb.length() > 0) sb.append(' ');
+      sb.append(Character.toUpperCase(word.charAt(0)));
+      sb.append(word.substring(1).toLowerCase());
+    }
+    return sb.toString();
+  }
+
+  /** Writes a complete {@code application/problem+json} response directly to {@code res}. */
+  private static void writeProblemJson(HttpServletResponse res, ProblemDetails problem) {
+    try {
+      res.setStatus(problem.status());
+      res.setContentType("application/problem+json;charset=UTF-8");
+      res.setCharacterEncoding("UTF-8");
+      PrintWriter out = res.getWriter();
+      out.print(problem.toJson());
+      out.flush();
+    } catch (IOException e) {
+      LOGGER.error("Failed to write problem JSON response for status {}", problem.status(), e);
     }
   }
 

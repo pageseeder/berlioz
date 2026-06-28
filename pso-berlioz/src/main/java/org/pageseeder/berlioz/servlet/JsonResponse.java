@@ -38,6 +38,7 @@ import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.UpstreamException;
 import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.ProblemDetails;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
@@ -62,7 +63,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.13.5
  * @since 0.13.2
  */
 public final class JsonResponse {
@@ -79,6 +80,9 @@ public final class JsonResponse {
   private final Map<Integer, String> etags = new HashMap<>();
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
   private final Map<String, String> responseHeadersView = Collections.unmodifiableMap(this.responseHeaders);
+
+  /** Non-null only for direct services whose sole generator produced a problem response. */
+  private @Nullable ProblemDetails topLevelProblem = null;
 
   public JsonResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
       MatchingService match, boolean profile) {
@@ -106,6 +110,20 @@ public final class JsonResponse {
 
   public Map<String, String> getHeaders() {
     return this.responseHeadersView;
+  }
+
+  /**
+   * Returns the top-level problem for this response, or {@code null} if the response is not a
+   * problem response.
+   *
+   * <p>Only set for direct services where the sole generator returned {@code Response.problem()}.
+   * For multi-generator services, generator problems are serialized inline inside the envelope
+   * object and the overall response remains {@code application/json}.
+   *
+   * @return the problem details, or {@code null}
+   */
+  public @Nullable ProblemDetails getProblem() {
+    return this.topLevelProblem;
   }
 
   /**
@@ -177,7 +195,6 @@ public final class JsonResponse {
 
     Response response = Response.ok();
     String json = null;
-    BerliozException error = null;
     long start = System.nanoTime();
 
     try (JsonStringBuilder jb = JsonStringBuilder.create()) {
@@ -193,14 +210,14 @@ public final class JsonResponse {
       }
       json = jb.toString();
     } catch (InvalidParameterException ex) {
-      error = outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.BAD_REQUEST);
+      outcome.handleError(ex, generator);
+      response = Response.problem(ProblemDetails.forInvalidParameter(ex));
     } catch (UpstreamException ex) {
-      error = outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.BAD_GATEWAY);
+      outcome.handleError(ex, generator);
+      response = Response.problem(ProblemDetails.forUpstreamException(ex));
     } catch (Exception ex) {
-      error = outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+      outcome.handleError(ex, generator);
+      response = Response.problem(ProblemDetails.forGeneratorError());
     }
 
     long end = System.nanoTime();
@@ -211,7 +228,8 @@ public final class JsonResponse {
     GeneratorListener l = listener.get();
     if (l != null) l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
 
-    return new GeneratorResult(name, json, error, request.getProfileEtag(), end - start);
+    ProblemDetails problem = response.isProblem() ? response.problem() : null;
+    return new GeneratorResult(name, json, problem, request.getProfileEtag(), end - start);
   }
 
   private String assemble(List<GeneratorResult> results, Service service) {
@@ -219,7 +237,9 @@ public final class JsonResponse {
 
     // Direct service: generator output IS the response body — no name wrapper
     if (service.isDirect()) {
-      return resolveValue(results.get(0));
+      GeneratorResult r = results.get(0);
+      if (r.problem != null) this.topLevelProblem = r.problem;
+      return resolveValue(r);
     }
 
     // Envelope: {"name1": <json1>, "name2": <json2>} — even for a single generator
@@ -238,7 +258,7 @@ public final class JsonResponse {
   }
 
   private static String resolveValue(GeneratorResult r) {
-    if (r.error != null) return errorJson(r.error);
+    if (r.problem != null) return r.problem.toJson();
     return r.json != null && !r.json.isEmpty() ? r.json : "null";
   }
 
@@ -271,26 +291,18 @@ public final class JsonResponse {
     return result;
   }
 
-  private static String errorJson(BerliozException ex) {
-    String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName();
-    try (JsonStringBuilder jb = JsonStringBuilder.create()) {
-      jb.startObject().field("error", msg).endObject();
-      return jb.toString();
-    }
-  }
-
   private static final class GeneratorResult {
     final String name;
     final @Nullable String json;
-    final @Nullable BerliozException error;
+    final @Nullable ProblemDetails problem;
     final long profileEtag;
     final long profileProcess;
 
-    GeneratorResult(String name, @Nullable String json, @Nullable BerliozException error,
+    GeneratorResult(String name, @Nullable String json, @Nullable ProblemDetails problem,
         long profileEtag, long profileProcess) {
       this.name = name;
       this.json = json;
-      this.error = error;
+      this.problem = problem;
       this.profileEtag = profileEtag;
       this.profileProcess = profileProcess;
     }

@@ -39,13 +39,13 @@ import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.ProblemDetails;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
-import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ProfileFormat;
 import org.pageseeder.berlioz.xml.XmlAppendable;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -60,7 +60,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.13.5
  * @since 0.7
  */
 public final class XmlResponse {
@@ -107,6 +107,9 @@ public final class XmlResponse {
   private final Map<String, String> responseHeadersView = Collections.unmodifiableMap(this.responseHeaders);
 
   private boolean serverTiming;
+
+  /** Non-null only for direct services whose sole generator produced a problem response. */
+  private @Nullable ProblemDetails topLevelProblem = null;
 
   /**
    * Creates a new XML response for the specified arguments.
@@ -199,6 +202,20 @@ public final class XmlResponse {
   }
 
   /**
+   * Returns the top-level problem for this response, or {@code null} if the response is not a
+   * problem response.
+   *
+   * <p>Only set for direct services where the sole generator returned {@code Response.problem()}.
+   * For non-direct services, generator problems are serialized as inline {@code <problem>}
+   * elements inside the {@code <content>} wrapper, and the XSLT pipeline runs as normal.
+   *
+   * @return the problem details, or {@code null}
+   */
+  public @Nullable ProblemDetails getProblem() {
+    return this.topLevelProblem;
+  }
+
+  /**
    * Returns the response headers accumulated from generators (last-writer-wins per name).
    *
    * @return an unmodifiable map; never {@code null}
@@ -245,6 +262,10 @@ public final class XmlResponse {
   /**
    * Direct path: single generator output IS the complete response — no {@code <root>} wrapper,
    * no {@link XmlResponseHeader}, no {@code <content>} element.
+   *
+   * <p>If the generator returns a problem response (explicitly or via a caught exception), the
+   * output is a {@code <problem>} XML document and {@link #getProblem()} will return the details
+   * so that the caller can set the {@code application/problem+xml} content type.
    */
   private String generateDirect(Service service) throws IOException {
     if (this.requests.isEmpty()) return "";
@@ -257,19 +278,30 @@ public final class XmlResponse {
       response = dispatchXml(generator, request, sw);
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.BAD_REQUEST);
+      response = Response.problem(ProblemDetails.forInvalidParameter(ex));
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.BAD_GATEWAY);
+      response = Response.problem(ProblemDetails.forUpstreamException(ex));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+      response = Response.problem(ProblemDetails.forGeneratorError());
     }
     long end = System.nanoTime();
     outcome.handleStatus(response, generator, service);
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
     GeneratorListener l = listener.get();
     if (l != null) l.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
+
+    if (response.isProblem()) {
+      ProblemDetails problem = response.problem();
+      this.topLevelProblem = problem;
+      StringWriter sw2 = new StringWriter();
+      XmlAppendable<StringWriter> problemXml = new XmlAppendable<>(sw2);
+      problemXml.declaration();
+      problem.toXml(problemXml);
+      problemXml.flush();
+      return sw2.toString();
+    }
     return sw.toString();
   }
 
@@ -361,7 +393,6 @@ public final class XmlResponse {
 
     // Invoke the generator
     String result = null;
-    BerliozException error = null;
     Response response = Response.ok();
     long start = System.nanoTime();
     StringWriter sw = new StringWriter();
@@ -369,14 +400,14 @@ public final class XmlResponse {
       response = dispatchXml(generator, request, sw);
       result = sw.toString();
     } catch (InvalidParameterException ex) {
-      error = outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.BAD_REQUEST);
+      outcome.handleError(ex, generator);
+      response = Response.problem(ProblemDetails.forInvalidParameter(ex));
     } catch (UpstreamException ex) {
-      error = outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.BAD_GATEWAY);
+      outcome.handleError(ex, generator);
+      response = Response.problem(ProblemDetails.forUpstreamException(ex));
     } catch (Exception ex) {
-      error = outcome.handleError(ex, generator);
-      response = Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+      outcome.handleError(ex, generator);
+      response = Response.problem(ProblemDetails.forGeneratorError());
     }
 
     long end = System.nanoTime();
@@ -404,12 +435,14 @@ public final class XmlResponse {
     }
 
 
-    // Write the XML
-    if (error != null) {
-      xml.openElement("berlioz-exception");
-      Errors.toXML(error, xml, false);
-      xml.closeElement();
-    } else {
+    // Write the XML: inline problem element if the generator signalled a problem,
+    // otherwise the generator's own XML output.
+    if (response.isProblem()) {
+      StringWriter problemSw = new StringWriter();
+      response.problem().toXml(new XmlAppendable<>(problemSw));
+      xml.writeXML(problemSw.toString());
+      // TODO we used to have `Errors.toXML(error, xml, false);` which provided more information about the issue
+    } else if (result != null) {
       xml.writeXML(result);
     }
 
