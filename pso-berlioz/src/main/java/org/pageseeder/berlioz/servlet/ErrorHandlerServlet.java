@@ -346,9 +346,16 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
       xml.element("servlet", servlet != null? servlet : "null");
 
-      writeThrowable(xml, throwable);
-      writeHttpHeaders(xml, req);
-      writeHttpParameters(xml, req);
+      String detail = GlobalSettings.get(BerliozOption.ERROR_DETAIL);
+      if ("minimal".equals(detail)) {
+        // nothing extra
+      } else if ("standard".equals(detail)) {
+        writeThrowableSummary(xml, throwable);
+      } else {
+        writeThrowable(xml, throwable);
+        writeHttpHeaders(xml, req);
+        writeHttpParameters(xml, req);
+      }
 
       xml.closeElement();
       xml.flush();
@@ -373,6 +380,17 @@ public final class ErrorHandlerServlet extends HttpServlet {
       }
       xml.closeElement();
     }
+  }
+
+  private static void writeThrowableSummary(XMLWriterImpl xml, @Nullable Throwable throwable) throws IOException {
+    if (throwable == null) return;
+    xml.openElement("exception");
+    xml.attribute("class", throwable.getClass().getName());
+    String message = throwable.getMessage();
+    if (message != null) {
+      xml.element("message", message);
+    }
+    xml.closeElement();
   }
 
   private static void writeHttpHeaders(XMLWriterImpl xml, HttpServletRequest req) throws IOException {

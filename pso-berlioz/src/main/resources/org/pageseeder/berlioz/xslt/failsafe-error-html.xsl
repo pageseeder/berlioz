@@ -233,7 +233,7 @@ details.extensions dd {margin-left: 168px; color: #222}
   </div>
 </xsl:template>
 
-<!-- Help for Specifid Error IDs ============================================================== -->
+<!-- Help for Specified Error IDs ============================================================== -->
 
 <!-- No help: ignore -->
 <xsl:template match="*" mode="help" />

@@ -274,6 +274,45 @@ public enum BerliozOption {
   ERROR_PROBLEM_FORMAT("berlioz.errors.problem", Boolean.FALSE),
 
   /**
+   * A string global option to control how much diagnostic detail is included in legacy
+   * framework-generated error responses (the {@code <server-error>} / {@code <client-error>} XML).
+   *
+   * <p>Three levels are available:
+   * <ul>
+   *   <li>{@code full} — full stack trace, HTTP request headers, and HTTP parameters are included.
+   *       Recommended for development.</li>
+   *   <li>{@code standard} — the exception class and message are included, but the stack trace,
+   *       HTTP headers, and HTTP parameters are omitted.</li>
+   *   <li>{@code minimal} — only the HTTP status, title, and error message are included; no
+   *       exception information, headers, or parameters.</li>
+   * </ul>
+   *
+   * <p>This option has no effect when {@link #ERROR_PROBLEM_FORMAT} is {@code true}, since the
+   * RFC 9457 {@code <problem>} format never includes diagnostic detail.</p>
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>Error detail usage</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td>{@code berlioz.errors.detail}</td>
+   *     <td>{@code full}</td>
+   *   </tr>
+   * </table>
+   *
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <caption>Error detail recommended value</caption>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr><td>{@code full}</td><td>{@code minimal}</td></tr></tbody>
+   * </table>
+   *
+   * @since 0.13.5
+   */
+  @Beta
+  ERROR_DETAIL("berlioz.errors.detail", "full"),
+
+  /**
    * A boolean global property to indicate whether Berlioz should record the time taken by each content generator
    * and by the transformer.
    *
