@@ -35,14 +35,17 @@ import javax.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.ErrorID;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.content.Problems;
 import org.pageseeder.berlioz.http.HttpStatusCodes;
 import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ISO8601;
+import org.pageseeder.berlioz.xml.XmlAppendable;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -255,16 +258,19 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // Write to the output
     PrintWriter out = res.getWriter();
 
+    boolean problemFormat = GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT);
+    String fallbackType = problemFormat ? "application/problem+xml;charset=UTF-8" : "application/xml;charset=UTF-8";
+
     // Try to format as HTML
     ClassLoader loader = ErrorHandlerServlet.class.getClassLoader();
     URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
     if (url != null) {
       String html = XsltTransformer.transformFailSafe(xml, url);
-      res.setContentType(!Objects.equals(html, xml) ? "text/html;charset=UTF-8" : "application/xml;charset=UTF-8");
+      res.setContentType(!Objects.equals(html, xml) ? "text/html;charset=UTF-8" : fallbackType);
       out.print(html);
       out.flush();
     } else {
-      res.setContentType("application/xml;charset=UTF-8");
+      res.setContentType(fallbackType);
       out.print(xml);
       out.flush();
     }
@@ -278,14 +284,40 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @return the error details as XML
    */
   private static String toXML(HttpServletRequest req) {
-    String message = (String)req.getAttribute(ERROR_MESSAGE);
     int code = getErrorCode(req);
+    String message = (String)req.getAttribute(ERROR_MESSAGE);
+
+    if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
+      return toProblemXML(code, message);
+    }
+    return toLegacyXML(req, code, message);
+  }
+
+  /**
+   * Serializes the error as an RFC 9457 {@code <problem>} XML document.
+   */
+  private static String toProblemXML(int code, @Nullable String message) {
+    StringWriter out = new StringWriter();
+    try {
+      XmlAppendable<StringWriter> xml = new XmlAppendable<>(out);
+      xml.declaration();
+      Problems.forHttpError(code, message != null ? message : "").toXml(xml);
+      xml.flush();
+    } catch (Exception ex) {
+      LOGGER.warn("Unable to produce problem details XML for status {}", code, ex);
+    }
+    return out.toString();
+  }
+
+  /**
+   * Serializes the error in the legacy Berlioz error XML format.
+   */
+  private static String toLegacyXML(HttpServletRequest req, int code, @Nullable String message) {
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
     Throwable throwable = getErrorException(req);
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
     String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
 
-    // Write the XML
     StringWriter out = new StringWriter();
     try {
       XMLWriterImpl xml = new XMLWriterImpl(out, true);

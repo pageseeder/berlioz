@@ -240,6 +240,40 @@ public enum BerliozOption {
   ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", Boolean.TRUE),
 
   /**
+   * A boolean global option to opt in to RFC 9457 Problem Details format for framework-generated
+   * error responses.
+   *
+   * <p>When set to {@code true}, {@link org.pageseeder.berlioz.servlet.ErrorHandlerServlet}
+   * emits a {@code <problem>} XML document (aligned with {@code application/problem+xml}) instead
+   * of the legacy {@code <server-error>} / {@code <client-error>} format. The failsafe XSLT
+   * template handles both formats, so existing error rendering continues to work.</p>
+   *
+   * <p>The default is {@code false} to preserve backward compatibility with applications that
+   * consume the legacy error XML in their own XSLT templates.</p>
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>Problem format usage</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td>{@code berlioz.errors.problem}</td>
+   *     <td>{@code false}</td>
+   *   </tr>
+   * </table>
+   *
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <caption>Problem format recommended value</caption>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr><td>{@code true}</td><td>{@code true}</td></tr></tbody>
+   * </table>
+   *
+   * @since 0.13.5
+   */
+  @Beta
+  ERROR_PROBLEM_FORMAT("berlioz.errors.problem", Boolean.FALSE),
+
+  /**
    * A boolean global property to indicate whether Berlioz should record the time taken by each content generator
    * and by the transformer.
    *
