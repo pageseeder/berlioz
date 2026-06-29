@@ -344,80 +344,178 @@
 <!-- No help: ignore -->
 <xsl:template match="*" mode="help" />
 
-<!-- Help: Services configuration could not be found  -->
+<!-- ── Unexpected ── -->
+<xsl:template match="*[@id='berlioz-unexpected']" mode="help">
+<div class="help">
+  <p>An unexpected error occurred that Berlioz was not able to classify.</p>
+  <p>Check the stack trace below and the server logs for context.</p>
+</div>
+</xsl:template>
+
+<!-- ── Lifecycle ── -->
+<xsl:template match="*[@id='berlioz-lifecycle-error']" mode="help">
+<div class="help">
+  <p>An error occurred during Berlioz <b>initialization or shutdown</b>.</p>
+  <p>Check the application server startup logs. The application may not have initialised correctly.</p>
+</div>
+</xsl:template>
+
+<!-- ── Services configuration ── -->
 <xsl:template match="server-error[@id='berlioz-services-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>service configuration</b>.</p>
-  <p>To fix this problem, creates a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
+  <p>Create a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
 </div>
 </xsl:template>
 
-<!-- Help: Services configuration is not well formed  -->
 <xsl:template match="server-error[@id='berlioz-services-malformed']" mode="help">
 <div class="help">
-  <p>Berlioz was unable to parse the <b>service configuration</b>.</p>
-  <p>To fix this problem, you need to fix the XML errors in the '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>' file.</p>
+  <p>Berlioz was unable to parse the <b>service configuration</b> — the file is not well-formed XML.</p>
+  <p>Fix the XML errors in '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>'.</p>
 </div>
 </xsl:template>
 
-<!-- Help: Services configuration is invalid  -->
 <xsl:template match="server-error[@id='berlioz-services-invalid']" mode="help">
 <div class="help">
-  <p>Berlioz was unable to load the service configuration because of the errors listed below.</p>
-  <p>To fix this problem, you need to modify the '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>' file.</p>
+  <p>Berlioz was unable to load the <b>service configuration</b> because of validation errors listed below.</p>
+  <p>Correct the invalid entries in '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>'.</p>
 </div>
 </xsl:template>
 
-<!-- Help: Transform file could not be found -->
-<xsl:template match="server-error[@id='berlioz-transform-not-found']" mode="help">
+<!-- ── XSLT transform ── -->
+<xsl:template match="*[@id='berlioz-transform-not-found']" mode="help">
 <div class="help">
-  <p>Berlioz was unable to find the <b>XSLT style sheet</b>.</p>
-  <p>To fix this problem, simply create the style file describe below in your <code>/WEB-INF/</code> folder.</p>
+  <p>Berlioz was unable to find the <b>XSLT stylesheet</b> for this URL.</p>
+  <p>Create the stylesheet file in your <code>/WEB-INF/</code> folder at the path shown in the error details.</p>
 </div>
 </xsl:template>
 
-<!-- Help: Transform file could not be found -->
-<xsl:template match="server-error[@id='berlioz-transform-malformed-source-xml']" mode="help">
+<xsl:template match="*[@id='berlioz-transform-invalid']" mode="help">
 <div class="help">
-  <p>Berlioz could not transform the <b>source XML</b> because it is not well-formed.</p>
-  <p>To fix this problem, simply ensure that the XML returned by your generator is well formed.</p>
+  <p>The <b>XSLT stylesheet</b> contains a static error and could not be compiled.</p>
+  <p>Check the error location and message below, and fix the XPath or XSLT syntax error in the stylesheet.</p>
 </div>
 </xsl:template>
 
-<!-- Problem Details help (mirrors legacy help, matched on type URI) ========================== -->
+<xsl:template match="*[@id='berlioz-transform-dynamic-error']" mode="help">
+<div class="help">
+  <p>A <b>runtime error</b> occurred during XSLT transformation.</p>
+  <p>Check the location and message below. Ensure the source XML matches what the stylesheet expects at that point.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="*[@id='berlioz-transform-malformed-source-xml']" mode="help">
+<div class="help">
+  <p>Berlioz could not transform the response because the <b>source XML is not well-formed</b>.</p>
+  <p>Ensure that every content generator for this service writes valid XML.</p>
+</div>
+</xsl:template>
+
+<!-- ── Generator errors ── -->
+<xsl:template match="*[@id='berlioz-generator-error-unchecked']" mode="help">
+<div class="help">
+  <p>A content generator threw an <b>unexpected runtime exception</b>.</p>
+  <p>Check the stack trace below and the server logs for context. This is likely a programming error in the generator.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="*[@id='berlioz-generator-error-unforced']" mode="help">
+<div class="help">
+  <p>A content generator reported an error using a <b>Berlioz exception</b>.</p>
+  <p>Check the error message and the generator implementation to understand why the error was raised.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="*[@id='berlioz-generator-error-multiple']" mode="help">
+<div class="help">
+  <p>Multiple content generators reported errors during this request.</p>
+  <p>Check the individual error details below to identify which generators failed and why.</p>
+</div>
+</xsl:template>
+
+<!-- Problem Details help (matched on type URI — mirrors the legacy help above) ============== -->
+
+<xsl:template match="problem[type='urn:berlioz:problem:unexpected']" mode="help">
+<div class="help">
+  <p>An unexpected error occurred that Berlioz was not able to classify.</p>
+  <p>Check the stack trace (if included) and the server logs for context.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:lifecycle-error']" mode="help">
+<div class="help">
+  <p>An error occurred during Berlioz <b>initialization or shutdown</b>.</p>
+  <p>Check the application server startup logs. The application may not have initialised correctly.</p>
+</div>
+</xsl:template>
 
 <xsl:template match="problem[type='urn:berlioz:problem:services-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>service configuration</b>.</p>
-  <p>To fix this problem, create a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
+  <p>Create a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
 </div>
 </xsl:template>
 
 <xsl:template match="problem[type='urn:berlioz:problem:services-malformed']" mode="help">
 <div class="help">
-  <p>Berlioz was unable to parse the <b>service configuration</b>.</p>
-  <p>To fix this problem, fix the XML errors in your <code>/WEB-INF/config/services.xml</code> file.</p>
+  <p>Berlioz was unable to parse the <b>service configuration</b> — the file is not well-formed XML.</p>
+  <p>Fix the XML errors in your <code>/WEB-INF/config/services.xml</code> file.</p>
 </div>
 </xsl:template>
 
 <xsl:template match="problem[type='urn:berlioz:problem:services-invalid']" mode="help">
 <div class="help">
-  <p>Berlioz was unable to load the service configuration because of validation errors.</p>
-  <p>To fix this problem, correct the invalid entries in your <code>/WEB-INF/config/services.xml</code> file.</p>
+  <p>Berlioz was unable to load the <b>service configuration</b> because of validation errors.</p>
+  <p>Correct the invalid entries in your <code>/WEB-INF/config/services.xml</code> file.</p>
 </div>
 </xsl:template>
 
 <xsl:template match="problem[type='urn:berlioz:problem:transform-not-found']" mode="help">
 <div class="help">
-  <p>Berlioz was unable to find the <b>XSLT stylesheet</b>.</p>
-  <p>To fix this problem, create the stylesheet file in your <code>/WEB-INF/</code> folder.</p>
+  <p>Berlioz was unable to find the <b>XSLT stylesheet</b> for this URL.</p>
+  <p>Create the stylesheet file in your <code>/WEB-INF/</code> folder.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:transform-invalid']" mode="help">
+<div class="help">
+  <p>The <b>XSLT stylesheet</b> contains a static error and could not be compiled.</p>
+  <p>Check the error details and fix the XPath or XSLT syntax error in the stylesheet.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:transform-dynamic-error']" mode="help">
+<div class="help">
+  <p>A <b>runtime error</b> occurred during XSLT transformation.</p>
+  <p>Ensure the source XML matches what the stylesheet expects at the failing point.</p>
 </div>
 </xsl:template>
 
 <xsl:template match="problem[type='urn:berlioz:problem:transform-malformed-source-xml']" mode="help">
 <div class="help">
-  <p>Berlioz could not transform the <b>source XML</b> because it is not well-formed.</p>
-  <p>To fix this problem, ensure that the XML returned by your generator is well formed.</p>
+  <p>Berlioz could not transform the response because the <b>source XML is not well-formed</b>.</p>
+  <p>Ensure that every content generator for this service writes valid XML.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:generator-error-unchecked']" mode="help">
+<div class="help">
+  <p>A content generator threw an <b>unexpected runtime exception</b>.</p>
+  <p>Check the exception details (if included) and the server logs. This is likely a programming error in the generator.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:generator-error-unforced']" mode="help">
+<div class="help">
+  <p>A content generator reported an error using a <b>Berlioz exception</b>.</p>
+  <p>Check the detail message and the generator implementation to understand why the error was raised.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:generator-error-multiple']" mode="help">
+<div class="help">
+  <p>Multiple content generators reported errors during this request.</p>
+  <p>Check the individual error details to identify which generators failed and why.</p>
 </div>
 </xsl:template>
 
