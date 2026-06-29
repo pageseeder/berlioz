@@ -47,7 +47,7 @@ import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ISO8601;
-import org.pageseeder.berlioz.xml.XmlAppendable;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -299,18 +299,17 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * Serializes the error as an RFC 9457 {@code <problem>} XML document.
    */
   private static String toProblemXML(int code, @Nullable String message, @Nullable Throwable throwable) {
-    DetailLevel detailLevel = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
-    StringWriter out = new StringWriter();
+    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+    XmlStringBuilder xml = new XmlStringBuilder();
     try {
-      XmlAppendable<StringWriter> xml = new XmlAppendable<>(out);
       xml.declaration();
-      ProblemDetails problem = Problems.forHttpError(code, message != null ? message : "", throwable, detailLevel);
+      ProblemDetails problem = Problems.forHttpError(code, message != null ? message : "", throwable, level);
       if (problem != null) problem.toXml(xml);
       xml.flush();
     } catch (Exception ex) {
       LOGGER.warn("Unable to produce problem details XML for status {}", code, ex);
     }
-    return out.toString();
+    return xml.toString();
   }
 
   /**

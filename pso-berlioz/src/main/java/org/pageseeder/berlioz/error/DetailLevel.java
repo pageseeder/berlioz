@@ -38,17 +38,16 @@ public enum DetailLevel {
   MINIMAL, STANDARD, FULL;
 
   /**
-   * Parses the config string value, returning {@link #FULL} for any unrecognised value.
+   * Parses the config string value, returning {@link #MINIMAL} for any unrecognised value.
    *
    * @param value the raw config string (e.g. {@code "minimal"}, {@code "standard"}, {@code "full"})
-   * @return the matching level, or {@link #FULL} if the value is not recognised
+   * @return the matching level, or {@link #MINIMAL} if the value is not recognised
    */
   public static DetailLevel parse(String value) {
-    // TODO We should default to MINIMAL to follow secure-as-default design
     switch (value.toLowerCase()) {
-      case "minimal":  return MINIMAL;
       case "standard": return STANDARD;
-      default:         return FULL;
+      case "full":     return FULL;
+      default:         return MINIMAL;
     }
   }
 
