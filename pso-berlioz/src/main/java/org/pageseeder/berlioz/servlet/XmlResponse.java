@@ -445,8 +445,8 @@ public final class XmlResponse {
     // Write the XML: inline problem element if the generator signalled a problem,
     // otherwise the generator's own XML output.
     if (response.isProblem()) {
-      StringWriter problemSw = new StringWriter();
-      response.problem().toXml(new XmlAppendable<>(problemSw));
+      XmlStringBuilder problemSw = new XmlStringBuilder();
+      response.problem().toXml(problemSw);
       xml.writeXML(problemSw.toString());
       // TODO we used to have `Errors.toXML(error, xml, false);` which provided more information about the issue
     } else if (result != null) {
