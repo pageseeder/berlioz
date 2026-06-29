@@ -240,6 +240,57 @@ public enum BerliozOption {
   ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", Boolean.TRUE),
 
   /**
+   * A string global option to specify a custom XSLT stylesheet for rendering framework-generated
+   * error responses.
+   *
+   * <p>When set, {@link org.pageseeder.berlioz.servlet.ErrorHandlerServlet} will attempt to load
+   * the specified stylesheet from the {@code WEB-INF} directory before falling back to the
+   * built-in failsafe template. This allows applications to apply their own branding and layout
+   * to error pages while retaining Berlioz's standard error XML or RFC 9457 problem XML as the
+   * source document.
+   *
+   * <p>The value must be a path relative to {@code WEB-INF}. For example, a value of
+   * {@code xslt/error.xsl} resolves to {@code WEB-INF/xslt/error.xsl}. If the file does not
+   * exist or cannot be read, Berlioz logs a warning and falls back to the built-in failsafe
+   * template.
+   *
+   * <p>The fallback chain is:
+   * <ol>
+   *   <li>Custom stylesheet ({@code WEB-INF/<value>}) — if configured and the file exists</li>
+   *   <li>Built-in failsafe classpath template</li>
+   *   <li>Raw XML — if neither template can be loaded</li>
+   * </ol>
+   *
+   * <p>The stylesheet receives the same error XML document that the failsafe template receives.
+   * It must produce HTML output. If it does not produce output (e.g. the XSLT processor fails),
+   * the raw XML is written instead with an appropriate content type.
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>Error stylesheet usage</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td>{@code berlioz.errors.stylesheet}</td>
+   *     <td>{@code ""}<i>(empty — use built-in failsafe)</i></td>
+   *   </tr>
+   * </table>
+   *
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <caption>Error stylesheet recommended value</caption>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr>
+   *     <td>{@code ""}<i>(empty)</i></td>
+   *     <td>{@code xslt/error.xsl}<i>(or leave empty)</i></td>
+   *   </tr></tbody>
+   * </table>
+   *
+   * @since 0.13.6
+   */
+  @Beta
+  ERROR_STYLESHEET("berlioz.errors.stylesheet", ""),
+
+  /**
    * A boolean global option to opt in to RFC 9457 Problem Details format for framework-generated
    * error responses.
    *
@@ -287,8 +338,9 @@ public enum BerliozOption {
    *       exception information, headers, or parameters.</li>
    * </ul>
    *
-   * <p>This option has no effect when {@link #ERROR_PROBLEM_FORMAT} is {@code true}, since the
-   * RFC 9457 {@code <problem>} format never includes diagnostic detail.</p>
+   * <p>When {@link #ERROR_PROBLEM_FORMAT} is {@code true}, this option still applies: at
+   * {@code standard} or {@code full} level, exception details are added to the RFC 9457
+   * {@code <problem>} response as an {@code exception} extension member.</p>
    *
    * <h3>Property</h3>
    * <table>

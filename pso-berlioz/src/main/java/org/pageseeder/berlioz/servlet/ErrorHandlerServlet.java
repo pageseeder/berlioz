@@ -15,9 +15,11 @@
  */
 package org.pageseeder.berlioz.servlet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.*;
@@ -263,9 +265,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
     boolean problemFormat = GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT);
     String fallbackType = problemFormat ? "application/problem+xml;charset=UTF-8" : "application/xml;charset=UTF-8";
 
-    // Try to format as HTML
-    ClassLoader loader = ErrorHandlerServlet.class.getClassLoader();
-    URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
+    // Resolve stylesheet: custom → built-in failsafe → raw XML
+    URL url = resolveErrorStylesheet();
     if (url != null) {
       String html = XsltTransformer.transformFailSafe(xml, url);
       res.setContentType(!Objects.equals(html, xml) ? "text/html;charset=UTF-8" : fallbackType);
@@ -276,6 +277,41 @@ public final class ErrorHandlerServlet extends HttpServlet {
       out.print(xml);
       out.flush();
     }
+  }
+
+  /**
+   * Resolves the XSLT stylesheet URL to use for error rendering.
+   *
+   * <p>Implements the fallback chain:
+   * <ol>
+   *   <li>Custom ({@code berlioz.errors.stylesheet} relative to {@code WEB-INF}) if configured</li>
+   *   <li>Built-in failsafe classpath template</li>
+   *   <li>{@code null} — raw XML is written with an appropriate content type</li>
+   * </ol>
+   *
+   * @return the URL to use, or {@code null} if no stylesheet is available
+   */
+  static @Nullable URL resolveErrorStylesheet() {
+    String configured = GlobalSettings.get(BerliozOption.ERROR_STYLESHEET);
+    if (!configured.isEmpty()) {
+      File webInf = GlobalSettings.getWebInf();
+      if (webInf != null) {
+        File xsl = new File(webInf, configured);
+        if (xsl.isFile() && xsl.canRead()) {
+          try {
+            return xsl.toURI().toURL();
+          } catch (MalformedURLException ex) {
+            LOGGER.warn("Cannot convert custom error stylesheet path to URL: {}", xsl, ex);
+          }
+        } else {
+          LOGGER.warn("Custom error stylesheet not found or not readable: {} (falling back to built-in)", xsl);
+        }
+      } else {
+        LOGGER.warn("berlioz.errors.stylesheet is configured but WEB-INF is not initialised — falling back to built-in");
+      }
+    }
+    ClassLoader loader = ErrorHandlerServlet.class.getClassLoader();
+    return loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
   }
 
   /**

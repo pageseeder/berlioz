@@ -4,11 +4,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.lang.reflect.Field;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -283,6 +287,78 @@ class ErrorHandlerServletTest {
     }
   }
 
+  // resolveErrorStylesheet() — unit tests for the fallback chain
+
+  @Nested
+  class ResolveErrorStylesheet {
+
+    @AfterEach
+    void clearStylesheet() throws ReflectiveOperationException {
+      setOption(BerliozOption.ERROR_STYLESHEET, "");
+    }
+
+    @Test
+    void resolveErrorStylesheet_defaultEmpty_returnsFailsafe() {
+      URL url = ErrorHandlerServlet.resolveErrorStylesheet();
+      assertNotNull(url, "Should return the built-in failsafe URL when no option is set");
+      assertTrue(url.toString().contains("failsafe-error-html.xsl"), "URL should point to the classpath failsafe");
+    }
+
+    @Test
+    void resolveErrorStylesheet_nonExistentPath_fallsBackToFailsafe() throws ReflectiveOperationException {
+      setOption(BerliozOption.ERROR_STYLESHEET, "xslt/does-not-exist.xsl");
+      URL url = ErrorHandlerServlet.resolveErrorStylesheet();
+      assertNotNull(url, "Should fall back to built-in failsafe when custom file is missing");
+      assertTrue(url.toString().contains("failsafe-error-html.xsl"), "Fallback URL should be the classpath failsafe");
+    }
+
+    @Test
+    void resolveErrorStylesheet_customFile_returnsCustomUrl(@TempDir File tempDir) throws Exception {
+      // Write a minimal XSLT to the temp directory (simulating WEB-INF)
+      File xsl = new File(tempDir, "error.xsl");
+      Files.writeString(xsl.toPath(),
+          "<?xml version=\"1.0\"?><xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"><xsl:template match=\"/\"><html/></xsl:template></xsl:stylesheet>");
+
+      setWebInf(tempDir);
+      setOption(BerliozOption.ERROR_STYLESHEET, "error.xsl");
+      try {
+        URL url = ErrorHandlerServlet.resolveErrorStylesheet();
+        assertNotNull(url, "Should return the custom stylesheet URL");
+        assertEquals(xsl.toURI().toURL(), url, "URL should point to the custom file");
+      } finally {
+        setWebInf(null);
+      }
+    }
+
+    @Test
+    void handle_withCustomStylesheet_producesHtml(@TempDir File tempDir) throws Exception {
+      // A minimal identity-to-HTML stylesheet
+      File xsl = new File(tempDir, "error.xsl");
+      Files.writeString(xsl.toPath(),
+          "<?xml version=\"1.0\"?><xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
+          + "<xsl:template match=\"/\"><html><body>CUSTOM</body></html></xsl:template></xsl:stylesheet>");
+
+      setWebInf(tempDir);
+      setOption(BerliozOption.ERROR_STYLESHEET, "error.xsl");
+      try {
+        HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+            .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
+            .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Test error")
+            .build();
+        ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+        new ErrorHandlerServlet().handle(req, res.build());
+        String body = res.content();
+        assertAll(
+            () -> assertEquals(500, res.status),
+            () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+            () -> assertTrue(body.contains("CUSTOM"), "Custom stylesheet output should appear")
+        );
+      } finally {
+        setWebInf(null);
+      }
+    }
+  }
+
   // Helpers
 
   @SuppressWarnings("unchecked")
@@ -307,6 +383,16 @@ class ErrorHandlerServletTest {
     Map<String, String> settings = ((AtomicReference<Map<String, String>>) f.get(null)).get();
     if (settings != null) {
       settings.put(option.property(), value);
+    }
+  }
+
+  private static void setWebInf(File dir) throws ReflectiveOperationException {
+    Field f = GlobalSettings.class.getDeclaredField("ENV");
+    f.setAccessible(true);
+    if (dir == null) {
+      ((AtomicReference<?>) f.get(null)).set(null);
+    } else {
+      GlobalSettings.setup(dir);
     }
   }
 }
