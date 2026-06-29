@@ -55,11 +55,16 @@ class FailsafeXsltTest {
         "legacy-server-error-500-full.xml",
         "legacy-invalid-parameter-full.xml",
         "legacy-upstream-error-full.xml",
-        // Legacy format — known error IDs (contextual help blocks)
-        "legacy-transform-not-found.xml",
-        "legacy-transform-dynamic-error.xml",
+        // Legacy format — all known error IDs (contextual help blocks)
+        "legacy-unexpected.xml",
+        "legacy-lifecycle-error.xml",
         "legacy-services-not-found.xml",
         "legacy-services-malformed.xml",
+        "legacy-transform-not-found.xml",
+        "legacy-transform-invalid.xml",
+        "legacy-transform-dynamic-error.xml",
+        "legacy-generator-error-unforced.xml",
+        "legacy-generator-error-multiple.xml",
         // Problem format (RFC 9457) — no exception extension
         "problem-not-found-404.xml",
         "problem-method-not-allowed-405.xml",
@@ -69,10 +74,17 @@ class FailsafeXsltTest {
         // Problem format — with exception extension
         "problem-server-error-500-standard.xml",
         "problem-server-error-500-full.xml",
-        // Problem format — specific type URIs triggering contextual help blocks
+        // Problem format — all known type URIs (contextual help blocks)
+        "problem-unexpected.xml",
+        "problem-lifecycle-error.xml",
         "problem-services-not-found.xml",
         "problem-services-malformed.xml",
-        "problem-transform-not-found.xml"
+        "problem-transform-not-found.xml",
+        "problem-transform-invalid.xml",
+        "problem-transform-dynamic-error.xml",
+        "problem-generator-error-unchecked.xml",
+        "problem-generator-error-unforced.xml",
+        "problem-generator-error-multiple.xml"
     );
   }
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server-error http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-generator-error-unforced">
+  <berlioz version="0.13.5"/>
+  <title>Internal Server Error</title>
+  <message>A generator error occurred</message>
+  <request-uri>/articles/view.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+  <exception class="org.pageseeder.berlioz.BerliozException">
+    <message>Article repository is unavailable</message>
+  </exception>
+</server-error>

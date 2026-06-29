@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:transform-dynamic-error</type>
+  <status>500</status>
+  <title>Internal Server Error</title>
+  <detail>A runtime error occurred during XSLT transformation</detail>
+</problem>

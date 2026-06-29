@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:lifecycle-error</type>
+  <status>500</status>
+  <title>Internal Server Error</title>
+  <detail>An error occurred during Berlioz initialization</detail>
+</problem>

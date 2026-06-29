@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:transform-invalid</type>
+  <status>500</status>
+  <title>Internal Server Error</title>
+  <detail>The XSLT stylesheet contains a static error and could not be compiled</detail>
+</problem>

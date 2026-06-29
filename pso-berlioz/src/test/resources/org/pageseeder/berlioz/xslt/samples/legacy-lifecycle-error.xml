@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server-error http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-lifecycle-error">
+  <berlioz version="0.13.5"/>
+  <title>Internal Server Error</title>
+  <message>An error occurred during Berlioz initialization</message>
+  <request-uri>/any/page.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+</server-error>
