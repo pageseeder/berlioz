@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Environment;
-import org.pageseeder.berlioz.content.InvalidParameterException;
 import org.pageseeder.berlioz.content.TypedParameter;
+import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
 import org.pageseeder.mock.servlet.MockHttpServletRequest;
 
