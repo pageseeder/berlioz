@@ -33,7 +33,7 @@ import org.pageseeder.berlioz.Beta;
  * </ul>
  *
  * <p>For other situations where short-circuiting is appropriate (e.g. 451, 431), extend this
- * class and call {@code super(message, code)} in the constructor:
+ * class and call {@code super(message, code)} with a code in the range 400–599:
  * <pre>{@code
  * public class LegalHoldException extends HttpException {
  *   public LegalHoldException(String reason) { super(reason, 451); }
@@ -56,23 +56,30 @@ public abstract class HttpException extends RuntimeException {
    * Creates an HTTP signal exception with the given message and HTTP status code.
    *
    * @param message  a description of the condition
-   * @param httpCode the HTTP status code to send; should be 4xx or 5xx
+   * @param httpCode the HTTP status code to send; must be in the range 400–599
+   * @throws IllegalArgumentException if {@code httpCode} is outside 400–599
    */
   protected HttpException(String message, int httpCode) {
     super(message);
-    this.httpCode = httpCode;
+    this.httpCode = requireErrorCode(httpCode);
   }
 
   /**
    * Creates an HTTP signal exception with the given message, HTTP status code, and underlying cause.
    *
    * @param message  a description of the condition
-   * @param httpCode the HTTP status code to send; should be 4xx or 5xx
+   * @param httpCode the HTTP status code to send; must be in the range 400–599
    * @param cause    the exception that triggered this signal
+   * @throws IllegalArgumentException if {@code httpCode} is outside 400–599
    */
   protected HttpException(String message, int httpCode, Throwable cause) {
     super(message, cause);
-    this.httpCode = httpCode;
+    this.httpCode = requireErrorCode(httpCode);
+  }
+
+  private static int requireErrorCode(int code) {
+    if (code < 400 || code > 599) throw new IllegalArgumentException("HTTP signal code must be 400–599, got: " + code);
+    return code;
   }
 
   /**
