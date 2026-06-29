@@ -17,10 +17,12 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.io.FileNotFoundException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Enumeration;
@@ -39,8 +41,10 @@ import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
@@ -80,13 +84,33 @@ public final class XsltTransformer {
   private static final Logger LOGGER = LoggerFactory.getLogger(XsltTransformer.class);
 
   /**
+   * True when an XSLT 2.0 processor (e.g. Saxon-HE) is available on the classpath.
+   * Probed once at class load by attempting to compile a minimal XSLT 2.0 stylesheet.
+   */
+  private static final boolean XSLT2_SUPPORTED;
+
+  /**
+   * Static HTML page served when no XSLT 2.0 processor is on the classpath.
+   * Loaded from {@code no-xslt2-error.html} alongside the failsafe stylesheet.
+   */
+  private static final String NO_XSLT2_HTML;
+
+  /**
    * Compiled failsafe stylesheet — loaded once from the classpath, never changes.
+   * Remains the identity sentinel when XSLT 2.0 is unavailable.
    */
   private static final Templates FAILSAFE_TEMPLATES;
   static {
     ClassLoader loader = XsltTransformer.class.getClassLoader();
-    URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
-    FAILSAFE_TEMPLATES = XsltTemplateCache.compile(url);
+    XSLT2_SUPPORTED = detectXslt2();
+    if (!XSLT2_SUPPORTED) {
+      LOGGER.error("No XSLT 2.0 processor found — Berlioz requires Saxon-HE on the runtime classpath");
+      FAILSAFE_TEMPLATES = XsltTemplateCache.compile((URL) null);
+    } else {
+      URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
+      FAILSAFE_TEMPLATES = XsltTemplateCache.compile(url);
+    }
+    NO_XSLT2_HTML = loadResource(loader, "org/pageseeder/berlioz/xslt/no-xslt2-error.html");
   }
 
   /**
@@ -397,12 +421,13 @@ public final class XsltTransformer {
 
   /**
    * Performs a fail-safe transformation. If {@code templates} are the identity templates
-   * or if the transformation itself fails, the source XML is returned verbatim.
+   * or if the transformation itself fails, falls back to either a static "no XSLT 2.0"
+   * page (when no XSLT 2.0 processor is available) or the raw XML.
    */
   private static String transformFailSafe(String xml, Templates templates) {
-    // No need to process, let's directly copy the output
-    if (XsltTemplateCache.isIdentity(templates)) return xml;
-    // Let's try to format it
+    if (XsltTemplateCache.isIdentity(templates)) {
+      return XSLT2_SUPPORTED ? xml : NO_XSLT2_HTML;
+    }
     try {
       Source source = toXMLSource(xml);
       StringWriter html = new StringWriter();
@@ -410,12 +435,46 @@ public final class XsltTransformer {
       return html.toString();
     } catch (TransformerException disaster) {
       LOGGER.error("Fail-safe stylesheet failed — returning error details as XML: {}", disaster.getMessageAndLocation());
-      // Fail-safe failed!
       return xml;
     } catch (Exception catastrophe) {
       LOGGER.error("Fail-safe stylesheet failed — returning error details as XML", catastrophe);
-      // Fail-safe failed!
       return xml;
+    }
+  }
+
+  /**
+   * Returns {@code true} if an XSLT 2.0 processor is available.
+   *
+   * <p>Uses {@code xsl:function}, a top-level XSLT-namespace element unknown to XSLT 1.0
+   * processors; even in forward-compatibility mode they must reject it at compile time.
+   */
+  private static boolean detectXslt2() {
+    String probe = "<xsl:stylesheet version='2.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
+        + "<xsl:function name='f:f' xmlns:f='urn:probe'><xsl:sequence select='()'/></xsl:function>"
+        + "<xsl:template match='/'/>"
+        + "</xsl:stylesheet>";
+    try {
+      TransformerFactory.newInstance().newTemplates(new StreamSource(new StringReader(probe)));
+      return true;
+    } catch (TransformerConfigurationException ex) {
+      return false;
+    }
+  }
+
+  /**
+   * Reads a classpath resource as a UTF-8 string.
+   * Returns an empty string and logs a warning if the resource cannot be found or read.
+   */
+  private static String loadResource(ClassLoader loader, String path) {
+    try (InputStream in = loader.getResourceAsStream(path)) {
+      if (in == null) {
+        LOGGER.warn("Classpath resource not found: {}", path);
+        return "";
+      }
+      return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+    } catch (IOException ex) {
+      LOGGER.warn("Unable to load classpath resource: {}", path, ex);
+      return "";
     }
   }
 

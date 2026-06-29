@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>XSLT 2.0 processor required — Berlioz</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      border-top: 6px solid #c01030;
+      padding: 2rem 1rem;
+      margin: 0;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 1.5rem 2rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    h1  { margin: 0 0 1rem; font-weight: 300; font-size: 2rem; }
+    p   { line-height: 1.6; }
+    code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .88em; }
+    pre { background: #f1f5f9; padding: .75rem 1rem; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>XSLT&#160;2.0 processor required</h1>
+    <p>Berlioz requires an XSLT&#160;2.0 processor on the runtime classpath.
+       The JDK's built-in Xalan only supports XSLT&#160;1.0 and cannot run Berlioz stylesheets.</p>
+    <p>XSLT&#160;3.0 is recommended if you use JSON output, as it enables the native JSON serialisation features.</p>
+    <p>Add <strong>Saxon-HE</strong> to your web application's runtime classpath
+       (Saxon&#160;PE and Saxon&#160;EE are also supported and provide additional features):</p>
+    <p><strong>Gradle:</strong></p>
+    <pre>runtimeOnly("net.sf.saxon:Saxon-HE:13.0")</pre>
+    <p><strong>Maven:</strong></p>
+    <pre>&lt;dependency&gt;
+  &lt;groupId&gt;net.sf.saxon&lt;/groupId&gt;
+  &lt;artifactId&gt;Saxon-HE&lt;/artifactId&gt;
+  &lt;version&gt;13.0&lt;/version&gt;
+  &lt;scope&gt;runtime&lt;/scope&gt;
+&lt;/dependency&gt;</pre>
+  </div>
+</body>
+</html>
