@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.servlet;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -31,8 +30,8 @@ import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.security.NonceFactory;
-import org.pageseeder.xmlwriter.XMLWritable;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWritable;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * The XML header common to all Berlioz responses.
@@ -44,6 +43,10 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * <p>The HTTP parameters are the parameters attached with the HTTP request. They are returned
  * in the order in which they are given by the HTTP request. Values for parameters with multiple
  * values are returned in order as separate parameters with the same name.
+ *
+ * <p>Parameter names longer than {@value #MAX_PARAM_NAME_LENGTH} characters are skipped;
+ * parameter values longer than {@value #MAX_PARAM_VALUE_LENGTH} characters are truncated
+ * and the element carries a {@code truncated="true"} attribute.
  *
  * <p>The <var>servlet path info</var> is the result of
  * {@link javax.servlet.http.HttpServletRequest#getPathInfo()}.
@@ -62,7 +65,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * @version 0.13.5
  * @since 0.6.0
  */
-public final class XmlResponseHeader implements XMLWritable {
+public final class XmlResponseHeader implements XmlWritable {
 
   /**
    * Check that it is a valid attribute name in XML.
@@ -72,6 +75,12 @@ public final class XmlResponseHeader implements XMLWritable {
   private static final Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][-a-zA-Z0-9_.]*");
 
   private static final NonceFactory NONCE_FACTORY = new NonceFactory();
+
+  /** HTTP parameter names longer than this are skipped when writing the header XML. */
+  private static final int MAX_PARAM_NAME_LENGTH = 100;
+
+  /** HTTP parameter values longer than this are truncated when writing the header XML. */
+  private static final int MAX_PARAM_VALUE_LENGTH = 2_000;
 
   /**
    * The core HTTP details.
@@ -150,75 +159,79 @@ public final class XmlResponseHeader implements XMLWritable {
    *   </header>
    * }</pre>
    *
-   * @see XMLWritable#toXML(org.pageseeder.xmlwriter.XMLWriter)
-   *
-   * @param xml The XML Writer to use.
-   *
-   * @throws IOException If thrown by the underlying XML Writer.
+   * @param xml The XML writer to use.
+   * @return The XML writer.
    */
   @Override
-  public void toXML(XMLWriter xml) throws IOException {
+  public XmlWriter toXml(XmlWriter xml) {
     HttpServletRequest req = this.core.request();
     xml.openElement("header", true);
     if (!"1.0".equals(GlobalSettings.get(BerliozOption.XML_HEADER_VERSION))) {
       writeCompatibilityElements(xml, req);
     }
     Location location = this.core.location();
-    location.toXML(xml);
-    location.info().toXML(xml);
+    xml.asXml(location);
+    xml.asXml(location.info());
 
     writeHttpParameters(xml, req);
     writeUriParameters(xml);
     writeBerliozInfo(xml);
     writeSecurityNonce(xml, req);
     xml.closeElement(); // close header
+    return xml;
   }
 
-  private void writeCompatibilityElements(XMLWriter xml, HttpServletRequest req) throws IOException {
-    xml.writeComment("Elements below will be deprecated in Berlioz 1.0");
+  private void writeCompatibilityElements(XmlWriter xml, HttpServletRequest req) {
+    xml.comment("Elements below will be deprecated in Berlioz 1.0");
     xml.element("group", this.group);
     xml.element("service", this.service);
-    xml.writeComment("Use 'path' instead");
+    xml.comment("Use 'path' instead");
     xml.element("path-info", HttpRequestWrapper.getBerliozPath(req));
     xml.element("context-path", req.getContextPath());
-    xml.writeComment("Use 'location' instead");
+    xml.comment("Use 'location' instead");
     xml.element("scheme", req.getScheme());
     xml.element("host", req.getServerName());
-    xml.element("port", Integer.toString(req.getServerPort()));
+    xml.element("port", req.getServerPort());
     xml.element("url", req.getRequestURL().toString());
     String queryString = req.getQueryString();
     xml.element("query-string", queryString != null ? queryString : "");
-    xml.writeComment("End deprecated elements");
+    xml.comment("End deprecated elements");
   }
 
-  private static void writeHttpParameters(XMLWriter xml, HttpServletRequest req) throws IOException {
+  private static void writeHttpParameters(XmlWriter xml, HttpServletRequest req) {
     xml.openElement("http-parameters", true);
     for (Map.Entry<String, String[]> entry : req.getParameterMap().entrySet()) {
       String name = entry.getKey();
+      if (name.length() > MAX_PARAM_NAME_LENGTH) continue;
       for (String value : entry.getValue()) {
         xml.openElement("parameter", false);
         xml.attribute("name", name);
-        xml.writeText(value);
+        if (value.length() > MAX_PARAM_VALUE_LENGTH) {
+          xml.attribute("truncated", "true");
+          xml.text(value.substring(0, MAX_PARAM_VALUE_LENGTH));
+        } else {
+          xml.text(value);
+        }
         xml.closeElement();
       }
     }
     xml.closeElement();
   }
 
-  private void writeUriParameters(XMLWriter xml) throws IOException {
+  private void writeUriParameters(XmlWriter xml) {
     Set<String> names = this.results.names();
     xml.openElement("uri-parameters", !names.isEmpty());
     for (String name : names) {
       Object value = this.results.get(name);
       xml.openElement("parameter", false);
       xml.attribute("name", name);
-      xml.writeText(value != null ? value.toString() : "");
+      xml.text(value != null ? value.toString() : "");
       xml.closeElement();
     }
     xml.closeElement();
   }
 
-  private static void writeBerliozInfo(XMLWriter xml) throws IOException {
+  private static void writeBerliozInfo(XmlWriter xml) {
     xml.openElement("berlioz");
     xml.attribute("version", GlobalSettings.getVersion());
     xml.attribute("mode", GlobalSettings.getMode());
@@ -237,7 +250,7 @@ public final class XmlResponseHeader implements XMLWritable {
     }
   }
 
-  private static void writeSecurityNonce(XMLWriter xml, HttpServletRequest req) throws IOException {
+  private static void writeSecurityNonce(XmlWriter xml, HttpServletRequest req) {
     if (!GlobalSettings.has(BerliozOption.NONCE_ENABLE)) return;
     String attribute = GlobalSettings.get(BerliozOption.NONCE_ATTRIBUTE);
     boolean useAttribute = !attribute.isEmpty();
@@ -252,7 +265,7 @@ public final class XmlResponseHeader implements XMLWritable {
       if (useAttribute) req.setAttribute(attribute, nonce);
     } else if (!nonce.matches("^[A-Za-z0-9+/=]*$")) {
       nonce = "";
-      xml.writeComment("invalid nonce");
+      xml.comment("invalid nonce");
     }
     if (!nonce.isEmpty()) {
       xml.openElement("security");
