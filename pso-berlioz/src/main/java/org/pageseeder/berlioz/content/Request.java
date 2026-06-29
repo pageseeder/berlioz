@@ -103,7 +103,7 @@ public interface Request {
    * @param <T>  the resolved type
    * @param spec the parameter spec
    * @return the resolved value
-   * @throws InvalidParameterException if the spec's resolver throws (e.g., a required parameter is absent)
+   * @throws org.pageseeder.berlioz.error.InvalidParameterException if the spec's resolver throws (e.g., a required parameter is absent)
    */
   default <T> T parameter(ParameterSpec<T> spec) {
     return spec.resolve(parameter(spec.name()));
