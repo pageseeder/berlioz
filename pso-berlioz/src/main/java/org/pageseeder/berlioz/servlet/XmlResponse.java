@@ -50,6 +50,7 @@ import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.util.ProfileFormat;
 import org.pageseeder.berlioz.xml.XmlAppendable;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
@@ -300,12 +301,10 @@ public final class XmlResponse {
     if (response.isProblem()) {
       ProblemDetails problem = response.problem();
       this.topLevelProblem = problem;
-      StringWriter sw2 = new StringWriter();
-      XmlAppendable<StringWriter> problemXml = new XmlAppendable<>(sw2);
+      XmlStringBuilder problemXml = new XmlStringBuilder();
       problemXml.declaration();
       problem.toXml(problemXml);
-      problemXml.flush();
-      return sw2.toString();
+      return problemXml.toString();
     }
     return sw.toString();
   }
