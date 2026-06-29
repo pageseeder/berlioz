@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,7 +44,6 @@ import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.error.ProblemDetails;
-import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.XmlGenerator;
@@ -72,11 +70,6 @@ import org.slf4j.LoggerFactory;
 public final class XmlResponse {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(XmlResponse.class);
-
-  /**
-   * May be used to collect information about how generators perform.
-   */
-  private static final AtomicReference<@Nullable GeneratorListener> listener = new AtomicReference<>(null);
 
   /**
    * The core HTTP details.
@@ -168,7 +161,7 @@ public final class XmlResponse {
         BerliozGenerator generator = request.generator();
         // Check if cacheable
         if (generator instanceof Cacheable) {
-          String localTag = retrieveETag(request);
+          String localTag = GeneratorDispatch.retrieveETag(request, this.etags);
           if (localTag.isEmpty()) return null;
           etag.append(localTag).append('/');
         } else {
@@ -299,7 +292,7 @@ public final class XmlResponse {
     long end = System.nanoTime();
     outcome.handleStatus(response, generator, service);
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
-    GeneratorListener l = listener.get();
+    GeneratorListener l = GeneratorDispatch.getListener();
     if (l != null) l.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
 
     if (response.isProblem()) {
@@ -345,20 +338,14 @@ public final class XmlResponse {
   // Static configuration
   // ---------------------------------------------------------------------------------------------
 
-  /**
-   * @param listener the listener to set
-   */
   @Beta
   static void setListener(@Nullable GeneratorListener listener) {
-    XmlResponse.listener.set(listener);
+    GeneratorDispatch.setListener(listener);
   }
 
-  /**
-   * @return the listener currently in use.
-   */
   @Beta
   static @Nullable GeneratorListener getListener() {
-    return listener.get();
+    return GeneratorDispatch.getListener();
   }
 
   // Private helpers
@@ -388,7 +375,7 @@ public final class XmlResponse {
 
     // If cacheable, include etag
     if (generator instanceof Cacheable) {
-      String etag = retrieveETag(request);
+      String etag = GeneratorDispatch.retrieveETag(request, this.etags);
       if (!etag.isEmpty()) {
         xml.attribute("etag", etag);
       }
@@ -441,7 +428,7 @@ public final class XmlResponse {
     }
 
     // Report if requested
-    GeneratorListener l = listener.get();
+    GeneratorListener l = GeneratorDispatch.getListener();
     if (l != null) {
       l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
     }
@@ -485,28 +472,4 @@ public final class XmlResponse {
     return Response.status(status);
   }
 
-  /**
-   * Returns the etag for the specified request.
-   *
-   * @param request The HTTP content request.
-   * @return the corresponding etag if there is one or <code>null</code>.
-   */
-  private String retrieveETag(HttpContentRequest request) {
-    String etag = null;
-    Integer key = request.order();
-    if (this.etags.containsKey(key)) {
-      etag = this.etags.get(key);
-    } else {
-      BerliozGenerator generator = request.generator();
-      if (generator instanceof Cacheable) {
-        long start = System.nanoTime();
-        etag = ((Cacheable)generator).getETag((Request)request);
-        long end = System.nanoTime();
-        request.setProfileEtag(end-start);
-      }
-      // Store for reuse (even if null)
-      this.etags.put(key, etag != null? etag : "");
-    }
-    return etag != null? etag : "";
-  }
 }

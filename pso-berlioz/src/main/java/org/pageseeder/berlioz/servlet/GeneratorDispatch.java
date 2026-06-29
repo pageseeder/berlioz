@@ -15,9 +15,14 @@
  */
 package org.pageseeder.berlioz.servlet;
 
+import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.BerliozGenerator;
+import org.pageseeder.berlioz.content.Cacheable;
+import org.pageseeder.berlioz.content.GeneratorListener;
+import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.UpstreamException;
@@ -35,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Package-private utilities shared between {@link XmlResponse} and {@link JsonResponse}.
@@ -48,6 +54,8 @@ import java.util.TreeSet;
 final class GeneratorDispatch {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GeneratorDispatch.class);
+
+  private static final AtomicReference<@Nullable GeneratorListener> listener = new AtomicReference<>(null);
 
   private GeneratorDispatch() {}
 
@@ -143,6 +151,38 @@ final class GeneratorDispatch {
         target.put(name, value);
       }
     });
+  }
+
+  @Beta
+  static void setListener(@Nullable GeneratorListener l) {
+    listener.set(l);
+  }
+
+  @Beta
+  static @Nullable GeneratorListener getListener() {
+    return listener.get();
+  }
+
+  /**
+   * Returns the cached ETag for the given request, computing and caching it on first call.
+   *
+   * <p>Returns an empty string when the generator is not {@link Cacheable} or returns {@code null}.
+   */
+  static String retrieveETag(HttpContentRequest request, Map<Integer, String> etags) {
+    Integer key = request.order();
+    String cached = etags.get(key);
+    if (cached != null) return cached;
+    BerliozGenerator generator = request.generator();
+    String etag = null;
+    if (generator instanceof Cacheable) {
+      long start = System.nanoTime();
+      etag = ((Cacheable) generator).getETag((Request) request);
+      long end = System.nanoTime();
+      request.setProfileEtag(end - start);
+    }
+    String result = etag != null ? etag : "";
+    etags.put(key, result);
+    return result;
   }
 
 }

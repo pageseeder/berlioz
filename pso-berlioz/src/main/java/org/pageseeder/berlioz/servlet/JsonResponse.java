@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,7 +40,6 @@ import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.error.ProblemDetails;
-import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
@@ -70,8 +68,6 @@ import org.slf4j.LoggerFactory;
 public final class JsonResponse {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JsonResponse.class);
-
-  private static final AtomicReference<@Nullable GeneratorListener> listener = new AtomicReference<>(null);
 
   private final MatchingService match;
   private final List<HttpContentRequest> requests;
@@ -155,7 +151,7 @@ public final class JsonResponse {
       for (HttpContentRequest request : this.requests) {
         BerliozGenerator generator = request.generator();
         if (generator instanceof Cacheable) {
-          String localTag = retrieveETag(request);
+          String localTag = GeneratorDispatch.retrieveETag(request, this.etags);
           if (localTag.isEmpty()) return null;
           etag.append(localTag).append('/');
         } else {
@@ -186,17 +182,17 @@ public final class JsonResponse {
     return assemble(results, service);
   }
 
-  // Static listener management (mirrors XmlResponse)
+  // Static listener management
   // ----------------------------------------------------------------------------------------------
 
   @Beta
   static void setListener(@Nullable GeneratorListener listener) {
-    JsonResponse.listener.set(listener);
+    GeneratorDispatch.setListener(listener);
   }
 
   @Beta
   static @Nullable GeneratorListener getListener() {
-    return listener.get();
+    return GeneratorDispatch.getListener();
   }
 
   // Private helpers
@@ -241,7 +237,7 @@ public final class JsonResponse {
     outcome.handleStatus(response, generator, service);
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
 
-    GeneratorListener l = listener.get();
+    GeneratorListener l = GeneratorDispatch.getListener();
     if (l != null) l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
 
     ProblemDetails problem = response.isProblem() ? response.problem() : null;
@@ -288,23 +284,6 @@ public final class JsonResponse {
       jb.endObject();
     }
     jb.endObject();
-  }
-
-  private String retrieveETag(HttpContentRequest request) {
-    Integer key = request.order();
-    String cached = this.etags.get(key);
-    if (cached != null) return cached;
-    BerliozGenerator generator = request.generator();
-    String etag = null;
-    if (generator instanceof Cacheable) {
-      long start = System.nanoTime();
-      etag = ((Cacheable) generator).getETag((Request) request);
-      long end = System.nanoTime();
-      request.setProfileEtag(end - start);
-    }
-    String result = etag != null ? etag : "";
-    this.etags.put(key, result);
-    return result;
   }
 
   private static final class GeneratorResult {
