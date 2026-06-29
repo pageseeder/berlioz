@@ -70,30 +70,36 @@ The 0.13.3–0.13.5 cycle completed RFC 9457 Problem Details integration across 
 - For direct services, problem responses are promoted to top-level with `application/problem+json` or `application/problem+xml` content type.
 - For envelope services, generator problems are embedded inline; the final HTTP status is governed by the service's response-code rule, supporting partial-failure semantics.
 - Added `ERROR_PROBLEM_FORMAT` option to opt in to RFC 9457 `<problem>` XML in `ErrorHandlerServlet` (default: legacy format).
-- Added `ERROR_DETAIL` option (`minimal` / `standard` / `full`) controlling diagnostic verbosity in error responses.
+- Added `ERROR_DETAIL` option (`minimal` / `standard` / `full`) controlling diagnostic verbosity in error responses; at `standard` or `full`, exception details are added to RFC 9457 problem responses as an `exception` extension member.
 - Updated failsafe XSLT with a `<problem>` template for consistent HTML rendering of problem responses.
 - Problem type URIs: `urn:berlioz:problem:*` reserved for Berlioz-internal types; application developers own their own scheme.
 
+### 0.13.5 Error Handling Pipeline
+
+The 0.13.5 cycle completed the remaining configurable error handling options:
+
+- Added `ERROR_STYLESHEET` option (`berlioz.errors.stylesheet`) — a path relative to `WEB-INF/` for a custom error XSLT; `ErrorHandlerServlet` tries the custom file first, falls back to the built-in failsafe, then falls back to raw XML with an appropriate content type.
+- Decided: the custom error stylesheet is a single global template (not per-group), consistent with how error handling bypasses the normal XSLT resolution path.
+- Added test coverage for stylesheet resolution: default failsafe, non-existent path fallback, custom file, and end-to-end `handle()` with custom output.
+
 ## Current Development Themes
 
-### 2. Error Handling Pipeline
+### 2. Error Handling Pipeline ✓ (one item remaining)
 
-Berlioz's error handling currently works but lacks user control over error presentation, leaks internal details by default, and handles static and dynamic XSLT errors with less distinction than it could.
+The error handling pipeline is now largely complete. Applications can control diagnostic verbosity, opt in to RFC 9457 problem format, and supply a custom error stylesheet.
 
-Already done:
+Done:
 
 - `BerliozErrorID` classifies errors semantically (transform not found, invalid, dynamic error, malformed source XML, etc.).
 - `XsltErrorCollector` collects warnings, errors, and fatals during XSLT processing.
-- `ErrorHandlerServlet` generates error XML and applies the failsafe template.
-- `XsltTransformer` catches both `TransformerConfigurationException` (static) and `TransformerException` (dynamic) and falls back to the failsafe template.
-- The built-in failsafe XSLT renders error details with contextual help for known error IDs.
+- `XsltTransformer` catches both `TransformerConfigurationException` (static) and `TransformerException` (dynamic) and falls back to the failsafe template, with distinct `BerliozErrorID` values for each.
+- `ERROR_DETAIL` option controls diagnostic verbosity in both legacy XML and RFC 9457 problem responses.
+- `ERROR_PROBLEM_FORMAT` option switches `ErrorHandlerServlet` to emit RFC 9457 `<problem>` XML.
+- `ERROR_STYLESHEET` option lets applications supply a custom error XSLT, with automatic fallback to the built-in failsafe.
 
-Next work:
+Remaining:
 
-- Allow applications to provide a custom error XSLT via a configuration option, with automatic fallback to the built-in failsafe when the custom template itself fails.
-- Introduce an error detail level option to control how much information is included in error responses (stack traces, exception messages, source locations, HTTP headers and parameters).
-- Improve the distinction between static XSLT errors (compilation failures) and dynamic XSLT errors (runtime failures), particularly around recoverability and the context included in the error output.
-- Modernize the built-in failsafe template with current CSS practices, responsive layout, collapsible stack traces, and a structure aligned with Problem Details.
+- Modernize the built-in failsafe template with current CSS practices, responsive layout, collapsible stack traces using `<details>`/`<summary>`, and a structure aligned with Problem Details.
 
 The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage.
 
@@ -295,14 +301,13 @@ Likely outcome:
 
 Completed in 0.13.3–0.13.5. See Recent Progress above.
 
-### Milestone 3: Error Handling Pipeline
+### Milestone 3: Error Handling Pipeline ✓ (one item remaining)
 
-- Add `berlioz.errors.stylesheet` option for custom error XSLT with fallback chain (custom → failsafe → raw XML).
-- Add `berlioz.errors.detail` option with `full`, `standard`, and `minimal` levels controlling what is serialized into error responses.
-- Refine static vs. dynamic XSLT error handling: surface non-fatal warnings without breaking the page, include source context for dynamic errors in development mode.
+- ✓ Added `berlioz.errors.stylesheet` option for custom error XSLT with fallback chain (custom → failsafe → raw XML).
+- ✓ Added `berlioz.errors.detail` option with `full`, `standard`, and `minimal` levels controlling what is serialized into error responses.
+- ✓ Error detail levels apply consistently across `XsltTransformer`, `ErrorHandlerServlet`, and `ProblemDetails` rendering.
+- ✓ Added test coverage for error detail filtering, custom error template resolution, and failsafe fallback behavior.
 - Modernize the failsafe XSLT template with responsive layout, `<details>`/`<summary>` for stack traces, CSS variables, and Problem Details-aligned structure.
-- Ensure error detail levels apply consistently across `XsltTransformer`, `ErrorHandlerServlet`, and `ProblemDetails` rendering.
-- Add test coverage for error detail filtering, custom error template resolution, and failsafe fallback behavior.
 
 ### Milestone 4: Content Negotiation
 
@@ -367,10 +372,10 @@ Completed in 0.13.3–0.13.5. See Recent Progress above.
 - Should authorization checks run at service level, generator level, or both?
 - Should interceptor hooks be added to core, or should they wait for optional observability modules?
 - Which integrations are valuable enough to maintain as official modules?
-- Should the custom error XSLT be a single global stylesheet, or should it support per-group error templates (like the normal XSLT resolution)?
+- ~~Should the custom error XSLT be a single global stylesheet, or should it support per-group error templates?~~ Decided: single global stylesheet. Error dispatch bypasses the normal XSLT resolution path so per-group templates would add complexity without clear benefit.
 - Should classpath service discovery be enabled by default or require an explicit opt-in configuration flag?
 - Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?
 - Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?
 - Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?
 - Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
-- Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses, or only suppress framework-internal information like stack traces?
+- ~~Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses?~~ Decided: `minimal` suppresses only framework-internal diagnostics (stack traces, exception class, HTTP headers and parameters). The `detail` member in RFC 9457 responses always reflects the error message passed to `Problems.forHttpError()`, which is the HTTP status phrase — safe for production.
