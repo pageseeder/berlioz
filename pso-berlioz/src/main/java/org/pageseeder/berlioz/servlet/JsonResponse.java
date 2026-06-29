@@ -27,7 +27,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentStatus;
@@ -204,6 +207,7 @@ public final class JsonResponse {
 
     Response response = Response.ok();
     String json = null;
+    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     long start = System.nanoTime();
 
     try (JsonStringBuilder jb = JsonStringBuilder.create()) {
@@ -220,16 +224,16 @@ public final class JsonResponse {
       json = jb.toString();
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forInvalidParameter(ex));
+      response = Response.problem(Problems.forInvalidParameter(ex, level));
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forUpstreamException(ex));
+      response = Response.problem(Problems.forUpstreamException(ex, level));
     } catch (HttpException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forHttpException(ex));
+      response = Response.problem(Problems.forHttpException(ex, level));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forGeneratorError());
+      response = Response.problem(Problems.forGeneratorError(ex, level));
     }
 
     long end = System.nanoTime();
