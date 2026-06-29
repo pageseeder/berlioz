@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:error</type>
+  <status>500</status>
+  <title>Internal Server Error</title>
+  <detail>An unexpected error occurred</detail>
+  <exception class="java.lang.NullPointerException">
+    <message>Cannot read field "content" because "article" is null</message>
+  </exception>
+</problem>

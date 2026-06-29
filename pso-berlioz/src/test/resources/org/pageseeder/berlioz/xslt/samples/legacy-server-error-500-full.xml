@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server-error http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-generator-error-unchecked">
+  <berlioz version="0.13.5"/>
+  <title>Internal Server Error</title>
+  <message>An unexpected error occurred</message>
+  <request-uri>/articles/broken-page.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+  <exception class="java.lang.RuntimeException">
+    <message>Failed to process article</message>
+    <stack-trace>java.lang.RuntimeException: Failed to process article
+  at com.example.generator.GetArticle.process(GetArticle.java:42)
+  at org.pageseeder.berlioz.servlet.XmlResponse.toXML(XmlResponse.java:400)
+  at org.pageseeder.berlioz.servlet.BerliozServlet.service(BerliozServlet.java:320)
+  at javax.servlet.http.HttpServlet.service(HttpServlet.java:741)
+Caused by: java.io.IOException: File not found: /data/articles/breaking-news.xml
+  at com.example.repository.ArticleRepository.load(ArticleRepository.java:87)
+  at com.example.generator.GetArticle.process(GetArticle.java:38)
+  ... 3 more</stack-trace>
+    <cause class="java.io.IOException">
+      <message>File not found: /data/articles/breaking-news.xml</message>
+      <stack-trace>java.io.IOException: File not found: /data/articles/breaking-news.xml
+  at com.example.repository.ArticleRepository.load(ArticleRepository.java:87)
+  at com.example.generator.GetArticle.process(GetArticle.java:38)
+  ... 3 more</stack-trace>
+    </cause>
+  </exception>
+  <http-headers>
+    <header name="Accept" value="text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"/>
+    <header name="Accept-Language" value="en-AU,en;q=0.5"/>
+    <header name="Accept-Encoding" value="gzip, deflate, br"/>
+    <header name="X-Forwarded-For" value="203.0.113.45"/>
+    <header name="User-Agent" value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/118.0"/>
+  </http-headers>
+  <http-parameters>
+    <parameters name="id" value="breaking-news"/>
+    <parameters name="format" value="html"/>
+  </http-parameters>
+</server-error>

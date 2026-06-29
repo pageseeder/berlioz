@@ -29,6 +29,17 @@ dependencies {
   testImplementation(libs.gson)
 
   testRuntimeOnly(libs.junit.platform.launcher)
+  testRuntimeOnly(libs.saxon.he)
+}
+
+tasks.register<Test>("generateErrorSamples") {
+  description = "Generate HTML previews of all error fixtures using the failsafe XSLT. Output: build/error-samples/"
+  group = "verification"
+  useJUnitPlatform {
+    includeTags("error-samples")
+  }
+  systemProperty("berlioz.generateSamples", "true")
+  outputs.dir(layout.buildDirectory.dir("error-samples"))
 }
 
 publishing {

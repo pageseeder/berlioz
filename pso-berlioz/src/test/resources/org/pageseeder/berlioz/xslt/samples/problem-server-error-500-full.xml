@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:error</type>
+  <status>500</status>
+  <title>Internal Server Error</title>
+  <detail>An unexpected error occurred</detail>
+  <exception class="java.lang.RuntimeException">
+    <message>Failed to process article</message>
+    <stack-trace>java.lang.RuntimeException: Failed to process article
+  at com.example.generator.GetArticle.process(GetArticle.java:42)
+  at org.pageseeder.berlioz.servlet.XmlResponse.toXML(XmlResponse.java:400)
+  at org.pageseeder.berlioz.servlet.BerliozServlet.service(BerliozServlet.java:320)</stack-trace>
+    <cause class="java.io.IOException">
+      <message>File not found: /data/articles/breaking-news.xml</message>
+      <stack-trace>java.io.IOException: File not found: /data/articles/breaking-news.xml
+  at com.example.repository.ArticleRepository.load(ArticleRepository.java:87)
+  ... 3 more</stack-trace>
+    </cause>
+  </exception>
+</problem>

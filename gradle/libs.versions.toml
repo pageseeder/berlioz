@@ -1,5 +1,6 @@
 [versions]
 cyclonedx = "3.2.4"
+saxon = "12.5"
 sonarqube = "7.3.0.8198"
 gson = "2.14.0"
 jackson = "2.22.0"
@@ -24,6 +25,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 parsson = { module = "org.eclipse.parsson:parsson", version.ref = "parsson" }
 glassfish-javax-json = { module = "org.glassfish:javax.json", version.ref = "javax-json" }
 glassfish-jakarta-json = { module = "org.glassfish:jakarta.json", version = "2.0.1" }
+saxon-he = { module = "net.sf.saxon:Saxon-HE", version.ref = "saxon" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version.ref = "servlet-api" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }

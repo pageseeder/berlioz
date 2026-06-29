@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server-error http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-services-malformed">
+  <berlioz version="0.13.5"/>
+  <title>Internal Server Error</title>
+  <message>Service configuration is malformed</message>
+  <request-uri>/any/page.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+  <exception class="org.xml.sax.SAXParseException" type="SAXParseException">
+    <message>The element type "group" must be terminated by the matching end-tag &lt;/group&gt;.</message>
+    <location system-id="/WEB-INF/config/services.xml" line="42" column="12"/>
+  </exception>
+  <collected-errors>
+    <collected level="error">
+      <location system-id="/WEB-INF/config/services.xml" line="42" column="12"/>
+      <message>The element type "group" must be terminated by the matching end-tag &lt;/group&gt;.</message>
+    </collected>
+    <collected level="error">
+      <location system-id="/WEB-INF/config/services.xml" line="45" column="0"/>
+      <message>Premature end of file.</message>
+    </collected>
+  </collected-errors>
+</server-error>

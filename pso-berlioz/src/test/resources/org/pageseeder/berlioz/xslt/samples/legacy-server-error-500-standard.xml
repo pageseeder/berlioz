@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server-error http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-generator-error-unchecked">
+  <berlioz version="0.13.5"/>
+  <title>Internal Server Error</title>
+  <message>An unexpected error occurred</message>
+  <request-uri>/articles/broken-page.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+  <exception class="java.lang.NullPointerException">
+    <message>Cannot read field "content" because "article" is null</message>
+  </exception>
+</server-error>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:method-not-allowed</type>
+  <status>405</status>
+  <title>Method Not Allowed</title>
+  <detail>Only GET and HEAD are allowed on this resource</detail>
+</problem>

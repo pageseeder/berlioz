@@ -1,8 +1,10 @@
 package org.pageseeder.berlioz.servlet;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.BerliozOption;
@@ -10,15 +12,29 @@ import org.pageseeder.berlioz.GlobalSettings;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ErrorHandlerServletTest {
+
+  // Initialise SETTINGS to an empty map before any test runs, so that GlobalSettings.has()
+  // inside ErrorHandlerServlet.toXML() does not trigger a spurious "Unable to load configuration"
+  // warning when ENV is also null (the no-environment test scenario).
+  // We bypass GlobalSettings.load() because load() always logs a warning when ENV is null.
+  @BeforeAll
+  static void initSettings() throws ReflectiveOperationException {
+    settingsRef().compareAndSet(null, new HashMap<>());
+  }
 
   // Public error attribute constants
 
@@ -61,11 +77,11 @@ class ErrorHandlerServletTest {
 
   // Legacy format (default: berlioz.errors.problem = false)
   //
-  // Note: the test JVM uses the built-in XSLT 1.0 processor (no Saxon). The failsafe XSLT
-  // relies on XSLT 2.0 features (format-dateTime), so transformFailSafe() falls back to
-  // returning the raw XML. Content type is therefore application/xml, not text/html.
-  // In a runtime environment that includes Saxon, the XSLT produces HTML instead.
+  // Saxon-HE is on the test runtime classpath so the XSLT 2.0 failsafe transform succeeds and
+  // produces HTML. The failsafe template embeds the original error XML in a hidden <div> via
+  // <xsl:copy-of>, so raw-XML element names such as <client-error> are still present in the body.
 
+  @Tag("error-samples")
   @Test
   void handle_legacyFormat_404_emitsClientErrorXml() throws Exception {
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
@@ -75,15 +91,17 @@ class ErrorHandlerServletTest {
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
     new ErrorHandlerServlet().handle(req, res.build());
     String body = res.content();
+    writePreview("integration-legacy-client-error-404", body);
     assertAll(
         () -> assertEquals(404, res.status),
-        () -> assertEquals("application/xml;charset=UTF-8", res.contentType),
-        () -> assertTrue(body.contains("<client-error"),   "root element should be client-error"),
+        () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+        () -> assertTrue(body.contains("<client-error"),   "original XML is embedded in the HTML"),
         () -> assertTrue(body.contains("Resource not found"), "message should be present"),
         () -> assertFalse(body.contains("<problem>"),      "legacy format must not emit <problem>")
     );
   }
 
+  @Tag("error-samples")
   @Test
   void handle_legacyFormat_500_emitsServerErrorXml() throws Exception {
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
@@ -93,10 +111,11 @@ class ErrorHandlerServletTest {
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
     new ErrorHandlerServlet().handle(req, res.build());
     String body = res.content();
+    writePreview("integration-legacy-server-error-500", body);
     assertAll(
         () -> assertEquals(500, res.status),
-        () -> assertEquals("application/xml;charset=UTF-8", res.contentType),
-        () -> assertTrue(body.contains("<server-error"),   "root element should be server-error"),
+        () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+        () -> assertTrue(body.contains("<server-error"),   "original XML is embedded in the HTML"),
         () -> assertTrue(body.contains("Unexpected error"), "message should be present"),
         () -> assertFalse(body.contains("<problem>"),      "legacy format must not emit <problem>")
     );
@@ -104,9 +123,10 @@ class ErrorHandlerServletTest {
 
   // Problem format (opt-in: berlioz.errors.problem = true)
   //
-  // Same XSLT caveat applies: in the test environment the XSLT falls back to raw XML,
-  // so we assert on the problem+xml content type and the RFC 9457 XML structure directly.
+  // The problem XSLT template renders to HTML without embedding the original XML, so assertions
+  // target the rendered HTML structure (heading, message paragraph, type URN in <code>).
 
+  @Tag("error-samples")
   @Nested
   class WithProblemFormat {
 
@@ -125,15 +145,14 @@ class ErrorHandlerServletTest {
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
       String body = res.content();
+      writePreview("integration-problem-not-found-404", body);
       assertAll(
           () -> assertEquals(404, res.status),
-          () -> assertEquals("application/problem+xml;charset=UTF-8", res.contentType),
-          () -> assertTrue(body.contains("<problem>"),              "root element should be <problem>"),
-          () -> assertTrue(body.contains("<status>404</status>"),   "status member should be 404"),
-          () -> assertTrue(body.contains("<title>Not Found</title>"), "title member should be present"),
-          () -> assertTrue(body.contains("<detail>Resource not found</detail>"), "detail should match message"),
+          () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.contains("404 - Not Found"),            "status and title should appear in heading"),
+          () -> assertTrue(body.contains("Resource not found"),          "detail should appear as message"),
           () -> assertTrue(body.contains("urn:berlioz:problem:not-found"), "type URN should be present"),
-          () -> assertFalse(body.contains("<client-error"),         "legacy root element must not appear")
+          () -> assertFalse(body.contains("<client-error"),              "legacy root element must not appear")
       );
     }
 
@@ -146,14 +165,14 @@ class ErrorHandlerServletTest {
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
       String body = res.content();
+      writePreview("integration-problem-server-error-500", body);
       assertAll(
           () -> assertEquals(500, res.status),
-          () -> assertEquals("application/problem+xml;charset=UTF-8", res.contentType),
-          () -> assertTrue(body.contains("<problem>"),                       "root element should be <problem>"),
-          () -> assertTrue(body.contains("<status>500</status>"),            "status member should be 500"),
-          () -> assertTrue(body.contains("<title>Internal Server Error</title>"), "title should be present"),
-          () -> assertTrue(body.contains("urn:berlioz:problem:"),            "type URN should be present"),
-          () -> assertFalse(body.contains("<server-error"),                  "legacy root element must not appear")
+          () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.contains("500 - Internal Server Error"),  "status and title should appear in heading"),
+          () -> assertTrue(body.contains("Unexpected error"),             "detail should appear as message"),
+          () -> assertTrue(body.contains("urn:berlioz:problem:"),         "type URN should be present"),
+          () -> assertFalse(body.contains("<server-error"),               "legacy root element must not appear")
       );
     }
 
@@ -166,9 +185,10 @@ class ErrorHandlerServletTest {
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
       String body = res.content();
+      writePreview("integration-problem-method-not-allowed-405", body);
       assertAll(
           () -> assertEquals(405, res.status),
-          () -> assertEquals("application/problem+xml;charset=UTF-8", res.contentType),
+          () -> assertEquals("text/html;charset=UTF-8", res.contentType),
           () -> assertTrue(body.contains("urn:berlioz:problem:method-not-allowed"), "type URN should name the problem")
       );
     }
@@ -185,6 +205,7 @@ class ErrorHandlerServletTest {
     @AfterEach
     void restore() throws Exception { setOption(BerliozOption.ERROR_DETAIL, "full"); }
 
+    @Tag("error-samples")
     @Test
     void handle_standardDetail_withThrowable_includesExceptionSummaryOnly() throws Exception {
       RuntimeException cause = new RuntimeException("something went wrong");
@@ -198,6 +219,7 @@ class ErrorHandlerServletTest {
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
       String body = res.content();
+      writePreview("integration-legacy-server-error-500-standard", body);
       assertAll(
           () -> assertEquals(500, res.status),
           () -> assertTrue(body.contains("<server-error"),         "root element should be server-error"),
@@ -242,6 +264,7 @@ class ErrorHandlerServletTest {
     @AfterEach
     void restore() throws Exception { setOption(BerliozOption.ERROR_DETAIL, "full"); }
 
+    @Tag("error-samples")
     @Test
     void handle_minimalDetail_suppressesAllDiagnostics() throws Exception {
       RuntimeException cause = new RuntimeException("something went wrong");
@@ -255,6 +278,7 @@ class ErrorHandlerServletTest {
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
       String body = res.content();
+      writePreview("integration-legacy-server-error-500-minimal", body);
       assertAll(
           () -> assertEquals(500, res.status),
           () -> assertTrue(body.contains("<server-error"),      "root element should be server-error"),
@@ -361,29 +385,32 @@ class ErrorHandlerServletTest {
 
   // Helpers
 
-  @SuppressWarnings("unchecked")
+  private static void writePreview(String name, String html) throws IOException {
+    if (!Boolean.getBoolean("berlioz.generateSamples")) return;
+    Path outDir = Paths.get("build/error-samples");
+    Files.createDirectories(outDir);
+    Files.writeString(outDir.resolve(name + ".html"), html, StandardCharsets.UTF_8);
+  }
+
   private static void setOption(BerliozOption option, boolean value) throws ReflectiveOperationException {
-    // GlobalSettings.load() catches IllegalStateException when no environment is configured
-    // and sets SETTINGS to an empty mutable HashMap — safe to call unconditionally.
-    try { GlobalSettings.load(); } catch (IllegalStateException ignored) {}
-    Field f = GlobalSettings.class.getDeclaredField("SETTINGS");
-    f.setAccessible(true);
-    Map<String, String> settings = ((AtomicReference<Map<String, String>>) f.get(null)).get();
-    if (settings != null) {
-      if (value) settings.put(option.property(), "true");
-      else settings.remove(option.property());
-    }
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    Map<String, String> settings = ref.get();
+    if (value) settings.put(option.property(), "true");
+    else settings.remove(option.property());
+  }
+
+  private static void setOption(BerliozOption option, String value) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    ref.get().put(option.property(), value);
   }
 
   @SuppressWarnings("unchecked")
-  private static void setOption(BerliozOption option, String value) throws ReflectiveOperationException {
-    try { GlobalSettings.load(); } catch (IllegalStateException ignored) {}
+  private static AtomicReference<Map<String, String>> settingsRef() throws ReflectiveOperationException {
     Field f = GlobalSettings.class.getDeclaredField("SETTINGS");
     f.setAccessible(true);
-    Map<String, String> settings = ((AtomicReference<Map<String, String>>) f.get(null)).get();
-    if (settings != null) {
-      settings.put(option.property(), value);
-    }
+    return (AtomicReference<Map<String, String>>) f.get(null);
   }
 
   private static void setWebInf(File dir) throws ReflectiveOperationException {

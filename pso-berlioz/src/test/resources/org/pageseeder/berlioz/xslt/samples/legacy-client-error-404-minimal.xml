@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<client-error http-code="404" datetime="2026-06-29T10:00:00+10:00" id="berlioz-unexpected">
+  <berlioz version="0.13.5"/>
+  <title>Not Found</title>
+  <message>Resource not found</message>
+  <request-uri>/articles/missing-page.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+</client-error>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server-error http-code="502" datetime="2026-06-29T10:00:00+10:00" id="berlioz-upstream-error">
+  <berlioz version="0.13.5"/>
+  <title>Bad Gateway</title>
+  <message>Upstream service 'content-api' unavailable: Connection refused</message>
+  <request-uri>/articles/live-feed.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+  <exception class="org.pageseeder.berlioz.error.UpstreamException">
+    <message>Connection refused</message>
+    <stack-trace>org.pageseeder.berlioz.error.UpstreamException: Connection refused
+  at com.example.generator.GetLiveFeed.process(GetLiveFeed.java:55)
+  at org.pageseeder.berlioz.servlet.XmlResponse.toXML(XmlResponse.java:400)</stack-trace>
+    <cause class="java.net.ConnectException">
+      <message>Connection refused: connect</message>
+      <stack-trace>java.net.ConnectException: Connection refused: connect
+  at java.net.PlainSocketImpl.socketConnect(Native Method)
+  at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:412)
+  ... 8 more</stack-trace>
+    </cause>
+  </exception>
+  <http-headers>
+    <header name="Accept" value="text/html"/>
+  </http-headers>
+  <http-parameters/>
+</server-error>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:invalid-parameter</type>
+  <status>400</status>
+  <title>Invalid Request Parameter</title>
+  <detail>parameter must be a positive integer</detail>
+  <parameter>page</parameter>
+  <reason>invalid-value</reason>
+</problem>

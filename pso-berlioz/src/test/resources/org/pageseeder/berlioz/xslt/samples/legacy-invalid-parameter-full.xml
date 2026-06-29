@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<client-error http-code="400" datetime="2026-06-29T10:00:00+10:00" id="berlioz-invalid-parameter">
+  <berlioz version="0.13.5"/>
+  <title>Bad Request</title>
+  <message>Invalid parameter 'page': parameter must be a positive integer</message>
+  <request-uri>/articles/list.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+  <exception class="org.pageseeder.berlioz.error.InvalidParameterException">
+    <message>parameter must be a positive integer</message>
+    <stack-trace>org.pageseeder.berlioz.error.InvalidParameterException: parameter must be a positive integer
+  at com.example.generator.GetArticles.process(GetArticles.java:31)
+  at org.pageseeder.berlioz.servlet.XmlResponse.toXML(XmlResponse.java:400)</stack-trace>
+  </exception>
+  <http-headers>
+    <header name="Accept" value="text/html"/>
+    <header name="Referer" value="https://example.com/"/>
+  </http-headers>
+  <http-parameters>
+    <parameters name="page" value="abc"/>
+    <parameters name="size" value="10"/>
+  </http-parameters>
+</client-error>

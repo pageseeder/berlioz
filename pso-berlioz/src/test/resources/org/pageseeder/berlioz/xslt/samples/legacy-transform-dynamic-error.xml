@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server-error http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-transform-dynamic-error">
+  <berlioz version="0.13.5"/>
+  <title>Internal Server Error</title>
+  <message>A dynamic error occurred during XSLT transformation</message>
+  <request-uri>/articles/view.html</request-uri>
+  <servlet>BerliozServlet</servlet>
+  <exception class="net.sf.saxon.trans.XPathException" type="TransformerException">
+    <message>Cannot cast string "" to xs:integer</message>
+    <location system-id="/WEB-INF/xslt/html/article.xsl" line="87" column="32"/>
+  </exception>
+</server-error>
