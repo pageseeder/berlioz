@@ -3,15 +3,11 @@
   Fail-safe stylesheet to display transform errors
 
   @author Christophe Lauret
-  @version 1 July 2011
+  @version 0.13.5
 -->
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-<!--
-  General Output properties.
-  (Ensure that the doctype does not triggers Quirks Mode)
--->
-<xsl:output method="html" encoding="utf-8" indent="yes" undeclare-prefixes="no" media-type="text/html" />
+<xsl:output method="html" encoding="utf-8" indent="yes" media-type="text/html" />
 
 <!-- The ID of the error -->
 <xsl:variable name="id" select="/*/@id"/>
@@ -23,63 +19,155 @@
 ]]></xsl:text>
 <html>
 <head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title><xsl:value-of select="*/title"/></title>
-  <style type="text/css">
-body {font-family: Frutiger, "Frutiger Linotype", Univers, Calibri, "Gill Sans", "Gill Sans MT", "Myriad Pro", Myriad, "Liberation Sans",  Tahoma, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif; background: #f7f7f7; border-top: 80px solid #13476a; padding: 0; margin: 0}
+  <style>
+    /* ── Custom properties ───────────────────────────────────────── */
+    :root {
+      --accent:  #1a6fa8;
+      --c-5xx:   #c01030;
+      --c-4xx:   #c85000;
+      --c-3xx:   #1a5f8e;
+      --c-2xx:   #1a7a40;
+      --c-1xx:   #555555;
+      --bg:      #f8fafc;
+      --surface: #ffffff;
+      --text:    #1e293b;
+      --muted:   #64748b;
+      --border:  #e2e8f0;
+      --shadow:  rgba(0,0,0,.08);
+      --sans:    system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --mono:    ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+    }
 
-h1   {margin-top: 0; font-weight: 100; color: white}
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --accent:  #60a5d4;
+        --bg:      #0f172a;
+        --surface: #1e293b;
+        --text:    #e2e8f0;
+        --muted:   #94a3b8;
+        --border:  #334155;
+        --shadow:  rgba(0,0,0,.4);
+      }
+    }
 
-.informational {border-color: #666;}
-.server-error  {border-color: #c01;}
-.client-error  {border-color: #e60;}
-.redirection   {border-color: #146;}
-.successful    {border-color: #292;}
+    /* ── Base ────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
 
-h2   {border-bottom: 2px solid #09f; color: #09f; font-size: 3ex}
-h3   {border-bottom: 1px solid #06a; color: #06a; font-size: 2.5ex}
-h4   {font-size: 2ex}
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      border-top: 6px solid var(--accent);
+      padding: 2rem 1rem;
+      margin: 0;
+    }
 
-code {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; line-height: 150%}
-pre  {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 70%; line-height: 150%; color: #666; }
+    /* Status colour on the top bar, driven by the body class */
+    .server-error { border-top-color: var(--c-5xx); }
+    .client-error { border-top-color: var(--c-4xx); }
+    .redirection  { border-top-color: var(--c-3xx); }
+    .successful   { border-top-color: var(--c-2xx); }
+    .continue     { border-top-color: var(--c-1xx); }
 
-.container       {width: 980px; margin: -56px auto; background: rgba(255,255,255,0.3); padding: 5px 10px; box-shadow: 0 0 15px 3px rgba(0,0,0,.2); border: 5px solid rgba(0,0,0,.1);}
-.message         {font-weight: bold}
-.footer          {border-top: 2px solid #999; height: 20px; color: #666; font-size: 80%;}
-.location        {font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; line-height: 150%}
-#datetime        {float: left;}
-#berlioz-version {float: right;}
+    h1 { margin: 0 0 1rem; font-weight: 300; font-size: 2rem; }
+    h2 { border-bottom: 2px solid var(--accent); color: var(--accent); font-size: 1.25rem; margin: 1.5rem 0 .5rem; }
+    h3 { border-bottom: 1px solid var(--border); color: var(--accent); font-size: 1.1rem; margin: 1rem 0 .4rem; }
+    h4 { font-size: 1rem; margin: 1rem 0 .25rem; }
 
-li     {list-style-type: none; display: block; clear: both; font-size: 12px; font-family: Consolas, "Lucida Console", "Lucida Sans Typewriter", "Courier New", monospace; font-size: 80%; margin-bottom: 2px}
-.line  {float:left; margin-right: 4px; color: #999;width: 60px}
-.col   {float:left; margin-right: 4px; color: #999;width: 80px}
-.level {float:left; margin-right: 4px; color: #999;width: 70px; text-align: center; font-weight: bold; border-radius: 5px; padding: 2px}
-.warning > .level  {color: orange;}
-.error   > .level  {color: red;}
-.fatal   > .level  {color: white; background: #C01;}
+    code, pre { font-family: var(--mono); font-size: .82em; }
+    pre        { line-height: 1.5; color: var(--muted); overflow-x: auto; }
 
-.help {border: 1px solid #ffe; background: #ffe; border-radius: 3px; box-shadow: 0 0 4px #ec9; font-style: italic;}
-.help p {margin: 4px}
+    /* ── Container ───────────────────────────────────────────────── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--surface);
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
 
-.problem        {border-color: #666;}
-.problem.s5xx   {border-color: #c01;}
-.problem.s4xx   {border-color: #e60;}
-.problem.s3xx   {border-color: #146;}
-.problem.s2xx   {border-color: #292;}
+    .message { font-weight: 600; margin: .5rem 0; }
 
-.problem-type     {font-size: 80%; color: #666; margin: 0 0 8px}
-.problem-instance {font-size: 80%; color: #666; margin: 4px 0}
+    /* ── Footer ──────────────────────────────────────────────────── */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      margin-top: 1.5rem;
+      padding-top: .5rem;
+      font-size: .8rem;
+      color: var(--muted);
+    }
 
-details.extensions {margin-top: 16px; border: 1px solid #ddd; border-radius: 3px; padding: 4px 8px}
-details.extensions summary {cursor: pointer; color: #06a; font-size: 90%}
-details.extensions dl {margin: 8px 0 4px; font-size: 85%}
-details.extensions dt {float: left; clear: left; width: 160px; font-weight: bold; color: #444}
-details.extensions dd {margin-left: 168px; color: #222}
+    /* ── Location ────────────────────────────────────────────────── */
+    .location { font-family: var(--mono); font-size: .8em; color: var(--muted); }
+
+    /* ── Help block ──────────────────────────────────────────────── */
+    .help {
+      border: 1px solid #fef08a;
+      background: #fefce8;
+      border-radius: 4px;
+      padding: .5rem .75rem;
+      font-style: italic;
+      margin: .75rem 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      .help { border-color: #713f12; background: #1c1108; }
+    }
+    .help p { margin: .25rem 0; }
+
+    /* ── Collected-errors list ───────────────────────────────────── */
+    ul.collected { list-style: none; padding: 0; margin: .5rem 0; }
+
+    ul.collected li {
+      display: flex;
+      align-items: baseline;
+      gap: .5rem;
+      font-family: var(--mono);
+      font-size: .8rem;
+      margin-bottom: .25rem;
+    }
+
+    .line  { color: var(--muted); flex: 0 0 5rem; }
+    .col   { color: var(--muted); flex: 0 0 6rem; }
+    .level { color: var(--muted); flex: 0 0 5.5rem; text-align: center; font-weight: bold; border-radius: 4px; padding: 1px 4px; }
+
+    .warning > .level { color: #d97706; }
+    .error   > .level { color: #dc2626; }
+    .fatal   > .level { color: #fff; background: var(--c-5xx); }
+
+    /* ── Problem Details (RFC 9457) ──────────────────────────────── */
+    .problem-type     { font-size: .8rem; color: var(--muted); margin: 0 0 .5rem; }
+    .problem-instance { font-size: .8rem; color: var(--muted); margin: .25rem 0; }
+
+    details.extensions {
+      margin-top: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .25rem .5rem;
+    }
+    details.extensions summary { cursor: pointer; color: var(--accent); font-size: .9rem; }
+    details.extensions dl      { margin: .5rem 0 .25rem; font-size: .85rem; }
+    details.extensions dt      { font-weight: bold; color: var(--muted); margin-top: .4rem; }
+    details.extensions dd      { margin-left: 1rem; }
   </style>
 </head>
-<body class="{name(*)}">
+<body>
+  <xsl:attribute name="class">
+    <xsl:apply-templates select="*" mode="class" />
+  </xsl:attribute>
   <xsl:apply-templates select="*"/>
 </body>
 </html>
+</xsl:template>
+
+<xsl:template match="*" mode="class">
+  <xsl:value-of select="name(.)"/>
 </xsl:template>
 
 <!-- Default template for errors -->
@@ -93,10 +181,10 @@ details.extensions dd {margin-left: 168px; color: #222}
     <xsl:apply-templates select="exception|error"/>
     <xsl:apply-templates select="collected-errors"/>
     <div class="footer">
-      <div id="datetime"><xsl:value-of select="format-dateTime(@datetime, '[MNn] [D], [Y] at [H01]:[m01]:[s01] [z]')"/></div>
-      <div id="berlioz-version">Berlioz <xsl:value-of select="berlioz/@version"/></div>
+      <span id="datetime"><xsl:value-of select="format-dateTime(@datetime, '[MNn] [D], [Y] at [H01]:[m01]:[s01] [z]')"/></span>
+      <span id="berlioz-version">Berlioz <xsl:value-of select="berlioz/@version"/></span>
     </div>
-    <div hidden="hidden" style="display:none">
+    <div hidden="">
       <xsl:copy-of select="."/>
     </div>
   </div>
@@ -140,7 +228,7 @@ details.extensions dd {margin-left: 168px; color: #222}
 <!-- Cause of an exception -->
 <xsl:template match="cause">
   <div class="cause">
-    <h4><i>Caused by: </i> <xsl:value-of select="message"/></h4>
+    <h4><em>Caused by: </em> <xsl:value-of select="message"/></h4>
     <xsl:if test="not(parent::exception/following-sibling::collected-errors)">
       <xsl:apply-templates select="location"/>
     </xsl:if>
@@ -154,7 +242,6 @@ details.extensions dd {margin-left: 168px; color: #222}
   <!-- No need to display the stack trace if we know the error -->
   <xsl:if test="not($id = 'berlioz-unexpected' or starts-with($id, 'berlioz-generator'))">
     <xsl:attribute name="hidden">hidden</xsl:attribute>
-    <xsl:attribute name="style">display:none</xsl:attribute>
   </xsl:if>
   <xsl:value-of select="text()"/></pre>
 </xsl:template>
@@ -196,17 +283,19 @@ details.extensions dd {margin-left: 168px; color: #222}
 
 <!-- Problem Details (RFC 9457) =============================================================== -->
 
-<xsl:template match="problem">
+<xsl:template match="problem" mode="class">
   <xsl:variable name="s" select="number(status)"/>
-  <xsl:variable name="range">
-    <xsl:choose>
-      <xsl:when test="$s >= 500">s5xx</xsl:when>
-      <xsl:when test="$s >= 400">s4xx</xsl:when>
-      <xsl:when test="$s >= 300">s3xx</xsl:when>
-      <xsl:when test="$s >= 200">s2xx</xsl:when>
-    </xsl:choose>
-  </xsl:variable>
-  <div class="container problem {$range}">
+  <xsl:choose>
+    <xsl:when test="$s >= 500">server-error</xsl:when>
+    <xsl:when test="$s >= 400">client-error</xsl:when>
+    <xsl:when test="$s >= 300">redirection</xsl:when>
+    <xsl:when test="$s >= 200">successful</xsl:when>
+    <xsl:when test="$s >= 100">continue</xsl:when>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template match="problem">
+  <div class="container">
     <h1><xsl:value-of select="status"/> - <xsl:value-of select="if (title != '') then title else 'Error'"/></h1>
     <xsl:if test="detail != ''">
       <p class="message"><xsl:value-of select="detail"/></p>
@@ -232,6 +321,7 @@ details.extensions dd {margin-left: 168px; color: #222}
     <div class="footer"/>
   </div>
 </xsl:template>
+
 
 <!-- Help for Specified Error IDs ============================================================== -->
 
