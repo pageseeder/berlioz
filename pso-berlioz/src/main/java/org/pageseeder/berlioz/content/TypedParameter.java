@@ -19,6 +19,7 @@ import java.util.function.Predicate;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.error.InvalidParameterException;
 
 /**
  * A typed, optionally constrained, view of a single request parameter.

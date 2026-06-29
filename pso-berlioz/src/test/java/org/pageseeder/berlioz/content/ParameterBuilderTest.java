@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.error.InvalidParameterException;
 
 final class ParameterBuilderTest {
 

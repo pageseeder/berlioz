@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.content;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.error.InvalidParameterException;
 
 final class ParameterSpecTest {
 

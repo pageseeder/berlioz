@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.BerliozGenerator;
-import org.pageseeder.berlioz.content.InvalidParameterException;
-import org.pageseeder.berlioz.content.UpstreamException;
+import org.pageseeder.berlioz.error.InvalidParameterException;
+import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.generator.NoContent;
 

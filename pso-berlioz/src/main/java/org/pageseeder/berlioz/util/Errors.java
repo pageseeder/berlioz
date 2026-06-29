@@ -270,7 +270,7 @@ public final class Errors {
    * @param s the file path.
    * @return The path from the "WEB-INF" directory
    */
-  private static String toWebPath(String s) {
+  public static String toWebPath(String s) {
     String from = "WEB-INF";
     int x = s.indexOf(from);
     return x != -1? s.substring(x+from.length()).replace('\\', '/') : s.replace('\\', '/');

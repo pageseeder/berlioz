@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.error.InvalidParameterException;
 
 /**
  * Entry point for typed, validating access to a single request parameter.

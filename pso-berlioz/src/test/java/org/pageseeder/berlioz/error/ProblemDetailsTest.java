@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pageseeder.berlioz.content;
+package org.pageseeder.berlioz.error;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;

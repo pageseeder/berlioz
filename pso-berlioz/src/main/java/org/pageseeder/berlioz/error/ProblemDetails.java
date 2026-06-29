@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pageseeder.berlioz.content;
+package org.pageseeder.berlioz.error;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
 import org.pageseeder.berlioz.json.JsonWritable;
 import org.pageseeder.berlioz.json.JsonWriter;
@@ -225,7 +226,11 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   }
 
   private static void writeExtensionJson(JsonWriter json, String name, Object value) {
-    if (value instanceof String)       json.field(name, (String) value);
+    if (value instanceof JsonWritable) {
+      json.startObject(name);
+      ((JsonWritable) value).toJson(json);
+      json.endObject();
+    } else if (value instanceof String)       json.field(name, (String) value);
     else if (value instanceof Long)    json.field(name, (Long) value);
     else if (value instanceof Integer) json.field(name, (Integer) value);
     else if (value instanceof Double)  json.field(name, (Double) value);
@@ -272,7 +277,9 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   }
 
   private static void writeExtensionXml(XmlWriter xml, String name, Object value) {
-    if (value instanceof List) {
+    if (value instanceof XmlWritable) {
+      ((XmlWritable) value).toXml(xml);
+    } else if (value instanceof List) {
       for (Object item : (List<?>) value) {
         xml.element(name, item.toString());
       }

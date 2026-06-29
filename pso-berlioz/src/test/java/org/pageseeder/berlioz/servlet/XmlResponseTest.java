@@ -6,6 +6,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.*;
+import org.pageseeder.berlioz.error.InvalidParameterException;
+import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.furi.URIResolver;

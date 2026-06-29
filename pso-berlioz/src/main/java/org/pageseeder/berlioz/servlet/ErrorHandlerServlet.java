@@ -38,7 +38,9 @@ import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.ErrorID;
 import org.pageseeder.berlioz.GlobalSettings;
-import org.pageseeder.berlioz.content.Problems;
+import org.pageseeder.berlioz.error.DetailLevel;
+import org.pageseeder.berlioz.error.ProblemDetails;
+import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.http.HttpStatusCodes;
 import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
@@ -288,7 +290,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String message = (String)req.getAttribute(ERROR_MESSAGE);
 
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
-      return toProblemXML(code, message);
+      return toProblemXML(code, message, getErrorException(req));
     }
     return toLegacyXML(req, code, message);
   }
@@ -296,12 +298,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * Serializes the error as an RFC 9457 {@code <problem>} XML document.
    */
-  private static String toProblemXML(int code, @Nullable String message) {
+  private static String toProblemXML(int code, @Nullable String message, @Nullable Throwable throwable) {
+    DetailLevel detailLevel = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     StringWriter out = new StringWriter();
     try {
       XmlAppendable<StringWriter> xml = new XmlAppendable<>(out);
       xml.declaration();
-      Problems.forHttpError(code, message != null ? message : "").toXml(xml);
+      ProblemDetails problem = Problems.forHttpError(code, message != null ? message : "", throwable, detailLevel);
+      if (problem != null) problem.toXml(xml);
       xml.flush();
     } catch (Exception ex) {
       LOGGER.warn("Unable to produce problem details XML for status {}", code, ex);
@@ -346,12 +350,10 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
       xml.element("servlet", servlet != null? servlet : "null");
 
-      String detail = GlobalSettings.get(BerliozOption.ERROR_DETAIL);
-      if ("minimal".equals(detail)) {
-        // nothing extra
-      } else if ("standard".equals(detail)) {
+      DetailLevel detail = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+      if (detail == DetailLevel.STANDARD) {
         writeThrowableSummary(xml, throwable);
-      } else {
+      } else if (detail == DetailLevel.FULL) {
         writeThrowable(xml, throwable);
         writeHttpHeaders(xml, req);
         writeHttpParameters(xml, req);

@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.content;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.error.ProblemDetails;
 
 import java.util.*;
 

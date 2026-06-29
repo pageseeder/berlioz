@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pageseeder.berlioz.content;
+package org.pageseeder.berlioz.error;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.content.ContentStatus;
 
 /**
  * Factory methods for all Berlioz {@link ProblemDetails} instances.
@@ -117,6 +118,25 @@ public final class Problems {
         .type("urn:berlioz:problem:" + slug)
         .title(toTitle(status))
         .detail(detail);
+  }
+
+  /**
+   * Creates a {@link ProblemDetails} for a framework-generated HTTP error, optionally decorated
+   * with exception detail according to the requested verbosity level.
+   *
+   * @param code        an HTTP status code
+   * @param detail      a human-readable explanation of this specific occurrence
+   * @param throwable   the exception that caused the error, or {@code null}
+   * @param detailLevel controls how much diagnostic information is added as an {@code exception}
+   *                    extension member
+   * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
+   */
+  public static @Nullable ProblemDetails forHttpError(int code, String detail,
+      @Nullable Throwable throwable, DetailLevel detailLevel) {
+    ProblemDetails base = forHttpError(code, detail);
+    if (base == null || throwable == null || detailLevel == DetailLevel.MINIMAL) return base;
+    boolean includeStackTrace = detailLevel == DetailLevel.FULL;
+    return base.extension("exception", ExceptionDetail.of(throwable, includeStackTrace));
   }
 
   // --- Private helpers -------------------------------------------------------------------------
