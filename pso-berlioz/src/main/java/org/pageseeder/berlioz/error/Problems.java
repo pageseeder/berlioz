@@ -62,6 +62,17 @@ public final class Problems {
   }
 
   /**
+   * Creates a {@code 400 Bad Request} problem with optional exception detail.
+   *
+   * @param ex    the exception carrying the parameter name, value, and reason
+   * @param level controls how much diagnostic information is added as an {@code exception} member
+   * @return a new {@code ProblemDetails} instance
+   */
+  public static ProblemDetails forInvalidParameter(InvalidParameterException ex, DetailLevel level) {
+    return withExceptionDetail(forInvalidParameter(ex), ex, level);
+  }
+
+  /**
    * Creates a {@code 502 Bad Gateway} problem from an upstream service failure.
    *
    * <p>If the exception names the failing dependency via {@link UpstreamException#getUpstreamService()},
@@ -77,6 +88,17 @@ public final class Problems {
         .detail(ex.getMessage());
     String service = ex.getUpstreamService();
     return service != null ? problem.extension("upstream-service", service) : problem;
+  }
+
+  /**
+   * Creates a {@code 502 Bad Gateway} problem with optional exception detail.
+   *
+   * @param ex    the upstream exception
+   * @param level controls how much diagnostic information is added as an {@code exception} member
+   * @return a new {@code ProblemDetails} instance
+   */
+  public static ProblemDetails forUpstreamException(UpstreamException ex, DetailLevel level) {
+    return withExceptionDetail(forUpstreamException(ex), ex, level);
   }
 
   /**
@@ -100,6 +122,17 @@ public final class Problems {
   }
 
   /**
+   * Creates a problem from a developer-defined {@link HttpException} with optional exception detail.
+   *
+   * @param ex    the signal exception carrying the HTTP code and detail message
+   * @param level controls how much diagnostic information is added as an {@code exception} member
+   * @return a new {@code ProblemDetails} instance
+   */
+  public static ProblemDetails forHttpException(HttpException ex, DetailLevel level) {
+    return withExceptionDetail(forHttpException(ex), ex, level);
+  }
+
+  /**
    * Creates a {@code 500 Internal Server Error} problem for an unhandled generator failure.
    *
    * <p>The error detail is intentionally omitted to avoid leaking internal information to clients.
@@ -110,6 +143,22 @@ public final class Problems {
     return ProblemDetails.of(ContentStatus.INTERNAL_SERVER_ERROR)
         .type("urn:berlioz:problem:generator-error")
         .title("Internal Server Error");
+  }
+
+  /**
+   * Creates a {@code 500 Internal Server Error} problem with optional exception detail.
+   *
+   * <p>At {@link DetailLevel#MINIMAL} the result is identical to {@link #forGeneratorError()}.
+   * At {@code STANDARD} or {@code FULL} an {@code exception} extension member is added, which
+   * preserves source location when {@code ex} is a {@link org.xml.sax.SAXParseException} or a
+   * {@link javax.xml.transform.TransformerException}.
+   *
+   * @param ex    the unhandled exception thrown by the generator
+   * @param level controls how much diagnostic information is added as an {@code exception} member
+   * @return a new {@code ProblemDetails} instance
+   */
+  public static ProblemDetails forGeneratorError(Throwable ex, DetailLevel level) {
+    return withExceptionDetail(forGeneratorError(), ex, level);
   }
 
   // --- Framework-level problems ----------------------------------------------------------------
@@ -192,6 +241,17 @@ public final class Problems {
   }
 
   // --- Private helpers -------------------------------------------------------------------------
+
+  /**
+   * Returns {@code base} with an {@code exception} extension added when {@code level} is not
+   * {@link DetailLevel#MINIMAL}. Source location (line, column, system-id) is preserved
+   * automatically for {@link org.xml.sax.SAXParseException} and
+   * {@link javax.xml.transform.TransformerException} instances.
+   */
+  private static ProblemDetails withExceptionDetail(ProblemDetails base, Throwable ex, DetailLevel level) {
+    if (level == DetailLevel.MINIMAL) return base;
+    return base.extension("exception", ExceptionDetail.of(ex, level == DetailLevel.FULL));
+  }
 
   /**
    * Returns the type URI slug for a framework error.

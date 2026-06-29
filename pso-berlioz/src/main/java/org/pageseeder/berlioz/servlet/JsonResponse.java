@@ -64,7 +64,6 @@ import org.slf4j.LoggerFactory;
  * <p>This class is not thread-safe.</p>
  *
  * @author Christophe Lauret
- *
  * @version 0.13.5
  * @since 0.13.2
  */
@@ -83,21 +82,33 @@ public final class JsonResponse {
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
   private final Map<String, String> responseHeadersView = Collections.unmodifiableMap(this.responseHeaders);
 
-  /** Non-null only for direct services whose sole generator produced a problem response. */
+  /**
+   * Non-null only for direct services whose sole generator produced a problem response.
+   */
   private @Nullable ProblemDetails topLevelProblem = null;
 
   public JsonResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
-      MatchingService match, boolean profile) {
+                      MatchingService match, boolean profile) {
     CoreHttpRequest core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
     this.requests = GeneratorDispatch.configure(core, match);
     this.profile = profile;
   }
 
+  /**
+   * Returns the service corresponding to this response.
+   *
+   * @return the service corresponding to this response.
+   */
   public Service getService() {
     return this.match.service();
   }
 
+  /**
+   * Returns the status of this service response.
+   *
+   * @return the status of this service response.
+   */
   public ContentStatus getStatus() {
     return this.outcome.getStatus();
   }
@@ -304,7 +315,7 @@ public final class JsonResponse {
     final long profileProcess;
 
     GeneratorResult(String name, @Nullable String json, @Nullable ProblemDetails problem,
-        long profileEtag, long profileProcess) {
+                    long profileEtag, long profileProcess) {
       this.name = name;
       this.json = json;
       this.problem = problem;
