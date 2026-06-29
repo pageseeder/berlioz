@@ -12,6 +12,9 @@
 
 <xsl:output method="html" encoding="utf-8" media-type="text/html" version="5.0"/>
 
+<!-- Berlioz version injected by XsltTransformer at runtime; empty when called directly (e.g. in tests). -->
+<xsl:param name="berlioz-version" as="xs:string" select="''"/>
+
 <!-- The ID of the error -->
 <xsl:variable name="id" select="/*/@id"/>
 
@@ -78,7 +81,9 @@
     h4 { font-size: 1rem; margin: 1rem 0 .25rem; }
 
     code, pre { font-family: var(--mono); font-size: .82em; }
-    pre { line-height: 1.5; color: var(--muted); overflow-x: auto; }
+    pre { line-height: 1.5; color: var(--muted); overflow-x: auto; margin: 0; }
+
+    summary { cursor: pointer; user-select: none; }
 
     /* ── Container ───────────────────────────────────────────────── */
     .container {
@@ -117,6 +122,12 @@
     }
     .help p { margin: .25rem 0; }
 
+    /* ── Collapsible stack trace ─────────────────────────────────── */
+    details.stack-trace { margin-top: .75rem; }
+    details.stack-trace > summary { color: var(--muted); font-size: .85rem; }
+    details.stack-trace > summary:hover { color: var(--accent); }
+    details.stack-trace pre { margin-top: .5rem; }
+
     /* ── Collected-errors list ───────────────────────────────────── */
     ul.collected { list-style: none; padding: 0; margin: .5rem 0; }
 
@@ -147,7 +158,7 @@
       border-radius: 4px;
       padding: .25rem .5rem;
     }
-    details.extensions summary { cursor: pointer; color: var(--accent); font-size: .9rem; }
+    details.extensions > summary { color: var(--accent); font-size: .9rem; }
     details.extensions dl      { margin: .5rem 0 .25rem; font-size: .85rem; }
     details.extensions dt      { font-weight: bold; color: var(--muted); margin-top: .4rem; }
     details.extensions dd      { margin-left: 1rem; }
@@ -242,14 +253,15 @@
   </div>
 </xsl:template>
 
-<!-- Stack Trace -->
+<!-- Stack Trace — collapsible; open by default only for unexpected/generator errors -->
 <xsl:template match="stack-trace">
-  <pre class="stacktrace">
-  <!-- No need to display the stack trace if we know the error -->
-  <xsl:if test="not($id = 'berlioz-unexpected' or starts-with($id, 'berlioz-generator'))">
-    <xsl:attribute name="hidden">hidden</xsl:attribute>
-  </xsl:if>
-  <xsl:value-of select="text()"/></pre>
+  <details class="stack-trace">
+    <xsl:if test="$id = 'berlioz-unexpected' or starts-with($id, 'berlioz-generator')">
+      <xsl:attribute name="open">open</xsl:attribute>
+    </xsl:if>
+    <summary>Stack trace</summary>
+    <pre><xsl:value-of select="text()"/></pre>
+  </details>
 </xsl:template>
 
 <!-- Location -->
@@ -301,7 +313,10 @@
     <xsl:if test="instance != ''">
       <p class="problem-instance">Instance: <code><xsl:value-of select="instance"/></code></p>
     </xsl:if>
-    <xsl:variable name="extensions" select="*[not(self::type|self::status|self::title|self::detail|self::instance)]"/>
+    <!-- Structured exception extension (message, stack trace, cause chain) -->
+    <xsl:apply-templates select="exception"/>
+    <!-- Other non-standard extension members -->
+    <xsl:variable name="extensions" select="*[not(self::type|self::status|self::title|self::detail|self::instance|self::exception)]"/>
     <xsl:if test="$extensions">
       <details class="extensions">
         <summary>Additional details</summary>
@@ -313,7 +328,12 @@
         </dl>
       </details>
     </xsl:if>
-    <div class="footer"/>
+    <div class="footer">
+      <span id="datetime"><xsl:value-of select="format-dateTime(current-dateTime(), '[MNn] [D], [Y] at [H01]:[m01]:[s01] [z]')"/></span>
+      <xsl:if test="$berlioz-version != ''">
+        <span id="berlioz-version">Berlioz <xsl:value-of select="$berlioz-version"/></span>
+      </xsl:if>
+    </div>
   </div>
 </xsl:template>
 

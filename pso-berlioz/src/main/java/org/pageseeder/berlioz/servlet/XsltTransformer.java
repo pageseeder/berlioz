@@ -431,7 +431,9 @@ public final class XsltTransformer {
     try {
       Source source = toXMLSource(xml);
       StringWriter html = new StringWriter();
-      templates.newTransformer().transform(source, new StreamResult(html));
+      Transformer transformer = templates.newTransformer();
+      transformer.setParameter("berlioz-version", GlobalSettings.getVersion());
+      transformer.transform(source, new StreamResult(html));
       return html.toString();
     } catch (TransformerException disaster) {
       LOGGER.error("Fail-safe stylesheet failed — returning error details as XML: {}", disaster.getMessageAndLocation());
