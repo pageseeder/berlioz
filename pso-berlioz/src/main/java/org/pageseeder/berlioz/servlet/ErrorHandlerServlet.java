@@ -326,7 +326,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String message = (String)req.getAttribute(ERROR_MESSAGE);
 
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
-      return toProblemXML(code, message, getErrorException(req));
+      Throwable throwable = getErrorException(req);
+      return toProblemXML(code, message, extractErrorId(req, throwable), throwable);
     }
     return toLegacyXML(req, code, message);
   }
@@ -334,12 +335,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * Serializes the error as an RFC 9457 {@code <problem>} XML document.
    */
-  private static String toProblemXML(int code, @Nullable String message, @Nullable Throwable throwable) {
+  private static String toProblemXML(int code, @Nullable String message,
+      @Nullable String berliozErrorId, @Nullable Throwable throwable) {
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     XmlStringBuilder xml = new XmlStringBuilder();
     try {
       xml.declaration();
-      ProblemDetails problem = Problems.forHttpError(code, message != null ? message : "", throwable, level);
+      ProblemDetails problem = Problems.forHttpError(code, message != null ? message : "", berliozErrorId, throwable, level);
       if (problem != null) problem.toXml(xml);
       xml.flush();
     } catch (Exception ex) {
@@ -349,13 +351,25 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
+   * Returns the Berlioz error ID for the current request, or {@code null} if unavailable.
+   *
+   * <p>Priority: {@link BerliozException#id()} from the throwable (when the throwable is a
+   * {@link BerliozException}), then the {@link #BERLIOZ_ERROR_ID} request attribute set by
+   * the servlet that detected the error.
+   */
+  private static @Nullable String extractErrorId(HttpServletRequest req, @Nullable Throwable throwable) {
+    ErrorID eid = throwable instanceof BerliozException ? ((BerliozException) throwable).id() : null;
+    if (eid != null) return eid.id();
+    return (String) req.getAttribute(BERLIOZ_ERROR_ID);
+  }
+
+  /**
    * Serializes the error in the legacy Berlioz error XML format.
    */
   private static String toLegacyXML(HttpServletRequest req, int code, @Nullable String message) {
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
     Throwable throwable = getErrorException(req);
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
-    String errorId = (String)req.getAttribute(BERLIOZ_ERROR_ID);
 
     StringWriter out = new StringWriter();
     try {
@@ -365,13 +379,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.attribute("http-code", code);
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
-      // If it has a Berlioz ID
-      ErrorID eid = throwable instanceof BerliozException? ((BerliozException)throwable).id() : null;
-      if (eid != null) {
-        xml.attribute("id", eid.id());
-      } else {
-        xml.attribute("id", errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString());
-      }
+      String id = extractErrorId(req, throwable);
+      xml.attribute("id", id != null ? id : BerliozErrorID.UNEXPECTED.toString());
 
       // Berlioz info
       xml.openElement("berlioz");

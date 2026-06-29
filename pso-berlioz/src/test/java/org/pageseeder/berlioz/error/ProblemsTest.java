@@ -126,4 +126,35 @@ final class ProblemsTest {
     Assertions.assertNull(p);
   }
 
+  // --- forHttpError() with berliozErrorId ---
+
+  @Test
+  void testForHttpError_withErrorId_usesIdSlug() {
+    ProblemDetails p = Problems.forHttpError(500, "stylesheet missing", "berlioz-transform-not-found");
+    Assertions.assertNotNull(p);
+    Assertions.assertEquals(500, p.status());
+    Assertions.assertEquals("urn:berlioz:problem:transform-not-found", p.type());
+  }
+
+  @Test
+  void testForHttpError_withErrorId_servicesNotFound() {
+    ProblemDetails p = Problems.forHttpError(500, "config missing", "berlioz-services-not-found");
+    Assertions.assertNotNull(p);
+    Assertions.assertEquals("urn:berlioz:problem:services-not-found", p.type());
+  }
+
+  @Test
+  void testForHttpError_withNullErrorId_fallsBackToCodeSlug() {
+    ProblemDetails p = Problems.forHttpError(404, "not found", (String) null);
+    Assertions.assertNotNull(p);
+    Assertions.assertEquals("urn:berlioz:problem:not-found", p.type());
+  }
+
+  @Test
+  void testForHttpError_withUnrecognisedErrorId_fallsBackToCodeSlug() {
+    ProblemDetails p = Problems.forHttpError(500, "oops", "app-custom-error");
+    Assertions.assertNotNull(p);
+    Assertions.assertEquals("urn:berlioz:problem:error", p.type());
+  }
+
 }

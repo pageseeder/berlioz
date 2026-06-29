@@ -127,16 +127,30 @@ public final class Problems {
    * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
    */
   public static @Nullable ProblemDetails forHttpError(int code, String detail) {
+    return forHttpError(code, detail, (String) null);
+  }
+
+  /**
+   * Creates a {@link ProblemDetails} for a framework-generated HTTP error, using the Berlioz
+   * error ID (when present) to select a specific {@code type} URI rather than the generic
+   * status-code-based fallback.
+   *
+   * <p>When {@code berliozErrorId} starts with {@code "berlioz-"}, the slug after that prefix
+   * becomes the type URI suffix — e.g. {@code "berlioz-transform-not-found"} yields
+   * {@code "urn:berlioz:problem:transform-not-found"}. This allows the failsafe XSLT to match
+   * the same contextual help templates it uses for the legacy error format.
+   *
+   * @param code           an HTTP status code
+   * @param detail         a human-readable explanation of this specific occurrence
+   * @param berliozErrorId a Berlioz error ID string (e.g. {@code "berlioz-transform-not-found"}),
+   *                       or {@code null} to fall back to status-code-based type selection
+   * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
+   */
+  public static @Nullable ProblemDetails forHttpError(int code, String detail, @Nullable String berliozErrorId) {
     ContentStatus status = ContentStatus.forCode(code);
     if (status == null) return null;
-    String slug;
-    if      (code == 400) slug = "bad-request";
-    else if (code == 404) slug = "not-found";
-    else if (code == 405) slug = "method-not-allowed";
-    else if (code == 503) slug = "service-unavailable";
-    else                  slug = "error";
     return ProblemDetails.of(status)
-        .type("urn:berlioz:problem:" + slug)
+        .type("urn:berlioz:problem:" + typeSlug(code, berliozErrorId))
         .title(toTitle(status))
         .detail(detail);
   }
@@ -154,13 +168,49 @@ public final class Problems {
    */
   public static @Nullable ProblemDetails forHttpError(int code, String detail,
       @Nullable Throwable throwable, DetailLevel detailLevel) {
-    ProblemDetails base = forHttpError(code, detail);
+    return forHttpError(code, detail, null, throwable, detailLevel);
+  }
+
+  /**
+   * Creates a {@link ProblemDetails} for a framework-generated HTTP error, using the Berlioz
+   * error ID for type selection and optionally decorating with exception detail.
+   *
+   * @param code           an HTTP status code
+   * @param detail         a human-readable explanation of this specific occurrence
+   * @param berliozErrorId a Berlioz error ID string, or {@code null}
+   * @param throwable      the exception that caused the error, or {@code null}
+   * @param detailLevel    controls how much diagnostic information is added as an {@code exception}
+   *                       extension member
+   * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
+   */
+  public static @Nullable ProblemDetails forHttpError(int code, String detail,
+      @Nullable String berliozErrorId, @Nullable Throwable throwable, DetailLevel detailLevel) {
+    ProblemDetails base = forHttpError(code, detail, berliozErrorId);
     if (base == null || throwable == null || detailLevel == DetailLevel.MINIMAL) return base;
     boolean includeStackTrace = detailLevel == DetailLevel.FULL;
     return base.extension("exception", ExceptionDetail.of(throwable, includeStackTrace));
   }
 
   // --- Private helpers -------------------------------------------------------------------------
+
+  /**
+   * Returns the type URI slug for a framework error.
+   *
+   * <p>When {@code berliozErrorId} starts with {@code "berlioz-"}, strips that prefix and uses
+   * the remainder as the slug — e.g. {@code "berlioz-transform-not-found"} →
+   * {@code "transform-not-found"}. Otherwise falls back to a slug derived from the HTTP status
+   * code for the four codes the framework commonly produces specifically.
+   */
+  private static String typeSlug(int code, @Nullable String berliozErrorId) {
+    if (berliozErrorId != null && berliozErrorId.startsWith("berlioz-")) {
+      return berliozErrorId.substring("berlioz-".length());
+    }
+    if (code == 400) return "bad-request";
+    if (code == 404) return "not-found";
+    if (code == 405) return "method-not-allowed";
+    if (code == 503) return "service-unavailable";
+    return "error";
+  }
 
   private static String reasonString(InvalidParameterException.Reason reason) {
     return reason.name().toLowerCase().replace('_', '-');

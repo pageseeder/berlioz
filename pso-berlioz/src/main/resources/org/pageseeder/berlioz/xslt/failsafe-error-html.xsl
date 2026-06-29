@@ -313,6 +313,7 @@
     <xsl:if test="instance != ''">
       <p class="problem-instance">Instance: <code><xsl:value-of select="instance"/></code></p>
     </xsl:if>
+    <xsl:apply-templates select="." mode="help"/>
     <!-- Structured exception extension (message, stack trace, cause chain) -->
     <xsl:apply-templates select="exception"/>
     <!-- Other non-standard extension members -->
@@ -380,6 +381,43 @@
 <div class="help">
   <p>Berlioz could not transform the <b>source XML</b> because it is not well-formed.</p>
   <p>To fix this problem, simply ensure that the XML returned by your generator is well formed.</p>
+</div>
+</xsl:template>
+
+<!-- Problem Details help (mirrors legacy help, matched on type URI) ========================== -->
+
+<xsl:template match="problem[type='urn:berlioz:problem:services-not-found']" mode="help">
+<div class="help">
+  <p>Berlioz was unable to find the <b>service configuration</b>.</p>
+  <p>To fix this problem, create a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:services-malformed']" mode="help">
+<div class="help">
+  <p>Berlioz was unable to parse the <b>service configuration</b>.</p>
+  <p>To fix this problem, fix the XML errors in your <code>/WEB-INF/config/services.xml</code> file.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:services-invalid']" mode="help">
+<div class="help">
+  <p>Berlioz was unable to load the service configuration because of validation errors.</p>
+  <p>To fix this problem, correct the invalid entries in your <code>/WEB-INF/config/services.xml</code> file.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:transform-not-found']" mode="help">
+<div class="help">
+  <p>Berlioz was unable to find the <b>XSLT stylesheet</b>.</p>
+  <p>To fix this problem, create the stylesheet file in your <code>/WEB-INF/</code> folder.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:transform-malformed-source-xml']" mode="help">
+<div class="help">
+  <p>Berlioz could not transform the <b>source XML</b> because it is not well-formed.</p>
+  <p>To fix this problem, ensure that the XML returned by your generator is well formed.</p>
 </div>
 </xsl:template>
 

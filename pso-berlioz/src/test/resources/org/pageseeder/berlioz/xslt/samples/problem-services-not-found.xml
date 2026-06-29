@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:services-not-found</type>
+  <status>500</status>
+  <title>Internal Server Error</title>
+  <detail>Service configuration could not be found</detail>
+</problem>

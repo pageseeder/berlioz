@@ -68,7 +68,11 @@ class FailsafeXsltTest {
         "problem-upstream-error-502.xml",
         // Problem format — with exception extension
         "problem-server-error-500-standard.xml",
-        "problem-server-error-500-full.xml"
+        "problem-server-error-500-full.xml",
+        // Problem format — specific type URIs triggering contextual help blocks
+        "problem-services-not-found.xml",
+        "problem-services-malformed.xml",
+        "problem-transform-not-found.xml"
     );
   }
 

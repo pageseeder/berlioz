@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:services-malformed</type>
+  <status>500</status>
+  <title>Internal Server Error</title>
+  <detail>Service configuration file is not well-formed XML</detail>
+</problem>
