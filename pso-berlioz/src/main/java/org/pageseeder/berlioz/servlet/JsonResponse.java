@@ -45,6 +45,7 @@ import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.util.ProfileFormat;
@@ -72,10 +73,12 @@ public final class JsonResponse {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JsonResponse.class);
 
+  private final CoreHttpRequest core;
   private final MatchingService match;
   private final List<HttpContentRequest> requests;
 
   private final boolean profile;
+  private boolean serverTiming;
   private final GeneratorOutcome outcome = new GeneratorOutcome();
   private final Map<Integer, String> etags = new HashMap<>();
   private final Map<String, String> responseHeaders = new LinkedHashMap<>();
@@ -88,10 +91,14 @@ public final class JsonResponse {
 
   public JsonResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
                       MatchingService match, boolean profile) {
-    CoreHttpRequest core = new CoreHttpRequest(req, res, config.getEnvironment());
+    this.core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
-    this.requests = GeneratorDispatch.configure(core, match);
+    this.requests = GeneratorDispatch.configure(this.core, match);
     this.profile = profile;
+  }
+
+  public void enableServerTiming() {
+    this.serverTiming = true;
   }
 
   /**
@@ -178,8 +185,9 @@ public final class JsonResponse {
     Service service = this.match.service();
     List<GeneratorResult> results = new ArrayList<>(this.requests.size());
 
+    int position = 0;
     for (HttpContentRequest request : this.requests) {
-      results.add(invoke(request, service));
+      results.add(invoke(request, ++position, service));
     }
 
     return assemble(results, service);
@@ -201,7 +209,7 @@ public final class JsonResponse {
   // Private helpers
   // ----------------------------------------------------------------------------------------------
 
-  private GeneratorResult invoke(HttpContentRequest request, Service service) {
+  private GeneratorResult invoke(HttpContentRequest request, int position, Service service) {
     BerliozGenerator generator = request.generator();
     String name = service.name(generator);
 
@@ -240,6 +248,11 @@ public final class JsonResponse {
     ContentStatus generatorStatus = response.status();
     outcome.handleStatus(response, generator, service);
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
+
+    if (this.serverTiming) {
+      String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
+      ServerTimingHeader.addMetricNano(this.core.response(), "json" + position, "Source " + safeName, request.getProfileEtag() + end - start);
+    }
 
     GeneratorListener l = GeneratorDispatch.getListener();
     if (l != null) l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);

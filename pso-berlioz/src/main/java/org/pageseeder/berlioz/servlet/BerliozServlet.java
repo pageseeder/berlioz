@@ -345,6 +345,7 @@ public final class BerliozServlet extends HttpServlet {
       ProcessingContext ctx) throws IOException {
 
     JsonResponse json = new JsonResponse(req, res, config, ctx.match, ctx.profile);
+    if (ctx.serverTiming) json.enableServerTiming();
 
     // Indicate that the representation may vary depending on the encoding
     if (config.enableCompression()) {

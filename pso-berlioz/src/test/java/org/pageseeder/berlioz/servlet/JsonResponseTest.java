@@ -325,6 +325,42 @@ class JsonResponseTest {
     assertNull(jr.getEtag());
   }
 
+  // enableServerTiming ---------------------------------------------------------------------------
+
+  @Test
+  void enableServerTiming_addsServerTimingHeaderPerGenerator() {
+    JsonGenerator gen = (req, json) -> {
+      json.startObject().field("k", "v").endObject();
+      return Response.ok();
+    };
+    Service service = singleGenerator(gen);
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    JsonResponse jr = new JsonResponse(req(), recorder.build(), config, matchFor(service), false);
+    jr.enableServerTiming();
+
+    jr.generate();
+
+    String timingHeader = recorder.header("Server-Timing");
+    assertNotNull(timingHeader, "Expected Server-Timing header when server timing is enabled");
+    assertTrue(timingHeader.contains("json1"), "Expected 'json1' metric: " + timingHeader);
+    assertTrue(timingHeader.contains("Source"), "Expected 'Source' description: " + timingHeader);
+  }
+
+  @Test
+  void enableServerTiming_notEnabled_noServerTimingHeader() {
+    JsonGenerator gen = (req, json) -> {
+      json.startObject().field("k", "v").endObject();
+      return Response.ok();
+    };
+    Service service = singleGenerator(gen);
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    JsonResponse jr = new JsonResponse(req(), recorder.build(), config, matchFor(service), false);
+
+    jr.generate();
+
+    assertNull(recorder.header("Server-Timing"), "Expected no Server-Timing header when not enabled");
+  }
+
   // listener -------------------------------------------------------------------------------------
 
   @Test

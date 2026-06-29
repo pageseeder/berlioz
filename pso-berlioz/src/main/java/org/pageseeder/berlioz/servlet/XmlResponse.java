@@ -292,8 +292,8 @@ public final class XmlResponse {
     long end = System.nanoTime();
     outcome.handleStatus(response, generator, service);
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
-    GeneratorListener l = GeneratorDispatch.getListener();
-    if (l != null) l.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
+    GeneratorListener listener = GeneratorDispatch.getListener();
+    if (listener != null) listener.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
 
     if (response.isProblem()) {
       ProblemDetails problem = response.problem();
@@ -428,9 +428,9 @@ public final class XmlResponse {
     }
 
     // Report if requested
-    GeneratorListener l = GeneratorDispatch.getListener();
-    if (l != null) {
-      l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
+    GeneratorListener listener = GeneratorDispatch.getListener();
+    if (listener != null) {
+      listener.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
     }
 
 
