@@ -30,11 +30,11 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.13.5
  * @since 0.13.1
  */
 @Beta
-public final class InvalidParameterException extends RuntimeException {
+public final class InvalidParameterException extends HttpException {
 
   private static final long serialVersionUID = 1L;
 
@@ -57,25 +57,17 @@ public final class InvalidParameterException extends RuntimeException {
   private final Reason reason;
 
   private InvalidParameterException(String message, String parameterName, @Nullable String parameterValue, Reason reason) {
-    super(message);
+    super(message, 400);
     this.parameterName = parameterName;
     this.parameterValue = parameterValue;
     this.reason = reason;
   }
 
   private InvalidParameterException(String message, String parameterName, @Nullable String parameterValue, Reason reason, Throwable cause) {
-    super(message, cause);
+    super(message, 400, cause);
     this.parameterName = parameterName;
     this.parameterValue = parameterValue;
     this.reason = reason;
-  }
-
-  /**
-   * Suppresses stack trace capture — this exception is a request-level signal, not a bug.
-   */
-  @Override
-  public synchronized Throwable fillInStackTrace() {
-    return this;
   }
 
   /**

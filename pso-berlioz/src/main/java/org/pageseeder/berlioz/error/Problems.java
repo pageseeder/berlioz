@@ -30,6 +30,7 @@ import org.pageseeder.berlioz.content.ContentStatus;
  * <ul>
  *   <li>{@link #forInvalidParameter(InvalidParameterException)} — 400 Bad Request</li>
  *   <li>{@link #forUpstreamException(UpstreamException)} — 502 Bad Gateway</li>
+ *   <li>{@link #forHttpException(HttpException)} — any code carried by an {@link HttpException} subclass</li>
  *   <li>{@link #forGeneratorError()} — 500 Internal Server Error</li>
  * </ul>
  *
@@ -76,6 +77,26 @@ public final class Problems {
         .detail(ex.getMessage());
     String service = ex.getUpstreamService();
     return service != null ? problem.extension("upstream-service", service) : problem;
+  }
+
+  /**
+   * Creates a problem from a developer-defined {@link HttpException} subclass.
+   *
+   * <p>The HTTP status code and message are taken directly from the exception. Use this as the
+   * catch-all for {@link HttpException} subclasses that are not {@link InvalidParameterException}
+   * or {@link UpstreamException}.
+   *
+   * @param ex the signal exception carrying the HTTP code and detail message
+   * @return a new {@code ProblemDetails} with {@code type}, {@code title}, and {@code detail} set
+   */
+  public static ProblemDetails forHttpException(HttpException ex) {
+    int code = ex.getHttpCode();
+    ContentStatus status = ContentStatus.forCode(code);
+    String title = status != null ? toTitle(status) : "HTTP " + code;
+    return ProblemDetails.of(code)
+        .type("urn:berlioz:problem:http-signal")
+        .title(title)
+        .detail(ex.getMessage());
   }
 
   /**

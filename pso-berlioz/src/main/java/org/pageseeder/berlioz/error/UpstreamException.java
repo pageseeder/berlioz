@@ -33,11 +33,11 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.3
+ * @version 0.13.5
  * @since 0.13.3
  */
 @Beta
-public final class UpstreamException extends RuntimeException {
+public final class UpstreamException extends HttpException {
 
   private static final long serialVersionUID = 1L;
 
@@ -52,7 +52,7 @@ public final class UpstreamException extends RuntimeException {
    * @param message a description of the failure
    */
   public UpstreamException(String message) {
-    super(message);
+    super(message, 502);
     this.upstreamService = null;
   }
 
@@ -63,7 +63,7 @@ public final class UpstreamException extends RuntimeException {
    * @param cause   the underlying exception
    */
   public UpstreamException(String message, Throwable cause) {
-    super(message, cause);
+    super(message, 502, cause);
     this.upstreamService = null;
   }
 
@@ -74,7 +74,7 @@ public final class UpstreamException extends RuntimeException {
    * @param upstreamService a short name identifying the failing dependency (e.g. {@code "PageSeeder"}, {@code "search-api"})
    */
   public UpstreamException(String message, String upstreamService) {
-    super(message);
+    super(message, 502);
     this.upstreamService = upstreamService;
   }
 
@@ -86,16 +86,8 @@ public final class UpstreamException extends RuntimeException {
    * @param cause           the underlying exception
    */
   public UpstreamException(String message, String upstreamService, Throwable cause) {
-    super(message, cause);
+    super(message, 502, cause);
     this.upstreamService = upstreamService;
-  }
-
-  /**
-   * Suppresses stack trace capture — this exception is a request-level signal, not a bug.
-   */
-  @Override
-  public synchronized Throwable fillInStackTrace() {
-    return this;
   }
 
   /**

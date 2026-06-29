@@ -22,7 +22,7 @@ package org.pageseeder.berlioz;
  *
  * @author Christophe Lauret
  *
- * @version 0.8.3
+ * @version 0.13.5
  * @since 0.8
  */
 @Beta public enum BerliozErrorID implements ErrorID {
@@ -95,7 +95,12 @@ package org.pageseeder.berlioz;
   /**
    * A generator could not reach an upstream service it depends on.
    */
-  UPSTREAM_ERROR;
+  UPSTREAM_ERROR,
+
+  /**
+   * A generator threw an {@code HttpException} to short-circuit the response with a specific HTTP status code.
+   */
+  HTTP_SIGNAL;
 
   /**
    * Returns a string representation of this error code.

@@ -18,6 +18,9 @@
  *
  * <p>Key types:</p>
  * <ul>
+ *   <li>{@link org.pageseeder.berlioz.error.HttpException} — abstract base for HTTP short-circuit signals</li>
+ *   <li>{@link org.pageseeder.berlioz.error.InvalidParameterException} — 400 Bad Request signal</li>
+ *   <li>{@link org.pageseeder.berlioz.error.UpstreamException} — 502 Bad Gateway signal</li>
  *   <li>{@link org.pageseeder.berlioz.error.ProblemDetails} — immutable RFC 9457 problem object</li>
  *   <li>{@link org.pageseeder.berlioz.error.Problems} — framework factory for all problem types</li>
  *   <li>{@link org.pageseeder.berlioz.error.DetailLevel} — verbosity control for error responses</li>

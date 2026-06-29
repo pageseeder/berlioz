@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.servlet;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.BerliozGenerator;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
@@ -37,6 +38,12 @@ import java.util.TreeSet;
 
 /**
  * Package-private utilities shared between {@link XmlResponse} and {@link JsonResponse}.
+ *
+ *
+ * @author Christophe Lauret
+ *
+ * @version 0.13.5
+ * @since 0.13.2
  */
 final class GeneratorDispatch {
 
@@ -114,6 +121,11 @@ final class GeneratorDispatch {
           ? "Upstream service '" + service + "' unavailable: " + ue.getMessage()
           : "Upstream service unavailable: " + ue.getMessage();
       return new BerliozException(msg, ue, BerliozErrorID.UPSTREAM_ERROR);
+    }
+    if (ex instanceof HttpException) {
+      HttpException he = (HttpException) ex;
+      return new BerliozException("HTTP signal " + he.getHttpCode() + ": " + he.getMessage(),
+          he, BerliozErrorID.HTTP_SIGNAL);
     }
     return new BerliozException("Unexpected exception caught", ex, BerliozErrorID.GENERATOR_ERROR_UNCHECKED);
   }

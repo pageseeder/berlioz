@@ -36,6 +36,7 @@ import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
@@ -283,6 +284,9 @@ public final class XmlResponse {
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
       response = Response.problem(Problems.forUpstreamException(ex));
+    } catch (HttpException ex) {
+      outcome.handleError(ex, generator);
+      response = Response.problem(Problems.forHttpException(ex));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
       response = Response.problem(Problems.forGeneratorError());
@@ -406,6 +410,9 @@ public final class XmlResponse {
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
       response = Response.problem(Problems.forUpstreamException(ex));
+    } catch (HttpException ex) {
+      outcome.handleError(ex, generator);
+      response = Response.problem(Problems.forHttpException(ex));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
       response = Response.problem(Problems.forGeneratorError());

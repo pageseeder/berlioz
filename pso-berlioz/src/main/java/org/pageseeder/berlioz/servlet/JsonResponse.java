@@ -34,6 +34,7 @@ import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.content.JsonGenerator;
@@ -216,6 +217,9 @@ public final class JsonResponse {
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
       response = Response.problem(Problems.forUpstreamException(ex));
+    } catch (HttpException ex) {
+      outcome.handleError(ex, generator);
+      response = Response.problem(Problems.forHttpException(ex));
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
       response = Response.problem(Problems.forGeneratorError());
