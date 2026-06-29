@@ -5,19 +5,19 @@
   @author Christophe Lauret
   @version 0.13.5
 -->
-<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                xmlns:f="urn:berlioz:function"
+                exclude-result-prefixes="#all">
 
-<xsl:output method="html" encoding="utf-8" indent="yes" media-type="text/html" />
+<xsl:output method="html" encoding="utf-8" media-type="text/html" version="5.0"/>
 
 <!-- The ID of the error -->
 <xsl:variable name="id" select="/*/@id"/>
 
 <!-- Main template called in all cases. -->
 <xsl:template match="/">
-<!-- Display the HTML Doctype -->
-<xsl:text disable-output-escaping="yes"><![CDATA[<!doctype html>
-]]></xsl:text>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -78,7 +78,7 @@
     h4 { font-size: 1rem; margin: 1rem 0 .25rem; }
 
     code, pre { font-family: var(--mono); font-size: .82em; }
-    pre        { line-height: 1.5; color: var(--muted); overflow-x: auto; }
+    pre { line-height: 1.5; color: var(--muted); overflow-x: auto; }
 
     /* ── Container ───────────────────────────────────────────────── */
     .container {
@@ -109,15 +109,11 @@
 
     /* ── Help block ──────────────────────────────────────────────── */
     .help {
-      border: 1px solid #fef08a;
-      background: #fefce8;
-      border-radius: 4px;
-      padding: .5rem .75rem;
-      font-style: italic;
+      border-left: 4px solid #f59e0b;
+      background: rgba(245, 158, 11, 0.07);
+      border-radius: 0 4px 4px 0;
+      padding: .6rem .75rem;
       margin: .75rem 0;
-    }
-    @media (prefers-color-scheme: dark) {
-      .help { border-color: #713f12; background: #1c1108; }
     }
     .help p { margin: .25rem 0; }
 
@@ -157,23 +153,33 @@
     details.extensions dd      { margin-left: 1rem; }
   </style>
 </head>
-<body>
-  <xsl:attribute name="class">
-    <xsl:apply-templates select="*" mode="class" />
-  </xsl:attribute>
+<body class="{f:body-class(*)}">
   <xsl:apply-templates select="*"/>
 </body>
 </html>
 </xsl:template>
 
-<xsl:template match="*" mode="class">
-  <xsl:value-of select="name(.)"/>
-</xsl:template>
+<xsl:function name="f:body-class">
+  <xsl:param name="element" />
+  <xsl:choose>
+    <xsl:when test="name($element) = 'problem' and $element/status castable as xs:integer">
+      <xsl:variable name="s" select="xs:integer($element/status)"/>
+      <xsl:sequence select="if ($s >= 500) then 'server-error'
+                   else if ($s >= 400) then 'client-error'
+                   else if ($s >= 300) then 'redirection'
+                   else if ($s >= 200) then 'successful'
+                   else                     'continue'"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:sequence select="name($element)"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:function>
 
 <!-- Default template for errors -->
 <xsl:template match="continue|successful|redirection|client-error|server-error">
   <div class="container">
-    <h1><xsl:value-of select="@http-code"/> - <xsl:value-of select="title"/></h1>
+    <h1><xsl:value-of select="@http-code"/> – <xsl:value-of select="title"/></h1>
     <xsl:if test="not(message = exception/message)">
       <p class="message"><xsl:value-of select="message"/></p>
     </xsl:if>
@@ -282,17 +288,6 @@
 </xsl:template>
 
 <!-- Problem Details (RFC 9457) =============================================================== -->
-
-<xsl:template match="problem" mode="class">
-  <xsl:variable name="s" select="number(status)"/>
-  <xsl:choose>
-    <xsl:when test="$s >= 500">server-error</xsl:when>
-    <xsl:when test="$s >= 400">client-error</xsl:when>
-    <xsl:when test="$s >= 300">redirection</xsl:when>
-    <xsl:when test="$s >= 200">successful</xsl:when>
-    <xsl:when test="$s >= 100">continue</xsl:when>
-  </xsl:choose>
-</xsl:template>
 
 <xsl:template match="problem">
   <div class="container">

@@ -83,7 +83,7 @@ class FailsafeXsltTest {
     assertNotNull(html, "transform result must not be null");
     assertNotSame(xml, html, "transform must produce new output, not return the input unchanged");
     assertTrue(
-        html.startsWith("<!doctype html") || html.startsWith("<!DOCTYPE html"),
+        html.toLowerCase(java.util.Locale.ROOT).startsWith("<!doctype html"),
         () -> "output should start with HTML doctype but was:\n" + html.substring(0, Math.min(200, html.length()))
     );
     assertTrue(html.contains("<html"), "output should contain an <html> element");
