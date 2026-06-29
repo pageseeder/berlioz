@@ -59,7 +59,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.6.0
  */
 public final class XmlResponseHeader implements XMLWritable {
@@ -186,7 +186,8 @@ public final class XmlResponseHeader implements XMLWritable {
     xml.element("host", req.getServerName());
     xml.element("port", Integer.toString(req.getServerPort()));
     xml.element("url", req.getRequestURL().toString());
-    xml.element("query-string", req.getQueryString());
+    String queryString = req.getQueryString();
+    xml.element("query-string", queryString != null ? queryString : "");
     xml.writeComment("End deprecated elements");
   }
 

@@ -9,7 +9,7 @@
     <message>parameter must be a positive integer</message>
     <stack-trace>org.pageseeder.berlioz.error.InvalidParameterException: parameter must be a positive integer
   at com.example.generator.GetArticles.process(GetArticles.java:31)
-  at org.pageseeder.berlioz.servlet.XmlResponse.toXML(XmlResponse.java:400)</stack-trace>
+  at toXml(XmlResponse.java:400)</stack-trace>
   </exception>
   <http-headers>
     <header name="Accept" value="text/html"/>

@@ -9,7 +9,7 @@
     <message>Connection refused</message>
     <stack-trace>org.pageseeder.berlioz.error.UpstreamException: Connection refused
   at com.example.generator.GetLiveFeed.process(GetLiveFeed.java:55)
-  at org.pageseeder.berlioz.servlet.XmlResponse.toXML(XmlResponse.java:400)</stack-trace>
+  at toXml(XmlResponse.java:400)</stack-trace>
     <cause class="java.net.ConnectException">
       <message>Connection refused: connect</message>
       <stack-trace>java.net.ConnectException: Connection refused: connect

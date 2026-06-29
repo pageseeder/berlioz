@@ -52,6 +52,7 @@ import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.util.ProfileFormat;
 import org.pageseeder.berlioz.xml.XmlAppendable;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.xml.XmlWriter;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
@@ -235,9 +236,8 @@ public final class XmlResponse {
     if (service.isDirect()) return generateDirect(service);
 
     // Envelope path: <?xml ...><root service="..." group="..."><header>...</header><content>...</content></root>
-    StringWriter writer = new StringWriter();
-    XMLWriter xml = new XMLWriterImpl(writer);
-    xml.xmlDecl();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    xml.declaration();
     xml.openElement("root", true);
     xml.attribute("service", service.id());
     xml.attribute("group", service.group());
@@ -246,16 +246,15 @@ public final class XmlResponse {
     }
 
     XmlResponseHeader header = new XmlResponseHeader(this.core, service, this.match.result());
-    header.toXML(xml);
+    xml.asXml(header);
 
     int position = 0;
     for (HttpContentRequest request : this.requests) {
-      toXML(request, ++position, service, xml);
+      toXml(request, ++position, service, xml);
     }
 
     xml.closeElement();
-    xml.flush();
-    return writer.toString();
+    return xml.toString();
   }
 
   /**
@@ -358,10 +357,8 @@ public final class XmlResponse {
    * @param position  The 1-based position of the request in the service
    * @param service   The service it is part of.
    * @param xml       The XML Writer to use.
-   *
-   * @throws IOException Should an I/O error occur while writing XML.
    */
-  private void toXML(HttpContentRequest request, int position, Service service, XMLWriter xml) throws IOException {
+  private void toXml(HttpContentRequest request, int position, Service service, XmlWriter xml) {
     BerliozGenerator generator = request.generator();
     // Generate the main element
     xml.openElement("content", true);
@@ -437,11 +434,9 @@ public final class XmlResponse {
     // Write the XML: inline problem element if the generator signalled a problem,
     // otherwise the generator's own XML output.
     if (response.isProblem()) {
-      XmlStringBuilder problemSw = new XmlStringBuilder();
-      response.problem().toXml(problemSw);
-      xml.writeXML(problemSw.toString());
+      xml.asXml(response.problem());
     } else if (result != null) {
-      xml.writeXML(result);
+      xml.xml(result);
     }
 
     xml.closeElement();

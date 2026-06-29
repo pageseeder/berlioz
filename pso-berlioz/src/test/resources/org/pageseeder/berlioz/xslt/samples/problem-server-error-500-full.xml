@@ -8,7 +8,7 @@
     <message>Failed to process article</message>
     <stack-trace>java.lang.RuntimeException: Failed to process article
   at com.example.generator.GetArticle.process(GetArticle.java:42)
-  at org.pageseeder.berlioz.servlet.XmlResponse.toXML(XmlResponse.java:400)
+  at toXml(XmlResponse.java:400)
   at org.pageseeder.berlioz.servlet.BerliozServlet.service(BerliozServlet.java:320)</stack-trace>
     <cause class="java.io.IOException">
       <message>File not found: /data/articles/breaking-news.xml</message>
