@@ -58,27 +58,23 @@ The 0.13.2 cycle completed much of the output-aware generator model:
 - Hardened redirects, relocations, stylesheet resolution, environment path resolution, web bundle CSS references, and response header validation.
 - Added broad unit coverage for the new servlet, generator, response, service, JSON, and security behavior.
 
+### 0.13.3–0.13.5 Problem Response Integration
+
+The 0.13.3–0.13.5 cycle completed RFC 9457 Problem Details integration across the request pipeline:
+
+- Added `HttpException` as the base class for generator-level HTTP short-circuiting (400–599); stack trace capture suppressed so it can be thrown on every bad request without cost.
+- Added `InvalidParameterException` (400 Bad Request) with `parameter` and `reason` extensions; immediate-fail semantics — one exception per request, no collector.
+- Added `UpstreamException` (502 Bad Gateway) with optional `upstream-service` extension.
+- Added `Problems` factory producing typed `ProblemDetails` from all framework exception types.
+- `XmlResponse` and `JsonResponse` both catch all `HttpException` subtypes and map them to `Response.problem(...)`.
+- For direct services, problem responses are promoted to top-level with `application/problem+json` or `application/problem+xml` content type.
+- For envelope services, generator problems are embedded inline; the final HTTP status is governed by the service's response-code rule, supporting partial-failure semantics.
+- Added `ERROR_PROBLEM_FORMAT` option to opt in to RFC 9457 `<problem>` XML in `ErrorHandlerServlet` (default: legacy format).
+- Added `ERROR_DETAIL` option (`minimal` / `standard` / `full`) controlling diagnostic verbosity in error responses.
+- Updated failsafe XSLT with a `<problem>` template for consistent HTML rendering of problem responses.
+- Problem type URIs: `urn:berlioz:problem:*` reserved for Berlioz-internal types; application developers own their own scheme.
+
 ## Current Development Themes
-
-### 1. Complete Problem Response Integration
-
-`ProblemDetails` and `Response.problem(...)` now exist, but framework-generated errors still need a complete negotiated rendering model.
-
-Already done:
-
-- `400 Bad Request` for invalid typed parameters (via `InvalidParameterException`).
-- `404 Not Found` for unmatched services.
-- `405 Method Not Allowed` when a URI matches but the method does not (with `Allow` header).
-- `500 Internal Server Error` for unexpected generator failures (forwarded to error handler).
-
-Next work:
-
-- Render problem responses consistently for JSON, XML, and transformed HTML.
-- Define Berlioz problem `type` URIs and decide whether they resolve to public documentation.
-- Decide how parameter validation failures should expose field-level details.
-- Decide whether request validation should fail immediately or collect all parameter errors first.
-
-The goal is not a large exception-mapping framework. The goal is a small, predictable error model that works across the existing output pipeline.
 
 ### 2. Error Handling Pipeline
 
@@ -295,12 +291,9 @@ Likely outcome:
 - Verify source compatibility for existing `ContentGenerator` applications.
 - Confirm which `RawGenerator` behavior is intentionally future-facing.
 
-### Milestone 2: Problem Response Completion
+### Milestone 2: Problem Response Completion ✓
 
-- Wire `ProblemDetails` into framework-generated errors.
-- Define negotiated problem response rendering for JSON, XML, and HTML.
-- Decide immediate versus collected parameter validation failures.
-- Define problem type URI conventions.
+Completed in 0.13.3–0.13.5. See Recent Progress above.
 
 ### Milestone 3: Error Handling Pipeline
 
@@ -366,8 +359,6 @@ Likely outcome:
 
 - Should the Jakarta migration be released as Berlioz 1.0?
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
-- Should framework-generated Problem Details use public Berlioz documentation URIs?
-- Should invalid parameter handling fail on the first invalid value or collect all parameter errors?
 - Should service-level metadata be part of normal output, diagnostic output, or both?
 - Should direct services support only one handler forever, or is there a future aggregation model?
 - How should raw output interact with cache headers, ETags, and content negotiation?
