@@ -244,7 +244,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
 
 
   @Override
-  public final void declaration() {
+  public final XmlAppendable<T> declaration() {
     if (this.used) {
       throw new IllegalStateException("Cannot write XML declaration after other content.");
     }
@@ -252,6 +252,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
     if (this.indent) {
       append('\n');
     }
+    return this;
   }
 
   @Override

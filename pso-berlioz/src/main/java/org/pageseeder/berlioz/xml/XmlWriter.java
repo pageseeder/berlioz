@@ -264,7 +264,7 @@ public interface XmlWriter {
    *
    * @throws XmlWriteFailureException If an I/O exception occurs.
    */
-  void declaration();
+  XmlWriter declaration();
 
   // Open/close elements
   // ----------------------------------------------------------------------------------------------
