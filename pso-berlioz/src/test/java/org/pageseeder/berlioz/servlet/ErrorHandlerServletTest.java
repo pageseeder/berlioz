@@ -121,6 +121,37 @@ class ErrorHandlerServletTest {
     );
   }
 
+  @Test
+  void handle_legacyFormat_fullDetail_redactsSensitiveHeadersAndParameters() throws Exception {
+    RuntimeException cause = new RuntimeException("something went wrong");
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
+        .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
+        .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, cause)
+        .header("Authorization", "Bearer header-secret")
+        .header("Cookie", "JSESSIONID=cookie-secret")
+        .header("X-Request-ID", "request-42")
+        .parameter("password", "parameter-secret")
+        .parameter("access_token", "token-secret")
+        .parameter("q", "visible-query")
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    new ErrorHandlerServlet().handle(req, res.build());
+
+    String body = res.content();
+    assertAll(
+        () -> assertEquals(500, res.status),
+        () -> assertTrue(body.contains("[REDACTED]"),       "sensitive values should be replaced"),
+        () -> assertTrue(body.contains("request-42"),       "non-sensitive header values should remain visible"),
+        () -> assertTrue(body.contains("visible-query"),    "non-sensitive parameter values should remain visible"),
+        () -> assertFalse(body.contains("header-secret"),   "authorization value must not be exposed"),
+        () -> assertFalse(body.contains("cookie-secret"),   "cookie value must not be exposed"),
+        () -> assertFalse(body.contains("parameter-secret"), "password value must not be exposed"),
+        () -> assertFalse(body.contains("token-secret"),    "token value must not be exposed")
+    );
+  }
+
   // Problem format (opt-in: berlioz.errors.problem = true)
   //
   // The problem XSLT template renders to HTML without embedding the original XML, so assertions

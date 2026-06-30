@@ -24,6 +24,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -88,6 +89,16 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * Displays debug information.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(ErrorHandlerServlet.class);
+
+  private static final String REDACTED = "[REDACTED]";
+
+  private static final Pattern SENSITIVE_HEADER = Pattern.compile(
+      "(?i)^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-auth-token|x-csrf-token)$|"
+          + ".*(token|secret|credential|api[._\\-]?key|session|csrf).*");
+
+  private static final Pattern SENSITIVE_PARAMETER = Pattern.compile(
+      "(?i)(password|passwd|pwd|secret|api[._\\-]?key|token|credential|private[._\\-]?key|"
+          + "session|auth|assertion|saml|jwt|csrf)");
 
   // Attributes set for error handlers.
   // ---------------------------------------------------------------------------------------------
@@ -450,7 +461,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
           String value = values.nextElement().toString();
           xml.openElement("header");
           xml.attribute("name", name);
-          xml.attribute("value", value);
+          xml.attribute("value", redactHeaderValue(name, value));
           xml.closeElement();
         }
       }
@@ -469,12 +480,28 @@ public final class ErrorHandlerServlet extends HttpServlet {
         for (String value : values) {
           xml.openElement("parameters");
           xml.attribute("name", name);
-          xml.attribute("value", value);
+          xml.attribute("value", redactParameterValue(name, value));
           xml.closeElement();
         }
       }
     }
     xml.closeElement();
+  }
+
+  private static String redactHeaderValue(String name, String value) {
+    return isSensitiveHeader(name) ? REDACTED : value;
+  }
+
+  private static String redactParameterValue(String name, String value) {
+    return isSensitiveParameter(name) ? REDACTED : value;
+  }
+
+  private static boolean isSensitiveHeader(String name) {
+    return SENSITIVE_HEADER.matcher(name).matches();
+  }
+
+  private static boolean isSensitiveParameter(String name) {
+    return SENSITIVE_PARAMETER.matcher(name).find();
   }
 
   /**
