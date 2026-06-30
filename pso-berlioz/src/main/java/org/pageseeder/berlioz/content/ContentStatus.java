@@ -153,6 +153,14 @@ public enum ContentStatus {
   BAD_REQUEST(400),
 
   /**
+   * The request has not been applied because it lacks valid authentication credentials for the
+   * target resource.
+   *
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9110#name-401-unauthorized">HTTP Semantics - 15.5.2. 401 Unauthorized</a>
+   */
+  UNAUTHORIZED(401),
+
+  /**
    * The server understood the request but is refusing to fulfill it.
    *
    * @see <a href="https://tools.ietf.org/html/rfc7231#section-6.5.3">HTTP/1.1 - 6.5.3. 403 Forbidden</a>

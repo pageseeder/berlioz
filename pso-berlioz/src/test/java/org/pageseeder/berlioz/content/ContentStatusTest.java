@@ -30,6 +30,7 @@ final class ContentStatusTest {
     Assertions.assertEquals(303, ContentStatus.SEE_OTHER.code());
     Assertions.assertEquals(307, ContentStatus.TEMPORARY_REDIRECT.code());
     Assertions.assertEquals(400, ContentStatus.BAD_REQUEST.code());
+    Assertions.assertEquals(401, ContentStatus.UNAUTHORIZED.code());
     Assertions.assertEquals(403, ContentStatus.FORBIDDEN.code());
     Assertions.assertEquals(404, ContentStatus.NOT_FOUND.code());
     Assertions.assertEquals(500, ContentStatus.INTERNAL_SERVER_ERROR.code());
@@ -38,6 +39,7 @@ final class ContentStatusTest {
   @Test
   void testForCode_found() {
     Assertions.assertEquals(ContentStatus.OK, ContentStatus.forCode(200));
+    Assertions.assertEquals(ContentStatus.UNAUTHORIZED, ContentStatus.forCode(401));
     Assertions.assertEquals(ContentStatus.NOT_FOUND, ContentStatus.forCode(404));
     Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR, ContentStatus.forCode(500));
     Assertions.assertEquals(ContentStatus.MOVED_PERMANENTLY, ContentStatus.forCode(301));
