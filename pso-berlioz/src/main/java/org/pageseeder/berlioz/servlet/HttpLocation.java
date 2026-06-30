@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.servlet;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,14 +24,14 @@ import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.content.PathInfo;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.util.Strings;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Capture details about the location of a resource.
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.9.13
  */
 public final class HttpLocation implements Location, Serializable {
@@ -116,11 +115,11 @@ public final class HttpLocation implements Location, Serializable {
   }
 
   @Override
-  public void toXML(XMLWriter xml) throws IOException {
+  public XmlWriter toXml(XmlWriter xml) {
     xml.openElement("location");
     xml.attribute("scheme", this.scheme);
     xml.attribute("host", this.host);
-    xml.attribute("port", Integer.toString(this.port));
+    xml.attribute("port", this.port);
     xml.attribute("path", this.path);
     xml.attribute("query", this.query);
     StringBuilder url = new StringBuilder();
@@ -134,8 +133,9 @@ public final class HttpLocation implements Location, Serializable {
     if (!this.query.isEmpty()) {
       url.append('?').append(this.query);
     }
-    xml.writeText(url.toString());
+    xml.text(url.toString());
     xml.closeElement();
+    return xml;
   }
 
   /**

@@ -2,11 +2,9 @@ package org.pageseeder.berlioz.servlet;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 
 class HttpPathInfoTest {
 
@@ -122,11 +120,10 @@ class HttpPathInfoTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testToXmlExtensionMapped() throws IOException {
+  void testToXmlExtensionMapped() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("", "/home.html"));
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    info.toXML(xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    info.toXml(xml);
     String out = xml.toString();
     Assertions.assertTrue(out.contains("info=\"/home\""), "Should contain info attribute");
     Assertions.assertTrue(out.contains("extension=\".html\""), "Should contain extension attribute");
@@ -135,11 +132,10 @@ class HttpPathInfoTest {
   }
 
   @Test
-  void testToXmlPrefixMapped() throws IOException {
+  void testToXmlPrefixMapped() {
     HttpPathInfo info = new HttpPathInfo(prefixMapped("", "/svc", "/items"));
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    info.toXML(xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    info.toXml(xml);
     String out = xml.toString();
     Assertions.assertTrue(out.contains("prefix=\"/svc\""), "Should contain prefix attribute");
     Assertions.assertTrue(out.contains("info=\"/items\""), "Should contain info attribute");
@@ -147,11 +143,10 @@ class HttpPathInfoTest {
   }
 
   @Test
-  void testToXmlWithContext() throws IOException {
+  void testToXmlWithContext() {
     HttpPathInfo info = new HttpPathInfo(extensionMapped("/app", "/page.json"));
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    info.toXML(xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    info.toXml(xml);
     String out = xml.toString();
     Assertions.assertTrue(out.contains("context=\"/app\""), "Should contain context attribute");
     Assertions.assertTrue(out.contains("extension=\".json\""), "Should contain extension attribute");

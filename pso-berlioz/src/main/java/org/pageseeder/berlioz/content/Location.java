@@ -15,17 +15,17 @@
  */
 package org.pageseeder.berlioz.content;
 
-import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.berlioz.xml.XmlWritable;
 
 /**
  * This class provides information about the location of a resource associated with the content request.
  *
  * @author Christophe Lauret
  *
- * @version 0.9.13
+ * @version 0.13.5
  * @since 0.9.13
  */
-public interface Location extends XMLWritable {
+public interface Location extends XmlWritable {
 
   /**
    * Returns the scheme of the URI (e.g. {@code "http"} or {@code "https"}).

@@ -15,20 +15,19 @@
  */
 package org.pageseeder.berlioz.servlet;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.content.PathInfo;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * An implementation of the path info based on HTTP servlets.
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.13.5
  * @since 0.9.13
  */
 public final class HttpPathInfo implements PathInfo, Serializable {
@@ -104,7 +103,7 @@ public final class HttpPathInfo implements PathInfo, Serializable {
   }
 
   @Override
-  public void toXML(XMLWriter xml) throws IOException {
+  public XmlWriter toXml(XmlWriter xml) {
     xml.openElement("path");
     if (!this.context.isEmpty()) {
       xml.attribute("context", this.context);
@@ -117,6 +116,7 @@ public final class HttpPathInfo implements PathInfo, Serializable {
       xml.attribute("extension", this.extension);
     }
     xml.closeElement();
+    return xml;
   }
 
   @Override

@@ -2,11 +2,9 @@ package org.pageseeder.berlioz.servlet;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 
 class HttpLocationTest {
 
@@ -137,16 +135,15 @@ class HttpLocationTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testToXmlContainsSchemeHostPort() throws IOException {
+  void testToXmlContainsSchemeHostPort() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(8080)
         .uri("/page.html").query("a=1")
         .contextPath("").servletPath("/page.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    loc.toXML(xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    loc.toXml(xml);
     String out = xml.toString();
     Assertions.assertTrue(out.contains("scheme=\"http\""));
     Assertions.assertTrue(out.contains("host=\"example.org\""));
@@ -157,16 +154,15 @@ class HttpLocationTest {
   }
 
   @Test
-  void testToXmlOmitsPortFromBaseWhenDefault() throws IOException {
+  void testToXmlOmitsPortFromBaseWhenDefault() {
     HttpServletRequest req = ServletTestSupport.request()
         .scheme("http").host("example.org").port(80)
         .uri("/page.html").query(null)
         .contextPath("").servletPath("/page.html").pathInfo(null)
         .build();
     HttpLocation loc = HttpLocation.build(req);
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    loc.toXML(xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    loc.toXml(xml);
     String out = xml.toString();
     Assertions.assertTrue(out.contains("base=\"http://example.org\""));
     Assertions.assertFalse(out.contains(":80"), "Base URL should not contain :80");

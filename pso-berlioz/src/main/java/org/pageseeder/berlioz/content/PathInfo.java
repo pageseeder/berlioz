@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz.content;
 
-import org.pageseeder.xmlwriter.XMLWritable;
+import org.pageseeder.berlioz.xml.XmlWritable;
 
 /**
  * Returns information about the content path.
@@ -26,10 +26,10 @@ import org.pageseeder.xmlwriter.XMLWritable;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.9.13
  */
-public interface PathInfo extends XMLWritable {
+public interface PathInfo extends XmlWritable {
 
   /**
    * Returns the context of the Web application.
