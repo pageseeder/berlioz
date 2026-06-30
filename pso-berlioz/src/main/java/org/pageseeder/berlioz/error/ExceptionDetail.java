@@ -93,6 +93,10 @@ public final class ExceptionDetail implements XmlWritable, JsonWritable {
    * @return a new {@code ExceptionDetail}
    */
   public static ExceptionDetail of(Throwable ex, boolean includeStackTrace) {
+    // BerliozException is a framework transport wrapper; surface the real cause
+    if (ex instanceof org.pageseeder.berlioz.BerliozException && ex.getCause() != null) {
+      ex = ex.getCause();
+    }
     String className = ex.getClass().getName();
     String message = Errors.cleanMessage(ex);
     String stackTrace = includeStackTrace ? Errors.getStackTrace(ex, true) : null;
