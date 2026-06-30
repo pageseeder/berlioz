@@ -271,6 +271,7 @@ public final class XmlResponse {
     HttpContentRequest request = this.requests.get(0);
     BerliozGenerator generator = request.generator();
     StringWriter sw = new StringWriter();
+    BerliozException error = null;
     Response response = Response.ok();
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     boolean problemFormat = GeneratorDispatch.useProblemFormat();
@@ -278,23 +279,23 @@ public final class XmlResponse {
     try {
       response = dispatchXml(generator, request, sw);
     } catch (InvalidParameterException ex) {
-      outcome.handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       response = problemFormat
           ? Response.problem(Problems.forInvalidParameter(ex, level))
           : Response.status(ContentStatus.BAD_REQUEST);
     } catch (UpstreamException ex) {
-      outcome.handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       response = problemFormat
           ? Response.problem(Problems.forUpstreamException(ex, level))
           : Response.status(ContentStatus.BAD_GATEWAY);
     } catch (HttpException ex) {
-      outcome.handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       ContentStatus status = ContentStatus.forCode(ex.getHttpCode());
       response = problemFormat
           ? Response.problem(Problems.forHttpException(ex, level))
           : Response.status(status != null ? status : ContentStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception ex) {
-      outcome.handleError(ex, generator);
+      error = outcome.handleError(ex, generator);
       response = problemFormat
           ? Response.problem(Problems.forGeneratorError(ex, level))
           : Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
@@ -312,6 +313,11 @@ public final class XmlResponse {
       problemXml.declaration();
       problem.toXml(problemXml);
       return problemXml.toString();
+    } else if (error != null) {
+      XmlStringBuilder legacyXml = new XmlStringBuilder();
+      legacyXml.declaration();
+      writeLegacyException(legacyXml, error, level);
+      return legacyXml.toString();
     }
     return sw.toString();
   }
@@ -458,7 +464,7 @@ public final class XmlResponse {
     if (response.isProblem()) {
       xml.asXml(response.problem());
     } else if (error != null) {
-      writeLegacyException(xml, error);
+      writeLegacyException(xml, error, level);
     } else if (result != null) {
       xml.xml(result);
     }
@@ -466,12 +472,24 @@ public final class XmlResponse {
     xml.closeElement();
   }
 
-  private static void writeLegacyException(XmlWriter xml, BerliozException error) {
+  private static void writeLegacyException(XmlWriter xml, BerliozException error, DetailLevel level) {
     StringWriter out = new StringWriter();
     try {
       XMLWriter legacy = new XMLWriterImpl(out);
       legacy.openElement("berlioz-exception");
-      Errors.toXML(error, legacy, false);
+      if (level != DetailLevel.MINIMAL) {
+        legacy.attribute("class", error.getClass().getName());
+        legacy.element("message", Errors.cleanMessage(error));
+        if (level == DetailLevel.FULL) {
+          legacy.element("stack-trace", Errors.getStackTrace(error, true));
+          Throwable cause = error.getCause();
+          if (cause != null) {
+            legacy.openElement("cause");
+            Errors.toXML(cause, legacy, false);
+            legacy.closeElement();
+          }
+        }
+      }
       legacy.closeElement();
       legacy.flush();
       xml.xml(out.toString());

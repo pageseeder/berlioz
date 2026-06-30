@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.UpstreamException;
@@ -303,18 +304,44 @@ class XmlResponseTest {
   @Test
   void generate_envelopeError_legacyFormatWritesBerliozException() throws Exception {
     setProblemFormat(false);
-    XmlGenerator gen = (req, xml) -> {
-      throw new RuntimeException("gen-error");
-    };
-    Service service = singleGenerator(gen);
-    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+    setDetailLevel(DetailLevel.FULL);
+    try {
+      XmlGenerator gen = (req, xml) -> {
+        throw new RuntimeException("gen-error");
+      };
+      Service service = singleGenerator(gen);
+      XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
 
-    String result = xr.generate();
+      String result = xr.generate();
 
-    assertTrue(result.contains("<berlioz-exception"), "Expected legacy exception element: " + result);
-    assertTrue(result.contains("Unexpected exception caught"), "Expected legacy exception details: " + result);
-    assertTrue(result.contains("<cause"), "Expected legacy exception cause: " + result);
-    assertFalse(result.contains("<problem>"), "Legacy format must not emit problem element: " + result);
+      assertTrue(result.contains("<berlioz-exception"), "Expected legacy exception element: " + result);
+      assertTrue(result.contains("Unexpected exception caught"), "Expected legacy exception details: " + result);
+      assertTrue(result.contains("<cause"), "Expected legacy exception cause: " + result);
+      assertFalse(result.contains("<problem>"), "Legacy format must not emit problem element: " + result);
+    } finally {
+      setDetailLevel(DetailLevel.FULL);
+    }
+  }
+
+  @Test
+  void generate_envelopeError_legacyFormatMinimalLevelWritesEmptyElement() throws Exception {
+    setProblemFormat(false);
+    setDetailLevel(DetailLevel.MINIMAL);
+    try {
+      XmlGenerator gen = (req, xml) -> {
+        throw new RuntimeException("gen-error");
+      };
+      Service service = singleGenerator(gen);
+      XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+      String result = xr.generate();
+
+      assertTrue(result.contains("<berlioz-exception"), "Expected legacy exception element: " + result);
+      assertFalse(result.contains("gen-error"), "MINIMAL must not include exception message: " + result);
+      assertFalse(result.contains("<cause"), "MINIMAL must not include cause chain: " + result);
+    } finally {
+      setDetailLevel(DetailLevel.FULL);
+    }
   }
 
   @Test
@@ -359,18 +386,25 @@ class XmlResponseTest {
   }
 
   @Test
-  void generate_directError_legacyFormatDoesNotSetTopLevelProblem() throws Exception {
+  void generate_directError_legacyFormatWritesBerliozException() throws Exception {
     setProblemFormat(false);
-    XmlGenerator gen = (req, xml) -> {
-      throw new RuntimeException("gen-error");
-    };
-    Service service = directGenerator(gen);
-    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+    setDetailLevel(DetailLevel.FULL);
+    try {
+      XmlGenerator gen = (req, xml) -> {
+        throw new RuntimeException("gen-error");
+      };
+      Service service = directGenerator(gen);
+      XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
 
-    String result = xr.generate();
+      String result = xr.generate();
 
-    assertEquals("", result);
-    assertNull(xr.getProblem());
+      assertTrue(result.contains("<berlioz-exception"), "Expected legacy exception element: " + result);
+      assertTrue(result.contains("Unexpected exception caught"), "Expected legacy exception message: " + result);
+      assertFalse(result.contains("<problem>"), "Legacy format must not emit problem element: " + result);
+      assertNull(xr.getProblem());
+    } finally {
+      setDetailLevel(DetailLevel.FULL);
+    }
   }
 
   // generate() - profile -------------------------------------------------------------------------
@@ -488,6 +522,13 @@ class XmlResponseTest {
     Map<String, String> settings = ref.get();
     if (value) settings.put(BerliozOption.ERROR_PROBLEM_FORMAT.property(), "true");
     else settings.remove(BerliozOption.ERROR_PROBLEM_FORMAT.property());
+  }
+
+  private static void setDetailLevel(DetailLevel level) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    Map<String, String> settings = ref.get();
+    settings.put(BerliozOption.ERROR_DETAIL.property(), level.name().toLowerCase());
   }
 
   @SuppressWarnings("unchecked")
