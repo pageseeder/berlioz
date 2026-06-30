@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * An immutable RFC 9457 Problem Details object for reporting errors from generators.
@@ -70,6 +71,9 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   private static final String FIELD_TITLE    = "title";
   private static final String FIELD_DETAIL   = "detail";
   private static final String FIELD_INSTANCE = "instance";
+
+  private static final Set<String> RESERVED_NAMES =
+      Set.of(FIELD_TYPE, FIELD_STATUS, FIELD_TITLE, FIELD_DETAIL, FIELD_INSTANCE);
 
   private final int status;
   private final @Nullable String type;
@@ -170,6 +174,8 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   public ProblemDetails extension(String name, Object value) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(value, "value");
+    if (RESERVED_NAMES.contains(name))
+      throw new IllegalArgumentException("'" + name + "' is a reserved RFC 9457 member name; use the dedicated method instead");
     Map<String, Object> copy = new LinkedHashMap<>(this.extensions);
     copy.put(name, value);
     return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy);
