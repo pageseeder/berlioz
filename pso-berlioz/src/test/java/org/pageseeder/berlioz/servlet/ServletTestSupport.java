@@ -181,13 +181,13 @@ final class ServletTestSupport {
           case "addHeader":            headers.put((String) args[0], (String) args[1]); return null;
           case "setDateHeader":
           case "setIntHeader":         headers.put((String) args[0], String.valueOf(args[1])); return null;
-          case "reset":                resetCalled = true; headers.clear(); body.getBuffer().setLength(0); bytes.reset(); return null;
+          case "reset":                reset(); return null;
           case "sendError":            status = (Integer) args[0]; errorMessage = args.length > 1 ? (String) args[1] : null; return null;
           case "setContentLength":
           case "setContentLengthLong":  headers.put("Content-Length", String.valueOf(args[0])); return null;
-          case "setCharacterEncoding":  characterEncoding = String.valueOf(args[0]); return null;
+          case "setCharacterEncoding":  setCharacterEncoding(String.valueOf(args[0])); return null;
           case "flushBuffer":          return null;
-          case "setContentType":       contentType = (String) args[0]; return null;
+          case "setContentType":       setContentType((String) args[0]); return null;
           case "getStatus":            return status;
           case "getWriter":            return writer;
           case "getOutputStream":       return new ServletOutputStream() {
@@ -207,6 +207,52 @@ final class ServletTestSupport {
       return (HttpServletResponse) Proxy.newProxyInstance(
           HttpServletResponse.class.getClassLoader(),
           new Class<?>[]{HttpServletResponse.class}, h);
+    }
+
+    private void reset() {
+      resetCalled = true;
+      headers.clear();
+      body.getBuffer().setLength(0);
+      bytes.reset();
+      contentType = null;
+      characterEncoding = null;
+    }
+
+    private void setContentType(String value) {
+      String type = mediaType(value);
+      String charset = charset(value);
+      if (charset != null) {
+        characterEncoding = charset;
+      }
+      contentType = withCharset(type);
+    }
+
+    private void setCharacterEncoding(String value) {
+      characterEncoding = value;
+      if (contentType != null) {
+        contentType = withCharset(mediaType(contentType));
+      }
+    }
+
+    private String withCharset(String type) {
+      return characterEncoding != null ? type + ";charset=" + characterEncoding : type;
+    }
+
+    private static String mediaType(String value) {
+      int semicolon = value.indexOf(';');
+      return semicolon >= 0 ? value.substring(0, semicolon) : value;
+    }
+
+    private static String charset(String value) {
+      String[] parts = value.split(";");
+      for (int i = 1; i < parts.length; i++) {
+        String part = parts[i].trim();
+        int equals = part.indexOf('=');
+        if (equals > 0 && "charset".equalsIgnoreCase(part.substring(0, equals).trim())) {
+          return part.substring(equals + 1).trim();
+        }
+      }
+      return null;
     }
   }
 
