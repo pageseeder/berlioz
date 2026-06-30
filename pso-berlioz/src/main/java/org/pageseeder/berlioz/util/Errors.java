@@ -65,9 +65,10 @@ public final class Errors {
     StringWriter sw = new StringWriter();
     error.printStackTrace(new PrintWriter(sw));
     StringBuffer stacktrace = sw.getBuffer();
-    // Remove anything after the servlet API exception
+    // Remove anything after the Berlioz servlet dispatch layer (or the container boundary)
     if (safe) {
-      int x = stacktrace.indexOf("javax.servlet.http.HttpServlet.service");
+      int x = stacktrace.indexOf("\tat org.pageseeder.berlioz.servlet.");
+      if (x < 0) x = stacktrace.indexOf("javax.servlet.http.HttpServlet.service");
       if (x >= 0) {
         stacktrace.setLength(x);
         stacktrace.append("...");
