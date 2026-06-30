@@ -482,16 +482,14 @@ public final class BerliozServlet extends HttpServlet {
     Charset charset = resolveCharset(result.getEncoding());
 
     // Update content type: use problem+xml for direct-service problem responses, otherwise honour XSLT output
-    ProblemDetails topLevelXmlProblem = xml.getProblem();
-    String ctype = topLevelXmlProblem != null
-        ? "application/problem+xml;charset=" + charset.name()
-        : result.getMediaType() + ";charset=" + charset.name();
-    res.setContentType(ctype);
+    boolean isProblemXml = transformer == null && xml.getProblem() != null;
+    res.setContentType(isProblemXml ? "application/problem+xml" : result.getMediaType());
     res.setCharacterEncoding(charset.name());
-    if (!config.getContentType().equals(ctype)) {
-      LOGGER.info("Updating content type to {}", ctype);
-      config.setContentType(ctype);
-    }
+
+//    if (!config.getContentType().equals(ctype)) {
+//      LOGGER.info("Updating content type to {}", ctype);
+//      config.setContentType(ctype);
+//    }
 
     // Write the response body, applying GZip compression when appropriate
     writeOutput(req, res, result, etag, charset, config, ctx.includeContent);

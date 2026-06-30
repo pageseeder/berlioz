@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.13.5
  * @since 0.8.1
  */
 public final class BerliozConfig {
@@ -281,7 +281,10 @@ public final class BerliozConfig {
    * Updates the content type, typically called when the XSLT output overrides the configured type.
    *
    * @param contentType the new content type, which may include a {@code charset} parameter.
+   *
+   * @deprecated We should not mutate the Berlioz Config to avoid side-effect
    */
+  @Deprecated(forRemoval = true, since = "0.13.5")
   public void setContentType(String contentType) {
     this.mediaType = parseMediaType(contentType);
     this.charset = parseCharset(contentType);
@@ -472,7 +475,7 @@ public final class BerliozConfig {
   private long newEtagSeed() {
     long seed = RANDOM.nextLong();
     String seedAsString = Long.toString(seed, 36);
-    LOGGER.info("Generating new ETag Seed: {}", seedAsString);
+    LOGGER.info("Generating new Etag Seed: {}", seedAsString);
     File f = this.env.getPrivateFile("berlioz.etag");
     File p = f.getParentFile();
     if (f.exists() && f.canWrite() || p != null && p.canWrite()) {
