@@ -49,6 +49,7 @@ import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
+import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ProfileFormat;
 import org.pageseeder.berlioz.xml.XmlAppendable;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
@@ -272,21 +273,31 @@ public final class XmlResponse {
     StringWriter sw = new StringWriter();
     Response response = Response.ok();
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+    boolean problemFormat = GeneratorDispatch.useProblemFormat();
     long start = System.nanoTime();
     try {
       response = dispatchXml(generator, request, sw);
     } catch (InvalidParameterException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forInvalidParameter(ex, level));
+      response = problemFormat
+          ? Response.problem(Problems.forInvalidParameter(ex, level))
+          : Response.status(ContentStatus.BAD_REQUEST);
     } catch (UpstreamException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forUpstreamException(ex, level));
+      response = problemFormat
+          ? Response.problem(Problems.forUpstreamException(ex, level))
+          : Response.status(ContentStatus.BAD_GATEWAY);
     } catch (HttpException ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forHttpException(ex, level));
+      ContentStatus status = ContentStatus.forCode(ex.getHttpCode());
+      response = problemFormat
+          ? Response.problem(Problems.forHttpException(ex, level))
+          : Response.status(status != null ? status : ContentStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception ex) {
       outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forGeneratorError(ex, level));
+      response = problemFormat
+          ? Response.problem(Problems.forGeneratorError(ex, level))
+          : Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
     }
     long end = System.nanoTime();
     outcome.handleStatus(response, generator, service);
@@ -385,25 +396,36 @@ public final class XmlResponse {
 
     // Invoke the generator
     String result = null;
+    BerliozException error = null;
     Response response = Response.ok();
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+    boolean problemFormat = GeneratorDispatch.useProblemFormat();
     long start = System.nanoTime();
     StringWriter sw = new StringWriter();
     try {
       response = dispatchXml(generator, request, sw);
       result = sw.toString();
     } catch (InvalidParameterException ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forInvalidParameter(ex, level));
+      error = outcome.handleError(ex, generator);
+      response = problemFormat
+          ? Response.problem(Problems.forInvalidParameter(ex, level))
+          : Response.status(ContentStatus.BAD_REQUEST);
     } catch (UpstreamException ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forUpstreamException(ex, level));
+      error = outcome.handleError(ex, generator);
+      response = problemFormat
+          ? Response.problem(Problems.forUpstreamException(ex, level))
+          : Response.status(ContentStatus.BAD_GATEWAY);
     } catch (HttpException ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forHttpException(ex, level));
+      error = outcome.handleError(ex, generator);
+      ContentStatus status = ContentStatus.forCode(ex.getHttpCode());
+      response = problemFormat
+          ? Response.problem(Problems.forHttpException(ex, level))
+          : Response.status(status != null ? status : ContentStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forGeneratorError(ex, level));
+      error = outcome.handleError(ex, generator);
+      response = problemFormat
+          ? Response.problem(Problems.forGeneratorError(ex, level))
+          : Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
     }
 
     long end = System.nanoTime();
@@ -431,15 +453,31 @@ public final class XmlResponse {
     }
 
 
-    // Write the XML: inline problem element if the generator signalled a problem,
-    // otherwise the generator's own XML output.
+    // Write the XML: legacy errors stay in the old berlioz-exception shape unless
+    // problem format is explicitly enabled.
     if (response.isProblem()) {
       xml.asXml(response.problem());
+    } else if (error != null) {
+      writeLegacyException(xml, error);
     } else if (result != null) {
       xml.xml(result);
     }
 
     xml.closeElement();
+  }
+
+  private static void writeLegacyException(XmlWriter xml, BerliozException error) {
+    StringWriter out = new StringWriter();
+    try {
+      XMLWriter legacy = new XMLWriterImpl(out);
+      legacy.openElement("berlioz-exception");
+      Errors.toXML(error, legacy, false);
+      legacy.closeElement();
+      legacy.flush();
+      xml.xml(out.toString());
+    } catch (IOException ex) {
+      LOGGER.warn("Unable to write legacy generator error XML", ex);
+    }
   }
 
   /**

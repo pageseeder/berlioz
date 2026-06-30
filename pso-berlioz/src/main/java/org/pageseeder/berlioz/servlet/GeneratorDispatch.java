@@ -19,6 +19,8 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.GeneratorListener;
@@ -161,6 +163,10 @@ final class GeneratorDispatch {
   @Beta
   static @Nullable GeneratorListener getListener() {
     return listener.get();
+  }
+
+  static boolean useProblemFormat() {
+    return GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT);
   }
 
   /**

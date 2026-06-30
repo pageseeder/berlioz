@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.servlet;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
@@ -19,8 +20,12 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -217,6 +222,77 @@ class JsonResponseTest {
   }
 
   @Test
+  void generate_envelopeError_legacyFormatWritesErrorObject() throws Exception {
+    setProblemFormat(false);
+    JsonGenerator gen = (req, json) -> {
+      throw new RuntimeException("unexpected");
+    };
+    Service service = singleGenerator(gen);
+    JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
+
+    String result = jr.generate();
+
+    assertTrue(result.contains("\"error\""), "Expected legacy error object: " + result);
+    assertFalse(result.contains("\"type\""), "Legacy generator error must not emit problem fields: " + result);
+    assertNull(jr.getProblem());
+  }
+
+  @Test
+  void generate_envelopeError_problemFormatWritesProblemObject() throws Exception {
+    setProblemFormat(true);
+    try {
+      JsonGenerator gen = (req, json) -> {
+        throw new RuntimeException("unexpected");
+      };
+      Service service = singleGenerator(gen);
+      JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
+
+      String result = jr.generate();
+
+      assertTrue(result.contains("\"type\""), "Expected problem object: " + result);
+      assertTrue(result.contains("generator-error"), "Expected generator problem type: " + result);
+      assertFalse(result.contains("\"error\""), "Problem format must not use legacy error object: " + result);
+      assertNull(jr.getProblem(), "Envelope problems are inline and do not change the top-level media type");
+    } finally {
+      setProblemFormat(false);
+    }
+  }
+
+  @Test
+  void generate_directError_legacyFormatDoesNotSetTopLevelProblem() throws Exception {
+    setProblemFormat(false);
+    JsonGenerator gen = (req, json) -> {
+      throw new RuntimeException("unexpected");
+    };
+    Service service = directGenerator(gen);
+    JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
+
+    String result = jr.generate();
+
+    assertTrue(result.contains("\"error\""), "Expected legacy error object: " + result);
+    assertNull(jr.getProblem());
+  }
+
+  @Test
+  void generate_directError_problemFormatSetsTopLevelProblem() throws Exception {
+    setProblemFormat(true);
+    try {
+      JsonGenerator gen = (req, json) -> {
+        throw new RuntimeException("unexpected");
+      };
+      Service service = directGenerator(gen);
+      JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
+
+      String result = jr.generate();
+
+      assertTrue(result.contains("generator-error"), "Expected generator problem type: " + result);
+      assertNotNull(jr.getProblem());
+    } finally {
+      setProblemFormat(false);
+    }
+  }
+
+  @Test
   void generate_generatorSetsNotFoundStatus_propagates() {
     JsonGenerator gen = (req, json) -> Response.status(ContentStatus.NOT_FOUND);
     Service service = singleGenerator(gen);
@@ -370,5 +446,20 @@ class JsonResponseTest {
     assertSame(listener, JsonResponse.getListener());
     JsonResponse.setListener(null);
     assertNull(JsonResponse.getListener());
+  }
+
+  private static void setProblemFormat(boolean value) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    Map<String, String> settings = ref.get();
+    if (value) settings.put(BerliozOption.ERROR_PROBLEM_FORMAT.property(), "true");
+    else settings.remove(BerliozOption.ERROR_PROBLEM_FORMAT.property());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static AtomicReference<Map<String, String>> settingsRef() throws ReflectiveOperationException {
+    Field f = GlobalSettings.class.getDeclaredField("SETTINGS");
+    f.setAccessible(true);
+    return (AtomicReference<Map<String, String>>) f.get(null);
   }
 }

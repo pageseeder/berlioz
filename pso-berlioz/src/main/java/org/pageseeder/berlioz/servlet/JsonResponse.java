@@ -215,7 +215,9 @@ public final class JsonResponse {
 
     Response response = Response.ok();
     String json = null;
+    BerliozException error = null;
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+    boolean problemFormat = GeneratorDispatch.useProblemFormat();
     long start = System.nanoTime();
 
     try (JsonStringBuilder jb = JsonStringBuilder.create()) {
@@ -231,17 +233,26 @@ public final class JsonResponse {
       }
       json = jb.toString();
     } catch (InvalidParameterException ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forInvalidParameter(ex, level));
+      error = outcome.handleError(ex, generator);
+      response = problemFormat
+          ? Response.problem(Problems.forInvalidParameter(ex, level))
+          : Response.status(ContentStatus.BAD_REQUEST);
     } catch (UpstreamException ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forUpstreamException(ex, level));
+      error = outcome.handleError(ex, generator);
+      response = problemFormat
+          ? Response.problem(Problems.forUpstreamException(ex, level))
+          : Response.status(ContentStatus.BAD_GATEWAY);
     } catch (HttpException ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forHttpException(ex, level));
+      error = outcome.handleError(ex, generator);
+      ContentStatus status = ContentStatus.forCode(ex.getHttpCode());
+      response = problemFormat
+          ? Response.problem(Problems.forHttpException(ex, level))
+          : Response.status(status != null ? status : ContentStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception ex) {
-      outcome.handleError(ex, generator);
-      response = Response.problem(Problems.forGeneratorError(ex, level));
+      error = outcome.handleError(ex, generator);
+      response = problemFormat
+          ? Response.problem(Problems.forGeneratorError(ex, level))
+          : Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
     }
 
     long end = System.nanoTime();
@@ -258,7 +269,7 @@ public final class JsonResponse {
     if (l != null) l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
 
     ProblemDetails problem = response.isProblem() ? response.problem() : null;
-    return new GeneratorResult(name, json, problem, request.getProfileEtag(), end - start);
+    return new GeneratorResult(name, json, problem, error, request.getProfileEtag(), end - start);
   }
 
   private String assemble(List<GeneratorResult> results, Service service) {
@@ -288,6 +299,7 @@ public final class JsonResponse {
 
   private static String resolveValue(GeneratorResult r) {
     if (r.problem != null) return r.problem.toJson();
+    if (r.error != null) return errorJson(r.error);
     return r.json != null && !r.json.isEmpty() ? r.json : "null";
   }
 
@@ -303,18 +315,30 @@ public final class JsonResponse {
     jb.endObject();
   }
 
+  private static String errorJson(BerliozException ex) {
+    String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName();
+    try (JsonStringBuilder jb = JsonStringBuilder.create()) {
+      jb.startObject().field("error", msg).endObject();
+      jb.flush();
+      return jb.toString();
+    }
+  }
+
   private static final class GeneratorResult {
     final String name;
     final @Nullable String json;
     final @Nullable ProblemDetails problem;
+    final @Nullable BerliozException error;
     final long profileEtag;
     final long profileProcess;
 
     GeneratorResult(String name, @Nullable String json, @Nullable ProblemDetails problem,
+                    @Nullable BerliozException error,
                     long profileEtag, long profileProcess) {
       this.name = name;
       this.json = json;
       this.problem = problem;
+      this.error = error;
       this.profileEtag = profileEtag;
       this.profileProcess = profileProcess;
     }

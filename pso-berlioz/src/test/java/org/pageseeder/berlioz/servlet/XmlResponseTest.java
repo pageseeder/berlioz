@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
@@ -20,8 +21,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -296,7 +301,8 @@ class XmlResponseTest {
   }
 
   @Test
-  void generate_envelopeError_writesProblemElement() throws IOException {
+  void generate_envelopeError_legacyFormatWritesBerliozException() throws Exception {
+    setProblemFormat(false);
     XmlGenerator gen = (req, xml) -> {
       throw new RuntimeException("gen-error");
     };
@@ -305,8 +311,66 @@ class XmlResponseTest {
 
     String result = xr.generate();
 
-    assertTrue(result.contains("<problem>"), "Expected inline <problem> element: " + result);
-    assertTrue(result.contains("generator-error"), "Expected problem type in element: " + result);
+    assertTrue(result.contains("<berlioz-exception"), "Expected legacy exception element: " + result);
+    assertTrue(result.contains("Unexpected exception caught"), "Expected legacy exception details: " + result);
+    assertTrue(result.contains("<cause"), "Expected legacy exception cause: " + result);
+    assertFalse(result.contains("<problem>"), "Legacy format must not emit problem element: " + result);
+  }
+
+  @Test
+  void generate_envelopeError_problemFormatWritesProblemElement() throws Exception {
+    setProblemFormat(true);
+    try {
+      XmlGenerator gen = (req, xml) -> {
+        throw new RuntimeException("gen-error");
+      };
+      Service service = singleGenerator(gen);
+      XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+      String result = xr.generate();
+
+      assertTrue(result.contains("<problem>"), "Expected inline <problem> element: " + result);
+      assertTrue(result.contains("generator-error"), "Expected problem type in element: " + result);
+      assertFalse(result.contains("<berlioz-exception>"), "Problem format must not emit legacy exception: " + result);
+      assertNull(xr.getProblem(), "Envelope problems are inline and do not change the top-level media type");
+    } finally {
+      setProblemFormat(false);
+    }
+  }
+
+  @Test
+  void generate_directError_problemFormatSetsTopLevelProblem() throws Exception {
+    setProblemFormat(true);
+    try {
+      XmlGenerator gen = (req, xml) -> {
+        throw new RuntimeException("gen-error");
+      };
+      Service service = directGenerator(gen);
+      XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+      String result = xr.generate();
+
+      assertTrue(result.contains("<problem>"), "Expected top-level problem element: " + result);
+      assertTrue(result.contains("generator-error"), "Expected problem type in element: " + result);
+      assertNotNull(xr.getProblem());
+    } finally {
+      setProblemFormat(false);
+    }
+  }
+
+  @Test
+  void generate_directError_legacyFormatDoesNotSetTopLevelProblem() throws Exception {
+    setProblemFormat(false);
+    XmlGenerator gen = (req, xml) -> {
+      throw new RuntimeException("gen-error");
+    };
+    Service service = directGenerator(gen);
+    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+    String result = xr.generate();
+
+    assertEquals("", result);
+    assertNull(xr.getProblem());
   }
 
   // generate() - profile -------------------------------------------------------------------------
@@ -416,5 +480,20 @@ class XmlResponseTest {
     assertSame(listener, XmlResponse.getListener());
     XmlResponse.setListener(null);
     assertNull(XmlResponse.getListener());
+  }
+
+  private static void setProblemFormat(boolean value) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    Map<String, String> settings = ref.get();
+    if (value) settings.put(BerliozOption.ERROR_PROBLEM_FORMAT.property(), "true");
+    else settings.remove(BerliozOption.ERROR_PROBLEM_FORMAT.property());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static AtomicReference<Map<String, String>> settingsRef() throws ReflectiveOperationException {
+    Field f = GlobalSettings.class.getDeclaredField("SETTINGS");
+    f.setAccessible(true);
+    return (AtomicReference<Map<String, String>>) f.get(null);
   }
 }
