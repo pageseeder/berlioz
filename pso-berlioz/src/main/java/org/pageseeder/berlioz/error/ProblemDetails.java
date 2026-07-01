@@ -26,6 +26,7 @@ import org.pageseeder.berlioz.output.OutputWriter.FieldOption;
 import org.pageseeder.berlioz.xml.XmlWritable;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ import java.util.Set;
  * </ul>
  *
  * <p>Extension members (e.g. {@code errors} for parameter validation failures) can be
- * added via {@link #extension(String, Object)}. Structured extensions that own their own
+ * added via typed {@code extension(name, value)} methods. Structured extensions that own their own
  * XML and JSON representation can be added via {@link #extension(ProblemExtension)}.</p>
  *
  * <p>Berlioz renders problem details according to the negotiated output path:</p>
@@ -162,25 +163,80 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   }
 
   /**
-   * Returns a copy with the given extension member added.
+   * Returns a copy with the given string extension member added.
    *
    * <p>Extension members allow frameworks and applications to add problem-specific data.
-   * For example, a validation failure might add an {@code errors} member listing each
-   * invalid field.</p>
+   * For example, a validation failure might add an {@code errors} member listing each invalid
+   * field via {@link #extension(String, Iterable)}.</p>
    *
    * @param name  the extension member name; must not conflict with standard RFC 9457 names
    * @param value the extension member value
    * @return a new instance
    */
-  public ProblemDetails extension(String name, Object value) {
-    Objects.requireNonNull(name, "name");
-    Objects.requireNonNull(value, "value");
-    checkExtensionName(name);
-    if (value instanceof XmlWritable || value instanceof JsonWritable)
-      throw new IllegalArgumentException("Structured problem extensions must implement ProblemExtension and be added with extension(ProblemExtension)");
+  public ProblemDetails extension(String name, String value) {
+    return withExtension(name, Objects.requireNonNull(value, "value"));
+  }
+
+  /**
+   * Returns a copy with the given boolean extension member added.
+   *
+   * @param name  the extension member name; must not conflict with standard RFC 9457 names
+   * @param value the extension member value
+   * @return a new instance
+   */
+  public ProblemDetails extension(String name, boolean value) {
+    return withExtension(name, value);
+  }
+
+  /**
+   * Returns a copy with the given integer extension member added.
+   *
+   * <p>{@code int} values are accepted through normal Java widening conversion.</p>
+   *
+   * @param name  the extension member name; must not conflict with standard RFC 9457 names
+   * @param value the extension member value
+   * @return a new instance
+   */
+  public ProblemDetails extension(String name, long value) {
+    return withExtension(name, value);
+  }
+
+  /**
+   * Returns a copy with the given decimal extension member added.
+   *
+   * @param name  the extension member name; must not conflict with standard RFC 9457 names
+   * @param value the extension member value
+   * @return a new instance
+   */
+  public ProblemDetails extension(String name, double value) {
+    return withExtension(name, value);
+  }
+
+  /**
+   * Returns a copy with the given string collection extension member added.
+   *
+   * @param name   the extension member name; must not conflict with standard RFC 9457 names
+   * @param values the extension member values
+   * @return a new instance
+   */
+  public ProblemDetails extension(String name, Iterable<String> values) {
+    return withExtension(name, copyValues(values));
+  }
+
+  private ProblemDetails withExtension(String name, Object value) {
+    checkExtensionName(Objects.requireNonNull(name, "name"));
     Map<String, Object> copy = new LinkedHashMap<>(this.extensions);
     copy.put(name, value);
     return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy);
+  }
+
+  private static List<String> copyValues(Iterable<String> values) {
+    Objects.requireNonNull(values, "values");
+    List<String> copy = new ArrayList<>();
+    for (String value : values) {
+      copy.add(Objects.requireNonNull(value, "values item"));
+    }
+    return List.copyOf(copy);
   }
 
   /**
@@ -246,8 +302,8 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
    * Serializes this problem as a complete {@code application/problem+json} document body.
    *
    * <p>Standard members are written in RFC 9457 order. Extension members follow as additional
-   * top-level fields. String, numeric, boolean, and {@code List<?>} extension values are supported;
-   * other values are serialized via {@code toString()}.
+   * top-level fields. String, numeric, boolean, string collection, and structured extension values
+   * are supported.
    *
    * @return the complete JSON object string
    */
@@ -260,19 +316,18 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   private static void writeExtensionJson(JsonWriter json, String name, Object value) {
     if (value instanceof ProblemExtension) {
       ((ProblemExtension) value).toJson(json);
-    } else if (value instanceof String)       json.field(name, (String) value);
-    else if (value instanceof Long)    json.field(name, (Long) value);
-    else if (value instanceof Integer) json.field(name, (Integer) value);
-    else if (value instanceof Double)  json.field(name, (Double) value);
-    else if (value instanceof Boolean) json.field(name, (Boolean) value);
-    else if (value instanceof List) {
+    } else if (value instanceof String)  json.field(name, (String) value);
+    else if (value instanceof Long)      json.field(name, (Long) value);
+    else if (value instanceof Double)    json.field(name, (Double) value);
+    else if (value instanceof Boolean)   json.field(name, (Boolean) value);
+    else if (value instanceof Iterable) {
       json.startArray(name);
-      for (Object item : (List<?>) value) {
-        json.value(item instanceof String ? (String) item : item.toString());
+      for (Object item : (Iterable<?>) value) {
+        json.value((String) item);
       }
       json.endArray();
     } else {
-      json.field(name, value.toString());
+      throw new IllegalStateException("Unsupported problem extension value: " + value.getClass().getName());
     }
   }
 
@@ -281,8 +336,8 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
    * {@code application/problem+xml} structure.
    *
    * <p>Standard members are written as child elements in RFC 9457 order. Extension members
-   * follow as additional child elements. {@code List<?>} extension values produce one element
-   * per list item; all other values use {@code toString()}.
+   * follow as additional child elements. String collection extension values produce one element
+   * per item.
    *
    * @param xml the XML writer to write to; the caller controls the surrounding document context
    * @return the same writer for chaining
@@ -309,12 +364,18 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   private static void writeExtensionXml(XmlWriter xml, String name, Object value) {
     if (value instanceof ProblemExtension) {
       ((ProblemExtension) value).toXml(xml);
-    } else if (value instanceof List) {
-      for (Object item : (List<?>) value) {
-        xml.element(name, item.toString());
+    } else if (value instanceof Iterable) {
+      for (Object item : (Iterable<?>) value) {
+        xml.element(name, (String) item);
       }
-    } else {
+    } else if (value instanceof String) {
+      xml.element(name, (String) value);
+    } else if (value instanceof Long) {
+      xml.element(name, ((Long) value).longValue());
+    } else if (value instanceof Double || value instanceof Boolean) {
       xml.element(name, value.toString());
+    } else {
+      throw new IllegalStateException("Unsupported problem extension value: " + value.getClass().getName());
     }
   }
 
@@ -350,13 +411,13 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
 
   @SuppressWarnings("unchecked")
   private static void writeExtensionOutput(OutputWriter out, String name, Object value) {
-    if (value instanceof String)       out.field(name, (String) value,            FieldOption.XML_ELEMENT);
-    else if (value instanceof Long)    out.field(name, (Long) value,              FieldOption.XML_ELEMENT);
-    else if (value instanceof Integer) out.field(name, (Integer) value,           FieldOption.XML_ELEMENT);
-    else if (value instanceof Double)  out.field(name, (Double) value,            FieldOption.XML_ELEMENT);
-    else if (value instanceof Boolean) out.field(name, (Boolean) value,           FieldOption.XML_ELEMENT);
-    else if (value instanceof Iterable) out.field(name, (Iterable<String>) value, FieldOption.XML_ELEMENT);
-    else                               out.field(name, value.toString(),          FieldOption.XML_ELEMENT);
+    if (value instanceof ProblemExtension) ((ProblemExtension) value).writeTo(out);
+    else if (value instanceof String)       out.field(name, (String) value,            FieldOption.XML_ELEMENT);
+    else if (value instanceof Long)         out.field(name, (Long) value,              FieldOption.XML_ELEMENT);
+    else if (value instanceof Double)       out.field(name, (Double) value,            FieldOption.XML_ELEMENT);
+    else if (value instanceof Boolean)      out.field(name, (Boolean) value,           FieldOption.XML_ELEMENT);
+    else if (value instanceof Iterable)     out.field(name, (Iterable<String>) value,  FieldOption.XML_ELEMENT);
+    else throw new IllegalStateException("Unsupported problem extension value: " + value.getClass().getName());
   }
 
 }

@@ -17,12 +17,14 @@ package org.pageseeder.berlioz.error;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.json.JsonWritable;
+import org.pageseeder.berlioz.output.OutputWritable;
 import org.pageseeder.berlioz.xml.XmlWritable;
 
 /**
  * A structured extension member for an RFC 9457 problem details response.
  *
- * <p>Unlike simple values added with {@link ProblemDetails#extension(String, Object)}, a
+ * <p>Unlike simple values added with typed {@code ProblemDetails.extension(name, value)}
+ * methods, a
  * {@code ProblemExtension} owns its extension member name and its complete XML and JSON
  * representation. Implementations should write a self-contained member: an XML element in
  * {@link #toXml(org.pageseeder.berlioz.xml.XmlWriter)} and a named JSON object or value in
@@ -34,7 +36,7 @@ import org.pageseeder.berlioz.xml.XmlWritable;
  * @since 0.13.5
  */
 @Beta
-public interface ProblemExtension extends XmlWritable, JsonWritable {
+public interface ProblemExtension extends XmlWritable, JsonWritable, OutputWritable {
 
   /**
    * The RFC 9457 extension member name.

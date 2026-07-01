@@ -19,6 +19,7 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.json.JsonWriter;
+import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
 import javax.xml.transform.SourceLocator;
@@ -206,6 +207,37 @@ public final class ExceptionDetail implements ProblemExtension {
     if (this.locationPublicId != null) json.field("publicId",  this.locationPublicId);
     if (this.locationSystemId != null) json.field("systemId",  this.locationSystemId);
     json.endObject();
+  }
+
+  // --- OutputWritable --------------------------------------------------------------------------
+
+  @Override
+  public OutputWriter writeTo(OutputWriter out) {
+    out.startObject(NAME);
+    writeFieldsTo(out);
+    return out.endObject();
+  }
+
+  private void writeFieldsTo(OutputWriter out) {
+    out.field("class", this.className);
+    out.optionalField("type", this.type);
+    out.field("message", this.message, OutputWriter.FieldOption.XML_ELEMENT);
+    if (hasLocation()) writeLocationTo(out);
+    out.optionalField("stack-trace", this.stackTrace, OutputWriter.FieldOption.XML_ELEMENT);
+    if (this.cause != null) {
+      out.startObject("cause");
+      this.cause.writeFieldsTo(out);
+      out.endObject();
+    }
+  }
+
+  private void writeLocationTo(OutputWriter out) {
+    out.startObject("location");
+    if (this.locationLine != -1) out.field("line", this.locationLine);
+    if (this.locationColumn != -1) out.field("column", this.locationColumn);
+    out.optionalField("public-id", this.locationPublicId);
+    out.optionalField("system-id", this.locationSystemId);
+    out.endObject();
   }
 
   // --- Private helpers -------------------------------------------------------------------------

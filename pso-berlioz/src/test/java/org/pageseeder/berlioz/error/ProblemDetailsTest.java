@@ -18,9 +18,9 @@ package org.pageseeder.berlioz.error;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentStatus;
-import org.pageseeder.berlioz.json.JsonWritable;
 import org.pageseeder.berlioz.json.JsonWriter;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.berlioz.xml.XmlWriter;
@@ -236,7 +236,20 @@ final class ProblemDetailsTest {
   @Test
   void testExtension_nullValueThrows() {
     ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST);
-    Assertions.assertThrows(NullPointerException.class, () -> p.extension("errors", null));
+    Assertions.assertThrows(NullPointerException.class, () -> p.extension("errors", (String) null));
+  }
+
+  @Test
+  void testExtension_nullIterableThrows() {
+    ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST);
+    Assertions.assertThrows(NullPointerException.class, () -> p.extension("errors", (Iterable<String>) null));
+  }
+
+  @Test
+  void testExtension_iterableWithNullThrows() {
+    ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST);
+    Iterable<String> values = java.util.Arrays.asList("ok", null);
+    Assertions.assertThrows(NullPointerException.class, () -> p.extension("errors", values));
   }
 
   @Test
@@ -255,10 +268,9 @@ final class ProblemDetailsTest {
   }
 
   @Test
-  void testExtension_namedJsonWritableThrows() {
-    ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST);
-    JsonWritable writable = json -> json.field("value", "oops");
-    Assertions.assertThrows(IllegalArgumentException.class, () -> p.extension("custom-detail", writable));
+  void testExtension_doesNotExposeObjectOverload() {
+    Assertions.assertThrows(NoSuchMethodException.class,
+        () -> ProblemDetails.class.getMethod("extension", String.class, Object.class));
   }
 
   // --- immutability / chaining ---
@@ -359,14 +371,6 @@ final class ProblemDetailsTest {
     Assertions.assertTrue(json.contains("\"errors\":["));
     Assertions.assertTrue(json.contains("name required"));
     Assertions.assertTrue(json.contains("email invalid"));
-  }
-
-  @Test
-  void testToJson_extensionFallback() {
-    // ContentStatus is an enum — not String/Long/Integer/Double/Boolean/List, so falls through to toString()
-    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
-        .extension("origin", ContentStatus.BAD_REQUEST).toJson();
-    Assertions.assertTrue(json.contains("\"origin\":"));
   }
 
   @Test
@@ -496,7 +500,6 @@ final class ProblemDetailsTest {
         .extension("dblField", 1.5d)
         .extension("boolField", false)
         .extension("listField", List.of("x", "y"))
-        .extension("otherField", ContentStatus.BAD_REQUEST)
         .writeTo(out);
     out.flush();
     String xml = sw.toString();
@@ -506,7 +509,6 @@ final class ProblemDetailsTest {
     Assertions.assertTrue(xml.contains("dblField"));
     Assertions.assertTrue(xml.contains("boolField"));
     Assertions.assertTrue(xml.contains("listField"));
-    Assertions.assertTrue(xml.contains("otherField"));
   }
 
   @Test
@@ -543,6 +545,13 @@ final class ProblemDetailsTest {
       json.startObject(this.name);
       json.field("value", "ok");
       return json.endObject();
+    }
+
+    @Override
+    public OutputWriter writeTo(OutputWriter out) {
+      out.startObject(this.name);
+      out.field("value", "ok", OutputWriter.FieldOption.XML_ELEMENT);
+      return out.endObject();
     }
   }
 
