@@ -139,8 +139,7 @@ final class ProblemsTest {
 
   @Test
   void testForHttpError_unknownCode() {
-    ProblemDetails p = Problems.forHttpError(999, "unknown");
-    Assertions.assertNull(p);
+    Assertions.assertThrows(IllegalArgumentException.class, () -> Problems.forHttpError(999, "unknown"));
   }
 
   // --- forHttpError() with berliozErrorId ---

@@ -743,11 +743,9 @@ public final class BerliozServlet extends HttpServlet {
     if (error == null && Json.isJsonMediaType(getBerliozConfig().getMediaType())) {
       DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
       ProblemDetails problem = Problems.forHttpError(code, message, extractErrorId(req, ex), ex, level);
-      if (problem != null) {
-        logError(code, message, ex, "Berlioz sending problem JSON {} [{}]");
-        writeProblemJson(res, problem);
-        return;
-      }
+      logError(code, message, ex, "Berlioz sending problem JSON {} [{}]");
+      writeProblemJson(res, problem);
+      return;
     }
 
     // Preserve the original error code when already handling an error; clamp to valid HTTP range to satisfy taint analysis

@@ -19,6 +19,8 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.http.HttpStatusCodes;
 
+import java.util.regex.Pattern;
+
 /**
  * Factory methods for all Berlioz {@link ProblemDetails} instances.
  *
@@ -36,13 +38,19 @@ import org.pageseeder.berlioz.http.HttpStatusCodes;
  * </ul>
  *
  * @author Christophe Lauret
- *
  * @version 0.13.5
  * @since 0.13.5
  */
 public final class Problems {
 
-  private Problems() {}
+  /**
+   *
+   */
+  private static final Pattern PROBLEM_SLUG =
+      Pattern.compile("\\A(?=.{1,128}\\z)[a-z0-9]++(?:-[a-z0-9]++)*+\\z");
+
+  private Problems() {
+  }
 
   // --- Generator-level problems ----------------------------------------------------------------
 
@@ -51,7 +59,7 @@ public final class Problems {
    *
    * @param ex the exception carrying the parameter name, value, and reason
    * @return a new {@code ProblemDetails} with {@code type}, {@code title}, {@code detail},
-   *         {@code parameter}, and {@code reason} members set
+   * {@code parameter}, and {@code reason} members set
    */
   public static ProblemDetails forInvalidParameter(InvalidParameterException ex) {
     return ProblemDetails.of(ContentStatus.BAD_REQUEST)
@@ -176,8 +184,8 @@ public final class Problems {
    * @param detail a human-readable explanation of this specific occurrence
    * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
-  public static @Nullable ProblemDetails forHttpError(int code, String detail) {
-    return forHttpError(code, detail, (String) null);
+  public static ProblemDetails forHttpError(int code, String detail) {
+    return forHttpError(code, detail, null);
   }
 
   /**
@@ -196,9 +204,9 @@ public final class Problems {
    *                       or {@code null} to fall back to status-code-based type selection
    * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
-  public static @Nullable ProblemDetails forHttpError(int code, String detail, @Nullable String berliozErrorId) {
+  public static ProblemDetails forHttpError(int code, String detail, @Nullable String berliozErrorId) {
+    if (code < 100 || code > 599) throw new IllegalArgumentException("HTTP status code out of range: " + code);
     ContentStatus status = ContentStatus.forCode(code);
-    if (code < 100 || code > 599) return null;
     return ProblemDetails.of(code)
         .type("urn:berlioz:problem:" + typeSlug(code, berliozErrorId))
         .title(titleFor(code, status))
@@ -216,8 +224,8 @@ public final class Problems {
    *                    extension member
    * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
-  public static @Nullable ProblemDetails forHttpError(int code, String detail,
-      @Nullable Throwable throwable, DetailLevel detailLevel) {
+  public static ProblemDetails forHttpError(int code, String detail,
+                                            @Nullable Throwable throwable, DetailLevel detailLevel) {
     return forHttpError(code, detail, null, throwable, detailLevel);
   }
 
@@ -233,10 +241,12 @@ public final class Problems {
    *                       extension member
    * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
-  public static @Nullable ProblemDetails forHttpError(int code, String detail,
-      @Nullable String berliozErrorId, @Nullable Throwable throwable, DetailLevel detailLevel) {
+  public static ProblemDetails forHttpError(int code, String detail,
+                                            @Nullable String berliozErrorId,
+                                            @Nullable Throwable throwable,
+                                            DetailLevel detailLevel) {
     ProblemDetails base = forHttpError(code, detail, berliozErrorId);
-    if (base == null || throwable == null || detailLevel == DetailLevel.MINIMAL) return base;
+    if (throwable == null || detailLevel == DetailLevel.MINIMAL) return base;
     boolean includeStackTrace = detailLevel == DetailLevel.FULL;
     return base.extension("exception", ExceptionDetail.of(throwable, includeStackTrace));
   }
@@ -264,7 +274,8 @@ public final class Problems {
    */
   private static String typeSlug(int code, @Nullable String berliozErrorId) {
     if (berliozErrorId != null && berliozErrorId.startsWith("berlioz-")) {
-      return berliozErrorId.substring("berlioz-".length());
+      String slug = berliozErrorId.substring("berlioz-".length());
+      if (PROBLEM_SLUG.matcher(slug).matches()) return slug;
     }
     if (code == 400) return "bad-request";
     if (code == 404) return "not-found";
@@ -277,7 +288,9 @@ public final class Problems {
     return reason.name().toLowerCase().replace('_', '-');
   }
 
-  /** Converts a {@link ContentStatus} name to a human-readable title, e.g. NOT_FOUND → "Not Found". */
+  /**
+   * Converts a {@link ContentStatus} name to a human-readable title, e.g. NOT_FOUND → "Not Found".
+   */
   private static String toTitle(ContentStatus status) {
     String[] words = status.name().split("_");
     StringBuilder sb = new StringBuilder();

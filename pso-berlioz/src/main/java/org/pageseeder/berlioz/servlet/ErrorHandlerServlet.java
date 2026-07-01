@@ -353,7 +353,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     try {
       xml.declaration();
       ProblemDetails problem = Problems.forHttpError(code, message != null ? message : "", berliozErrorId, throwable, level);
-      if (problem != null) problem.toXml(xml);
+      xml.asXml(problem);
       xml.flush();
     } catch (Exception ex) {
       LOGGER.warn("Unable to produce problem details XML for status {}", code, ex);
