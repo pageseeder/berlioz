@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.error;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.berlioz.http.HttpStatusCodes;
 
 /**
  * Factory methods for all Berlioz {@link ProblemDetails} instances.
@@ -114,7 +115,7 @@ public final class Problems {
   public static ProblemDetails forHttpException(HttpException ex) {
     int code = ex.getHttpCode();
     ContentStatus status = ContentStatus.forCode(code);
-    String title = status != null ? toTitle(status) : "HTTP " + code;
+    String title = titleFor(code, status);
     return ProblemDetails.of(code)
         .type("urn:berlioz:problem:http-signal")
         .title(title)
@@ -165,7 +166,7 @@ public final class Problems {
 
   /**
    * Creates a {@link ProblemDetails} for a framework-generated HTTP error, or {@code null} if
-   * {@code code} does not map to a known {@link ContentStatus}.
+   * {@code code} is outside the valid HTTP status range.
    *
    * <p>Named types are assigned for the codes the framework commonly produces:
    * 400, 404, 405, and 503. All other valid codes receive the generic
@@ -173,7 +174,7 @@ public final class Problems {
    *
    * @param code   an HTTP status code
    * @param detail a human-readable explanation of this specific occurrence
-   * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
+   * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
   public static @Nullable ProblemDetails forHttpError(int code, String detail) {
     return forHttpError(code, detail, (String) null);
@@ -193,14 +194,14 @@ public final class Problems {
    * @param detail         a human-readable explanation of this specific occurrence
    * @param berliozErrorId a Berlioz error ID string (e.g. {@code "berlioz-transform-not-found"}),
    *                       or {@code null} to fall back to status-code-based type selection
-   * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
+   * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
   public static @Nullable ProblemDetails forHttpError(int code, String detail, @Nullable String berliozErrorId) {
     ContentStatus status = ContentStatus.forCode(code);
-    if (status == null) return null;
-    return ProblemDetails.of(status)
+    if (code < 100 || code > 599) return null;
+    return ProblemDetails.of(code)
         .type("urn:berlioz:problem:" + typeSlug(code, berliozErrorId))
-        .title(toTitle(status))
+        .title(titleFor(code, status))
         .detail(detail);
   }
 
@@ -213,7 +214,7 @@ public final class Problems {
    * @param throwable   the exception that caused the error, or {@code null}
    * @param detailLevel controls how much diagnostic information is added as an {@code exception}
    *                    extension member
-   * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
+   * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
   public static @Nullable ProblemDetails forHttpError(int code, String detail,
       @Nullable Throwable throwable, DetailLevel detailLevel) {
@@ -230,7 +231,7 @@ public final class Problems {
    * @param throwable      the exception that caused the error, or {@code null}
    * @param detailLevel    controls how much diagnostic information is added as an {@code exception}
    *                       extension member
-   * @return a fully populated {@code ProblemDetails}, or {@code null} for an unrecognised code
+   * @return a fully populated {@code ProblemDetails}, or {@code null} for an invalid code
    */
   public static @Nullable ProblemDetails forHttpError(int code, String detail,
       @Nullable String berliozErrorId, @Nullable Throwable throwable, DetailLevel detailLevel) {
@@ -286,6 +287,12 @@ public final class Problems {
       sb.append(word.substring(1).toLowerCase());
     }
     return sb.toString();
+  }
+
+  private static String titleFor(int code, @Nullable ContentStatus status) {
+    String title = HttpStatusCodes.getTitle(code);
+    if (title != null) return title;
+    return status != null ? toTitle(status) : "HTTP " + code;
   }
 
 }

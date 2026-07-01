@@ -121,6 +121,23 @@ final class ProblemsTest {
   }
 
   @Test
+  void testForHttpError_validStatusOutsideContentStatus() {
+    ProblemDetails p = Problems.forHttpError(412, "precondition failed");
+    Assertions.assertNotNull(p);
+    Assertions.assertEquals(412, p.status());
+    Assertions.assertEquals("Precondition Failed", p.title());
+    Assertions.assertEquals("urn:berlioz:problem:error", p.type());
+  }
+
+  @Test
+  void testForHttpError_validUnknownStatusUsesHttpTitle() {
+    ProblemDetails p = Problems.forHttpError(599, "network timeout");
+    Assertions.assertNotNull(p);
+    Assertions.assertEquals(599, p.status());
+    Assertions.assertEquals("HTTP 599", p.title());
+  }
+
+  @Test
   void testForHttpError_unknownCode() {
     ProblemDetails p = Problems.forHttpError(999, "unknown");
     Assertions.assertNull(p);

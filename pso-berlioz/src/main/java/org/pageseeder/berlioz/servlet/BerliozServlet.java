@@ -385,10 +385,11 @@ public final class BerliozServlet extends HttpServlet {
 
     // Examine status
     ContentStatus status = json.getStatus();
-    res.setStatus(Objects.requireNonNullElseGet(ctx.errorCode, status::code));
+    int statusCode = Objects.requireNonNullElse(ctx.errorCode, json.getStatusCode());
+    res.setStatus(statusCode);
 
     // If errors occurred and should percolate
-    if (checkAndSendError(req, res, status, json.getError())) return;
+    if (checkAndSendError(req, res, statusCode, json.getError())) return;
 
     // Redirection
     if (handleRedirect(req, res, status, json.getRedirectURL())) return;
@@ -464,10 +465,11 @@ public final class BerliozServlet extends HttpServlet {
 
     // Examine the status
     ContentStatus status = xml.getStatus();
-    res.setStatus(Objects.requireNonNullElseGet(ctx.errorCode, status::code));
+    int statusCode = Objects.requireNonNullElse(ctx.errorCode, xml.getStatusCode());
+    res.setStatus(statusCode);
 
     // If errors occurred and should percolate
-    if (checkAndSendError(req, res, status, xml.getError())) return;
+    if (checkAndSendError(req, res, statusCode, xml.getError())) return;
 
     // Redirection (Beta)
     if (handleRedirect(req, res, status, xml.getRedirectURL())) return;
@@ -558,9 +560,9 @@ public final class BerliozServlet extends HttpServlet {
    * @return {@code true} when an error was sent and the caller must return immediately.
    */
   private boolean checkAndSendError(HttpServletRequest req, HttpServletResponse res,
-      ContentStatus status, @Nullable Exception error) {
+      int statusCode, @Nullable Exception error) {
     if (error == null || GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) return false;
-    sendError(req, res, status.code(), "The service failed because of errors thrown by generators", error);
+    sendError(req, res, statusCode, "The service failed because of errors thrown by generators", error);
     return true;
   }
 

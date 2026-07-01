@@ -166,6 +166,14 @@ final class ResponseTest {
     ProblemDetails pd = ProblemDetails.of(ContentStatus.NOT_FOUND);
     Response r = Response.problem(pd);
     Assertions.assertEquals(ContentStatus.NOT_FOUND, r.status());
+    Assertions.assertEquals(404, r.statusCode());
+  }
+
+  @Test
+  void testProblem_statusCodePreservesValidHttpStatusNotInContentStatus() {
+    ProblemDetails pd = ProblemDetails.of(412);
+    Response r = Response.problem(pd);
+    Assertions.assertEquals(412, r.statusCode());
   }
 
   @Test

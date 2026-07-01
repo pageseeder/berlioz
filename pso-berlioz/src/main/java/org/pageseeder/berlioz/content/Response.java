@@ -57,14 +57,16 @@ import java.util.*;
  */
 public final class Response {
 
-  private final ContentStatus status;
+  private final @Nullable ContentStatus status;
+  private final int statusCode;
   private final @Nullable String redirectLocation;
   private final @Nullable ProblemDetails problem;
   private final Map<String, String> headers;
 
-  private Response(ContentStatus status, @Nullable String redirectLocation,
+  private Response(@Nullable ContentStatus status, int statusCode, @Nullable String redirectLocation,
       @Nullable ProblemDetails problem, Map<String, String> headers) {
     this.status = status;
+    this.statusCode = statusCode;
     this.redirectLocation = redirectLocation;
     this.problem = problem;
     this.headers = headers; // all callers guarantee immutability
@@ -78,7 +80,7 @@ public final class Response {
    * @return a new {@code Response}
    */
   public static Response ok() {
-    return new Response(ContentStatus.OK, null, null, Map.of());
+    return new Response(ContentStatus.OK, ContentStatus.OK.code(), null, null, Map.of());
   }
 
   /**
@@ -92,7 +94,7 @@ public final class Response {
     Objects.requireNonNull(status, "status");
     if (ContentStatus.isRedirect(status))
       throw new IllegalArgumentException("Use redirect() for redirect statuses: " + status);
-    return new Response(status, null, null, Map.of());
+    return new Response(status, status.code(), null, null, Map.of());
   }
 
   /**
@@ -108,7 +110,7 @@ public final class Response {
     Objects.requireNonNull(location, "location");
     if (!ContentStatus.isRedirect(status))
       throw new IllegalArgumentException("Status is not a redirect code: " + status);
-    return new Response(status, location, null, Map.of());
+    return new Response(status, status.code(), location, null, Map.of());
   }
 
   /**
@@ -122,7 +124,7 @@ public final class Response {
   public static Response problem(ProblemDetails problem) {
     Objects.requireNonNull(problem, "problem");
     ContentStatus cs = ContentStatus.forCode(problem.status());
-    return new Response(cs != null ? cs : ContentStatus.INTERNAL_SERVER_ERROR, null, problem, Map.of());
+    return new Response(cs, problem.status(), null, problem, Map.of());
   }
 
   // --- Fluent modifier -------------------------------------------------------------------------
@@ -154,7 +156,7 @@ public final class Response {
       throw new IllegalArgumentException("Invalid HTTP header value for: " + name);
     Map<String, String> copy = new LinkedHashMap<>(this.headers);
     copy.put(name, value);
-    return new Response(this.status, this.redirectLocation, this.problem, Map.copyOf(copy));
+    return new Response(this.status, this.statusCode, this.redirectLocation, this.problem, Map.copyOf(copy));
   }
 
   private static boolean isValidHeaderName(String name) {
@@ -201,8 +203,22 @@ public final class Response {
 
   // --- Accessors -------------------------------------------------------------------------------
 
-  /** @return the HTTP status code */
-  public ContentStatus status() { return this.status; }
+  /**
+   * Returns the response status as a {@link ContentStatus} when the code is represented by the
+   * generator status enum.
+   *
+   * <p>Problem responses can carry any valid HTTP status. Use {@link #statusCode()} when the exact
+   * wire-level HTTP status matters.</p>
+   *
+   * @return the content status view, or {@code 500 Internal Server Error} when this response carries
+   *         a valid HTTP code that is not represented by {@link ContentStatus}
+   */
+  public ContentStatus status() {
+    return this.status != null ? this.status : ContentStatus.INTERNAL_SERVER_ERROR;
+  }
+
+  /** @return the exact HTTP status code to send on the wire */
+  public int statusCode() { return this.statusCode; }
 
   /** @return the redirect target URL, or {@code null} if this is not a redirect */
   public @Nullable String redirectLocation() { return this.redirectLocation; }

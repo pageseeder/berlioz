@@ -6,6 +6,7 @@ import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.content.ServiceStatusRule.CodeRule;
 import org.pageseeder.berlioz.content.ServiceTestHelper;
+import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 
@@ -107,6 +108,18 @@ class GeneratorOutcomeTest {
     // Second call with OK (200) should NOT displace NOT_FOUND
     outcome.handleStatus(Response.ok(), generator, service);
     assertEquals(ContentStatus.NOT_FOUND, outcome.getStatus());
+  }
+
+  @Test
+  void handleStatus_highestRule_validStatusOutsideContentStatusIsPreserved() {
+    GeneratorOutcome outcome = new GeneratorOutcome();
+    Service service = serviceWithRule(CodeRule.HIGHEST);
+    NoContent generator = new NoContent();
+
+    outcome.handleStatus(Response.problem(ProblemDetails.of(412)), generator, service);
+    outcome.handleStatus(Response.ok(), generator, service);
+
+    assertEquals(412, outcome.getStatusCode());
   }
 
   @Test

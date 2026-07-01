@@ -42,13 +42,21 @@ final class GeneratorOutcome {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GeneratorOutcome.class);
 
+  private boolean hasStatus = false;
   private @Nullable ContentStatus status = null;
+  private int statusCode = ContentStatus.OK.code();
   private @Nullable String redirect = null;
   private @Nullable BerliozException exception = null;
 
   ContentStatus getStatus() {
     ContentStatus s = this.status;
-    return s == null ? ContentStatus.OK : s;
+    if (s != null) return s;
+    // TODO Content status based on same class of error?
+    return this.statusCode == ContentStatus.OK.code() ? ContentStatus.OK : ContentStatus.INTERNAL_SERVER_ERROR;
+  }
+
+  int getStatusCode() {
+    return this.statusCode;
   }
 
   @Nullable BerliozException getError() {
@@ -76,14 +84,15 @@ final class GeneratorOutcome {
    */
   void handleStatus(Response response, BerliozGenerator generator, Service service) {
     if (!service.affectStatus(generator)) return;
-    ContentStatus incoming = response.status();
+    int incoming = response.statusCode();
     CodeRule rule = service.rule().rule();
-    ContentStatus current = this.status;
-    boolean update = current == null
-        || (rule == CodeRule.HIGHEST && incoming.code() > current.code())
-        || (rule == CodeRule.LOWEST  && incoming.code() < current.code());
+    boolean update = !this.hasStatus
+        || (rule == CodeRule.HIGHEST && incoming > this.statusCode)
+        || (rule == CodeRule.LOWEST  && incoming < this.statusCode);
     if (update) {
-      this.status = incoming;
+      this.hasStatus = true;
+      this.statusCode = incoming;
+      this.status = ContentStatus.forCode(incoming);
       if (response.isRedirect()) this.redirect = response.redirectLocation();
     }
   }

@@ -119,6 +119,10 @@ public final class JsonResponse {
     return this.outcome.getStatus();
   }
 
+  public int getStatusCode() {
+    return this.outcome.getStatusCode();
+  }
+
   public @Nullable BerliozException getError() {
     return this.outcome.getError();
   }

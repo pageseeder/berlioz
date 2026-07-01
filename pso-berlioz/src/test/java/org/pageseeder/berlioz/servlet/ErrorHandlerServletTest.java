@@ -223,6 +223,24 @@ class ErrorHandlerServletTest {
           () -> assertTrue(body.contains("urn:berlioz:problem:method-not-allowed"), "type URN should name the problem")
       );
     }
+
+    @Test
+    void handle_problemFormat_401_emitsValidProblemDocument() throws Exception {
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 401)
+          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Authentication required")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+      new ErrorHandlerServlet().handle(req, res.build());
+      String body = res.content();
+      assertAll(
+          () -> assertEquals(401, res.status),
+          () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.contains("401 - Unauthorized"), "status and title should appear in heading"),
+          () -> assertTrue(body.contains("Authentication required"), "detail should appear as message"),
+          () -> assertTrue(body.contains("urn:berlioz:problem:error"), "generic problem type should be present")
+      );
+    }
   }
 
   // Detail level: standard (exception summary only, no headers/parameters)

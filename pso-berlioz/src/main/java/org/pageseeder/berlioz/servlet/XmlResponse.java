@@ -184,6 +184,10 @@ public final class XmlResponse {
     return this.outcome.getStatus();
   }
 
+  public int getStatusCode() {
+    return this.outcome.getStatusCode();
+  }
+
   /**
    * Returns a Berlioz Exception wrapping any error(s) that may have been thrown by the generators.
    *
