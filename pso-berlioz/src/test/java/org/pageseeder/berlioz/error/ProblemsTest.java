@@ -130,6 +130,14 @@ final class ProblemsTest {
   }
 
   @Test
+  void testForHttpError_usesStandardHttpTitles() {
+    ProblemDetails nonAuthoritative = Problems.forHttpError(203, "transformed");
+    ProblemDetails uriTooLong = Problems.forHttpError(414, "too long");
+    Assertions.assertEquals("Non-Authoritative Information", nonAuthoritative.title());
+    Assertions.assertEquals("URI Too Long", uriTooLong.title());
+  }
+
+  @Test
   void testForHttpError_validUnknownStatusUsesHttpTitle() {
     ProblemDetails p = Problems.forHttpError(599, "network timeout");
     Assertions.assertNotNull(p);

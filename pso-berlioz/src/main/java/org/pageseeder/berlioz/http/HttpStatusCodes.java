@@ -56,6 +56,7 @@ public final class HttpStatusCodes {
     HTTP_CODE_TITLE.put(304, "Not Modified");
     HTTP_CODE_TITLE.put(305, "Use Proxy");
     HTTP_CODE_TITLE.put(307, "Temporary Redirect");
+    HTTP_CODE_TITLE.put(308, "Permanent Redirect");
     // Client Error 4xx
     HTTP_CODE_TITLE.put(400, "Bad Request");
     HTTP_CODE_TITLE.put(401, "Unauthorized");
@@ -70,11 +71,18 @@ public final class HttpStatusCodes {
     HTTP_CODE_TITLE.put(410, "Gone");
     HTTP_CODE_TITLE.put(411, "Length Required");
     HTTP_CODE_TITLE.put(412, "Precondition Failed");
-    HTTP_CODE_TITLE.put(413, "Request Entity Too Large");
-    HTTP_CODE_TITLE.put(414, "Request-URI Too Long");
+    HTTP_CODE_TITLE.put(413, "Payload Too Large");
+    HTTP_CODE_TITLE.put(414, "URI Too Long");
     HTTP_CODE_TITLE.put(415, "Unsupported Media Type");
     HTTP_CODE_TITLE.put(416, "Requested Range Not Satisfiable");
     HTTP_CODE_TITLE.put(417, "Expectation Failed");
+    HTTP_CODE_TITLE.put(422, "Unprocessable Entity");
+    HTTP_CODE_TITLE.put(423, "Locked");
+    HTTP_CODE_TITLE.put(424, "Failed Dependency");
+    HTTP_CODE_TITLE.put(428, "Precondition Required");
+    HTTP_CODE_TITLE.put(429, "Too Many Requests");
+    HTTP_CODE_TITLE.put(431, "Request Header Fields Too Large");
+    HTTP_CODE_TITLE.put(451, "Unavailable For Legal Reasons");
     // Server Error 5xx
     HTTP_CODE_TITLE.put(500, "Internal Server Error");
     HTTP_CODE_TITLE.put(501, "Not Implemented");
@@ -82,6 +90,7 @@ public final class HttpStatusCodes {
     HTTP_CODE_TITLE.put(503, "Service Unavailable");
     HTTP_CODE_TITLE.put(504, "Gateway Timeout");
     HTTP_CODE_TITLE.put(505, "HTTP Version Not Supported");
+    HTTP_CODE_TITLE.put(507, "Insufficient Storage");
   }
 
   /**
