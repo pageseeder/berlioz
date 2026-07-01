@@ -42,6 +42,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -76,7 +77,7 @@ import org.xml.sax.XMLReader;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.13.5
  * @since 0.7
  */
 public final class XsltTransformer {
@@ -105,7 +106,7 @@ public final class XsltTransformer {
     XSLT2_SUPPORTED = detectXslt2();
     if (!XSLT2_SUPPORTED) {
       LOGGER.error("No XSLT 2.0 processor found — Berlioz requires Saxon-HE on the runtime classpath");
-      FAILSAFE_TEMPLATES = XsltTemplateCache.compile((URL) null);
+      FAILSAFE_TEMPLATES = XsltTemplateCache.compile(null);
     } else {
       URL url = loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
       FAILSAFE_TEMPLATES = XsltTemplateCache.compile(url);
@@ -459,6 +460,9 @@ public final class XsltTransformer {
       TransformerFactory.newInstance().newTemplates(new StreamSource(new StringReader(probe)));
       return true;
     } catch (TransformerConfigurationException ex) {
+      return false;
+    } catch (TransformerFactoryConfigurationError ex) {
+      LOGGER.error("Unable to create JAXP TransformerFactory while probing XSLT 2.0 support", ex);
       return false;
     }
   }
