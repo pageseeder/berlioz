@@ -112,7 +112,7 @@ package org.pageseeder.berlioz;
    *   <li>Prefixed by "berlioz-"</li>
    * </ul>
    *
-   * <p>For example, the ID of <code>SERVICES_NOT_FOUND</code> is <code>bzi-services-not-found</code>.
+   * <p>For example, the ID of <code>SERVICES_NOT_FOUND</code> is <code>berlioz-services-not-found</code>.
    *
    * @return The ID of this error code.
    */

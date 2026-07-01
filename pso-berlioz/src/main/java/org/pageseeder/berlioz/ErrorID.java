@@ -20,16 +20,17 @@ import java.io.Serializable;
 /**
  * An ID for errors to help with error handling and diagnostic.
  *
- * <p>Error IDs starting with "bz" are reserved by Berlioz.
+ * <p>Error IDs starting with "berlioz-" are reserved by Berlioz.
  *
  * <p>Note: these are different and complementary to HTTP response codes.
  *
  * @author Christophe Lauret
  *
- * @version 0.8.3
+ * @version 0.13.5
  * @since 0.8
  */
-@Beta public interface ErrorID extends Serializable {
+@Beta
+public interface ErrorID extends Serializable {
 
   /**
    * Returns the error identifier as a string.
