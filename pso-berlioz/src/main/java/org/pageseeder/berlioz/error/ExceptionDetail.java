@@ -17,10 +17,8 @@ package org.pageseeder.berlioz.error;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.json.JsonWritable;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.json.JsonWriter;
-import org.pageseeder.berlioz.xml.XmlWritable;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
 import javax.xml.transform.SourceLocator;
@@ -52,7 +50,9 @@ import org.xml.sax.SAXParseException;
  * @since 0.13.5
  */
 @Beta
-public final class ExceptionDetail implements XmlWritable, JsonWritable {
+public final class ExceptionDetail implements ProblemExtension {
+
+  private static final String NAME = "exception";
 
   private final String className;
   private final @Nullable String type;
@@ -130,6 +130,11 @@ public final class ExceptionDetail implements XmlWritable, JsonWritable {
 
   // --- XmlWritable -----------------------------------------------------------------------------
 
+  @Override
+  public String name() {
+    return NAME;
+  }
+
   /**
    * Writes this detail as an {@code <exception>} XML element.
    *
@@ -140,7 +145,7 @@ public final class ExceptionDetail implements XmlWritable, JsonWritable {
    */
   @Override
   public XmlWriter toXml(XmlWriter xml) {
-    return toXml(xml, "exception");
+    return toXml(xml, NAME);
   }
 
   private XmlWriter toXml(XmlWriter xml, String elementName) {
@@ -166,7 +171,7 @@ public final class ExceptionDetail implements XmlWritable, JsonWritable {
   // --- JsonWritable (JSON) ---------------------------------------------------------------------
 
   /**
-   * Writes the fields of this detail into the current JSON object context.
+   * Writes this detail as a named {@code exception} JSON object.
    *
    * <p>Standard members: {@code class}, optional {@code type}, {@code message}, optional
    * {@code location} object. Full additionally writes {@code stackTrace} and {@code cause}.</p>
@@ -176,6 +181,12 @@ public final class ExceptionDetail implements XmlWritable, JsonWritable {
    */
   @Override
   public JsonWriter toJson(JsonWriter json) {
+    json.startObject(NAME);
+    writeFieldsJson(json);
+    return json.endObject();
+  }
+
+  private void writeFieldsJson(JsonWriter json) {
     json.field("class", this.className);
     if (this.type != null) json.field("type", this.type);
     json.field("message", this.message);
@@ -183,10 +194,9 @@ public final class ExceptionDetail implements XmlWritable, JsonWritable {
     if (this.stackTrace != null) json.field("stackTrace", this.stackTrace);
     if (this.cause != null) {
       json.startObject("cause");
-      this.cause.toJson(json);
+      this.cause.writeFieldsJson(json);
       json.endObject();
     }
-    return json;
   }
 
   private void writeLocationJson(JsonWriter json) {

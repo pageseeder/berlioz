@@ -248,7 +248,7 @@ public final class Problems {
     ProblemDetails base = forHttpError(code, detail, berliozErrorId);
     if (throwable == null || detailLevel == DetailLevel.MINIMAL) return base;
     boolean includeStackTrace = detailLevel == DetailLevel.FULL;
-    return base.extension("exception", ExceptionDetail.of(throwable, includeStackTrace));
+    return base.extension(ExceptionDetail.of(throwable, includeStackTrace));
   }
 
   // --- Private helpers -------------------------------------------------------------------------
@@ -261,7 +261,7 @@ public final class Problems {
    */
   private static ProblemDetails withExceptionDetail(ProblemDetails base, Throwable ex, DetailLevel level) {
     if (level == DetailLevel.MINIMAL) return base;
-    return base.extension("exception", ExceptionDetail.of(ex, level == DetailLevel.FULL));
+    return base.extension(ExceptionDetail.of(ex, level == DetailLevel.FULL));
   }
 
   /**

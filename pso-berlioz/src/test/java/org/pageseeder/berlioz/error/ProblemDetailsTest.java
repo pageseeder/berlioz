@@ -18,9 +18,12 @@ package org.pageseeder.berlioz.error;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.berlioz.json.JsonWritable;
+import org.pageseeder.berlioz.json.JsonWriter;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 import java.io.StringWriter;
 import java.util.List;
@@ -236,6 +239,28 @@ final class ProblemDetailsTest {
     Assertions.assertThrows(NullPointerException.class, () -> p.extension("errors", null));
   }
 
+  @Test
+  void testExtension_structuredAddsEntryByOwnName() {
+    ProblemExtension extension = new SampleExtension("custom-detail");
+    ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension(extension);
+    Assertions.assertSame(extension, p.extensions().get("custom-detail"));
+  }
+
+  @Test
+  void testExtension_structuredReservedNameThrows() {
+    ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST);
+    ProblemExtension extension = new SampleExtension("type");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> p.extension(extension));
+  }
+
+  @Test
+  void testExtension_namedJsonWritableThrows() {
+    ProblemDetails p = ProblemDetails.of(ContentStatus.BAD_REQUEST);
+    JsonWritable writable = json -> json.field("value", "oops");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> p.extension("custom-detail", writable));
+  }
+
   // --- immutability / chaining ---
 
   @Test
@@ -344,6 +369,23 @@ final class ProblemDetailsTest {
     Assertions.assertTrue(json.contains("\"origin\":"));
   }
 
+  @Test
+  void testToJson_structuredExtensionUsesOwnRepresentation() {
+    String json = ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension(new SampleExtension("custom-detail")).toJson();
+    Assertions.assertTrue(json.contains("\"custom-detail\":{"));
+    Assertions.assertTrue(json.contains("\"value\":\"ok\""));
+  }
+
+  @Test
+  void testToJson_exceptionDetailWritesExceptionMember() {
+    String json = ProblemDetails.of(ContentStatus.INTERNAL_SERVER_ERROR)
+        .extension(ExceptionDetail.of(new IllegalStateException("boom"), false)).toJson();
+    Assertions.assertTrue(json.contains("\"exception\":{"));
+    Assertions.assertTrue(json.contains("\"class\":\"java.lang.IllegalStateException\""));
+    Assertions.assertTrue(json.contains("\"message\":\"boom\""));
+  }
+
   // --- toXml(XmlWriter) ---
 
   @Test
@@ -390,6 +432,26 @@ final class ProblemDetailsTest {
     String xml = out.toString();
     Assertions.assertTrue(xml.contains("<error>name required</error>"));
     Assertions.assertTrue(xml.contains("<error>email invalid</error>"));
+  }
+
+  @Test
+  void testToXml_structuredExtensionUsesOwnRepresentation() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .extension(new SampleExtension("custom-detail")).toXml(out);
+    String xml = out.toString();
+    Assertions.assertTrue(xml.contains("<custom-detail>"));
+    Assertions.assertTrue(xml.contains("<value>ok</value>"));
+  }
+
+  @Test
+  void testToXml_exceptionDetailWritesExceptionElement() {
+    XmlStringBuilder out = new XmlStringBuilder();
+    ProblemDetails.of(ContentStatus.INTERNAL_SERVER_ERROR)
+        .extension(ExceptionDetail.of(new IllegalStateException("boom"), false)).toXml(out);
+    String xml = out.toString();
+    Assertions.assertTrue(xml.contains("<exception class=\"java.lang.IllegalStateException\">"));
+    Assertions.assertTrue(xml.contains("<message>boom</message>"));
   }
 
   // --- writeTo(OutputWriter) ---
@@ -454,6 +516,34 @@ final class ProblemDetailsTest {
     ProblemDetails.of(ContentStatus.NOT_FOUND).writeTo(out);
     out.flush();
     Assertions.assertTrue(sw.toString().contains("\"status\":404"));
+  }
+
+  private static final class SampleExtension implements ProblemExtension {
+
+    private final String name;
+
+    private SampleExtension(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String name() {
+      return this.name;
+    }
+
+    @Override
+    public XmlWriter toXml(XmlWriter xml) {
+      xml.openElement(this.name);
+      xml.element("value", "ok");
+      return xml.closeElement();
+    }
+
+    @Override
+    public JsonWriter toJson(JsonWriter json) {
+      json.startObject(this.name);
+      json.field("value", "ok");
+      return json.endObject();
+    }
   }
 
 }

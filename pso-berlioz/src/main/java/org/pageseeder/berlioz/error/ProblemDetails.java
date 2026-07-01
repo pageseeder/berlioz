@@ -46,7 +46,8 @@ import java.util.Set;
  * </ul>
  *
  * <p>Extension members (e.g. {@code errors} for parameter validation failures) can be
- * added via {@link #extension(String, Object)}.</p>
+ * added via {@link #extension(String, Object)}. Structured extensions that own their own
+ * XML and JSON representation can be added via {@link #extension(ProblemExtension)}.</p>
  *
  * <p>Berlioz renders problem details according to the negotiated output path:</p>
  * <ul>
@@ -174,11 +175,36 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   public ProblemDetails extension(String name, Object value) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(value, "value");
-    if (RESERVED_NAMES.contains(name))
-      throw new IllegalArgumentException("'" + name + "' is a reserved RFC 9457 member name; use the dedicated method instead");
+    checkExtensionName(name);
+    if (value instanceof XmlWritable || value instanceof JsonWritable)
+      throw new IllegalArgumentException("Structured problem extensions must implement ProblemExtension and be added with extension(ProblemExtension)");
     Map<String, Object> copy = new LinkedHashMap<>(this.extensions);
     copy.put(name, value);
     return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy);
+  }
+
+  /**
+   * Returns a copy with the given structured extension member added.
+   *
+   * <p>The extension owns its member name and writes its complete XML and JSON representation.
+   * This avoids ambiguity between the map key used for bookkeeping and the serialized member
+   * name used on the wire.</p>
+   *
+   * @param extension the structured extension member
+   * @return a new instance
+   */
+  public ProblemDetails extension(ProblemExtension extension) {
+    Objects.requireNonNull(extension, "extension");
+    String name = Objects.requireNonNull(extension.name(), "extension.name()");
+    checkExtensionName(name);
+    Map<String, Object> copy = new LinkedHashMap<>(this.extensions);
+    copy.put(name, extension);
+    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy);
+  }
+
+  private static void checkExtensionName(String name) {
+    if (RESERVED_NAMES.contains(name))
+      throw new IllegalArgumentException("'" + name + "' is a reserved RFC 9457 member name; use the dedicated method instead");
   }
 
   /** @return the HTTP status code */
@@ -232,10 +258,8 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   }
 
   private static void writeExtensionJson(JsonWriter json, String name, Object value) {
-    if (value instanceof JsonWritable) {
-      json.startObject(name);
-      ((JsonWritable) value).toJson(json);
-      json.endObject();
+    if (value instanceof ProblemExtension) {
+      ((ProblemExtension) value).toJson(json);
     } else if (value instanceof String)       json.field(name, (String) value);
     else if (value instanceof Long)    json.field(name, (Long) value);
     else if (value instanceof Integer) json.field(name, (Integer) value);
@@ -283,8 +307,8 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   }
 
   private static void writeExtensionXml(XmlWriter xml, String name, Object value) {
-    if (value instanceof XmlWritable) {
-      ((XmlWritable) value).toXml(xml);
+    if (value instanceof ProblemExtension) {
+      ((ProblemExtension) value).toXml(xml);
     } else if (value instanceof List) {
       for (Object item : (List<?>) value) {
         xml.element(name, item.toString());
