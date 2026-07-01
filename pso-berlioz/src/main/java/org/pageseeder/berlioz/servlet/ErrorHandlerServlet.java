@@ -75,7 +75,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -357,6 +357,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.flush();
     } catch (Exception ex) {
       LOGGER.warn("Unable to produce problem details XML for status {}", code, ex);
+      return fallbackProblemXml(code);
     }
     return xml.toString();
   }
@@ -592,4 +593,15 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return  to;
   }
 
+  private static String fallbackProblemXml(int code) {
+    XmlStringBuilder xml = new XmlStringBuilder();
+    xml.declaration();
+    ProblemDetails.of(code)
+        .type("urn:berlioz:problem:error")
+        .title("HTTP " + code)
+        .detail("Unable to serialize problem details.")
+        .toXml(xml);
+    xml.flush();
+    return xml.toString();
+  }
 }
