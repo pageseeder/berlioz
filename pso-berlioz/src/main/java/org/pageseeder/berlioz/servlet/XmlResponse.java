@@ -307,6 +307,7 @@ public final class XmlResponse {
     long end = System.nanoTime();
     outcome.handleStatus(response, generator, service);
     GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
+    addServerTimingMetric(request, 1, service, end - start);
     GeneratorListener listener = GeneratorDispatch.getListener();
     if (listener != null) listener.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
 
@@ -452,8 +453,7 @@ public final class XmlResponse {
       xml.attribute("profile", ProfileFormat.format(request.getProfileEtag() + end - start));
     }
     if (this.serverTiming) {
-      String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
-      ServerTimingHeader.addMetricNano(this.core.response(), "xml"+position, "Source "+safeName, request.getProfileEtag() + end - start);
+      addServerTimingMetric(request, position, service, end - start);
     }
 
     // Report if requested
@@ -474,6 +474,14 @@ public final class XmlResponse {
     }
 
     xml.closeElement();
+  }
+
+  private void addServerTimingMetric(HttpContentRequest request, int position, Service service, long processTime) {
+    if (!this.serverTiming) return;
+    String name = service.name(request.generator());
+    String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
+    ServerTimingHeader.addMetricNano(this.core.response(), "xml" + position, "Source " + safeName,
+        request.getProfileEtag() + processTime);
   }
 
   private static void writeLegacyException(XmlWriter xml, BerliozException error, DetailLevel level) {

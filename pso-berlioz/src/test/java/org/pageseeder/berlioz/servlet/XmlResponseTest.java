@@ -432,6 +432,42 @@ class XmlResponseTest {
     assertFalse(result.contains("profile="), "Unexpected profile attribute: " + result);
   }
 
+  // enableServerTiming -----------------------------------------------------------------------------
+
+  @Test
+  void enableServerTiming_envelopeService_addsServerTimingHeaderPerGenerator() throws IOException {
+    Service service = singleGenerator(new NoContent());
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    XmlResponse xr = new XmlResponse(req(), recorder.build(), config, matchFor(service), false);
+    xr.enableServerTiming();
+
+    xr.generate();
+
+    String timingHeader = recorder.header("Server-Timing");
+    assertNotNull(timingHeader, "Expected Server-Timing header when server timing is enabled");
+    assertTrue(timingHeader.contains("xml1"), "Expected 'xml1' metric: " + timingHeader);
+    assertTrue(timingHeader.contains("Source"), "Expected 'Source' description: " + timingHeader);
+  }
+
+  @Test
+  void enableServerTiming_directService_addsServerTimingHeaderPerGenerator() throws IOException {
+    XmlGenerator gen = (req, xml) -> {
+      xml.openElement("raw").closeElement();
+      return Response.ok();
+    };
+    Service service = directGenerator(gen);
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    XmlResponse xr = new XmlResponse(req(), recorder.build(), config, matchFor(service), false);
+    xr.enableServerTiming();
+
+    xr.generate();
+
+    String timingHeader = recorder.header("Server-Timing");
+    assertNotNull(timingHeader, "Expected Server-Timing header when server timing is enabled");
+    assertTrue(timingHeader.contains("xml1"), "Expected 'xml1' metric: " + timingHeader);
+    assertTrue(timingHeader.contains("Source"), "Expected 'Source' description: " + timingHeader);
+  }
+
   // getHeaders -----------------------------------------------------------------------------------
 
   @Test
