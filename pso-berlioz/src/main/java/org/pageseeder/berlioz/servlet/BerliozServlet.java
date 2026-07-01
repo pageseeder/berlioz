@@ -34,9 +34,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.ErrorID;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.content.ServiceLoader;
@@ -739,7 +741,8 @@ public final class BerliozServlet extends HttpServlet {
     // For JSON-configured servlets with ERROR_HANDLER=true, produce application/problem+json directly
     // instead of dispatching to ErrorHandlerServlet (which always renders XML/HTML).
     if (error == null && Json.isJsonMediaType(getBerliozConfig().getMediaType())) {
-      ProblemDetails problem = Problems.forHttpError(code, message);
+      DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+      ProblemDetails problem = Problems.forHttpError(code, message, extractErrorId(req, ex), ex, level);
       if (problem != null) {
         logError(code, message, ex, "Berlioz sending problem JSON {} [{}]");
         writeProblemJson(res, problem);
@@ -760,6 +763,16 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     dispatchError(req, res, code, message, ex);
+  }
+
+  /**
+   * Returns the Berlioz error ID from the current exception or request attributes, if available.
+   */
+  private static @Nullable String extractErrorId(HttpServletRequest req, @Nullable Exception ex) {
+    ErrorID id = ex instanceof BerliozException ? ((BerliozException) ex).id() : null;
+    if (id != null) return id.id();
+    Object attribute = req.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_ID);
+    return attribute instanceof String ? (String) attribute : null;
   }
 
   /**
