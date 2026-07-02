@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Christophe Lauret
  *
- * @version 0.9.14
+ * @version 0.13.5
  * @since 0.6
  */
 public final class XmlContent implements BerliozOutput {
@@ -61,7 +61,7 @@ public final class XmlContent implements BerliozOutput {
   }
 
   /**
-   * @return Always <code>utf-8</code>.
+   * @return Always <code>UTF-8</code>.
    */
   @Override
   public String getEncoding() {

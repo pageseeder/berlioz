@@ -41,7 +41,7 @@ import java.util.Objects;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.12.0
  */
 public class XmlAppendable<T extends Appendable> implements XmlWriter {

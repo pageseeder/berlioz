@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.13.5
  * @since 0.13.2
  */
 final class GeneratorOutcome {

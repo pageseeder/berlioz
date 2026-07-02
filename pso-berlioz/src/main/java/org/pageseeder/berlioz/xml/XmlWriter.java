@@ -58,7 +58,7 @@ import java.util.Map;
  *
  * @author Christophe Lauret
  *
- * @version 0.12.0
+ * @version 0.13.5
  * @since 0.12.0
  */
 public interface XmlWriter {
@@ -263,6 +263,8 @@ public interface XmlWriter {
    *                               writing element nodes.
    *
    * @throws XmlWriteFailureException If an I/O exception occurs.
+   *
+   * @return this writer for chaining.
    */
   XmlWriter declaration();
 

@@ -24,7 +24,7 @@ import org.pageseeder.berlioz.xslt.XsltCacheMode;
  *
  * @author Christophe Lauret
  *
- * @version 0.10.3
+ * @version 0.13.5
  * @since 0.8.4
  */
 public enum BerliozOption {
@@ -152,7 +152,7 @@ public enum BerliozOption {
   HTTP_CACHE_CONTROL("berlioz.http.cache-control", ""),
 
   /**
-   * A global option to allow server timing information to be to returned using the <code>Server-Timing</code>
+   * A global option to allow server timing information to be returned using the <code>Server-Timing</code>
    * header.
    *
    * @see <a href="https://www.w3.org/TR/server-timing/">W3: Server Timing</a>
@@ -285,7 +285,7 @@ public enum BerliozOption {
    *   </tr></tbody>
    * </table>
    *
-   * @since 0.13.6
+   * @since 0.13.5
    */
   @Beta
   ERROR_STYLESHEET("berlioz.errors.stylesheet", ""),

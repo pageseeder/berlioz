@@ -25,11 +25,11 @@ import java.nio.file.Files;
 import java.util.Properties;
 
 /**
- * A bunch of utility functions for media types
+ * Utility functions for media types.
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.6
  */
 public final class MediaTypes {

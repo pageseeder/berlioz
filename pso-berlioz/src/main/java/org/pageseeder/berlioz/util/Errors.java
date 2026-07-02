@@ -36,7 +36,7 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.13.5
  * @since 0.8.1
  */
 public final class Errors {
@@ -270,6 +270,8 @@ public final class Errors {
    *
    * @param s the file path.
    * @return The path from the "WEB-INF" directory
+   *
+   * @since 0.13.5
    */
   public static String toWebPath(String s) {
     String from = "WEB-INF";

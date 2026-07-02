@@ -59,7 +59,7 @@ import org.pageseeder.berlioz.error.InvalidParameterException;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.13.5
  * @since 0.13.1
  */
 @Beta
