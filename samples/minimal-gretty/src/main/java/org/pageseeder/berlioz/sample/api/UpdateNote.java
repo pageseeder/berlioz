@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.error.ExceptionDetail;
 import org.pageseeder.berlioz.json.JsonWriter;
 import org.pageseeder.berlioz.sample.support.AppParameters;
 import org.pageseeder.berlioz.sample.support.ProblemRegistry;
@@ -37,10 +36,8 @@ public final class UpdateNote implements JsonGenerator {
           .endObject();
       return Response.ok();
     } catch (IOException ex) {
-      // The problem type is reusable; the exception detail describes this particular failure.
-      // Pass false so stack traces are never sent to clients; use true only in dev tooling.
-      return Response.problem(ProblemRegistry.NOTE_WRITE_ERROR
-          .extension(ExceptionDetail.of(ex, false)));
+      // The problem type is reusable; the exception describes this particular failure.
+      return Response.problem(ProblemRegistry.NOTE_WRITE_ERROR.diagnostic(ex));
     }
   }
 

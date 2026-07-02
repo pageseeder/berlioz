@@ -3,7 +3,6 @@ package org.pageseeder.berlioz.sample.api;
 import java.io.IOException;
 
 import org.pageseeder.berlioz.content.*;
-import org.pageseeder.berlioz.error.ExceptionDetail;
 import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.sample.support.ProblemRegistry;
 
@@ -32,9 +31,8 @@ public final class GetNote implements Generator {
           .endObject();
       return Response.ok();
     } catch (IOException ex) {
-      // Keep the reusable problem definition separate from the occurrence-specific exception detail.
-      return Response.problem(ProblemRegistry.NOTE_READ_ERROR
-          .extension(ExceptionDetail.of(ex, true)));
+      // Keep the reusable problem definition separate from the occurrence-specific exception diagnostic
+      return Response.problem(ProblemRegistry.NOTE_READ_ERROR.diagnostic(ex));
     }
   }
 
