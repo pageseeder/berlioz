@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<global>
+  <berlioz>
+    <errors handle="false" generator-catch="false"/>
+    <http compression="true" cache-control="no-cache"/>
+    <xml parse-strict="true" header.version="1.0"/>
+    <xslt cache="true"/>
+    <!-- Application version and date -->
+    <app version="@APP_VERSION@" date="@APP_DATE@"/>
+  </berlioz>
+</global>

@@ -10,13 +10,14 @@ val title: String by project
 val gitName: String by project
 val website: String by project
 val globalVersion = file("version.txt").readText().trim()
+val publishedProjectNames = setOf("pso-berlioz", "pso-berlioz-kickstart", "pso-berlioz-mock")
 
 allprojects {
   group   = "org.pageseeder.berlioz"
   version = globalVersion
 }
 
-subprojects {
+configure(subprojects.filter { it.name in publishedProjectNames }) {
   apply(plugin = "java-library")
   apply(plugin = "jacoco")
   apply(plugin = "maven-publish")
@@ -126,7 +127,8 @@ sonarqube {
     property("sonar.projectKey", "pageseeder_berlioz")
     property("sonar.token", providers.gradleProperty("sonarcloud.login").getOrElse(""))
     property("sonar.coverage.jacoco.xmlReportPaths",
-      subprojects.map { "${it.layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml" }
+      subprojects.filter { it.name in publishedProjectNames }
+        .map { "${it.layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml" }
         .joinToString(",")
     )
   }
