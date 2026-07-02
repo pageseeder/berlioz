@@ -127,7 +127,7 @@ public final class JsonResponse {
     return this.outcome.getError();
   }
 
-  public @Nullable String getRedirectURL() {
+  public @Nullable String getRedirectUrl() {
     return this.outcome.getRedirectURL();
   }
 
@@ -269,8 +269,8 @@ public final class JsonResponse {
       ServerTimingHeader.addMetricNano(this.core.response(), "json" + position, "Source " + safeName, request.getProfileEtag() + end - start);
     }
 
-    GeneratorListener l = GeneratorDispatch.getListener();
-    if (l != null) l.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
+    GeneratorListener listener = GeneratorDispatch.getListener();
+    if (listener != null) listener.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
 
     ProblemDetails problem = response.isProblem() ? response.problem() : null;
     return new GeneratorResult(name, json, problem, error, request.getProfileEtag(), end - start);
@@ -287,17 +287,17 @@ public final class JsonResponse {
     }
 
     // Envelope: {"name1": <json1>, "name2": <json2>} — even for a single generator
-    try (JsonStringBuilder jb = JsonStringBuilder.create()) {
-      jb.startObject();
+    try (JsonStringBuilder json = JsonStringBuilder.create()) {
+      json.startObject();
       for (GeneratorResult r : results) {
-        jb.fieldRaw(r.name, resolveValue(r));
+        json.fieldRaw(r.name, resolveValue(r));
       }
       if (this.profile) {
-        appendProfile(jb, results);
+        appendProfile(json, results);
       }
-      jb.endObject();
-      jb.flush();
-      return jb.toString();
+      json.endObject();
+      json.flush();
+      return json.toString();
     }
   }
 
@@ -307,24 +307,24 @@ public final class JsonResponse {
     return r.json != null && !r.json.isEmpty() ? r.json : "null";
   }
 
-  private static void appendProfile(JsonStringBuilder jb, List<GeneratorResult> results) {
-    jb.startObject("_profile");
+  private static void appendProfile(JsonStringBuilder json, List<GeneratorResult> results) {
+    json.startObject("_profile");
     for (GeneratorResult r : results) {
-      jb.startObject(r.name);
-      jb.field("etag", ProfileFormat.format(r.profileEtag));
-      jb.field("process", ProfileFormat.format(r.profileProcess));
-      jb.field("total", ProfileFormat.format(r.profileEtag + r.profileProcess));
-      jb.endObject();
+      json.startObject(r.name);
+      json.field("etag", ProfileFormat.format(r.profileEtag));
+      json.field("process", ProfileFormat.format(r.profileProcess));
+      json.field("total", ProfileFormat.format(r.profileEtag + r.profileProcess));
+      json.endObject();
     }
-    jb.endObject();
+    json.endObject();
   }
 
   private static String errorJson(BerliozException ex) {
     String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName();
-    try (JsonStringBuilder jb = JsonStringBuilder.create()) {
-      jb.startObject().field("error", msg).endObject();
-      jb.flush();
-      return jb.toString();
+    try (JsonStringBuilder json = JsonStringBuilder.create()) {
+      json.startObject().field("error", msg).endObject();
+      json.flush();
+      return json.toString();
     }
   }
 

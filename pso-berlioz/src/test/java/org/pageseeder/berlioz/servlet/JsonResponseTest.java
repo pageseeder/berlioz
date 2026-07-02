@@ -117,10 +117,10 @@ class JsonResponseTest {
   }
 
   @Test
-  void getRedirectURL_initiallyNull() {
+  void getRedirectUrl_initiallyNull() {
     Service service = singleGenerator(new NoContent());
     JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
-    assertNull(jr.getRedirectURL());
+    assertNull(jr.getRedirectUrl());
   }
 
   // generate() - JsonGenerator -------------------------------------------------------------------
@@ -311,7 +311,7 @@ class JsonResponseTest {
 
     jr.generate();
 
-    assertEquals("/new", jr.getRedirectURL());
+    assertEquals("/new", jr.getRedirectUrl());
     assertTrue(ContentStatus.isRedirect(jr.getStatus()));
   }
 

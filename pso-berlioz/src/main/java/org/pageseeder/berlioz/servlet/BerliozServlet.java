@@ -331,11 +331,11 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
-    ProcessingContext ctx = new ProcessingContext(match, method, code, profile, serverTiming, includeContent);
+    ProcessingContext context = new ProcessingContext(match, method, code, profile, serverTiming, includeContent);
     if (serviceSupportsJson) {
-      processJson(req, res, config, ctx);
+      processJson(req, res, config, context);
     } else {
-      processXml(req, res, config, ctx);
+      processXml(req, res, config, context);
     }
   }
 
@@ -343,11 +343,11 @@ public final class BerliozServlet extends HttpServlet {
    * Handles requests whose service supports direct JSON output, bypassing the XSLT pipeline.
    */
   @SuppressWarnings("java:S3776") // sequential HTTP protocol steps; splitting would harm readability
-  private void processJson(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
-      ProcessingContext ctx) throws IOException {
+  private void processJson(HttpServletRequest req, HttpServletResponse res, BerliozConfig config, ProcessingContext context)
+      throws IOException {
 
-    JsonResponse json = new JsonResponse(req, res, config, ctx.match, ctx.profile);
-    if (ctx.serverTiming) json.enableServerTiming();
+    JsonResponse json = new JsonResponse(req, res, config, context.match, context.profile);
+    if (context.serverTiming) json.enableServerTiming();
 
     // Indicate that the representation may vary depending on the encoding
     if (config.enableCompression()) {
@@ -356,13 +356,13 @@ public final class BerliozServlet extends HttpServlet {
 
     // Compute the ETag for the request if cacheable and method is GET or HEAD
     String etag = null;
-    boolean cacheable = ctx.errorCode == null && ctx.match.isCacheable()
-        && (ctx.method == HttpMethod.GET || ctx.method == HttpMethod.HEAD);
+    boolean cacheable = context.errorCode == null && context.match.isCacheable()
+        && (context.method == HttpMethod.GET || context.method == HttpMethod.HEAD);
     if (cacheable) {
       String etagJSON = json.getEtag();
       if (etagJSON != null) {
         etag = '"' + SHA256.hash(config.getETagSeed() + "~" + etagJSON) + '"';
-        applyCacheHeaders(res, config, ctx.match, etag);
+        applyCacheHeaders(res, config, context.match, etag);
 
         // Check conditional request headers (may return 304 without generating content)
         if (!HttpHeaderUtils.checkIfHeaders(req, res, new ServiceInfo(etag))) return;
@@ -378,23 +378,23 @@ public final class BerliozServlet extends HttpServlet {
     long start = System.nanoTime();
     String content = json.generate();
     long end = System.nanoTime();
-    if (ctx.profile && LOGGER.isInfoEnabled()) {
+    if (context.profile && LOGGER.isInfoEnabled()) {
       LOGGER.info("JSON content generated in {} ms", ProfileFormat.format(end - start));
     }
-    if (ctx.serverTiming) {
+    if (context.serverTiming) {
       ServerTimingHeader.addMetricNano(res, "json", "JSON Response", end - start);
     }
 
     // Examine status
     ContentStatus status = json.getStatus();
-    int statusCode = resolveStatusCode(ctx.errorCode, json.getStatusCode());
+    int statusCode = resolveStatusCode(context.errorCode, json.getStatusCode());
     res.setStatus(statusCode);
 
     // If errors occurred and should percolate
     if (checkAndSendError(req, res, statusCode, json.getError())) return;
 
     // Redirection
-    if (handleRedirect(req, res, status, json.getRedirectURL())) return;
+    if (handleRedirect(req, res, status, json.getRedirectUrl())) return;
 
     // Apply generator response headers
     json.getHeaders().forEach(res::setHeader);
@@ -409,7 +409,7 @@ public final class BerliozServlet extends HttpServlet {
       public String getMediaType() { return "application/json"; }
       public String getEncoding() { return StandardCharsets.UTF_8.name(); }
     };
-    writeOutput(req, res, jsonOutput, etag, StandardCharsets.UTF_8, config, ctx.includeContent);
+    writeOutput(req, res, jsonOutput, etag, StandardCharsets.UTF_8, config, context.includeContent);
   }
 
   /**
