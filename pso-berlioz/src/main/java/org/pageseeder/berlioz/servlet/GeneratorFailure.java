@@ -23,10 +23,8 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.error.HttpException;
-import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
-import org.pageseeder.berlioz.error.UpstreamException;
 
 /**
  * The framework error policy for a generator invocation.
@@ -77,12 +75,6 @@ final class GeneratorFailure {
   }
 
   private static ProblemDetails toProblem(Exception ex, DetailLevel level) {
-    if (ex instanceof InvalidParameterException) {
-      return Problems.forInvalidParameter((InvalidParameterException) ex, level);
-    }
-    if (ex instanceof UpstreamException) {
-      return Problems.forUpstreamException((UpstreamException) ex, level);
-    }
     if (ex instanceof HttpException) {
       return Problems.forHttpException((HttpException) ex, level);
     }
@@ -90,12 +82,6 @@ final class GeneratorFailure {
   }
 
   private static ContentStatus toLegacyStatus(Exception ex) {
-    if (ex instanceof InvalidParameterException) {
-      return ContentStatus.BAD_REQUEST;
-    }
-    if (ex instanceof UpstreamException) {
-      return ContentStatus.BAD_GATEWAY;
-    }
     if (ex instanceof HttpException) {
       return statusFor((HttpException) ex);
     }

@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.error;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.content.ContentStatus;
 
 /**
  * Thrown when a generator cannot reach an upstream service it depends on.
@@ -95,6 +96,15 @@ public final class UpstreamException extends HttpException {
    */
   public @Nullable String getUpstreamService() {
     return this.upstreamService;
+  }
+
+  @Override
+  public ProblemDetails toProblem() {
+    ProblemDetails problem = ProblemDetails.of(ContentStatus.BAD_GATEWAY)
+        .type("urn:berlioz:problem:upstream-error")
+        .title("Upstream Service Error")
+        .detail(getMessage());
+    return this.upstreamService != null ? problem.extension("upstream-service", this.upstreamService) : problem;
   }
 
 }

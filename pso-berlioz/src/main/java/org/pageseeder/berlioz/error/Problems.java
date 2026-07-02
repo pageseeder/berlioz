@@ -55,90 +55,76 @@ public final class Problems {
   // --- Generator-level problems ----------------------------------------------------------------
 
   /**
-   * Creates a {@code 400 Bad Request} problem from a request parameter validation failure.
+   * Returns the RFC 9457 problem for a request parameter validation failure.
+   *
+   * <p>Delegates to {@link InvalidParameterException#toProblem()}.
    *
    * @param ex the exception carrying the parameter name, value, and reason
-   * @return a new {@code ProblemDetails} with {@code type}, {@code title}, {@code detail},
-   * {@code parameter}, and {@code reason} members set
+   * @return the problem defined by the exception
    */
   public static ProblemDetails forInvalidParameter(InvalidParameterException ex) {
-    return ProblemDetails.of(ContentStatus.BAD_REQUEST)
-        .type("urn:berlioz:problem:invalid-parameter")
-        .title("Invalid Request Parameter")
-        .detail(ex.getMessage())
-        .extension("parameter", ex.getParameterName())
-        .extension("reason", reasonString(ex.getReason()));
+    return ex.toProblem();
   }
 
   /**
-   * Creates a {@code 400 Bad Request} problem with optional exception detail.
+   * Returns the RFC 9457 problem for a request parameter validation failure, with optional
+   * exception detail appended by the framework.
    *
    * @param ex    the exception carrying the parameter name, value, and reason
    * @param level controls how much diagnostic information is added as an {@code exception} member
    * @return a new {@code ProblemDetails} instance
    */
   public static ProblemDetails forInvalidParameter(InvalidParameterException ex, DetailLevel level) {
-    return withExceptionDetail(forInvalidParameter(ex), ex, level);
+    return withExceptionDetail(ex.toProblem(), ex, level);
   }
 
   /**
-   * Creates a {@code 502 Bad Gateway} problem from an upstream service failure.
+   * Returns the RFC 9457 problem for an upstream service failure.
    *
-   * <p>If the exception names the failing dependency via {@link UpstreamException#getUpstreamService()},
-   * it is included as an {@code upstream-service} extension member.
+   * <p>Delegates to {@link UpstreamException#toProblem()}.
    *
    * @param ex the upstream exception
-   * @return a new {@code ProblemDetails} with {@code type}, {@code title}, and {@code detail} set
+   * @return the problem defined by the exception
    */
   public static ProblemDetails forUpstreamException(UpstreamException ex) {
-    ProblemDetails problem = ProblemDetails.of(ContentStatus.BAD_GATEWAY)
-        .type("urn:berlioz:problem:upstream-error")
-        .title("Upstream Service Error")
-        .detail(ex.getMessage());
-    String service = ex.getUpstreamService();
-    return service != null ? problem.extension("upstream-service", service) : problem;
+    return ex.toProblem();
   }
 
   /**
-   * Creates a {@code 502 Bad Gateway} problem with optional exception detail.
+   * Returns the RFC 9457 problem for an upstream service failure, with optional exception detail
+   * appended by the framework.
    *
    * @param ex    the upstream exception
    * @param level controls how much diagnostic information is added as an {@code exception} member
    * @return a new {@code ProblemDetails} instance
    */
   public static ProblemDetails forUpstreamException(UpstreamException ex, DetailLevel level) {
-    return withExceptionDetail(forUpstreamException(ex), ex, level);
+    return withExceptionDetail(ex.toProblem(), ex, level);
   }
 
   /**
-   * Creates a problem from a developer-defined {@link HttpException} subclass.
+   * Returns the RFC 9457 problem for any {@link HttpException}.
    *
-   * <p>The HTTP status code and message are taken directly from the exception. Use this as the
-   * catch-all for {@link HttpException} subclasses that are not {@link InvalidParameterException}
-   * or {@link UpstreamException}.
+   * <p>Delegates to {@link HttpException#toProblem()}, which built-in subclasses and
+   * registry-based exceptions override to provide domain-specific type URIs and titles.
    *
-   * @param ex the signal exception carrying the HTTP code and detail message
-   * @return a new {@code ProblemDetails} with {@code type}, {@code title}, and {@code detail} set
+   * @param ex the signal exception
+   * @return the problem defined by the exception
    */
   public static ProblemDetails forHttpException(HttpException ex) {
-    int code = ex.getHttpCode();
-    ContentStatus status = ContentStatus.forCode(code);
-    String title = titleFor(code, status);
-    return ProblemDetails.of(code)
-        .type("urn:berlioz:problem:http-signal")
-        .title(title)
-        .detail(ex.getMessage());
+    return ex.toProblem();
   }
 
   /**
-   * Creates a problem from a developer-defined {@link HttpException} with optional exception detail.
+   * Returns the RFC 9457 problem for any {@link HttpException}, with optional exception detail
+   * appended by the framework.
    *
-   * @param ex    the signal exception carrying the HTTP code and detail message
+   * @param ex    the signal exception
    * @param level controls how much diagnostic information is added as an {@code exception} member
    * @return a new {@code ProblemDetails} instance
    */
   public static ProblemDetails forHttpException(HttpException ex, DetailLevel level) {
-    return withExceptionDetail(forHttpException(ex), ex, level);
+    return withExceptionDetail(ex.toProblem(), ex, level);
   }
 
   /**
@@ -282,10 +268,6 @@ public final class Problems {
     if (code == 405) return "method-not-allowed";
     if (code == 503) return "service-unavailable";
     return "error";
-  }
-
-  private static String reasonString(InvalidParameterException.Reason reason) {
-    return reason.name().toLowerCase().replace('_', '-');
   }
 
   /**

@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.error;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.content.ContentStatus;
 
 /**
  * Thrown when a request parameter fails a type or constraint check.
@@ -89,6 +90,18 @@ public final class InvalidParameterException extends HttpException {
    */
   public Reason getReason() {
     return this.reason;
+  }
+
+  // --- ProblemDetails --------------------------------------------------------
+
+  @Override
+  public ProblemDetails toProblem() {
+    return ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .type("urn:berlioz:problem:invalid-parameter")
+        .title("Invalid Request Parameter")
+        .detail(getMessage())
+        .extension("parameter", this.parameterName)
+        .extension("reason", this.reason.name().toLowerCase().replace('_', '-'));
   }
 
   // --- Factory methods -------------------------------------------------------
