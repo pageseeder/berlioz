@@ -27,8 +27,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.BerliozGenerator;
+import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
@@ -309,7 +312,10 @@ public final class JsonResponse {
   }
 
   private static String resolveValue(GeneratorResult r) {
-    if (r.problem != null) return r.problem.toJson();
+    if (r.problem != null) {
+      DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+      return r.problem.forDetailLevel(level).toJson();
+    }
     if (r.error != null) return errorJson(r.error);
     return r.json != null && !r.json.isEmpty() ? r.json : "null";
   }

@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.pageseeder.berlioz.error.DetailLevel.FULL;
+import static org.pageseeder.berlioz.error.DetailLevel.MINIMAL;
+
 /**
  * An immutable RFC 9457 Problem Details object for reporting errors from generators.
  *
@@ -49,6 +52,18 @@ import java.util.Set;
  * <p>Extension members (e.g. {@code errors} for parameter validation failures) can be
  * added via typed {@code extension(name, value)} methods. Structured extensions that own their own
  * XML and JSON representation can be added via {@link #extension(ProblemExtension)}.</p>
+ *
+ * <h3>Diagnostic members</h3>
+ * <p>Diagnostic members are an additional tier alongside extension members. They are intended for
+ * developer-mode context (exception details, internal state) that should not reach clients in
+ * production. Unlike extension members, they are invisible to {@link #toXml(XmlWriter)} and
+ * {@link #toJson()} by default. The framework folds them into the serialized output only when the
+ * configured {@code berlioz.errors.detail} level is {@code standard} or {@code full} — call
+ * {@link #forDetailLevel(DetailLevel)} in the render layer to apply this promotion.</p>
+ *
+ * <p>Use {@link #diagnostic(String, String)} (and typed variants) for key-value context. Use
+ * {@link #diagnostic(Throwable)} to attach an exception whose class, message, and optionally stack
+ * trace will be rendered as an {@code exception} member when the level allows it.</p>
  *
  * <p>Berlioz renders problem details according to the negotiated output path:</p>
  * <ul>
@@ -83,9 +98,12 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   private final @Nullable String detail;
   private final @Nullable String instance;
   private final Map<String, Object> extensions;
+  private final Map<String, Object> diagnostics;
+  private final @Nullable Throwable diagnosticCause;
 
   private ProblemDetails(int status, @Nullable String type, @Nullable String title,
-      @Nullable String detail, @Nullable String instance, Map<String, Object> extensions) {
+      @Nullable String detail, @Nullable String instance, Map<String, Object> extensions,
+      Map<String, Object> diagnostics, @Nullable Throwable diagnosticCause) {
     this.status = status;
     this.type = type;
     this.title = title;
@@ -93,6 +111,9 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
     this.instance = instance;
     this.extensions = extensions.isEmpty() ? Map.of()
         : Collections.unmodifiableMap(new LinkedHashMap<>(extensions));
+    this.diagnostics = diagnostics.isEmpty() ? Map.of()
+        : Collections.unmodifiableMap(new LinkedHashMap<>(diagnostics));
+    this.diagnosticCause = diagnosticCause;
   }
 
   /**
@@ -104,7 +125,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
    */
   public static ProblemDetails of(int code) {
     if (code < 100 || code > 599) throw new IllegalArgumentException("Invalid HTTP status code: " + code);
-    return new ProblemDetails(code, null, null, null, null, Map.of());
+    return new ProblemDetails(code, null, null, null, null, Map.of(), Map.of(), null);
   }
 
   /**
@@ -126,7 +147,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
    */
   public ProblemDetails type(String type) {
     Objects.requireNonNull(type, FIELD_TYPE);
-    return new ProblemDetails(this.status, type, this.title, this.detail, this.instance, this.extensions);
+    return new ProblemDetails(this.status, type, this.title, this.detail, this.instance, this.extensions, this.diagnostics, this.diagnosticCause);
   }
 
   /**
@@ -137,7 +158,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
    */
   public ProblemDetails title(String title) {
     Objects.requireNonNull(title, FIELD_TITLE);
-    return new ProblemDetails(this.status, this.type, title, this.detail, this.instance, this.extensions);
+    return new ProblemDetails(this.status, this.type, title, this.detail, this.instance, this.extensions, this.diagnostics, this.diagnosticCause);
   }
 
   /**
@@ -148,7 +169,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
    */
   public ProblemDetails detail(String detail) {
     Objects.requireNonNull(detail, FIELD_DETAIL);
-    return new ProblemDetails(this.status, this.type, this.title, detail, this.instance, this.extensions);
+    return new ProblemDetails(this.status, this.type, this.title, detail, this.instance, this.extensions, this.diagnostics, this.diagnosticCause);
   }
 
   /**
@@ -159,7 +180,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
    */
   public ProblemDetails instance(String instance) {
     Objects.requireNonNull(instance, FIELD_INSTANCE);
-    return new ProblemDetails(this.status, this.type, this.title, this.detail, instance, this.extensions);
+    return new ProblemDetails(this.status, this.type, this.title, this.detail, instance, this.extensions, this.diagnostics, this.diagnosticCause);
   }
 
   /**
@@ -227,7 +248,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
     checkExtensionName(Objects.requireNonNull(name, "name"));
     Map<String, Object> copy = new LinkedHashMap<>(this.extensions);
     copy.put(name, value);
-    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy);
+    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy, this.diagnostics, this.diagnosticCause);
   }
 
   private static List<String> copyValues(Iterable<String> values) {
@@ -255,12 +276,106 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
     checkExtensionName(name);
     Map<String, Object> copy = new LinkedHashMap<>(this.extensions);
     copy.put(name, extension);
-    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy);
+    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy, this.diagnostics, this.diagnosticCause);
   }
 
   private static void checkExtensionName(String name) {
     if (RESERVED_NAMES.contains(name))
       throw new IllegalArgumentException("'" + name + "' is a reserved RFC 9457 member name; use the dedicated method instead");
+  }
+
+  // --- Diagnostic members (developer-mode only) ------------------------------------------------
+
+  /**
+   * Returns a copy with the given string diagnostic member added.
+   *
+   * <p>Diagnostic members are invisible to {@link #toXml(XmlWriter)} and {@link #toJson()}.
+   * They are folded into the serialized output only when
+   * {@link #forDetailLevel(DetailLevel)} is called with {@code STANDARD} or {@code FULL}.</p>
+   *
+   * @param name  the diagnostic member name
+   * @param value the diagnostic member value
+   * @return a new instance
+   */
+  public ProblemDetails diagnostic(String name, String value) {
+    return withDiagnostic(name, Objects.requireNonNull(value, "value"));
+  }
+
+  /** @see #diagnostic(String, String) */
+  public ProblemDetails diagnostic(String name, boolean value) {
+    return withDiagnostic(name, value);
+  }
+
+  /** @see #diagnostic(String, String) */
+  public ProblemDetails diagnostic(String name, long value) {
+    return withDiagnostic(name, value);
+  }
+
+  /** @see #diagnostic(String, String) */
+  public ProblemDetails diagnostic(String name, double value) {
+    return withDiagnostic(name, value);
+  }
+
+  /** @see #diagnostic(String, String) */
+  public ProblemDetails diagnostic(String name, Iterable<String> values) {
+    return withDiagnostic(name, copyValues(values));
+  }
+
+  /**
+   * Returns a copy with the given throwable attached as developer-mode exception detail.
+   *
+   * <p>The throwable is stored as-is and converted to an {@code exception} extension member by
+   * {@link #forDetailLevel(DetailLevel)} at render time. At {@code STANDARD} level the member
+   * contains class, message, and source location; at {@code FULL} level it also includes the
+   * stack trace and cause chain.</p>
+   *
+   * @param cause the exception to attach; must not be {@code null}
+   * @return a new instance
+   */
+  public ProblemDetails diagnostic(Throwable cause) {
+    Objects.requireNonNull(cause, "cause");
+    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance,
+        this.extensions, this.diagnostics, cause);
+  }
+
+  private ProblemDetails withDiagnostic(String name, Object value) {
+    Objects.requireNonNull(name, "name");
+    Map<String, Object> copy = new LinkedHashMap<>(this.diagnostics);
+    copy.put(name, value);
+    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance,
+        this.extensions, copy, this.diagnosticCause);
+  }
+
+  /**
+   * Returns a view of this problem with diagnostic members promoted to regular extension members
+   * according to the given detail level.
+   *
+   * <ul>
+   *   <li>{@code MINIMAL} — returns {@code this} unchanged; diagnostic members remain invisible.</li>
+   *   <li>{@code STANDARD} — key-value diagnostic members are added as extensions; a
+   *       {@link #diagnostic(Throwable)} cause produces an {@code exception} member with class,
+   *       message, and source location (no stack trace).</li>
+   *   <li>{@code FULL} — same as {@code STANDARD} plus stack trace and cause chain on the
+   *       exception member.</li>
+   * </ul>
+   *
+   * <p>This method is called by the framework render layer; application code should not need to
+   * call it directly.</p>
+   *
+   * @param level the detail level to apply
+   * @return a new instance with diagnostics promoted, or {@code this} when nothing changes
+   */
+  public ProblemDetails forDetailLevel(DetailLevel level) {
+    if (level == MINIMAL) return this;
+    if (this.diagnostics.isEmpty() && this.diagnosticCause == null) return this;
+    Map<String, Object> combined = new LinkedHashMap<>(this.extensions);
+    combined.putAll(this.diagnostics);
+    if (this.diagnosticCause != null) {
+      ExceptionDetail ed = ExceptionDetail.of(this.diagnosticCause, level == FULL);
+      combined.put(ed.name(), ed);
+    }
+    return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance,
+        combined, Map.of(), null);
   }
 
   /** @return the HTTP status code */
@@ -280,6 +395,12 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
 
   /** @return an unmodifiable map of extension members; empty if none were set */
   public Map<String, Object> extensions() { return this.extensions; }
+
+  /** @return an unmodifiable map of diagnostic members (not serialized unless {@link #forDetailLevel} promotes them); empty if none were set */
+  public Map<String, Object> diagnostics() { return this.diagnostics; }
+
+  /** @return the throwable attached via {@link #diagnostic(Throwable)}, or {@code null} */
+  public @Nullable Throwable diagnosticCause() { return this.diagnosticCause; }
 
   // --- Serialization ---------------------------------------------------------------------------
 

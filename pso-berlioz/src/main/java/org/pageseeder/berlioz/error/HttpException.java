@@ -178,6 +178,7 @@ public abstract class HttpException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("java:S1948") // never serialized; flow-control signal caught in the same JVM
     private final ProblemDetails problem;
 
     ProblemException(ProblemDetails problem) {
@@ -196,8 +197,10 @@ public abstract class HttpException extends RuntimeException {
     }
 
     private static String effectiveMessage(ProblemDetails p) {
-      if (p.detail() != null) return p.detail();
-      if (p.title() != null) return p.title();
+      String detail = p.detail();
+      if (detail != null) return detail;
+      String title = p.title();
+      if (title != null) return title;
       return "HTTP " + p.status();
     }
   }

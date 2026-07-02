@@ -28,7 +28,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.Cacheable;
@@ -302,9 +304,10 @@ public final class XmlResponse {
     if (response.isProblem()) {
       ProblemDetails problem = response.problem();
       this.topLevelProblem = problem;
+      DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
       XmlStringBuilder problemXml = new XmlStringBuilder();
       problemXml.declaration();
-      problem.toXml(problemXml);
+      problem.forDetailLevel(level).toXml(problemXml);
       return problemXml.toString();
     } else if (error != null) {
       XmlStringBuilder legacyXml = new XmlStringBuilder();
@@ -438,7 +441,8 @@ public final class XmlResponse {
     // problem format is explicitly enabled.
     ProblemDetails problem = response.problem();
     if (problem != null) {
-      xml.asXml(problem);
+      DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+      xml.asXml(problem.forDetailLevel(level));
     } else if (error != null) {
       writeLegacyException(xml, error, detailLevelOrMinimal(errorLevel));
     } else if (result != null) {
