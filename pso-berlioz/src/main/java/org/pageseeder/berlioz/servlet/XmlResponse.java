@@ -28,9 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
-import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.Cacheable;
@@ -38,11 +36,7 @@ import org.pageseeder.berlioz.content.ContentGenerator;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
-import org.pageseeder.berlioz.error.HttpException;
-import org.pageseeder.berlioz.error.InvalidParameterException;
-import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.content.MatchingService;
-import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
@@ -277,32 +271,15 @@ public final class XmlResponse {
     StringWriter sw = new StringWriter();
     BerliozException error = null;
     Response response = Response.ok();
-    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
-    boolean problemFormat = GeneratorDispatch.useProblemFormat();
+    @Nullable DetailLevel errorLevel = null;
     long start = System.nanoTime();
     try {
       response = dispatchXml(generator, request, sw);
-    } catch (InvalidParameterException ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forInvalidParameter(ex, level))
-          : Response.status(ContentStatus.BAD_REQUEST);
-    } catch (UpstreamException ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forUpstreamException(ex, level))
-          : Response.status(ContentStatus.BAD_GATEWAY);
-    } catch (HttpException ex) {
-      error = outcome.handleError(ex, generator);
-      ContentStatus status = ContentStatus.forCode(ex.getHttpCode());
-      response = problemFormat
-          ? Response.problem(Problems.forHttpException(ex, level))
-          : Response.status(status != null ? status : ContentStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forGeneratorError(ex, level))
-          : Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+      GeneratorFailure failure = GeneratorFailure.handle(ex, generator, this.outcome);
+      error = failure.error();
+      response = failure.response();
+      errorLevel = failure.detailLevel();
     }
     long end = System.nanoTime();
     outcome.handleStatus(response, generator, service);
@@ -321,7 +298,7 @@ public final class XmlResponse {
     } else if (error != null) {
       XmlStringBuilder legacyXml = new XmlStringBuilder();
       legacyXml.declaration();
-      writeLegacyException(legacyXml, error, level);
+      writeLegacyException(legacyXml, error, detailLevelOrMinimal(errorLevel));
       return legacyXml.toString();
     }
     return sw.toString();
@@ -409,34 +386,17 @@ public final class XmlResponse {
     String result = null;
     BerliozException error = null;
     Response response = Response.ok();
-    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
-    boolean problemFormat = GeneratorDispatch.useProblemFormat();
+    @Nullable DetailLevel errorLevel = null;
     long start = System.nanoTime();
     StringWriter sw = new StringWriter();
     try {
       response = dispatchXml(generator, request, sw);
       result = sw.toString();
-    } catch (InvalidParameterException ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forInvalidParameter(ex, level))
-          : Response.status(ContentStatus.BAD_REQUEST);
-    } catch (UpstreamException ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forUpstreamException(ex, level))
-          : Response.status(ContentStatus.BAD_GATEWAY);
-    } catch (HttpException ex) {
-      error = outcome.handleError(ex, generator);
-      ContentStatus status = ContentStatus.forCode(ex.getHttpCode());
-      response = problemFormat
-          ? Response.problem(Problems.forHttpException(ex, level))
-          : Response.status(status != null ? status : ContentStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forGeneratorError(ex, level))
-          : Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+      GeneratorFailure failure = GeneratorFailure.handle(ex, generator, this.outcome);
+      error = failure.error();
+      response = failure.response();
+      errorLevel = failure.detailLevel();
     }
 
     long end = System.nanoTime();
@@ -468,7 +428,7 @@ public final class XmlResponse {
     if (response.isProblem()) {
       xml.asXml(response.problem());
     } else if (error != null) {
-      writeLegacyException(xml, error, level);
+      writeLegacyException(xml, error, detailLevelOrMinimal(errorLevel));
     } else if (result != null) {
       xml.xml(result);
     }
@@ -482,6 +442,13 @@ public final class XmlResponse {
     String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
     ServerTimingHeader.addMetricNano(this.core.response(), "xml" + position, "Source " + safeName,
         request.getProfileEtag() + processTime);
+  }
+
+  private static DetailLevel detailLevelOrMinimal(@Nullable DetailLevel level) {
+    if (level != null) {
+      return level;
+    }
+    return DetailLevel.MINIMAL;
   }
 
   private static void writeLegacyException(XmlWriter xml, BerliozException error, DetailLevel level) {

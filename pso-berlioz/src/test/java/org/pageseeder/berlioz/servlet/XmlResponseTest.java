@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.DetailLevel;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.UpstreamException;
@@ -260,6 +261,21 @@ class XmlResponseTest {
 
     assertNotNull(xr.getError());
     assertEquals(ContentStatus.BAD_GATEWAY, xr.getStatus());
+  }
+
+  @Test
+  void generate_directService_httpException_signalStatus() throws IOException {
+    XmlGenerator gen = (req, xml) -> {
+      throw new HttpException("legal hold", 451) {};
+    };
+    Service service = directGenerator(gen);
+    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+    xr.generate();
+
+    assertNotNull(xr.getError());
+    assertEquals(ContentStatus.UNAVAILABLE_FOR_LEGAL_REASONS, xr.getStatus());
+    assertEquals(451, xr.getStatusCode());
   }
 
   @Test

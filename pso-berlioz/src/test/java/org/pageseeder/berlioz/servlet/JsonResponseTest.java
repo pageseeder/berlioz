@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.UpstreamException;
@@ -205,6 +206,21 @@ class JsonResponseTest {
 
     assertNotNull(jr.getError());
     assertEquals(ContentStatus.BAD_GATEWAY, jr.getStatus());
+  }
+
+  @Test
+  void generate_generatorThrowsHttpException_setsSignalStatus() {
+    JsonGenerator gen = (req, json) -> {
+      throw new HttpException("legal hold", 451) {};
+    };
+    Service service = directGenerator(gen);
+    JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
+
+    jr.generate();
+
+    assertNotNull(jr.getError());
+    assertEquals(ContentStatus.UNAVAILABLE_FOR_LEGAL_REASONS, jr.getStatus());
+    assertEquals(451, jr.getStatusCode());
   }
 
   @Test

@@ -27,21 +27,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
-import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.GlobalSettings;
-import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
-import org.pageseeder.berlioz.error.HttpException;
-import org.pageseeder.berlioz.error.InvalidParameterException;
-import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.content.JsonGenerator;
 import org.pageseeder.berlioz.content.MatchingService;
-import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
@@ -220,43 +213,15 @@ public final class JsonResponse {
     Response response = Response.ok();
     String json = null;
     BerliozException error = null;
-    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
-    boolean problemFormat = GeneratorDispatch.useProblemFormat();
     long start = System.nanoTime();
 
     try (JsonStringBuilder jb = JsonStringBuilder.create()) {
-      if (generator instanceof JsonGenerator) {
-        response = ((JsonGenerator) generator).generate(request, jb);
-        jb.flush();
-      } else if (generator instanceof Generator) {
-        JsonOutputAdapter oa = new JsonOutputAdapter(jb);
-        response = ((Generator) generator).generate(request, oa);
-        oa.flush();
-      } else {
-        LOGGER.warn("Generator {} does not support JSON output — skipping", generator.getClass().getName());
-      }
+      response = dispatchJson(generator, request, jb);
       json = jb.toString();
-    } catch (InvalidParameterException ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forInvalidParameter(ex, level))
-          : Response.status(ContentStatus.BAD_REQUEST);
-    } catch (UpstreamException ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forUpstreamException(ex, level))
-          : Response.status(ContentStatus.BAD_GATEWAY);
-    } catch (HttpException ex) {
-      error = outcome.handleError(ex, generator);
-      ContentStatus status = ContentStatus.forCode(ex.getHttpCode());
-      response = problemFormat
-          ? Response.problem(Problems.forHttpException(ex, level))
-          : Response.status(status != null ? status : ContentStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception ex) {
-      error = outcome.handleError(ex, generator);
-      response = problemFormat
-          ? Response.problem(Problems.forGeneratorError(ex, level))
-          : Response.status(ContentStatus.INTERNAL_SERVER_ERROR);
+      GeneratorFailure failure = GeneratorFailure.handle(ex, generator, this.outcome);
+      error = failure.error();
+      response = failure.response();
     }
 
     long end = System.nanoTime();
@@ -274,6 +239,22 @@ public final class JsonResponse {
 
     ProblemDetails problem = response.isProblem() ? response.problem() : null;
     return new GeneratorResult(name, json, problem, error, request.getProfileEtag(), end - start);
+  }
+
+  private static Response dispatchJson(BerliozGenerator generator, HttpContentRequest request, JsonStringBuilder jb) {
+    if (generator instanceof JsonGenerator) {
+      Response response = ((JsonGenerator) generator).generate(request, jb);
+      jb.flush();
+      return response;
+    }
+    if (generator instanceof Generator) {
+      JsonOutputAdapter oa = new JsonOutputAdapter(jb);
+      Response response = ((Generator) generator).generate(request, oa);
+      oa.flush();
+      return response;
+    }
+    LOGGER.warn("Generator {} does not support JSON output — skipping", generator.getClass().getName());
+    return Response.ok();
   }
 
   private String assemble(List<GeneratorResult> results, Service service) {
