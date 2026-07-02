@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -76,7 +75,6 @@ import org.slf4j.LoggerFactory;
  * }</pre>
  *
  * @author Christophe Lauret
- *
  * @version 0.13.5
  * @since 0.6
  */
@@ -94,37 +92,76 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   private static final String REDACTED = "[REDACTED]";
 
-  private static final Pattern SENSITIVE_HEADER = Pattern.compile(
-      "(?i)^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-auth-token|x-csrf-token)$|"
-          + ".*(token|secret|credential|api[._\\-]?key|session|csrf).*");
+  private static final Set<String> SENSITIVE_HEADER_NAMES = Set.of(
+      "authorization",
+      "proxy-authorization",
+      "cookie",
+      "set-cookie"
+  );
 
-  private static final Pattern SENSITIVE_PARAMETER = Pattern.compile(
-      "(?i)(password|passwd|pwd|secret|api[._\\-]?key|token|credential|private[._\\-]?key|"
-          + "session|auth|assertion|saml|jwt|csrf)");
+  private static final String[] SENSITIVE_HEADER_KEYWORDS = {
+      "token",
+      "secret",
+      "credential",
+      "apikey",
+      "session",
+      "csrf"
+  };
+
+  private static final String[] SENSITIVE_PARAMETER_KEYWORDS = {
+      "password",
+      "passwd",
+      "pwd",
+      "secret",
+      "apikey",
+      "token",
+      "credential",
+      "privatekey",
+      "session",
+      "auth",
+      "assertion",
+      "saml",
+      "jwt",
+      "csrf"
+  };
 
   // Attributes set for error handlers.
   // ---------------------------------------------------------------------------------------------
 
-  /** Exception thrown (Exception). */
-  public static final String ERROR_EXCEPTION      = "javax.servlet.error.exception";
+  /**
+   * Exception thrown (Exception).
+   */
+  public static final String ERROR_EXCEPTION = "javax.servlet.error.exception";
 
-  /** Class of exception thrown (Class). */
+  /**
+   * Class of exception thrown (Class).
+   */
   public static final String ERROR_EXCEPTION_TYPE = "javax.servlet.error.exception_type";
 
-  /** Any attached message (String). */
-  public static final String ERROR_MESSAGE        = "javax.servlet.error.message";
+  /**
+   * Any attached message (String).
+   */
+  public static final String ERROR_MESSAGE = "javax.servlet.error.message";
 
-  /** The offending request URI (String). */
-  public static final String ERROR_REQUEST_URI    = "javax.servlet.error.request_uri";
+  /**
+   * The offending request URI (String).
+   */
+  public static final String ERROR_REQUEST_URI = "javax.servlet.error.request_uri";
 
-  /** The name of the offending servlet (String). */
-  public static final String ERROR_SERVLET_NAME   = "javax.servlet.error.servlet_name";
+  /**
+   * The name of the offending servlet (String).
+   */
+  public static final String ERROR_SERVLET_NAME = "javax.servlet.error.servlet_name";
 
-  /** The HTTP Status code (Integer). */
-  public static final String ERROR_STATUS_CODE    = "javax.servlet.error.status_code";
+  /**
+   * The HTTP Status code (Integer).
+   */
+  public static final String ERROR_STATUS_CODE = "javax.servlet.error.status_code";
 
-  /** The Berlioz error ID (String). */
-  public static final String BERLIOZ_ERROR_ID     = "org.pageseeder.berlioz.error_id";
+  /**
+   * The Berlioz error ID (String).
+   */
+  public static final String BERLIOZ_ERROR_ID = "org.pageseeder.berlioz.error_id";
 
   /**
    * The default list of extensions to preserve.
@@ -177,7 +214,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     }
     Collections.addAll(ignoreExtensions, ignore.split(","));
     String defExt = config.getInitParameter("forward-default");
-    defaultExtension = defExt != null? defExt : DEFAULT_EXTENSION;
+    defaultExtension = defExt != null ? defExt : DEFAULT_EXTENSION;
   }
 
   @Override
@@ -203,26 +240,25 @@ public final class ErrorHandlerServlet extends HttpServlet {
    *
    * @param req The servlet request.
    * @param res The servlet response.
-   *
    * @throws ServletException Should a servlet exception occur.
-   * @throws IOException Should an I/O error occur.
+   * @throws IOException      Should an I/O error occur.
    */
   public void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
     // Grab the status code (Default to 200 OK)
-    int code  = getErrorCode(req);
+    int code = getErrorCode(req);
 
     // Get URI of error handler
     String uri = req.getRequestURI();
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Error handler for URI:{}", uri);
-      LOGGER.debug(ERROR_MESSAGE+":{}", req.getAttribute(ERROR_MESSAGE));
-      LOGGER.debug(ERROR_STATUS_CODE+":{}", req.getAttribute(ERROR_STATUS_CODE));
-      LOGGER.debug(ERROR_SERVLET_NAME+":{}", req.getAttribute(ERROR_SERVLET_NAME));
-      LOGGER.debug(ERROR_EXCEPTION+":{}", req.getAttribute(ERROR_EXCEPTION));
-      LOGGER.debug(ERROR_REQUEST_URI+":{}", req.getAttribute(ERROR_REQUEST_URI));
-      LOGGER.debug(BERLIOZ_ERROR_ID+":{}", req.getAttribute(BERLIOZ_ERROR_ID));
+      LOGGER.debug(ERROR_MESSAGE + ":{}", req.getAttribute(ERROR_MESSAGE));
+      LOGGER.debug(ERROR_STATUS_CODE + ":{}", req.getAttribute(ERROR_STATUS_CODE));
+      LOGGER.debug(ERROR_SERVLET_NAME + ":{}", req.getAttribute(ERROR_SERVLET_NAME));
+      LOGGER.debug(ERROR_EXCEPTION + ":{}", req.getAttribute(ERROR_EXCEPTION));
+      LOGGER.debug(ERROR_REQUEST_URI + ":{}", req.getAttribute(ERROR_REQUEST_URI));
+      LOGGER.debug(BERLIOZ_ERROR_ID + ":{}", req.getAttribute(BERLIOZ_ERROR_ID));
     }
 
     // Fetch original URI and its extension
@@ -331,12 +367,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * Handles HTTP error using the error requests attributes.
    *
    * @param req The HTTP servlet request will cause the error.
-   *
    * @return the error details as XML
    */
   private static String toXml(HttpServletRequest req) {
     int code = getErrorCode(req);
-    String message = (String)req.getAttribute(ERROR_MESSAGE);
+    String message = (String) req.getAttribute(ERROR_MESSAGE);
 
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
       Throwable throwable = getErrorException(req);
@@ -382,9 +417,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * Serializes the error in the legacy Berlioz error XML format.
    */
   private static String toLegacyXml(HttpServletRequest req, int code, @Nullable String message) {
-    String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
+    String servlet = (String) req.getAttribute(ERROR_SERVLET_NAME);
     Throwable throwable = getErrorException(req);
-    String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
+    String requestURI = (String) req.getAttribute(ERROR_REQUEST_URI);
 
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.declaration();
@@ -404,8 +439,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String title = HttpStatusCodes.getTitle(code);
     xml.element("title", title != null ? title : "Berlioz Status");
     xml.element("message", message != null ? message : "");
-    xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
-    xml.element("servlet", servlet != null? servlet : "null");
+    xml.element("request-uri", requestURI != null ? requestURI : req.getRequestURI());
+    xml.element("servlet", servlet != null ? servlet : "null");
 
     DetailLevel detail = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     if (detail == DetailLevel.STANDARD) {
@@ -462,7 +497,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     for (Entry<?, ?> entry : parameters.entrySet()) {
       String name = entry.getKey().toString();
       // Must be an array, according to Servlet Specifications
-      String[] values = (String[])entry.getValue();
+      String[] values = (String[]) entry.getValue();
       if (values != null) {
         for (String value : values) {
           xml.openElement("parameters");
@@ -484,11 +519,25 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   private static boolean isSensitiveHeader(String name) {
-    return SENSITIVE_HEADER.matcher(name).matches();
+    String lowerName = name.toLowerCase(Locale.ROOT);
+    return SENSITIVE_HEADER_NAMES.contains(lowerName) ||
+        containsSensitiveKeyword(normalizeName(lowerName), SENSITIVE_HEADER_KEYWORDS);
   }
 
   private static boolean isSensitiveParameter(String name) {
-    return SENSITIVE_PARAMETER.matcher(name).find();
+    String normalizedName = normalizeName(name.toLowerCase(Locale.ROOT));
+    return containsSensitiveKeyword(normalizedName, SENSITIVE_PARAMETER_KEYWORDS);
+  }
+
+  private static boolean containsSensitiveKeyword(String normalizedName, String[] keywords) {
+    for (String keyword : keywords) {
+      if (normalizedName.contains(keyword)) return true;
+    }
+    return false;
+  }
+
+  private static String normalizeName(String name) {
+    return name.replace("-", "").replace("_", "").replace(".", "");
   }
 
   /**
@@ -499,7 +548,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static String getRootElementName(Integer code) {
     String element = HttpStatusCodes.getClassOfStatus(code);
-    return (element != null)? element.toLowerCase().replace(' ', '-') : "unknown-status";
+    return (element != null) ? element.toLowerCase().replace(' ', '-') : "unknown-status";
   }
 
   /**
@@ -510,7 +559,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static String getExtension(String uri) {
     int dot = uri.lastIndexOf('.');
-    return dot >= 0? uri.substring(dot) : "";
+    return dot >= 0 ? uri.substring(dot) : "";
   }
 
   /**
@@ -521,7 +570,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static String getOriginalURI(HttpServletRequest req) {
     Object original = req.getAttribute(ERROR_REQUEST_URI);
-    if (original instanceof String) return (String)original;
+    if (original instanceof String) return (String) original;
     return req.getRequestURI();
   }
 
@@ -529,14 +578,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * Returns the error code from the request attribute '<code>javax.servlet.error.status_code</code>'.
    *
    * @param req the servlet request
-   *
    * @return the error code.
    */
   private static int getErrorCode(ServletRequest req) {
     Object o = req.getAttribute(ERROR_STATUS_CODE);
     if (o == null) return HttpServletResponse.SC_OK;
     else if (o instanceof Integer) {
-      return (Integer)o;
+      return (Integer) o;
     } else {
       LOGGER.error("The 'javax.servlet.error.status_code' must contain an Integer, but was of type: {}", o.getClass().getSimpleName());
       return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -547,13 +595,12 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * Returns the error code from the request attribute '<code>javax.servlet.error.exception</code>'.
    *
    * @param req the servlet request
-   *
    * @return the error code.
    */
   private static @Nullable Throwable getErrorException(ServletRequest req) {
     Object o = req.getAttribute(ERROR_EXCEPTION);
     if (o == null) return null;
-    else if (o instanceof Throwable) return (Throwable)o;
+    else if (o instanceof Throwable) return (Throwable) o;
     else {
       LOGGER.error("The 'javax.servlet.error.exception' must contain a Throwable, but was of type: {}", o.getClass().getSimpleName());
       return null;
@@ -568,15 +615,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @param uri     The original request URI
    * @param ext     The extension to map the .auto to
    * @param context The application context
-   *
    * @return THe path to forward to.
    */
   private static String replaceAutoURI(String uri, String ext, String context) {
     String to = uri.substring(context.length());
     int dot = to.lastIndexOf('.');
-    to = (dot >= 0? to.substring(0, dot) : uri)+ext;
+    to = (dot >= 0 ? to.substring(0, dot) : uri) + ext;
     LOGGER.debug("Auto forward: {} to {}", uri, to);
-    return  to;
+    return to;
   }
 
   private static String fallbackProblemXml(int code) {
@@ -599,7 +645,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       // If some errors were collected, let's include them
       if (throwable instanceof CompoundBerliozException) {
         buffer.openElement("collected-errors");
-        ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)throwable).getCollector();
+        ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException) throwable).getCollector();
         for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
           collected.toXML(buffer);
         }

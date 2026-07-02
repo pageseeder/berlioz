@@ -130,9 +130,11 @@ class ErrorHandlerServletTest {
         .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, cause)
         .header("Authorization", "Bearer header-secret")
         .header("Cookie", "JSESSIONID=cookie-secret")
+        .header("X-Api_Key", "api-key-secret")
         .header("X-Request-ID", "request-42")
         .parameter("password", "parameter-secret")
         .parameter("access_token", "token-secret")
+        .parameter("private-key", "private-key-secret")
         .parameter("q", "visible-query")
         .build();
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
@@ -147,8 +149,11 @@ class ErrorHandlerServletTest {
         () -> assertTrue(body.contains("visible-query"),    "non-sensitive parameter values should remain visible"),
         () -> assertFalse(body.contains("header-secret"),   "authorization value must not be exposed"),
         () -> assertFalse(body.contains("cookie-secret"),   "cookie value must not be exposed"),
+        () -> assertFalse(body.contains("api-key-secret"),  "API key header value must not be exposed"),
         () -> assertFalse(body.contains("parameter-secret"), "password value must not be exposed"),
-        () -> assertFalse(body.contains("token-secret"),    "token value must not be exposed")
+        () -> assertFalse(body.contains("token-secret"),    "token value must not be exposed"),
+        () -> assertFalse(body.contains("private-key-secret"),
+            "private key value must not be exposed")
     );
   }
 
