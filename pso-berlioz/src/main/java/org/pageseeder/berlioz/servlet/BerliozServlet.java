@@ -387,7 +387,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Examine status
     ContentStatus status = json.getStatus();
-    int statusCode = Objects.requireNonNullElse(ctx.errorCode, json.getStatusCode());
+    int statusCode = resolveStatusCode(ctx.errorCode, json.getStatusCode());
     res.setStatus(statusCode);
 
     // If errors occurred and should percolate
@@ -467,7 +467,7 @@ public final class BerliozServlet extends HttpServlet {
 
     // Examine the status
     ContentStatus status = xml.getStatus();
-    int statusCode = Objects.requireNonNullElse(ctx.errorCode, xml.getStatusCode());
+    int statusCode = resolveStatusCode(ctx.errorCode, xml.getStatusCode());
     res.setStatus(statusCode);
 
     // If errors occurred and should percolate
@@ -553,6 +553,14 @@ public final class BerliozServlet extends HttpServlet {
   private static void applyNoCacheHeaders(HttpServletResponse res) {
     res.setDateHeader(HttpHeaders.EXPIRES, 0);
     res.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+  }
+
+  /**
+   * Resolves the effective HTTP status code, allowing servlet error dispatches to override the
+   * generator status without boxing the fallback value.
+   */
+  private static int resolveStatusCode(@Nullable Integer errorCode, int generatedStatusCode) {
+    return errorCode != null ? errorCode : generatedStatusCode;
   }
 
   /**
