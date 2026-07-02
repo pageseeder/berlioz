@@ -9,6 +9,12 @@
       <url pattern="/hello"/>
       <generator class="HelloGenerator"/>
     </service>
+
+    <service id="general-error" method="get">
+      <url pattern="/test/error"/>
+      <generator class="ErrorGenerator"/>
+    </service>
+
   </services>
 
   <services group="api">
@@ -20,6 +26,10 @@
     <service id="update-note" method="post">
       <url pattern="/api/note"/>
       <handler class="UpdateNote"/>
+    </service>
+    <service id="standalone-error" method="get">
+      <url pattern="/api/error"/>
+      <handler class="org.pageseeder.berlioz.sample.ErrorGenerator"/>
     </service>
   </services>
 
