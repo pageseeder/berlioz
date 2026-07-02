@@ -25,7 +25,7 @@ import java.nio.file.Files;
 import java.util.Properties;
 
 /**
- * A bunch of utility functions for files.
+ * A bunch of utility functions for media types
  *
  * @author Christophe Lauret
  *
