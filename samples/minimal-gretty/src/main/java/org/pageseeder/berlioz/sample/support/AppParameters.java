@@ -10,7 +10,9 @@ import org.pageseeder.berlioz.content.ParameterSpec;
  * from endpoint behavior. When validation fails, Berlioz converts the parameter error into a
  * client error response.</p>
  */
-public interface AppParameters {
+public final class AppParameters {
+
+  private AppParameters() {}
 
   /**
    * Text accepted by the note update endpoint.
@@ -18,9 +20,9 @@ public interface AppParameters {
    * <p>The limit is intentionally tiny so it is easy to trigger and inspect validation failures
    * while manually testing the sample API.</p>
    */
-  ParameterSpec<String> TEXT =
+  public static final ParameterSpec<String> TEXT =
       ParameterSpec.of("text",   p -> p.asString()
-          .matching(s -> s.length() < 10, "must not exceed 10 characters")
+          .matching(s -> s.length() < 100, "must not exceed 100 characters")
           .required());
 
 }
