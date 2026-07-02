@@ -16,7 +16,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -68,11 +70,16 @@ class FailsafeXsltTest {
         "legacy-transform-dynamic-error.xml",
         "legacy-generator-error-unforced.xml",
         "legacy-generator-error-multiple.xml",
-        // Problem format (RFC 9457) — no exception extension
+        // Problem format (RFC 9457) — framework-level HTTP errors
+        "problem-bad-request-400.xml",
         "problem-not-found-404.xml",
         "problem-method-not-allowed-405.xml",
+        "problem-service-unavailable-503.xml",
         "problem-server-error-500.xml",
+        // Problem format (RFC 9457) — normalized generator-level problems
+        "problem-generator-error.xml",
         "problem-invalid-parameter-400.xml",
+        "problem-http-signal-451.xml",
         "problem-upstream-error-502.xml",
         // Problem format — with exception extension
         "problem-server-error-500-standard.xml",
@@ -89,6 +96,24 @@ class FailsafeXsltTest {
         "problem-generator-error-unforced.xml",
         "problem-generator-error-multiple.xml"
     );
+  }
+
+  @Test
+  void fixtureListIncludesAllXmlSamples() throws Exception {
+    URL dir = FailsafeXsltTest.class.getClassLoader().getResource(SAMPLES_PATH);
+    assertNotNull(dir, "Fixture directory not found on classpath: " + SAMPLES_PATH);
+    Path path = Paths.get(dir.toURI());
+    List<String> actual;
+    try (java.util.stream.Stream<Path> files = Files.list(path)) {
+      actual = files
+          .filter(Files::isRegularFile)
+          .map(p -> p.getFileName().toString())
+          .filter(name -> name.endsWith(".xml"))
+          .sorted(Comparator.naturalOrder())
+          .collect(Collectors.toList());
+    }
+    List<String> expected = fixtures().stream().sorted(Comparator.naturalOrder()).collect(Collectors.toList());
+    assertEquals(expected, actual, "Every XML sample fixture should be exercised by this test");
   }
 
   @ParameterizedTest(name = "{0}")

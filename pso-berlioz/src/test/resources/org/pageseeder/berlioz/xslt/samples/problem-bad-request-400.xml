@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:bad-request</type>
+  <status>400</status>
+  <title>Bad Request</title>
+  <detail>The request could not be understood</detail>
+</problem>

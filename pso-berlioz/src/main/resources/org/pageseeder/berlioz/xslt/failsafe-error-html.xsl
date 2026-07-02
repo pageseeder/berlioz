@@ -470,6 +470,20 @@
 </div>
 </xsl:template>
 
+<xsl:template match="problem[type='urn:berlioz:problem:bad-request']" mode="help">
+<div class="help">
+  <p>The request could not be processed because it is malformed or contains invalid input.</p>
+  <p>Check the request URI, submitted parameters, and HTTP method.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:service-unavailable']" mode="help">
+<div class="help">
+  <p>The service is temporarily unavailable.</p>
+  <p>Check application startup, maintenance windows, and upstream dependencies before retrying.</p>
+</div>
+</xsl:template>
+
 <xsl:template match="problem[type='urn:berlioz:problem:transform-not-found']" mode="help">
 <div class="help">
   <p>Berlioz was unable to find the <b>XSLT stylesheet</b> for this URL.</p>
@@ -495,6 +509,34 @@
 <div class="help">
   <p>Berlioz could not transform the response because the <b>source XML is not well-formed</b>.</p>
   <p>Ensure that every content generator for this service writes valid XML.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:invalid-parameter']" mode="help">
+<div class="help">
+  <p>A request parameter failed validation.</p>
+  <p>Check the parameter name and reason in the additional details below.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:upstream-error']" mode="help">
+<div class="help">
+  <p>A generator could not reach an upstream service.</p>
+  <p>Check the named upstream service, network connectivity, and server logs.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:http-signal']" mode="help">
+<div class="help">
+  <p>A content generator deliberately returned this HTTP status.</p>
+  <p>Check the generator logic that raised the HTTP signal.</p>
+</div>
+</xsl:template>
+
+<xsl:template match="problem[type='urn:berlioz:problem:generator-error']" mode="help">
+<div class="help">
+  <p>A content generator failed while processing the request.</p>
+  <p>Check the exception details (if included) and the server logs for context.</p>
 </div>
 </xsl:template>
 

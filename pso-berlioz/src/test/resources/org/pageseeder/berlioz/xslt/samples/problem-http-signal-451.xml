@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:http-signal</type>
+  <status>451</status>
+  <title>Unavailable For Legal Reasons</title>
+  <detail>Article is unavailable because of a legal hold</detail>
+</problem>

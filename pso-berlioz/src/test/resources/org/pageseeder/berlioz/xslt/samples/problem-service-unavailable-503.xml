@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problem>
+  <type>urn:berlioz:problem:service-unavailable</type>
+  <status>503</status>
+  <title>Service Unavailable</title>
+  <detail>Service is temporarily unavailable</detail>
+</problem>
