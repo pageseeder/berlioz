@@ -4,6 +4,18 @@
 <xsl:output method="xml" media-type="application/xml" indent="no" encoding="utf-8"/>
 
 <xsl:template match="/">
+  <xsl:apply-templates />
+</xsl:template>
+
+<xsl:template match="root">
+  <!-- swapping `root` for `service` as an example -->
+  <service id="{@service}" group="{@group}">
+    <!-- inlining generator content to simplify output -->
+    <xsl:sequence select="content/*"/>
+  </service>
+</xsl:template>
+
+<xsl:template match="*">
   <xsl:sequence select="."/>
 </xsl:template>
 
