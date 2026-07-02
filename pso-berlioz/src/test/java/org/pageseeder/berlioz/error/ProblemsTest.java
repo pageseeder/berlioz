@@ -54,6 +54,13 @@ final class ProblemsTest {
     Assertions.assertEquals("not-allowed", p.extensions().get("reason"));
   }
 
+  @Test
+  void testForInvalidParameter_withDetailAddsException() {
+    InvalidParameterException ex = InvalidParameterException.required("username");
+    ProblemDetails p = Problems.forInvalidParameter(ex, DetailLevel.STANDARD);
+    Assertions.assertTrue(p.extensions().containsKey("exception"));
+  }
+
   // --- forUpstreamException() ---
 
   @Test
@@ -72,6 +79,32 @@ final class ProblemsTest {
     UpstreamException ex = new UpstreamException("timeout", "search-api");
     ProblemDetails p = Problems.forUpstreamException(ex);
     Assertions.assertEquals("search-api", p.extensions().get("upstream-service"));
+  }
+
+  @Test
+  void testForUpstreamException_withDetailAddsException() {
+    UpstreamException ex = new UpstreamException("timeout", "search-api");
+    ProblemDetails p = Problems.forUpstreamException(ex, DetailLevel.FULL);
+    Assertions.assertTrue(p.extensions().containsKey("exception"));
+  }
+
+  // --- forHttpException() ---
+
+  @Test
+  void testForHttpException() {
+    HttpException ex = new HttpException("legal hold", 451) {};
+    ProblemDetails p = Problems.forHttpException(ex);
+    Assertions.assertEquals(451, p.status());
+    Assertions.assertEquals("urn:berlioz:problem:http-signal", p.type());
+    Assertions.assertEquals("Unavailable For Legal Reasons", p.title());
+    Assertions.assertEquals("legal hold", p.detail());
+  }
+
+  @Test
+  void testForHttpException_withDetailAddsException() {
+    HttpException ex = new HttpException("legal hold", 451) {};
+    ProblemDetails p = Problems.forHttpException(ex, DetailLevel.STANDARD);
+    Assertions.assertTrue(p.extensions().containsKey("exception"));
   }
 
   // --- forGeneratorError() ---
@@ -179,6 +212,27 @@ final class ProblemsTest {
     ProblemDetails p = Problems.forHttpError(500, "oops", "app-custom-error");
     Assertions.assertNotNull(p);
     Assertions.assertEquals("urn:berlioz:problem:error", p.type());
+  }
+
+  @Test
+  void testForHttpError_withInvalidBerliozSlug_fallsBackToCodeSlug() {
+    ProblemDetails p = Problems.forHttpError(404, "oops", "berlioz-Not_Valid");
+    Assertions.assertNotNull(p);
+    Assertions.assertEquals("urn:berlioz:problem:not-found", p.type());
+  }
+
+  @Test
+  void testForHttpError_withThrowableAndStandardDetailAddsException() {
+    ProblemDetails p = Problems.forHttpError(500, "oops", new IllegalStateException("boom"), DetailLevel.STANDARD);
+    Assertions.assertTrue(p.extensions().containsKey("exception"));
+  }
+
+  @Test
+  void testForHttpError_withErrorIdThrowableAndMinimalDetailOmitsException() {
+    ProblemDetails p = Problems.forHttpError(500, "oops", "berlioz-unexpected",
+        new IllegalStateException("boom"), DetailLevel.MINIMAL);
+    Assertions.assertEquals("urn:berlioz:problem:unexpected", p.type());
+    Assertions.assertFalse(p.extensions().containsKey("exception"));
   }
 
 }

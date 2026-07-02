@@ -1,8 +1,13 @@
 package org.pageseeder.berlioz.servlet;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.Map;
@@ -78,6 +83,19 @@ class BerliozConfigTest {
     assertNull(BerliozConfig.getListener());
   }
 
+  @Test
+  void resetETagSeed_generatesAndPersistsSeed(@TempDir Path contextRoot) throws Exception {
+    Files.createDirectories(contextRoot.resolve("WEB-INF"));
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig(contextRoot));
+
+    config.resetETagSeed();
+
+    assertAll(
+        () -> assertNotEquals(0L, config.getETagSeed()),
+        () -> assertTrue(Files.exists(contextRoot.resolve("WEB-INF/berlioz.etag")))
+    );
+  }
+
   // Helper: build a request proxy that handles getParameter and getHeaders
   private static HttpServletRequest requestWithHeaders(
       Map<String, String> params, Map<String, String> headers) {
@@ -98,6 +116,25 @@ class BerliozConfigTest {
             case "equals":   return proxy == args[0];
             default:         return ServletTestSupport.defaultValue(m.getReturnType());
           }
+        });
+  }
+
+  private static ServletConfig servletConfig(Path contextRoot) {
+    ServletContext context = (ServletContext) Proxy.newProxyInstance(
+        ServletContext.class.getClassLoader(),
+        new Class<?>[]{ServletContext.class},
+        (proxy, m, args) -> {
+          if ("getRealPath".equals(m.getName())) return contextRoot.toString();
+          return ServletTestSupport.defaultValue(m.getReturnType());
+        });
+    return (ServletConfig) Proxy.newProxyInstance(
+        ServletConfig.class.getClassLoader(),
+        new Class<?>[]{ServletConfig.class},
+        (proxy, m, args) -> {
+          if ("getServletContext".equals(m.getName())) return context;
+          if ("getServletName".equals(m.getName())) return "test-config";
+          if ("getInitParameter".equals(m.getName())) return null;
+          return ServletTestSupport.defaultValue(m.getReturnType());
         });
   }
 }

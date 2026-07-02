@@ -175,6 +175,76 @@ class XmlResponseTest {
   }
 
   @Test
+  void generate_headerSkipsLongParameterNamesAndTruncatesLongValues() throws IOException {
+    String longName = "n".repeat(101);
+    String longValue = "v".repeat(2_001);
+    HttpServletRequest req = ServletTestSupport.request()
+        .scheme("http").host("localhost").port(80)
+        .uri("/test").servletPath("/test").pathInfo(null)
+        .parameter(longName, "hidden")
+        .parameter("long-value", longValue)
+        .parameter("short-value", "visible")
+        .build();
+    Service service = singleGenerator(new NoContent());
+    XmlResponse xr = new XmlResponse(req, res(), config, matchFor(service), false);
+
+    String result = xr.generate();
+
+    assertAll(
+        () -> assertFalse(result.contains("hidden"), "parameter with long name must be skipped"),
+        () -> assertTrue(result.contains("truncated=\"true\""), "long value should be marked as truncated"),
+        () -> assertFalse(result.contains(longValue), "full long value must not be emitted"),
+        () -> assertTrue(result.contains("visible"), "ordinary parameter should still be emitted")
+    );
+  }
+
+  @Test
+  void generate_headerWritesGeneratedSecurityNonce() throws Exception {
+    setOption(BerliozOption.NONCE_ENABLE, "true");
+    setOption(BerliozOption.NONCE_ATTRIBUTE, "cspNonce");
+    try {
+      Service service = singleGenerator(new NoContent());
+      XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+      String result = xr.generate();
+
+      assertAll(
+          () -> assertTrue(result.contains("<security"), "security element should be emitted"),
+          () -> assertTrue(result.contains("nonce="), "nonce attribute should be emitted"),
+          () -> assertTrue(result.contains("source=\"berlioz\""), "generated nonce should name Berlioz as source")
+      );
+    } finally {
+      clearOption(BerliozOption.NONCE_ENABLE);
+      clearOption(BerliozOption.NONCE_ATTRIBUTE);
+    }
+  }
+
+  @Test
+  void generate_headerSuppressesInvalidAttributeNonce() throws Exception {
+    setOption(BerliozOption.NONCE_ENABLE, "true");
+    setOption(BerliozOption.NONCE_ATTRIBUTE, "cspNonce");
+    try {
+      HttpServletRequest req = ServletTestSupport.request()
+          .scheme("http").host("localhost").port(80)
+          .uri("/test").servletPath("/test").pathInfo(null)
+          .attribute("cspNonce", "not a nonce!")
+          .build();
+      Service service = singleGenerator(new NoContent());
+      XmlResponse xr = new XmlResponse(req, res(), config, matchFor(service), false);
+
+      String result = xr.generate();
+
+      assertAll(
+          () -> assertTrue(result.contains("invalid nonce"), "invalid nonce should be commented"),
+          () -> assertFalse(result.contains("<security"), "invalid nonce should not be emitted")
+      );
+    } finally {
+      clearOption(BerliozOption.NONCE_ENABLE);
+      clearOption(BerliozOption.NONCE_ATTRIBUTE);
+    }
+  }
+
+  @Test
   void generate_generatorInterface_adaptsToXml() throws IOException {
     Generator gen = (req, out) -> {
       out.startObject("data").field("key", "value", OutputWriter.FieldOption.DEFAULT).endObject();
@@ -581,6 +651,18 @@ class XmlResponseTest {
     ref.compareAndSet(null, new HashMap<>());
     Map<String, String> settings = ref.get();
     settings.put(BerliozOption.ERROR_DETAIL.property(), level.name().toLowerCase());
+  }
+
+  private static void setOption(BerliozOption option, String value) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    ref.get().put(option.property(), value);
+  }
+
+  private static void clearOption(BerliozOption option) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    ref.get().remove(option.property());
   }
 
   @SuppressWarnings("unchecked")

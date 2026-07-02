@@ -7,13 +7,20 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.util.CollectedError;
+import org.pageseeder.berlioz.util.CompoundBerliozException;
+import org.pageseeder.berlioz.util.ErrorCollector;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -65,6 +72,19 @@ class ErrorHandlerServletTest {
   @Test
   void testErrorHandlerServlet_canBeInstantiated() {
     assertDoesNotThrow(ErrorHandlerServlet::new);
+  }
+
+  @Test
+  void init_withDefaultParametersDoesNotThrow() {
+    ServletConfig config = (ServletConfig) Proxy.newProxyInstance(
+        ServletConfig.class.getClassLoader(),
+        new Class<?>[]{ServletConfig.class},
+        (proxy, m, args) -> {
+          if ("getServletName".equals(m.getName())) return "error";
+          if ("getInitParameter".equals(m.getName())) return null;
+          return ServletTestSupport.defaultValue(m.getReturnType());
+        });
+    assertDoesNotThrow(() -> new ErrorHandlerServlet().init(config));
   }
 
   // Null-safety on getErrorCode with valid Integer attribute (tested via constant)
@@ -154,6 +174,48 @@ class ErrorHandlerServletTest {
         () -> assertFalse(body.contains("token-secret"),    "token value must not be exposed"),
         () -> assertFalse(body.contains("private-key-secret"),
             "private key value must not be exposed")
+    );
+  }
+
+  @Test
+  void handle_legacyFormat_fullDetail_includesCollectedErrors() throws Exception {
+    setOption(BerliozOption.ERROR_DETAIL, "full");
+    ErrorCollector<Exception> collector = new ErrorCollector<>();
+    collector.collectQuietly(CollectedError.Level.ERROR, new IOException("first collected"));
+    CompoundBerliozException cause = new CompoundBerliozException("compound failure",
+        BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
+        .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
+        .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, cause)
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    new ErrorHandlerServlet().handle(req, res.build());
+
+    String body = res.content();
+    assertAll(
+        () -> assertEquals(500, res.status),
+        () -> assertTrue(body.contains("<collected-errors"), "collected errors should be serialized"),
+        () -> assertTrue(body.contains("first collected"), "collected error message should be present")
+    );
+  }
+
+  @Test
+  void privateFallbackHelpersProduceSafeValues() throws Exception {
+    Method fallbackProblemXml = ErrorHandlerServlet.class.getDeclaredMethod("fallbackProblemXml", int.class);
+    fallbackProblemXml.setAccessible(true);
+    Method replaceAutoURI = ErrorHandlerServlet.class.getDeclaredMethod("replaceAutoURI",
+        String.class, String.class, String.class);
+    replaceAutoURI.setAccessible(true);
+
+    String problem = (String) fallbackProblemXml.invoke(null, 500);
+    String forward = (String) replaceAutoURI.invoke(null, "/context/errors/not-found.auto", ".json", "/context");
+
+    assertAll(
+        () -> assertTrue(problem.contains("<problem"), "fallback problem should be serialized"),
+        () -> assertTrue(problem.contains("Unable to serialize problem details."), "fallback detail should be present"),
+        () -> assertEquals("/errors/not-found.json", forward)
     );
   }
 
@@ -387,6 +449,15 @@ class ErrorHandlerServletTest {
       setOption(BerliozOption.ERROR_STYLESHEET, "xslt/does-not-exist.xsl");
       URL url = ErrorHandlerServlet.resolveErrorStylesheet();
       assertNotNull(url, "Should fall back to built-in failsafe when custom file is missing");
+      assertTrue(url.toString().contains("failsafe-error-html.xsl"), "Fallback URL should be the classpath failsafe");
+    }
+
+    @Test
+    void resolveErrorStylesheet_configuredWithoutWebInf_fallsBackToFailsafe() throws ReflectiveOperationException {
+      setWebInf(null);
+      setOption(BerliozOption.ERROR_STYLESHEET, "xslt/error.xsl");
+      URL url = ErrorHandlerServlet.resolveErrorStylesheet();
+      assertNotNull(url, "Should fall back to built-in failsafe when WEB-INF is unavailable");
       assertTrue(url.toString().contains("failsafe-error-html.xsl"), "Fallback URL should be the classpath failsafe");
     }
 

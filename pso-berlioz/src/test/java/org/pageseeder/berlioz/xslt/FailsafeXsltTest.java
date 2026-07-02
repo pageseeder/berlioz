@@ -1,11 +1,15 @@
 package org.pageseeder.berlioz.xslt;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.pageseeder.berlioz.servlet.XsltTransformer;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -105,6 +109,76 @@ class FailsafeXsltTest {
 
     if (Boolean.getBoolean("berlioz.generateSamples")) {
       writePreview(fixture, html);
+    }
+  }
+
+  @Test
+  void transformFailSafe_nullStylesheetReturnsOriginalXml() {
+    String xml = "<server-error http-code=\"500\"><title>Error</title></server-error>";
+
+    String result = XsltTransformer.transformFailSafe(xml, (URL) null);
+
+    assertEquals(xml, result);
+  }
+
+  @Test
+  void transformFailSafe_runtimeFailureReturnsOriginalXml(@TempDir Path tmp) throws IOException {
+    String xml = "<server-error http-code=\"500\"><title>Error</title></server-error>";
+    Path xsl = tmp.resolve("fail.xsl");
+    Files.writeString(xsl,
+        "<?xml version=\"1.0\"?>"
+        + "<xsl:stylesheet version=\"2.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
+        + "<xsl:template match=\"/\">"
+        + "<xsl:message terminate=\"yes\">stop</xsl:message>"
+        + "</xsl:template>"
+        + "</xsl:stylesheet>",
+        StandardCharsets.UTF_8);
+
+    String result = XsltTransformer.transformFailSafe(xml, xsl.toUri().toURL());
+
+    assertEquals(xml, result);
+  }
+
+  @Test
+  void loadResource_missingOrUnreadableReturnsEmptyString() throws Exception {
+    Method loadResource = XsltTransformer.class.getDeclaredMethod("loadResource", ClassLoader.class, String.class);
+    loadResource.setAccessible(true);
+    ClassLoader missing = new ClassLoader(null) {
+      @Override
+      public InputStream getResourceAsStream(String name) {
+        return null;
+      }
+    };
+    ClassLoader unreadable = new ClassLoader(null) {
+      @Override
+      public InputStream getResourceAsStream(String name) {
+        return new InputStream() {
+          @Override
+          public int read() throws IOException {
+            throw new IOException("broken");
+          }
+        };
+      }
+    };
+
+    assertAll(
+        () -> assertEquals("", loadResource.invoke(null, missing, "missing.html")),
+        () -> assertEquals("", loadResource.invoke(null, unreadable, "broken.html"))
+    );
+  }
+
+  @Test
+  void detectXslt2ReturnsFalseForMissingFactory() throws Exception {
+    Method detectXslt2 = XsltTransformer.class.getDeclaredMethod("detectXslt2");
+    detectXslt2.setAccessible(true);
+    String property = "javax.xml.transform.TransformerFactory";
+    String previous = System.getProperty(property);
+    try {
+      System.setProperty(property, "org.pageseeder.berlioz.tests.DoesNotExistTransformerFactory");
+      assertFalse((Boolean) detectXslt2.invoke(null), "missing factory should be treated as unsupported");
+    } finally {
+      if (previous == null) System.clearProperty(property);
+      else System.setProperty(property, previous);
     }
   }
 
