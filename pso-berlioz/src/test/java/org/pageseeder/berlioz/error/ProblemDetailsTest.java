@@ -390,6 +390,18 @@ final class ProblemDetailsTest {
     Assertions.assertTrue(json.contains("\"message\":\"boom\""));
   }
 
+  @Test
+  void testToJson_exceptionDetailCamelifiesXmlNames() {
+    Throwable ex = new org.xml.sax.SAXParseException("bad", null, "file:/tmp/source.xsl", 12, 7);
+    String json = ProblemDetails.of(ContentStatus.INTERNAL_SERVER_ERROR)
+        .extension(ExceptionDetail.of(ex, true)).toJson();
+    Assertions.assertTrue(json.contains("\"location\":{"));
+    Assertions.assertTrue(json.contains("\"systemId\""));
+    Assertions.assertTrue(json.contains("\"stackTrace\""));
+    Assertions.assertFalse(json.contains("\"system-id\""));
+    Assertions.assertFalse(json.contains("\"stack-trace\""));
+  }
+
   // --- toXml(XmlWriter) ---
 
   @Test
@@ -456,6 +468,20 @@ final class ProblemDetailsTest {
     String xml = out.toString();
     Assertions.assertTrue(xml.contains("<exception class=\"java.lang.IllegalStateException\">"));
     Assertions.assertTrue(xml.contains("<message>boom</message>"));
+  }
+
+  @Test
+  void testToXml_exceptionDetailKeepsXmlNames() {
+    Throwable ex = new org.xml.sax.SAXParseException("bad", null, "file:/tmp/source.xsl", 12, 7);
+    XmlStringBuilder out = new XmlStringBuilder();
+    ProblemDetails.of(ContentStatus.INTERNAL_SERVER_ERROR)
+        .extension(ExceptionDetail.of(ex, true)).toXml(out);
+    String xml = out.toString();
+    Assertions.assertTrue(xml.contains("<location"));
+    Assertions.assertTrue(xml.contains("system-id="));
+    Assertions.assertTrue(xml.contains("<stack-trace>"));
+    Assertions.assertFalse(xml.contains("systemId="));
+    Assertions.assertFalse(xml.contains("<stackTrace>"));
   }
 
   // --- writeTo(OutputWriter) ---

@@ -18,9 +18,7 @@ package org.pageseeder.berlioz.error;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.util.Errors;
-import org.pageseeder.berlioz.json.JsonWriter;
 import org.pageseeder.berlioz.output.OutputWriter;
-import org.pageseeder.berlioz.xml.XmlWriter;
 
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerConfigurationException;
@@ -129,87 +127,10 @@ public final class ExceptionDetail implements ProblemExtension {
     return new ExceptionDetail(className, null, message, stackTrace, -1, -1, null, null, cause);
   }
 
-  // --- XmlWritable -----------------------------------------------------------------------------
-
   @Override
   public String name() {
     return NAME;
   }
-
-  /**
-   * Writes this detail as an {@code <exception>} XML element.
-   *
-   * <p>Standard members: {@code class} attribute, optional {@code type} attribute,
-   * {@code <message>}. Full additionally writes {@code <stack-trace>} and {@code <cause>}.
-   * A {@code <location>} element is written whenever source location is available,
-   * regardless of level.</p>
-   */
-  @Override
-  public XmlWriter toXml(XmlWriter xml) {
-    return toXml(xml, NAME);
-  }
-
-  private XmlWriter toXml(XmlWriter xml, String elementName) {
-    xml.openElement(elementName, true);
-    xml.attribute("class", this.className);
-    if (this.type != null) xml.attribute("type", this.type);
-    xml.element("message", this.message);
-    if (this.stackTrace != null) xml.element("stack-trace", this.stackTrace);
-    if (this.cause != null) this.cause.toXml(xml, "cause");
-    if (hasLocation()) writeLocationXml(xml);
-    return xml.closeElement();
-  }
-
-  private void writeLocationXml(XmlWriter xml) {
-    xml.openElement("location");
-    if (this.locationLine   != -1) xml.attribute("line",      this.locationLine);
-    if (this.locationColumn != -1) xml.attribute("column",    this.locationColumn);
-    if (this.locationPublicId != null) xml.attribute("public-id",  this.locationPublicId);
-    if (this.locationSystemId != null) xml.attribute("system-id",  this.locationSystemId);
-    xml.closeElement();
-  }
-
-  // --- JsonWritable (JSON) ---------------------------------------------------------------------
-
-  /**
-   * Writes this detail as a named {@code exception} JSON object.
-   *
-   * <p>Standard members: {@code class}, optional {@code type}, {@code message}, optional
-   * {@code location} object. Full additionally writes {@code stackTrace} and {@code cause}.</p>
-   *
-   * <p>JSON member names follow camelCase convention: {@code stackTrace}, {@code systemId},
-   * {@code publicId}.</p>
-   */
-  @Override
-  public JsonWriter toJson(JsonWriter json) {
-    json.startObject(NAME);
-    writeFieldsJson(json);
-    return json.endObject();
-  }
-
-  private void writeFieldsJson(JsonWriter json) {
-    json.field("class", this.className);
-    if (this.type != null) json.field("type", this.type);
-    json.field("message", this.message);
-    if (hasLocation()) writeLocationJson(json);
-    if (this.stackTrace != null) json.field("stackTrace", this.stackTrace);
-    if (this.cause != null) {
-      json.startObject("cause");
-      this.cause.writeFieldsJson(json);
-      json.endObject();
-    }
-  }
-
-  private void writeLocationJson(JsonWriter json) {
-    json.startObject("location");
-    if (this.locationLine   != -1) json.field("line",     this.locationLine);
-    if (this.locationColumn != -1) json.field("column",   this.locationColumn);
-    if (this.locationPublicId != null) json.field("publicId",  this.locationPublicId);
-    if (this.locationSystemId != null) json.field("systemId",  this.locationSystemId);
-    json.endObject();
-  }
-
-  // --- OutputWritable --------------------------------------------------------------------------
 
   @Override
   public OutputWriter writeTo(OutputWriter out) {

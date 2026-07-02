@@ -17,8 +17,12 @@ package org.pageseeder.berlioz.error;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.json.JsonWritable;
+import org.pageseeder.berlioz.json.JsonWriter;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.output.OutputWritable;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.xml.XmlWritable;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * A structured extension member for an RFC 9457 problem details response.
@@ -44,5 +48,29 @@ public interface ProblemExtension extends XmlWritable, JsonWritable, OutputWrita
    * @return the name used for collision checks and by the extension's serialized representation
    */
   String name();
+
+  /**
+   * Write the XML representation of this extension based on the output writable implementation.
+   *
+   * @param xml The XML writer to use.
+   *
+   * @return The JSON writer for easy chaining
+   */
+  default XmlWriter toXml(XmlWriter xml) {
+    writeTo(new XmlOutputAdapter(xml));
+    return xml;
+  }
+
+  /**
+   * Write the JSON representation of this extension based on the output writable implementation.
+   *
+   * @param json The JSON writer to use.
+   *
+   * @return The JSON writer for easy chaining
+   */
+  default JsonWriter toJson(JsonWriter json) {
+    writeTo(new JsonOutputAdapter(json));
+    return json;
+  }
 
 }
