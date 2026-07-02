@@ -34,6 +34,10 @@ Let us know if there is anything that we can do to help you use Berlioz. We want
 
 The Java API documentation can be found [here](https://javadoc.io/doc/org.pageseeder.berlioz/pso-berlioz)
 
+## Error Responses
+
+Berlioz uses RFC 9457 Problem Details support for generator and framework errors.
+
 ## Roadmap
 
 The current development roadmap is available in [ROADMAP.md](ROADMAP.md).
