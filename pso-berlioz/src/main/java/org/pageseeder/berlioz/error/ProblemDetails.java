@@ -101,6 +101,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
   private final Map<String, Object> diagnostics;
   private final @Nullable Throwable diagnosticCause;
 
+  @SuppressWarnings("java:S107") // private copy-constructor; all fields are distinct RFC 9457 members
   private ProblemDetails(int status, @Nullable String type, @Nullable String title,
       @Nullable String detail, @Nullable String instance, Map<String, Object> extensions,
       Map<String, Object> diagnostics, @Nullable Throwable diagnosticCause) {
