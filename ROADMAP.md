@@ -69,6 +69,9 @@ The 0.13.3–0.13.5 cycle completed RFC 9457 Problem Details integration across 
 - `XmlResponse` and `JsonResponse` both catch all `HttpException` subtypes and map them to `Response.problem(...)`.
 - For direct services, problem responses are promoted to top-level with `application/problem+json` or `application/problem+xml` content type.
 - For envelope services, generator problems are embedded inline; the final HTTP status is governed by the service's response-code rule, supporting partial-failure semantics.
+- Moved problem APIs into `org.pageseeder.berlioz.error`: `ProblemDetails`, `InvalidParameterException`, and `UpstreamException`.
+- Added `ProblemExtension` for structured problem extension members and `ExceptionDetail` for optional exception metadata.
+- Added support for custom problem HTTP status codes through `ProblemDetails.of(int)`, `Response.problem(...)`, and `GeneratorOutcome`.
 - Added `ERROR_PROBLEM_FORMAT` option to opt in to RFC 9457 `<problem>` XML in `ErrorHandlerServlet` (default: legacy format).
 - Added `ERROR_DETAIL` option (`minimal` / `standard` / `full`) controlling diagnostic verbosity in error responses; at `standard` or `full`, exception details are added to RFC 9457 problem responses as an `exception` extension member.
 - Updated failsafe XSLT with a `<problem>` template for consistent HTML rendering of problem responses.
@@ -80,6 +83,10 @@ The 0.13.5 cycle completed the remaining configurable error handling options:
 
 - Added `ERROR_STYLESHEET` option (`berlioz.errors.stylesheet`) — a path relative to `WEB-INF/` for a custom error XSLT; `ErrorHandlerServlet` tries the custom file first, falls back to the built-in failsafe, then falls back to raw XML with an appropriate content type.
 - Decided: the custom error stylesheet is a single global template (not per-group), consistent with how error handling bypasses the normal XSLT resolution path.
+- Added sensitive-value redaction for full-detail HTTP headers and parameters in `ErrorHandlerServlet`.
+- Added XSLT 2.0 runtime detection and a static diagnostic page for environments missing an XSLT 2.0 processor.
+- Added direct JSON problem output for JSON-configured servlet errors when Berlioz handles the error.
+- Added per-generator `Server-Timing` metrics for direct JSON services, matching the XML service path.
 - Added test coverage for stylesheet resolution: default failsafe, non-existent path fallback, custom file, and end-to-end `handle()` with custom output.
 
 ## Current Development Themes
@@ -97,6 +104,8 @@ Done:
 - `ERROR_PROBLEM_FORMAT` option switches `ErrorHandlerServlet` to emit RFC 9457 `<problem>` XML.
 - `ERROR_STYLESHEET` option lets applications supply a custom error XSLT, with automatic fallback to the built-in failsafe.
 - Modernized failsafe template: CSS variables, dark-mode support, responsive layout, collapsible stack traces via `<details>`/`<summary>`, structured `<exception>` rendering inside Problem Details responses, and `http-headers`/`http-parameters` diagnostic blocks in full-detail mode.
+- Sensitive values in diagnostic request headers and parameters are redacted before serialization.
+- Runtime XSLT 2.0 probing reports a clear static diagnostic when no XSLT 2.0 processor is available.
 
 The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage.
 
