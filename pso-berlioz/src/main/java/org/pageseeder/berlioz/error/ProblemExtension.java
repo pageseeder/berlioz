@@ -54,7 +54,7 @@ public interface ProblemExtension extends XmlWritable, JsonWritable, OutputWrita
    *
    * @param xml The XML writer to use.
    *
-   * @return The JSON writer for easy chaining
+   * @return The XML writer for easy chaining
    */
   default XmlWriter toXml(XmlWriter xml) {
     writeTo(new XmlOutputAdapter(xml));

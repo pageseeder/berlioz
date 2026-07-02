@@ -21,19 +21,21 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A utility class for HTTP Status codes.
+ * A utility class for HTTP status codes.
  *
- * @see <a href="http://tools.ietf.org/html/rfc2616#section-10">HTTP/1.1 - 10 Status Code Definitions</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-status-codes">HTTP Semantics - Status Codes</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc6585.html">Additional HTTP Status Codes</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc7725.html">HTTP 451</a>
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.13.5
  * @since 0.8.3
  */
 public final class HttpStatusCodes {
 
   /**
-   * The default titles to use for the various HTTP Codes (reusing titles defined by RFC 2616)
+   * The default titles to use for known HTTP status codes.
    */
   private static final Map<Integer, String> HTTP_CODE_TITLE = new HashMap<>();
   static {
@@ -100,19 +102,19 @@ public final class HttpStatusCodes {
   }
 
   /**
-   * Returns the title for the specified code based on the name defined in the RFC.
+   * Returns the registered title for the specified HTTP status code.
    *
-   * @see <a href="http://tools.ietf.org/html/rfc2616#section-10">HTTP/1.1 - 10 Status Code Definitions</a>
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-status-codes">HTTP Semantics - Status Codes</a>
    *
    * @param code the HTTP status code.
-   * @return the corresponding title as defined in RFC 2616 or <code>null</code> if the code does not exist.
+   * @return the corresponding title, or <code>null</code> if the code is not registered here.
    */
   public static @Nullable String getTitle(int code) {
     return HTTP_CODE_TITLE.get(code);
   }
 
   /**
-   * Returns the class of the HTTP status code based on the class defined in the RFC.
+   * Returns the class of the HTTP status code.
    *
    * <p>Will return for range:
    * <ul>
@@ -123,7 +125,7 @@ public final class HttpStatusCodes {
    *   <li>500-599: <code>"Server Error"</code></li>
    * </ul>
    *
-   * @see <a href="http://tools.ietf.org/html/rfc2616#section-10">HTTP/1.1 - 10 Status Code Definitions</a>
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-overview-of-status-codes">HTTP Semantics - Overview of Status Codes</a>
    *
    * @param code the HTTP status code.
    * @return the class of the HTTP status code based on the class defined in the RFC;

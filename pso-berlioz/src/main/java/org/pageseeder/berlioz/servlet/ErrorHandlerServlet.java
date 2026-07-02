@@ -364,9 +364,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
-   * Handles HTTP error using the error requests attributes.
+   * Handles an HTTP error using servlet error request attributes.
    *
-   * @param req The HTTP servlet request will cause the error.
+   * @param req The HTTP servlet request that caused the error.
    * @return the error details as XML
    */
   private static String toXml(HttpServletRequest req) {
@@ -592,10 +592,10 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
-   * Returns the error code from the request attribute '<code>javax.servlet.error.exception</code>'.
+   * Returns the exception from the request attribute '<code>javax.servlet.error.exception</code>'.
    *
    * @param req the servlet request
-   * @return the error code.
+   * @return the exception, or {@code null} when unavailable.
    */
   private static @Nullable Throwable getErrorException(ServletRequest req) {
     Object o = req.getAttribute(ERROR_EXCEPTION);
@@ -610,12 +610,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * Replace the '.auto' by the original extension (.html, .xml, .json, etc...)
    *
-   * <p>The application context is removed from the request URI as the RequestDiscpatcher will automatically add it.
+   * <p>The application context is removed from the request URI as the {@link RequestDispatcher}
+   * will automatically add it.
    *
    * @param uri     The original request URI
    * @param ext     The extension to map the .auto to
    * @param context The application context
-   * @return THe path to forward to.
+   * @return The path to forward to.
    */
   private static String replaceAutoURI(String uri, String ext, String context) {
     String to = uri.substring(context.length());

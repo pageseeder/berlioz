@@ -50,7 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Defines the configuration uses by a Berlioz Servlet.
+ * Defines the configuration used by a Berlioz servlet.
  *
  * @author Christophe Lauret
  *
@@ -149,7 +149,7 @@ public final class BerliozConfig {
   private final TransformAllocation allocation;
 
   /**
-   * The XSLT Transformers to user.
+   * The XSLT transformers to use.
    *
    * <p>The key depends on how the transformers are allocated.
    */
@@ -278,11 +278,16 @@ public final class BerliozConfig {
   }
 
   /**
-   * Updates the content type, typically called when the XSLT output overrides the configured type.
+   * Updates the configured content type.
+   *
+   * <p>Response processing no longer mutates shared servlet configuration when an XSLT result
+   * declares a different media type or charset. Use {@link #getMediaType()}, {@link #getCharset()},
+   * or the servlet response itself instead of changing this object at runtime.</p>
    *
    * @param contentType the new content type, which may include a {@code charset} parameter.
    *
-   * @deprecated We should not mutate the Berlioz Config to avoid side-effect
+   * @deprecated Mutating shared Berlioz configuration during request processing causes
+   *             cross-request side effects.
    */
   @Deprecated(forRemoval = true, since = "0.13.5")
   public void setContentType(String contentType) {

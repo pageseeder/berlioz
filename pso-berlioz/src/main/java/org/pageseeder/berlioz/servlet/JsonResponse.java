@@ -90,6 +90,9 @@ public final class JsonResponse {
     this.profile = profile;
   }
 
+  /**
+   * Enables per-generator {@code Server-Timing} metrics for this response.
+   */
   public void enableServerTiming() {
     this.serverTiming = true;
   }
@@ -112,18 +115,41 @@ public final class JsonResponse {
     return this.outcome.getStatus();
   }
 
+  /**
+   * Returns the exact HTTP status code selected for this response.
+   *
+   * <p>Unlike {@link #getStatus()}, this preserves custom problem status codes that are not
+   * represented by {@link ContentStatus}.</p>
+   *
+   * @return the HTTP status code
+   */
   public int getStatusCode() {
     return this.outcome.getStatusCode();
   }
 
+  /**
+   * Returns a Berlioz exception wrapping any generator error.
+   *
+   * @return the generator error, or {@code null} if generation succeeded
+   */
   public @Nullable BerliozException getError() {
     return this.outcome.getError();
   }
 
+  /**
+   * Returns the redirect URL selected by the service outcome.
+   *
+   * @return the redirect URL, or {@code null} if this response is not a redirect
+   */
   public @Nullable String getRedirectUrl() {
     return this.outcome.getRedirectURL();
   }
 
+  /**
+   * Returns response headers accumulated from generator {@link Response} objects.
+   *
+   * @return an unmodifiable map of headers; never {@code null}
+   */
   public Map<String, String> getHeaders() {
     return this.responseHeadersView;
   }

@@ -123,6 +123,9 @@ public final class XmlResponse {
     this.profile = profile;
   }
 
+  /**
+   * Enables per-generator {@code Server-Timing} metrics for this response.
+   */
   public void enableServerTiming() {
     this.serverTiming = true;
   }
@@ -178,6 +181,14 @@ public final class XmlResponse {
     return this.outcome.getStatus();
   }
 
+  /**
+   * Returns the exact HTTP status code selected for this response.
+   *
+   * <p>Unlike {@link #getStatus()}, this preserves custom problem status codes that are not
+   * represented by {@link ContentStatus}.</p>
+   *
+   * @return the HTTP status code
+   */
   public int getStatusCode() {
     return this.outcome.getStatusCode();
   }
