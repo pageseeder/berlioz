@@ -177,6 +177,13 @@ final class ResponseTest {
   }
 
   @Test
+  void testProblem_statusUsesStatusClassForValidHttpStatusNotInContentStatus() {
+    ProblemDetails pd = ProblemDetails.of(412);
+    Response r = Response.problem(pd);
+    Assertions.assertEquals(ContentStatus.BAD_REQUEST, r.status());
+  }
+
+  @Test
   void testProblem_isProblemTrue() {
     Response r = Response.problem(ProblemDetails.of(ContentStatus.BAD_REQUEST));
     Assertions.assertTrue(r.isProblem());

@@ -210,11 +210,11 @@ public final class Response {
    * <p>Problem responses can carry any valid HTTP status. Use {@link #statusCode()} when the exact
    * wire-level HTTP status matters.</p>
    *
-   * @return the content status view, or {@code 500 Internal Server Error} when this response carries
-   *         a valid HTTP code that is not represented by {@link ContentStatus}
+   * @return the content status view, or the nearest status class represented by
+   *         {@link ContentStatus} when the exact code is not represented
    */
   public ContentStatus status() {
-    return this.status != null ? this.status : ContentStatus.INTERNAL_SERVER_ERROR;
+    return this.status != null ? this.status : ContentStatus.forCodeOrClass(this.statusCode);
   }
 
   /** @return the exact HTTP status code to send on the wire */

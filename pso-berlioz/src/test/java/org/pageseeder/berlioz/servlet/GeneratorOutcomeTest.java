@@ -120,6 +120,7 @@ class GeneratorOutcomeTest {
     outcome.handleStatus(Response.ok(), generator, service);
 
     assertEquals(412, outcome.getStatusCode());
+    assertEquals(ContentStatus.BAD_REQUEST, outcome.getStatus());
   }
 
   @Test

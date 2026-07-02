@@ -396,6 +396,29 @@ public enum ContentStatus {
   }
 
   /**
+   * Returns the content status corresponding to the specified HTTP status code, or the closest
+   * status class represented by this enum when the exact code is not available. Informational
+   * status codes map to {@link #OK}, since this enum has no 1xx representative.
+   *
+   * <p>Use {@link #forCode(int)} when only an exact enum match is acceptable. This method is for
+   * legacy {@code ContentStatus} views of responses that can carry any valid HTTP status code.
+   *
+   * @param code The HTTP code.
+   * @return the corresponding enum constant or a status representing the nearest available HTTP
+   *         status class
+   *
+   * @since 0.13.5
+   */
+  public static ContentStatus forCodeOrClass(int code) {
+    ContentStatus status = forCode(code);
+    if (status != null) return status;
+    if (code >= 100 && code < 300) return OK;
+    if (code >= 300 && code < 400) return MULTIPLE_CHOICE;
+    if (code >= 400 && code < 500) return BAD_REQUEST;
+    return INTERNAL_SERVER_ERROR;
+  }
+
+  /**
    * Indicates whether the specified status corresponds to an HTTP redirect code.
    *
    * @param status The content status

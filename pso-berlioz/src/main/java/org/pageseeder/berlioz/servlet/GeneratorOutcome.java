@@ -51,8 +51,7 @@ final class GeneratorOutcome {
   ContentStatus getStatus() {
     ContentStatus s = this.status;
     if (s != null) return s;
-    // TODO Content status based on same class of error?
-    return this.statusCode == ContentStatus.OK.code() ? ContentStatus.OK : ContentStatus.INTERNAL_SERVER_ERROR;
+    return ContentStatus.forCodeOrClass(this.statusCode);
   }
 
   int getStatusCode() {

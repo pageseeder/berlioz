@@ -53,6 +53,26 @@ final class ContentStatusTest {
   }
 
   @Test
+  void testForCodeOrClass_exactStatus() {
+    Assertions.assertEquals(ContentStatus.NOT_FOUND, ContentStatus.forCodeOrClass(404));
+    Assertions.assertEquals(ContentStatus.SERVICE_UNAVAILABLE, ContentStatus.forCodeOrClass(503));
+  }
+
+  @Test
+  void testForCodeOrClass_unknownStatusUsesStatusClass() {
+    Assertions.assertEquals(ContentStatus.OK, ContentStatus.forCodeOrClass(206));
+    Assertions.assertEquals(ContentStatus.MULTIPLE_CHOICE, ContentStatus.forCodeOrClass(304));
+    Assertions.assertEquals(ContentStatus.BAD_REQUEST, ContentStatus.forCodeOrClass(412));
+    Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR, ContentStatus.forCodeOrClass(508));
+  }
+
+  @Test
+  void testForCodeOrClass_invalidStatusDefaultsToInternalServerError() {
+    Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR, ContentStatus.forCodeOrClass(0));
+    Assertions.assertEquals(ContentStatus.INTERNAL_SERVER_ERROR, ContentStatus.forCodeOrClass(999));
+  }
+
+  @Test
   void testForCode_allValuesRoundTrip() {
     for (ContentStatus status : ContentStatus.values()) {
       Assertions.assertEquals(status, ContentStatus.forCode(status.code()));
