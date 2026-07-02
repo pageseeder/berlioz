@@ -18,7 +18,6 @@ package org.pageseeder.berlioz.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -51,7 +50,9 @@ import org.pageseeder.berlioz.util.ErrorCollector;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ISO8601;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
-import org.pageseeder.xmlwriter.XMLWriterImpl;
+import org.pageseeder.berlioz.xml.XmlWriter;
+import org.pageseeder.xmlwriter.XML;
+import org.pageseeder.xmlwriter.XMLStringWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -263,7 +264,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     }
 
     // Generate error details as XML
-    String xml = toXML(req);
+    String xml = toXml(req);
 
     // Reset the response (in case the ETag, etc. has been set...)
     res.reset();
@@ -332,22 +333,22 @@ public final class ErrorHandlerServlet extends HttpServlet {
    *
    * @return the error details as XML
    */
-  private static String toXML(HttpServletRequest req) {
+  private static String toXml(HttpServletRequest req) {
     int code = getErrorCode(req);
     String message = (String)req.getAttribute(ERROR_MESSAGE);
 
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
       Throwable throwable = getErrorException(req);
-      return toProblemXML(code, message, extractErrorId(req, throwable), throwable);
+      return toProblemXml(code, message, extractErrorId(req, throwable), throwable);
     }
-    return toLegacyXML(req, code, message);
+    return toLegacyXml(req, code, message);
   }
 
   /**
    * Serializes the error as an RFC 9457 {@code <problem>} XML document.
    */
-  private static String toProblemXML(int code, @Nullable String message,
-      @Nullable String berliozErrorId, @Nullable Throwable throwable) {
+  private static String toProblemXml(int code, @Nullable String message,
+                                     @Nullable String berliozErrorId, @Nullable Throwable throwable) {
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     XmlStringBuilder xml = new XmlStringBuilder();
     try {
@@ -356,6 +357,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       xml.asXml(problem);
       xml.flush();
     } catch (Exception ex) {
+      // ProblemDetails should not cause problem, but custom problem extensions might...
       LOGGER.warn("Unable to produce problem details XML for status {}", code, ex);
       return fallbackProblemXml(code);
     }
@@ -378,69 +380,52 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * Serializes the error in the legacy Berlioz error XML format.
    */
-  private static String toLegacyXML(HttpServletRequest req, int code, @Nullable String message) {
+  private static String toLegacyXml(HttpServletRequest req, int code, @Nullable String message) {
     String servlet = (String)req.getAttribute(ERROR_SERVLET_NAME);
     Throwable throwable = getErrorException(req);
     String requestURI = (String)req.getAttribute(ERROR_REQUEST_URI);
 
-    StringWriter out = new StringWriter();
-    try {
-      XMLWriterImpl xml = new XMLWriterImpl(out, true);
-      xml.xmlDecl();
-      xml.openElement(getRootElementName(code));
-      xml.attribute("http-code", code);
-      xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    xml.declaration();
+    xml.openElement(getRootElementName(code));
+    xml.attribute("http-code", code);
+    xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
-      String id = extractErrorId(req, throwable);
-      xml.attribute("id", id != null ? id : BerliozErrorID.UNEXPECTED.toString());
+    String id = extractErrorId(req, throwable);
+    xml.attribute("id", id != null ? id : BerliozErrorID.UNEXPECTED.toString());
 
-      // Berlioz info
-      xml.openElement("berlioz");
-      xml.attribute("version", GlobalSettings.getVersion());
-      xml.closeElement();
+    // Berlioz info
+    xml.openElement("berlioz");
+    xml.attribute("version", GlobalSettings.getVersion());
+    xml.closeElement();
 
-      // Other informational elements
-      String title = HttpStatusCodes.getTitle(code);
-      xml.element("title", title != null? title : "Berlioz Status");
-      xml.element("message", message);
-      xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
-      xml.element("servlet", servlet != null? servlet : "null");
+    // Other informational elements
+    String title = HttpStatusCodes.getTitle(code);
+    xml.element("title", title != null ? title : "Berlioz Status");
+    xml.element("message", message != null ? message : "");
+    xml.element("request-uri", requestURI != null? requestURI : req.getRequestURI());
+    xml.element("servlet", servlet != null? servlet : "null");
 
-      DetailLevel detail = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
-      if (detail == DetailLevel.STANDARD) {
-        writeThrowableSummary(xml, throwable);
-      } else if (detail == DetailLevel.FULL) {
-        writeThrowable(xml, throwable);
-        writeHttpHeaders(xml, req);
-        writeHttpParameters(xml, req);
-      }
-
-      xml.closeElement();
-      xml.flush();
-    } catch (IOException io) {
-      LOGGER.warn("Unable to produce error details for error below:");
-      LOGGER.error("An error occurred while transforming content", throwable);
+    DetailLevel detail = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+    if (detail == DetailLevel.STANDARD) {
+      writeThrowableSummary(xml, throwable);
+    } else if (detail == DetailLevel.FULL) {
+      writeThrowable(xml, throwable);
+      writeHttpHeaders(xml, req);
+      writeHttpParameters(xml, req);
     }
 
-    return out.toString();
+    xml.closeElement();
+    xml.flush();
+    return xml.toString();
   }
 
-  private static void writeThrowable(XMLWriterImpl xml, @Nullable Throwable throwable) throws IOException {
+  private static void writeThrowable(XmlWriter xml, @Nullable Throwable throwable) {
     if (throwable == null) return;
-    Errors.toXML(throwable, xml, true);
-
-    // If some errors were collected, let's include them
-    if (throwable instanceof CompoundBerliozException) {
-      xml.openElement("collected-errors");
-      ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)throwable).getCollector();
-      for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
-        collected.toXML(xml);
-      }
-      xml.closeElement();
-    }
+    xml.xml(toThrowable(throwable));
   }
 
-  private static void writeThrowableSummary(XMLWriterImpl xml, @Nullable Throwable throwable) throws IOException {
+  private static void writeThrowableSummary(XmlWriter xml, @Nullable Throwable throwable) {
     if (throwable == null) return;
     xml.openElement("exception");
     xml.attribute("class", throwable.getClass().getName());
@@ -451,7 +436,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     xml.closeElement();
   }
 
-  private static void writeHttpHeaders(XMLWriterImpl xml, HttpServletRequest req) throws IOException {
+  private static void writeHttpHeaders(XmlWriter xml, HttpServletRequest req) {
     xml.openElement("http-headers");
     Enumeration<?> names = req.getHeaderNames();
     while (names.hasMoreElements()) {
@@ -470,7 +455,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     xml.closeElement();
   }
 
-  private static void writeHttpParameters(XMLWriterImpl xml, HttpServletRequest req) throws IOException {
+  private static void writeHttpParameters(XmlWriter xml, HttpServletRequest req) {
     xml.openElement("http-parameters");
     Map<?, ?> parameters = req.getParameterMap();
     for (Entry<?, ?> entry : parameters.entrySet()) {
@@ -603,5 +588,26 @@ public final class ErrorHandlerServlet extends HttpServlet {
         .toXml(xml);
     xml.flush();
     return xml.toString();
+  }
+
+  private static String toThrowable(Throwable throwable) {
+    XMLStringWriter buffer = new XMLStringWriter(XML.NamespaceAware.No);
+    try {
+      Errors.toXML(throwable, buffer, true);
+
+      // If some errors were collected, let's include them
+      if (throwable instanceof CompoundBerliozException) {
+        buffer.openElement("collected-errors");
+        ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException)throwable).getCollector();
+        for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
+          collected.toXML(buffer);
+        }
+        buffer.closeElement();
+      }
+
+    } catch (IOException e) {
+      // Will never happen since we send a string buffer, we can safely ignore
+    }
+    return buffer.toString();
   }
 }
