@@ -52,7 +52,7 @@ import java.util.*;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.13.5
  * @since 0.13.2
  */
 public final class Response {

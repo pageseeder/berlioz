@@ -425,8 +425,9 @@ public final class XmlResponse {
 
     // Write the XML: legacy errors stay in the old berlioz-exception shape unless
     // problem format is explicitly enabled.
-    if (response.isProblem()) {
-      xml.asXml(response.problem());
+    ProblemDetails problem = response.problem();
+    if (problem != null) {
+      xml.asXml(problem);
     } else if (error != null) {
       writeLegacyException(xml, error, detailLevelOrMinimal(errorLevel));
     } else if (result != null) {
