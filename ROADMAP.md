@@ -148,7 +148,36 @@ Next work:
 
 The goal is to allow a self-contained Berlioz overlay — XSLT templates, service configuration, static assets via `META-INF/resources/`, and a servlet filter via `web-fragment.xml` — to be distributed and consumed as a single JAR dependency.
 
-### 5. Finish Direct Output And Raw Output Support
+### 5. Configuration Requirements And Validation
+
+Many Berlioz applications depend on application-specific global properties being present and well-formed. Berlioz should be able to validate those requirements when global configuration is loaded, report violations consistently, and expose the result through a diagnostic generator.
+
+Recommended shape:
+
+- Add a declarative requirement file, for example `WEB-INF/config/config-requirements.xml`, evaluated after global properties are fully resolved.
+- Match requirements by property name, including simple wildcard patterns such as `test.*.url`.
+- Distinguish presence checks:
+  - `defined`: the resolved property key exists.
+  - `specified`: the application supplied the property rather than only inheriting a framework default.
+  - `has-value`: the resolved value is non-null and non-blank after trimming.
+- Support built-in value constraints for booleans, integers, numbers, regular expressions, enumerated values, URLs, URIs, ports, hostnames, and paths.
+- Record violations with severity (`error`, `warning`, `info`) and enough metadata to identify the requirement, matched property, and failing constraint.
+- Add an option to fail application startup or configuration reload when `error` violations are present, while keeping report-and-continue behavior available for development and diagnostics.
+- Avoid exposing raw property values in diagnostic output by default, especially for secret-like keys.
+
+Potential core model:
+
+- `ConfigurationRequirement`
+- `ConfigurationConstraint`
+- `ConfigurationViolation`
+- `ConfigurationValidationReport`
+- `ConfigurationValidator`
+
+The first implementation should keep the constraint language small and declarative. A later extension point, such as `ServiceLoader<ConfigurationConstraintProvider>`, can allow applications or modules to contribute custom constraints without turning the core into a general validation framework.
+
+The diagnostic generator should emit the current validation report as XML, with JSON available through the normal output pipeline. It should be opt-in or intended for admin-only services.
+
+### 6. Finish Direct Output And Raw Output Support
 
 Direct JSON and direct XML services are now part of the pipeline. `RawGenerator` exists as an API shape, but servlet dispatch support is still future work.
 
@@ -160,7 +189,7 @@ Next work:
 - Keep the direct service rule simple: one handler, one complete response body.
 - Document how `<handler>` differs from `<generator>`.
 
-### 6. Content Negotiation
+### 7. Content Negotiation
 
 Berlioz currently determines the output format from the URL extension (`.xml`, `.json`, `.html`) via servlet mappings. Adding support for the `Accept` header would allow a single endpoint to serve multiple formats based on client preference.
 
@@ -171,7 +200,7 @@ Next work:
 - Decide how `Accept`-based negotiation interacts with extension-based format selection (precedence, override, fallback).
 - Decide whether content negotiation should be opt-in per service or enabled globally.
 
-### 7. Authentication And Authorization Guards
+### 8. Authentication And Authorization Guards
 
 Berlioz should make it easy for applications to guard services and generators without becoming responsible for authentication itself.
 
@@ -200,7 +229,7 @@ The core model should not force role-based, permission-based, attribute-based, o
 - Forbidden.
 - Custom problem response.
 
-### 8. Interceptors And Observability
+### 9. Interceptors And Observability
 
 `GeneratorListener` already provides a focused generator timing hook. The next step is deciding whether Berlioz needs a broader interceptor model.
 
@@ -230,7 +259,7 @@ Natural optional integrations:
 
 The core should expose a small lifecycle model. Metrics and tracing dependencies should stay in optional modules.
 
-### 9. Optional Integration Modules
+### 10. Optional Integration Modules
 
 Keep Berlioz core small, but provide integration points for applications that already use other Java frameworks.
 
@@ -242,11 +271,11 @@ Possible modules:
 - Jakarta CDI integration for resolving generators as CDI beans.
 - Optional annotation-based routing, metadata, or authorization module.
 - Optional adapters for metrics and tracing.
-- Binary serialization module for high-performance output formats (see §10).
+- Binary serialization module for high-performance output formats (see §11).
 
 These integrations should support Berlioz rather than replace its URI template, generator, and XSLT model.
 
-### 10. Binary Serialization Module
+### 11. Binary Serialization Module
 
 Berlioz's generator hierarchy (`XmlGenerator`, `JsonGenerator`, `RawGenerator`) already supports multiple output formats dispatched by URL extension. A future optional module could extend this to high-performance binary serialization formats, following the same pattern as the existing `aeson` JSON adapters.
 
@@ -264,7 +293,7 @@ Schema-based formats (Protobuf, Avro, FlatBuffers) would need a different genera
 
 No core changes are expected: the existing extension-based dispatch and generator hierarchy should accommodate binary formats without modification.
 
-### 11. Jakarta Servlet Support
+### 12. Jakarta Servlet Support
 
 Move Berlioz to the Jakarta Servlet namespace for modern servlet containers when the application migration window is clear.
 
@@ -313,7 +342,19 @@ Completed in 0.13.3–0.13.5. See Recent Progress above.
 - Improve service registry diagnostic warnings.
 - Add tests for metadata stability.
 
-### Milestone 5: Classpath Overlay Discovery
+### Milestone 5: Configuration Requirements And Validation
+
+- Define a compact `config-requirements.xml` format for resolved global-property requirements.
+- Support exact and simple wildcard property-name matching.
+- Implement presence checks for defined, specified, and non-blank values.
+- Implement built-in constraints for boolean, integer, number, regex, enum, URL, URI, port, hostname, and path values.
+- Add a validation report model with severity, requirement identity, matched property name, and safe diagnostic messages.
+- Run validation after global configuration resolution and on configuration reload.
+- Add an option to fail startup or reload on error-level violations.
+- Add an opt-in generator that returns the current validation report as XML, with JSON support through the normal output pipeline.
+- Add tests for wildcard matching, presence semantics, each built-in constraint, reload behavior, fail-fast behavior, and safe diagnostic output.
+
+### Milestone 6: Classpath Overlay Discovery
 
 - Define the `META-INF/berlioz/services/` classpath convention for service configuration files.
 - Extend `ServiceLoader` to enumerate and merge classpath service configurations alongside filesystem ones.
@@ -323,20 +364,20 @@ Completed in 0.13.3–0.13.5. See Recent Progress above.
 - Add test coverage for classpath service discovery, XSLT classpath loading, and mixed classpath/filesystem configurations.
 - Verify that an overlay packaged as a JAR — with `META-INF/berlioz/services/`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT — deploys correctly without any host application changes beyond adding the dependency.
 
-### Milestone 6: Raw Output
+### Milestone 7: Raw Output
 
 - Implement servlet dispatch for `RawGenerator`.
 - Define raw content type and cache behavior.
 - Add tests for raw response status, headers, ETags, and body writing.
 - Document raw output constraints.
 
-### Milestone 7: Content Negotiation
+### Milestone 8: Content Negotiation
 
 - Support `Accept` header content negotiation.
 - Use `406 Not Acceptable` when the requested format is not supported.
 - Define interaction with extension-based format selection.
 
-### Milestone 8: Authorization And Interceptors
+### Milestone 9: Authorization And Interceptors
 
 - Define a small authorization result model.
 - Add programmatic guard support for services or generators.
@@ -344,14 +385,14 @@ Completed in 0.13.3–0.13.5. See Recent Progress above.
 - Decide whether interceptor hooks belong in core or an optional module.
 - Add tests for `401` and `403` early-return behavior.
 
-### Milestone 9: Integration And Instrumentation
+### Milestone 10: Integration And Instrumentation
 
 - Add optional Spring or CDI generator resolution.
 - Add optional Spring Security or application authorization adapters.
 - Add optional metrics/tracing integration.
 - Keep integration modules separate from the core runtime.
 
-### Milestone 10: Jakarta Migration
+### Milestone 11: Jakarta Migration
 
 - Decide final Jakarta migration strategy.
 - Release a Jakarta-based line with migration notes.
@@ -362,6 +403,9 @@ Completed in 0.13.3–0.13.5. See Recent Progress above.
 - Should the Jakarta migration be released as Berlioz 1.0?
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
 - Should service-level metadata be part of normal output, diagnostic output, or both?
+- Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?
+- For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?
+- How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?
 - Should direct services support only one handler forever, or is there a future aggregation model?
 - How should raw output interact with cache headers, ETags, and content negotiation?
 - Should authorization requirements be declared primarily by generator interfaces, service configuration, or both?
