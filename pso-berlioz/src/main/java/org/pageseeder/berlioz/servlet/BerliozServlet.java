@@ -490,11 +490,6 @@ public final class BerliozServlet extends HttpServlet {
     res.setContentType(isProblemXml ? "application/problem+xml" : result.getMediaType());
     res.setCharacterEncoding(charset.name());
 
-//    if (!config.getContentType().equals(ctype)) {
-//      LOGGER.info("Updating content type to {}", ctype);
-//      config.setContentType(ctype);
-//    }
-
     // Write the response body, applying GZip compression when appropriate
     writeOutput(req, res, result, etag, charset, config, ctx.includeContent);
   }
