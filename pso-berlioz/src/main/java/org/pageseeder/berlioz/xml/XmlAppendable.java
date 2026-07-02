@@ -21,6 +21,7 @@ import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
 import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
   /**
    * Encoding of the output xml.
    */
-  private static final String ENCODING = "utf-8";
+  private static final String ENCODING = StandardCharsets.UTF_8.name();
 
   /**
    * Indicates whether the XML output should be indented.

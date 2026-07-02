@@ -267,7 +267,7 @@ public final class BerliozServlet extends HttpServlet {
     ServiceRegistry services = getServiceRegistry();
 
     // Setup and ensure that we use UTF-8 to read data
-    req.setCharacterEncoding("utf-8");
+    req.setCharacterEncoding(StandardCharsets.UTF_8.name());
     res.setContentType(config.getContentType());
 
     // Notify the client not to attempt a range request if it does attempt to do so
@@ -402,12 +402,12 @@ public final class BerliozServlet extends HttpServlet {
     // Write JSON — with optional GZip compression; use problem+json when a top-level problem was signalled
     ProblemDetails topLevelProblem = json.getProblem();
     String jsonMediaType = topLevelProblem != null ? "application/problem+json" : "application/json";
-    res.setContentType(jsonMediaType + ";charset=UTF-8");
-    res.setCharacterEncoding("UTF-8");
+    res.setContentType(jsonMediaType);
+    res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     BerliozOutput jsonOutput = new BerliozOutput() {
       public CharSequence content() { return content; }
       public String getMediaType() { return "application/json"; }
-      public String getEncoding() { return "UTF-8"; }
+      public String getEncoding() { return StandardCharsets.UTF_8.name(); }
     };
     writeOutput(req, res, jsonOutput, etag, StandardCharsets.UTF_8, config, ctx.includeContent);
   }
@@ -795,8 +795,8 @@ public final class BerliozServlet extends HttpServlet {
   private static void writeProblemJson(HttpServletResponse res, ProblemDetails problem) {
     try {
       res.setStatus(problem.status());
-      res.setContentType("application/problem+json;charset=UTF-8");
-      res.setCharacterEncoding("UTF-8");
+      res.setContentType("application/problem+json");
+      res.setCharacterEncoding(StandardCharsets.UTF_8.name());
       PrintWriter out = res.getWriter();
       out.print(problem.toJson());
       out.flush();

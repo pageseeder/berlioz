@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
@@ -268,7 +269,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     // Reset the response (in case the ETag, etc. has been set...)
     res.reset();
-    res.setCharacterEncoding("utf-8");
+    res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     res.setStatus(code);
 
     // Write to the output

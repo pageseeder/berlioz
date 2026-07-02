@@ -30,7 +30,7 @@ final class XmlWriterTest {
     xml.closeElement();
     xml.close();
 
-    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         + "<?xml-stylesheet href=\"style.xsl\"?>"
         + "<!--  comment  -->"
         + "<root a=\"1&lt;&amp;&quot;\" b=\"two\">"

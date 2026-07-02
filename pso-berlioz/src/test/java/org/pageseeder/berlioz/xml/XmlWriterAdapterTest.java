@@ -178,7 +178,7 @@ final class XmlWriterAdapterTest {
     XmlStringBuilder out = new XmlStringBuilder();
     XMLWriter adapter = new XmlWriterAdapter(out);
     adapter.xmlDecl();
-    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?>", out.toString());
+    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", out.toString());
   }
 
   // close() is a no-op ---------------------------------------------------------------------------

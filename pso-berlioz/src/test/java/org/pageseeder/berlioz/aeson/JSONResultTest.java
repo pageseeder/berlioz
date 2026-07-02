@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.aeson;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Result;
@@ -136,7 +137,7 @@ class JSONResultTest {
     StreamResult sr = new StreamResult(out);
     Result result = JSONResult.newInstanceIfSupported(t, sr);
     t.transform(new StreamSource(new StringReader(xml)), result);
-    String json = out.toString("UTF-8");
+    String json = out.toString(StandardCharsets.UTF_8);
     Assertions.assertFalse(json.isEmpty(), "Output must not be empty");
     Assertions.assertTrue(json.contains("\"name\""), "JSON must contain 'name'");
   }

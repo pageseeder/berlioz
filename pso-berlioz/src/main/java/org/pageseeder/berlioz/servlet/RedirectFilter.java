@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -180,7 +181,7 @@ public final class RedirectFilter implements Filter, Serializable {
     // Evaluate URI patterns
     RedirectLocation location = redirectConfig.redirect(req.getRequestURI());
     if (location != null) {
-      res.setCharacterEncoding("utf-8");
+      res.setCharacterEncoding(StandardCharsets.UTF_8.name());
       LOGGER.debug("Redirecting from {} to {}", location.from(), location.to());
 
       // And redirect

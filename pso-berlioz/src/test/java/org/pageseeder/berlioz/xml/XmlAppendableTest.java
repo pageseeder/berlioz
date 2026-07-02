@@ -221,7 +221,7 @@ final class XmlAppendableTest {
   void testDeclaration() {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.declaration();
-    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?>", xml.toString());
+    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", xml.toString());
   }
 
   @Test
@@ -390,6 +390,6 @@ final class XmlAppendableTest {
   void testDeclarationWithIndentAddsNewline() {
     XmlStringBuilder xml = new XmlStringBuilder().withIndent("  ");
     xml.declaration();
-    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n", xml.toString());
+    Assertions.assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", xml.toString());
   }
 }

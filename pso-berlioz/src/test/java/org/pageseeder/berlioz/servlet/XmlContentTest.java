@@ -19,7 +19,7 @@ class XmlContentTest {
 
   @Test
   void testGetEncoding() {
-    assertEquals("utf-8", new XmlContent("").getEncoding());
+    assertEquals("UTF-8", new XmlContent("").getEncoding());
   }
 
   @Test

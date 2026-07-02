@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.servlet;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Holds the results of a transformation process.
  *
@@ -63,7 +65,7 @@ public final class XmlContent implements BerliozOutput {
    */
   @Override
   public String getEncoding() {
-    return "utf-8";
+    return StandardCharsets.UTF_8.name();
   }
 
 }
