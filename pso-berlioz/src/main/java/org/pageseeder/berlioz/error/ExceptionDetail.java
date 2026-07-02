@@ -78,8 +78,15 @@ public final class ExceptionDetail implements ProblemExtension {
    * {@link TransformerConfigurationException} and extracts their source location
    * (line, column, system ID). All other throwables produce a location-free detail.</p>
    *
+   * <p><b>Production guidance:</b> pass {@code false} in production generators. The stack trace
+   * and cause chain are sent verbatim to API clients and reveal internal class names, method
+   * names, and file paths regardless of the {@code ERROR_DETAIL} Berlioz option. Use {@code true}
+   * only when the calling code explicitly checks that the configured
+   * {@link org.pageseeder.berlioz.error.DetailLevel} is {@code FULL}.</p>
+   *
    * @param ex                 the throwable to describe
-   * @param includeStackTrace  {@code true} for full verbosity (stack trace + cause chain);
+   * @param includeStackTrace  {@code true} for full verbosity (stack trace + cause chain) —
+   *                           do not hardcode {@code true} in production generators;
    *                           {@code false} for standard verbosity (class, message, location only)
    * @return a new {@code ExceptionDetail}
    */

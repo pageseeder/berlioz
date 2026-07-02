@@ -38,8 +38,9 @@ public final class UpdateNote implements JsonGenerator {
       return Response.ok();
     } catch (IOException ex) {
       // The problem type is reusable; the exception detail describes this particular failure.
+      // Pass false so stack traces are never sent to clients; use true only in dev tooling.
       return Response.problem(ProblemRegistry.NOTE_WRITE_ERROR
-          .extension(ExceptionDetail.of(ex, true)));
+          .extension(ExceptionDetail.of(ex, false)));
     }
   }
 
