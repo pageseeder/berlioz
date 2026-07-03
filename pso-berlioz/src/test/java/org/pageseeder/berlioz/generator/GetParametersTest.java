@@ -4,8 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 class GetParametersTest {
 
@@ -13,7 +12,7 @@ class GetParametersTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testProcessNoParametersWritesEmptyElement() throws Exception {
+  void testProcessNoParametersWritesEmptyElement() {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertTrue(out.contains("<parameters"), "Should contain <parameters>");
@@ -21,7 +20,7 @@ class GetParametersTest {
   }
 
   @Test
-  void testProcessSingleParameter() throws Exception {
+  void testProcessSingleParameter() {
     ContentRequest req = GeneratorTestSupport.request()
         .parameter("name", "Alice")
         .build();
@@ -31,7 +30,7 @@ class GetParametersTest {
   }
 
   @Test
-  void testProcessMultipleParameters() throws Exception {
+  void testProcessMultipleParameters() {
     ContentRequest req = GeneratorTestSupport.request()
         .parameter("a", "1")
         .parameter("b", "2")
@@ -44,7 +43,7 @@ class GetParametersTest {
   }
 
   @Test
-  void testProcessMultiValueParameter() throws Exception {
+  void testProcessMultiValueParameter() {
     ContentRequest req = GeneratorTestSupport.request()
         .multiParameter("color", "red", "blue", "green")
         .build();
@@ -88,11 +87,10 @@ class GetParametersTest {
   // helpers
   // ---------------------------------------------------------------------------
 
-  private static String process(ContentRequest req) throws Exception {
+  private static String process(ContentRequest req) {
     GetParameters gen = new GetParameters();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    gen.process(req, xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    gen.generate(req, xml);
     return xml.toString();
   }
 }

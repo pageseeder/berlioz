@@ -15,14 +15,12 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import java.io.IOException;
-
 import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.util.SHA256;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns the HTTP Parameters as XML.
@@ -50,10 +48,10 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.7
  */
-public final class GetParameters implements ContentGenerator, Cacheable {
+public final class GetParameters implements XmlGenerator, Cacheable {
 
   private static final int MAX_PARAMETERS = 50;
   private static final int MAX_VALUES = 20;
@@ -72,7 +70,7 @@ public final class GetParameters implements ContentGenerator, Cacheable {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
     xml.openElement("parameters", true);
     int paramCount = 0;
     for (String name : req.parameterNames()) {
@@ -80,6 +78,7 @@ public final class GetParameters implements ContentGenerator, Cacheable {
       if (name.length() <= MAX_NAME_LENGTH) writeParameterValues(xml, name, req.parameterValues(name));
     }
     xml.closeElement();
+    return Response.ok();
   }
 
   private static void appendValuesToHash(StringBuilder hash, String name, Iterable<String> values) {
@@ -91,17 +90,17 @@ public final class GetParameters implements ContentGenerator, Cacheable {
     }
   }
 
-  private static void writeParameterValues(XMLWriter xml, String name, Iterable<String> values) throws IOException {
+  private static void writeParameterValues(XmlWriter xml, String name, Iterable<String> values) {
     int valueCount = 0;
     for (String value : values) {
       if (++valueCount > MAX_VALUES) break;
       xml.openElement("parameter", false);
       xml.attribute("name", name);
       if (value.length() > MAX_VALUE_LENGTH) {
-        xml.attribute("truncated", "true");
-        xml.writeText(value.substring(0, MAX_VALUE_LENGTH));
+        xml.attribute("truncated", true);
+        xml.text(value.substring(0, MAX_VALUE_LENGTH));
       } else {
-        xml.writeText(value);
+        xml.text(value);
       }
       xml.closeElement();
     }
