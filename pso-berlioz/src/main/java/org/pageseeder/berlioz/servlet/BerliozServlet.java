@@ -482,7 +482,7 @@ public final class BerliozServlet extends HttpServlet {
     xml.getHeaders().forEach(res::setHeader);
 
     // Produce the output (XSLT transform or pass through raw XML)
-    BerliozOutput result = executeTransform(content, req, xml, transformer, res, config, ctx.profile, ctx.serverTiming);
+    BerliozOutput result = executeTransform(content, req, xml, transformer, res, config, ctx);
 
     // Resolve and validate encoding from XSLT output; canonical name is safe for HTTP headers
     Charset charset = resolveCharset(result.getEncoding());
@@ -640,18 +640,18 @@ public final class BerliozServlet extends HttpServlet {
    * Applies the XSLT transformer to the XML content or returns the raw XML when no transformer
    * is configured. Also records profiling and server-timing metrics when enabled.
    *
-   * @param content       The XML content to transform.
-   * @param req           The HTTP servlet request (passed through to the transformer).
-   * @param xml           The XML response (provides the matched service).
-   * @param transformer   The transformer to use, or {@code null} to pass XML through unchanged.
-   * @param res           The HTTP servlet response (used for server-timing headers).
-   * @param profile       Whether to log profiling information.
-   * @param serverTiming  Whether to add a Server-Timing header entry.
+   * @param content     The XML content to transform.
+   * @param req         The HTTP servlet request (passed through to the transformer).
+   * @param xml         The XML response (provides the matched service and any problem details).
+   * @param transformer The transformer to use, or {@code null} to pass XML through unchanged.
+   * @param res         The HTTP servlet response (used for server-timing headers).
+   * @param config      The Berlioz configuration (provides expected media type).
+   * @param ctx         The processing context (provides profile and server-timing flags).
    * @return The transformed (or raw XML) output.
    */
   private BerliozOutput executeTransform(String content, HttpServletRequest req, XmlResponse xml,
                                          @Nullable XsltTransformer transformer, HttpServletResponse res,
-                                         BerliozConfig config, boolean profile, boolean serverTiming) {
+                                         BerliozConfig config, ProcessingContext ctx) {
     // Direct service with a problem response: return problem+xml, or apply failsafe stylesheet for
     // non-XML media types (e.g. text/html endpoints) so the client receives a rendered error page.
     if (transformer == null) {
@@ -667,10 +667,10 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     XsltTransformResult result = transformer.transform(content, req, xml.getService());
-    if (profile && LOGGER.isInfoEnabled()) {
+    if (ctx.profile && LOGGER.isInfoEnabled()) {
       LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(result.time()));
     }
-    if (serverTiming) {
+    if (ctx.serverTiming) {
       ServerTimingHeader.addMetricNano(res, "xslt", "XSLT Transform", result.time());
     }
     // Signal the client that the service is temporarily unavailable when the transform failed
