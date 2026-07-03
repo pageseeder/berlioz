@@ -1,9 +1,8 @@
 package org.pageseeder.berlioz.system;
 
 import org.junit.jupiter.api.Test;
-import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -19,16 +18,16 @@ class ListThreadsTest {
 
   @Test
   void testProcess_noParams_writesThreadsElement() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new ListThreads().process(request(false, false), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new ListThreads().generate(request(false, false), xml);
     Document doc = parse(xml.toString());
     assertEquals("threads", doc.getDocumentElement().getTagName());
   }
 
   @Test
   void testProcess_noParams_containsThreadChildren() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new ListThreads().process(request(false, false), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new ListThreads().generate(request(false, false), xml);
     Document doc = parse(xml.toString());
     NodeList threads = doc.getElementsByTagName("thread");
     assertTrue(threads.getLength() > 0, "Should list at least one thread");
@@ -36,8 +35,8 @@ class ListThreadsTest {
 
   @Test
   void testProcess_threadHasExpectedAttributes() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new ListThreads().process(request(false, false), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new ListThreads().generate(request(false, false), xml);
     Document doc = parse(xml.toString());
     Element thread = (Element) doc.getElementsByTagName("thread").item(0);
     assertFalse(thread.getAttribute("id").isEmpty(),    "Thread should have id");
@@ -46,32 +45,32 @@ class ListThreadsTest {
   }
 
   @Test
-  void testProcess_withStacktraces_includesStacktraceElement() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new ListThreads().process(request(true, false), xml);
+  void testProcess_withStacktraces_includesStacktraceElement() {
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new ListThreads().generate(request(true, false), xml);
     String out = xml.toString();
     assertTrue(out.contains("<stacktrace"), "Should include stacktrace elements when requested");
   }
 
   @Test
-  void testProcess_withoutStacktraces_noStacktraceElement() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new ListThreads().process(request(false, false), xml);
+  void testProcess_withoutStacktraces_noStacktraceElement() {
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new ListThreads().generate(request(false, false), xml);
     assertFalse(xml.toString().contains("<stacktrace"), "Should not include stacktrace when not requested");
   }
 
   @Test
-  void testProcess_withThreadTime_includesTimesElement() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new ListThreads().process(request(false, true), xml);
+  void testProcess_withThreadTime_includesTimesElement() {
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new ListThreads().generate(request(false, true), xml);
     // CPU time support is JVM-dependent; just verify it doesn't throw
     assertDoesNotThrow(xml::toString);
   }
 
   @Test
   void testProcess_currentThreadFlagged() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new ListThreads().process(request(false, false), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new ListThreads().generate(request(false, false), xml);
     Document doc = parse(xml.toString());
     NodeList threads = doc.getElementsByTagName("thread");
     boolean foundCurrent = false;
@@ -85,10 +84,10 @@ class ListThreadsTest {
     assertTrue(foundCurrent, "Current thread should be flagged with current=\"true\"");
   }
 
-  private static ContentRequest request(boolean stacktraces, boolean threadtime) {
-    return (ContentRequest) Proxy.newProxyInstance(
-        ContentRequest.class.getClassLoader(),
-        new Class<?>[]{ContentRequest.class},
+  private static Request request(boolean stacktraces, boolean threadtime) {
+    return (Request) Proxy.newProxyInstance(
+        Request.class.getClassLoader(),
+        new Class<?>[]{Request.class},
         (proxy, m, args) -> {
           if ("getParameter".equals(m.getName())) {
             String name = (String) args[0];
