@@ -24,7 +24,7 @@ import org.pageseeder.berlioz.xslt.XsltCacheMode;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.5
+ * @version 0.14.0
  * @since 0.8.4
  */
 public enum BerliozOption {
@@ -89,11 +89,9 @@ public enum BerliozOption {
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.http.get-via-post</code></td>
-   *     <td><code>true</code><sup>*</sup></td>
+   *     <td><code>false</code></td>
    *   </tr>
    * </table>
-   * <p><sup>*</sup>The default value is set to <code>true</code> for legacy applications,
-   * this may change in later versions of Berlioz.</p>
    *
    * <h3>Recommended values</h3>
    * <table>
@@ -101,12 +99,17 @@ public enum BerliozOption {
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>false</code></td><td><code>false</code></td></tr></tbody>
    * </table>
-   * <p>Since this option goes against REST principles, it is recommended that it is set to
-   * <code>false</code> for most applications. It should not be enabled for a Web API.
+   * <p>Since this option goes against REST principles, it is recommended that it remain
+   * {@code false} for most applications. It should not be enabled for a Web API.
+   * Applications that relied on the old default of {@code true} must now set
+   * {@code berlioz.http.get-via-post=true} explicitly.</p>
    *
    * @since 0.8.3
+   * @deprecated Since 0.14.0; this option will be removed in 1.0 — POST requests will never
+   *             fall back to GET. Applications must declare explicit POST-mapped services.
    */
-  HTTP_GET_VIA_POST("berlioz.http.get-via-post", Boolean.TRUE),
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  HTTP_GET_VIA_POST("berlioz.http.get-via-post", Boolean.FALSE),
 
   /**
    * A global option to specify the default cache control to use for cacheable content.
@@ -299,8 +302,9 @@ public enum BerliozOption {
    * of the legacy {@code <server-error>} / {@code <client-error>} format. The failsafe XSLT
    * template handles both formats, so existing error rendering continues to work.</p>
    *
-   * <p>The default is {@code false} to preserve backward compatibility with applications that
-   * consume the legacy error XML in their own XSLT templates.</p>
+   * <p>The legacy {@code <server-error>} / {@code <client-error>} format is deprecated since
+   * 0.14.0. Applications whose XSLT templates consume the legacy format can opt back in with
+   * {@code berlioz.errors.problem=false} while migrating to the {@code <problem>} format.</p>
    *
    * <h3>Property</h3>
    * <table>
@@ -308,7 +312,7 @@ public enum BerliozOption {
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td>{@code berlioz.errors.problem}</td>
-   *     <td>{@code false}</td>
+   *     <td>{@code true}</td>
    *   </tr>
    * </table>
    *
@@ -320,9 +324,12 @@ public enum BerliozOption {
    * </table>
    *
    * @since 0.13.5
+   * @deprecated Since 0.14.0; this option will be removed in 1.0 — Problem Details will always
+   *             be used. The {@code berlioz.errors.problem=false} escape hatch is only supported
+   *             during the 0.14.x migration window.
    */
-  @Beta
-  ERROR_PROBLEM_FORMAT("berlioz.errors.problem", Boolean.FALSE),
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  ERROR_PROBLEM_FORMAT("berlioz.errors.problem", Boolean.TRUE),
 
   /**
    * A string global option to control how much diagnostic detail is included in legacy
@@ -348,7 +355,7 @@ public enum BerliozOption {
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td>{@code berlioz.errors.detail}</td>
-   *     <td>{@code full}</td>
+   *     <td>{@code minimal}</td>
    *   </tr>
    * </table>
    *
@@ -358,11 +365,12 @@ public enum BerliozOption {
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td>{@code full}</td><td>{@code minimal}</td></tr></tbody>
    * </table>
+   * <p>The previous default of {@code full} exposed exception metadata and is not safe for
+   * production. Set {@code berlioz.errors.detail=full} in development configurations.</p>
    *
    * @since 0.13.5
    */
-  @Beta
-  ERROR_DETAIL("berlioz.errors.detail", "full"),
+  ERROR_DETAIL("berlioz.errors.detail", "minimal"),
 
   /**
    * A boolean global property to indicate whether Berlioz should record the time taken by each content generator
@@ -418,7 +426,7 @@ public enum BerliozOption {
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.xml.header.version</code></td>
-   *     <td><code>"0.9"</code></td>
+   *     <td><code>"1.0"</code></td>
    *   </tr>
    * </table>
    *
@@ -428,12 +436,19 @@ public enum BerliozOption {
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>1.0</code></td><td><code>1.0</code></td></tr></tbody>
    * </table>
-   * <p>This option will default to <code>1.0</code> from Berlioz 1.0.</p>
+   * <p>The legacy {@code "0.9"} header emits compatibility elements ({@code <group>},
+   * {@code <service>}, {@code <path-info>}, {@code <host>}, {@code <port>}, {@code <url>},
+   * {@code <query-string>}) that are absent in {@code "1.0"}. Applications whose XSLT templates
+   * depend on those elements must migrate or set {@code berlioz.xml.header.version=0.9}
+   * temporarily.</p>
    *
    * @since 0.9.26
+   * @deprecated Since 0.14.0; this option will be removed in 1.0 — the 1.0 header format will
+   *             always be used. The {@code berlioz.xml.header.version=0.9} escape hatch is only
+   *             supported during the 0.14.x migration window.
    */
-  @Beta
-  XML_HEADER_VERSION("berlioz.xml.header.version", "0.9"),
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  XML_HEADER_VERSION("berlioz.xml.header.version", "1.0"),
 
   /**
    * A boolean global option to indicate whether to tolerate warnings or throw an error when they
@@ -468,7 +483,9 @@ public enum BerliozOption {
    * A string global option to specify a key to use enables the control parameters to reload the
    * configuration and XSLT or reset the Etag seed.
    *
-   * <p>If the control key is empty, then the control parameters can be used directly.
+   * <p>If the control key is empty (the default), control parameters are disabled. Set a
+   * non-empty key to enable them; the key must be supplied with each request via the
+   * {@code berlioz-control} request parameter.
    *
    * <h3>Property</h3>
    * <table>
@@ -476,7 +493,7 @@ public enum BerliozOption {
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
    *     <td><code>berlioz.control-key</code></td>
-   *     <td><code>""</code><i>(Empty string)</i></td>
+   *     <td><code>""</code><i>(Empty string — controls disabled)</i></td>
    *   </tr>
    * </table>
    *
@@ -484,11 +501,11 @@ public enum BerliozOption {
    * <table>
    *   <caption>Control key recommended value</caption>
    *   <tr><th>Development</th><th>Production</th></tr>
-   *   <tbody><tr><td><code>""</code><i>(Empty string)</i></td><td><code>[a complex string]</code></td></tr></tbody>
+   *   <tbody><tr><td><code>dev</code><i>(or any simple key)</i></td><td><code>[a strong secret string]</code></td></tr></tbody>
    * </table>
-   * <p>No control key is required for development; however, in production a string such as
-   * a hash value should be specified to secure the application
-   * (for example, 'd131dd02c5e6eec4693d96dacd436c91').</p>
+   * <p>For development, set a simple key such as {@code dev} in the {@code berlioz-control}
+   * servlet init parameter. In production, use a strong secret string
+   * (for example, {@code 'd131dd02c5e6eec4693d96dacd436c91'}).</p>
    *
    * @since 0.8.3
    */
