@@ -498,6 +498,7 @@ public final class BerliozServlet extends HttpServlet {
    * global option {@link BerliozOption#HTTP_GET_VIA_POST} allows POST requests to be treated as GET
    * (backward compatibility).
    */
+  @SuppressWarnings("removal") // HTTP_GET_VIA_POST removed in 1.0; fallback path guarded here until then
   private static @Nullable MatchingService findMatch(ServiceRegistry services, String path, HttpMethod method) {
     // No matching service (backward compatibility)
     MatchingService match = services.get(path, method);

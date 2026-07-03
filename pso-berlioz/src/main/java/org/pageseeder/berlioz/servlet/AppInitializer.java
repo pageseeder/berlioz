@@ -790,6 +790,7 @@ public abstract class AppInitializer {
   /**
    * Checking that the global setting is loaded properly.
    */
+  @SuppressWarnings("removal") // XML_HEADER_VERSION removed in 1.0; logged during init until then
   private static void loadSettings() {
     File modeConfigFile = GlobalSettings.getModeConfigFile();
     File defaultConfigFile = GlobalSettings.getDefaultConfigFile();

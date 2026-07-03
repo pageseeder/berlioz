@@ -382,6 +382,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @param req The HTTP servlet request that caused the error.
    * @return the error details as XML
    */
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; legacy fallback guarded here until then
   private static String toXml(HttpServletRequest req) {
     int code = getErrorCode(req);
     String message = (String) req.getAttribute(ERROR_MESSAGE);

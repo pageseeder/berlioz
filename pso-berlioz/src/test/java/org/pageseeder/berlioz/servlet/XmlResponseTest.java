@@ -638,6 +638,7 @@ class XmlResponseTest {
     assertNull(XmlResponse.getListener());
   }
 
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; test covers migration escape hatch
   private static void setProblemFormat(boolean value) throws ReflectiveOperationException {
     AtomicReference<Map<String, String>> ref = settingsRef();
     ref.compareAndSet(null, new HashMap<>());

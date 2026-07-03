@@ -165,6 +165,7 @@ final class GeneratorDispatch {
     return listener.get();
   }
 
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; always true then
   static boolean useProblemFormat() {
     return GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT);
   }

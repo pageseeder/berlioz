@@ -226,6 +226,7 @@ class ErrorHandlerServletTest {
 
   @Tag("error-samples")
   @Nested
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; test covers migration escape hatch
   class WithProblemFormat {
 
     @BeforeEach

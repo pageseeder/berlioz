@@ -163,6 +163,7 @@ public final class XmlResponseHeader implements XmlWritable {
    * @return The XML writer.
    */
   @Override
+  @SuppressWarnings("removal") // XML_HEADER_VERSION removed in 1.0; 0.9 compat path guarded here until then
   public XmlWriter toXml(XmlWriter xml) {
     HttpServletRequest req = this.core.request();
     xml.openElement("header", true);
