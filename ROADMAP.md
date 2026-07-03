@@ -2,9 +2,9 @@
 
 Berlioz is a lightweight Java web framework built around URI templates, generator-based content, XML, JSON, and XSLT rendering.
 
-The 0.13.x releases have already delivered a large part of the previous roadmap: typed request parameters, safer XML parsing and XSLT caching, output-aware generators, direct JSON responses, explicit response values, RFC 9457 Problem Details, and stronger redirect/filesystem protections.
+The 0.13.x releases delivered the complete roadmap for that cycle: typed request parameters, safer XML parsing and XSLT caching, output-aware generators, direct JSON responses, explicit response values, RFC 9457 Problem Details, stronger redirect/filesystem protections, and the full configurable error handling pipeline. **0.13.5 was released on 2026-07-03 as the final 0.13.x release.**
 
-This roadmap now focuses on the remaining work needed to make those foundations feel complete, predictable, and easy to adopt without turning Berlioz into a general-purpose application framework.
+This roadmap now focuses on the 0.14.x work needed to harden defaults, extend diagnostics, and complete the foundation before a 1.0 release.
 
 ## Guiding Principles
 
@@ -19,17 +19,6 @@ This roadmap now focuses on the remaining work needed to make those foundations 
 - Treat security hardening as part of the core framework contract, not as an optional add-on.
 
 ## Release Plan
-
-### 0.13.5: Final 0.13 Release
-
-0.13.5 is the final planned 0.13.x release. It consolidates the 0.13 cycle and completes the Problem Details and error handling pipeline while keeping compatibility-oriented defaults.
-
-Release posture:
-
-- Keep legacy Berlioz error XML as the default for `ErrorHandlerServlet`.
-- Keep RFC 9457 Problem Details available through `berlioz.errors.problem=true`.
-- Keep detailed error output available for development, but support `berlioz.errors.detail=minimal` for production.
-- Preserve source compatibility where feasible for existing `ContentGenerator` applications.
 
 ### 0.14.0: Secure Defaults
 
@@ -202,6 +191,17 @@ The 0.13.5 cycle completed the remaining configurable error handling options:
 - Added direct JSON problem output for JSON-configured servlet errors when Berlioz handles the error.
 - Added per-generator `Server-Timing` metrics for direct JSON services, matching the XML service path.
 - Added test coverage for stylesheet resolution: default failsafe, non-existent path fallback, custom file, and end-to-end `handle()` with custom output.
+
+### 0.13.5: Final 0.13 Release ✓ Released 2026-07-03
+
+0.13.5 was the final 0.13.x release. It consolidated the 0.13 cycle and completed the Problem Details and error handling pipeline while keeping compatibility-oriented defaults.
+
+Release posture:
+
+- Keep legacy Berlioz error XML as the default for `ErrorHandlerServlet`.
+- Keep RFC 9457 Problem Details available through `berlioz.errors.problem=true`.
+- Keep detailed error output available for development, but support `berlioz.errors.detail=minimal` for production.
+- Preserve source compatibility where feasible for existing `ContentGenerator` applications.
 
 ## Current Development Themes
 
