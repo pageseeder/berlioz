@@ -15,23 +15,22 @@
  */
 package org.pageseeder.berlioz.system;
 
-import java.io.IOException;
-
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.GeneratorListener;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.servlet.BerliozConfig;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Christophe Lauret
  *
- * @version 0.9.32
+ * @version 0.14.0
  * @since 0.9.32
  */
-public class GetGeneratorStatistics implements ContentGenerator {
+public class GetGeneratorStatistics implements XmlGenerator {
 
   /**
    * A logger.
@@ -52,14 +51,15 @@ public class GetGeneratorStatistics implements ContentGenerator {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
     StatisticsCollector collector = StatisticsCollector.getInstance();
 
     if ("true".equals(req.getParameter("reset", "false"))) {
       collector.clear();
     }
 
-    collector.toXML(xml);
+    collector.toXml(xml);
+    return Response.ok();
   }
 
 }

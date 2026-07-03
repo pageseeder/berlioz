@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.system;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -30,19 +29,19 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.util.ISO8601;
-import org.pageseeder.xmlwriter.XMLWritable;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWritable;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Collects basic statistics about generators.
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.9.32
  */
 @SuppressWarnings("java:S6548") // intentional framework-level singleton; package-private and eagerly initialized
-final class StatisticsCollector implements GeneratorListener, XMLWritable {
+final class StatisticsCollector implements GeneratorListener, XmlWritable {
 
   /**
    * Singleton instance.
@@ -97,19 +96,20 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
   }
 
   @Override
-  public void toXML(XMLWriter xml) throws IOException {
+  public XmlWriter toXml(XmlWriter xml) {
     xml.openElement("statistics");
     xml.attribute("since", ISO8601.format(this.since, ISO8601.DATETIME));
     for (BasicStats s : this.stats.values()) {
-      s.toXML(xml);
+      s.toXml(xml);
     }
     xml.closeElement();
+    return xml;
   }
 
   /**
    * Holds basic statistics about a generator.
    */
-  public static final class BasicStats implements XMLWritable {
+  public static final class BasicStats implements XmlWritable {
 
     /**
      * The class name of the generator.
@@ -236,7 +236,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
     }
 
     @Override
-    public synchronized void toXML(XMLWriter xml) throws IOException {
+    public synchronized XmlWriter toXml(XmlWriter xml) {
       xml.openElement("statistic");
       xml.attribute("generator", this.generator);
       xml.attribute("count", this.count.toString());
@@ -265,6 +265,7 @@ final class StatisticsCollector implements GeneratorListener, XMLWritable {
       }
       xml.closeElement();
       xml.closeElement();
+      return xml;
     }
 
     /**
