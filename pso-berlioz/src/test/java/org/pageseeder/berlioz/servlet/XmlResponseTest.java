@@ -10,6 +10,7 @@ import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
+import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.UpstreamException;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
@@ -388,6 +389,23 @@ class XmlResponseTest {
   }
 
   @Test
+  void generate_xmlGenerator_returnsProblem_inlineInEnvelope() throws Exception {
+    setProblemFormat(true);
+    try {
+      XmlGenerator gen = (req, xml) -> Response.problem(ProblemDetails.of(ContentStatus.NOT_FOUND));
+      Service service = singleGenerator(gen);
+      XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+      String result = xr.generate();
+
+      assertTrue(result.contains("<problem>"), "Expected inline <problem> element: " + result);
+      assertNull(xr.getProblem(), "Envelope problem must not promote to top-level problem");
+    } finally {
+      setProblemFormat(true);
+    }
+  }
+
+  @Test
   void generate_envelopeError_legacyFormatWritesBerliozException() throws Exception {
     setProblemFormat(false);
     setDetailLevel(DetailLevel.FULL);
@@ -596,6 +614,20 @@ class XmlResponseTest {
     XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
 
     assertNull(xr.getEtag());
+  }
+
+  @Test
+  void getEtag_cacheableXmlGenerator_returnsTagFromGetETag() {
+    class CacheableGen implements XmlGenerator, Cacheable {
+      @Override public String getETag(Request req) { return "xml-gen-tag"; }
+      @Override public Response generate(Request req, org.pageseeder.berlioz.xml.XmlWriter xml) { return Response.ok(); }
+    }
+    Service service = singleGenerator(new CacheableGen());
+    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+    String etag = xr.getEtag();
+    assertNotNull(etag, "XmlGenerator + Cacheable must produce a non-null etag");
+    assertTrue(etag.contains("xml-gen-tag"), "Etag must incorporate the value from getETag(): " + etag);
   }
 
   @Test
