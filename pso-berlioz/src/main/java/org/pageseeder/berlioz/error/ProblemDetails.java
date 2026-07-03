@@ -302,22 +302,50 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
     return withDiagnostic(name, Objects.requireNonNull(value, "value"));
   }
 
-  /** @see #diagnostic(String, String) */
+  /**
+   * Returns a copy with the given boolean diagnostic member added.
+   *
+   * @param name  the diagnostic member name
+   * @param value the diagnostic member value
+   * @return a new instance
+   * @see #diagnostic(String, String)
+   */
   public ProblemDetails diagnostic(String name, boolean value) {
     return withDiagnostic(name, value);
   }
 
-  /** @see #diagnostic(String, String) */
+  /**
+   * Returns a copy with the given long diagnostic member added.
+   *
+   * @param name  the diagnostic member name
+   * @param value the diagnostic member value
+   * @return a new instance
+   * @see #diagnostic(String, String)
+   */
   public ProblemDetails diagnostic(String name, long value) {
     return withDiagnostic(name, value);
   }
 
-  /** @see #diagnostic(String, String) */
+  /**
+   * Returns a copy with the given double diagnostic member added.
+   *
+   * @param name  the diagnostic member name
+   * @param value the diagnostic member value
+   * @return a new instance
+   * @see #diagnostic(String, String)
+   */
   public ProblemDetails diagnostic(String name, double value) {
     return withDiagnostic(name, value);
   }
 
-  /** @see #diagnostic(String, String) */
+  /**
+   * Returns a copy with the given string collection diagnostic member added.
+   *
+   * @param name   the diagnostic member name
+   * @param values the diagnostic member values
+   * @return a new instance
+   * @see #diagnostic(String, String)
+   */
   public ProblemDetails diagnostic(String name, Iterable<String> values) {
     return withDiagnostic(name, copyValues(values));
   }
