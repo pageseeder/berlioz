@@ -16,7 +16,6 @@
 package org.pageseeder.berlioz.bundler;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,13 +23,13 @@ import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.servlet.HttpContentRequest;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * This generator returns the list of timestamped scripts and styles for a given service.
@@ -120,7 +119,7 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * @version 0.13.2
  * @since 0.9.32
  */
-public final class GetWebBundles implements ContentGenerator, Cacheable {
+public final class GetWebBundles implements XmlGenerator, Cacheable {
 
   /**
    * The CSS bundle configuration - static as it is common to all generators.
@@ -160,7 +159,7 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
     HttpContentRequest hreq = (HttpContentRequest)req;
     Service service = hreq.getService();
     Environment env = req.getEnvironment();
@@ -198,12 +197,13 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
         writeUnbundled(xml, "style", path);
       }
     }
+    return Response.ok();
   }
 
   // Private helpers
   // ----------------------------------------------------------------------------------------------
 
-  private static String getConfig(ContentRequest req) {
+  private static String getConfig(Request req) {
     return Objects.requireNonNull(req.getParameter("config", "default"));
   }
 
@@ -217,25 +217,25 @@ public final class GetWebBundles implements ContentGenerator, Cacheable {
    * @param req content request
    * @return <code>true</code> if bundles folder is writable and "bundle-bundle" parameter is set to "false"
    */
-  private static boolean canBundle(ContentRequest req) {
+  private static boolean canBundle(Request req) {
     return writable == Writable.YES
         && !"false".equals(req.getParameter("berlioz-bundle", "true"));
   }
 
-  private static void writeBundled(XMLWriter xml, String element, String src, boolean minimized) throws IOException {
+  private static void writeBundled(XmlWriter xml, String element, String src, boolean minimized) {
     writeAsset(xml, element, src, true, minimized);
   }
 
-  private static void writeUnbundled(XMLWriter xml, String element, String src) throws IOException {
+  private static void writeUnbundled(XmlWriter xml, String element, String src) {
     writeAsset(xml, element, src, false, false);
   }
 
-  private static void writeAsset(XMLWriter xml, String element, String src, boolean bundled, boolean minimized) throws IOException {
-    xml.openElement(element, false);
-    xml.attribute("src", src);
-    xml.attribute("bundled", Boolean.toString(bundled));
-    xml.attribute("minimized", Boolean.toString(minimized));
-    xml.closeElement();
+  private static void writeAsset(XmlWriter xml, String element, String src, boolean bundled, boolean minimized) {
+    xml.openElement(element)
+        .attribute("src", src)
+        .attribute("bundled", bundled)
+        .attribute("minimized", minimized)
+        .closeElement();
   }
 
   /**
