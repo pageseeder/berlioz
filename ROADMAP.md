@@ -2,7 +2,7 @@
 
 Berlioz is a lightweight Java web framework built around URI templates, generator-based content, XML, JSON, and XSLT rendering.
 
-The 0.13.x releases have already delivered a large part of the previous roadmap: typed request parameters, safer XML parsing and XSLT caching, output-aware generators, direct JSON responses, explicit response values, and stronger redirect/filesystem protections.
+The 0.13.x releases have already delivered a large part of the previous roadmap: typed request parameters, safer XML parsing and XSLT caching, output-aware generators, direct JSON responses, explicit response values, RFC 9457 Problem Details, and stronger redirect/filesystem protections.
 
 This roadmap now focuses on the remaining work needed to make those foundations feel complete, predictable, and easy to adopt without turning Berlioz into a general-purpose application framework.
 
@@ -17,6 +17,120 @@ This roadmap now focuses on the remaining work needed to make those foundations 
 - Keep optional integrations optional.
 - Maintain source compatibility for existing `ContentGenerator` applications where feasible.
 - Treat security hardening as part of the core framework contract, not as an optional add-on.
+
+## Release Plan
+
+### 0.13.5: Final 0.13 Release
+
+0.13.5 is the final planned 0.13.x release. It consolidates the 0.13 cycle and completes the Problem Details and error handling pipeline while keeping compatibility-oriented defaults.
+
+Release posture:
+
+- Keep legacy Berlioz error XML as the default for `ErrorHandlerServlet`.
+- Keep RFC 9457 Problem Details available through `berlioz.errors.problem=true`.
+- Keep detailed error output available for development, but support `berlioz.errors.detail=minimal` for production.
+- Preserve source compatibility where feasible for existing `ContentGenerator` applications.
+
+### 0.14.0: Secure Defaults
+
+0.14.0 should be almost identical to 0.13.5 in API and behavior, except that framework defaults move to the secure/recommended side. This makes 0.14.0 the migration release for applications that want the 0.13.5 feature set with production-oriented defaults.
+
+Expected default changes:
+
+- `berlioz.errors.problem=true` so framework-generated errors use RFC 9457 Problem Details by default.
+- `berlioz.errors.detail=minimal` so framework-generated error responses do not expose exception metadata, stack traces, headers, or request parameters by default.
+- `berlioz.http.get-via-post=false` so POST requests are not silently retried as GET unless applications opt in.
+- `berlioz.xml.header.version=1.0` so the modern XML header is the default.
+- Administration/control parameters should no longer be open by default. The exact shape still needs design: either require an explicit control key to enable request-level controls, or disable those controls unless a key is configured.
+
+Legacy error XML should be deprecated in 0.14.0, not removed. Applications can still opt back into the legacy `<server-error>` / `<client-error>` shape with `berlioz.errors.problem=false` while migrating custom error XSLT templates.
+
+### 0.14.x: Roadmap Themes 3-5
+
+The 0.14.x cycle should deliver the remaining adoption and diagnostics work needed before Berlioz can reasonably call the core model 1.0-ready.
+
+Theme 3, Service Metadata And Diagnostics:
+
+- Add supported-output metadata to source or diagnostic output.
+- Expose direct handler and generator capability information.
+- Improve service registry diagnostic warnings.
+- Add tests for metadata stability.
+
+Theme 4, Classpath Overlay Discovery:
+
+- Define the `META-INF/berlioz/services/` classpath convention for service configuration files.
+- Extend `ServiceLoader` to enumerate and merge classpath service configurations alongside filesystem ones.
+- Document load ordering and override behavior between classpath and filesystem sources.
+- Extend XSLT template resolution to support a `classpath:` prefix as a first-class option, not just a fallback mechanism.
+- Decide and implement staleness/cache-invalidation behavior for classpath-resident templates.
+- Add test coverage for classpath service discovery, XSLT classpath loading, and mixed classpath/filesystem configurations.
+- Verify that an overlay packaged as a JAR — with `META-INF/berlioz/services/`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT — deploys correctly without any host application changes beyond adding the dependency.
+
+Theme 5, Configuration Requirements And Validation:
+
+- Define a compact `config-requirements.xml` format for resolved global-property requirements.
+- Support exact and simple wildcard property-name matching.
+- Implement presence checks for defined, specified, and non-blank values.
+- Implement built-in constraints for boolean, integer, number, regex, enum, URL, URI, port, hostname, and path values.
+- Add a validation report model with severity, requirement identity, matched property name, and safe diagnostic messages.
+- Run validation after global configuration resolution and on configuration reload.
+- Add an option to fail startup or reload on error-level violations.
+- Add an opt-in generator that returns the current validation report as XML, with JSON support through the normal output pipeline.
+- Add tests for wildcard matching, presence semantics, each built-in constraint, reload behavior, fail-fast behavior, and safe diagnostic output.
+
+After these are complete, Berlioz may be ready for a 1.0.0 release.
+
+### 1.0.x: Roadmap Themes 6-9
+
+The 1.0.x cycle should complete the remaining core runtime capabilities without expanding Berlioz into a broad application framework.
+
+Theme 6, Raw Output:
+
+- Implement servlet dispatch for `RawGenerator`.
+- Define raw content type and cache behavior.
+- Add tests for raw response status, headers, ETags, and body writing.
+- Document raw output constraints.
+
+Theme 7, Content Negotiation:
+
+- Support `Accept` header content negotiation.
+- Use `406 Not Acceptable` when the requested format is not supported.
+- Define interaction with extension-based format selection.
+
+Theme 8, Authentication And Authorization Guards:
+
+- Define a small authorization result model.
+- Add programmatic guard support for services or generators.
+- Define how authorization failures map to Problem Details.
+- Add tests for `401` and `403` early-return behavior.
+
+Theme 9, Interceptors And Observability:
+
+- Decide whether interceptor hooks belong in core or should wait for optional observability modules.
+- Add lifecycle hooks only where they support clear core use cases.
+- Keep metrics and tracing dependencies in optional modules.
+
+### 1.1+: Roadmap Themes 10-12
+
+The 1.1 and later line should focus on optional integrations, additional output formats, and platform migration work.
+
+Theme 10, Optional Integration Modules:
+
+- Add optional Spring or CDI generator resolution.
+- Add optional Spring Security or application authorization adapters.
+- Add optional metrics/tracing integration.
+- Keep integration modules separate from the core runtime.
+
+Theme 11, Binary Serialization Module:
+
+- Evaluate MessagePack as the first optional binary serialization module.
+- Defer schema-based formats such as Protocol Buffers, Avro, and FlatBuffers until the generator contract is clearer.
+
+Theme 12, Jakarta Servlet Support:
+
+- Decide final Jakarta migration strategy.
+- Release a Jakarta-based line with migration notes when the application migration window is clear.
+- Determine whether the `javax.servlet` line continues as maintenance-only.
 
 ## Recent Progress
 
@@ -93,7 +207,7 @@ The 0.13.5 cycle completed the remaining configurable error handling options:
 
 ### 2. Error Handling Pipeline ✓
 
-The error handling pipeline is complete. Applications can control diagnostic verbosity, opt in to RFC 9457 problem format, supply a custom error stylesheet, and the built-in failsafe template renders cleanly across all error types.
+The error handling pipeline is complete. Applications can control diagnostic verbosity, use RFC 9457 Problem Details, supply a custom error stylesheet, and the built-in failsafe template renders cleanly across all error types.
 
 Done:
 
@@ -101,13 +215,13 @@ Done:
 - `XsltErrorCollector` collects warnings, errors, and fatals during XSLT processing.
 - `XsltTransformer` catches both `TransformerConfigurationException` (static) and `TransformerException` (dynamic) and falls back to the failsafe template, with distinct `BerliozErrorID` values for each.
 - `ERROR_DETAIL` option controls diagnostic verbosity in both legacy XML and RFC 9457 problem responses.
-- `ERROR_PROBLEM_FORMAT` option switches `ErrorHandlerServlet` to emit RFC 9457 `<problem>` XML.
+- `ERROR_PROBLEM_FORMAT` option switches `ErrorHandlerServlet` to emit RFC 9457 `<problem>` XML. It remains opt-in for 0.13.5 and should become the default in 0.14.0.
 - `ERROR_STYLESHEET` option lets applications supply a custom error XSLT, with automatic fallback to the built-in failsafe.
 - Modernized failsafe template: CSS variables, dark-mode support, responsive layout, collapsible stack traces via `<details>`/`<summary>`, structured `<exception>` rendering inside Problem Details responses, and `http-headers`/`http-parameters` diagnostic blocks in full-detail mode.
 - Sensitive values in diagnostic request headers and parameters are redacted before serialization.
 - Runtime XSLT 2.0 probing reports a clear static diagnostic when no XSLT 2.0 processor is available.
 
-The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage.
+The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage. The legacy `<server-error>` / `<client-error>` error XML format should be deprecated when Problem Details becomes the default in 0.14.0, then removed only after a clear migration window.
 
 ### 3. Service Metadata And Diagnostics
 
@@ -321,96 +435,11 @@ Likely outcome:
 - Clear migration notes for applications moving from `javax.servlet` to `jakarta.servlet`.
 - A defined maintenance policy for the `javax.servlet` line.
 
-## Possible Milestones
-
-### Milestone 1: 0.13.2 Release Polish
-
-- Finalize 0.13.2 release notes.
-- Align Javadoc `@since` and `@version` values for new APIs.
-- Document new generator interfaces with examples.
-- Document `<namespace>`, `<handler>`, `patch`, and redirect allowlists.
-- Verify source compatibility for existing `ContentGenerator` applications.
-- Confirm which `RawGenerator` behavior is intentionally future-facing.
-
-### Milestone 2: Problem Response Completion ✓
-
-Completed in 0.13.3–0.13.5. See Recent Progress above.
-
-### Milestone 3: Error Handling Pipeline ✓
-
-- ✓ Added `berlioz.errors.stylesheet` option for custom error XSLT with fallback chain (custom → failsafe → raw XML).
-- ✓ Added `berlioz.errors.detail` option with `full`, `standard`, and `minimal` levels controlling what is serialized into error responses.
-- ✓ Error detail levels apply consistently across `XsltTransformer`, `ErrorHandlerServlet`, and `ProblemDetails` rendering.
-- ✓ Added test coverage for error detail filtering, custom error template resolution, and failsafe fallback behavior.
-- ✓ Modernized failsafe XSLT: CSS variables, dark-mode, responsive layout, collapsible `<details>`/`<summary>` stack traces (open by default for unexpected errors), structured exception rendering inside `<problem>`, and `http-headers`/`http-parameters` diagnostic blocks.
-
-### Milestone 4: Metadata And Diagnostics
-
-- Add supported-output metadata to source or diagnostic output.
-- Expose direct handler and generator capability information.
-- Improve service registry diagnostic warnings.
-- Add tests for metadata stability.
-
-### Milestone 5: Configuration Requirements And Validation
-
-- Define a compact `config-requirements.xml` format for resolved global-property requirements.
-- Support exact and simple wildcard property-name matching.
-- Implement presence checks for defined, specified, and non-blank values.
-- Implement built-in constraints for boolean, integer, number, regex, enum, URL, URI, port, hostname, and path values.
-- Add a validation report model with severity, requirement identity, matched property name, and safe diagnostic messages.
-- Run validation after global configuration resolution and on configuration reload.
-- Add an option to fail startup or reload on error-level violations.
-- Add an opt-in generator that returns the current validation report as XML, with JSON support through the normal output pipeline.
-- Add tests for wildcard matching, presence semantics, each built-in constraint, reload behavior, fail-fast behavior, and safe diagnostic output.
-
-### Milestone 6: Classpath Overlay Discovery
-
-- Define the `META-INF/berlioz/services/` classpath convention for service configuration files.
-- Extend `ServiceLoader` to enumerate and merge classpath service configurations alongside filesystem ones.
-- Document load ordering and override behavior between classpath and filesystem sources.
-- Extend XSLT template resolution to support a `classpath:` prefix as a first-class option, not just a fallback mechanism.
-- Decide and implement staleness/cache-invalidation behavior for classpath-resident templates.
-- Add test coverage for classpath service discovery, XSLT classpath loading, and mixed classpath/filesystem configurations.
-- Verify that an overlay packaged as a JAR — with `META-INF/berlioz/services/`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT — deploys correctly without any host application changes beyond adding the dependency.
-
-### Milestone 7: Raw Output
-
-- Implement servlet dispatch for `RawGenerator`.
-- Define raw content type and cache behavior.
-- Add tests for raw response status, headers, ETags, and body writing.
-- Document raw output constraints.
-
-### Milestone 8: Content Negotiation
-
-- Support `Accept` header content negotiation.
-- Use `406 Not Acceptable` when the requested format is not supported.
-- Define interaction with extension-based format selection.
-
-### Milestone 9: Authorization And Interceptors
-
-- Define a small authorization result model.
-- Add programmatic guard support for services or generators.
-- Define how authorization failures map to Problem Details.
-- Decide whether interceptor hooks belong in core or an optional module.
-- Add tests for `401` and `403` early-return behavior.
-
-### Milestone 10: Integration And Instrumentation
-
-- Add optional Spring or CDI generator resolution.
-- Add optional Spring Security or application authorization adapters.
-- Add optional metrics/tracing integration.
-- Keep integration modules separate from the core runtime.
-
-### Milestone 11: Jakarta Migration
-
-- Decide final Jakarta migration strategy.
-- Release a Jakarta-based line with migration notes.
-- Determine whether the `javax.servlet` line continues as maintenance-only.
-
 ## Open Questions
 
-- Should the Jakarta migration be released as Berlioz 1.0?
+- Should Jakarta support be a breaking major release, a parallel artifact, or a later 1.x line once the application migration window is clear?
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
+- How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?
 - Should service-level metadata be part of normal output, diagnostic output, or both?
 - Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?
 - For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?
@@ -423,6 +452,7 @@ Completed in 0.13.3–0.13.5. See Recent Progress above.
 - Should interceptor hooks be added to core, or should they wait for optional observability modules?
 - Which integrations are valuable enough to maintain as official modules?
 - ~~Should the custom error XSLT be a single global stylesheet, or should it support per-group error templates?~~ Decided: single global stylesheet. Error dispatch bypasses the normal XSLT resolution path so per-group templates would add complexity without clear benefit.
+- ~~Should 0.14.0 remove the legacy Berlioz error XML format?~~ Decided: deprecate it in 0.14.0, make Problem Details the default, and keep `berlioz.errors.problem=false` as a migration opt-out.
 - Should classpath service discovery be enabled by default or require an explicit opt-in configuration flag?
 - Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?
 - Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?
