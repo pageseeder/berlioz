@@ -187,7 +187,7 @@ class BerliozServletTest {
   }
 
   @Test
-  void doGet_jsonServletServiceLoadErrorWritesDetailedProblemJson() throws Exception {
+  void doGet_jsonServletServiceLoadErrorWritesProblemJson() throws Exception {
     writeConfig(true);
     GlobalSettings.setup(this.webInf.toFile());
     writeServices(String.join("\n",
@@ -205,8 +205,6 @@ class BerliozServletTest {
     assertEquals("application/problem+json;charset=UTF-8", recorder.contentType);
     assertTrue(body.contains("\"type\":\"urn:berlioz:problem:services-malformed\""), body);
     assertTrue(body.contains("\"status\":503"), body);
-    assertTrue(body.contains("\"exception\""), body);
-    assertTrue(body.contains("SAXParseException"), body);
   }
 
   @Test

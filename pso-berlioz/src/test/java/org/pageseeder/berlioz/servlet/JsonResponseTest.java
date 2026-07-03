@@ -270,7 +270,7 @@ class JsonResponseTest {
       assertFalse(result.contains("\"error\""), "Problem format must not use legacy error object: " + result);
       assertNull(jr.getProblem(), "Envelope problems are inline and do not change the top-level media type");
     } finally {
-      setProblemFormat(false);
+      setProblemFormat(true);
     }
   }
 
@@ -304,7 +304,7 @@ class JsonResponseTest {
       assertTrue(result.contains("generator-error"), "Expected generator problem type: " + result);
       assertNotNull(jr.getProblem());
     } finally {
-      setProblemFormat(false);
+      setProblemFormat(true);
     }
   }
 
@@ -469,8 +469,7 @@ class JsonResponseTest {
     AtomicReference<Map<String, String>> ref = settingsRef();
     ref.compareAndSet(null, new HashMap<>());
     Map<String, String> settings = ref.get();
-    if (value) settings.put(BerliozOption.ERROR_PROBLEM_FORMAT.property(), "true");
-    else settings.remove(BerliozOption.ERROR_PROBLEM_FORMAT.property());
+    settings.put(BerliozOption.ERROR_PROBLEM_FORMAT.property(), value ? "true" : "false");
   }
 
   @SuppressWarnings("unchecked")

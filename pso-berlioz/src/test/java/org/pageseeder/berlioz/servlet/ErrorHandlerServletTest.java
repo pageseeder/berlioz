@@ -95,15 +95,31 @@ class ErrorHandlerServletTest {
     assertFalse(ErrorHandlerServlet.BERLIOZ_ERROR_ID.isEmpty());
   }
 
-  // Legacy format (default: berlioz.errors.problem = false)
+  // Legacy format (opt-in since 0.14.0: berlioz.errors.problem = false)
   //
   // Saxon-HE is on the test runtime classpath so the XSLT 2.0 failsafe transform succeeds and
   // produces HTML. The failsafe template embeds the original error XML in a hidden <div> via
   // <xsl:copy-of>, so raw-XML element names such as <client-error> are still present in the body.
 
-  @Tag("error-samples")
-  @Test
-  void handle_legacyFormat_404_emitsClientErrorXml() throws Exception {
+  @Nested
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
+  class WithLegacyFormat {
+
+    @BeforeEach
+    void setup() throws Exception {
+      setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
+      setOption(BerliozOption.ERROR_DETAIL, "full");
+    }
+
+    @AfterEach
+    void restore() throws Exception {
+      removeOption(BerliozOption.ERROR_PROBLEM_FORMAT);
+      removeOption(BerliozOption.ERROR_DETAIL);
+    }
+
+    @Tag("error-samples")
+    @Test
+    void handle_legacyFormat_404_emitsClientErrorXml() throws Exception {
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
         .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
         .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Resource not found")
@@ -179,7 +195,6 @@ class ErrorHandlerServletTest {
 
   @Test
   void handle_legacyFormat_fullDetail_includesCollectedErrors() throws Exception {
-    setOption(BerliozOption.ERROR_DETAIL, "full");
     ErrorCollector<Exception> collector = new ErrorCollector<>();
     collector.collectQuietly(CollectedError.Level.ERROR, new IOException("first collected"));
     CompoundBerliozException cause = new CompoundBerliozException("compound failure",
@@ -200,6 +215,8 @@ class ErrorHandlerServletTest {
         () -> assertTrue(body.contains("first collected"), "collected error message should be present")
     );
   }
+
+  } // end WithLegacyFormat
 
   @Test
   void privateFallbackHelpersProduceSafeValues() throws Exception {
@@ -313,14 +330,21 @@ class ErrorHandlerServletTest {
 
   // Detail level: standard (exception summary only, no headers/parameters)
 
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; tests legacy XML detail levels
   @Nested
   class WithStandardDetail {
 
     @BeforeEach
-    void enable() throws Exception { setOption(BerliozOption.ERROR_DETAIL, "standard"); }
+    void enable() throws Exception {
+      setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
+      setOption(BerliozOption.ERROR_DETAIL, "standard");
+    }
 
     @AfterEach
-    void restore() throws Exception { setOption(BerliozOption.ERROR_DETAIL, "full"); }
+    void restore() throws Exception {
+      removeOption(BerliozOption.ERROR_PROBLEM_FORMAT);
+      removeOption(BerliozOption.ERROR_DETAIL);
+    }
 
     @Tag("error-samples")
     @Test
@@ -372,14 +396,21 @@ class ErrorHandlerServletTest {
 
   // Detail level: minimal (status, title, message only)
 
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; tests legacy XML detail levels
   @Nested
   class WithMinimalDetail {
 
     @BeforeEach
-    void enable() throws Exception { setOption(BerliozOption.ERROR_DETAIL, "minimal"); }
+    void enable() throws Exception {
+      setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
+      setOption(BerliozOption.ERROR_DETAIL, "minimal");
+    }
 
     @AfterEach
-    void restore() throws Exception { setOption(BerliozOption.ERROR_DETAIL, "full"); }
+    void restore() throws Exception {
+      removeOption(BerliozOption.ERROR_PROBLEM_FORMAT);
+      removeOption(BerliozOption.ERROR_DETAIL);
+    }
 
     @Tag("error-samples")
     @Test
@@ -530,6 +561,10 @@ class ErrorHandlerServletTest {
     AtomicReference<Map<String, String>> ref = settingsRef();
     ref.compareAndSet(null, new HashMap<>());
     ref.get().put(option.property(), value);
+  }
+
+  private static void removeOption(BerliozOption option) throws ReflectiveOperationException {
+    settingsRef().get().remove(option.property());
   }
 
   @SuppressWarnings("unchecked")

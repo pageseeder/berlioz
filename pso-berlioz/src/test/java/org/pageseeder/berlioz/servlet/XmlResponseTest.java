@@ -405,7 +405,7 @@ class XmlResponseTest {
       assertTrue(result.contains("<cause"), "Expected legacy exception cause: " + result);
       assertFalse(result.contains("<problem>"), "Legacy format must not emit problem element: " + result);
     } finally {
-      setDetailLevel(DetailLevel.FULL);
+      setDetailLevel(DetailLevel.MINIMAL);
     }
   }
 
@@ -426,7 +426,7 @@ class XmlResponseTest {
       assertFalse(result.contains("gen-error"), "MINIMAL must not include exception message: " + result);
       assertFalse(result.contains("<cause"), "MINIMAL must not include cause chain: " + result);
     } finally {
-      setDetailLevel(DetailLevel.FULL);
+      setDetailLevel(DetailLevel.MINIMAL);
     }
   }
 
@@ -447,7 +447,7 @@ class XmlResponseTest {
       assertFalse(result.contains("<berlioz-exception>"), "Problem format must not emit legacy exception: " + result);
       assertNull(xr.getProblem(), "Envelope problems are inline and do not change the top-level media type");
     } finally {
-      setProblemFormat(false);
+      setProblemFormat(true);
     }
   }
 
@@ -467,7 +467,7 @@ class XmlResponseTest {
       assertTrue(result.contains("generator-error"), "Expected problem type in element: " + result);
       assertNotNull(xr.getProblem());
     } finally {
-      setProblemFormat(false);
+      setProblemFormat(true);
     }
   }
 
@@ -489,7 +489,7 @@ class XmlResponseTest {
       assertFalse(result.contains("<problem>"), "Legacy format must not emit problem element: " + result);
       assertNull(xr.getProblem());
     } finally {
-      setDetailLevel(DetailLevel.FULL);
+      setDetailLevel(DetailLevel.MINIMAL);
     }
   }
 
@@ -643,8 +643,7 @@ class XmlResponseTest {
     AtomicReference<Map<String, String>> ref = settingsRef();
     ref.compareAndSet(null, new HashMap<>());
     Map<String, String> settings = ref.get();
-    if (value) settings.put(BerliozOption.ERROR_PROBLEM_FORMAT.property(), "true");
-    else settings.remove(BerliozOption.ERROR_PROBLEM_FORMAT.property());
+    settings.put(BerliozOption.ERROR_PROBLEM_FORMAT.property(), value ? "true" : "false");
   }
 
   private static void setDetailLevel(DetailLevel level) throws ReflectiveOperationException {
