@@ -43,6 +43,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
+import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpStatusCodes;
 import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
@@ -309,23 +310,35 @@ public final class ErrorHandlerServlet extends HttpServlet {
     res.setStatus(code);
 
     // Write to the output
-    PrintWriter out = res.getWriter();
+    String fallbackType = "application/xml";
 
-    boolean problemFormat = GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT);
-    String fallbackType = problemFormat ? "application/problem+xml;charset=UTF-8" : "application/xml;charset=UTF-8";
+    // For non-HTML extensions (.xml, .src, etc.) return XML error directly, without the HTML
+    // failsafe stylesheet. This respects the content type whether dispatched via the .auto
+    // error-page mechanism or forwarded directly from BerliozServlet (ERROR_HANDLER=true).
+    if (!DEFAULT_EXTENSION.equals(ext) && !ext.isEmpty()) {
+      writeResponse(res, xml, fallbackType);
+      return;
+    }
 
     // Resolve stylesheet: custom → built-in failsafe → raw XML
     URL url = resolveErrorStylesheet();
     if (url != null) {
       String html = XsltTransformer.transformFailSafe(xml, url);
-      res.setContentType(!Objects.equals(html, xml) ? "text/html;charset=UTF-8" : fallbackType);
-      out.print(html);
-      out.flush();
+      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : fallbackType);
     } else {
-      res.setContentType(fallbackType);
-      out.print(xml);
-      out.flush();
+      writeResponse(res, xml, fallbackType);
     }
+  }
+
+  private void writeResponse(HttpServletResponse res, String content, String mediaType) throws IOException {
+    res.setContentType(mediaType);
+    res.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    res.setContentLength(content.length());
+    res.setDateHeader(HttpHeaders.DATE, System.currentTimeMillis());
+    res.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+    PrintWriter out = res.getWriter();
+    out.print(content);
+    out.flush();
   }
 
   /**
