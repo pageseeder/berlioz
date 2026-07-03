@@ -15,11 +15,8 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.content.*;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Generates no content.
@@ -55,10 +52,10 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.7
  */
-public final class NoContent implements ContentGenerator, Cacheable {
+public final class NoContent implements XmlGenerator, Cacheable {
 
   @Override
   public String getETag(Request req) {
@@ -70,8 +67,9 @@ public final class NoContent implements ContentGenerator, Cacheable {
    * {@inheritDoc}
    */
   @Override
-  public void process(ContentRequest req, XMLWriter xml) {
+  public Response generate(Request req, XmlWriter xml) {
     // Does nothing on purpose
+    return Response.ok();
   }
 
 }
