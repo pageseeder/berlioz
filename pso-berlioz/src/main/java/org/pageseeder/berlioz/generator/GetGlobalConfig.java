@@ -16,18 +16,17 @@
 package org.pageseeder.berlioz.generator;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.util.SHA256;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns the global properties as XML.
@@ -59,10 +58,10 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.8
  */
-public final class GetGlobalConfig implements ContentGenerator, Cacheable {
+public final class GetGlobalConfig implements XmlGenerator, Cacheable {
 
   private static final Pattern SENSITIVE_NAME = Pattern.compile(
       "(?i)(password|passwd|secret|api[._\\-]?key|token|credential|private[._\\-]?key)");
@@ -77,7 +76,7 @@ public final class GetGlobalConfig implements ContentGenerator, Cacheable {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
     File global = GlobalSettings.getPropertiesFile();
 
     xml.openElement("properties", true);
@@ -95,6 +94,7 @@ public final class GetGlobalConfig implements ContentGenerator, Cacheable {
     }
 
     xml.closeElement();
+    return Response.ok();
   }
 
 }

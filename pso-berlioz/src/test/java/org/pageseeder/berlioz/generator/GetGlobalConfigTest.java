@@ -8,8 +8,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 import java.io.File;
 
@@ -32,14 +31,14 @@ class GetGlobalConfigTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testProcessAlwaysWritesPropertiesElement() throws Exception {
+  void testProcessAlwaysWritesPropertiesElement() {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertTrue(out.contains("<properties"), "Should contain <properties>");
   }
 
   @Test
-  void testProcessIncludesSourceAttributeWhenConfigExists() throws Exception {
+  void testProcessIncludesSourceAttributeWhenConfigExists() {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertTrue(out.contains("source="), "Should include source attribute when config file is found");
@@ -65,11 +64,10 @@ class GetGlobalConfigTest {
   // helpers
   // ---------------------------------------------------------------------------
 
-  private static String process(ContentRequest req) throws Exception {
+  private static String process(ContentRequest req) {
     GetGlobalConfig gen = new GetGlobalConfig();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    gen.process(req, xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    gen.generate(req, xml);
     return xml.toString();
   }
 }
