@@ -19,30 +19,29 @@ import java.io.IOException;
 import java.lang.management.ThreadInfo;
 
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns information about a thread.
  *
  * @author Christophe Lauret
  *
- * @version 0.10.7
+ * @version 0.14.0
  * @since 0.9.32
  */
 @Beta
-public final class GetThreadInfo implements ContentGenerator {
+public final class GetThreadInfo implements XmlGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
-
-    long threadId = req.getLongParameter("id", -1L);
+  public Response generate(Request req, XmlWriter xml) {
+    long threadId = req.parameter("id").asLong().defaultValue(-1L);
     if (threadId < 0) {
-      req.setStatus(ContentStatus.BAD_REQUEST);
-      xml.writeComment("Interval must be strictly positive");
-      return;
+      xml.comment("Interval must be strictly positive");
+      return Response.status(ContentStatus.BAD_REQUEST);
     } else {
       threadId = Thread.currentThread().getId();
     }
@@ -52,9 +51,10 @@ public final class GetThreadInfo implements ContentGenerator {
       toXML(thread, xml);
     } else {
       xml.openElement("no-thread", true);
-      xml.attribute("id", Long.toString(threadId));
+      xml.attribute("id", threadId);
       xml.closeElement();
     }
+    return Response.ok();
   }
 
   /**
@@ -62,18 +62,15 @@ public final class GetThreadInfo implements ContentGenerator {
    *
    * @param thread The thread information to serialize as XML
    * @param xml The XML writer
-   *
-   * @throws IOException If thrown while writing XML.
    */
-  private static void toXML(ThreadInfo thread, XMLWriter xml)
-      throws IOException {
+  private static void toXML(ThreadInfo thread, XmlWriter xml) {
     xml.openElement("thread", true);
     xml.attribute("id", thread.getThreadId());
     xml.attribute("name", thread.getThreadName());
     xml.attribute("priority", thread.getPriority());
     xml.attribute("state", thread.getThreadState().name());
-    xml.attribute("alive", Boolean.TRUE.toString());
-    xml.attribute("daemon", Boolean.toString(thread.isDaemon()));
+    xml.attribute("alive", true);
+    xml.attribute("daemon", thread.isDaemon());
     xml.attribute("group", Threads.threadGroupName());
 
     StackTraceElement[] stacktrace = thread.getStackTrace();

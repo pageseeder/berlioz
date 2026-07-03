@@ -1,9 +1,8 @@
 package org.pageseeder.berlioz.system;
 
 import org.junit.jupiter.api.Test;
-import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -18,17 +17,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class GetSystemPropertiesTest {
 
   @Test
-  void testProcess_writesSystemElement() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new GetSystemProperties().process(emptyRequest(), xml);
+  void testProcess_writesSystemElement() {
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new GetSystemProperties().generate(emptyRequest(), xml);
     String out = xml.toString();
     assertTrue(out.contains("<system"), "Should write <system> element");
   }
 
   @Test
   void testProcess_containsPropertyElements() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new GetSystemProperties().process(emptyRequest(), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new GetSystemProperties().generate(emptyRequest(), xml);
     Document doc = parse(xml.toString());
     Element root = doc.getDocumentElement();
     assertEquals("system", root.getTagName());
@@ -38,8 +37,8 @@ class GetSystemPropertiesTest {
 
   @Test
   void testProcess_includesJavaVersion() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new GetSystemProperties().process(emptyRequest(), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new GetSystemProperties().generate(emptyRequest(), xml);
     Document doc = parse(xml.toString());
     NodeList props = doc.getElementsByTagName("property");
     boolean found = false;
@@ -56,17 +55,17 @@ class GetSystemPropertiesTest {
 
   @Test
   void testProcess_propertyHasNameAndValue() throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new GetSystemProperties().process(emptyRequest(), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new GetSystemProperties().generate(emptyRequest(), xml);
     Document doc = parse(xml.toString());
     Element first = (Element) doc.getElementsByTagName("property").item(0);
     assertFalse(first.getAttribute("name").isEmpty(), "Each property should have a name");
   }
 
-  private static ContentRequest emptyRequest() {
-    return (ContentRequest) Proxy.newProxyInstance(
-        ContentRequest.class.getClassLoader(),
-        new Class<?>[]{ContentRequest.class},
+  private static Request emptyRequest() {
+    return (Request) Proxy.newProxyInstance(
+        Request.class.getClassLoader(),
+        new Class<?>[]{Request.class},
         (proxy, m, args) -> null);
   }
 

@@ -15,14 +15,14 @@
  */
 package org.pageseeder.berlioz.system;
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * A content generator that measures CPU usage over a short sampling interval.
@@ -61,32 +61,21 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * @version 0.13.0
  * @since 0.9.32
  */
-public final class GetCPUTime implements ContentGenerator {
+public final class GetCPUTime implements XmlGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
+    int interval = req.parameter("interval").asInt().defaultValue(100);
 
-    int interval = req.getIntParameter("interval", 100);
-
-    // Check that the interval is positive
     if (interval <= 0) {
-      req.setStatus(ContentStatus.BAD_REQUEST);
-      xml.writeComment("Interval must be strictly positive");
-      return;
+      xml.comment("Interval must be strictly positive");
+      return Response.status(ContentStatus.BAD_REQUEST);
     }
 
-    long threadId = -1L;
-    try {
-      threadId = req.getLongParameter("thread", -1);
-    } catch (NumberFormatException ex) {
-      req.setStatus(ContentStatus.BAD_REQUEST);
-      xml.writeComment("Invalid thread ID");
-      return;
-    }
+    long threadId = req.parameter("thread").asLong().defaultValue(-1L);
 
     try {
       ThreadMXBean bean = ManagementFactory.getThreadMXBean();
-      // measure
       Sample start;
       Sample end;
       if (threadId == -1L) {
@@ -100,24 +89,23 @@ public final class GetCPUTime implements ContentGenerator {
         end = single(bean, threadId);
       }
 
-      // Calculate
       long time = end.time() - start.time();
       long user = end.user() - start.user();
       long cpu = end.cpu() - start.cpu();
 
-      // Write XML
       xml.openElement("sample");
-      xml.attribute("interval", Long.toString(interval));
-      xml.attribute("cpu", Long.toString(cpu*100 / time));
-      xml.attribute("user", Long.toString(user*100 / time));
-      xml.attribute("system", Long.toString((cpu - user)*100 / time));
+      xml.attribute("interval", interval);
+      xml.attribute("cpu", cpu * 100 / time);
+      xml.attribute("user", user * 100 / time);
+      xml.attribute("system", (cpu - user) * 100 / time);
       xml.closeElement();
 
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
-      req.setStatus(ContentStatus.SERVICE_UNAVAILABLE);
-      xml.writeComment("CPU time sampling was interrupted");
+      xml.comment("CPU time sampling was interrupted");
+      return Response.status(ContentStatus.SERVICE_UNAVAILABLE);
     }
+    return Response.ok();
   }
 
   /**

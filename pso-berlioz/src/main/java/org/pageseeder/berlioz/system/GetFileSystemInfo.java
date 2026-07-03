@@ -30,42 +30,41 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns information about the underlying file system.
  *
  * @author Christophe Lauret
  *
- * @version 0.9.32
+ * @version 0.14.0
  * @since 0.9.32
  */
 @Beta
-public final class GetFileSystemInfo implements ContentGenerator {
+public final class GetFileSystemInfo implements XmlGenerator {
 
   private static final String DETAILS_PARAMETER = "details";
 
   private static final String WEB_INF_DIRECTORY = "WEB-INF";
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
-
-    // Free and total space
+  public Response generate(Request req, XmlWriter xml) {
     File pub = req.getEnvironment().getPublicFolder();
     File priv = req.getEnvironment().getPrivateFolder();
     xml.openElement("file-system");
-    xml.attribute("free-space", Long.toString(pub.getFreeSpace()));
-    xml.attribute("total-space", Long.toString(pub.getTotalSpace()));
+    xml.attribute("free-space", pub.getFreeSpace());
+    xml.attribute("total-space", pub.getTotalSpace());
 
     if ("true".equals(req.getParameter(DETAILS_PARAMETER))) {
-      // Go through public and private folders
       analyze(pub, "public", xml);
       analyze(priv, "private", xml);
     }
 
     xml.closeElement();
+    return Response.ok();
   }
 
   /**
@@ -75,10 +74,9 @@ public final class GetFileSystemInfo implements ContentGenerator {
    * @param dir   The actual directory to scan.
    * @param name  The name of the directory object gathering information.
    * @param xml   The XML writer.
-   *
-   * @throws IOException if thrown while writing the XML.
    */
-  private static void analyze(File dir, String name, XMLWriter xml) throws IOException {
+
+  private static void analyze(File dir, String name, XmlWriter xml) {
     DirInfo global = new DirInfo(name);
     List<DirInfo> locals = analyzeDirectChildren(dir.toPath(), global);
     xml.openElement(name);

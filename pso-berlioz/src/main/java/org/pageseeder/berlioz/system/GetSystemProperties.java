@@ -15,41 +15,40 @@
  */
 package org.pageseeder.berlioz.system;
 
-import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns system properties as returned by the <code>System</code> class.
  *
  * @author Christophe Lauret
  *
- * @version 0.9.32
+ * @version 0.14.0
  * @since 0.9.32
  */
 @Beta
-public final class GetSystemProperties implements ContentGenerator {
+public final class GetSystemProperties implements XmlGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
-
+  public Response generate(Request req, XmlWriter xml) {
     xml.openElement("system");
 
-    // List the system properties
     Properties properties = System.getProperties();
     for (Entry<Object, Object> p : properties.entrySet()) {
       xml.openElement("property");
-      xml.attribute("name",  (String)p.getKey());
-      xml.attribute("value", (String)p.getValue());
+      xml.attribute("name",  (String) p.getKey());
+      xml.attribute("value", (String) p.getValue());
       xml.closeElement();
     }
 
     xml.closeElement();
+    return Response.ok();
   }
 
 }

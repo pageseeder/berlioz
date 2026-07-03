@@ -15,10 +15,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -40,8 +39,8 @@ final class GetFileSystemInfoTest {
     write(publicFolder, "WEB-INF/secret.txt", 11);
     write(privateFolder, "config.xml", 7);
 
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new GetFileSystemInfo().process(request(publicFolder, privateFolder, "true"), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new GetFileSystemInfo().generate(request(publicFolder, privateFolder, "true"), xml);
 
     Document doc = parse(xml.toString());
     Element root = doc.getDocumentElement();
@@ -66,8 +65,8 @@ final class GetFileSystemInfoTest {
     File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
     File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
 
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    new GetFileSystemInfo().process(request(publicFolder, privateFolder, null), xml);
+    XmlStringBuilder xml = new XmlStringBuilder();
+    new GetFileSystemInfo().generate(request(publicFolder, privateFolder, null), xml);
 
     Element root = parse(xml.toString()).getDocumentElement();
     assertEquals("file-system", root.getTagName());
@@ -82,7 +81,7 @@ final class GetFileSystemInfoTest {
     assertEquals(count, directory.getAttribute("file-count"));
   }
 
-  private static ContentRequest request(File publicFolder, File privateFolder, String details) {
+  private static Request request(File publicFolder, File privateFolder, String details) {
     Environment env = (Environment) Proxy.newProxyInstance(
         Environment.class.getClassLoader(),
         new Class<?>[] {Environment.class},
@@ -97,9 +96,9 @@ final class GetFileSystemInfoTest {
           }
         });
 
-    return (ContentRequest) Proxy.newProxyInstance(
-        ContentRequest.class.getClassLoader(),
-        new Class<?>[] {ContentRequest.class},
+    return (Request) Proxy.newProxyInstance(
+        Request.class.getClassLoader(),
+        new Class<?>[] {Request.class},
         (proxy, method, args) -> {
           switch (method.getName()) {
             case "getEnvironment":
@@ -107,7 +106,7 @@ final class GetFileSystemInfoTest {
             case "getParameter":
               return "details".equals(args[0]) ? details : null;
             default:
-              throw new UnsupportedOperationException(method.getName());
+              return null;
           }
         });
   }

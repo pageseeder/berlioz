@@ -15,40 +15,38 @@
  */
 package org.pageseeder.berlioz.system;
 
-import java.io.IOException;
-
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
-
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns information from the runtime object.
  *
  * @author Christophe Lauret
  *
- * @version 0.9.32
+ * @version 0.14.0
  * @since 0.9.32
  */
 @Beta
-public class GetRuntimeInfo implements ContentGenerator {
+public class GetRuntimeInfo implements XmlGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
     Runtime runtime = Runtime.getRuntime();
 
     xml.openElement("runtime");
     xml.attribute("processors", runtime.availableProcessors());
 
-    // Memory information
     xml.openElement("memory");
-    xml.attribute("free",  Long.toString(runtime.freeMemory()));
-    xml.attribute("total", Long.toString(runtime.totalMemory()));
-    xml.attribute("max",   Long.toString(runtime.maxMemory()));
+    xml.attribute("free",  runtime.freeMemory());
+    xml.attribute("total", runtime.totalMemory());
+    xml.attribute("max",   runtime.maxMemory());
     xml.closeElement();
 
     xml.closeElement();
+    return Response.ok();
   }
 
 }
