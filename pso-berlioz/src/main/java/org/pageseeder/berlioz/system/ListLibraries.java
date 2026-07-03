@@ -34,13 +34,13 @@ import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
-import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.GlobalSettings;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.servlet.HttpContentRequest;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,11 +52,11 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.14.0
  * @since 0.9.32
  */
 @Beta
-public final class ListLibraries implements ContentGenerator {
+public final class ListLibraries implements XmlGenerator {
 
   /**
    * Logger for this generator.
@@ -89,10 +89,11 @@ public final class ListLibraries implements ContentGenerator {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws BerliozException, IOException {
+  public Response generate(Request req, XmlWriter xml) {
     HttpServletRequest http = ((HttpContentRequest)req).getHttpRequest();
     ServletContext context = http.getServletContext();
     extractLibs(context, xml);
+    return Response.ok();
   }
 
   /**
@@ -100,10 +101,8 @@ public final class ListLibraries implements ContentGenerator {
    *
    * @param context The servlet context to inspect.
    * @param xml     The XML output.
-   *
-   * @throws IOException If an error occurs while writing the XML.
    */
-  void extractLibs(ServletContext context, XMLWriter xml) throws IOException {
+  void extractLibs(ServletContext context, XmlWriter xml) {
 
     List<String> paths = getLibraryPaths(context);
 
@@ -126,7 +125,7 @@ public final class ListLibraries implements ContentGenerator {
 
       // Get attributes
       Map<String, String> attributes = getMainAttributes(path, context);
-      toXML(xml, attributes);
+      toXml(xml, attributes);
 
       xml.closeElement();
     }
@@ -201,10 +200,8 @@ public final class ListLibraries implements ContentGenerator {
    *
    * @param xml        The XML
    * @param attributes The attributes from the Manifest
-   *
-   * @throws IOException If an error occurs while writing the XML.
    */
-  private static void toXML(XMLWriter xml, Map<String, String> attributes) throws IOException {
+  private static void toXml(XmlWriter xml, Map<String, String> attributes) {
     Map<String, String> xmlAttributes = new TreeMap<>();
     Map<String, Map<String, String>> elements = new TreeMap<>();
     for (Entry<String, String> entry : attributes.entrySet()) {

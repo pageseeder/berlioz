@@ -23,8 +23,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -102,7 +101,7 @@ final class ListLibrariesTest {
   }
 
   private static Element extract(ServletContextFixture fixture) throws Exception {
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
+    XmlStringBuilder xml = new XmlStringBuilder();
     new ListLibraries().extractLibs(fixture.context(), xml);
     Document doc = parse(xml.toString());
     assertEquals("libraries", doc.getDocumentElement().getTagName());
