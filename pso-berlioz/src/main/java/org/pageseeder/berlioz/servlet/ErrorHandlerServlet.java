@@ -382,7 +382,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @param req The HTTP servlet request that caused the error.
    * @return the error details as XML
    */
-  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; legacy fallback guarded here until then
+  @SuppressWarnings({"removal", "deprecation"}) // both removed in 1.0; legacy fallback guarded here until then
   private static String toXml(HttpServletRequest req) {
     int code = getErrorCode(req);
     String message = (String) req.getAttribute(ERROR_MESSAGE);
@@ -429,7 +429,12 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Serializes the error in the legacy Berlioz error XML format.
+   *
+   * @deprecated Since 0.14.0. The legacy {@code <server-error>} / {@code <client-error>} XML format
+   *             is deprecated. Use {@link #toProblemXml} instead. Applications can opt back in with
+   *             {@code berlioz.errors.problem=false} during the 0.14.x migration window.
    */
+  @Deprecated(since = "0.14.0")
   private static String toLegacyXml(HttpServletRequest req, int code, @Nullable String message) {
     String servlet = (String) req.getAttribute(ERROR_SERVLET_NAME);
     Throwable throwable = getErrorException(req);
@@ -559,7 +564,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
    *
    * @param code the HTTP status code.
    * @return the root element name based on the HTTP status code or "unknown-status";
+   * @deprecated Since 0.14.0. Only used by the deprecated legacy XML format ({@link #toLegacyXml}).
    */
+  @Deprecated(since = "0.14.0")
   private static String getRootElementName(Integer code) {
     String element = HttpStatusCodes.getClassOfStatus(code);
     return (element != null) ? element.toLowerCase().replace(' ', '-') : "unknown-status";

@@ -275,6 +275,12 @@ The goal is to allow a self-contained Berlioz overlay — XSLT templates, servic
 
 Many Berlioz applications depend on application-specific global properties being present and well-formed. Berlioz should be able to validate those requirements when global configuration is loaded, report violations consistently, and expose the result through a diagnostic generator.
 
+Already done (groundwork):
+
+- `OptionDeprecations` (package-private) holds the deprecated-value checks for the three 0.14.0 deprecated options: `berlioz.http.get-via-post=true`, `berlioz.errors.problem=false`, and `berlioz.xml.header.version=0.9`. `GlobalSettings.load()` calls it once after a successful load or reload; no warning is ever emitted per request.
+- `BerliozOption` is unchanged — deprecation metadata does not live on the enum.
+- `OptionDeprecations` is the internal precursor to Theme 5's `ConfigurationValidator`: the check-and-warn pattern it establishes will generalize into the declarative, application-facing validation layer.
+
 Recommended shape:
 
 - Add a declarative requirement file, for example `WEB-INF/config/config-requirements.xml`, evaluated after global properties are fully resolved.

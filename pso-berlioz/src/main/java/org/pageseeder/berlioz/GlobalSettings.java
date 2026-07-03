@@ -659,6 +659,11 @@ public final class GlobalSettings {
       NODES.set(new ConcurrentHashMap<>());
     }
 
+    // Warn once per load for deprecated options explicitly set to a deprecated value
+    if (loaded) {
+      OptionDeprecations.checkAll(properties);
+    }
+
     // Notify the listeners
     if (loaded) {
       for (ConfigListener listener : LISTENERS) {
