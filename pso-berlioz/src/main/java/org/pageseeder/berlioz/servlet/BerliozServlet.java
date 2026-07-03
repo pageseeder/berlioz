@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
@@ -48,6 +49,7 @@ import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.http.*;
 import org.pageseeder.berlioz.servlet.XsltTransformResult.Status;
 import org.pageseeder.berlioz.util.*;
+import org.pageseeder.berlioz.xml.Xml;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -480,14 +482,11 @@ public final class BerliozServlet extends HttpServlet {
     xml.getHeaders().forEach(res::setHeader);
 
     // Produce the output (XSLT transform or pass through raw XML)
-    BerliozOutput result = executeTransform(content, req, xml, transformer, res, ctx.profile, ctx.serverTiming);
+    BerliozOutput result = executeTransform(content, req, xml, transformer, res, config, ctx.profile, ctx.serverTiming);
 
     // Resolve and validate encoding from XSLT output; canonical name is safe for HTTP headers
     Charset charset = resolveCharset(result.getEncoding());
-
-    // Update content type: use problem+xml for direct-service problem responses, otherwise honour XSLT output
-    boolean isProblemXml = transformer == null && xml.getProblem() != null;
-    res.setContentType(isProblemXml ? "application/problem+xml" : result.getMediaType());
+    res.setContentType(result.getMediaType());
     res.setCharacterEncoding(charset.name());
 
     // Write the response body, applying GZip compression when appropriate
@@ -651,22 +650,35 @@ public final class BerliozServlet extends HttpServlet {
    * @return The transformed (or raw XML) output.
    */
   private BerliozOutput executeTransform(String content, HttpServletRequest req, XmlResponse xml,
-                                         @Nullable XsltTransformer transformer, HttpServletResponse res, boolean profile, boolean serverTiming) {
-    if (transformer == null) return new XmlContent(content);
+                                         @Nullable XsltTransformer transformer, HttpServletResponse res,
+                                         BerliozConfig config, boolean profile, boolean serverTiming) {
+    // Direct service with a problem response: return problem+xml, or apply failsafe stylesheet for
+    // non-XML media types (e.g. text/html endpoints) so the client receives a rendered error page.
+    if (transformer == null) {
+      if (xml.getProblem() != null && !Xml.isXmlMediaType(config.getMediaType())) {
+        URL failsafeUrl = ErrorHandlerServlet.resolveErrorStylesheet();
+        if (failsafeUrl != null) {
+          return new XmlContent(XsltTransformer.transformFailSafe(content, failsafeUrl), config.getMediaType());
+        }
+      }
+      // Note we fall back on application/xml, because browsers don't show the response if
+      // set to `application/problem+xml`
+      return new XmlContent(content);
+    }
 
-    XsltTransformResult xslresult = transformer.transform(content, req, xml.getService());
+    XsltTransformResult result = transformer.transform(content, req, xml.getService());
     if (profile && LOGGER.isInfoEnabled()) {
-      LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(xslresult.time()));
+      LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(result.time()));
     }
     if (serverTiming) {
-      ServerTimingHeader.addMetricNano(res, "xslt", "XSLT Transform", xslresult.time());
+      ServerTimingHeader.addMetricNano(res, "xslt", "XSLT Transform", result.time());
     }
     // Signal the client that the service is temporarily unavailable when the transform failed
-    if (xslresult.status() == Status.ERROR) {
+    if (result.status() == Status.ERROR) {
       res.reset();
       res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
     }
-    return xslresult;
+    return result;
   }
 
   /**
