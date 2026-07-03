@@ -15,20 +15,19 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns the current service configuration as XML.
@@ -63,11 +62,11 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.9.3
  */
 @Beta
-public final class GetLiveServices implements ContentGenerator, Cacheable {
+public final class GetLiveServices implements XmlGenerator, Cacheable {
 
   @Override
   public String getETag(Request req) {
@@ -76,26 +75,22 @@ public final class GetLiveServices implements ContentGenerator, Cacheable {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     xml.openElement("live-services", true);
 
-    // Get the cache control
-    HttpEnvironment httpEnv = (HttpEnvironment)req.getEnvironment();
+    HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
 
-    // For each HTTP method
     for (HttpMethod method : HttpMethod.mappable()) {
       List<Service> services = registry.getServices(method);
-
-      // Iterate over the services
       for (Service service : services) {
         List<String> urls = registry.matches(service);
-        service.toXML(xml, method, urls, httpEnv.getCacheControl());
+        service.toXml(xml, method, urls, httpEnv.getCacheControl());
       }
-
     }
 
     xml.closeElement();
+    return Response.ok();
   }
 
 }

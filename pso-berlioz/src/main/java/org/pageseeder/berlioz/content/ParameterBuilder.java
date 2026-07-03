@@ -52,12 +52,10 @@ public final class ParameterBuilder {
   private final @Nullable String rawValue;
 
   /**
-   * Package-private: created only by {@link ContentRequest#parameter(String)}.
-   *
    * @param name     the parameter name
    * @param rawValue the raw string value, or {@code null} if the parameter was not submitted
    */
-  ParameterBuilder(String name, @Nullable String rawValue) {
+  public ParameterBuilder(String name, @Nullable String rawValue) {
     this.name = name;
     this.rawValue = rawValue;
   }

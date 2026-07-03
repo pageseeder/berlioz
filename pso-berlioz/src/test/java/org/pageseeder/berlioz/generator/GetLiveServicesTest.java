@@ -11,8 +11,7 @@ import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -71,11 +70,10 @@ class GetLiveServicesTest {
   // helpers
   // ---------------------------------------------------------------------------
 
-  private static String process(ContentRequest req) throws Exception {
+  private static String process(ContentRequest req) {
     GetLiveServices gen = new GetLiveServices();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    gen.process(req, xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    gen.generate(req, xml);
     return xml.toString();
   }
 }

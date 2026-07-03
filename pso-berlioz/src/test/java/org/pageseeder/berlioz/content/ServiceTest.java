@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.content;
 
-import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.List;
@@ -28,9 +27,8 @@ import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.json.JsonWriter;
 import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.berlioz.xml.XmlWriter;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
 import org.pageseeder.xmlwriter.XMLWriter;
 
 final class ServiceTest {
@@ -408,11 +406,11 @@ final class ServiceTest {
   // --- toXML ---
 
   @Test
-  void testToXML_basicAttributes() throws IOException {
+  void testToXML_basicAttributes() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/articles/{id}"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/articles/{id}"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("id=\"svc\""), out);
@@ -421,11 +419,11 @@ final class ServiceTest {
   }
 
   @Test
-  void testToXML_urlPatterns() throws IOException {
+  void testToXML_urlPatterns() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/articles/{id}", "/news/{id}"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/articles/{id}", "/news/{id}"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("pattern=\"/articles/{id}\""), out);
@@ -433,11 +431,11 @@ final class ServiceTest {
   }
 
   @Test
-  void testToXML_generatorElement() throws IOException {
+  void testToXML_generatorElement(){
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).name("my-gen").build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("name=\"my-gen\""), out);
@@ -445,45 +443,45 @@ final class ServiceTest {
   }
 
   @Test
-  void testToXML_cacheControlOverload() throws IOException {
+  void testToXML_cacheControlOverload() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"), "max-age=600");
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"), "max-age=600");
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("cache-control=\"max-age=600\""), out);
   }
 
   @Test
-  void testToXML_flagsAttribute() throws IOException {
+  void testToXML_flagsAttribute() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").flags("secure").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("flags=\"secure\""), out);
   }
 
   @Test
-  void testToXML_directAttribute() throws IOException {
+  void testToXML_directAttribute() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").direct(true).add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("direct=\"true\""), out);
   }
 
   @Test
-  void testToXML_generatorParameterElement() throws IOException {
+  void testToXML_generatorParameterElement() {
     NoContent g = new NoContent();
     Parameter p = new Parameter("limit", "10");
     Service s = defaultBuilder("svc").add(g).parameter(p).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("name=\"limit\""), out);
@@ -491,44 +489,44 @@ final class ServiceTest {
   }
 
   @Test
-  void testToXML_supportedAttributeForContentGenerator() throws IOException {
+  void testToXML_supportedAttributeForContentGenerator() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("supported=\"xml\""), out);
   }
 
   @Test
-  void testToXML_supportedAttributeForGenerator() throws IOException {
+  void testToXML_supportedAttributeForGenerator() {
     CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
     Service s = defaultBuilder("svc").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("supported=\"xml,json\""), out);
   }
 
   @Test
-  void testToXML_generatorTypeContent() throws IOException {
+  void testToXML_generatorTypeContent() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
-    Assertions.assertTrue(out.contains("type=\"content\""), out);
+    Assertions.assertTrue(out.contains("type=\"xml\""), out);
   }
 
   @Test
-  void testToXML_generatorTypeGenerator() throws IOException {
+  void testToXML_generatorTypeGenerator() {
     CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
     Service s = defaultBuilder("svc").add(g).build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    s.toXML(xml, HttpMethod.GET, List.of("/"));
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
     xml.flush();
     String out = xml.toString();
     Assertions.assertTrue(out.contains("type=\"generator\""), out);
@@ -538,7 +536,7 @@ final class ServiceTest {
 
   @Test
   void testGeneratorType_content() {
-    Assertions.assertEquals("content", Service.generatorType(new NoContent()));
+    Assertions.assertEquals("xml", Service.generatorType(new NoContent()));
   }
 
   @Test

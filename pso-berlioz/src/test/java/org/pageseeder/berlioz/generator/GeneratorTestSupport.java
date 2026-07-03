@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.generator;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Environment;
+import org.pageseeder.berlioz.content.ParameterBuilder;
 
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -67,6 +68,11 @@ final class GeneratorTestSupport {
                 String first = (vals != null && vals.length > 0 && !vals[0].isEmpty()) ? vals[0] : null;
                 if (args.length == 1) return first;
                 return first != null ? first : args[1];  // getParameter(name, def)
+              }
+              case "parameter": {
+                String[] vals = self.parameters.get(args[0]);
+                String first = (vals != null && vals.length > 0 && !vals[0].isEmpty()) ? vals[0] : null;
+                return new ParameterBuilder((String) args[0], first);
               }
               case "getIntParameter": {
                 String[] vals = self.parameters.get(args[0]);

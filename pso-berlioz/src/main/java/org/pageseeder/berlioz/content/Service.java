@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.content;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +31,7 @@ import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.util.Strings;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.7
  */
 public final class Service {
@@ -280,12 +279,10 @@ public final class Service {
    * @param xml     the XML writer
    * @param method  the HTTP method the service is mapped to.
    * @param urls    the URI patterns this service matches
-   *
-   * @throws IOException if thrown by the XML writer.
    */
   @Beta
-  public void toXML(XMLWriter xml, HttpMethod method, List<String> urls) throws IOException {
-    toXML(xml, method, urls, null);
+  public void toXml(XmlWriter xml, HttpMethod method, List<String> urls) {
+    toXml(xml, method, urls, null);
   }
 
   /**
@@ -295,11 +292,9 @@ public final class Service {
    * @param method       the HTTP method the service is mapped to.
    * @param urls         the URI patterns this service matches
    * @param cacheControl the cache control directives.
-   *
-   * @throws IOException if thrown by the XML writer.
    */
   @Beta
-  public void toXML(XMLWriter xml, HttpMethod method, List<String> urls, @Nullable String cacheControl) throws IOException {
+  public void toXml(XmlWriter xml, HttpMethod method, List<String> urls, @Nullable String cacheControl) {
     xml.openElement("service", true);
     xml.attribute("id", this.id);
     xml.attribute("group", this.group);

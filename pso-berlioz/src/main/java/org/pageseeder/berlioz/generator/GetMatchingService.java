@@ -32,7 +32,6 @@ import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
 import org.pageseeder.berlioz.xml.XmlWriter;
-import org.pageseeder.berlioz.xml.XmlWriterAdapter;
 
 /**
  * Returns the current service configuration as XML.
@@ -107,11 +106,7 @@ public final class GetMatchingService implements XmlGenerator, Cacheable {
       Service service = match.service();
       List<String> urls = registry.matches(service);
       HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
-      try {
-        service.toXML(new XmlWriterAdapter(xml), method, urls, httpEnv.getCacheControl());
-      } catch (java.io.IOException ex) {
-        throw new IllegalStateException("Unexpected IO error writing service XML", ex);
-      }
+      service.toXml(xml, method, urls, httpEnv.getCacheControl());
 
       xml.closeElement();
     } else {
