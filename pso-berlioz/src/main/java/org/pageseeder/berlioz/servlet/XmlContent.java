@@ -15,7 +15,10 @@
  */
 package org.pageseeder.berlioz.servlet;
 
+import org.pageseeder.berlioz.xml.Xml;
+
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * Holds the results of a transformation process.
@@ -36,16 +39,36 @@ public final class XmlContent implements BerliozOutput {
   private final CharSequence content;
 
   /**
-   * Creates some new XML content.
+   * The media type for this content.
+   */
+  private final String mediaType;
+
+  /**
+   * Creates some new XML content with the default {@code application/xml} media type.
    *
    * @param content The content.
    */
   public XmlContent(CharSequence content) {
     this.content = content;
+    this.mediaType = "application/xml";
   }
 
   /**
-   * @return The actual XML content.
+   * Creates content with a specific media type.
+   *
+   * @param content   The content.
+   * @param mediaType The media type (e.g. {@code "application/problem+xml"}, {@code "text/html"}).
+   */
+  XmlContent(CharSequence content, String mediaType) {
+    Objects.requireNonNull(mediaType);
+    if (!Xml.isXmlMediaType(mediaType))
+      throw new IllegalArgumentException("Invalid media type: " + mediaType);
+    this.content = content;
+    this.mediaType = mediaType;
+  }
+
+  /**
+   * @return The actual content.
    */
   @Override
   public CharSequence content() {
@@ -53,11 +76,11 @@ public final class XmlContent implements BerliozOutput {
   }
 
   /**
-   * @return Always <code>application/xml</code>.
+   * @return The media type for this content.
    */
   @Override
   public String getMediaType() {
-    return "application/xml";
+    return this.mediaType;
   }
 
   /**
