@@ -15,25 +15,24 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
-import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlWriter;
+import org.pageseeder.berlioz.xml.XmlWriterAdapter;
 
 /**
  * Returns the current service configuration as XML.
@@ -68,11 +67,11 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.9.3
  */
 @Beta
-public final class GetMatchingService implements ContentGenerator, Cacheable {
+public final class GetMatchingService implements XmlGenerator, Cacheable {
 
   @Override
   public String getETag(Request req) {
@@ -81,99 +80,45 @@ public final class GetMatchingService implements ContentGenerator, Cacheable {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
+  public Response generate(Request req, XmlWriter xml) {
+    String url = req.parameter("url").asString().required();
+    HttpMethod method = req.parameter("method").asEnum(HttpMethod.class).optional(HttpMethod.GET);
 
-    // Parameters
-    String url = getURL(req, xml);
-    HttpMethod method = getMethod(req, xml);
-
-    // Nothing left to do
-    if (url == null || method == null) return;
-
-    // Identify the service
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     MatchingService match = registry.get(url, method);
 
-    // Display info as XML
     if (match != null) {
-
       xml.openElement("matching-service", true);
 
-      // URI Pattern
       URIPattern pattern = match.pattern();
       xml.openElement("url", true);
       xml.attribute("path", url);
       xml.attribute("pattern", pattern.toString());
       URIResolveResult result = match.result();
       for (String name : result.names()) {
-        xml.openElement("parameter", true);
-        xml.attribute("name", name);
-        Object o = result.get(name);
-        xml.attribute("value", o != null? o.toString() : "");
-        xml.closeElement();
+        String value = Objects.toString(result.get(name), "");
+        xml.openElement("parameter")
+            .attribute("name", name)
+            .attribute("value", value)
+            .closeElement();
       }
       xml.closeElement();
 
-      // The service
       Service service = match.service();
       List<String> urls = registry.matches(service);
-      HttpEnvironment httpEnv = (HttpEnvironment)req.getEnvironment();
-      service.toXML(xml, method, urls, httpEnv.getCacheControl());
+      HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
+      try {
+        service.toXML(new XmlWriterAdapter(xml), method, urls, httpEnv.getCacheControl());
+      } catch (java.io.IOException ex) {
+        throw new IllegalStateException("Unexpected IO error writing service XML", ex);
+      }
 
-      // close 'matching-service'
       xml.closeElement();
-
     } else {
       xml.emptyElement("no-matching-service");
     }
 
-  }
-
-  /**
-   * Returns the HTTP method if valid (defaults to GET).
-   *
-   * @param req The content request.
-   * @param xml The XML writer.
-   *
-   * @return the HTTP method or <code>null</code>.
-   *
-   * @throws IOException if an error occurs while writing the XML error message
-   */
-  private @Nullable HttpMethod getMethod(ContentRequest req, XMLWriter xml) throws IOException {
-    String method = req.getParameter("method", "GET");
-    try {
-      return HttpMethod.valueOf(method);
-    } catch (IllegalArgumentException ex) {
-      xml.openElement("error");
-      xml.attribute("type", "client");
-      xml.attribute("message", "The specified HTTP method is invalid: "+method);
-      xml.closeElement();
-      req.setStatus(ContentStatus.BAD_REQUEST);
-      return null;
-    }
-  }
-
-  /**
-   * Returns the URL if specified and not empty.
-   *
-   * @param req The content request.
-   * @param xml The XML writer.
-   *
-   * @return the url or <code>null</code>.
-   *
-   * @throws IOException if an error occurs while writing the XML error message
-   */
-  private @Nullable String getURL(ContentRequest req, XMLWriter xml) throws IOException {
-    String url = req.getParameter("url", "");
-    if (url.isEmpty()) {
-      xml.openElement("error");
-      xml.attribute("type", "client");
-      xml.attribute("message", "The URL was not specified");
-      xml.closeElement();
-      req.setStatus(ContentStatus.BAD_REQUEST);
-      return null;
-    }
-    return url;
+    return Response.ok();
   }
 
 }

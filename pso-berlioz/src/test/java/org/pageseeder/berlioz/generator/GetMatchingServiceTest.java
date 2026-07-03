@@ -7,13 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
-import org.pageseeder.berlioz.content.ContentRequest;
-import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.content.ContentStatus;
-import org.pageseeder.berlioz.content.ServiceLoader;
+import org.pageseeder.berlioz.content.*;
+import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -43,30 +40,30 @@ class GetMatchingServiceTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testMissingUrlParameterWritesError() throws Exception {
+  void testMissingUrlParameterWritesError() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request();
-    String out = process(builder);
-    Assertions.assertTrue(out.contains("<error"), "Should write an error element");
-    Assertions.assertTrue(out.contains("URL was not specified"));
-    Assertions.assertEquals(ContentStatus.BAD_REQUEST, builder.capturedStatus);
+    ContentRequest req = builder.build();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    XmlGenerator generator = new GetMatchingService();
+    Assertions.assertThrows(InvalidParameterException.class, () -> generator.generate(req, xml));
   }
 
   @Test
-  void testInvalidMethodParameterWritesError() throws Exception {
+  void testInvalidMethodParameterWritesError() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .parameter("url", "/home")
         .parameter("method", "INVALID");
-    String out = process(builder);
-    Assertions.assertTrue(out.contains("<error"), "Should write an error element for invalid method");
-    Assertions.assertTrue(out.contains("invalid"));
-    Assertions.assertEquals(ContentStatus.BAD_REQUEST, builder.capturedStatus);
+    ContentRequest req = builder.build();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    XmlGenerator generator = new GetMatchingService();
+    Assertions.assertThrows(InvalidParameterException.class, () -> generator.generate(req, xml));
   }
 
   // No match
   // ---------------------------------------------------------------------------
 
   @Test
-  void testNoMatchWritesNoMatchingServiceElement() throws Exception {
+  void testNoMatchWritesNoMatchingServiceElement() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .parameter("url", "/unknown/path")
         .parameter("method", "GET");
@@ -124,12 +121,11 @@ class GetMatchingServiceTest {
   // helpers
   // ---------------------------------------------------------------------------
 
-  private static String process(GeneratorTestSupport.RequestBuilder builder) throws Exception {
+  private static String process(GeneratorTestSupport.RequestBuilder builder) {
     GetMatchingService gen = new GetMatchingService();
     ContentRequest req = builder.build();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    gen.process(req, xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    gen.generate(req, xml);
     return xml.toString();
   }
 }
