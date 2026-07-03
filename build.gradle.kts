@@ -126,6 +126,7 @@ sonarqube {
     property("sonar.organization", "pageseeder")
     property("sonar.projectKey", "pageseeder_berlioz")
     property("sonar.token", providers.gradleProperty("sonarcloud.login").getOrElse(""))
+    property("sonar.coverage.exclusions", "samples/**")
     property("sonar.coverage.jacoco.xmlReportPaths",
       subprojects.filter { it.name in publishedProjectNames }
         .map { "${it.layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml" }
