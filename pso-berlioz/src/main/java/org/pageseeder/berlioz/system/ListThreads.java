@@ -117,7 +117,7 @@ public final class ListThreads implements XmlGenerator {
           xml.attribute("method", method);
         }
         if (line >= 0) {
-          xml.attribute("line", (long) line);
+          xml.attribute("line", line);
         }
         xml.closeElement();
       }
@@ -130,7 +130,7 @@ public final class ListThreads implements XmlGenerator {
   private static void writeThreadAttributes(ThreadInfo thread, XmlWriter xml) {
     xml.attribute("id", thread.getThreadId());
     xml.attribute("name", thread.getThreadName());
-    xml.attribute("priority", (long) thread.getPriority());
+    xml.attribute("priority", thread.getPriority());
     xml.attribute("state", thread.getThreadState().name());
     xml.attribute("alive", true);
     xml.attribute("daemon", thread.isDaemon());

@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz.system;
 
-import java.io.IOException;
 import java.lang.management.ThreadInfo;
 
 import org.pageseeder.berlioz.Beta;
