@@ -18,11 +18,14 @@ package org.pageseeder.berlioz.generator;
 import java.io.File;
 import java.util.List;
 
+import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.berlioz.xml.XmlCopier;
 import org.pageseeder.berlioz.xml.XmlWriter;
@@ -48,7 +51,9 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * <h3>Error Handling</h3>
  * <p>Should there be any problem parsing or reading the file, the XML returned will be:
  * <pre>{@code <no-data error="[error]" details="[error-details]"/>}</pre>
- * <p>The error details are only shown if available.
+ * <p>The {@code details} (and {@code line}/{@code column}) attributes are only included when the
+ * {@code berlioz.errors.detail} option is set to {@code standard} or {@code full}; a malformed
+ * services file never fails this generator, it only replaces that file's content with this element.
  *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
@@ -77,18 +82,19 @@ public final class GetServices implements XmlGenerator, Cacheable {
   @Override
   public Response generate(Request req, XmlWriter xml) {
     List<File> files = ServiceLoader.getInstance().listServiceFiles();
+    boolean includeDetails = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
 
     if (!files.isEmpty()) {
       File main = files.get(0);
       if (main.exists()) {
-        XmlCopier.copyTo(main, xml);
+        XmlCopier.copyTo(main, xml, includeDetails);
       }
     }
 
     if (files.size() > 1) {
       xml.openElement("service-modules", true);
       for (int i = 1; i < files.size(); i++) {
-        XmlCopier.copyTo(files.get(i), xml);
+        XmlCopier.copyTo(files.get(i), xml, includeDetails);
       }
       xml.closeElement();
     }

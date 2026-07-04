@@ -7,7 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.ext.LexicalHandler;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
@@ -29,6 +32,17 @@ import java.util.Locale;
 public class Xml {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Xml.class);
+
+  /**
+   * The LexicalHandler property name.
+   */
+  @SuppressWarnings("HttpUrlsUsage")
+  private static final String LEXICAL_HANDLER_PROPERTY = "http://xml.org/sax/properties/lexical-handler";
+
+  /**
+   * Whether the lexical-handler property is supported (optimistically assumes it is).
+   */
+  private static volatile boolean supportsLexicalHandler = true;
 
   private Xml() {
   }
@@ -124,29 +138,12 @@ public class Xml {
    *
    * @throws BerliozException Should something unexpected happen.
    */
-  @SuppressWarnings("HttpUrlsUsage")
   public static void parse(ContentHandler handler, File xml, boolean validate) throws BerliozException {
     if (xml.isDirectory())
       throw new BerliozException("Cannot parse a directory");
-    SAXParser parser = safeParser(validate);
-    try {
-      XMLReader reader = parser.getXMLReader();
-      reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-      reader.setContentHandler(handler);
-      reader.setEntityResolver(BerliozEntityResolver.getInstance());
-      reader.setErrorHandler(BerliozErrorHandler.getInstance());
-      URI uri = xml.toURI();
-      LOGGER.info("Parsing file {}", uri);
-      reader.parse(new InputSource(uri.toString()));
-    } catch (SAXException ex) {
-      throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
-    } catch (FileNotFoundException ex) {
-      LOGGER.warn("Attempted to parse file which cannot be found", ex);
-      throw new BerliozException("Could not find file.", ex);
-    } catch (IOException ex) {
-      LOGGER.warn("Unable to parse file", ex);
-      throw new BerliozException("Could not read file.", ex);
-    }
+    URI uri = xml.toURI();
+    LOGGER.info("Parsing file {}", uri);
+    parse(handler, new InputSource(uri.toString()), validate, true);
   }
 
   /**
@@ -159,17 +156,69 @@ public class Xml {
    * @throws BerliozException Should something unexpected happen.
    */
   public static void parse(ContentHandler handler, Reader reader, boolean validate) throws BerliozException {
+    parse(handler, new InputSource(reader), validate, false);
+  }
+
+  /**
+   * Shared parsing core: configures the safe parser, entity resolver, error handler, and
+   * (opportunistically) the lexical handler, then parses the given source.
+   *
+   * <p>Package-private so callers within {@code org.pageseeder.berlioz.xml} that need to parse a
+   * source without disallowing {@code DOCTYPE} declarations (e.g. {@link XmlCopier}, which copies
+   * documents verbatim rather than resolving them for routing/configuration) can reuse the same
+   * plumbing as the public {@link #parse(ContentHandler, File, boolean)} /
+   * {@link #parse(ContentHandler, Reader, boolean)} methods.
+   *
+   * @param handler         The content handler to use.
+   * @param source          The input source to parse.
+   * @param validate        Whether to validate.
+   * @param disallowDoctype Whether to reject any {@code DOCTYPE} declaration outright.
+   *
+   * @throws BerliozException Should something unexpected happen.
+   */
+  @SuppressWarnings("HttpUrlsUsage")
+  static void parse(ContentHandler handler, InputSource source, boolean validate, boolean disallowDoctype)
+      throws BerliozException {
     SAXParser parser = safeParser(validate);
     try {
-      XMLReader xmlreader = parser.getXMLReader();
-      xmlreader.setContentHandler(handler);
-      xmlreader.setEntityResolver(BerliozEntityResolver.getInstance());
-      xmlreader.setErrorHandler(BerliozErrorHandler.getInstance());
-      xmlreader.parse(new InputSource(reader));
+      XMLReader reader = parser.getXMLReader();
+      if (disallowDoctype) {
+        reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      }
+      reader.setContentHandler(handler);
+      trySettingLexicalHandler(reader, handler);
+      reader.setEntityResolver(BerliozEntityResolver.getInstance());
+      reader.setErrorHandler(BerliozErrorHandler.getInstance());
+      reader.parse(source);
     } catch (SAXException ex) {
       throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
+    } catch (FileNotFoundException ex) {
+      LOGGER.warn("Attempted to parse file which cannot be found", ex);
+      throw new BerliozException("Could not find file.", ex);
     } catch (IOException ex) {
+      LOGGER.warn("Unable to parse file", ex);
       throw new BerliozException("Could not read file.", ex);
+    }
+  }
+
+  /**
+   * Opportunistically registers the handler as the lexical handler, so that comments are
+   * reported to {@link ContentHandler} implementations that also implement {@link LexicalHandler}.
+   *
+   * <p>If the property is not supported by the underlying parser, a warning is logged once and
+   * no further attempts are made.
+   *
+   * @param reader  the XML reader.
+   * @param handler the content handler, only registered if it also implements {@link LexicalHandler}.
+   */
+  private static void trySettingLexicalHandler(XMLReader reader, ContentHandler handler) {
+    if (supportsLexicalHandler && handler instanceof LexicalHandler) {
+      try {
+        reader.setProperty(LEXICAL_HANDLER_PROPERTY, handler);
+      } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
+        supportsLexicalHandler = false;
+        LOGGER.warn("Unable to copy comments", ex);
+      }
     }
   }
 

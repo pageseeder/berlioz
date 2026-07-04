@@ -16,13 +16,12 @@
 package org.pageseeder.berlioz.xml;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.xml.parsers.SAXParser;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozException;
@@ -31,11 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -48,8 +43,17 @@ import org.xml.sax.helpers.DefaultHandler;
  * single {@code <no-data>} element, same as a successful copy produces a single well-formed
  * document.
  *
- * <p>This class also implements the {@link LexicalHandler} interface, so that comments can be copied if the
- * {@link XMLReader} reader supports the {@value #LEXICAL_HANDLER_PROPERTY} property.
+ * <p>Two API shapes are provided:
+ * <ul>
+ *   <li>{@link #copy(File, XmlWriter)} / {@link #copy(Reader, XmlWriter)} — throw
+ *       {@link XmlParseException} (or {@link UncheckedIOException} if the file cannot be found)
+ *       so the caller decides how to handle a bad source.</li>
+ *   <li>{@link #copyTo(File, XmlWriter)} / {@link #copyTo(Reader, XmlWriter)} — never throw;
+ *       errors are reported inline as a {@code <no-data>} element and {@code false} is returned.</li>
+ * </ul>
+ *
+ * <p>This class also implements the {@link LexicalHandler} interface, so that comments are copied
+ * when the underlying parser supports it (see {@link Xml#parse}).
  *
  * @author Christophe Lauret
  *
@@ -58,21 +62,7 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public final class XmlCopier extends DefaultHandler implements ContentHandler, LexicalHandler {
 
-  /**
-   * Logger the extractor.
-   */
   private static final Logger LOGGER = LoggerFactory.getLogger(XmlCopier.class);
-
-  /**
-   * The LexicalHandler property.
-   */
-  @SuppressWarnings("HttpUrlsUsage")
-  private static final String LEXICAL_HANDLER_PROPERTY = "http://xml.org/sax/properties/lexical-handler";
-
-  /**
-   * Whether comments are supported (optimistically assumes they are).
-   */
-  private static volatile boolean supportsComments = true;
 
   /**
    * Where the XML should be copied to.
@@ -198,15 +188,59 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
     // No-op
   }
 
-  // Static helpers
+  // Throwing API
   // ----------------------------------------------------------------------------------------------
 
   /**
    * Copy the specified File to the given XML Writer.
    *
-   * <p>Any error is reported as XML on the XML writer.
+   * @param file The file.
+   * @param xml  The XML writer.
    *
-   * <p>This method does not perform any caching, generators better handle caching externally.
+   * @throws UncheckedIOException if the file does not exist.
+   * @throws XmlParseException    if the file could not be parsed.
+   */
+  public static void copy(File file, XmlWriter xml) {
+    if (!file.exists()) {
+      throw new UncheckedIOException(new FileNotFoundException(file.toString()));
+    }
+    XmlStringBuilder buffer = new XmlStringBuilder();
+    try {
+      // disallowDoctype=false: unlike Xml.parse(File, boolean), a copy is not resolved for
+      // routing/configuration, so a DOCTYPE (e.g. Berlioz's own services.xml convention) is fine.
+      Xml.parse(new XmlCopier(buffer), new InputSource(file.toURI().toString()), false, false);
+    } catch (BerliozException ex) {
+      throw toParseException(ex);
+    }
+    xml.xml(buffer.toString());
+  }
+
+  /**
+   * Copy the specified Reader to the given XML Writer.
+   *
+   * @param reader The reader over the XML to read.
+   * @param xml    The XML writer.
+   *
+   * @throws XmlParseException if the source could not be parsed.
+   */
+  public static void copy(Reader reader, XmlWriter xml) {
+    XmlStringBuilder buffer = new XmlStringBuilder();
+    try {
+      Xml.parse(new XmlCopier(buffer), new InputSource(reader), false, false);
+    } catch (BerliozException ex) {
+      throw toParseException(ex);
+    }
+    xml.xml(buffer.toString());
+  }
+
+  // Non-throwing (auto-resolving) API
+  // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Copy the specified File to the given XML Writer.
+   *
+   * <p>Any error is reported as a {@code <no-data>} element on the XML writer, without exception
+   * details.
    *
    * @param file The file.
    * @param xml  The XML writer.
@@ -215,21 +249,34 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
    *         <code>false</code> otherwise.
    */
   public static boolean copyTo(File file, XmlWriter xml) {
-    if (!file.exists()) {
-      LOGGER.warn("Could not find {}", file.toURI());
-      xml.openElement("no-data");
-      xml.attribute("error", "file-not-found");
-      xml.closeElement();
-      return false;
-    }
-    XmlStringBuilder buffer = new XmlStringBuilder();
+    return copyTo(file, xml, false);
+  }
+
+  /**
+   * Copy the specified File to the given XML Writer.
+   *
+   * <p>This method does not perform any caching, generators better handle caching externally.
+   *
+   * @param file           The file.
+   * @param xml            The XML writer.
+   * @param includeDetails Whether to include the exception message and source location in the
+   *                       {@code <no-data>} element on parse failure. Callers should only pass
+   *                       {@code true} when the caller's own diagnostic verbosity setting allows it.
+   *
+   * @return <code>true</code> if the copy was done successfully;
+   *         <code>false</code> otherwise.
+   */
+  public static boolean copyTo(File file, XmlWriter xml, boolean includeDetails) {
     try {
-      parse(new XmlCopier(buffer), new InputSource(file.toURI().toString()));
-      xml.xml(buffer.toString());
+      copy(file, xml);
       return true;
-    } catch (BerliozException ex) {
+    } catch (UncheckedIOException ex) {
+      LOGGER.warn("Could not find {}", file.toURI());
+      writeNotFound(xml);
+      return false;
+    } catch (XmlParseException ex) {
       LOGGER.warn("An error was reported by the parser while parsing {}", file.toURI());
-      handleError(xml, ex);
+      handleError(xml, ex, includeDetails);
       return false;
     }
   }
@@ -237,8 +284,8 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
   /**
    * Copy the specified Reader to the given XML Writer.
    *
-   * <p>Any error is reported as XML on the XML writer. This method does not perform any caching
-   * or validation.
+   * <p>Any error is reported as a {@code <no-data>} element on the XML writer, without exception
+   * details.
    *
    * @param reader The reader over the XML to read.
    * @param xml    The XML writer.
@@ -247,79 +294,65 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
    *         <code>false</code> otherwise.
    */
   public static boolean copyTo(Reader reader, XmlWriter xml) {
-    XmlStringBuilder buffer = new XmlStringBuilder();
+    return copyTo(reader, xml, false);
+  }
+
+  /**
+   * Copy the specified Reader to the given XML Writer.
+   *
+   * <p>This method does not perform any caching or validation.
+   *
+   * @param reader         The reader over the XML to read.
+   * @param xml            The XML writer.
+   * @param includeDetails Whether to include the exception message and source location in the
+   *                       {@code <no-data>} element on parse failure. Callers should only pass
+   *                       {@code true} when the caller's own diagnostic verbosity setting allows it.
+   *
+   * @return <code>true</code> if the copy was done successfully;
+   *         <code>false</code> otherwise.
+   */
+  public static boolean copyTo(Reader reader, XmlWriter xml, boolean includeDetails) {
     try {
-      parse(new XmlCopier(buffer), new InputSource(reader));
-      xml.xml(buffer.toString());
+      copy(reader, xml);
       return true;
-    } catch (BerliozException ex) {
+    } catch (XmlParseException ex) {
       LOGGER.warn("An error was reported by the parser while parsing reader");
-      handleError(xml, ex);
+      handleError(xml, ex, includeDetails);
       return false;
     }
   }
 
-  // private parsing methods
+  // private helpers
   // --------------------------------------------------------------------------------------------------------
 
-  /**
-   * Parses the specified file using the given handler.
-   *
-   * @param copier The XmlCopier instance.
-   * @param source The input source to copy
-   *
-   * @throws BerliozException Should something unexpected happen.
-   */
-  private static void parse(XmlCopier copier, InputSource source) throws BerliozException {
-    SAXParser parser = Xml.safeParser(false);
-    try {
-      // get the reader
-      XMLReader xmlreader = parser.getXMLReader();
-      // configure the reader
-      xmlreader.setContentHandler(copier);
-      trySettingLexicalHandler(xmlreader, copier);
-      xmlreader.setEntityResolver(BerliozEntityResolver.getInstance());
-      xmlreader.setErrorHandler(BerliozErrorHandler.getInstance());
-      xmlreader.parse(source);
-    } catch (SAXException ex) {
-      throw new BerliozException("Could not parse file. " + ex.getMessage(), ex);
-    } catch (IOException ex) {
-      LOGGER.error("Could not read file.", ex);
-      throw new BerliozException("Could not read file.", ex);
-    }
-  }
-
-  /**
-   * Try to set the lexical handler property to copy comments.
-   *
-   * <p>If the property is not supported, a warning is logged and no further attempts will be made.
-   *
-   * @param xmlreader the XML reader.
-   * @param copier    the XML copy handler.
-   */
-  private static void trySettingLexicalHandler(XMLReader xmlreader, XmlCopier copier) {
-    if (supportsComments) {
-      try {
-        xmlreader.setProperty(LEXICAL_HANDLER_PROPERTY, copier);
-      } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
-        supportsComments = false;
-        LOGGER.warn("Unable to copy comments", ex);
-      }
-    }
-  }
-
-  private static void handleError(XmlWriter xml, Exception ex) {
-    String m = ex.getMessage();
+  private static XmlParseException toParseException(BerliozException ex) {
     Throwable cause = ex.getCause();
+    if (cause instanceof SAXParseException) {
+      SAXParseException sax = (SAXParseException) cause;
+      return new XmlParseException(ex.getMessage(), ex, sax.getLineNumber(), sax.getColumnNumber());
+    }
+    return new XmlParseException(ex.getMessage(), ex);
+  }
+
+  private static void writeNotFound(XmlWriter xml) {
+    xml.openElement("no-data");
+    xml.attribute("error", "file-not-found");
+    xml.closeElement();
+  }
+
+  private static void handleError(XmlWriter xml, XmlParseException ex, boolean includeDetails) {
     LOGGER.warn("Error details:", ex);
     xml.openElement("no-data");
     xml.attribute("error", "parsing");
-    xml.attribute("details", m != null? m : "(No message)");
-    if (cause instanceof SAXParseException) {
-      SAXParseException sax = (SAXParseException)cause;
-      xml.attribute("line", sax.getLineNumber());
-      xml.attribute("column", sax.getColumnNumber());
+    if (includeDetails) {
+      String m = ex.getMessage();
+      xml.attribute("details", m != null ? m : "(No message)");
+      if (ex.hasLocation()) {
+        xml.attribute("line", ex.getLine());
+        xml.attribute("column", ex.getColumn());
+      }
     }
     xml.closeElement();
   }
+
 }
