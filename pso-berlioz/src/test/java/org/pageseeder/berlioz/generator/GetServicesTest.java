@@ -9,8 +9,7 @@ import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.ServiceLoader;
-import org.pageseeder.xmlwriter.XML.NamespaceAware;
-import org.pageseeder.xmlwriter.XMLStringWriter;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 import java.io.File;
 
@@ -35,14 +34,14 @@ class GetServicesTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  void testProcessWritesNothingWhenNoConfigured() throws Exception {
+  void testProcessWritesNothingWhenNoConfigured() {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertEquals("", out, "No output expected when no service files are configured");
   }
 
   @Test
-  void testProcessIncludesServicesXmlContent() throws Exception {
+  void testProcessIncludesServicesXmlContent() {
     GlobalSettings.setup(WEB_INF);
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
@@ -63,11 +62,10 @@ class GetServicesTest {
   // helpers
   // ---------------------------------------------------------------------------
 
-  private static String process(ContentRequest req) throws Exception {
+  private static String process(ContentRequest req) {
     GetServices gen = new GetServices();
-    XMLStringWriter xml = new XMLStringWriter(NamespaceAware.No);
-    gen.process(req, xml);
-    xml.flush();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    gen.generate(req, xml);
     return xml.toString();
   }
 }

@@ -16,17 +16,16 @@
 package org.pageseeder.berlioz.generator;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.ServiceLoader;
+import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.util.SHA256;
-import org.pageseeder.berlioz.xml.XMLCopy;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.xml.XmlCopier;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns the current service configuration as XML.
@@ -61,10 +60,10 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.0
  * @since 0.8
  */
-public final class GetServices implements ContentGenerator, Cacheable {
+public final class GetServices implements XmlGenerator, Cacheable {
 
   @Override
   public String getETag(Request req) {
@@ -76,26 +75,24 @@ public final class GetServices implements ContentGenerator, Cacheable {
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
-
+  public Response generate(Request req, XmlWriter xml) {
     List<File> files = ServiceLoader.getInstance().listServiceFiles();
 
-    // Display the main file (always comes first)
     if (!files.isEmpty()) {
       File main = files.get(0);
       if (main.exists()) {
-        XMLCopy.copyTo(main, xml);
+        XmlCopier.copyTo(main, xml);
       }
     }
 
-    // Display additional modules
     if (files.size() > 1) {
       xml.openElement("service-modules", true);
       for (int i = 1; i < files.size(); i++) {
-        XMLCopy.copyTo(files.get(i), xml);
+        XmlCopier.copyTo(files.get(i), xml);
       }
       xml.closeElement();
     }
+    return Response.ok();
   }
 
 }
