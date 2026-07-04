@@ -319,8 +319,10 @@
     <xsl:apply-templates select="." mode="help"/>
     <!-- Structured exception extension (message, stack trace, cause chain) -->
     <xsl:apply-templates select="exception"/>
+    <!-- Secondary errors collected while processing this request (e.g. multiple XSLT errors) -->
+    <xsl:apply-templates select="collected-errors"/>
     <!-- Other non-standard extension members -->
-    <xsl:variable name="extensions" select="*[not(self::type|self::status|self::title|self::detail|self::instance|self::exception)]"/>
+    <xsl:variable name="extensions" select="*[not(self::type|self::status|self::title|self::detail|self::instance|self::exception|self::collected-errors)]"/>
     <xsl:if test="$extensions">
       <details class="extensions">
         <summary>Additional details</summary>
@@ -338,6 +340,21 @@
         <span id="berlioz-version">Berlioz <xsl:value-of select="$berlioz-version"/></span>
       </xsl:if>
     </div>
+  </div>
+</xsl:template>
+
+<!-- Collected errors extension (RFC 9457 problem: <collected-errors><collected level="..."><exception>...) -->
+<xsl:template match="problem/collected-errors">
+  <div class="collected-errors">
+    <h3>Collected errors</h3>
+    <xsl:apply-templates select="collected"/>
+  </div>
+</xsl:template>
+
+<xsl:template match="problem/collected-errors/collected">
+  <div class="exception {@level}">
+    <span class="level">[<xsl:value-of select="@level"/>]</span>
+    <xsl:apply-templates select="exception"/>
   </div>
 </xsl:template>
 

@@ -49,11 +49,17 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozErrorID;
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.aeson.JSONResult;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.error.CollectedErrorsExtension;
+import org.pageseeder.berlioz.error.DetailLevel;
+import org.pageseeder.berlioz.error.ProblemDetails;
+import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.util.*;
 import org.pageseeder.berlioz.xml.Xml;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.berlioz.xslt.XsltTemplateCache;
 import org.pageseeder.berlioz.xslt.XsltErrorCollector;
 import org.pageseeder.berlioz.xslt.XsltExceptionWrapper;
@@ -354,26 +360,58 @@ public final class XsltTransformer {
 
   /**
    * Serializes transformation error details as XML for use with the fail-safe stylesheet.
+   *
+   * <p>Emits an RFC 9457 {@code <problem>} document when {@link BerliozOption#ERROR_PROBLEM_FORMAT}
+   * is enabled (the default), or the legacy {@code <server-error>} shape otherwise.
    */
+  @SuppressWarnings({"removal", "deprecation"}) // ERROR_PROBLEM_FORMAT removed in 1.0; legacy fallback guarded here until then
   private static String toXML(TransformerException ex, @Nullable Map<String, String> parameters) {
+    TransformerException actual = ex;
+    XsltErrorCollector collector = null;
+    if (ex instanceof XsltExceptionWrapper) {
+      XsltExceptionWrapper wrapper = (XsltExceptionWrapper) ex;
+      TransformerException wrapped = (TransformerException) wrapper.getException();
+      if (wrapped != null) {
+        actual = wrapped;
+        collector = wrapper.collector();
+      }
+    }
+    if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
+      return toProblemXML(ex, actual, collector);
+    }
+    return toLegacyXML(ex, actual, collector, parameters);
+  }
+
+  /**
+   * Serializes transformation error details as an RFC 9457 {@code <problem>} document.
+   */
+  private static String toProblemXML(TransformerException ex, TransformerException actual,
+      @Nullable XsltErrorCollector collector) {
+    BerliozErrorID id = toErrorID(actual);
+    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+    ProblemDetails problem = Problems.forHttpError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+        Errors.cleanMessage(ex), id.id(), actual, level);
+    if (collector != null && !collector.getErrors().isEmpty()) {
+      problem = problem.extension(new CollectedErrorsExtension<>(collector.getErrors()));
+    }
+    XmlStringBuilder xml = new XmlStringBuilder();
+    xml.declaration();
+    xml.asXml(problem);
+    xml.flush();
+    return xml.toString();
+  }
+
+  /**
+   * Serializes transformation error details in the legacy {@code <server-error>} XML format.
+   */
+  private static String toLegacyXML(TransformerException ex, TransformerException actual,
+      @Nullable XsltErrorCollector collector, @Nullable Map<String, String> parameters) {
     StringWriter out = new StringWriter();
     try {
       XMLWriter xml = new XMLWriterImpl(out);
       xml.openElement("server-error");
       xml.attribute("http-code", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
-
-      TransformerException actual = ex;
-      XsltErrorCollector collector = null;
-
-      if (ex instanceof XsltExceptionWrapper) {
-        XsltExceptionWrapper wrapper = (XsltExceptionWrapper) ex;
-        TransformerException wrapped = (TransformerException) wrapper.getException();
-        if (wrapped != null) {
-          actual = wrapped;
-          collector = wrapper.collector();
-        }
-      }
 
       // Let's guess the Berlioz internal code
       BerliozErrorID id = toErrorID(actual);
