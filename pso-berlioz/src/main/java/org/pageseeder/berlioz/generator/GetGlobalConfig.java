@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.generator;
 
 import java.io.File;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
@@ -25,6 +24,7 @@ import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.util.Redaction;
 import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
@@ -63,11 +63,6 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  */
 public final class GetGlobalConfig implements XmlGenerator, Cacheable {
 
-  private static final Pattern SENSITIVE_NAME = Pattern.compile(
-      "(?i)(password|passwd|secret|api[._\\-]?key|token|credential|private[._\\-]?key)");
-
-  static final String REDACTED = "[REDACTED]";
-
   @Override
   public @Nullable String getETag(Request req) {
     File global = GlobalSettings.getPropertiesFile();
@@ -86,7 +81,7 @@ public final class GetGlobalConfig implements XmlGenerator, Cacheable {
 
     for (Entry<String, String> e : GlobalSettings.getAll().entrySet()) {
       String name = e.getKey();
-      String value = SENSITIVE_NAME.matcher(name).find() ? REDACTED : e.getValue();
+      String value = Redaction.redact(name, e.getValue());
       xml.openElement("property", false);
       xml.attribute("name", name);
       xml.attribute("value", value);

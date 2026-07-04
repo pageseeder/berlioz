@@ -16,9 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 /**
  *
@@ -28,41 +26,6 @@ import java.util.Set;
 @Deprecated(since = "0.14.0")
 public final class LegacyError implements XmlWritable {
 
-
-  private static final String REDACTED = "[REDACTED]";
-
-  private static final Set<String> SENSITIVE_HEADER_NAMES = Set.of(
-      "authorization",
-      "proxy-authorization",
-      "cookie",
-      "set-cookie"
-  );
-
-  private static final String[] SENSITIVE_HEADER_KEYWORDS = {
-      "token",
-      "secret",
-      "credential",
-      "apikey",
-      "session",
-      "csrf"
-  };
-
-  private static final String[] SENSITIVE_PARAMETER_KEYWORDS = {
-      "password",
-      "passwd",
-      "pwd",
-      "secret",
-      "apikey",
-      "token",
-      "credential",
-      "privatekey",
-      "session",
-      "auth",
-      "assertion",
-      "saml",
-      "jwt",
-      "csrf"
-  };
 
   private final int code;
 
@@ -198,7 +161,7 @@ public final class LegacyError implements XmlWritable {
           String value = values.nextElement().toString();
           xml.openElement("header")
               .attribute("name", name)
-              .attribute("value", redactHeaderValue(name, value))
+              .attribute("value", Redaction.redactHeader(name, value))
               .closeElement();
         }
       }
@@ -217,7 +180,7 @@ public final class LegacyError implements XmlWritable {
         for (String value : values) {
           xml.openElement("parameter")
               .attribute("name", name)
-              .attribute("value", redactParameterValue(name, value))
+              .attribute("value", Redaction.redact(name, value))
               .closeElement();
         }
       }
@@ -264,38 +227,5 @@ public final class LegacyError implements XmlWritable {
     }
     return errorId != null ? errorId : BerliozErrorID.UNEXPECTED.toString();
   }
-
-
-  private static String redactHeaderValue(String name, String value) {
-    return isSensitiveHeader(name) ? REDACTED : value;
-  }
-
-  private static String redactParameterValue(String name, String value) {
-    return isSensitiveParameter(name) ? REDACTED : value;
-  }
-
-  private static boolean isSensitiveHeader(String name) {
-    String lowerName = name.toLowerCase(Locale.ROOT);
-    return SENSITIVE_HEADER_NAMES.contains(lowerName) ||
-        containsSensitiveKeyword(normalizeName(lowerName), SENSITIVE_HEADER_KEYWORDS);
-  }
-
-  private static boolean isSensitiveParameter(String name) {
-    String normalizedName = normalizeName(name.toLowerCase(Locale.ROOT));
-    return containsSensitiveKeyword(normalizedName, SENSITIVE_PARAMETER_KEYWORDS);
-  }
-
-  private static boolean containsSensitiveKeyword(String normalizedName, String[] keywords) {
-    for (String keyword : keywords) {
-      if (normalizedName.contains(keyword)) return true;
-    }
-    return false;
-  }
-
-  private static String normalizeName(String name) {
-    return name.replace("-", "").replace("_", "").replace(".", "");
-  }
-
-
 
 }
