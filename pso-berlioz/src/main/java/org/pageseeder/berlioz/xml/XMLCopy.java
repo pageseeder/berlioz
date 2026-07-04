@@ -52,7 +52,10 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @version 0.13.0
  * @since 0.7
+ *
+ * @deprecated Use {@link XmlCopier} instead, which copies to the modern {@link XmlWriter} API.
  */
+@Deprecated(since = "0.14.0")
 public final class XMLCopy extends DefaultHandler implements ContentHandler, LexicalHandler {
 
   /**
