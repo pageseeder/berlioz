@@ -49,9 +49,9 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * returned; the XML declaration and comments are stripped.</p>
  *
  * <h3>Error Handling</h3>
- * <p>Should there be any problem parsing or reading the file, the XML returned will be:
- * <pre>{@code <no-data error="[error]" details="[error-details]"/>}</pre>
- * <p>The {@code details} (and {@code line}/{@code column}) attributes are only included when the
+ * <p>Should there be any problem parsing or reading a services file, its content is replaced by:
+ * <pre>{@code <copy-error reason="[not-found|parsing]" filename="[name]" message="[message]" line="[line]" column="[column]"/>}</pre>
+ * <p>The {@code message} (and {@code line}/{@code column}) attributes are only included when the
  * {@code berlioz.errors.detail} option is set to {@code standard} or {@code full}; a malformed
  * services file never fails this generator, it only replaces that file's content with this element.
  *

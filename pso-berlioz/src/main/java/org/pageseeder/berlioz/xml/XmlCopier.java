@@ -40,7 +40,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>The source is parsed into an in-memory buffer first; the target {@link XmlWriter} is only
  * touched once parsing has completed successfully. This guarantees that a malformed source never
  * leaves the target writer with a dangling open element — on error, the target instead receives a
- * single {@code <no-data>} element, same as a successful copy produces a single well-formed
+ * single {@code <copy-error>} element, same as a successful copy produces a single well-formed
  * document.
  *
  * <p>Two API shapes are provided:
@@ -49,7 +49,11 @@ import org.xml.sax.helpers.DefaultHandler;
  *       {@link XmlParseException} (or {@link UncheckedIOException} if the file cannot be found)
  *       so the caller decides how to handle a bad source.</li>
  *   <li>{@link #copyTo(File, XmlWriter)} / {@link #copyTo(Reader, XmlWriter)} — never throw;
- *       errors are reported inline as a {@code <no-data>} element and {@code false} is returned.</li>
+ *       errors are reported inline as a {@code <copy-error>} element and {@code false} is
+ *       returned. The element always carries a {@code reason} ({@code not-found} or
+ *       {@code parsing}) and a {@code filename} when copying from a {@link File}; the
+ *       {@code message}/{@code line}/{@code column} attributes are only added when
+ *       {@code includeDetails} is {@code true}.</li>
  * </ul>
  *
  * <p>This class also implements the {@link LexicalHandler} interface, so that comments are copied
@@ -239,8 +243,8 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
   /**
    * Copy the specified File to the given XML Writer.
    *
-   * <p>Any error is reported as a {@code <no-data>} element on the XML writer, without exception
-   * details.
+   * <p>Any error is reported as a {@code <copy-error>} element on the XML writer, without the
+   * {@code message}/{@code line}/{@code column} attributes.
    *
    * @param file The file.
    * @param xml  The XML writer.
@@ -259,9 +263,9 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
    *
    * @param file           The file.
    * @param xml            The XML writer.
-   * @param includeDetails Whether to include the exception message and source location in the
-   *                       {@code <no-data>} element on parse failure. Callers should only pass
-   *                       {@code true} when the caller's own diagnostic verbosity setting allows it.
+   * @param includeDetails Whether to include the {@code message}/{@code line}/{@code column}
+   *                       attributes on parse failure. Callers should only pass {@code true} when
+   *                       the caller's own diagnostic verbosity setting allows it.
    *
    * @return <code>true</code> if the copy was done successfully;
    *         <code>false</code> otherwise.
@@ -272,11 +276,11 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
       return true;
     } catch (UncheckedIOException ex) {
       LOGGER.warn("Could not find {}", file.toURI());
-      writeNotFound(xml);
+      writeNotFound(xml, file.getName());
       return false;
     } catch (XmlParseException ex) {
       LOGGER.warn("An error was reported by the parser while parsing {}", file.toURI());
-      handleError(xml, ex, includeDetails);
+      handleError(xml, ex, includeDetails, file.getName());
       return false;
     }
   }
@@ -284,8 +288,8 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
   /**
    * Copy the specified Reader to the given XML Writer.
    *
-   * <p>Any error is reported as a {@code <no-data>} element on the XML writer, without exception
-   * details.
+   * <p>Any error is reported as a {@code <copy-error>} element on the XML writer, without the
+   * {@code message}/{@code line}/{@code column} attributes.
    *
    * @param reader The reader over the XML to read.
    * @param xml    The XML writer.
@@ -304,9 +308,9 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
    *
    * @param reader         The reader over the XML to read.
    * @param xml            The XML writer.
-   * @param includeDetails Whether to include the exception message and source location in the
-   *                       {@code <no-data>} element on parse failure. Callers should only pass
-   *                       {@code true} when the caller's own diagnostic verbosity setting allows it.
+   * @param includeDetails Whether to include the {@code message}/{@code line}/{@code column}
+   *                       attributes on parse failure. Callers should only pass {@code true} when
+   *                       the caller's own diagnostic verbosity setting allows it.
    *
    * @return <code>true</code> if the copy was done successfully;
    *         <code>false</code> otherwise.
@@ -317,7 +321,7 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
       return true;
     } catch (XmlParseException ex) {
       LOGGER.warn("An error was reported by the parser while parsing reader");
-      handleError(xml, ex, includeDetails);
+      handleError(xml, ex, includeDetails, null);
       return false;
     }
   }
@@ -334,19 +338,23 @@ public final class XmlCopier extends DefaultHandler implements ContentHandler, L
     return new XmlParseException(ex.getMessage(), ex);
   }
 
-  private static void writeNotFound(XmlWriter xml) {
-    xml.openElement("no-data");
-    xml.attribute("error", "file-not-found");
+  private static void writeNotFound(XmlWriter xml, String filename) {
+    xml.openElement("copy-error");
+    xml.attribute("reason", "not-found");
+    xml.attribute("filename", filename);
     xml.closeElement();
   }
 
-  private static void handleError(XmlWriter xml, XmlParseException ex, boolean includeDetails) {
+  private static void handleError(XmlWriter xml, XmlParseException ex, boolean includeDetails, @Nullable String filename) {
     LOGGER.warn("Error details:", ex);
-    xml.openElement("no-data");
-    xml.attribute("error", "parsing");
+    xml.openElement("copy-error");
+    xml.attribute("reason", "parsing");
+    if (filename != null) {
+      xml.attribute("filename", filename);
+    }
     if (includeDetails) {
       String m = ex.getMessage();
-      xml.attribute("details", m != null ? m : "(No message)");
+      xml.attribute("message", m != null ? m : "(No message)");
       if (ex.hasLocation()) {
         xml.attribute("line", ex.getLine());
         xml.attribute("column", ex.getColumn());

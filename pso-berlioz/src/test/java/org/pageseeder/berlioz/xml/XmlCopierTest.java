@@ -41,8 +41,9 @@ class XmlCopierTest {
 
     assertFalse(ok);
     String out = xml.toString();
-    assertTrue(out.contains("no-data"), "Should write <no-data> element");
-    assertTrue(out.contains("file-not-found"), "Should indicate file-not-found error");
+    assertTrue(out.contains("<copy-error"), "Should write <copy-error> element");
+    assertTrue(out.contains("reason=\"not-found\""), "Should indicate not-found reason");
+    assertTrue(out.contains("filename=\"missing.xml\""), "Should indicate which file was missing");
   }
 
   @Test
@@ -55,7 +56,9 @@ class XmlCopierTest {
 
     assertFalse(ok);
     String out = xml.toString();
-    assertTrue(out.contains("no-data"), "Should write <no-data> on parse error");
+    assertTrue(out.contains("<copy-error"), "Should write <copy-error> on parse error");
+    assertTrue(out.contains("reason=\"parsing\""), "Should indicate parsing reason");
+    assertTrue(out.contains("filename=\"bad.xml\""), "Should indicate which file failed to parse");
   }
 
   @Test
@@ -79,7 +82,10 @@ class XmlCopierTest {
     boolean ok = XmlCopier.copyTo(reader, xml);
 
     assertFalse(ok);
-    assertTrue(xml.toString().contains("no-data"), "Should write <no-data> on parse error");
+    String out = xml.toString();
+    assertTrue(out.contains("<copy-error"), "Should write <copy-error> on parse error");
+    assertTrue(out.contains("reason=\"parsing\""), "Should indicate parsing reason");
+    assertFalse(out.contains("filename="), "A reader source has no filename to report");
   }
 
   @Test
@@ -98,7 +104,7 @@ class XmlCopierTest {
   /**
    * A malformed source that opens several elements successfully before failing must not leave
    * any of them dangling on the destination writer: the destination should only ever see the
-   * complete document, or the {@code <no-data>} error stub, never a partial fragment.
+   * complete document, or the {@code <copy-error>} error stub, never a partial fragment.
    */
   @Test
   void testCopyTo_invalidXml_doesNotLeavePartialElementsOnDestination() throws IOException {
@@ -115,7 +121,7 @@ class XmlCopierTest {
     assertDoesNotThrow(xml::close);
 
     String out = xml.toString();
-    assertTrue(out.contains("no-data"), "Should write <no-data> on parse error");
+    assertTrue(out.contains("<copy-error"), "Should write <copy-error> on parse error");
     assertFalse(out.contains("<root>"), "Malformed source content must not leak into destination");
     assertFalse(out.contains("<a>"), "Malformed source content must not leak into destination");
   }
@@ -132,7 +138,8 @@ class XmlCopierTest {
     XmlCopier.copyTo(file.toFile(), xml);
 
     String out = xml.toString();
-    assertFalse(out.contains("details="), "Details should be omitted by default");
+    assertTrue(out.contains("filename="), "Filename is always reported, even without details");
+    assertFalse(out.contains("message="), "Message should be omitted by default");
     assertFalse(out.contains("line="), "Line should be omitted by default");
   }
 
@@ -145,7 +152,7 @@ class XmlCopierTest {
     XmlCopier.copyTo(file.toFile(), xml, true);
 
     String out = xml.toString();
-    assertTrue(out.contains("details="), "Details should be included when requested");
+    assertTrue(out.contains("message="), "Message should be included when requested");
   }
 
   @Test
@@ -154,7 +161,7 @@ class XmlCopierTest {
 
     XmlCopier.copyTo(new StringReader("not xml at all!!!"), xml);
 
-    assertFalse(xml.toString().contains("details="), "Details should be omitted by default");
+    assertFalse(xml.toString().contains("message="), "Message should be omitted by default");
   }
 
   @Test
@@ -163,7 +170,7 @@ class XmlCopierTest {
 
     XmlCopier.copyTo(new StringReader("not xml at all!!!"), xml, true);
 
-    assertTrue(xml.toString().contains("details="), "Details should be included when requested");
+    assertTrue(xml.toString().contains("message="), "Message should be included when requested");
   }
 
   // copy(...) throwing API tests
