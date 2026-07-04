@@ -25,7 +25,27 @@ import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns system properties as returned by the <code>System</code> class.
+ * Returns JVM system properties as XML.
+ *
+ * <p>Exposes all properties available via {@link System#getProperties()}. This may include
+ * sensitive values (e.g. user home directory, OS details) — restrict access to this generator
+ * in production environments.
+ *
+ * <h3>Parameters</h3>
+ * <p>This generator does not use any parameter.</p>
+ *
+ * <h3>Returned XML</h3>
+ * <pre>{@code
+ * <system>
+ *   <property name="[name]" value="[value]"/>
+ *   ...
+ * </system>
+ * }</pre>
+ *
+ * <h3>Usage</h3>
+ * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
+ * <pre>{@code <generator class="org.pageseeder.berlioz.system.GetSystemProperties"
+ *                         name="[name]" target="[target]"/>}</pre>
  *
  * @author Christophe Lauret
  *

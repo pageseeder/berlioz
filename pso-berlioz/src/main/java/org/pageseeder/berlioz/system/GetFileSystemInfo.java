@@ -36,7 +36,42 @@ import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns information about the underlying file system.
+ * Returns information about the underlying file system as XML.
+ *
+ * <p>Always reports overall free and total disk space. When the {@code details} parameter is
+ * {@code "true"}, also scans the public and private folders and reports per-subdirectory file
+ * counts and sizes. The {@code WEB-INF} directory is excluded from the public folder scan.
+ *
+ * <h3>Parameters</h3>
+ * <dl>
+ *   <dt>{@code details}</dt>
+ *   <dd>Optional. When {@code "true"}, includes per-directory breakdown. Defaults to
+ *       {@code "false"}.</dd>
+ * </dl>
+ *
+ * <h3>Returned XML</h3>
+ * <p>Without details:
+ * <pre>{@code
+ * <file-system free-space="[bytes]" total-space="[bytes]"/>
+ * }</pre>
+ * <p>With {@code details=true}:
+ * <pre>{@code
+ * <file-system free-space="[bytes]" total-space="[bytes]">
+ *   <public total-size="[bytes]" total-count="[n]">
+ *     <directory name="[name]" file-size="[bytes]" file-count="[n]"/>
+ *     ...
+ *   </public>
+ *   <private total-size="[bytes]" total-count="[n]">
+ *     <directory name="[name]" file-size="[bytes]" file-count="[n]"/>
+ *     ...
+ *   </private>
+ * </file-system>
+ * }</pre>
+ *
+ * <h3>Usage</h3>
+ * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
+ * <pre>{@code <generator class="org.pageseeder.berlioz.system.GetFileSystemInfo"
+ *                         name="[name]" target="[target]"/>}</pre>
  *
  * @author Christophe Lauret
  *

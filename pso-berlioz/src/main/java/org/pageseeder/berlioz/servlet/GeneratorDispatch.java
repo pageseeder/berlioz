@@ -155,16 +155,33 @@ final class GeneratorDispatch {
     });
   }
 
+  /**
+   * Sets the global {@link GeneratorListener}. Pass {@code null} to clear any existing listener.
+   *
+   * @param l the listener to install, or {@code null} to remove the current one
+   */
   @Beta
   static void setListener(@Nullable GeneratorListener l) {
     listener.set(l);
   }
 
+  /**
+   * Returns the currently installed {@link GeneratorListener}, or {@code null} if none is set.
+   *
+   * @return the current listener, or {@code null}
+   */
   @Beta
   static @Nullable GeneratorListener getListener() {
     return listener.get();
   }
 
+  /**
+   * Returns {@code true} if error responses should use the RFC 9457 {@code <problem>} XML
+   * format rather than the legacy {@code <error>} format.
+   *
+   * <p>Controlled by {@link BerliozOption#ERROR_PROBLEM_FORMAT}. Defaults to {@code true}
+   * (problem format enabled); opt out by explicitly setting the option to {@code false}.
+   */
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; always true then
   static boolean useProblemFormat() {
     return GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT);

@@ -26,7 +26,32 @@ import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns information about a thread.
+ * Returns information about a single JVM thread as XML, including its stack trace.
+ *
+ * <h3>Parameters</h3>
+ * <dl>
+ *   <dt>{@code id}</dt>
+ *   <dd>Required. The numeric thread ID to inspect. Must be a non-negative long. Returns a
+ *       {@code 400 Bad Request} response if omitted or negative.</dd>
+ * </dl>
+ *
+ * <h3>Returned XML</h3>
+ * <p>When the thread is found:
+ * <pre>{@code
+ * <thread id="[id]" name="[name]" priority="[n]" state="[state]" alive="true" daemon="[true|false]" group="[group]">
+ *   <stacktrace>
+ *     <element class="[class]" filename="[file]" method="[method]" line="[n]"/>
+ *     ...
+ *   </stacktrace>
+ * </thread>
+ * }</pre>
+ * <p>When no thread with the given ID exists:
+ * <pre>{@code <no-thread id="[id]"/>}</pre>
+ *
+ * <h3>Usage</h3>
+ * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
+ * <pre>{@code <generator class="org.pageseeder.berlioz.system.GetThreadInfo"
+ *                         name="[name]" target="[target]"/>}</pre>
  *
  * @author Christophe Lauret
  *

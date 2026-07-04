@@ -8,9 +8,17 @@ import java.util.Set;
  *
  * <p>Names are normalized (stripped of {@code -}, {@code _}, {@code .} separators and lowercased)
  * before keyword matching, so {@code api-key}, {@code api_key}, and {@code apikey} all match.
+ *
+ * @author Christophe Lauret
+ *
+ * @version 0.14.0
+ * @since 0.14.0
  */
 public final class Redaction {
 
+  /**
+   * The redacted value.
+   */
   public static final String REDACTED = "[REDACTED]";
 
   /** HTTP header names that are unconditionally redacted regardless of keyword matching. */
@@ -33,6 +41,10 @@ public final class Redaction {
 
   /**
    * Returns {@link #REDACTED} if the HTTP header name is sensitive, otherwise the original value.
+   *
+   * @param name  the HTTP header name
+   * @param value the HTTP header value
+   * @return the original value, or {@link #REDACTED} if the header name is sensitive
    */
   public static String redactHeader(String name, String value) {
     return isSensitiveHeader(name) ? REDACTED : value;
@@ -40,6 +52,10 @@ public final class Redaction {
 
   /**
    * Returns {@link #REDACTED} if the parameter or property name is sensitive, otherwise the original value.
+   *
+   * @param name  the parameter or property name
+   * @param value the parameter or property value
+   * @return the original value, or {@link #REDACTED} if the name is sensitive
    */
   public static String redact(String name, String value) {
     return isSensitiveName(name) ? REDACTED : value;
@@ -50,6 +66,9 @@ public final class Redaction {
    *
    * <p>Checks exact header names first ({@code authorization}, {@code cookie}, etc.),
    * then falls back to keyword matching.
+   *
+   * @param name the HTTP header name (case-insensitive)
+   * @return {@code true} if the header value should be redacted
    */
   public static boolean isSensitiveHeader(String name) {
     String lower = name.toLowerCase(Locale.ROOT);
@@ -58,6 +77,9 @@ public final class Redaction {
 
   /**
    * Returns {@code true} if the parameter or property name is considered sensitive.
+   *
+   * @param name the parameter or property name (case-insensitive)
+   * @return {@code true} if values for this name should be redacted
    */
   public static boolean isSensitiveName(String name) {
     return containsKeyword(normalize(name.toLowerCase(Locale.ROOT)));

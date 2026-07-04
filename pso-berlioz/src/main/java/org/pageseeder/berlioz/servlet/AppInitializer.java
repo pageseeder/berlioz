@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class initializes a Berlioz application.
  *
- * @version 0.13.0
+ * @version 0.14.0
  * @since 0.11.0
  */
 public abstract class AppInitializer {

@@ -30,35 +30,39 @@ import org.pageseeder.berlioz.servlet.HttpEnvironment;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns the current service configuration as XML.
+ * Returns the live service registry as XML.
  *
- * <p>This content generator is mostly useful for developers to see how the services are configured.
+ * <p>Unlike {@code GetServices}, which re-reads the services XML files from disk, this generator
+ * reflects the current in-memory state of the service registry. It is intended for developers and
+ * operations tooling to inspect which services are actually loaded and active.
  *
  * <h3>Configuration</h3>
  * <p>There is no configuration associated with this generator.</p>
  *
  * <h3>Parameters</h3>
- * <p>This generator does not use and require any parameter.
+ * <p>This generator does not use any parameter.</p>
  *
  * <h3>Returned XML</h3>
- * <p>This generator contains the <code>/WEB-INF/config/services.xml</code> used by Berlioz to load
- * its services.</p>
- * <pre>{@code <services version="1.0"> ... </services>}</pre>
- * <p>The formatting of the XML may differ from the actual files as it is parsed before being
- * returned; the XML declaration and comments are stripped.</p>
- *
- * <h3>Error Handling</h3>
- * <p>Should there be any problem parsing or reading the file, the XML returned will be:
- * <pre>{@code <no-data error="[error]" details="[error-details]"/>}</pre>
- * <p>The error details are only shown if available.
+ * <pre>{@code
+ * <live-services>
+ *   <service id="[id]" group="[group]" method="[method]" cacheable="[true|false]" ...>
+ *     <response-code use="[use]" rule="[rule]"/>
+ *     <url pattern="[uri-pattern]"/>
+ *     <generator class="[class]" name="[name]" type="[type]" cacheable="[true|false]" .../>
+ *     ...
+ *   </service>
+ *   ...
+ * </live-services>
+ * }</pre>
  *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
- * <pre>{@code <generator class="org.pageseeder.berlioz.generator.GetServices"
+ * <pre>{@code <generator class="org.pageseeder.berlioz.generator.GetLiveServices"
  *                         name="[name]" target="[target]"/>}</pre>
  *
  * <h3>Etag</h3>
- * <p>This generator uses an etag based on the name, length, and last modified date of the file.
+ * <p>The ETag is the registry version counter, which increments each time the services are
+ * reloaded. This ensures the response is invalidated whenever the service configuration changes.
  *
  * @author Christophe Lauret
  *

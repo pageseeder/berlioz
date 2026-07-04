@@ -97,7 +97,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.5
+ * @version 0.14.0
  * @since 0.7
  */
 public final class BerliozServlet extends HttpServlet {

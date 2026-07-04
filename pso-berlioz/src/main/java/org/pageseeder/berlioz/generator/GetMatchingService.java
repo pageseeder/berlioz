@@ -34,35 +34,47 @@ import org.pageseeder.berlioz.servlet.HttpEnvironment;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns the current service configuration as XML.
+ * Returns the service that matches a given URL as XML.
  *
- * <p>This content generator is mostly useful for developers to see how the services are configured.
+ * <p>This generator looks up the live service registry and reports which service (if any) would
+ * handle the specified URL and HTTP method, together with the URI template variables extracted
+ * from the match. It is intended for developer tooling and diagnostics.
  *
  * <h3>Configuration</h3>
  * <p>There is no configuration associated with this generator.</p>
  *
  * <h3>Parameters</h3>
- * <p>This generator does not use and require any parameter.
+ * <dl>
+ *   <dt>{@code url}</dt>
+ *   <dd>Required. The URL path to match against the service registry.</dd>
+ *   <dt>{@code method}</dt>
+ *   <dd>Optional. The HTTP method to use for matching (default: {@code GET}).</dd>
+ * </dl>
  *
  * <h3>Returned XML</h3>
- * <p>This generator contains the <code>/WEB-INF/config/services.xml</code> used by Berlioz to load
- * its services.</p>
- * <pre>{@code <services version="1.0"> ... </services>}</pre>
- * <p>The formatting of the XML may differ from the actual files as it is parsed before being
- * returned; the XML declaration and comments are stripped.</p>
- *
- * <h3>Error Handling</h3>
- * <p>Should there be any problem parsing or reading the file, the XML returned will be:
- * <pre>{@code <no-data error="[error]" details="[error-details]"/>}</pre>
- * <p>The error details are only shown if available.
+ * <p>When a matching service is found:
+ * <pre>{@code
+ * <matching-service>
+ *   <url path="[url]" pattern="[uri-pattern]">
+ *     <parameter name="[var]" value="[extracted-value]"/>
+ *     ...
+ *   </url>
+ *   <service id="[id]" group="[group]" method="[method]" ...>
+ *     ...
+ *   </service>
+ * </matching-service>
+ * }</pre>
+ * <p>When no service matches:
+ * <pre>{@code <no-matching-service/>}</pre>
  *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
- * <pre>{@code <generator class="org.pageseeder.berlioz.generator.GetServices"
+ * <pre>{@code <generator class="org.pageseeder.berlioz.generator.GetMatchingService"
  *                         name="[name]" target="[target]"/>}</pre>
  *
  * <h3>Etag</h3>
- * <p>This generator uses an etag based on the name, length, and last modified date of the file.
+ * <p>The ETag is the registry version counter, which increments each time the services are
+ * reloaded.
  *
  * @author Christophe Lauret
  *

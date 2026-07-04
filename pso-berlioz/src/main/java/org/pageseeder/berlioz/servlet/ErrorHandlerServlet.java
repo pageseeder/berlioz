@@ -50,14 +50,21 @@ import org.slf4j.LoggerFactory;
 /**
  * Servlet used to handle errors for a uniform response.
  *
- * <p>
- * This servlet always returns an error code.
+ * <p>This servlet intercepts errors forwarded by the servlet container via the
+ * {@code <error-page>} mechanism and renders them as either an RFC 9457
+ * {@code <problem>} XML document (default since 0.14.0) or the legacy Berlioz
+ * {@code <error>} XML format (opt-in via {@code berlioz.errors.problem=false}).
  *
- * <p>
- * This servlet should be configured as:
+ * <p>For {@code .html} requests the XML is further transformed by an XSLT stylesheet
+ * (custom via {@link BerliozOption#ERROR_STYLESHEET}, or the built-in failsafe template).
+ * For other extensions ({@code .xml}, {@code .src}, etc.) raw XML is returned directly.
+ * Static resource errors ({@code .jpg}, {@code .png}, {@code .css}, {@code .js}) are
+ * answered with an empty body and the original status code.
+ *
+ * <p>This servlet should be configured as:
  *
  * <pre>{@code
- * <!-- Handler for errors (this servlet does not need to be mapped to anything) --&gt;
+ * <!-- Handler for errors (this servlet does not need to be mapped to anything) -->
  * <servlet>
  *   <servlet-name>ErrorHandlerServlet</servlet-name>
  *   <servlet-class>org.pageseeder.berlioz.servlet.ErrorHandlerServlet</servlet-class>
@@ -66,7 +73,7 @@ import org.slf4j.LoggerFactory;
  * }</pre>
  *
  * @author Christophe Lauret
- * @version 0.13.5
+ * @version 0.14.0
  * @since 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
