@@ -23,7 +23,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.Map.Entry;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -35,25 +34,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.ErrorID;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.DetailLevel;
+import org.pageseeder.berlioz.error.LegacyError;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.http.HttpHeaders;
-import org.pageseeder.berlioz.http.HttpStatusCodes;
-import org.pageseeder.berlioz.util.CollectedError;
-import org.pageseeder.berlioz.util.CompoundBerliozException;
-import org.pageseeder.berlioz.util.ErrorCollector;
-import org.pageseeder.berlioz.util.Errors;
-import org.pageseeder.berlioz.util.ISO8601;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
-import org.pageseeder.berlioz.xml.XmlWriter;
-import org.pageseeder.xmlwriter.XML;
-import org.pageseeder.xmlwriter.XMLStringWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,41 +80,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * Displays debug information.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(ErrorHandlerServlet.class);
-
-  private static final String REDACTED = "[REDACTED]";
-
-  private static final Set<String> SENSITIVE_HEADER_NAMES = Set.of(
-      "authorization",
-      "proxy-authorization",
-      "cookie",
-      "set-cookie"
-  );
-
-  private static final String[] SENSITIVE_HEADER_KEYWORDS = {
-      "token",
-      "secret",
-      "credential",
-      "apikey",
-      "session",
-      "csrf"
-  };
-
-  private static final String[] SENSITIVE_PARAMETER_KEYWORDS = {
-      "password",
-      "passwd",
-      "pwd",
-      "secret",
-      "apikey",
-      "token",
-      "credential",
-      "privatekey",
-      "session",
-      "auth",
-      "assertion",
-      "saml",
-      "jwt",
-      "csrf"
-  };
 
   // Attributes set for error handlers.
   // ---------------------------------------------------------------------------------------------
@@ -384,14 +339,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   @SuppressWarnings({"removal", "deprecation"}) // both removed in 1.0; legacy fallback guarded here until then
   private static String toXml(HttpServletRequest req) {
-    int code = getErrorCode(req);
-    String message = (String) req.getAttribute(ERROR_MESSAGE);
-
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
+      int code = getErrorCode(req);
+      String message = (String) req.getAttribute(ERROR_MESSAGE);
       Throwable throwable = getErrorException(req);
       return toProblemXml(code, message, extractErrorId(req, throwable), throwable);
     }
-    return toLegacyXml(req, code, message);
+    return toLegacyXml(req);
   }
 
   /**
@@ -429,147 +383,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Serializes the error in the legacy Berlioz error XML format.
-   *
-   * @deprecated Since 0.14.0. The legacy {@code <server-error>} / {@code <client-error>} XML format
-   *             is deprecated. Use {@link #toProblemXml} instead. Applications can opt back in with
-   *             {@code berlioz.errors.problem=false} during the 0.14.x migration window.
    */
-  @Deprecated(since = "0.14.0")
-  private static String toLegacyXml(HttpServletRequest req, int code, @Nullable String message) {
-    String servlet = (String) req.getAttribute(ERROR_SERVLET_NAME);
-    Throwable throwable = getErrorException(req);
-    String requestURI = (String) req.getAttribute(ERROR_REQUEST_URI);
-
-    XmlStringBuilder xml = new XmlStringBuilder();
-    xml.declaration();
-    xml.openElement(getRootElementName(code));
-    xml.attribute("http-code", code);
-    xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
-
-    String id = extractErrorId(req, throwable);
-    xml.attribute("id", id != null ? id : BerliozErrorID.UNEXPECTED.toString());
-
-    // Berlioz info
-    xml.openElement("berlioz");
-    xml.attribute("version", GlobalSettings.getVersion());
-    xml.closeElement();
-
-    // Other informational elements
-    String title = HttpStatusCodes.getTitle(code);
-    xml.element("title", title != null ? title : "Berlioz Status");
-    xml.element("message", message != null ? message : "");
-    xml.element("request-uri", requestURI != null ? requestURI : req.getRequestURI());
-    xml.element("servlet", servlet != null ? servlet : "null");
-
-    DetailLevel detail = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
-    if (detail == DetailLevel.STANDARD) {
-      writeThrowableSummary(xml, throwable);
-    } else if (detail == DetailLevel.FULL) {
-      writeThrowable(xml, throwable);
-      writeHttpHeaders(xml, req);
-      writeHttpParameters(xml, req);
-    }
-
-    xml.closeElement();
-    xml.flush();
-    return xml.toString();
-  }
-
-  private static void writeThrowable(XmlWriter xml, @Nullable Throwable throwable) {
-    if (throwable == null) return;
-    xml.xml(toThrowable(throwable));
-  }
-
-  private static void writeThrowableSummary(XmlWriter xml, @Nullable Throwable throwable) {
-    if (throwable == null) return;
-    xml.openElement("exception");
-    xml.attribute("class", throwable.getClass().getName());
-    String message = throwable.getMessage();
-    if (message != null) {
-      xml.element("message", message);
-    }
-    xml.closeElement();
-  }
-
-  private static void writeHttpHeaders(XmlWriter xml, HttpServletRequest req) {
-    xml.openElement("http-headers");
-    Enumeration<?> names = req.getHeaderNames();
-    while (names.hasMoreElements()) {
-      String name = names.nextElement().toString();
-      Enumeration<?> values = req.getHeaders(name);
-      if (values != null) {
-        while (values.hasMoreElements()) {
-          String value = values.nextElement().toString();
-          xml.openElement("header");
-          xml.attribute("name", name);
-          xml.attribute("value", redactHeaderValue(name, value));
-          xml.closeElement();
-        }
-      }
-    }
-    xml.closeElement();
-  }
-
-  private static void writeHttpParameters(XmlWriter xml, HttpServletRequest req) {
-    xml.openElement("http-parameters");
-    Map<?, ?> parameters = req.getParameterMap();
-    for (Entry<?, ?> entry : parameters.entrySet()) {
-      String name = entry.getKey().toString();
-      // Must be an array, according to Servlet Specifications
-      String[] values = (String[]) entry.getValue();
-      if (values != null) {
-        for (String value : values) {
-          xml.openElement("parameters");
-          xml.attribute("name", name);
-          xml.attribute("value", redactParameterValue(name, value));
-          xml.closeElement();
-        }
-      }
-    }
-    xml.closeElement();
-  }
-
-  private static String redactHeaderValue(String name, String value) {
-    return isSensitiveHeader(name) ? REDACTED : value;
-  }
-
-  private static String redactParameterValue(String name, String value) {
-    return isSensitiveParameter(name) ? REDACTED : value;
-  }
-
-  private static boolean isSensitiveHeader(String name) {
-    String lowerName = name.toLowerCase(Locale.ROOT);
-    return SENSITIVE_HEADER_NAMES.contains(lowerName) ||
-        containsSensitiveKeyword(normalizeName(lowerName), SENSITIVE_HEADER_KEYWORDS);
-  }
-
-  private static boolean isSensitiveParameter(String name) {
-    String normalizedName = normalizeName(name.toLowerCase(Locale.ROOT));
-    return containsSensitiveKeyword(normalizedName, SENSITIVE_PARAMETER_KEYWORDS);
-  }
-
-  private static boolean containsSensitiveKeyword(String normalizedName, String[] keywords) {
-    for (String keyword : keywords) {
-      if (normalizedName.contains(keyword)) return true;
-    }
-    return false;
-  }
-
-  private static String normalizeName(String name) {
-    return name.replace("-", "").replace("_", "").replace(".", "");
-  }
-
-  /**
-   * Return the root element name based on the status code.
-   *
-   * @param code the HTTP status code.
-   * @return the root element name based on the HTTP status code or "unknown-status";
-   * @deprecated Since 0.14.0. Only used by the deprecated legacy XML format ({@link #toLegacyXml}).
-   */
-  @Deprecated(since = "0.14.0")
-  private static String getRootElementName(Integer code) {
-    String element = HttpStatusCodes.getClassOfStatus(code);
-    return (element != null) ? element.toLowerCase().replace(' ', '-') : "unknown-status";
+  @SuppressWarnings("deprecation") // LegacyError removed in 1.0; intentional use until GetErrorDetails is retired
+  private static String toLegacyXml(HttpServletRequest req) {
+    LegacyError error = LegacyError.of(req);
+    return new XmlStringBuilder().declaration().asXml(error).toString();
   }
 
   /**
@@ -659,24 +477,4 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return xml.toString();
   }
 
-  private static String toThrowable(Throwable throwable) {
-    XMLStringWriter buffer = new XMLStringWriter(XML.NamespaceAware.No);
-    try {
-      Errors.toXML(throwable, buffer, true);
-
-      // If some errors were collected, let's include them
-      if (throwable instanceof CompoundBerliozException) {
-        buffer.openElement("collected-errors");
-        ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException) throwable).getCollector();
-        for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
-          collected.toXML(buffer);
-        }
-        buffer.closeElement();
-      }
-
-    } catch (IOException e) {
-      // Will never happen since we send a string buffer, we can safely ignore
-    }
-    return buffer.toString();
-  }
 }

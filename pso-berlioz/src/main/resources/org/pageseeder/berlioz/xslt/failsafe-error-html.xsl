@@ -181,6 +181,9 @@
                    else if ($s >= 200) then 'successful'
                    else                     'continue'"/>
     </xsl:when>
+    <xsl:when test="$element/@http-class">
+      <xsl:sequence select="string($element/@http-class)"/>
+    </xsl:when>
     <xsl:otherwise>
       <xsl:sequence select="name($element)"/>
     </xsl:otherwise>
@@ -188,7 +191,7 @@
 </xsl:function>
 
 <!-- Default template for errors -->
-<xsl:template match="continue|successful|redirection|client-error|server-error">
+<xsl:template match="continue|successful|redirection|client-error|server-error|error[@http-class]">
   <div class="container">
     <h1><xsl:value-of select="@http-code"/> – <xsl:value-of select="title"/></h1>
     <xsl:if test="not(message = exception/message)">
@@ -208,7 +211,7 @@
 </xsl:template>
 
 <!-- Other errors -->
-<xsl:template match="error[@http-code=404]">
+<xsl:template match="error[@http-code=404]" priority="1">
   <div class="container client-error">
     <h1><xsl:value-of select="message"/></h1>
     <p class="message">Sorry but I could not find anything at <code><xsl:value-of select="@request-uri"/></code></p>

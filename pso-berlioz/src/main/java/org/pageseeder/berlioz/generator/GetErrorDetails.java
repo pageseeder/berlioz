@@ -15,26 +15,12 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import java.io.IOException;
-
-import javax.servlet.http.HttpServletResponse;
-
-import org.jspecify.annotations.Nullable;
-
-import org.pageseeder.berlioz.BerliozErrorID;
-import org.pageseeder.berlioz.BerliozException;
-import org.pageseeder.berlioz.ErrorID;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
-import org.pageseeder.berlioz.http.HttpStatusCodes;
-import org.pageseeder.berlioz.servlet.ErrorHandlerServlet;
-import org.pageseeder.berlioz.util.CollectedError;
-import org.pageseeder.berlioz.util.CompoundBerliozException;
-import org.pageseeder.berlioz.util.ErrorCollector;
-import org.pageseeder.berlioz.util.Errors;
-import org.pageseeder.berlioz.util.ISO8601;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.error.LegacyError;
+import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns HTTP error details as XML.
@@ -69,10 +55,11 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * <h3>Returned XML</h3>
  * <pre>{@code
  * <error http-class="[http-class]" http-code="[http-code]" datetime="[iso8601-datetime]" id="[error-id]">
+ *   <berlioz version="[version]"/>
  *   <title>[http-status-title]</title>
  *   <message>[error-message]</message>           <!-- only if a message is available -->
  *   <request-uri>[request-uri]</request-uri>     <!-- only if a request URI is available -->
- *   <!-- exception XML if an exception was thrown -->
+ *   <!-- exception XML at STANDARD/FULL detail level only -->
  *   <collected-errors>                           <!-- only for CompoundBerliozException -->
  *     ...
  *   </collected-errors>
@@ -80,8 +67,8 @@ import org.pageseeder.xmlwriter.XMLWriter;
  * }</pre>
  * <p>The {@code http-class} attribute is the kebab-case name of the HTTP status class
  * (e.g. {@code client-error}, {@code server-error}). The {@code id} attribute is taken from
- * {@link BerliozException#id()} when available, or from the Berlioz error ID attribute,
- * falling back to {@link BerliozErrorID#UNEXPECTED}.
+ * {@link org.pageseeder.berlioz.BerliozException#id()} when available, or from the Berlioz
+ * error ID attribute, falling back to {@link org.pageseeder.berlioz.BerliozErrorID#UNEXPECTED}.
  *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
@@ -93,85 +80,17 @@ import org.pageseeder.xmlwriter.XMLWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.0
  * @since 0.8.7
  */
-public final class GetErrorDetails implements ContentGenerator {
+public final class GetErrorDetails implements XmlGenerator {
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
-
-    // XXX: Copy of error handler!
-
-    // Grab data from attributes
-    String message = (String)req.getAttribute(ErrorHandlerServlet.ERROR_MESSAGE);
-    Integer code   = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
-    Throwable exception = (Throwable)req.getAttribute(ErrorHandlerServlet.ERROR_EXCEPTION);
-    String requestURI = (String)req.getAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI);
-    String errorId = (String)req.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_ID);
-
-    // Ensure we have a status code
-    if (code == null) {
-      code = HttpServletResponse.SC_OK;
-    }
-
-    xml.openElement("error");
-    xml.attribute("http-class", getHTTPClass(code));
-    xml.attribute("http-code", code);
-    xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
-    xml.attribute("id", resolveErrorId(exception, errorId));
-
-    // Other informational elements
-    String title = HttpStatusCodes.getTitle(code);
-    xml.element("title", title != null? title : "Berlioz Status");
-    if (message != null) {
-      xml.element("message", message);
-    }
-    if (requestURI != null) {
-      xml.element("request-uri", requestURI);
-    }
-
-    if (exception != null) {
-      writeException(exception, xml);
-    }
-    xml.closeElement();
-
-    // Set the status code of the generator
-    ContentStatus status = ContentStatus.forCode(code);
-    if (status != null) {
-      req.setStatus(status);
-    }
-
-  }
-
-  private static String resolveErrorId(@Nullable Throwable exception, @Nullable String errorId) {
-    if (exception instanceof BerliozException) {
-      ErrorID id = ((BerliozException) exception).id();
-      if (id != null) return id.id();
-    }
-    return errorId != null? errorId : BerliozErrorID.UNEXPECTED.toString();
-  }
-
-  private static void writeException(Throwable exception, XMLWriter xml) throws IOException {
-    Errors.toXML(exception, xml, true);
-    if (exception instanceof CompoundBerliozException) {
-      xml.openElement("collected-errors");
-      ErrorCollector<? extends Throwable> collector = ((CompoundBerliozException) exception).getCollector();
-      for (CollectedError<? extends Throwable> collected : collector.getErrors()) {
-        collected.toXML(xml);
-      }
-      xml.closeElement();
-    }
-  }
-
-  /**
-   * Return the root element name based on the status code.
-   *
-   * @param code the HTTP status code.
-   * @return the root element name based on the HTTP status code or "unknown-status";
-   */
-  private static String getHTTPClass(Integer code) {
-    String element = HttpStatusCodes.getClassOfStatus(code);
-    return (element != null)? element.toLowerCase().replace(' ', '-') : "unknown-status";
+  @SuppressWarnings("deprecation") // LegacyError removed in 1.0; intentional use until GetErrorDetails is retired
+  public Response generate(Request req, XmlWriter xml) {
+    LegacyError error = LegacyError.of(req);
+    error.toXml(xml);
+    ContentStatus status = ContentStatus.forCode(error.getCode());
+    return status != null ? Response.status(status) : Response.ok();
   }
 }

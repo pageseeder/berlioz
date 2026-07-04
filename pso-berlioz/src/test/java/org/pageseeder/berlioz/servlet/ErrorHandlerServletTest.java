@@ -131,7 +131,7 @@ class ErrorHandlerServletTest {
     assertAll(
         () -> assertEquals(404, res.status),
         () -> assertEquals("text/html;charset=UTF-8", res.contentType),
-        () -> assertTrue(body.contains("<client-error"),   "original XML is embedded in the HTML"),
+        () -> assertTrue(body.contains("http-class=\"client-error\""), "client-error class should be in the embedded XML"),
         () -> assertTrue(body.contains("Resource not found"), "message should be present"),
         () -> assertFalse(body.contains("<problem>"),      "legacy format must not emit <problem>")
     );
@@ -151,7 +151,7 @@ class ErrorHandlerServletTest {
     assertAll(
         () -> assertEquals(500, res.status),
         () -> assertEquals("text/html;charset=UTF-8", res.contentType),
-        () -> assertTrue(body.contains("<server-error"),   "original XML is embedded in the HTML"),
+        () -> assertTrue(body.contains("http-class=\"server-error\""), "server-error class should be in the embedded XML"),
         () -> assertTrue(body.contains("Unexpected error"), "message should be present"),
         () -> assertFalse(body.contains("<problem>"),      "legacy format must not emit <problem>")
     );
@@ -363,7 +363,7 @@ class ErrorHandlerServletTest {
       writePreview("integration-legacy-server-error-500-standard", body);
       assertAll(
           () -> assertEquals(500, res.status),
-          () -> assertTrue(body.contains("<server-error"),         "root element should be server-error"),
+          () -> assertTrue(body.contains("http-class=\"server-error\""), "server-error class should be in the embedded XML"),
           () -> assertTrue(body.contains("Unexpected error"),      "error message should be present"),
           () -> assertTrue(body.contains("<exception"),            "exception summary should be present"),
           () -> assertTrue(body.contains("RuntimeException"),      "exception class should be present"),
@@ -429,7 +429,7 @@ class ErrorHandlerServletTest {
       writePreview("integration-legacy-server-error-500-minimal", body);
       assertAll(
           () -> assertEquals(500, res.status),
-          () -> assertTrue(body.contains("<server-error"),      "root element should be server-error"),
+          () -> assertTrue(body.contains("http-class=\"server-error\""), "server-error class should be in the embedded XML"),
           () -> assertTrue(body.contains("Unexpected error"),   "error message should be present"),
           () -> assertFalse(body.contains("<exception"),        "exception element must not appear"),
           () -> assertFalse(body.contains("<stack-trace"),      "stack trace must not appear"),

@@ -20,6 +20,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ *
+ * @deprecated Since 0.14.0. The legacy XML format is deprecated. Applications can opt back in
+ *             with {@code berlioz.errors.problem=false} during the 0.14.x migration window.
+ */
+@Deprecated(since = "0.14.0")
 public final class LegacyError implements XmlWritable {
 
 
@@ -117,13 +123,13 @@ public final class LegacyError implements XmlWritable {
     }
   }
 
+  public int getCode() {
+    return this.code;
+  }
+
   @Override
   public XmlWriter toXml(XmlWriter xml) {
-
-    // Generator
-    String element = "error";
-    if (this.servletRequest != null) element = toHttpClass(this.code);
-    xml.openElement(element);
+    xml.openElement("error");
     xml.attribute("http-class", toHttpClass(this.code));
     xml.attribute("http-code", this.code);
     xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
