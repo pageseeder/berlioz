@@ -39,10 +39,18 @@ public enum ControlNetwork {
   /** The network channel never grants access. Safe default. */
   OFF,
 
-  /** Grants access when the caller's remote address is a loopback address. Dev-only; see caveat below. */
+  /**
+   * Grants access when the caller's remote address is a loopback address, and, if an
+   * {@code X-Forwarded-For} header is present, every hop it lists is also loopback. Dev-only; see
+   * caveat below.
+   */
   LOOPBACK,
 
-  /** Grants access when the caller's remote address is loopback or a private/site-local address. Dev-only; see caveat below. */
+  /**
+   * Grants access when the caller's remote address is loopback or a private/site-local address,
+   * and, if an {@code X-Forwarded-For} header is present, every hop it lists also is. Dev-only;
+   * see caveat below.
+   */
   LAN;
 
   /**

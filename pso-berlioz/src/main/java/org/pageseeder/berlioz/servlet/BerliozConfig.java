@@ -30,12 +30,15 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -48,6 +51,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -345,29 +349,87 @@ public final class BerliozConfig {
 
     ControlNetwork network = ControlNetwork.parse(GlobalSettings.get(BerliozOption.CONTROL_NETWORK));
     switch (network) {
-      case LOOPBACK: return isLoopback(req);
-      case LAN:      return isLoopback(req) || isSiteLocal(req);
+      case LOOPBACK:
+      case LAN:      return matchesNetwork(req, network);
       case OFF:
       default:       return false;
     }
   }
 
   /**
-   * @return <code>true</code> if {@code req.getRemoteAddr()} is a loopback address; <code>false</code>
-   *         otherwise, including when the address cannot be parsed.
+   * @param req     the request to check.
+   * @param network either {@link ControlNetwork#LOOPBACK} or {@link ControlNetwork#LAN} — never
+   *                {@link ControlNetwork#OFF}.
+   * @return <code>true</code> if {@code req.getRemoteAddr()} matches <code>network</code> and,
+   *         when an {@code X-Forwarded-For} header is present, every hop it lists also matches;
+   *         <code>false</code> otherwise, including when any address cannot be parsed.
+   *
+   * <p>The {@code X-Forwarded-For} check is a safety net, not a fix for the reverse-proxy caveat
+   * documented on {@link BerliozOption#CONTROL_NETWORK}: it only tightens the existing
+   * {@code req.getRemoteAddr()} check (it can turn an authorization into a denial, never the
+   * reverse), so it cannot grant access the plain address check would not already grant. It catches
+   * a {@code loopback}/{@code lan} config mistakenly left on behind a same-host or private reverse
+   * proxy that forwards the header — since {@code req.getRemoteAddr()} is then always the proxy's
+   * own address regardless of who the real caller is, requiring every forwarded hop to also match
+   * closes that specific gap. It does <b>not</b> help when the proxy does not forward
+   * {@code X-Forwarded-For} at all (a common default — e.g. a bare {@code proxy_pass} with no
+   * explicit header configuration) — that case is indistinguishable from no proxy being present.
    */
-  private static boolean isLoopback(HttpServletRequest req) {
-    InetAddress addr = remoteAddress(req);
-    return addr != null && addr.isLoopbackAddress();
+  private static boolean matchesNetwork(HttpServletRequest req, ControlNetwork network) {
+    InetAddress remote = remoteAddress(req);
+    if (remote == null || !isAuthorizedAddress(remote, network)) return false;
+    return forwardedForAddresses(req).allMatch(addr -> addr != null && isAuthorizedAddress(addr, network));
   }
 
   /**
-   * @return <code>true</code> if {@code req.getRemoteAddr()} is a private/site-local address;
-   *         <code>false</code> otherwise, including when the address cannot be parsed.
+   * @return <code>true</code> if <code>addr</code> matches <code>network</code> — loopback only
+   *         for {@link ControlNetwork#LOOPBACK}, loopback or private/site-local for
+   *         {@link ControlNetwork#LAN}.
    */
-  private static boolean isSiteLocal(HttpServletRequest req) {
-    InetAddress addr = remoteAddress(req);
-    return addr != null && addr.isSiteLocalAddress();
+  private static boolean isAuthorizedAddress(InetAddress addr, ControlNetwork network) {
+    return network == ControlNetwork.LOOPBACK
+        ? addr.isLoopbackAddress()
+        : addr.isLoopbackAddress() || addr.isSiteLocalAddress();
+  }
+
+  /**
+   * A conservative character set for IP literals (IPv4 dotted-quad or IPv6 hex-and-colon), used to
+   * reject non-literal input <em>before</em> it reaches {@link InetAddress#getByName(String)}.
+   */
+  private static final Pattern IP_LITERAL = Pattern.compile("[0-9a-fA-F.:]+");
+
+  /**
+   * Parses the {@code X-Forwarded-For} header, if any, into one {@link InetAddress} per
+   * comma-separated hop.
+   *
+   * <p>Unlike {@code req.getRemoteAddr()} (guaranteed literal by the servlet container, see
+   * {@link #remoteAddress(HttpServletRequest)}), each hop here is attacker-controllable header
+   * content. {@link InetAddress#getByName(String)} only skips DNS resolution for literal
+   * addresses — a non-literal value (e.g. a hostname) would otherwise trigger a real DNS lookup
+   * against attacker-supplied input. Each token is therefore checked against {@link #IP_LITERAL}
+   * first; anything that doesn't match, or that fails to parse, resolves to {@code null} rather
+   * than being skipped, since a malformed or non-IP hop must fail the authorization check in
+   * {@link #matchesNetwork} rather than be silently ignored.
+   *
+   * @return a stream with one (possibly {@code null}) element per comma-separated hop; empty if
+   *         the header is absent or blank.
+   */
+  private static Stream<@Nullable InetAddress> forwardedForAddresses(HttpServletRequest req) {
+    String header = req.getHeader(HttpHeaders.X_FORWARDED_FOR);
+    if (header == null || header.isBlank()) return Stream.empty();
+    return Arrays.stream(header.split(","))
+        .map(String::trim)
+        .filter(hop -> !hop.isEmpty())
+        .map(BerliozConfig::parseIpLiteral);
+  }
+
+  private static @Nullable InetAddress parseIpLiteral(String hop) {
+    if (!IP_LITERAL.matcher(hop).matches()) return null;
+    try {
+      return InetAddress.getByName(hop);
+    } catch (UnknownHostException ex) {
+      return null;
+    }
   }
 
   /**

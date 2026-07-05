@@ -172,6 +172,88 @@ class BerliozConfigTest {
     assertFalse(BerliozConfig.hasControl(req));
   }
 
+  // hasControl(req) — network=loopback/lan, X-Forwarded-For safety net
+  //
+  // This only ever tightens the plain req.getRemoteAddr() check above: a matching remote address
+  // is still required, and a forwarded hop that also matches adds nothing new. It exists to catch
+  // a loopback/lan config mistakenly left on behind a same-host or private reverse proxy that
+  // forwards the header — see the BerliozOption#CONTROL_NETWORK javadoc.
+
+  @Test
+  void testHasControl_loopback_forwardedForAlsoLoopback_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("127.0.0.1")
+        .header("X-Forwarded-For", "127.0.0.1")
+        .build();
+    assertTrue(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_loopback_forwardedForPublicAddress_returnsFalse() throws ReflectiveOperationException {
+    // The gap being closed: remoteAddr is the (loopback) proxy, but the real caller is external.
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("127.0.0.1")
+        .header("X-Forwarded-For", "203.0.113.10")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_loopback_forwardedForChainWithPublicHop_returnsFalse() throws ReflectiveOperationException {
+    // Every hop must match — not just the first (attacker-controlled) or last one.
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("127.0.0.1")
+        .header("X-Forwarded-For", "127.0.0.1, 203.0.113.10")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_lan_forwardedForAlsoPrivate_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, "lan");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("127.0.0.1")
+        .header("X-Forwarded-For", "192.168.1.10")
+        .build();
+    assertTrue(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_lan_forwardedForPublicAddress_returnsFalse() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, "lan");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("192.168.1.10")
+        .header("X-Forwarded-For", "203.0.113.10")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_loopback_forwardedForNonIpToken_returnsFalse() throws ReflectiveOperationException {
+    // A malformed/non-IP hop must fail closed, not be silently ignored — and must never be
+    // resolved as a hostname (no DNS lookup on attacker-supplied header content).
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("127.0.0.1")
+        .header("X-Forwarded-For", "not-an-ip-address")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_loopback_blankForwardedFor_returnsTrue() throws ReflectiveOperationException {
+    // An empty/blank header is treated the same as no header — falls back to remoteAddr only.
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("127.0.0.1")
+        .header("X-Forwarded-For", "  ")
+        .build();
+    assertTrue(BerliozConfig.hasControl(req));
+  }
+
   // hasControl(req) — delegated (fixed attribute) channel
 
   @Test
