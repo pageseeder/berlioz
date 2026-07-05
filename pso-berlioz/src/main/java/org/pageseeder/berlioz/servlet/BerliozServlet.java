@@ -113,6 +113,13 @@ public final class BerliozServlet extends HttpServlet {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(BerliozServlet.class);
 
+  /**
+   * Minimum content length (in bytes) below which GZip compression is skipped: below this size,
+   * the fixed gzip header/footer overhead and CPU cost outweigh the bandwidth savings, and the
+   * response typically fits within a single network packet regardless.
+   */
+  private static final int COMPRESSION_THRESHOLD = 1024;
+
   // Class attributes
   // ----------------------------------------------------------------------------------------------
 
@@ -683,9 +690,10 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   /**
-   * Writes the response body, applying GZip compression when both the configuration and the
-   * client support it. For HEAD requests ({@code includeContent = false}) only the
-   * {@code Content-Length} header is written without a body.
+   * Writes the response body, applying GZip compression when the configuration and the client
+   * support it and the content meets {@link #COMPRESSION_THRESHOLD}. For HEAD requests
+   * ({@code includeContent = false}) only the {@code Content-Length} header is written without a
+   * body.
    *
    * @param req            The HTTP servlet request.
    * @param res            The HTTP servlet response.
@@ -699,8 +707,10 @@ public final class BerliozServlet extends HttpServlet {
   private void writeOutput(HttpServletRequest req, HttpServletResponse res, BerliozOutput result,
       @Nullable String etag, Charset charset, BerliozConfig config, boolean includeContent) throws IOException {
 
-    // Only attempt compression when the config enables it and the media type is compressible
-    boolean compressible = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType());
+    // Only attempt compression when the config enables it, the media type is compressible and the
+    // content is large enough for compression to be worthwhile
+    boolean compressible = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType())
+        && CharsetUtils.length(result.content(), charset) >= COMPRESSION_THRESHOLD;
     if (compressible && HttpHeaderUtils.acceptsGZipCompression(req)) {
       byte[] compressed = ResourceCompressor.compress(result.content(), charset);
       if (compressed.length > 0) {
