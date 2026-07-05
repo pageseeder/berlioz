@@ -20,6 +20,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import org.slf4j.Logger;
@@ -57,6 +58,11 @@ public final class CharsetUtils {
   public static int length(CharSequence content, Charset charset) {
     Objects.requireNonNull(content, "No length for null content");
     Objects.requireNonNull(charset, "Charset is null");
+    // UTF-8 is by far the most common charset for Berlioz output; count bytes directly
+    // instead of running a full encode pass through a freshly allocated encoder and buffer.
+    if (StandardCharsets.UTF_8.equals(charset)) {
+      return lengthUtf8(content);
+    }
     int length;
     try {
       CharsetEncoder encoder = charset.newEncoder();
@@ -66,6 +72,46 @@ public final class CharsetUtils {
     } catch (CharacterCodingException ex) {
       LOGGER.error("Unable to determine the length of specified content", ex);
       length = -1;
+    }
+    return length;
+  }
+
+  /**
+   * Computes the UTF-8 byte length of the specified content without allocating an encoder or
+   * an output buffer, matching the semantics of {@link CharsetEncoder#encode(CharBuffer)} which
+   * reports (rather than replaces) malformed surrogate pairs.
+   *
+   * @param content The content to measure.
+   *
+   * @return the UTF-8 byte length; or -1 if the content contains an unpaired surrogate.
+   */
+  private static int lengthUtf8(CharSequence content) {
+    int length = 0;
+    int count = content.length();
+    int i = 0;
+    while (i < count) {
+      char c = content.charAt(i);
+      if (c < 0x80) {
+        length += 1;
+        i += 1;
+      } else if (c < 0x800) {
+        length += 2;
+        i += 1;
+      } else if (Character.isHighSurrogate(c)) {
+        if (i + 1 < count && Character.isLowSurrogate(content.charAt(i + 1))) {
+          length += 4;
+          i += 2;
+        } else {
+          LOGGER.error("Unable to determine the length of specified content: unpaired surrogate at index {}", i);
+          return -1;
+        }
+      } else if (Character.isLowSurrogate(c)) {
+        LOGGER.error("Unable to determine the length of specified content: unpaired surrogate at index {}", i);
+        return -1;
+      } else {
+        length += 3;
+        i += 1;
+      }
     }
     return length;
   }

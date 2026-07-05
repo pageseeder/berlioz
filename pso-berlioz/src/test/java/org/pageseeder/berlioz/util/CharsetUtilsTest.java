@@ -38,6 +38,17 @@ class CharsetUtilsTest {
   }
 
   @Test
+  void testLength_surrogatePair_utf8() {
+    // A surrogate pair (e.g. an emoji) encodes to 4 bytes in UTF-8
+    assertEquals(4, CharsetUtils.length("😀", StandardCharsets.UTF_8));
+  }
+
+  @Test
+  void testLength_unpairedSurrogate_utf8() {
+    assertEquals(-1, CharsetUtils.length("\uD83D", StandardCharsets.UTF_8));
+  }
+
+  @Test
   void testLength_nullContentThrows() {
     assertThrows(NullPointerException.class,
         () -> CharsetUtils.length(null, StandardCharsets.UTF_8));
