@@ -81,12 +81,14 @@ class XsltTransformerTest {
   @BeforeEach
   void resetErrorProblemFormat() throws ReflectiveOperationException {
     removeOption(BerliozOption.ERROR_PROBLEM_FORMAT);
+    removeOption(BerliozOption.ERROR_DETAIL);
   }
 
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
   @AfterEach
   void restoreErrorProblemFormat() throws ReflectiveOperationException {
     removeOption(BerliozOption.ERROR_PROBLEM_FORMAT);
+    removeOption(BerliozOption.ERROR_DETAIL);
   }
 
   @Test
@@ -107,10 +109,49 @@ class XsltTransformerTest {
 
     String xml = invokeToXML(ex, null);
 
-    Assertions.assertTrue(xml.contains("<server-error"), xml);
+    Assertions.assertTrue(xml.contains("<error"), xml);
+    Assertions.assertTrue(xml.contains("http-class=\"server-error\""), xml);
     Assertions.assertTrue(xml.contains("http-code=\"503\""), xml);
     Assertions.assertTrue(xml.contains("id=\"berlioz-transform-invalid\""), xml);
+    Assertions.assertFalse(xml.contains("<server-error"), xml);
     Assertions.assertFalse(xml.contains("<problem>"), xml);
+  }
+
+  @Test
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
+  void toXML_legacyFormat_minimalDetail_omitsExceptionDetail() throws Exception {
+    setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
+    setOption(BerliozOption.ERROR_DETAIL, "minimal");
+    TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
+
+    String xml = invokeToXML(ex, null);
+
+    Assertions.assertFalse(xml.contains("<exception"), xml);
+  }
+
+  @Test
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
+  void toXML_legacyFormat_standardDetail_addsExceptionSummaryOnly() throws Exception {
+    setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
+    setOption(BerliozOption.ERROR_DETAIL, "standard");
+    TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
+
+    String xml = invokeToXML(ex, null);
+
+    Assertions.assertTrue(xml.contains("<exception class=\"" + TransformerConfigurationException.class.getName() + "\">"), xml);
+    Assertions.assertFalse(xml.contains("<stack-trace>"), xml);
+  }
+
+  @Test
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
+  void toXML_legacyFormat_fullDetail_addsStackTrace() throws Exception {
+    setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
+    setOption(BerliozOption.ERROR_DETAIL, "full");
+    TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
+
+    String xml = invokeToXML(ex, null);
+
+    Assertions.assertTrue(xml.contains("<stack-trace>"), xml);
   }
 
   @Test

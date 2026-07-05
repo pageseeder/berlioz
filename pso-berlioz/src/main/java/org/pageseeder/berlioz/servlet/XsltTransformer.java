@@ -57,6 +57,7 @@ import org.pageseeder.berlioz.error.CollectedErrorsExtension;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
+import org.pageseeder.berlioz.http.HttpStatusCodes;
 import org.pageseeder.berlioz.util.*;
 import org.pageseeder.berlioz.xml.Xml;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
@@ -402,15 +403,18 @@ public final class XsltTransformer {
   }
 
   /**
-   * Serializes transformation error details in the legacy {@code <server-error>} XML format.
+   * Serializes transformation error details in the legacy {@code <error http-class="...">} XML
+   * format shared with {@link org.pageseeder.berlioz.error.LegacyError}.
    */
   private static String toLegacyXML(TransformerException ex, TransformerException actual,
       @Nullable XsltErrorCollector collector, @Nullable Map<String, String> parameters) {
     StringWriter out = new StringWriter();
     try {
       XMLWriter xml = new XMLWriterImpl(out);
-      xml.openElement("server-error");
-      xml.attribute("http-code", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+      int code = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+      xml.openElement("error");
+      xml.attribute("http-class", toHttpClass(code));
+      xml.attribute("http-code", code);
       xml.attribute("datetime", ISO8601.format(System.currentTimeMillis(), ISO8601.DATETIME));
 
       // Let's guess the Berlioz internal code
@@ -424,8 +428,13 @@ public final class XsltTransformer {
       xml.element("title", toTitle(id));
       xml.element("message", Errors.cleanMessage(ex));
 
-      // Generate the XML for the exception
-      Errors.toXML(actual, xml);
+      // Generate the XML for the exception, respecting the configured detail level
+      DetailLevel detail = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+      if (detail == DetailLevel.STANDARD) {
+        writeThrowableSummary(xml, actual);
+      } else if (detail == DetailLevel.FULL) {
+        Errors.toXML(actual, xml);
+      }
 
       // Also copy the errors collected here
       if (collector != null) {
@@ -543,6 +552,29 @@ public final class XsltTransformer {
       case TRANSFORM_MALFORMED_SOURCE_XML: return "XML is not well formed";
       default: return "Unidentified XSLT error!";
     }
+  }
+
+  /**
+   * Returns the {@code http-class} attribute value for the given status code (e.g. {@code
+   * "server-error"}), matching the convention used by {@link org.pageseeder.berlioz.error.LegacyError}.
+   */
+  private static String toHttpClass(int code) {
+    String element = HttpStatusCodes.getClassOfStatus(code);
+    return element != null ? element.toLowerCase().replace(' ', '-') : "unknown-status";
+  }
+
+  /**
+   * Writes a brief {@code <exception>} summary (class + message, no stack trace), matching the
+   * {@code STANDARD} detail level shape used by {@link org.pageseeder.berlioz.error.LegacyError}.
+   */
+  private static void writeThrowableSummary(XMLWriter xml, Throwable throwable) throws IOException {
+    xml.openElement("exception");
+    xml.attribute("class", throwable.getClass().getName());
+    String message = throwable.getMessage();
+    if (message != null) {
+      xml.element("message", message);
+    }
+    xml.closeElement();
   }
 
 }
