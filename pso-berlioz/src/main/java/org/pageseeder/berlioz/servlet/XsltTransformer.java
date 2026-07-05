@@ -199,7 +199,7 @@ public final class XsltTransformer {
 
       // very likely to be an error in the XML or a dynamic error
     } catch (TransformerException ex) {
-      String error = toXML(ex, parameters);
+      String error = toXml(ex, parameters);
       // Try to use the fail-safe template to present the error
       error = transformFailSafe(error, FAILSAFE_TEMPLATES);
       return new XsltTransformResult(error, ex, FAILSAFE_TEMPLATES);
@@ -366,7 +366,7 @@ public final class XsltTransformer {
    * is enabled (the default), or the legacy {@code <server-error>} shape otherwise.
    */
   @SuppressWarnings({"removal", "deprecation"}) // ERROR_PROBLEM_FORMAT removed in 1.0; legacy fallback guarded here until then
-  private static String toXML(TransformerException ex, @Nullable Map<String, String> parameters) {
+  private static String toXml(TransformerException ex, @Nullable Map<String, String> parameters) {
     TransformerException actual = ex;
     XsltErrorCollector collector = null;
     if (ex instanceof XsltExceptionWrapper) {
@@ -378,16 +378,16 @@ public final class XsltTransformer {
       }
     }
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
-      return toProblemXML(ex, actual, collector);
+      return toProblemXml(ex, actual, collector);
     }
-    return toLegacyXML(ex, actual, collector, parameters);
+    return toLegacyXml(ex, actual, collector, parameters);
   }
 
   /**
    * Serializes transformation error details as an RFC 9457 {@code <problem>} document.
    */
-  private static String toProblemXML(TransformerException ex, TransformerException actual,
-      @Nullable XsltErrorCollector collector) {
+  private static String toProblemXml(TransformerException ex, TransformerException actual,
+                                     @Nullable XsltErrorCollector collector) {
     BerliozErrorID id = toErrorID(actual);
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     ProblemDetails problem = Problems.forHttpError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
@@ -406,8 +406,9 @@ public final class XsltTransformer {
    * Serializes transformation error details in the legacy {@code <error http-class="...">} XML
    * format shared with {@link org.pageseeder.berlioz.error.LegacyError}.
    */
-  private static String toLegacyXML(TransformerException ex, TransformerException actual,
-      @Nullable XsltErrorCollector collector, @Nullable Map<String, String> parameters) {
+  private static String toLegacyXml(TransformerException ex, TransformerException actual,
+                                    @Nullable XsltErrorCollector collector,
+                                    @Nullable Map<String, String> parameters) {
     StringWriter out = new StringWriter();
     try {
       XMLWriter xml = new XMLWriterImpl(out);

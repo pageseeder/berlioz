@@ -94,7 +94,7 @@ class XsltTransformerTest {
   @Test
   void toXML_defaultsToProblemFormat() throws Exception {
     TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
-    String xml = invokeToXML(ex, null);
+    String xml = invokeToXml(ex, null);
 
     Assertions.assertTrue(xml.contains("<problem>"), xml);
     Assertions.assertTrue(xml.contains("<type>urn:berlioz:problem:transform-invalid</type>"), xml);
@@ -103,11 +103,11 @@ class XsltTransformerTest {
 
   @Test
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
-  void toXML_legacyFormat_producesServerErrorDocument() throws Exception {
+  void toXml_legacyFormat_producesServerErrorDocument() throws Exception {
     setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
     TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
 
-    String xml = invokeToXML(ex, null);
+    String xml = invokeToXml(ex, null);
 
     Assertions.assertTrue(xml.contains("<error"), xml);
     Assertions.assertTrue(xml.contains("http-class=\"server-error\""), xml);
@@ -119,24 +119,24 @@ class XsltTransformerTest {
 
   @Test
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
-  void toXML_legacyFormat_minimalDetail_omitsExceptionDetail() throws Exception {
+  void toXml_legacyFormat_minimalDetail_omitsExceptionDetail() throws Exception {
     setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
     setOption(BerliozOption.ERROR_DETAIL, "minimal");
     TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
 
-    String xml = invokeToXML(ex, null);
+    String xml = invokeToXml(ex, null);
 
     Assertions.assertFalse(xml.contains("<exception"), xml);
   }
 
   @Test
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
-  void toXML_legacyFormat_standardDetail_addsExceptionSummaryOnly() throws Exception {
+  void toXml_legacyFormat_standardDetail_addsExceptionSummaryOnly() throws Exception {
     setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
     setOption(BerliozOption.ERROR_DETAIL, "standard");
     TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
 
-    String xml = invokeToXML(ex, null);
+    String xml = invokeToXml(ex, null);
 
     Assertions.assertTrue(xml.contains("<exception class=\"" + TransformerConfigurationException.class.getName() + "\">"), xml);
     Assertions.assertFalse(xml.contains("<stack-trace>"), xml);
@@ -144,25 +144,25 @@ class XsltTransformerTest {
 
   @Test
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
-  void toXML_legacyFormat_fullDetail_addsStackTrace() throws Exception {
+  void toXml_legacyFormat_fullDetail_addsStackTrace() throws Exception {
     setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
     setOption(BerliozOption.ERROR_DETAIL, "full");
     TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
 
-    String xml = invokeToXML(ex, null);
+    String xml = invokeToXml(ex, null);
 
     Assertions.assertTrue(xml.contains("<stack-trace>"), xml);
   }
 
   @Test
-  void toXML_problemFormat_withCollectedErrors_addsCollectedErrorsExtension() throws Exception {
+  void toXml_problemFormat_withCollectedErrors_addsCollectedErrorsExtension() throws Exception {
     XsltErrorCollector collector = new XsltErrorCollector(org.slf4j.LoggerFactory.getLogger(XsltTransformerTest.class));
     collector.collectQuietly(Level.ERROR, new TransformerException("first failure"));
     collector.collectQuietly(Level.WARNING, new TransformerException("second failure"));
     XsltExceptionWrapper wrapper = new XsltExceptionWrapper(
         new TransformerConfigurationException("bad stylesheet"), collector);
 
-    String xml = invokeToXML(wrapper, null);
+    String xml = invokeToXml(wrapper, null);
 
     Assertions.assertTrue(xml.contains("<collected-errors>"), xml);
     Assertions.assertTrue(xml.contains("<collected level=\"error\">"), xml);
@@ -173,14 +173,14 @@ class XsltTransformerTest {
 
   @Test
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
-  void toXML_legacyFormat_withCollectedErrors_keepsFlatShape() throws Exception {
+  void toXml_legacyFormat_withCollectedErrors_keepsFlatShape() throws Exception {
     setOption(BerliozOption.ERROR_PROBLEM_FORMAT, "false");
     XsltErrorCollector collector = new XsltErrorCollector(org.slf4j.LoggerFactory.getLogger(XsltTransformerTest.class));
     collector.collectQuietly(Level.ERROR, new TransformerException("first failure"));
     XsltExceptionWrapper wrapper = new XsltExceptionWrapper(
         new TransformerConfigurationException("bad stylesheet"), collector);
 
-    String xml = invokeToXML(wrapper, Map.of("xsl-mode", "preview"));
+    String xml = invokeToXml(wrapper, Map.of("xsl-mode", "preview"));
 
     Assertions.assertTrue(xml.contains("<collected-errors>"), xml);
     Assertions.assertTrue(xml.contains("<collected level=\"error\""), xml);
@@ -189,8 +189,8 @@ class XsltTransformerTest {
     Assertions.assertTrue(xml.contains("xsl-mode"), xml);
   }
 
-  private static String invokeToXML(TransformerException ex, Map<String, String> parameters) throws Exception {
-    Method toXML = XsltTransformer.class.getDeclaredMethod("toXML", TransformerException.class, Map.class);
+  private static String invokeToXml(TransformerException ex, Map<String, String> parameters) throws Exception {
+    Method toXML = XsltTransformer.class.getDeclaredMethod("toXml", TransformerException.class, Map.class);
     toXML.setAccessible(true);
     return (String) toXML.invoke(null, ex, parameters);
   }
