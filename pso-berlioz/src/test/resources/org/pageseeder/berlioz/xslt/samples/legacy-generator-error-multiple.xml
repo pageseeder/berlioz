@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<server-error http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-generator-error-multiple">
+<error http-class="server-error" http-code="500" datetime="2026-06-29T10:00:00+10:00" id="berlioz-generator-error-multiple">
   <berlioz version="0.13.5"/>
   <title>Internal Server Error</title>
   <message>Multiple generator errors occurred</message>
@@ -13,4 +13,4 @@
       <message>Navigation menu generator failed</message>
     </collected>
   </collected-errors>
-</server-error>
+</error>

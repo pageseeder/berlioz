@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<client-error http-code="400" datetime="2026-06-29T10:00:00+10:00" id="berlioz-invalid-parameter">
+<error http-class="client-error" http-code="400" datetime="2026-06-29T10:00:00+10:00" id="berlioz-invalid-parameter">
   <berlioz version="0.13.5"/>
   <title>Bad Request</title>
   <message>Invalid parameter 'page': parameter must be a positive integer</message>
@@ -19,4 +19,4 @@
     <parameters name="page" value="abc"/>
     <parameters name="size" value="10"/>
   </http-parameters>
-</client-error>
+</error>

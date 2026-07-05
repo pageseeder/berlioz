@@ -191,7 +191,7 @@
 </xsl:function>
 
 <!-- Default template for errors -->
-<xsl:template match="continue|successful|redirection|client-error|server-error|error[@http-class]">
+<xsl:template match="error[@http-class]">
   <div class="container">
     <h1><xsl:value-of select="@http-code"/> – <xsl:value-of select="title"/></h1>
     <xsl:if test="not(message = exception/message)">
@@ -377,28 +377,6 @@
 <div class="help">
   <p>An error occurred during Berlioz <b>initialization or shutdown</b>.</p>
   <p>Check the application server startup logs. The application may not have initialised correctly.</p>
-</div>
-</xsl:template>
-
-<!-- ── Services configuration ── -->
-<xsl:template match="server-error[@id='berlioz-services-not-found']" mode="help">
-<div class="help">
-  <p>Berlioz was unable to find the <b>service configuration</b>.</p>
-  <p>Create a file called '<b>services.xml</b>' and put it in your <code>/WEB-INF/config/</code> folder.</p>
-</div>
-</xsl:template>
-
-<xsl:template match="server-error[@id='berlioz-services-malformed']" mode="help">
-<div class="help">
-  <p>Berlioz was unable to parse the <b>service configuration</b> — the file is not well-formed XML.</p>
-  <p>Fix the XML errors in '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>'.</p>
-</div>
-</xsl:template>
-
-<xsl:template match="server-error[@id='berlioz-services-invalid']" mode="help">
-<div class="help">
-  <p>Berlioz was unable to load the <b>service configuration</b> because of validation errors listed below.</p>
-  <p>Correct the invalid entries in '<b>/WEB-INF<xsl:value-of select="(//location)[1]/@system-id"/></b>'.</p>
 </div>
 </xsl:template>
 

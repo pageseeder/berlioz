@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<server-error http-code="502" datetime="2026-06-29T10:00:00+10:00" id="berlioz-upstream-error">
+<error http-class="server-error" http-code="502" datetime="2026-06-29T10:00:00+10:00" id="berlioz-upstream-error">
   <berlioz version="0.13.5"/>
   <title>Bad Gateway</title>
   <message>Upstream service 'content-api' unavailable: Connection refused</message>
@@ -22,4 +22,4 @@
     <header name="Accept" value="text/html"/>
   </http-headers>
   <http-parameters/>
-</server-error>
+</error>
