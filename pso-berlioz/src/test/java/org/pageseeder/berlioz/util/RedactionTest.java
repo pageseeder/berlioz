@@ -24,6 +24,12 @@ class RedactionTest {
     Assertions.assertEquals(Redaction.REDACTED, Redaction.redact("saml", "value"));
     Assertions.assertEquals(Redaction.REDACTED, Redaction.redact("jwt", "value"));
     Assertions.assertEquals(Redaction.REDACTED, Redaction.redact("csrf", "value"));
+    Assertions.assertEquals(Redaction.REDACTED, Redaction.redact("key", "value"));
+  }
+
+  @Test
+  void testRedactControlKey() {
+    Assertions.assertEquals(Redaction.REDACTED, Redaction.redact("berlioz.control.key", "s3cr3t"));
   }
 
   @Test

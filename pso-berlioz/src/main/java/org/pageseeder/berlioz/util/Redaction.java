@@ -32,7 +32,7 @@ public final class Redaction {
   private static final String[] SENSITIVE_KEYWORDS = {
       "password", "passwd", "pwd",
       "secret", "apikey", "token",
-      "credential", "privatekey",
+      "credential", "privatekey", "key",
       "session", "auth",
       "assertion", "saml", "jwt", "csrf"
   };
