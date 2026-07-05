@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.RelocationConfig;
+import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,7 +150,7 @@ public final class RelocationFilter implements Filter {
      throws ServletException, IOException {
 
     // Reset mapping on reload
-    if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req)) {
+    if ("true".equals(req.getParameter("berlioz-reload")) && ControlAuthorization.hasControl(req)) {
       this.config = null;
     }
 

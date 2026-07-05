@@ -22,11 +22,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-final class ServletTestSupport {
+public final class ServletTestSupport {
 
   private ServletTestSupport() {}
 
-  static RequestBuilder request() {
+  public static RequestBuilder request() {
     return new RequestBuilder();
   }
 
@@ -56,7 +56,7 @@ final class ServletTestSupport {
         });
   }
 
-  static final class RequestBuilder {
+  public static final class RequestBuilder {
     private String method = "GET";
     private String scheme = "http";
     private String host = "localhost";
@@ -73,22 +73,22 @@ final class ServletTestSupport {
     private final Map<String, Object> attributes = new LinkedHashMap<>();
     private RequestDispatcher dispatcher = null;
 
-    RequestBuilder method(String v)      { this.method = v; return this; }
-    RequestBuilder scheme(String v)      { this.scheme = v; return this; }
-    RequestBuilder host(String v)        { this.host = v; return this; }
-    RequestBuilder port(int v)           { this.port = v; return this; }
-    RequestBuilder contextPath(String v) { this.contextPath = v; return this; }
-    RequestBuilder servletPath(String v) { this.servletPath = v; return this; }
-    RequestBuilder pathInfo(String v)    { this.pathInfo = v; return this; }
-    RequestBuilder uri(String v)         { this.requestURI = v; return this; }
-    RequestBuilder query(String v)       { this.queryString = v; return this; }
-    RequestBuilder remoteAddr(String v)  { this.remoteAddr = v; return this; }
-    RequestBuilder header(String n, String v)    { this.headers.put(n, v); return this; }
-    RequestBuilder parameter(String n, String v) { this.parameters.put(n, v); return this; }
-    RequestBuilder attribute(String n, Object v) { this.attributes.put(n, v); return this; }
-    RequestBuilder dispatcher(RequestDispatcher d) { this.dispatcher = d; return this; }
+    public RequestBuilder method(String v)      { this.method = v; return this; }
+    public RequestBuilder scheme(String v)      { this.scheme = v; return this; }
+    public RequestBuilder host(String v)        { this.host = v; return this; }
+    public RequestBuilder port(int v)           { this.port = v; return this; }
+    public RequestBuilder contextPath(String v) { this.contextPath = v; return this; }
+    public RequestBuilder servletPath(String v) { this.servletPath = v; return this; }
+    public RequestBuilder pathInfo(String v)    { this.pathInfo = v; return this; }
+    public RequestBuilder uri(String v)         { this.requestURI = v; return this; }
+    public RequestBuilder query(String v)       { this.queryString = v; return this; }
+    public RequestBuilder remoteAddr(String v)  { this.remoteAddr = v; return this; }
+    public RequestBuilder header(String n, String v)    { this.headers.put(n, v); return this; }
+    public RequestBuilder parameter(String n, String v) { this.parameters.put(n, v); return this; }
+    public RequestBuilder attribute(String n, Object v) { this.attributes.put(n, v); return this; }
+    public RequestBuilder dispatcher(RequestDispatcher d) { this.dispatcher = d; return this; }
 
-    HttpServletRequest build() {
+    public HttpServletRequest build() {
       InvocationHandler h = (proxy, m, args) -> {
         switch (m.getName()) {
           case "getMethod":       return method;

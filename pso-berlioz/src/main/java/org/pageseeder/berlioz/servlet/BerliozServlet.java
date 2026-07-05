@@ -46,6 +46,7 @@ import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
 import org.pageseeder.berlioz.json.Json;
 import org.pageseeder.berlioz.output.OutputType;
+import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.pageseeder.berlioz.http.*;
 import org.pageseeder.berlioz.servlet.XsltTransformResult.Status;
 import org.pageseeder.berlioz.util.*;
@@ -94,7 +95,7 @@ import org.slf4j.LoggerFactory;
  * <p>For security, the Berlioz administration ("control") parameters are disabled by default.
  * See {@link org.pageseeder.berlioz.BerliozOption#CONTROL_KEY},
  * {@link org.pageseeder.berlioz.BerliozOption#CONTROL_NETWORK}, and
- * {@link BerliozConfig#CONTROL_AUTHORIZED_ATTRIBUTE} to enable them.
+ * {@link org.pageseeder.berlioz.security.ControlAuthorization#CONTROL_AUTHORIZED_ATTRIBUTE} to enable them.
  *
  * @author Christophe Lauret
  *
@@ -623,7 +624,7 @@ public final class BerliozServlet extends HttpServlet {
    * @return {@code true} if profiling should be active for this request.
    */
   private boolean applyBerliozControl(HttpServletRequest req, BerliozConfig config, ServiceLoader loader, boolean profile) {
-    if (!BerliozConfig.hasControl(req)) return profile;
+    if (!ControlAuthorization.hasControl(req)) return profile;
 
     // A "reload" triggers all the sub-operations below
     boolean reload = isTrue(req.getParameter("berlioz-reload"));

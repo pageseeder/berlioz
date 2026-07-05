@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz;
 
-import org.pageseeder.berlioz.servlet.ControlNetwork;
+import org.pageseeder.berlioz.security.ControlNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

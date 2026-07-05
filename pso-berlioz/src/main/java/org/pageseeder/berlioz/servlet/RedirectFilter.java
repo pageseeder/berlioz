@@ -36,6 +36,7 @@ import org.pageseeder.berlioz.config.RedirectConfig;
 import org.pageseeder.berlioz.config.RedirectLocation;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpRequests;
+import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,7 +162,7 @@ public final class RedirectFilter implements Filter, Serializable {
       throws ServletException, IOException {
 
     // Reset mapping on reload
-    if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req)) {
+    if ("true".equals(req.getParameter("berlioz-reload")) && ControlAuthorization.hasControl(req)) {
       this.config = null;
     }
 

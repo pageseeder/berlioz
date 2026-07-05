@@ -528,7 +528,7 @@ public enum BerliozOption {
    *
    * <p>Independent of {@link #CONTROL_KEY} (the key channel) and the fixed, always-checked
    * delegated request-attribute channel documented on
-   * {@link org.pageseeder.berlioz.servlet.BerliozConfig#CONTROL_AUTHORIZED_ATTRIBUTE}. Any one of
+   * {@link org.pageseeder.berlioz.security.ControlAuthorization#CONTROL_AUTHORIZED_ATTRIBUTE}. Any one of
    * the three being satisfied authorizes the request.
    *
    * <p>Three values are available:
@@ -589,7 +589,7 @@ public enum BerliozOption {
    * </table>
    *
    * @see #CONTROL_KEY
-   * @see org.pageseeder.berlioz.servlet.ControlNetwork
+   * @see org.pageseeder.berlioz.security.ControlNetwork
    * @since 0.14.0
    */
   @Beta

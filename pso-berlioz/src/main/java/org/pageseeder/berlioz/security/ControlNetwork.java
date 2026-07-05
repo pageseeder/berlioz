@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pageseeder.berlioz.servlet;
+package org.pageseeder.berlioz.security;
 
 /**
  * Describes what network position a direct HTTP caller must originate from to be allowed to
@@ -22,7 +22,7 @@ package org.pageseeder.berlioz.servlet;
  * <p>This is re-evaluated independently on every request — there is no session or persisted
  * state, so being granted access on one request confers no standing for the next.
  *
- * <p>This is the "network channel" of {@link BerliozConfig#hasControl(javax.servlet.http.HttpServletRequest)};
+ * <p>This is the "network channel" of {@link ControlAuthorization#hasControl(javax.servlet.http.HttpServletRequest)};
  * see that method for how it combines with the independent key channel and the fixed delegated
  * (request-attribute) channel.
  *
