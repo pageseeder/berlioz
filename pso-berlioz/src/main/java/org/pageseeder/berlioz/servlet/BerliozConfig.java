@@ -18,8 +18,10 @@ package org.pageseeder.berlioz.servlet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
@@ -119,11 +121,6 @@ public final class BerliozConfig {
   private final String cacheControl;
 
   /**
-   * Set the Berlioz control key.
-   */
-  private final String controlKey;
-
-  /**
    * The relative path to the XSLT stylesheet to use.
    */
   private final String stylePath;
@@ -185,7 +182,6 @@ public final class BerliozConfig {
       defaultCacheControl = "no-cache";
     }
     this.cacheControl = this.getInitParameter("cache-control", defaultCacheControl);
-    this.controlKey = this.getInitParameter("berlioz-control", GlobalSettings.get(BerliozOption.XML_CONTROL_KEY));
     this.compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
     this.env = new HttpEnvironment(contextPath, webinfPath, this.cacheControl);
     this.etagSeed = loadEtagSeed();
@@ -296,30 +292,85 @@ public final class BerliozConfig {
   }
 
   /**
-   * Indicates whether the user can control this configuration.
+   * Indicates whether the request is authorized to invoke Berlioz control parameters (e.g.
+   * {@code berlioz-reload}, {@code clear-xsl-cache}, {@code reset-etags}, {@code reload-services},
+   * {@code berlioz-profile}).
    *
-   * @param req the request including the control key is specified as a request parameter
-   * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
-   *         the control key; false otherwise.
+   * <p>Authorization is granted by either of two independent channels:
+   * <ol>
+   *   <li>the delegated channel — {@link BerliozOption#CONTROL_AUTHORIZED_ATTRIBUTE}, a
+   *       request-attribute handoff from the host application's own auth layer; or</li>
+   *   <li>the direct channel — {@link BerliozOption#CONTROL_ACCESS}, describing how a direct HTTP
+   *       caller proves it is allowed (loopback origin, LAN origin, or a shared-secret
+   *       {@code Authorization: Berlioz <key>} header). Re-evaluated independently on every
+   *       request; there is no session or persisted state.</li>
+   * </ol>
+   *
+   * <p>By default ({@code off}, no authorized attribute configured), neither channel authorizes
+   * and this always returns {@code false}.
+   *
+   * @param req the request to check.
+   * @return <code>true</code> if the request is authorized via either channel; <code>false</code> otherwise.
    */
-  public boolean hasControl(HttpServletRequest req) {
-    return hasControl(req, this.controlKey);
+  public static boolean hasControl(HttpServletRequest req) {
+    String attribute = GlobalSettings.get(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE);
+    if (!attribute.isEmpty() && Boolean.TRUE.equals(req.getAttribute(attribute))) return true;
+
+    ControlAccess access = ControlAccess.parse(GlobalSettings.get(BerliozOption.CONTROL_ACCESS));
+    switch (access) {
+      case LOOPBACK: return isLoopback(req);
+      case LAN:      return isLoopback(req) || isSiteLocal(req);
+      case KEY:      return matchesAuthorizationHeader(req, GlobalSettings.get(BerliozOption.CONTROL_KEY));
+      case OFF:
+      default:       return false;
+    }
   }
 
   /**
-   * Indicates whether the user can control this configuration.
-   *
-   * @param req the request including the control key is specified as a request parameter
-   * @param controlKey the control key
-   *
-   * @return <code>true</code> if no key has been configured or the <code>berlioz-control</code> matches
-   *         the control key; false otherwise.
+   * @return <code>true</code> if {@code req.getRemoteAddr()} is a loopback address; <code>false</code>
+   *         otherwise, including when the address cannot be parsed.
    */
-  public static boolean hasControl(HttpServletRequest req, @Nullable String controlKey) {
-    if (controlKey == null || controlKey.isEmpty()) return true;
-    // NB: servers/proxies may log query parameters — prefer the Authorization header for non-dev use
-    if (controlKey.equals(req.getParameter("berlioz-control"))) return true;
-    // Accept a custom "Berlioz <key>" Authorization header as an alternative to the query parameter
+  private static boolean isLoopback(HttpServletRequest req) {
+    InetAddress addr = remoteAddress(req);
+    return addr != null && addr.isLoopbackAddress();
+  }
+
+  /**
+   * @return <code>true</code> if {@code req.getRemoteAddr()} is a private/site-local address;
+   *         <code>false</code> otherwise, including when the address cannot be parsed.
+   */
+  private static boolean isSiteLocal(HttpServletRequest req) {
+    InetAddress addr = remoteAddress(req);
+    return addr != null && addr.isSiteLocalAddress();
+  }
+
+  /**
+   * Resolves {@code req.getRemoteAddr()} as an {@link InetAddress}.
+   *
+   * <p>The value is a literal IP address supplied by the servlet container, so this never
+   * triggers a DNS lookup.
+   *
+   * @return the parsed address, or <code>null</code> if it cannot be parsed.
+   */
+  private static @Nullable InetAddress remoteAddress(HttpServletRequest req) {
+    try {
+      return InetAddress.getByName(req.getRemoteAddr());
+    } catch (UnknownHostException ex) {
+      return null;
+    }
+  }
+
+  /**
+   * @param req        the request to check.
+   * @param controlKey the shared secret configured via {@link BerliozOption#CONTROL_KEY}.
+   * @return <code>true</code> if a non-empty <code>controlKey</code> is configured and the request
+   *         carries a matching <code>Authorization: Berlioz &lt;key&gt;</code> header;
+   *         <code>false</code> otherwise.
+   */
+  private static boolean matchesAuthorizationHeader(HttpServletRequest req, String controlKey) {
+    // An unset key must never match — otherwise "unlock=key" with no key configured would be
+    // satisfied by a bare "Authorization: Berlioz " header, reopening the exact bug being fixed.
+    if (controlKey.isEmpty()) return false;
     // NB: use equals (not endsWith) to prevent a suffix like "Berlioz xyzSECRET" from matching "SECRET"
     Enumeration<String> headers = req.getHeaders("Authorization");
     while (headers.hasMoreElements()) {

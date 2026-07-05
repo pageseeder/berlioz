@@ -91,9 +91,9 @@ import org.slf4j.LoggerFactory;
  *   Cache-Control: no-cache
  * </pre>
  *
- * <p>For security, the Berlioz administration parameters can be secured using a Berlioz control key.
- * The control key is a string that must be supplied as a parameter whenever one of the admin
- * parameters is used. Use the initialization parameters to define a control key.
+ * <p>For security, the Berlioz administration ("control") parameters are disabled by default.
+ * See {@link org.pageseeder.berlioz.BerliozOption#CONTROL_ACCESS} and
+ * {@link org.pageseeder.berlioz.BerliozOption#CONTROL_AUTHORIZED_ATTRIBUTE} to enable them.
  *
  * @author Christophe Lauret
  *
@@ -139,7 +139,6 @@ public final class BerliozServlet extends HttpServlet {
    * <ul>
    *   <li><code>content-type</code> to specify the content type used by this Berlioz instance.
    *   <li><code>stylesheet</code> to specify the XSLT stylesheet to use for this Berlioz instance.
-   *   <li><code>berlioz-control</code> to specify the Berlioz control key to enable admin parameters.
    * </ul>
    *
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
@@ -616,7 +615,7 @@ public final class BerliozServlet extends HttpServlet {
    * @return {@code true} if profiling should be active for this request.
    */
   private boolean applyBerliozControl(HttpServletRequest req, BerliozConfig config, ServiceLoader loader, boolean profile) {
-    if (!config.hasControl(req)) return profile;
+    if (!BerliozConfig.hasControl(req)) return profile;
 
     // A "reload" triggers all the sub-operations below
     boolean reload = isTrue(req.getParameter("berlioz-reload"));

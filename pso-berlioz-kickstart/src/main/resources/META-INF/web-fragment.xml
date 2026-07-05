@@ -69,9 +69,10 @@
   <!--                     overridden by individual services                -->
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
-  <!--  berlioz-control    A secret key that must be provided whenever the  -->
-  <!--                     configuration or XSLT should be reloaded         -->
-  <!--                     (optional)                                       -->
+  <!--                                                                      -->
+  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  disabled by default. Enable via the global settings                -->
+  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz HTML Setup                                                   -->
   <!--      This Berlioz instance is configured to serve the response       -->
@@ -111,9 +112,10 @@
   <!--                     overridden by individual services                -->
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
-  <!--  berlioz-control    A secret key that must be provided whenever the  -->
-  <!--                     configuration or XSLT should be reloaded         -->
-  <!--                     (optional)                                       -->
+  <!--                                                                      -->
+  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  disabled by default. Enable via the global settings                -->
+  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz HTML Setup                                                   -->
   <!--      This Berlioz instance is configured to serve the response       -->
@@ -156,9 +158,10 @@
   <!--                     overridden by individual services                -->
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
-  <!--  berlioz-control    A secret key that must be provided whenever the  -->
-  <!--                     configuration or XSLT should be reloaded         -->
-  <!--                     (optional)                                       -->
+  <!--                                                                      -->
+  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  disabled by default. Enable via the global settings                -->
+  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz HTML Setup                                                   -->
   <!--      This Berlioz instance is configured to serve the response       -->
@@ -201,9 +204,10 @@
   <!--                     overridden by individual services                -->
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
-  <!--  berlioz-control    A secret key that must be provided whenever the  -->
-  <!--                     configuration or XSLT should be reloaded         -->
-  <!--                     (optional)                                       -->
+  <!--                                                                      -->
+  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  disabled by default. Enable via the global settings                -->
+  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz XML Setup                                                    -->
   <!--      This Berlioz instance is configured to serve the response       -->

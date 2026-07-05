@@ -33,8 +33,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.BerliozOption;
-import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.RelocationConfig;
 import org.slf4j.Logger;
@@ -74,11 +72,6 @@ public final class RelocationFilter implements Filter {
   private static final Logger LOGGER = LoggerFactory.getLogger(RelocationFilter.class);
 
   /**
-   * The control key
-   */
-  private String controlKey = "";
-
-  /**
    * Where the relocation config is located.
    */
   private @Nullable File mappingFile;
@@ -108,8 +101,6 @@ public final class RelocationFilter implements Filter {
     File webinfPath = new File(contextPath, "WEB-INF");
     String mapping = config.getInitParameter("config");
 
-    this.controlKey = GlobalSettings.get(BerliozOption.XML_CONTROL_KEY);
-
     // Mapping isn't specified
     if (mapping == null) {
       LOGGER.warn("Missing 'config' init-parameter - filter will have no effect");
@@ -134,7 +125,6 @@ public final class RelocationFilter implements Filter {
   public void destroy() {
     this.mappingFile = null;
     this.config = null;
-    this.controlKey = "";
   }
 
   @Override
@@ -159,7 +149,7 @@ public final class RelocationFilter implements Filter {
      throws ServletException, IOException {
 
     // Reset mapping on reload
-    if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req, this.controlKey)) {
+    if ("true".equals(req.getParameter("berlioz-reload")) && BerliozConfig.hasControl(req)) {
       this.config = null;
     }
 

@@ -480,20 +480,21 @@ public enum BerliozOption {
   XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE),
 
   /**
-   * A string global option to specify a key to use enables the control parameters to reload the
-   * configuration and XSLT or reset the Etag seed.
+   * A string global option specifying the shared secret used by the {@code key} value of
+   * {@link #CONTROL_ACCESS} to authorize Berlioz control parameters (e.g. {@code berlioz-reload}).
    *
-   * <p>If the control key is empty (the default), control parameters are disabled. Set a
-   * non-empty key to enable them; the key must be supplied with each request via the
-   * {@code berlioz-control} request parameter.
+   * <p>Has no effect unless {@link #CONTROL_ACCESS} is set to {@code key}. The key must be
+   * supplied with each request via an {@code Authorization: Berlioz <key>} request header — the
+   * {@code berlioz-control} query parameter is not read for this purpose (query parameters and
+   * URLs are more likely to be logged by servers and proxies along the way).
    *
    * <h3>Property</h3>
    * <table>
-   *   <caption>Nonce enable property</caption>
+   *   <caption>Control key property</caption>
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
-   *     <td><code>berlioz.control-key</code></td>
-   *     <td><code>""</code><i>(Empty string — controls disabled)</i></td>
+   *     <td><code>berlioz.control.key</code></td>
+   *     <td><code>""</code><i>(Empty string)</i></td>
    *   </tr>
    * </table>
    *
@@ -503,14 +504,115 @@ public enum BerliozOption {
    *   <tr><th>Development</th><th>Production</th></tr>
    *   <tbody><tr><td><code>dev</code><i>(or any simple key)</i></td><td><code>[a strong secret string]</code></td></tr></tbody>
    * </table>
-   * <p>For development, set a simple key such as {@code dev} in the {@code berlioz-control}
-   * servlet init parameter. In production, use a strong secret string
-   * (for example, {@code 'd131dd02c5e6eec4693d96dacd436c91'}).</p>
+   * <p>For development, set a simple key such as {@code dev}. In production, use a strong secret
+   * string (for example, {@code 'd131dd02c5e6eec4693d96dacd436c91'}).</p>
    *
+   * @see #CONTROL_ACCESS
    * @since 0.8.3
    */
   @Beta
-  XML_CONTROL_KEY("berlioz.control-key", ""),
+  CONTROL_KEY("berlioz.control.key", ""),
+
+  /**
+   * A string global option describing how a direct HTTP caller proves it is allowed to invoke
+   * Berlioz control parameters (e.g. {@code berlioz-reload}, {@code clear-xsl-cache},
+   * {@code reset-etags}, {@code reload-services}, {@code berlioz-profile}).
+   *
+   * <p>This is re-evaluated independently on every request — there is no session or persisted
+   * state, so being granted access on one request confers no standing for the next.
+   *
+   * <p>This is the "direct channel"; see {@link #CONTROL_AUTHORIZED_ATTRIBUTE} for an independent
+   * "delegated channel" that an in-process, already-authenticated admin UI can use instead.
+   * Either channel being satisfied authorizes the request.
+   *
+   * <p>Four values are available:
+   * <ul>
+   *   <li>{@code off} (default) — the direct channel never grants access; control parameters can
+   *       never be authorized this way. Only the delegated channel (if configured) can authorize
+   *       them. This is the safe default and requires zero configuration.</li>
+   *   <li>{@code loopback} — grants access when {@code req.getRemoteAddr()} is a loopback address
+   *       ({@code 127.0.0.1} or {@code ::1}).</li>
+   *   <li>{@code lan} — grants access when {@code req.getRemoteAddr()} is loopback or a
+   *       private/site-local address, using {@link java.net.InetAddress#isSiteLocalAddress()}
+   *       (RFC 1918 ranges for IPv4). <b>Known limitation:</b> this does not recognize IPv6 ULA
+   *       ({@code fc00::/7}) — a JDK quirk, since that method predates ULA and targets the
+   *       deprecated IPv6 site-local concept instead.</li>
+   *   <li>{@code key} — grants access when the request carries an {@code Authorization: Berlioz <key>}
+   *       header matching {@link #CONTROL_KEY}.</li>
+   * </ul>
+   *
+   * <p>Unrecognized values are treated as {@code off} (fail closed).
+   *
+   * <p><b>Reverse-proxy caveat:</b> {@code req.getRemoteAddr()} cannot be forged by a remote
+   * attacker for a normal HTTP request — it reflects the actual TCP peer. But when a reverse
+   * proxy fronts the app — especially one running on the same host as the servlet container, a
+   * common production shape — {@code getRemoteAddr()} is the <i>proxy's</i> address for every
+   * request, including external attackers' requests. {@code loopback} and {@code lan} are
+   * dev-convenience settings, not production security settings, and must never be enabled on a
+   * deployment where a same-host or otherwise untrusted-boundary reverse proxy is in front.
+   * Selecting {@code loopback} or {@code lan} logs a warning once at configuration load time.
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>Control access property</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.control.access</code></td>
+   *     <td><code>"off"</code></td>
+   *   </tr>
+   * </table>
+   *
+   * <h3>Recommended values</h3>
+   * <table>
+   *   <caption>Control access recommended value</caption>
+   *   <tr><th>Development</th><th>Production</th></tr>
+   *   <tbody><tr><td><code>loopback</code><i>(or {@code key})</i></td><td><code>key</code><i>(or {@code off})</i></td></tr></tbody>
+   * </table>
+   *
+   * @see #CONTROL_KEY
+   * @see #CONTROL_AUTHORIZED_ATTRIBUTE
+   * @see org.pageseeder.berlioz.servlet.ControlAccess
+   * @since 0.14.0
+   */
+  @Beta
+  CONTROL_ACCESS("berlioz.control.access", "off"),
+
+  /**
+   * A string global option naming a request attribute that an in-process, already-authenticated
+   * host application can set to {@link Boolean#TRUE} to authorize Berlioz control parameters —
+   * the "delegated channel" of {@link #CONTROL_ACCESS}, independent of it.
+   *
+   * <p>Confirmed use case: an admin UI that is in-process with {@code BerliozServlet} (just
+   * another set of Berlioz services) and has its own authentication layer, which necessarily
+   * runs ahead of {@code BerliozServlet}/{@code RedirectFilter}/{@code RelocationFilter} in the
+   * filter chain to gate the admin services themselves. That layer can hand off "this request is
+   * authorized" via plain request state, with no secret ever reaching the client. This lets an
+   * authenticated admin trigger {@code berlioz-reload} without any {@code berlioz.control.key}
+   * management.
+   *
+   * <p>If empty (the default), this channel is inert and only {@link #CONTROL_ACCESS} applies.
+   * Berlioz does not interpret sessions, roles, CSRF tokens, HTTP methods, or filter ordering for
+   * this attribute — that is entirely the host application's responsibility. Berlioz only checks
+   * whether the named attribute is exactly {@link Boolean#TRUE}.
+   *
+   * <p>Mirrors the existing {@link #NONCE_ATTRIBUTE} pattern of a configurable request-attribute
+   * name set by an app-installed filter and read back by Berlioz.
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>Control authorized attribute property</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.control.authorized-attribute</code></td>
+   *     <td><code>""</code><i>(Empty — channel disabled)</i></td>
+   *   </tr>
+   * </table>
+   *
+   * @see #CONTROL_ACCESS
+   * @since 0.14.0
+   */
+  @Beta
+  CONTROL_AUTHORIZED_ATTRIBUTE("berlioz.control.authorized-attribute", ""),
 
   /**
    * A string global option to specify the name of the HTTP request attribute for the nonce.

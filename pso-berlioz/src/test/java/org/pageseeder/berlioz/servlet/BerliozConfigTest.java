@@ -1,77 +1,210 @@
 package org.pageseeder.berlioz.servlet;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.GlobalSettings;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.lang.reflect.Proxy;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class BerliozConfigTest {
 
-  // hasControl(req, controlKey) static method
+  @AfterEach
+  void resetControlSettings() throws ReflectiveOperationException {
+    removeOption(BerliozOption.CONTROL_ACCESS);
+    removeOption(BerliozOption.CONTROL_KEY);
+    removeOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE);
+  }
+
+  // hasControl(req) — default (off, no delegated attribute)
 
   @Test
-  void testHasControl_nullKey_alwaysTrue() {
+  void testHasControl_defaultSettings_returnsFalse() {
     HttpServletRequest req = ServletTestSupport.request().build();
-    assertTrue(BerliozConfig.hasControl(req, null));
+    assertFalse(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_emptyKey_alwaysTrue() {
-    HttpServletRequest req = ServletTestSupport.request().build();
-    assertTrue(BerliozConfig.hasControl(req, ""));
+  void testHasControl_accessOff_ignoresMatchingAuthorizationHeader() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "off");
+    setOption(BerliozOption.CONTROL_KEY, "secret123");
+    HttpServletRequest req = ServletTestSupport.request()
+        .header("Authorization", "Berlioz secret123")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_matchingQueryParameter_returnsTrue() {
+  void testHasControl_unknownAccessValue_fallsBackToOff() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "bogus");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  // hasControl(req) — access=key
+
+  @Test
+  void testHasControl_key_matchingAuthorizationHeader_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    setOption(BerliozOption.CONTROL_KEY, "secret123");
+    HttpServletRequest req = ServletTestSupport.request()
+        .header("Authorization", "Berlioz secret123")
+        .build();
+    assertTrue(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_key_wrongAuthorizationHeader_returnsFalse() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    setOption(BerliozOption.CONTROL_KEY, "secret123");
+    HttpServletRequest req = ServletTestSupport.request()
+        .header("Authorization", "Berlioz wrongkey")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_key_noHeader_returnsFalse() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    setOption(BerliozOption.CONTROL_KEY, "secret123");
+    HttpServletRequest req = ServletTestSupport.request().build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_key_partialKeySuffix_returnsFalse() throws ReflectiveOperationException {
+    // Ensure "Berlioz xyzSECRET" doesn't match key "SECRET"
+    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    setOption(BerliozOption.CONTROL_KEY, "SECRET");
+    HttpServletRequest req = ServletTestSupport.request()
+        .header("Authorization", "Berlioz xyzSECRET")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_key_queryParameterIgnored_returnsFalse() throws ReflectiveOperationException {
+    // The berlioz-control query parameter is no longer read — only the Authorization header.
+    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    setOption(BerliozOption.CONTROL_KEY, "secret123");
     HttpServletRequest req = ServletTestSupport.request()
         .parameter("berlioz-control", "secret123")
         .build();
-    assertTrue(BerliozConfig.hasControl(req, "secret123"));
+    assertFalse(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_wrongQueryParameter_returnsFalse() {
-    // Need getHeaders to return empty enumeration to avoid NPE
-    HttpServletRequest req = requestWithHeaders(
-        Map.of("berlioz-control", "wrong"), Map.of());
-    assertFalse(BerliozConfig.hasControl(req, "secret123"));
+  void testHasControl_key_noKeyConfigured_returnsFalse() throws ReflectiveOperationException {
+    // access=key with no berlioz.control.key set must fail closed, not match a bare "Berlioz " header.
+    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    HttpServletRequest req = ServletTestSupport.request()
+        .header("Authorization", "Berlioz ")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  // hasControl(req) — access=loopback
+
+  @Test
+  void testHasControl_loopback_loopbackIPv4_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
+    assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_matchingAuthorizationHeader_returnsTrue() {
-    HttpServletRequest req = requestWithHeaders(
-        Map.of(), Map.of("Authorization", "Berlioz secret123"));
-    assertTrue(BerliozConfig.hasControl(req, "secret123"));
+  void testHasControl_loopback_loopbackIPv6_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("::1").build();
+    assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_wrongAuthorizationHeader_returnsFalse() {
-    HttpServletRequest req = requestWithHeaders(
-        Map.of(), Map.of("Authorization", "Berlioz wrongkey"));
-    assertFalse(BerliozConfig.hasControl(req, "secret123"));
+  void testHasControl_loopback_nonLoopbackAddress_returnsFalse() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("203.0.113.10").build();
+    assertFalse(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_noParameterNoHeader_returnsFalse() {
-    HttpServletRequest req = requestWithHeaders(Map.of(), Map.of());
-    assertFalse(BerliozConfig.hasControl(req, "mykey"));
+  void testHasControl_loopback_privateAddress_returnsFalse() throws ReflectiveOperationException {
+    // "loopback" must not also authorize the wider LAN range — that's what "lan" is for.
+    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("192.168.1.10").build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  // hasControl(req) — access=lan
+
+  @Test
+  void testHasControl_lan_privateAddress_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "lan");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("192.168.1.10").build();
+    assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_partialKeySuffix_returnsFalse() {
-    // Ensure "Berlioz xyzSECRET" doesn't match key "SECRET"
-    HttpServletRequest req = requestWithHeaders(
-        Map.of(), Map.of("Authorization", "Berlioz xyzSECRET"));
-    assertFalse(BerliozConfig.hasControl(req, "SECRET"));
+  void testHasControl_lan_loopbackAddress_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "lan");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
+    assertTrue(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_lan_publicAddress_returnsFalse() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_ACCESS, "lan");
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr("203.0.113.10").build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  // hasControl(req) — delegated (authorized-attribute) channel
+
+  @Test
+  void testHasControl_authorizedAttribute_setToTrue_returnsTrue() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE, "admin.authorized");
+    // access left at the default (off) to prove the delegated channel is independent of it.
+    HttpServletRequest req = ServletTestSupport.request()
+        .attribute("admin.authorized", Boolean.TRUE)
+        .build();
+    assertTrue(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_authorizedAttribute_notSet_returnsFalse() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE, "admin.authorized");
+    HttpServletRequest req = ServletTestSupport.request().build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_authorizedAttribute_wrongType_returnsFalse() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE, "admin.authorized");
+    HttpServletRequest req = ServletTestSupport.request()
+        .attribute("admin.authorized", "true")
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_authorizedAttribute_emptyConfig_channelInert() throws ReflectiveOperationException {
+    // berlioz.control.authorized-attribute defaults to "" — the attribute name itself must not
+    // be treated as a magic default that Berlioz reads regardless of configuration.
+    HttpServletRequest req = ServletTestSupport.request()
+        .attribute("admin.authorized", Boolean.TRUE)
+        .build();
+    assertFalse(BerliozConfig.hasControl(req));
   }
 
   // Listener static methods (just verify they don't throw)
@@ -96,29 +229,6 @@ class BerliozConfigTest {
     );
   }
 
-  // Helper: build a request proxy that handles getParameter and getHeaders
-  private static HttpServletRequest requestWithHeaders(
-      Map<String, String> params, Map<String, String> headers) {
-    return (HttpServletRequest) Proxy.newProxyInstance(
-        HttpServletRequest.class.getClassLoader(),
-        new Class<?>[]{HttpServletRequest.class},
-        (proxy, m, args) -> {
-          switch (m.getName()) {
-            case "getParameter": return params.get(args[0]);
-            case "getHeaders": {
-              String name = (String) args[0];
-              String value = headers.get(name);
-              return value != null
-                  ? Collections.enumeration(Collections.singletonList(value))
-                  : Collections.emptyEnumeration();
-            }
-            case "hashCode": return System.identityHashCode(proxy);
-            case "equals":   return proxy == args[0];
-            default:         return ServletTestSupport.defaultValue(m.getReturnType());
-          }
-        });
-  }
-
   private static ServletConfig servletConfig(Path contextRoot) {
     ServletContext context = (ServletContext) Proxy.newProxyInstance(
         ServletContext.class.getClassLoader(),
@@ -136,5 +246,25 @@ class BerliozConfigTest {
           if ("getInitParameter".equals(m.getName())) return null;
           return ServletTestSupport.defaultValue(m.getReturnType());
         });
+  }
+
+  // GlobalSettings test helpers (direct SETTINGS map manipulation, mirroring ErrorHandlerServletTest)
+
+  private static void setOption(BerliozOption option, String value) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    ref.get().put(option.property(), value);
+  }
+
+  private static void removeOption(BerliozOption option) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    if (ref.get() != null) ref.get().remove(option.property());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static AtomicReference<Map<String, String>> settingsRef() throws ReflectiveOperationException {
+    Field f = GlobalSettings.class.getDeclaredField("SETTINGS");
+    f.setAccessible(true);
+    return (AtomicReference<Map<String, String>>) f.get(null);
   }
 }

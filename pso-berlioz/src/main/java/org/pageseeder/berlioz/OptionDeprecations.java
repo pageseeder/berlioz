@@ -15,18 +15,19 @@
  */
 package org.pageseeder.berlioz;
 
+import org.pageseeder.berlioz.servlet.ControlAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 /**
- * Checks for deprecated {@link BerliozOption} values at configuration load time and emits a
- * single WARN-level log per violation.
+ * Checks for deprecated or otherwise risky {@link BerliozOption} values at configuration load
+ * time and emits a single WARN-level log per violation.
  *
  * <p>This is the internal precursor to the declarative configuration validation layer planned
- * for Theme 5. Each entry maps a deprecated option to the specific raw value that constitutes
- * deprecated usage and the message to emit when that value is found in the loaded configuration.
+ * for Theme 5. Each entry maps an option to the specific raw value that constitutes deprecated
+ * or risky usage and the message to emit when that value is found in the loaded configuration.
  *
  * @author Christophe Lauret
  * @version 0.14.0
@@ -39,8 +40,9 @@ final class OptionDeprecations {
   private OptionDeprecations() {}
 
   /**
-   * Checks all known deprecated-value constraints against the loaded configuration and logs a
-   * warning for each violation. Called once per configuration load or reload.
+   * Checks all known deprecated-value and risky-value constraints against the loaded
+   * configuration and logs a warning for each violation. Called once per configuration load or
+   * reload.
    *
    * @param properties the fully resolved configuration properties
    */
@@ -60,6 +62,26 @@ final class OptionDeprecations {
         "Config berlioz.xml.header.version=0.9 enables the legacy XML header format,"
             + " deprecated since 0.14.0 and will be removed in 1.0."
             + " Migrate XSLT templates to the 1.0 header format and remove this property.");
+
+    checkControlAccess(properties);
+  }
+
+  /**
+   * Warns once when {@code berlioz.control.access} is set to {@code loopback} or {@code lan} —
+   * these authorize Berlioz control parameters based on {@code req.getRemoteAddr()}, which is
+   * unsafe when a reverse proxy fronts the app on the same host or across an untrusted boundary.
+   */
+  private static void checkControlAccess(Map<String, String> properties) {
+    String raw = properties.get(BerliozOption.CONTROL_ACCESS.property());
+    if (raw == null) return;
+    ControlAccess access = ControlAccess.parse(raw);
+    if (access == ControlAccess.LOOPBACK || access == ControlAccess.LAN) {
+      LOGGER.warn("Config berlioz.control.access={} authorizes Berlioz control parameters"
+          + " (berlioz-reload, etc.) based on req.getRemoteAddr(). This is a dev-convenience"
+          + " setting, not a production security setting: if a reverse proxy fronts this app —"
+          + " especially one on the same host — getRemoteAddr() is the proxy's address for every"
+          + " request, including external attackers'. Do not enable it behind such a proxy.", raw);
+    }
   }
 
   private static void check(Map<String, String> properties, BerliozOption option,
