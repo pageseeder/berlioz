@@ -92,8 +92,9 @@ import org.slf4j.LoggerFactory;
  * </pre>
  *
  * <p>For security, the Berlioz administration ("control") parameters are disabled by default.
- * See {@link org.pageseeder.berlioz.BerliozOption#CONTROL_ACCESS} and
- * {@link org.pageseeder.berlioz.BerliozOption#CONTROL_AUTHORIZED_ATTRIBUTE} to enable them.
+ * See {@link org.pageseeder.berlioz.BerliozOption#CONTROL_KEY},
+ * {@link org.pageseeder.berlioz.BerliozOption#CONTROL_NETWORK}, and
+ * {@link BerliozConfig#CONTROL_AUTHORIZED_ATTRIBUTE} to enable them.
  *
  * @author Christophe Lauret
  *

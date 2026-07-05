@@ -72,7 +72,7 @@
   <!--                                                                      -->
   <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
   <!--  disabled by default. Enable via the global settings                -->
-  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
+  <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz HTML Setup                                                   -->
   <!--      This Berlioz instance is configured to serve the response       -->
@@ -115,7 +115,7 @@
   <!--                                                                      -->
   <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
   <!--  disabled by default. Enable via the global settings                -->
-  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
+  <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz HTML Setup                                                   -->
   <!--      This Berlioz instance is configured to serve the response       -->
@@ -161,7 +161,7 @@
   <!--                                                                      -->
   <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
   <!--  disabled by default. Enable via the global settings                -->
-  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
+  <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz HTML Setup                                                   -->
   <!--      This Berlioz instance is configured to serve the response       -->
@@ -207,7 +207,7 @@
   <!--                                                                      -->
   <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
   <!--  disabled by default. Enable via the global settings                -->
-  <!--  berlioz.control.access / berlioz.control.key, not an init-param.    -->
+  <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <!-- Berlioz XML Setup                                                    -->
   <!--      This Berlioz instance is configured to serve the response       -->

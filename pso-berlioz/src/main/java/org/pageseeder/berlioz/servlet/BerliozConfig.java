@@ -67,6 +67,30 @@ public final class BerliozConfig {
   private static final String IDENTITY_TRANSFORM = "IDENTITY";
 
   /**
+   * The fixed request attribute name for the delegated channel of
+   * {@link #hasControl(HttpServletRequest)}: an in-process, already-authenticated host
+   * application (e.g. an admin UI) sets this attribute to {@link Boolean#TRUE} to authorize
+   * Berlioz control parameters (e.g. {@code berlioz-reload}), with no secret ever reaching the
+   * client.
+   *
+   * <p>Always checked — not a {@link BerliozOption}/config setting. Request attributes can only be
+   * set by trusted in-process code (filters/servlets running earlier in the chain), never by an
+   * HTTP client, so always checking this does not relax the secure-by-default guarantee: no
+   * external caller can trigger it. Unlike {@link BerliozOption#NONCE_ATTRIBUTE}, there's no
+   * third-party framework that would ever spontaneously set an attribute with this meaning, so
+   * there's no interop reason to make the name configurable — whoever wires this always has to
+   * write {@code request.setAttribute(CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE)} in their own
+   * auth filter regardless. The name is deliberately fully-qualified so it can't collide with an
+   * unrelated attribute an application already sets for a different purpose.
+   *
+   * <p>Berlioz does not interpret sessions, roles, CSRF tokens, HTTP methods, or filter ordering
+   * for this attribute — that is entirely the host application's responsibility.
+   *
+   * @see #hasControl(HttpServletRequest)
+   */
+  public static final String CONTROL_AUTHORIZED_ATTRIBUTE = "org.pageseeder.berlioz.control.authorized";
+
+  /**
    * Stores all the berlioz config here.
    */
   private static final Map<String, BerliozConfig> CONFIGS = new ConcurrentHashMap<>();
@@ -296,31 +320,33 @@ public final class BerliozConfig {
    * {@code berlioz-reload}, {@code clear-xsl-cache}, {@code reset-etags}, {@code reload-services},
    * {@code berlioz-profile}).
    *
-   * <p>Authorization is granted by either of two independent channels:
+   * <p>Authorization is granted by any one of three independent channels:
    * <ol>
-   *   <li>the delegated channel — {@link BerliozOption#CONTROL_AUTHORIZED_ATTRIBUTE}, a
-   *       request-attribute handoff from the host application's own auth layer; or</li>
-   *   <li>the direct channel — {@link BerliozOption#CONTROL_ACCESS}, describing how a direct HTTP
-   *       caller proves it is allowed (loopback origin, LAN origin, or a shared-secret
-   *       {@code Authorization: Berlioz <key>} header). Re-evaluated independently on every
-   *       request; there is no session or persisted state.</li>
+   *   <li>the delegated channel — {@link #CONTROL_AUTHORIZED_ATTRIBUTE}, a fixed request-attribute
+   *       handoff from the host application's own auth layer; or</li>
+   *   <li>the key channel — {@link BerliozOption#CONTROL_KEY}, a shared secret presented via an
+   *       {@code Authorization: Berlioz <key>} header; or</li>
+   *   <li>the network channel — {@link BerliozOption#CONTROL_NETWORK}, describing what network
+   *       position a direct HTTP caller must originate from (loopback or LAN).</li>
    * </ol>
+   * None depends on the others. Re-evaluated independently on every request; there is no session
+   * or persisted state.
    *
-   * <p>By default ({@code off}, no authorized attribute configured), neither channel authorizes
-   * and this always returns {@code false}.
+   * <p>By default (no key configured, network {@code off}, attribute unset), none of the three
+   * channels authorizes and this always returns {@code false}.
    *
    * @param req the request to check.
-   * @return <code>true</code> if the request is authorized via either channel; <code>false</code> otherwise.
+   * @return <code>true</code> if the request is authorized via any channel; <code>false</code> otherwise.
    */
   public static boolean hasControl(HttpServletRequest req) {
-    String attribute = GlobalSettings.get(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE);
-    if (!attribute.isEmpty() && Boolean.TRUE.equals(req.getAttribute(attribute))) return true;
+    if (Boolean.TRUE.equals(req.getAttribute(CONTROL_AUTHORIZED_ATTRIBUTE))) return true;
 
-    ControlAccess access = ControlAccess.parse(GlobalSettings.get(BerliozOption.CONTROL_ACCESS));
-    switch (access) {
+    if (matchesAuthorizationHeader(req, GlobalSettings.get(BerliozOption.CONTROL_KEY))) return true;
+
+    ControlNetwork network = ControlNetwork.parse(GlobalSettings.get(BerliozOption.CONTROL_NETWORK));
+    switch (network) {
       case LOOPBACK: return isLoopback(req);
       case LAN:      return isLoopback(req) || isSiteLocal(req);
-      case KEY:      return matchesAuthorizationHeader(req, GlobalSettings.get(BerliozOption.CONTROL_KEY));
       case OFF:
       default:       return false;
     }
@@ -368,8 +394,8 @@ public final class BerliozConfig {
    *         <code>false</code> otherwise.
    */
   private static boolean matchesAuthorizationHeader(HttpServletRequest req, String controlKey) {
-    // An unset key must never match — otherwise "unlock=key" with no key configured would be
-    // satisfied by a bare "Authorization: Berlioz " header, reopening the exact bug being fixed.
+    // An unset key must never match — otherwise an unconfigured key channel would be satisfied
+    // by a bare "Authorization: Berlioz " header, reopening the exact bug being fixed.
     if (controlKey.isEmpty()) return false;
     // NB: use equals (not endsWith) to prevent a suffix like "Berlioz xyzSECRET" from matching "SECRET"
     Enumeration<String> headers = req.getHeaders("Authorization");

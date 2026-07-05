@@ -15,7 +15,7 @@
  */
 package org.pageseeder.berlioz;
 
-import org.pageseeder.berlioz.servlet.ControlAccess;
+import org.pageseeder.berlioz.servlet.ControlNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,20 +63,20 @@ final class OptionDeprecations {
             + " deprecated since 0.14.0 and will be removed in 1.0."
             + " Migrate XSLT templates to the 1.0 header format and remove this property.");
 
-    checkControlAccess(properties);
+    checkControlNetwork(properties);
   }
 
   /**
-   * Warns once when {@code berlioz.control.access} is set to {@code loopback} or {@code lan} —
+   * Warns once when {@code berlioz.control.network} is set to {@code loopback} or {@code lan} —
    * these authorize Berlioz control parameters based on {@code req.getRemoteAddr()}, which is
    * unsafe when a reverse proxy fronts the app on the same host or across an untrusted boundary.
    */
-  private static void checkControlAccess(Map<String, String> properties) {
-    String raw = properties.get(BerliozOption.CONTROL_ACCESS.property());
+  private static void checkControlNetwork(Map<String, String> properties) {
+    String raw = properties.get(BerliozOption.CONTROL_NETWORK.property());
     if (raw == null) return;
-    ControlAccess access = ControlAccess.parse(raw);
-    if (access == ControlAccess.LOOPBACK || access == ControlAccess.LAN) {
-      LOGGER.warn("Config berlioz.control.access={} authorizes Berlioz control parameters"
+    ControlNetwork network = ControlNetwork.parse(raw);
+    if (network == ControlNetwork.LOOPBACK || network == ControlNetwork.LAN) {
+      LOGGER.warn("Config berlioz.control.network={} authorizes Berlioz control parameters"
           + " (berlioz-reload, etc.) based on req.getRemoteAddr(). This is a dev-convenience"
           + " setting, not a production security setting: if a reverse proxy fronts this app —"
           + " especially one on the same host — getRemoteAddr() is the proxy's address for every"

@@ -480,13 +480,18 @@ public enum BerliozOption {
   XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE),
 
   /**
-   * A string global option specifying the shared secret used by the {@code key} value of
-   * {@link #CONTROL_ACCESS} to authorize Berlioz control parameters (e.g. {@code berlioz-reload}).
+   * A string global option specifying the shared secret used by the key channel to authorize
+   * Berlioz control parameters (e.g. {@code berlioz-reload}).
    *
-   * <p>Has no effect unless {@link #CONTROL_ACCESS} is set to {@code key}. The key must be
-   * supplied with each request via an {@code Authorization: Berlioz <key>} request header — the
+   * <p>Independent of {@link #CONTROL_NETWORK}: whenever this is non-empty, a request carrying a
+   * matching {@code Authorization: Berlioz <key>} request header is authorized, regardless of
+   * {@code berlioz.control.network}. Empty (the default) means this channel is inert — it never
+   * authorizes, not even a request whose header happens to be empty or absent. The
    * {@code berlioz-control} query parameter is not read for this purpose (query parameters and
    * URLs are more likely to be logged by servers and proxies along the way).
+   *
+   * <p>Typical usage: this is the channel expected for programmatic access against real,
+   * non-dev deployments, as opposed to {@link #CONTROL_NETWORK}'s dev-convenience role.
    *
    * <h3>Property</h3>
    * <table>
@@ -507,29 +512,30 @@ public enum BerliozOption {
    * <p>For development, set a simple key such as {@code dev}. In production, use a strong secret
    * string (for example, {@code 'd131dd02c5e6eec4693d96dacd436c91'}).</p>
    *
-   * @see #CONTROL_ACCESS
+   * @see #CONTROL_NETWORK
    * @since 0.8.3
    */
   @Beta
   CONTROL_KEY("berlioz.control.key", ""),
 
   /**
-   * A string global option describing how a direct HTTP caller proves it is allowed to invoke
-   * Berlioz control parameters (e.g. {@code berlioz-reload}, {@code clear-xsl-cache},
-   * {@code reset-etags}, {@code reload-services}, {@code berlioz-profile}).
+   * A string global option describing what network position a direct HTTP caller must originate
+   * from to be allowed to invoke Berlioz control parameters (e.g. {@code berlioz-reload},
+   * {@code clear-xsl-cache}, {@code reset-etags}, {@code reload-services}, {@code berlioz-profile}).
    *
    * <p>This is re-evaluated independently on every request — there is no session or persisted
    * state, so being granted access on one request confers no standing for the next.
    *
-   * <p>This is the "direct channel"; see {@link #CONTROL_AUTHORIZED_ATTRIBUTE} for an independent
-   * "delegated channel" that an in-process, already-authenticated admin UI can use instead.
-   * Either channel being satisfied authorizes the request.
+   * <p>Independent of {@link #CONTROL_KEY} (the key channel) and the fixed, always-checked
+   * delegated request-attribute channel documented on
+   * {@link org.pageseeder.berlioz.servlet.BerliozConfig#CONTROL_AUTHORIZED_ATTRIBUTE}. Any one of
+   * the three being satisfied authorizes the request.
    *
-   * <p>Four values are available:
+   * <p>Three values are available:
    * <ul>
-   *   <li>{@code off} (default) — the direct channel never grants access; control parameters can
-   *       never be authorized this way. Only the delegated channel (if configured) can authorize
-   *       them. This is the safe default and requires zero configuration.</li>
+   *   <li>{@code off} (default) — the network channel never grants access; control parameters can
+   *       never be authorized this way. Only the key or delegated channels can authorize them.
+   *       This is the safe default and requires zero configuration.</li>
    *   <li>{@code loopback} — grants access when {@code req.getRemoteAddr()} is a loopback address
    *       ({@code 127.0.0.1} or {@code ::1}).</li>
    *   <li>{@code lan} — grants access when {@code req.getRemoteAddr()} is loopback or a
@@ -537,11 +543,12 @@ public enum BerliozOption {
    *       (RFC 1918 ranges for IPv4). <b>Known limitation:</b> this does not recognize IPv6 ULA
    *       ({@code fc00::/7}) — a JDK quirk, since that method predates ULA and targets the
    *       deprecated IPv6 site-local concept instead.</li>
-   *   <li>{@code key} — grants access when the request carries an {@code Authorization: Berlioz <key>}
-   *       header matching {@link #CONTROL_KEY}.</li>
    * </ul>
    *
    * <p>Unrecognized values are treated as {@code off} (fail closed).
+   *
+   * <p>Typical usage: this is a dev/local convenience (e.g. {@code loopback} while developing
+   * against a local server), not intended for production use — see the reverse-proxy caveat below.
    *
    * <p><b>Reverse-proxy caveat:</b> {@code req.getRemoteAddr()} cannot be forged by a remote
    * attacker for a normal HTTP request — it reflects the actual TCP peer. But when a reverse
@@ -554,65 +561,27 @@ public enum BerliozOption {
    *
    * <h3>Property</h3>
    * <table>
-   *   <caption>Control access property</caption>
+   *   <caption>Control network property</caption>
    *   <tr><th>Name</th><th>Value</th></tr>
    *   <tr>
-   *     <td><code>berlioz.control.access</code></td>
+   *     <td><code>berlioz.control.network</code></td>
    *     <td><code>"off"</code></td>
    *   </tr>
    * </table>
    *
    * <h3>Recommended values</h3>
    * <table>
-   *   <caption>Control access recommended value</caption>
+   *   <caption>Control network recommended value</caption>
    *   <tr><th>Development</th><th>Production</th></tr>
-   *   <tbody><tr><td><code>loopback</code><i>(or {@code key})</i></td><td><code>key</code><i>(or {@code off})</i></td></tr></tbody>
+   *   <tbody><tr><td><code>loopback</code><i>(or rely on {@link #CONTROL_KEY} instead)</i></td><td><code>off</code><i>(rely on {@link #CONTROL_KEY} instead)</i></td></tr></tbody>
    * </table>
    *
    * @see #CONTROL_KEY
-   * @see #CONTROL_AUTHORIZED_ATTRIBUTE
-   * @see org.pageseeder.berlioz.servlet.ControlAccess
+   * @see org.pageseeder.berlioz.servlet.ControlNetwork
    * @since 0.14.0
    */
   @Beta
-  CONTROL_ACCESS("berlioz.control.access", "off"),
-
-  /**
-   * A string global option naming a request attribute that an in-process, already-authenticated
-   * host application can set to {@link Boolean#TRUE} to authorize Berlioz control parameters —
-   * the "delegated channel" of {@link #CONTROL_ACCESS}, independent of it.
-   *
-   * <p>Confirmed use case: an admin UI that is in-process with {@code BerliozServlet} (just
-   * another set of Berlioz services) and has its own authentication layer, which necessarily
-   * runs ahead of {@code BerliozServlet}/{@code RedirectFilter}/{@code RelocationFilter} in the
-   * filter chain to gate the admin services themselves. That layer can hand off "this request is
-   * authorized" via plain request state, with no secret ever reaching the client. This lets an
-   * authenticated admin trigger {@code berlioz-reload} without any {@code berlioz.control.key}
-   * management.
-   *
-   * <p>If empty (the default), this channel is inert and only {@link #CONTROL_ACCESS} applies.
-   * Berlioz does not interpret sessions, roles, CSRF tokens, HTTP methods, or filter ordering for
-   * this attribute — that is entirely the host application's responsibility. Berlioz only checks
-   * whether the named attribute is exactly {@link Boolean#TRUE}.
-   *
-   * <p>Mirrors the existing {@link #NONCE_ATTRIBUTE} pattern of a configurable request-attribute
-   * name set by an app-installed filter and read back by Berlioz.
-   *
-   * <h3>Property</h3>
-   * <table>
-   *   <caption>Control authorized attribute property</caption>
-   *   <tr><th>Name</th><th>Value</th></tr>
-   *   <tr>
-   *     <td><code>berlioz.control.authorized-attribute</code></td>
-   *     <td><code>""</code><i>(Empty — channel disabled)</i></td>
-   *   </tr>
-   * </table>
-   *
-   * @see #CONTROL_ACCESS
-   * @since 0.14.0
-   */
-  @Beta
-  CONTROL_AUTHORIZED_ATTRIBUTE("berlioz.control.authorized-attribute", ""),
+  CONTROL_NETWORK("berlioz.control.network", "off"),
 
   /**
    * A string global option to specify the name of the HTTP request attribute for the nonce.

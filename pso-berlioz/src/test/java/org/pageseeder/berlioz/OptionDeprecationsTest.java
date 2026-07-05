@@ -14,40 +14,33 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class OptionDeprecationsTest {
 
-  private static final String CONTROL_ACCESS_PROPERTY = BerliozOption.CONTROL_ACCESS.property();
+  private static final String CONTROL_NETWORK_PROPERTY = BerliozOption.CONTROL_NETWORK.property();
 
   @Test
-  void testCheckAll_controlAccessLoopback_warnsOnce() {
+  void testCheckAll_controlNetworkLoopback_warnsOnce() {
     String output = captureStderr(() ->
-        OptionDeprecations.checkAll(Map.of(CONTROL_ACCESS_PROPERTY, "loopback")));
-    assertEquals(1, countOccurrences(output, CONTROL_ACCESS_PROPERTY));
+        OptionDeprecations.checkAll(Map.of(CONTROL_NETWORK_PROPERTY, "loopback")));
+    assertEquals(1, countOccurrences(output, CONTROL_NETWORK_PROPERTY));
   }
 
   @Test
-  void testCheckAll_controlAccessLan_warnsOnce() {
+  void testCheckAll_controlNetworkLan_warnsOnce() {
     String output = captureStderr(() ->
-        OptionDeprecations.checkAll(Map.of(CONTROL_ACCESS_PROPERTY, "lan")));
-    assertEquals(1, countOccurrences(output, CONTROL_ACCESS_PROPERTY));
+        OptionDeprecations.checkAll(Map.of(CONTROL_NETWORK_PROPERTY, "lan")));
+    assertEquals(1, countOccurrences(output, CONTROL_NETWORK_PROPERTY));
   }
 
   @Test
-  void testCheckAll_controlAccessOff_noWarning() {
+  void testCheckAll_controlNetworkOff_noWarning() {
     String output = captureStderr(() ->
-        OptionDeprecations.checkAll(Map.of(CONTROL_ACCESS_PROPERTY, "off")));
-    assertFalse(output.contains(CONTROL_ACCESS_PROPERTY));
+        OptionDeprecations.checkAll(Map.of(CONTROL_NETWORK_PROPERTY, "off")));
+    assertFalse(output.contains(CONTROL_NETWORK_PROPERTY));
   }
 
   @Test
-  void testCheckAll_controlAccessKey_noWarning() {
-    String output = captureStderr(() ->
-        OptionDeprecations.checkAll(Map.of(CONTROL_ACCESS_PROPERTY, "key")));
-    assertFalse(output.contains(CONTROL_ACCESS_PROPERTY));
-  }
-
-  @Test
-  void testCheckAll_controlAccessNotConfigured_noWarning() {
+  void testCheckAll_controlNetworkNotConfigured_noWarning() {
     String output = captureStderr(() -> OptionDeprecations.checkAll(Map.of()));
-    assertFalse(output.contains(CONTROL_ACCESS_PROPERTY));
+    assertFalse(output.contains(CONTROL_NETWORK_PROPERTY));
   }
 
   private static int countOccurrences(String haystack, String needle) {

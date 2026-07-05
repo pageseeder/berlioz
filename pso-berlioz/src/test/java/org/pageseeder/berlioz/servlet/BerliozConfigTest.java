@@ -23,12 +23,11 @@ class BerliozConfigTest {
 
   @AfterEach
   void resetControlSettings() throws ReflectiveOperationException {
-    removeOption(BerliozOption.CONTROL_ACCESS);
+    removeOption(BerliozOption.CONTROL_NETWORK);
     removeOption(BerliozOption.CONTROL_KEY);
-    removeOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE);
   }
 
-  // hasControl(req) — default (off, no delegated attribute)
+  // hasControl(req) — default (network off, no key, no delegated attribute)
 
   @Test
   void testHasControl_defaultSettings_returnsFalse() {
@@ -37,9 +36,8 @@ class BerliozConfigTest {
   }
 
   @Test
-  void testHasControl_accessOff_ignoresMatchingAuthorizationHeader() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "off");
-    setOption(BerliozOption.CONTROL_KEY, "secret123");
+  void testHasControl_networkOff_ignoresMatchingAuthorizationHeaderWithoutKeyConfigured() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, "off");
     HttpServletRequest req = ServletTestSupport.request()
         .header("Authorization", "Berlioz secret123")
         .build();
@@ -47,17 +45,27 @@ class BerliozConfigTest {
   }
 
   @Test
-  void testHasControl_unknownAccessValue_fallsBackToOff() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "bogus");
+  void testHasControl_unknownNetworkValue_fallsBackToOff() throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, "bogus");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
     assertFalse(BerliozConfig.hasControl(req));
   }
 
-  // hasControl(req) — access=key
+  // hasControl(req) — key channel (independent of network)
 
   @Test
   void testHasControl_key_matchingAuthorizationHeader_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    setOption(BerliozOption.CONTROL_KEY, "secret123");
+    HttpServletRequest req = ServletTestSupport.request()
+        .header("Authorization", "Berlioz secret123")
+        .build();
+    assertTrue(BerliozConfig.hasControl(req));
+  }
+
+  @Test
+  void testHasControl_key_matchingAuthorizationHeader_networkOff_stillReturnsTrue() throws ReflectiveOperationException {
+    // The key channel authorizes independently of the network channel's value.
+    setOption(BerliozOption.CONTROL_NETWORK, "off");
     setOption(BerliozOption.CONTROL_KEY, "secret123");
     HttpServletRequest req = ServletTestSupport.request()
         .header("Authorization", "Berlioz secret123")
@@ -67,7 +75,6 @@ class BerliozConfigTest {
 
   @Test
   void testHasControl_key_wrongAuthorizationHeader_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "key");
     setOption(BerliozOption.CONTROL_KEY, "secret123");
     HttpServletRequest req = ServletTestSupport.request()
         .header("Authorization", "Berlioz wrongkey")
@@ -77,7 +84,6 @@ class BerliozConfigTest {
 
   @Test
   void testHasControl_key_noHeader_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "key");
     setOption(BerliozOption.CONTROL_KEY, "secret123");
     HttpServletRequest req = ServletTestSupport.request().build();
     assertFalse(BerliozConfig.hasControl(req));
@@ -86,7 +92,6 @@ class BerliozConfigTest {
   @Test
   void testHasControl_key_partialKeySuffix_returnsFalse() throws ReflectiveOperationException {
     // Ensure "Berlioz xyzSECRET" doesn't match key "SECRET"
-    setOption(BerliozOption.CONTROL_ACCESS, "key");
     setOption(BerliozOption.CONTROL_KEY, "SECRET");
     HttpServletRequest req = ServletTestSupport.request()
         .header("Authorization", "Berlioz xyzSECRET")
@@ -97,7 +102,6 @@ class BerliozConfigTest {
   @Test
   void testHasControl_key_queryParameterIgnored_returnsFalse() throws ReflectiveOperationException {
     // The berlioz-control query parameter is no longer read — only the Authorization header.
-    setOption(BerliozOption.CONTROL_ACCESS, "key");
     setOption(BerliozOption.CONTROL_KEY, "secret123");
     HttpServletRequest req = ServletTestSupport.request()
         .parameter("berlioz-control", "secret123")
@@ -107,33 +111,32 @@ class BerliozConfigTest {
 
   @Test
   void testHasControl_key_noKeyConfigured_returnsFalse() throws ReflectiveOperationException {
-    // access=key with no berlioz.control.key set must fail closed, not match a bare "Berlioz " header.
-    setOption(BerliozOption.CONTROL_ACCESS, "key");
+    // No berlioz.control.key set must fail closed, not match a bare "Berlioz " header.
     HttpServletRequest req = ServletTestSupport.request()
         .header("Authorization", "Berlioz ")
         .build();
     assertFalse(BerliozConfig.hasControl(req));
   }
 
-  // hasControl(req) — access=loopback
+  // hasControl(req) — network=loopback
 
   @Test
   void testHasControl_loopback_loopbackIPv4_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
     assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
   void testHasControl_loopback_loopbackIPv6_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("::1").build();
     assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
   void testHasControl_loopback_nonLoopbackAddress_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("203.0.113.10").build();
     assertFalse(BerliozConfig.hasControl(req));
   }
@@ -141,68 +144,64 @@ class BerliozConfigTest {
   @Test
   void testHasControl_loopback_privateAddress_returnsFalse() throws ReflectiveOperationException {
     // "loopback" must not also authorize the wider LAN range — that's what "lan" is for.
-    setOption(BerliozOption.CONTROL_ACCESS, "loopback");
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("192.168.1.10").build();
     assertFalse(BerliozConfig.hasControl(req));
   }
 
-  // hasControl(req) — access=lan
+  // hasControl(req) — network=lan
 
   @Test
   void testHasControl_lan_privateAddress_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "lan");
+    setOption(BerliozOption.CONTROL_NETWORK, "lan");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("192.168.1.10").build();
     assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
   void testHasControl_lan_loopbackAddress_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "lan");
+    setOption(BerliozOption.CONTROL_NETWORK, "lan");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
     assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
   void testHasControl_lan_publicAddress_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_ACCESS, "lan");
+    setOption(BerliozOption.CONTROL_NETWORK, "lan");
     HttpServletRequest req = ServletTestSupport.request().remoteAddr("203.0.113.10").build();
     assertFalse(BerliozConfig.hasControl(req));
   }
 
-  // hasControl(req) — delegated (authorized-attribute) channel
+  // hasControl(req) — delegated (fixed attribute) channel
 
   @Test
-  void testHasControl_authorizedAttribute_setToTrue_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE, "admin.authorized");
-    // access left at the default (off) to prove the delegated channel is independent of it.
+  void testHasControl_authorizedAttribute_setToTrue_returnsTrue() {
+    // network left at the default (off), no key configured, to prove the delegated channel is
+    // independent of the other two.
     HttpServletRequest req = ServletTestSupport.request()
-        .attribute("admin.authorized", Boolean.TRUE)
+        .attribute(BerliozConfig.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE)
         .build();
     assertTrue(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_authorizedAttribute_notSet_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE, "admin.authorized");
+  void testHasControl_authorizedAttribute_notSet_returnsFalse() {
     HttpServletRequest req = ServletTestSupport.request().build();
     assertFalse(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_authorizedAttribute_wrongType_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_AUTHORIZED_ATTRIBUTE, "admin.authorized");
+  void testHasControl_authorizedAttribute_setToFalse_returnsFalse() {
     HttpServletRequest req = ServletTestSupport.request()
-        .attribute("admin.authorized", "true")
+        .attribute(BerliozConfig.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.FALSE)
         .build();
     assertFalse(BerliozConfig.hasControl(req));
   }
 
   @Test
-  void testHasControl_authorizedAttribute_emptyConfig_channelInert() throws ReflectiveOperationException {
-    // berlioz.control.authorized-attribute defaults to "" — the attribute name itself must not
-    // be treated as a magic default that Berlioz reads regardless of configuration.
+  void testHasControl_authorizedAttribute_wrongType_returnsFalse() {
     HttpServletRequest req = ServletTestSupport.request()
-        .attribute("admin.authorized", Boolean.TRUE)
+        .attribute(BerliozConfig.CONTROL_AUTHORIZED_ATTRIBUTE, "true")
         .build();
     assertFalse(BerliozConfig.hasControl(req));
   }
