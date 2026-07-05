@@ -708,9 +708,11 @@ public final class BerliozServlet extends HttpServlet {
       @Nullable String etag, Charset charset, BerliozConfig config, boolean includeContent) throws IOException {
 
     // Only attempt compression when the config enables it, the media type is compressible and the
-    // content is large enough for compression to be worthwhile
+    // content is large enough for compression to be worthwhile. Char count is a safe lower bound
+    // on encoded byte length (every supported charset uses at least 1 byte per char), so it gates
+    // the decision without a full encode pass.
     boolean compressible = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType())
-        && CharsetUtils.length(result.content(), charset) >= COMPRESSION_THRESHOLD;
+        && result.content().length() >= COMPRESSION_THRESHOLD;
     if (compressible && HttpHeaderUtils.acceptsGZipCompression(req)) {
       byte[] compressed = ResourceCompressor.compress(result.content(), charset);
       if (compressed.length > 0) {
