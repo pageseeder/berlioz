@@ -93,33 +93,57 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
   /**
    * Exception thrown (Exception).
+   *
+   * @deprecated Use {@link RequestDispatcher#ERROR_EXCEPTION} instead; this duplicates the
+   *             standard servlet API constant.
    */
-  public static final String ERROR_EXCEPTION = "javax.servlet.error.exception";
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  public static final String ERROR_EXCEPTION = RequestDispatcher.ERROR_EXCEPTION;
 
   /**
    * Class of exception thrown (Class).
+   *
+   * @deprecated Use {@link RequestDispatcher#ERROR_EXCEPTION_TYPE} instead; this duplicates the
+   *             standard servlet API constant.
    */
-  public static final String ERROR_EXCEPTION_TYPE = "javax.servlet.error.exception_type";
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  public static final String ERROR_EXCEPTION_TYPE = RequestDispatcher.ERROR_EXCEPTION_TYPE;
 
   /**
    * Any attached message (String).
+   *
+   * @deprecated Use {@link RequestDispatcher#ERROR_MESSAGE} instead; this duplicates the
+   *             standard servlet API constant.
    */
-  public static final String ERROR_MESSAGE = "javax.servlet.error.message";
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  public static final String ERROR_MESSAGE = RequestDispatcher.ERROR_MESSAGE;
 
   /**
    * The offending request URI (String).
+   *
+   * @deprecated Use {@link RequestDispatcher#ERROR_REQUEST_URI} instead; this duplicates the
+   *             standard servlet API constant.
    */
-  public static final String ERROR_REQUEST_URI = "javax.servlet.error.request_uri";
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  public static final String ERROR_REQUEST_URI = RequestDispatcher.ERROR_REQUEST_URI;
 
   /**
    * The name of the offending servlet (String).
+   *
+   * @deprecated Use {@link RequestDispatcher#ERROR_SERVLET_NAME} instead; this duplicates the
+   *             standard servlet API constant.
    */
-  public static final String ERROR_SERVLET_NAME = "javax.servlet.error.servlet_name";
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  public static final String ERROR_SERVLET_NAME = RequestDispatcher.ERROR_SERVLET_NAME;
 
   /**
    * The HTTP Status code (Integer).
+   *
+   * @deprecated Use {@link RequestDispatcher#ERROR_STATUS_CODE} instead; this duplicates the
+   *             standard servlet API constant.
    */
-  public static final String ERROR_STATUS_CODE = "javax.servlet.error.status_code";
+  @Deprecated(since = "0.14.0", forRemoval = true)
+  public static final String ERROR_STATUS_CODE = RequestDispatcher.ERROR_STATUS_CODE;
 
   /**
    * The Berlioz error ID (String).
@@ -216,11 +240,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Error handler for URI:{}", uri);
-      LOGGER.debug(ERROR_MESSAGE + ":{}", req.getAttribute(ERROR_MESSAGE));
-      LOGGER.debug(ERROR_STATUS_CODE + ":{}", req.getAttribute(ERROR_STATUS_CODE));
-      LOGGER.debug(ERROR_SERVLET_NAME + ":{}", req.getAttribute(ERROR_SERVLET_NAME));
-      LOGGER.debug(ERROR_EXCEPTION + ":{}", req.getAttribute(ERROR_EXCEPTION));
-      LOGGER.debug(ERROR_REQUEST_URI + ":{}", req.getAttribute(ERROR_REQUEST_URI));
+      LOGGER.debug(RequestDispatcher.ERROR_MESSAGE + ":{}", req.getAttribute(RequestDispatcher.ERROR_MESSAGE));
+      LOGGER.debug(RequestDispatcher.ERROR_STATUS_CODE + ":{}", req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE));
+      LOGGER.debug(RequestDispatcher.ERROR_SERVLET_NAME + ":{}", req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME));
+      LOGGER.debug(RequestDispatcher.ERROR_EXCEPTION + ":{}", req.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+      LOGGER.debug(RequestDispatcher.ERROR_REQUEST_URI + ":{}", req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI));
       LOGGER.debug(BERLIOZ_ERROR_ID + ":{}", req.getAttribute(BERLIOZ_ERROR_ID));
     }
 
@@ -348,7 +372,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   private static String toXml(HttpServletRequest req) {
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
       int code = getErrorCode(req);
-      String message = (String) req.getAttribute(ERROR_MESSAGE);
+      String message = (String) req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
       Throwable throwable = getErrorException(req);
       return toProblemXml(code, message, extractErrorId(req, throwable), throwable);
     }
@@ -415,7 +439,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @return The original URI or this URI if it is the original.
    */
   private static String getOriginalURI(HttpServletRequest req) {
-    Object original = req.getAttribute(ERROR_REQUEST_URI);
+    Object original = req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
     if (original instanceof String) return (String) original;
     return req.getRequestURI();
   }
@@ -427,7 +451,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @return the error code.
    */
   private static int getErrorCode(ServletRequest req) {
-    Object o = req.getAttribute(ERROR_STATUS_CODE);
+    Object o = req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
     if (o == null) return HttpServletResponse.SC_OK;
     else if (o instanceof Integer) {
       return (Integer) o;
@@ -444,7 +468,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @return the exception, or {@code null} when unavailable.
    */
   private static @Nullable Throwable getErrorException(ServletRequest req) {
-    Object o = req.getAttribute(ERROR_EXCEPTION);
+    Object o = req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
     if (o == null) return null;
     else if (o instanceof Throwable) return (Throwable) o;
     else {

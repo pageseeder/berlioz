@@ -14,6 +14,7 @@ import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -46,14 +47,15 @@ class ErrorHandlerServletTest {
   // Public error attribute constants
 
   @Test
+  @SuppressWarnings("removal") // asserting the deprecated aliases still match the servlet API
   void testErrorAttributeConstants() {
-    assertEquals("javax.servlet.error.exception",      ErrorHandlerServlet.ERROR_EXCEPTION);
-    assertEquals("javax.servlet.error.exception_type", ErrorHandlerServlet.ERROR_EXCEPTION_TYPE);
-    assertEquals("javax.servlet.error.message",        ErrorHandlerServlet.ERROR_MESSAGE);
-    assertEquals("javax.servlet.error.request_uri",    ErrorHandlerServlet.ERROR_REQUEST_URI);
-    assertEquals("javax.servlet.error.servlet_name",   ErrorHandlerServlet.ERROR_SERVLET_NAME);
-    assertEquals("javax.servlet.error.status_code",    ErrorHandlerServlet.ERROR_STATUS_CODE);
-    assertEquals("org.pageseeder.berlioz.error_id",    ErrorHandlerServlet.BERLIOZ_ERROR_ID);
+    assertEquals(RequestDispatcher.ERROR_EXCEPTION,      ErrorHandlerServlet.ERROR_EXCEPTION);
+    assertEquals(RequestDispatcher.ERROR_EXCEPTION_TYPE, ErrorHandlerServlet.ERROR_EXCEPTION_TYPE);
+    assertEquals(RequestDispatcher.ERROR_MESSAGE,        ErrorHandlerServlet.ERROR_MESSAGE);
+    assertEquals(RequestDispatcher.ERROR_REQUEST_URI,    ErrorHandlerServlet.ERROR_REQUEST_URI);
+    assertEquals(RequestDispatcher.ERROR_SERVLET_NAME,   ErrorHandlerServlet.ERROR_SERVLET_NAME);
+    assertEquals(RequestDispatcher.ERROR_STATUS_CODE,    ErrorHandlerServlet.ERROR_STATUS_CODE);
+    assertEquals("org.pageseeder.berlioz.error_id",      ErrorHandlerServlet.BERLIOZ_ERROR_ID);
   }
 
   // getErrorCode() - accessible indirectly through doGet; tested via attribute behaviour
@@ -121,8 +123,8 @@ class ErrorHandlerServletTest {
     @Test
     void handle_legacyFormat_404_emitsClientErrorXml() throws Exception {
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
-        .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Resource not found")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Resource not found")
         .build();
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
     new ErrorHandlerServlet().handle(req, res.build());
@@ -141,8 +143,8 @@ class ErrorHandlerServletTest {
   @Test
   void handle_legacyFormat_500_emitsServerErrorXml() throws Exception {
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-        .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
         .build();
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
     new ErrorHandlerServlet().handle(req, res.build());
@@ -161,9 +163,9 @@ class ErrorHandlerServletTest {
   void handle_legacyFormat_fullDetail_redactsSensitiveHeadersAndParameters() throws Exception {
     RuntimeException cause = new RuntimeException("something went wrong");
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-        .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
-        .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, cause)
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+        .attribute(RequestDispatcher.ERROR_EXCEPTION, cause)
         .header("Authorization", "Bearer header-secret")
         .header("Cookie", "JSESSIONID=cookie-secret")
         .header("X-Api_Key", "api-key-secret")
@@ -200,9 +202,9 @@ class ErrorHandlerServletTest {
     CompoundBerliozException cause = new CompoundBerliozException("compound failure",
         BerliozErrorID.GENERATOR_ERROR_MULTIPLE, collector);
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-        .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
-        .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, cause)
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+        .attribute(RequestDispatcher.ERROR_EXCEPTION, cause)
         .build();
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
 
@@ -255,8 +257,8 @@ class ErrorHandlerServletTest {
     @Test
     void handle_problemFormat_404_emitsProblemXml() throws Exception {
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Resource not found")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Resource not found")
           .build();
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
@@ -275,8 +277,8 @@ class ErrorHandlerServletTest {
     @Test
     void handle_problemFormat_500_emitsProblemXml() throws Exception {
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
           .build();
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
@@ -295,8 +297,8 @@ class ErrorHandlerServletTest {
     @Test
     void handle_problemFormat_405_includesMethodNotAllowedType() throws Exception {
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 405)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Only GET is allowed")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 405)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Only GET is allowed")
           .build();
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
@@ -312,8 +314,8 @@ class ErrorHandlerServletTest {
     @Test
     void handle_problemFormat_401_emitsValidProblemDocument() throws Exception {
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 401)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Authentication required")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 401)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Authentication required")
           .build();
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
       new ErrorHandlerServlet().handle(req, res.build());
@@ -351,9 +353,9 @@ class ErrorHandlerServletTest {
     void handle_standardDetail_withThrowable_includesExceptionSummaryOnly() throws Exception {
       RuntimeException cause = new RuntimeException("something went wrong");
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
-          .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, cause)
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .attribute(RequestDispatcher.ERROR_EXCEPTION, cause)
           .header("X-Forwarded-For", "10.0.0.1")
           .parameter("q", "test")
           .build();
@@ -377,8 +379,8 @@ class ErrorHandlerServletTest {
     @Test
     void handle_standardDetail_withoutThrowable_emitsNoExceptionElement() throws Exception {
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Resource not found")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Resource not found")
           .header("Accept", "text/html")
           .build();
       ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
@@ -417,9 +419,9 @@ class ErrorHandlerServletTest {
     void handle_minimalDetail_suppressesAllDiagnostics() throws Exception {
       RuntimeException cause = new RuntimeException("something went wrong");
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Unexpected error")
-          .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, cause)
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .attribute(RequestDispatcher.ERROR_EXCEPTION, cause)
           .header("X-Forwarded-For", "10.0.0.1")
           .parameter("q", "test")
           .build();
@@ -441,8 +443,8 @@ class ErrorHandlerServletTest {
     @Test
     void handle_minimalDetail_404_suppressesAllDiagnostics() throws Exception {
       HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-          .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
-          .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Resource not found")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Resource not found")
           .header("Accept", "text/html")
           .parameter("id", "42")
           .build();
@@ -523,8 +525,8 @@ class ErrorHandlerServletTest {
       setOption(BerliozOption.ERROR_STYLESHEET, "error.xsl");
       try {
         HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
-            .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-            .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "Test error")
+            .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+            .attribute(RequestDispatcher.ERROR_MESSAGE, "Test error")
             .build();
         ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
         new ErrorHandlerServlet().handle(req, res.build());

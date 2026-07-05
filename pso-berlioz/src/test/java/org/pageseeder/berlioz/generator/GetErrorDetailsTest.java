@@ -7,9 +7,9 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.servlet.ErrorHandlerServlet;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ class GetErrorDetailsTest {
   @Test
   void test404ProducesClientErrorClass() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
     String out = process(builder);
     Assertions.assertTrue(out.contains("http-code=\"404\""));
     Assertions.assertTrue(out.contains("http-class=\"client-error\""));
@@ -49,7 +49,7 @@ class GetErrorDetailsTest {
   @Test
   void test500ProducesServerErrorClass() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     String out = process(builder);
     Assertions.assertTrue(out.contains("http-code=\"500\""));
     Assertions.assertTrue(out.contains("http-class=\"server-error\""));
@@ -61,8 +61,8 @@ class GetErrorDetailsTest {
   @Test
   void testMessageAttributeWritesMessageElement() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
-        .attribute(ErrorHandlerServlet.ERROR_MESSAGE, "The page was not found");
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "The page was not found");
     String out = process(builder);
     Assertions.assertTrue(out.contains("<message>The page was not found</message>"));
   }
@@ -70,8 +70,8 @@ class GetErrorDetailsTest {
   @Test
   void testRequestUriAttributeWritesRequestUriElement() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 404)
-        .attribute(ErrorHandlerServlet.ERROR_REQUEST_URI, "/missing/page");
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .attribute(RequestDispatcher.ERROR_REQUEST_URI, "/missing/page");
     String out = process(builder);
     Assertions.assertTrue(out.contains("<request-uri>/missing/page</request-uri>"));
   }
@@ -79,8 +79,8 @@ class GetErrorDetailsTest {
   @Test
   void testExceptionNotIncludedAtMinimalDetailLevel() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, 500)
-        .attribute(ErrorHandlerServlet.ERROR_EXCEPTION, new IllegalStateException("boom"));
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_EXCEPTION, new IllegalStateException("boom"));
     String out = process(builder);
     Assertions.assertFalse(out.contains("IllegalStateException"), "Exception class should not appear at minimal detail level");
     Assertions.assertFalse(out.contains("<exception"), "Exception element should not appear at minimal detail level");
@@ -98,7 +98,7 @@ class GetErrorDetailsTest {
   @Test
   void testStatusReturnedInResponse() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
-        .attribute(ErrorHandlerServlet.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, HttpServletResponse.SC_NOT_FOUND);
     ContentRequest req = builder.build();
     XmlStringBuilder xml = new XmlStringBuilder();
     Response response = new GetErrorDetails().generate(req, xml);

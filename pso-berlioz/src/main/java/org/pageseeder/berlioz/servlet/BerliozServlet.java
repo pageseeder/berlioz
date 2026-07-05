@@ -324,7 +324,7 @@ public final class BerliozServlet extends HttpServlet {
     LOGGER.debug("{} -> {}", path, service);
 
     // Is Berlioz used to handle an error?
-    Integer code = (Integer)req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
+    Integer code = (Integer)req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
 
     // Detect whether a direct JSON response is appropriate:
     // the servlet is configured with a JSON media type AND the service supports direct JSON output.
@@ -754,7 +754,7 @@ public final class BerliozServlet extends HttpServlet {
    */
   private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex) {
     // Is Berlioz already handling an error? (set by the servlet container per javax.servlet error dispatch contract)
-    Integer error = (Integer) req.getAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE);
+    Integer error = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
 
     if (error == null && !GlobalSettings.has(BerliozOption.ERROR_HANDLER)) {
       logError(code, message, ex, "Berlioz sending error to Web container {} [{}]");
@@ -778,14 +778,14 @@ public final class BerliozServlet extends HttpServlet {
 
     // Preserve the original error code when already handling an error; clamp to valid HTTP range to satisfy taint analysis
     int statusCode = Math.max(100, Math.min(599, error != null ? error : code));
-    req.setAttribute(ErrorHandlerServlet.ERROR_STATUS_CODE, statusCode);
-    req.setAttribute(ErrorHandlerServlet.ERROR_MESSAGE, message);
-    req.setAttribute(ErrorHandlerServlet.ERROR_REQUEST_URI, req.getRequestURI());
-    req.setAttribute(ErrorHandlerServlet.ERROR_SERVLET_NAME, getBerliozConfig().getName());
+    req.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode);
+    req.setAttribute(RequestDispatcher.ERROR_MESSAGE, message);
+    req.setAttribute(RequestDispatcher.ERROR_REQUEST_URI, req.getRequestURI());
+    req.setAttribute(RequestDispatcher.ERROR_SERVLET_NAME, getBerliozConfig().getName());
 
     if (ex != null) {
-      req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION, ex);
-      req.setAttribute(ErrorHandlerServlet.ERROR_EXCEPTION_TYPE, ex.getClass());
+      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION, ex);
+      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, ex.getClass());
     }
 
     dispatchError(req, res, code, message, ex);
