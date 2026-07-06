@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
@@ -36,11 +35,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.servlet.HttpContentRequest;
-import org.pageseeder.berlioz.xml.XmlWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,13 +49,46 @@ import org.slf4j.LoggerFactory;
  * <p>This generator scans the <code>/WEB-INF/lib/</code> folder of the current Web application
  * for <code>.jar</code> files and extracts the metadata from their manifest.
  *
+ * <h3>Returned XML</h3>
+ * <p>Manifest headers vary per jar, so each one is written as a {@code name}/{@code value}
+ * attribute pair rather than mapped onto element or attribute names, keeping the shape of each
+ * {@code library} element uniform regardless of which headers a given jar happens to declare:
+ * <pre>{@code
+ * <libraries>
+ *   <library file="[file]" name="[name]" version="[version]">
+ *     <attribute name="implementation-vendor" value="[vendor]"/>
+ *     <attribute name="implementation-title" value="[title]"/>
+ *     ...
+ *   </library>
+ *   ...
+ * </libraries>
+ * }</pre>
+ *
+ * <h3>Returned JSON</h3>
+ * <p>This generator returns the same information as JSON as below:
+ * <pre>{@code
+ * {
+ *   "libraries": [
+ *     {
+ *       "file": "[file]", "name": "[name]", "version": "[version]",
+ *       "attributes": [
+ *         {"name": "implementation-vendor", "value": "[vendor]"},
+ *         {"name": "implementation-title", "value": "[title]"},
+ *         ...
+ *       ]
+ *     },
+ *     ...
+ *   ]
+ * }
+ * }</pre>
+ *
  * @author Christophe Lauret
  *
  * @version 0.14.0
  * @since 0.9.32
  */
 @Beta
-public final class ListLibraries implements XmlGenerator {
+public final class ListLibraries implements Generator {
 
   /**
    * Logger for this generator.
@@ -89,24 +121,25 @@ public final class ListLibraries implements XmlGenerator {
   }
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     HttpServletRequest http = ((HttpContentRequest)req).getHttpRequest();
     ServletContext context = http.getServletContext();
-    extractLibs(context, xml);
+    extractLibs(context, out);
     return Response.ok();
   }
 
   /**
-   * Extracts the libraries from the servlet context as XML.
+   * Extracts the libraries from the servlet context.
    *
    * @param context The servlet context to inspect.
-   * @param xml     The XML output.
+   * @param out     The output writer.
    */
-  void extractLibs(ServletContext context, XmlWriter xml) {
+  void extractLibs(ServletContext context, OutputWriter out) {
 
     List<String> paths = getLibraryPaths(context);
 
-    xml.openElement("libraries");
+    out.startObject("libraries");
+    out.startArray("libraries", OutputWriter.ContextOption.JSON_ONLY);
     for (String path : paths) {
 
       String filename = filename(path);
@@ -115,21 +148,18 @@ public final class ListLibraries implements XmlGenerator {
       String name = dash > 0 && dash < base.length() - 1 ? base.substring(0, dash) : base;
       String version = dash > 0 && dash < base.length() - 1 ? base.substring(dash+1) : null;
 
-      // Start writing out the XML
-      xml.openElement("library");
-      xml.attribute("file", filename);
-      xml.attribute("name", name);
-      if (version != null) {
-        xml.attribute("version", version);
-      }
+      out.startObject("library");
+      out.field("file", filename);
+      out.field("name", name);
+      out.optionalField("version", version);
 
-      // Get attributes
       Map<String, String> attributes = getMainAttributes(path, context);
-      toXml(xml, attributes);
+      writeAttributes(out, attributes);
 
-      xml.closeElement();
+      out.endObject();
     }
-    xml.closeElement();
+    out.endArray();
+    out.endObject();
   }
 
   /**
@@ -196,41 +226,27 @@ public final class ListLibraries implements XmlGenerator {
 
 
   /**
-   * Extracts all the attributes of the manifest as XML
+   * Writes the manifest attributes for a single library as a flat {@code name}/{@code value}
+   * list, in both XML and JSON.
    *
-   * @param xml        The XML
-   * @param attributes The attributes from the Manifest
+   * <p>Manifest headers vary per jar, so keys are written as data rather than mapped onto
+   * element, attribute, or property names, keeping the shape of each library entry uniform
+   * regardless of which headers a given jar happens to declare.
+   *
+   * @param out        The output writer.
+   * @param attributes The attributes from the Manifest (keys already lower-cased).
    */
-  private static void toXml(XmlWriter xml, Map<String, String> attributes) {
-    Map<String, String> xmlAttributes = new TreeMap<>();
-    Map<String, Map<String, String>> elements = new TreeMap<>();
-    for (Entry<String, String> entry : attributes.entrySet()) {
-      String key = entry.getKey();
-      int dash = key.indexOf('-');
-      if (dash == -1) {
-        xmlAttributes.put(key.toLowerCase(Locale.ROOT), Objects.toString(entry.getValue(), ""));
-      } else {
-        String category = key.substring(0, dash);
-        String value = key.substring(dash+1);
-        Map<String, String> values = elements.computeIfAbsent(category, k -> new TreeMap<>());
-        values.put(value, Objects.toString(entry.getValue(), ""));
-      }
+  private static void writeAttributes(OutputWriter out, Map<String, String> attributes) {
+    out.startArray("attributes", OutputWriter.ContextOption.JSON_ONLY);
+    // `attributes` is an immutable `Map.copyOf`, whose iteration order is not guaranteed;
+    // sort so the output is deterministic.
+    for (Entry<String, String> attribute : new TreeMap<>(attributes).entrySet()) {
+      out.startObject("attribute");
+      out.field("name", attribute.getKey());
+      out.field("value", attribute.getValue());
+      out.endObject();
     }
-
-    // Attributes must be written before any child element.
-    for (Entry<String, String> e : xmlAttributes.entrySet()) {
-      xml.attribute(e.getKey(), e.getValue());
-    }
-
-    // Elements
-    for (Entry<String, Map<String, String>> e : elements.entrySet()) {
-      xml.openElement(e.getKey().toLowerCase(Locale.ROOT));
-      for (Entry<String, String> attribute : e.getValue().entrySet()) {
-        xml.attribute(attribute.getKey().toLowerCase(Locale.ROOT), attribute.getValue());
-      }
-      xml.closeElement();
-    }
-
+    out.endArray();
   }
 
   /**

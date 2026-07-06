@@ -2,6 +2,7 @@ package org.pageseeder.berlioz.system;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -23,7 +24,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -56,16 +59,16 @@ final class ListLibrariesTest {
     assertEquals("alpha.jar", alpha.getAttribute("file"));
     assertEquals("alpha", alpha.getAttribute("name"));
     assertFalse(alpha.hasAttribute("version"));
-    assertEquals("1.0", child(alpha, "manifest", 0).getAttribute("version"));
-    assertEquals("Alpha Library", child(alpha, "implementation", 0).getAttribute("title"));
-    assertEquals("Berlioz", child(alpha, "built", 0).getAttribute("by"));
+    assertEquals("1.0", attributeValue(alpha, "manifest-version"));
+    assertEquals("Alpha Library", attributeValue(alpha, "implementation-title"));
+    assertEquals("Berlioz", attributeValue(alpha, "built-by"));
 
     Element beta = child(root, "library", 1);
     assertEquals("beta-2.0.jar", beta.getAttribute("file"));
     assertEquals("beta", beta.getAttribute("name"));
     assertEquals("2.0", beta.getAttribute("version"));
-    assertEquals("Beta Library", child(beta, "implementation", 0).getAttribute("title"));
-    assertEquals("2.0", child(beta, "implementation", 0).getAttribute("version"));
+    assertEquals("Beta Library", attributeValue(beta, "implementation-title"));
+    assertEquals("2.0", attributeValue(beta, "implementation-version"));
   }
 
   @Test
@@ -74,17 +77,17 @@ final class ListLibrariesTest {
     fixture.add("/WEB-INF/lib/library-1.0.jar", jar("Implementation-Version", "1.0"));
 
     Element first = child(extract(fixture), "library", 0);
-    assertEquals("1.0", child(first, "implementation", 0).getAttribute("version"));
+    assertEquals("1.0", attributeValue(first, "implementation-version"));
     assertEquals(1, fixture.opens("/WEB-INF/lib/library-1.0.jar"));
 
     fixture.add("/WEB-INF/lib/library-1.0.jar", jar("Implementation-Version", "2.0"));
     Element cached = child(extract(fixture), "library", 0);
-    assertEquals("1.0", child(cached, "implementation", 0).getAttribute("version"));
+    assertEquals("1.0", attributeValue(cached, "implementation-version"));
     assertEquals(1, fixture.opens("/WEB-INF/lib/library-1.0.jar"));
 
     ListLibraries.clearCache();
     Element reloaded = child(extract(fixture), "library", 0);
-    assertEquals("2.0", child(reloaded, "implementation", 0).getAttribute("version"));
+    assertEquals("2.0", attributeValue(reloaded, "implementation-version"));
     assertEquals(2, fixture.opens("/WEB-INF/lib/library-1.0.jar"));
   }
 
@@ -100,12 +103,45 @@ final class ListLibrariesTest {
     assertEquals(0, library.getChildNodes().getLength());
   }
 
+  @Test
+  void testExtractLibsJsonFlattensAttributes() throws Exception {
+    ServletContextFixture fixture = new ServletContextFixture();
+    fixture.add("/WEB-INF/lib/alpha.jar",
+        jar("Implementation-Title", "Alpha Library", "Built-By", "Berlioz"));
+
+    String json = extractJson(fixture);
+
+    assertTrue(json.startsWith("{\"libraries\":[{\"file\":\"alpha.jar\",\"name\":\"alpha\","), json);
+    assertTrue(json.endsWith("]}"), json);
+    assertTrue(json.contains("\"attributes\":["), json);
+    assertTrue(json.contains("{\"name\":\"built-by\",\"value\":\"Berlioz\"}"), json);
+    assertTrue(json.contains("{\"name\":\"implementation-title\",\"value\":\"Alpha Library\"}"), json);
+    assertTrue(json.contains("{\"name\":\"manifest-version\",\"value\":\"1.0\"}"), json);
+    assertFalse(json.contains("\"implementation\""), "JSON should not group attributes by category");
+  }
+
+  @Test
+  void testExtractLibsJsonWithoutManifest() throws Exception {
+    ServletContextFixture fixture = new ServletContextFixture();
+    fixture.add("/WEB-INF/lib/broken.jar", new byte[] {1, 2, 3});
+
+    String json = extractJson(fixture);
+
+    assertEquals("{\"libraries\":[{\"file\":\"broken.jar\",\"name\":\"broken\",\"attributes\":[]}]}", json);
+  }
+
   private static Element extract(ServletContextFixture fixture) throws Exception {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListLibraries().extractLibs(fixture.context(), xml);
-    Document doc = parse(xml.toString());
+    OutputWriter out = new XmlOutputAdapter();
+    new ListLibraries().extractLibs(fixture.context(), out);
+    Document doc = parse(out.toString());
     assertEquals("libraries", doc.getDocumentElement().getTagName());
     return doc.getDocumentElement();
+  }
+
+  private static String extractJson(ServletContextFixture fixture) {
+    OutputWriter out = new JsonOutputAdapter();
+    new ListLibraries().extractLibs(fixture.context(), out);
+    return out.toString();
   }
 
   private static byte[] jar(String... attributes) throws Exception {
@@ -138,6 +174,19 @@ final class ListLibrariesTest {
       }
     }
     fail("Missing child element "+name+" at index "+index);
+    throw new AssertionError();
+  }
+
+  private static String attributeValue(Element library, String name) {
+    for (int i = 0; i < library.getChildNodes().getLength(); i++) {
+      if (library.getChildNodes().item(i) instanceof Element) {
+        Element child = (Element) library.getChildNodes().item(i);
+        if ("attribute".equals(child.getTagName()) && name.equals(child.getAttribute("name"))) {
+          return child.getAttribute("value");
+        }
+      }
+    }
+    fail("Missing attribute "+name);
     throw new AssertionError();
   }
 
