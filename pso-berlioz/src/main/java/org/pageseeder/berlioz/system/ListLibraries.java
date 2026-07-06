@@ -144,9 +144,9 @@ public final class ListLibraries implements Generator {
 
       String filename = filename(path);
       String base = filename.substring(0, filename.length() - ".jar".length());
-      int dash = base.lastIndexOf('-');
-      String name = dash > 0 && dash < base.length() - 1 ? base.substring(0, dash) : base;
-      String version = dash > 0 && dash < base.length() - 1 ? base.substring(dash+1) : null;
+      int versionStart = versionStart(base);
+      String name = versionStart >= 0 ? base.substring(0, versionStart) : base;
+      String version = versionStart >= 0 ? base.substring(versionStart+1) : null;
 
       out.startObject("library");
       out.field("file", filename);
@@ -238,8 +238,7 @@ public final class ListLibraries implements Generator {
    */
   private static void writeAttributes(OutputWriter out, Map<String, String> attributes) {
     out.startArray("attributes", OutputWriter.ContextOption.JSON_ONLY);
-    // `attributes` is an immutable `Map.copyOf`, whose iteration order is not guaranteed;
-    // sort so the output is deterministic.
+    // Using TreeMap to have deterministic sorting
     for (Entry<String, String> attribute : new TreeMap<>(attributes).entrySet()) {
       out.startObject("attribute");
       out.field("name", attribute.getKey());
@@ -283,6 +282,22 @@ public final class ListLibraries implements Generator {
   private static String filename(String path) {
     int slash = path.lastIndexOf('/');
     return slash >= 0 ? path.substring(slash+1) : path;
+  }
+
+  /**
+   * Finds the index of the {@code -} that separates a Maven-style artifact name from its
+   * version, i.e. the first {@code -} immediately followed by a digit, e.g. {@code
+   * commons-lang3-3.12.0} or {@code xyz-1.2.4-beta.1}.
+   *
+   * @param base The filename base, without its {@code .jar} extension.
+   *
+   * @return the index of the separating {@code -}, or {@code -1} if none is found.
+   */
+  private static int versionStart(String base) {
+    for (int i = 0; i < base.length() - 1; i++) {
+      if (base.charAt(i) == '-' && Character.isDigit(base.charAt(i+1))) return i;
+    }
+    return -1;
   }
 
   private static <K, V> Map<K, V> createLRUMap(final int maxEntries) {

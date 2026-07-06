@@ -72,6 +72,45 @@ final class ListLibrariesTest {
   }
 
   @Test
+  void testExtractLibsParsesNameAndVersionForNonTrivialFilenames() throws Exception {
+    ServletContextFixture fixture = new ServletContextFixture();
+    fixture.add("/WEB-INF/lib/commons-lang3-3.12.0.jar", jar());
+    fixture.add("/WEB-INF/lib/xyz-1.2.3-SNAPSHOT.jar", jar());
+    fixture.add("/WEB-INF/lib/xyz-1.2-data.jar", jar());
+    fixture.add("/WEB-INF/lib/xyz-1.2.4-beta.1.jar", jar());
+    fixture.add("/WEB-INF/lib/xyz-1.2.3-rc.1.jar", jar());
+    fixture.add("/WEB-INF/lib/no-version.jar", jar());
+
+    Element root = extract(fixture);
+
+    // Paths are sorted alphabetically by ListLibraries, so '-' (data) sorts before
+    // '.' (SNAPSHOT/rc/beta), and among those, uppercase 'S' sorts before lowercase letters.
+    Element commonsLang3 = child(root, "library", 0);
+    assertEquals("commons-lang3", commonsLang3.getAttribute("name"));
+    assertEquals("3.12.0", commonsLang3.getAttribute("version"));
+
+    Element noVersion = child(root, "library", 1);
+    assertEquals("no-version", noVersion.getAttribute("name"));
+    assertFalse(noVersion.hasAttribute("version"));
+
+    Element withClassifier = child(root, "library", 2);
+    assertEquals("xyz", withClassifier.getAttribute("name"));
+    assertEquals("1.2-data", withClassifier.getAttribute("version"));
+
+    Element snapshot = child(root, "library", 3);
+    assertEquals("xyz", snapshot.getAttribute("name"));
+    assertEquals("1.2.3-SNAPSHOT", snapshot.getAttribute("version"));
+
+    Element rc = child(root, "library", 4);
+    assertEquals("xyz", rc.getAttribute("name"));
+    assertEquals("1.2.3-rc.1", rc.getAttribute("version"));
+
+    Element beta = child(root, "library", 5);
+    assertEquals("xyz", beta.getAttribute("name"));
+    assertEquals("1.2.4-beta.1", beta.getAttribute("version"));
+  }
+
+  @Test
   void testExtractLibsUsesCacheUntilCleared() throws Exception {
     ServletContextFixture fixture = new ServletContextFixture();
     fixture.add("/WEB-INF/lib/library-1.0.jar", jar("Implementation-Version", "1.0"));
