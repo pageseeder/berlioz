@@ -18,20 +18,21 @@ package org.pageseeder.berlioz.system;
 import java.lang.management.ThreadInfo;
 
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
-import org.pageseeder.berlioz.xml.XmlWriter;
+import org.pageseeder.berlioz.output.OutputWriter;
 
 /**
- * Returns information about a single JVM thread as XML, including its stack trace.
+ * Returns information about a single JVM thread, including its stack trace.
  *
  * <h3>Parameters</h3>
  * <dl>
  *   <dt>{@code id}</dt>
- *   <dd>Required. The numeric thread ID to inspect. Must be a non-negative long. Returns a
- *       {@code 400 Bad Request} response if omitted or negative.</dd>
+ *   <dd>Optional. The numeric thread ID to inspect; must be zero or positive. Defaults to the
+ *       current (request-handling) thread when omitted. A negative value or a value that is
+ *       not a valid long throws {@link org.pageseeder.berlioz.error.InvalidParameterException},
+ *       which the framework maps to a {@code 400 Bad Request} problem response.</dd>
  * </dl>
  *
  * <h3>Returned XML</h3>
@@ -47,6 +48,21 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * <p>When no thread with the given ID exists:
  * <pre>{@code <no-thread id="[id]"/>}</pre>
  *
+ * <h3>Returned JSON</h3>
+ * <p>When the thread is found:
+ * <pre>{@code
+ * {
+ *   "id": [id], "name": "[name]", "priority": [n], "state": "[state]", "alive": true,
+ *   "daemon": [true|false], "group": "[group]",
+ *   "stacktrace": [
+ *     {"class": "[class]", "filename": "[file]", "method": "[method]", "line": [n]},
+ *     ...
+ *   ]
+ * }
+ * }</pre>
+ * <p>When no thread with the given ID exists:
+ * <pre>{@code {"id": [id]} }</pre>
+ *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
  * <pre>{@code <generator class="org.pageseeder.berlioz.system.GetThreadInfo"
@@ -58,68 +74,35 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * @since 0.9.32
  */
 @Beta
-public final class GetThreadInfo implements XmlGenerator {
+public final class GetThreadInfo implements Generator {
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
-    long threadId = req.parameter("id").asLong().defaultValue(-1L);
-    if (threadId < 0) {
-      xml.comment("Interval must be strictly positive");
-      return Response.status(ContentStatus.BAD_REQUEST);
-    } else {
-      threadId = Thread.currentThread().getId();
-    }
+  public Response generate(Request req, OutputWriter out) {
+    long threadId = req.parameter("id").asLong().inRange(0L, Long.MAX_VALUE)
+        .optional(Thread.currentThread().getId());
 
     ThreadInfo thread = Threads.getThreadInfo(threadId);
     if (thread != null) {
-      toXML(thread, xml);
+      toOutput(thread, out);
     } else {
-      xml.openElement("no-thread", true);
-      xml.attribute("id", threadId);
-      xml.closeElement();
+      out.startObject("no-thread");
+      out.field("id", threadId);
+      out.endObject();
     }
     return Response.ok();
   }
 
   /**
-   * Return all the threads with stack traces
+   * Writes a single thread with its stack trace.
    *
-   * @param thread The thread information to serialize as XML
-   * @param xml The XML writer
+   * @param thread The thread information to serialize.
+   * @param out    The output writer.
    */
-  private static void toXML(ThreadInfo thread, XmlWriter xml) {
-    xml.openElement("thread", true);
-    xml.attribute("id", thread.getThreadId());
-    xml.attribute("name", thread.getThreadName());
-    xml.attribute("priority", thread.getPriority());
-    xml.attribute("state", thread.getThreadState().name());
-    xml.attribute("alive", true);
-    xml.attribute("daemon", thread.isDaemon());
-    xml.attribute("group", Threads.threadGroupName());
-
-    StackTraceElement[] stacktrace = thread.getStackTrace();
-    if (stacktrace != null) {
-      xml.openElement("stacktrace");
-      for (StackTraceElement element : stacktrace) {
-        xml.openElement("element");
-        String method = element.getMethodName();
-        String filename = element.getFileName();
-        int line = element.getLineNumber();
-        xml.attribute("class", element.getClassName());
-        if (filename != null) {
-          xml.attribute("filename", filename);
-        }
-        if (method != null) {
-          xml.attribute("method", method);
-        }
-        if (line >= 0) {
-          xml.attribute("line", line);
-        }
-        xml.closeElement();
-      }
-      xml.closeElement();
-    }
-
-    xml.closeElement();
+  private static void toOutput(ThreadInfo thread, OutputWriter out) {
+    out.startObject("thread");
+    Threads.writeThreadAttributes(out, thread, false);
+    Threads.writeStackTrace(out, thread.getStackTrace());
+    out.endObject();
   }
+
 }

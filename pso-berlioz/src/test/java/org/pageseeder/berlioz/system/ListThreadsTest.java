@@ -2,7 +2,9 @@ package org.pageseeder.berlioz.system;
 
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -18,26 +20,26 @@ class ListThreadsTest {
 
   @Test
   void testProcess_noParams_writesThreadsElement() throws Exception {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListThreads().generate(request(false, false), xml);
-    Document doc = parse(xml.toString());
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    Document doc = parse(out.toString());
     assertEquals("threads", doc.getDocumentElement().getTagName());
   }
 
   @Test
   void testProcess_noParams_containsThreadChildren() throws Exception {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListThreads().generate(request(false, false), xml);
-    Document doc = parse(xml.toString());
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    Document doc = parse(out.toString());
     NodeList threads = doc.getElementsByTagName("thread");
     assertTrue(threads.getLength() > 0, "Should list at least one thread");
   }
 
   @Test
   void testProcess_threadHasExpectedAttributes() throws Exception {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListThreads().generate(request(false, false), xml);
-    Document doc = parse(xml.toString());
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    Document doc = parse(out.toString());
     Element thread = (Element) doc.getElementsByTagName("thread").item(0);
     assertFalse(thread.getAttribute("id").isEmpty(),    "Thread should have id");
     assertFalse(thread.getAttribute("name").isEmpty(),  "Thread should have name");
@@ -46,32 +48,32 @@ class ListThreadsTest {
 
   @Test
   void testProcess_withStacktraces_includesStacktraceElement() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListThreads().generate(request(true, false), xml);
-    String out = xml.toString();
-    assertTrue(out.contains("<stacktrace"), "Should include stacktrace elements when requested");
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(true, false), out);
+    String result = out.toString();
+    assertTrue(result.contains("<stacktrace"), "Should include stacktrace elements when requested");
   }
 
   @Test
   void testProcess_withoutStacktraces_noStacktraceElement() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListThreads().generate(request(false, false), xml);
-    assertFalse(xml.toString().contains("<stacktrace"), "Should not include stacktrace when not requested");
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    assertFalse(out.toString().contains("<stacktrace"), "Should not include stacktrace when not requested");
   }
 
   @Test
   void testProcess_withThreadTime_includesTimesElement() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListThreads().generate(request(false, true), xml);
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, true), out);
     // CPU time support is JVM-dependent; just verify it doesn't throw
-    assertDoesNotThrow(xml::toString);
+    assertDoesNotThrow(out::toString);
   }
 
   @Test
   void testProcess_currentThreadFlagged() throws Exception {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new ListThreads().generate(request(false, false), xml);
-    Document doc = parse(xml.toString());
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    Document doc = parse(out.toString());
     NodeList threads = doc.getElementsByTagName("thread");
     boolean foundCurrent = false;
     for (int i = 0; i < threads.getLength(); i++) {
@@ -82,6 +84,23 @@ class ListThreadsTest {
       }
     }
     assertTrue(foundCurrent, "Current thread should be flagged with current=\"true\"");
+  }
+
+  @Test
+  void testProcess_json_writesThreadsArray() {
+    OutputWriter out = new JsonOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    String json = out.toString();
+    assertTrue(json.startsWith("{\"threads\":["), json);
+    assertTrue(json.contains("\"name\":"), json);
+    assertTrue(json.contains("\"state\":"), json);
+  }
+
+  @Test
+  void testProcess_json_withStacktraces_includesStacktraceArray() {
+    OutputWriter out = new JsonOutputAdapter();
+    new ListThreads().generate(request(true, false), out);
+    assertTrue(out.toString().contains("\"stacktrace\":["));
   }
 
   private static Request request(boolean stacktraces, boolean threadtime) {

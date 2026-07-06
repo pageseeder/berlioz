@@ -20,10 +20,10 @@ import java.lang.management.ThreadMXBean;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
-import org.pageseeder.berlioz.xml.XmlWriter;
+import org.pageseeder.berlioz.output.OutputWriter;
 
 /**
  * Returns information about the threads running in the system.
@@ -37,16 +37,60 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *   <li><code>TIMED_WAITING</code>. The thread is either waiting or in a sleep().</li>
  * </ul>
  *
+ * <h3>Parameters</h3>
+ * <dl>
+ *   <dt>{@code stacktraces}</dt>
+ *   <dd>Optional. When {@code "true"}, includes each thread's stack trace. Defaults to
+ *       {@code "false"}.</dd>
+ *   <dt>{@code threadtime}</dt>
+ *   <dd>Optional. When {@code "true"}, includes per-thread CPU/user time (if supported by the
+ *       JVM). Defaults to {@code "false"}.</dd>
+ * </dl>
+ *
+ * <h3>Returned XML</h3>
+ * <pre>{@code
+ * <threads>
+ *   <thread id="[id]" name="[name]" priority="[n]" state="[state]" alive="true" daemon="[true|false]" group="[group]" current="true">
+ *     <times cpu="[n]" user="[n]" system="[n]"/>            <!-- only if threadtime=true and stacktraces=false -->
+ *     <time cpu="[n]" user="[n]" system="[n]"/>             <!-- only if threadtime=true and stacktraces=true -->
+ *     <stacktrace>                                          <!-- only if stacktraces=true -->
+ *       <element class="[class]" filename="[file]" method="[method]" line="[n]"/>
+ *       ...
+ *     </stacktrace>
+ *   </thread>
+ *   ...
+ * </threads>
+ * }</pre>
+ *
+ * <h3>Returned JSON</h3>
+ * <pre>{@code
+ * {
+ *   "threads": [
+ *     {
+ *       "id": [id], "name": "[name]", "priority": [n], "state": "[state]", "alive": true,
+ *       "daemon": [true|false], "group": "[group]", "current": "true",
+ *       "times": {"cpu": [n], "user": [n], "system": [n]},   <!-- only if threadtime=true and stacktraces=false -->
+ *       "time": {"cpu": [n], "user": [n], "system": [n]},    <!-- only if threadtime=true and stacktraces=true -->
+ *       "stacktrace": [                                      <!-- only if stacktraces=true -->
+ *         {"class": "[class]", "filename": "[file]", "method": "[method]", "line": [n]},
+ *         ...
+ *       ]
+ *     },
+ *     ...
+ *   ]
+ * }
+ * }</pre>
+ *
  * @author Christophe Lauret
  *
  * @version 0.14.0
  * @since 0.9.32
  */
 @Beta
-public final class ListThreads implements XmlGenerator {
+public final class ListThreads implements Generator {
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     boolean stackTraces = "true".equals(req.getParameter("stacktraces"));
     boolean threadTime = "true".equals(req.getParameter("threadtime"));
 
@@ -56,88 +100,57 @@ public final class ListThreads implements XmlGenerator {
       bean = null;
     }
 
-    xml.openElement("threads");
+    out.startObject("threads");
+    out.startArray("threads", OutputWriter.ContextOption.JSON_ONLY);
     ThreadInfo[] threads = Threads.getThreadInfo(threadBean, stackTraces ? Integer.MAX_VALUE : 0);
     for (ThreadInfo thread : threads) {
       if (thread != null) {
         if (stackTraces) {
-          toXML(thread, thread.getStackTrace(), bean, xml);
+          toOutput(thread, thread.getStackTrace(), bean, out);
         } else {
-          toXML(thread, bean, xml);
+          toOutput(thread, bean, out);
         }
       }
     }
-    xml.closeElement();
+    out.endArray();
+    out.endObject();
     return Response.ok();
   }
 
-  private static void toXML(ThreadInfo thread, @Nullable ThreadMXBean bean, XmlWriter xml) {
-    xml.openElement("thread", true);
-    writeThreadAttributes(thread, xml);
+  private static void toOutput(ThreadInfo thread, @Nullable ThreadMXBean bean, OutputWriter out) {
+    out.startObject("thread");
+    Threads.writeThreadAttributes(out, thread, true);
 
     if (bean != null) {
       final long cpu = bean.getThreadCpuTime(thread.getThreadId());
       final long user = bean.getThreadUserTime(thread.getThreadId());
-      xml.openElement("times");
-      xml.attribute("cpu", cpu);
-      xml.attribute("user", user);
-      xml.attribute("system", cpu - user);
-      xml.closeElement();
+      out.startObject("times");
+      out.field("cpu", cpu);
+      out.field("user", user);
+      out.field("system", cpu - user);
+      out.endObject();
     }
 
-    xml.closeElement();
+    out.endObject();
   }
 
-  private static void toXML(ThreadInfo thread, StackTraceElement[] stacktrace, @Nullable ThreadMXBean bean, XmlWriter xml) {
-    xml.openElement("thread", true);
-    writeThreadAttributes(thread, xml);
+  private static void toOutput(ThreadInfo thread, StackTraceElement[] stacktrace, @Nullable ThreadMXBean bean, OutputWriter out) {
+    out.startObject("thread");
+    Threads.writeThreadAttributes(out, thread, true);
 
     if (bean != null) {
       final long cpu = bean.getThreadCpuTime(thread.getThreadId());
       final long user = bean.getThreadUserTime(thread.getThreadId());
-      xml.openElement("time");
-      xml.attribute("cpu", cpu);
-      xml.attribute("user", user);
-      xml.attribute("system", cpu - user);
-      xml.closeElement();
+      out.startObject("time");
+      out.field("cpu", cpu);
+      out.field("user", user);
+      out.field("system", cpu - user);
+      out.endObject();
     }
 
-    if (stacktrace != null) {
-      xml.openElement("stacktrace");
-      for (StackTraceElement element : stacktrace) {
-        xml.openElement("element");
-        String method = element.getMethodName();
-        String filename = element.getFileName();
-        int line = element.getLineNumber();
-        xml.attribute("class", element.getClassName());
-        if (filename != null) {
-          xml.attribute("filename", filename);
-        }
-        if (method != null) {
-          xml.attribute("method", method);
-        }
-        if (line >= 0) {
-          xml.attribute("line", line);
-        }
-        xml.closeElement();
-      }
-      xml.closeElement();
-    }
+    Threads.writeStackTrace(out, stacktrace);
 
-    xml.closeElement();
-  }
-
-  private static void writeThreadAttributes(ThreadInfo thread, XmlWriter xml) {
-    xml.attribute("id", thread.getThreadId());
-    xml.attribute("name", thread.getThreadName());
-    xml.attribute("priority", thread.getPriority());
-    xml.attribute("state", thread.getThreadState().name());
-    xml.attribute("alive", true);
-    xml.attribute("daemon", thread.isDaemon());
-    xml.attribute("group", Threads.threadGroupName());
-    if (thread.getThreadId() == Thread.currentThread().getId()) {
-      xml.attribute("current", "true");
-    }
+    out.endObject();
   }
 
 }

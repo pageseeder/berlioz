@@ -5,7 +5,7 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.ParameterBuilder;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.error.ProblemDetails;
+import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
@@ -21,30 +21,35 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GetCPUTimeTest {
 
+  // Out-of-range `interval` is a flow-control signal: TypedParameter#optional() throws
+  // InvalidParameterException, which the servlet dispatch layer (GeneratorDispatch) catches
+  // and maps to a 400 Bad Request problem response. Calling generate() directly, as these
+  // tests do, bypasses that layer, so the exception itself is what we can observe here.
+
   @Test
-  void testProcessZeroIntervalReturnsBadRequestProblem() {
+  void testProcessZeroIntervalThrowsInvalidParameterException() {
     OutputWriter out = new XmlOutputAdapter();
-    Response response = new GetCPUTime().generate(request(0, -1L), out);
-    assertTrue(response.isProblem());
-    assertEquals(ContentStatus.BAD_REQUEST, response.status());
-    ProblemDetails problem = response.problem();
-    assertNotNull(problem);
-    assertEquals(400, problem.status());
+    InvalidParameterException ex = assertThrows(InvalidParameterException.class,
+        () -> new GetCPUTime().generate(request(0, -1L), out));
+    assertEquals("interval", ex.getParameterName());
+    assertEquals(InvalidParameterException.Reason.OUT_OF_RANGE, ex.getReason());
+    assertEquals(400, ex.toProblem().status());
   }
 
   @Test
-  void testProcessNegativeIntervalReturnsBadRequestProblem() {
+  void testProcessNegativeIntervalThrowsInvalidParameterException() {
     OutputWriter out = new XmlOutputAdapter();
-    Response response = new GetCPUTime().generate(request(-5, -1L), out);
-    assertTrue(response.isProblem());
-    assertEquals(ContentStatus.BAD_REQUEST, response.status());
+    InvalidParameterException ex = assertThrows(InvalidParameterException.class,
+        () -> new GetCPUTime().generate(request(-5, -1L), out));
+    assertEquals("interval", ex.getParameterName());
+    assertEquals(InvalidParameterException.Reason.OUT_OF_RANGE, ex.getReason());
   }
 
   @Test
   void testProcessZeroIntervalWritesNothingToOutput() {
     OutputWriter out = new XmlOutputAdapter();
-    new GetCPUTime().generate(request(0, -1L), out);
-    assertEquals("", out.toString(), "Generator should not write body content on a problem response");
+    assertThrows(InvalidParameterException.class, () -> new GetCPUTime().generate(request(0, -1L), out));
+    assertEquals("", out.toString(), "Generator should not write body content when the parameter is rejected");
   }
 
   // process() tests — XML

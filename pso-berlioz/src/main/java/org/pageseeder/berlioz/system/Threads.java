@@ -20,13 +20,14 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.output.OutputWriter;
 
 /**
  * A utility class for retrieving information about threads.
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.0
  * @since 0.9.32
  */
 final class Threads {
@@ -75,6 +76,50 @@ final class Threads {
    */
   static String threadGroupName() {
     return NO_THREAD_GROUP;
+  }
+
+  /**
+   * Writes the common thread identity fields shared by {@code GetThreadInfo} and
+   * {@code ListThreads}.
+   *
+   * @param out         The output writer.
+   * @param thread      The thread information to write.
+   * @param markCurrent Whether to flag the entry with {@code current="true"} when it
+   *                    corresponds to the calling thread.
+   */
+  static void writeThreadAttributes(OutputWriter out, ThreadInfo thread, boolean markCurrent) {
+    out.field("id", thread.getThreadId());
+    out.field("name", thread.getThreadName());
+    out.field("priority", thread.getPriority());
+    out.field("state", thread.getThreadState().name());
+    out.field("alive", true);
+    out.field("daemon", thread.isDaemon());
+    out.field("group", threadGroupName());
+    if (markCurrent && thread.getThreadId() == Thread.currentThread().getId()) {
+      out.field("current", "true");
+    }
+  }
+
+  /**
+   * Writes a stack trace as a {@code stacktrace} array of {@code element} objects, in both
+   * XML and JSON.
+   *
+   * @param out        The output writer.
+   * @param stacktrace The stack trace to write, or {@code null} to write nothing.
+   */
+  static void writeStackTrace(OutputWriter out, @Nullable StackTraceElement[] stacktrace) {
+    if (stacktrace == null) return;
+    out.startArray("stacktrace");
+    for (StackTraceElement element : stacktrace) {
+      out.startObject("element");
+      out.field("class", element.getClassName());
+      out.optionalField("filename", element.getFileName());
+      out.optionalField("method", element.getMethodName());
+      int line = element.getLineNumber();
+      out.optionalField("line", line >= 0 ? line : null);
+      out.endObject();
+    }
+    out.endArray();
   }
 
 }
