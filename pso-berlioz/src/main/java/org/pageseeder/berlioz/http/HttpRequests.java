@@ -18,7 +18,6 @@ package org.pageseeder.berlioz.http;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
@@ -190,7 +189,7 @@ public final class HttpRequests {
     static {
       List<RedirectPolicy> loaded = new ArrayList<>();
       ServiceLoader.load(RedirectPolicy.class).forEach(loaded::add);
-      INSTANCE = Collections.unmodifiableList(loaded);
+      INSTANCE = List.copyOf(loaded);
     }
   }
 
