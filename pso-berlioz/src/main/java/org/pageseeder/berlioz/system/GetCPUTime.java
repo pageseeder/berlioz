@@ -21,7 +21,6 @@ import java.lang.management.ThreadMXBean;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.output.OutputWriter;
 
@@ -68,13 +67,7 @@ public final class GetCPUTime implements Generator {
 
   @Override
   public Response generate(Request req, OutputWriter out) {
-    int interval = req.parameter("interval").asInt().defaultValue(100);
-
-    if (interval <= 0) {
-      return Response.problem(Problems.forInvalidParameter(InvalidParameterException.outOfRange(
-          "interval", String.valueOf(interval), "must be strictly positive")));
-    }
-
+    int interval = req.parameter("interval").asInt().inRange(1, 5000).optional(100);
     long threadId = req.parameter("thread").asLong().defaultValue(-1L);
 
     try {
