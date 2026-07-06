@@ -79,14 +79,8 @@ class XsltTransformerTest {
 
   @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
   @BeforeEach
-  void resetErrorProblemFormat() throws ReflectiveOperationException {
-    removeOption(BerliozOption.ERROR_PROBLEM_FORMAT);
-    removeOption(BerliozOption.ERROR_DETAIL);
-  }
-
-  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
   @AfterEach
-  void restoreErrorProblemFormat() throws ReflectiveOperationException {
+  void resetErrorProblemFormat() throws ReflectiveOperationException {
     removeOption(BerliozOption.ERROR_PROBLEM_FORMAT);
     removeOption(BerliozOption.ERROR_DETAIL);
   }
