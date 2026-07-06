@@ -7,7 +7,6 @@ import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.output.OutputWriter;
-import org.pageseeder.berlioz.sample.support.ProblemRegistry;
 
 /**
  * A sample generator that generates errors on purpose for testing error handling.
