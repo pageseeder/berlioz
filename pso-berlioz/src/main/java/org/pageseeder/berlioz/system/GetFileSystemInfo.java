@@ -30,13 +30,13 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
-import org.pageseeder.berlioz.xml.XmlWriter;
+import org.pageseeder.berlioz.output.OutputWriter;
 
 /**
- * Returns information about the underlying file system as XML.
+ * Returns information about the underlying file system as XML or JSON.
  *
  * <p>Always reports overall free and total disk space. When the {@code details} parameter is
  * {@code "true"}, also scans the public and private folders and reports per-subdirectory file
@@ -68,6 +68,23 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * </file-system>
  * }</pre>
  *
+ * <h3>Returned JSON</h3>
+ * <p>With {@code details=true}:
+ * <pre>{@code
+ * {
+ *   "freeSpace": [bytes],
+ *   "totalSpace": [bytes],
+ *   "public": {
+ *     "totalSize": [bytes], "totalCount": [n],
+ *     "directories": [{"name": "[name]", "fileSize": [bytes], "fileCount": [n]}, ...]
+ *   },
+ *   "private": {
+ *     "totalSize": [bytes], "totalCount": [n],
+ *     "directories": [{"name": "[name]", "fileSize": [bytes], "fileCount": [n]}, ...]
+ *   }
+ * }
+ * }</pre>
+ *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
  * <pre>{@code <generator class="org.pageseeder.berlioz.system.GetFileSystemInfo"
@@ -79,55 +96,57 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * @since 0.9.32
  */
 @Beta
-public final class GetFileSystemInfo implements XmlGenerator {
+public final class GetFileSystemInfo implements Generator {
 
   private static final String DETAILS_PARAMETER = "details";
 
   private static final String WEB_INF_DIRECTORY = "WEB-INF";
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     File pub = req.getEnvironment().getPublicFolder();
     File priv = req.getEnvironment().getPrivateFolder();
-    xml.openElement("file-system");
-    xml.attribute("free-space", pub.getFreeSpace());
-    xml.attribute("total-space", pub.getTotalSpace());
+    out.startObject("file-system");
+    out.field("free-space", pub.getFreeSpace());
+    out.field("total-space", pub.getTotalSpace());
 
     if ("true".equals(req.getParameter(DETAILS_PARAMETER))) {
-      analyze(pub, "public", xml);
-      analyze(priv, "private", xml);
+      analyze(pub, "public", out);
+      analyze(priv, "private", out);
     }
 
-    xml.closeElement();
+    out.endObject();
     return Response.ok();
   }
 
   /**
    * Analyzes the specified root directory, collect total file size and count information
-   * for each direct subdirectory, and print it on the XML.
+   * for each direct subdirectory, and print it on the output.
    *
-   * @param dir   The actual directory to scan.
-   * @param name  The name of the directory object gathering information.
-   * @param xml   The XML writer.
+   * @param dir  The actual directory to scan.
+   * @param name The name of the directory object gathering information.
+   * @param out  The output writer.
    */
 
-  private static void analyze(File dir, String name, XmlWriter xml) {
+  private static void analyze(File dir, String name, OutputWriter out) {
     DirInfo global = new DirInfo(name);
     List<DirInfo> locals = analyzeDirectChildren(dir.toPath(), global);
-    xml.openElement(name);
+    out.startObject(name);
     for (DirInfo local : locals) {
       global.add(local);
     }
-    xml.attribute("total-size", global.getSize());
-    xml.attribute("total-count", global.getCount());
+    out.field("total-size", global.getSize());
+    out.field("total-count", global.getCount());
+    out.startArray("directories", OutputWriter.ContextOption.JSON_ONLY);
     for (DirInfo local : locals) {
-      xml.openElement("directory");
-      xml.attribute("name", local.name());
-      xml.attribute("file-size", local.getSize());
-      xml.attribute("file-count", local.getCount());
-      xml.closeElement();
+      out.startObject("directory");
+      out.field("name", local.name());
+      out.field("file-size", local.getSize());
+      out.field("file-count", local.getCount());
+      out.endObject();
     }
-    xml.closeElement();
+    out.endArray();
+    out.endObject();
   }
 
   /**

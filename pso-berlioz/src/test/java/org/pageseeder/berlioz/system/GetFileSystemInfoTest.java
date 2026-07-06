@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -17,7 +18,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -26,6 +29,9 @@ final class GetFileSystemInfoTest {
 
   @TempDir
   Path folder;
+
+  // process() tests — XML
+  // ---------------------------------------------------------------------------
 
   @Test
   void testProcessWithDetails() throws Exception {
@@ -39,10 +45,7 @@ final class GetFileSystemInfoTest {
     write(publicFolder, "WEB-INF/secret.txt", 11);
     write(privateFolder, "config.xml", 7);
 
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new GetFileSystemInfo().generate(request(publicFolder, privateFolder, "true"), xml);
-
-    Document doc = parse(xml.toString());
+    Document doc = parseXml(process(publicFolder, privateFolder, "true"));
     Element root = doc.getDocumentElement();
     assertEquals("file-system", root.getTagName());
     assertFalse(root.getAttribute("free-space").isEmpty());
@@ -65,20 +68,64 @@ final class GetFileSystemInfoTest {
     File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
     File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
 
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new GetFileSystemInfo().generate(request(publicFolder, privateFolder, null), xml);
-
-    Element root = parse(xml.toString()).getDocumentElement();
+    Element root = parseXml(process(publicFolder, privateFolder, null)).getDocumentElement();
     assertEquals("file-system", root.getTagName());
     assertNull(childOrNull(root, "public"));
     assertNull(childOrNull(root, "private"));
   }
+
+  // process() tests — JSON
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testProcessJsonWithDetails() throws Exception {
+    File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
+    File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
+
+    write(publicFolder, "alpha/a.txt", 2);
+    write(privateFolder, "config.xml", 7);
+
+    String out = processJson(publicFolder, privateFolder, "true");
+    assertTrue(out.startsWith("{\"freeSpace\":"), "Should include freeSpace property");
+    assertTrue(out.contains("\"totalSpace\":"));
+    assertTrue(out.contains("\"public\":{\"totalSize\":2,\"totalCount\":1,"
+        + "\"directories\":[{\"name\":\"alpha\",\"fileSize\":2,\"fileCount\":1}]}"));
+    assertTrue(out.contains("\"private\":{\"totalSize\":7,\"totalCount\":1,"
+        + "\"directories\":[]}"));
+  }
+
+  @Test
+  void testProcessJsonWithoutDetails() throws Exception {
+    File publicFolder = Files.createDirectory(this.folder.resolve("public")).toFile();
+    File privateFolder = Files.createDirectory(this.folder.resolve("private")).toFile();
+
+    String out = processJson(publicFolder, privateFolder, null);
+    assertFalse(out.contains("\"public\""));
+    assertFalse(out.contains("\"private\""));
+  }
+
+  // helpers
+  // ---------------------------------------------------------------------------
 
   private static void assertDirectory(Element parent, int index, String name, String size, String count) {
     Element directory = (Element) parent.getElementsByTagName("directory").item(index);
     assertEquals(name, directory.getAttribute("name"));
     assertEquals(size, directory.getAttribute("file-size"));
     assertEquals(count, directory.getAttribute("file-count"));
+  }
+
+  private static String process(File publicFolder, File privateFolder, String details) {
+    GetFileSystemInfo gen = new GetFileSystemInfo();
+    OutputWriter out = new XmlOutputAdapter();
+    gen.generate(request(publicFolder, privateFolder, details), out);
+    return out.toString();
+  }
+
+  private static String processJson(File publicFolder, File privateFolder, String details) {
+    GetFileSystemInfo gen = new GetFileSystemInfo();
+    OutputWriter out = new JsonOutputAdapter();
+    gen.generate(request(publicFolder, privateFolder, details), out);
+    return out.toString();
   }
 
   private static Request request(File publicFolder, File privateFolder, String details) {
@@ -117,7 +164,7 @@ final class GetFileSystemInfoTest {
     Files.write(file.toPath(), new byte[size]);
   }
 
-  private static Document parse(String xml) throws Exception {
+  private static Document parseXml(String xml) throws Exception {
     return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
   }
 
