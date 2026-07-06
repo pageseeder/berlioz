@@ -189,15 +189,17 @@ class XmlCopierTest {
     Path file = tempDir.resolve("bad.xml");
     Files.writeString(file, "<unclosed");
     XmlStringBuilder xml = new XmlStringBuilder();
+    File badXml = file.toFile();
 
-    assertThrows(XmlParseException.class, () -> XmlCopier.copy(file.toFile(), xml));
+    assertThrows(XmlParseException.class, () -> XmlCopier.copy(badXml, xml));
   }
 
   @Test
   void testCopy_reader_invalidXml_throwsXmlParseException() {
     XmlStringBuilder xml = new XmlStringBuilder();
+    StringReader reader = new StringReader("not xml at all!!!");
 
-    assertThrows(XmlParseException.class, () -> XmlCopier.copy(new StringReader("not xml at all!!!"), xml));
+    assertThrows(XmlParseException.class, () -> XmlCopier.copy(reader, xml));
   }
 
   @Test

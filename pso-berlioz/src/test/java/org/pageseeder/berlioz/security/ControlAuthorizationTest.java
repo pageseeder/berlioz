@@ -2,6 +2,10 @@ package org.pageseeder.berlioz.security;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.servlet.ServletTestSupport;
@@ -11,6 +15,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,13 +53,18 @@ class ControlAuthorizationTest {
 
   // hasControl(req) — key channel (independent of network)
 
-  @Test
-  void testHasControl_key_matchingAuthorizationHeader_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_KEY, "secret123");
+  @ParameterizedTest(name = "key={0}, header=\"{1}\" => {2}")
+  @CsvSource({
+      "secret123, 'Berlioz secret123', true",
+      "secret123, 'Berlioz wrongkey',  false",
+      "SECRET,    'Berlioz xyzSECRET', false", // "Berlioz xyzSECRET" must not match key "SECRET" as a suffix
+  })
+  void testHasControl_key_authorizationHeader(String key, String header, boolean expected) throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_KEY, key);
     HttpServletRequest req = ServletTestSupport.request()
-        .header("Authorization", "Berlioz secret123")
+        .header("Authorization", header)
         .build();
-    assertTrue(ControlAuthorization.hasControl(req));
+    assertEquals(expected, ControlAuthorization.hasControl(req));
   }
 
   @Test
@@ -69,28 +79,9 @@ class ControlAuthorizationTest {
   }
 
   @Test
-  void testHasControl_key_wrongAuthorizationHeader_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_KEY, "secret123");
-    HttpServletRequest req = ServletTestSupport.request()
-        .header("Authorization", "Berlioz wrongkey")
-        .build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
   void testHasControl_key_noHeader_returnsFalse() throws ReflectiveOperationException {
     setOption(BerliozOption.CONTROL_KEY, "secret123");
     HttpServletRequest req = ServletTestSupport.request().build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_key_partialKeySuffix_returnsFalse() throws ReflectiveOperationException {
-    // Ensure "Berlioz xyzSECRET" doesn't match key "SECRET"
-    setOption(BerliozOption.CONTROL_KEY, "SECRET");
-    HttpServletRequest req = ServletTestSupport.request()
-        .header("Authorization", "Berlioz xyzSECRET")
-        .build();
     assertFalse(ControlAuthorization.hasControl(req));
   }
 
@@ -105,7 +96,7 @@ class ControlAuthorizationTest {
   }
 
   @Test
-  void testHasControl_key_noKeyConfigured_returnsFalse() throws ReflectiveOperationException {
+  void testHasControl_key_noKeyConfigured_returnsFalse() {
     // No berlioz.control.key set must fail closed, not match a bare "Berlioz " header.
     HttpServletRequest req = ServletTestSupport.request()
         .header("Authorization", "Berlioz ")
@@ -113,58 +104,22 @@ class ControlAuthorizationTest {
     assertFalse(ControlAuthorization.hasControl(req));
   }
 
-  // hasControl(req) — network=loopback
+  // hasControl(req) — network=loopback/lan
 
-  @Test
-  void testHasControl_loopback_loopbackIPv4_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
-    assertTrue(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_loopback_loopbackIPv6_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request().remoteAddr("::1").build();
-    assertTrue(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_loopback_nonLoopbackAddress_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request().remoteAddr("203.0.113.10").build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_loopback_privateAddress_returnsFalse() throws ReflectiveOperationException {
-    // "loopback" must not also authorize the wider LAN range — that's what "lan" is for.
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request().remoteAddr("192.168.1.10").build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  // hasControl(req) — network=lan
-
-  @Test
-  void testHasControl_lan_privateAddress_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "lan");
-    HttpServletRequest req = ServletTestSupport.request().remoteAddr("192.168.1.10").build();
-    assertTrue(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_lan_loopbackAddress_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "lan");
-    HttpServletRequest req = ServletTestSupport.request().remoteAddr("127.0.0.1").build();
-    assertTrue(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_lan_publicAddress_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "lan");
-    HttpServletRequest req = ServletTestSupport.request().remoteAddr("203.0.113.10").build();
-    assertFalse(ControlAuthorization.hasControl(req));
+  @ParameterizedTest(name = "network={0}, remoteAddr={1} => {2}")
+  @CsvSource({
+      "loopback, 127.0.0.1,    true",
+      "loopback, ::1,          true",
+      "loopback, 203.0.113.10, false",
+      "loopback, 192.168.1.10, false", // "loopback" must not also authorize the wider LAN range — that's what "lan" is for
+      "lan,      192.168.1.10, true",
+      "lan,      127.0.0.1,    true",
+      "lan,      203.0.113.10, false",
+  })
+  void testHasControl_network_remoteAddr(String network, String remoteAddr, boolean expected) throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, network);
+    HttpServletRequest req = ServletTestSupport.request().remoteAddr(remoteAddr).build();
+    assertEquals(expected, ControlAuthorization.hasControl(req));
   }
 
   // hasControl(req) — network=loopback/lan, X-Forwarded-For safety net
@@ -174,113 +129,53 @@ class ControlAuthorizationTest {
   // a loopback/lan config mistakenly left on behind a same-host or private reverse proxy that
   // forwards the header — see the BerliozOption#CONTROL_NETWORK javadoc.
 
-  @Test
-  void testHasControl_loopback_forwardedForAlsoLoopback_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
+  @ParameterizedTest(name = "network={0}, remoteAddr={1}, X-Forwarded-For=\"{2}\" => {3}")
+  @CsvSource({
+      "loopback, 127.0.0.1,    127.0.0.1,                 true",
+      // The gap being closed: remoteAddr is the (loopback) proxy, but the real caller is external.
+      "loopback, 127.0.0.1,    203.0.113.10,              false",
+      // Every hop must match — not just the first (attacker-controlled) or last one.
+      "loopback, 127.0.0.1,    '127.0.0.1, 203.0.113.10', false",
+      "lan,      127.0.0.1,    192.168.1.10,              true",
+      "lan,      192.168.1.10, 203.0.113.10,              false",
+      // A malformed/non-IP hop must fail closed, not be silently ignored — and must never be
+      // resolved as a hostname (no DNS lookup on attacker-supplied header content).
+      "loopback, 127.0.0.1,    not-an-ip-address,         false",
+      // An empty/blank header is treated the same as no header — falls back to remoteAddr only.
+      "loopback, 127.0.0.1,    '  ',                      true",
+  })
+  void testHasControl_network_forwardedFor(String network, String remoteAddr, String forwardedFor, boolean expected)
+      throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, network);
     HttpServletRequest req = ServletTestSupport.request()
-        .remoteAddr("127.0.0.1")
-        .header("X-Forwarded-For", "127.0.0.1")
+        .remoteAddr(remoteAddr)
+        .header("X-Forwarded-For", forwardedFor)
         .build();
-    assertTrue(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_loopback_forwardedForPublicAddress_returnsFalse() throws ReflectiveOperationException {
-    // The gap being closed: remoteAddr is the (loopback) proxy, but the real caller is external.
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request()
-        .remoteAddr("127.0.0.1")
-        .header("X-Forwarded-For", "203.0.113.10")
-        .build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_loopback_forwardedForChainWithPublicHop_returnsFalse() throws ReflectiveOperationException {
-    // Every hop must match — not just the first (attacker-controlled) or last one.
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request()
-        .remoteAddr("127.0.0.1")
-        .header("X-Forwarded-For", "127.0.0.1, 203.0.113.10")
-        .build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_lan_forwardedForAlsoPrivate_returnsTrue() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "lan");
-    HttpServletRequest req = ServletTestSupport.request()
-        .remoteAddr("127.0.0.1")
-        .header("X-Forwarded-For", "192.168.1.10")
-        .build();
-    assertTrue(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_lan_forwardedForPublicAddress_returnsFalse() throws ReflectiveOperationException {
-    setOption(BerliozOption.CONTROL_NETWORK, "lan");
-    HttpServletRequest req = ServletTestSupport.request()
-        .remoteAddr("192.168.1.10")
-        .header("X-Forwarded-For", "203.0.113.10")
-        .build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_loopback_forwardedForNonIpToken_returnsFalse() throws ReflectiveOperationException {
-    // A malformed/non-IP hop must fail closed, not be silently ignored — and must never be
-    // resolved as a hostname (no DNS lookup on attacker-supplied header content).
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request()
-        .remoteAddr("127.0.0.1")
-        .header("X-Forwarded-For", "not-an-ip-address")
-        .build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_loopback_blankForwardedFor_returnsTrue() throws ReflectiveOperationException {
-    // An empty/blank header is treated the same as no header — falls back to remoteAddr only.
-    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
-    HttpServletRequest req = ServletTestSupport.request()
-        .remoteAddr("127.0.0.1")
-        .header("X-Forwarded-For", "  ")
-        .build();
-    assertTrue(ControlAuthorization.hasControl(req));
+    assertEquals(expected, ControlAuthorization.hasControl(req));
   }
 
   // hasControl(req) — delegated (fixed attribute) channel
+  //
+  // network left at the default (off), no key configured, to prove the delegated channel is
+  // independent of the other two.
 
-  @Test
-  void testHasControl_authorizedAttribute_setToTrue_returnsTrue() {
-    // network left at the default (off), no key configured, to prove the delegated channel is
-    // independent of the other two.
-    HttpServletRequest req = ServletTestSupport.request()
-        .attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE)
-        .build();
-    assertTrue(ControlAuthorization.hasControl(req));
+  @ParameterizedTest(name = "attribute={0} => {1}")
+  @MethodSource("authorizedAttributeCases")
+  void testHasControl_authorizedAttribute(Object attributeValue, boolean expected) {
+    ServletTestSupport.RequestBuilder builder = ServletTestSupport.request();
+    if (attributeValue != null) {
+      builder.attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, attributeValue);
+    }
+    assertEquals(expected, ControlAuthorization.hasControl(builder.build()));
   }
 
-  @Test
-  void testHasControl_authorizedAttribute_notSet_returnsFalse() {
-    HttpServletRequest req = ServletTestSupport.request().build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_authorizedAttribute_setToFalse_returnsFalse() {
-    HttpServletRequest req = ServletTestSupport.request()
-        .attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.FALSE)
-        .build();
-    assertFalse(ControlAuthorization.hasControl(req));
-  }
-
-  @Test
-  void testHasControl_authorizedAttribute_wrongType_returnsFalse() {
-    HttpServletRequest req = ServletTestSupport.request()
-        .attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, "true")
-        .build();
-    assertFalse(ControlAuthorization.hasControl(req));
+  private static Stream<Arguments> authorizedAttributeCases() {
+    return Stream.of(
+        Arguments.of(Boolean.TRUE, true),
+        Arguments.of(null, false),
+        Arguments.of(Boolean.FALSE, false),
+        Arguments.of("true", false)
+    );
   }
 
   // GlobalSettings test helpers (direct SETTINGS map manipulation, mirroring ErrorHandlerServletTest)

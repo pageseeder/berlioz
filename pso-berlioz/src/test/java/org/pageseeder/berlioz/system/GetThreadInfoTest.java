@@ -1,10 +1,7 @@
 package org.pageseeder.berlioz.system;
 
 import org.junit.jupiter.api.Test;
-import org.pageseeder.berlioz.content.ContentStatus;
-import org.pageseeder.berlioz.content.ParameterBuilder;
-import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.output.OutputWriter;
@@ -24,8 +21,10 @@ class GetThreadInfoTest {
   @Test
   void testProcess_negativeId_throwsInvalidParameterException() {
     OutputWriter out = new XmlOutputAdapter();
+    Generator generator = new GetThreadInfo();
+    Request req = request(-1L);
     InvalidParameterException ex = assertThrows(InvalidParameterException.class,
-        () -> new GetThreadInfo().generate(request(-1L), out));
+        () -> generator.generate(req, out));
     assertEquals("id", ex.getParameterName());
     assertEquals(InvalidParameterException.Reason.OUT_OF_RANGE, ex.getReason());
     assertEquals(400, ex.toProblem().status());
@@ -34,7 +33,9 @@ class GetThreadInfoTest {
   @Test
   void testProcess_negativeId_writesNothingToOutput() {
     OutputWriter out = new XmlOutputAdapter();
-    assertThrows(InvalidParameterException.class, () -> new GetThreadInfo().generate(request(-1L), out));
+    Generator generator = new GetThreadInfo();
+    Request req = request(-1L);
+    assertThrows(InvalidParameterException.class, () -> generator.generate(req, out));
     assertEquals("", out.toString(), "Generator should not write body content when the parameter is rejected");
   }
 

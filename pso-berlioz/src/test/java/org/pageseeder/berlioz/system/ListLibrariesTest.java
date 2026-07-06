@@ -160,7 +160,7 @@ final class ListLibrariesTest {
   }
 
   @Test
-  void testExtractLibsJsonWithoutManifest() throws Exception {
+  void testExtractLibsJsonWithoutManifest() {
     ServletContextFixture fixture = new ServletContextFixture();
     fixture.add("/WEB-INF/lib/broken.jar", new byte[] {1, 2, 3});
 
