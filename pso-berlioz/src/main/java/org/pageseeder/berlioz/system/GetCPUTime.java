@@ -18,11 +18,12 @@ package org.pageseeder.berlioz.system;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
-import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
-import org.pageseeder.berlioz.xml.XmlWriter;
+import org.pageseeder.berlioz.error.InvalidParameterException;
+import org.pageseeder.berlioz.error.Problems;
+import org.pageseeder.berlioz.output.OutputWriter;
 
 /**
  * A content generator that measures CPU usage over a short sampling interval.
@@ -41,9 +42,12 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * </dl>
  *
  * <h2>Output</h2>
- * <p>On success, writes a single {@code <sample>} element:</p>
+ * <p>On success, writes a single {@code <sample>} element (or the equivalent JSON object):</p>
  * <pre>{@code
  * <sample interval="100" cpu="12" user="9" system="3"/>
+ * }</pre>
+ * <pre>{@code
+ * {"interval": 100, "cpu": 12, "user": 9, "system": 3}
  * }</pre>
  * <dl>
  *   <dt>{@code interval}</dt><dd>The actual sampling interval used, in milliseconds.</dd>
@@ -52,24 +56,23 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *   <dt>{@code system}</dt><dd>Kernel-mode CPU usage as a percentage (cpu − user).</dd>
  * </dl>
  *
- * <p>On error, the response status is set to {@code 400 Bad Request} (invalid parameters) or
- * {@code 503 Service Unavailable} (sampling interrupted), with an XML comment describing the
- * cause.</p>
+ * <p>On error, an RFC 9457 problem response is returned: {@code 400 Bad Request} (invalid
+ * {@code interval}) or {@code 503 Service Unavailable} (sampling interrupted).</p>
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.0
  * @since 0.9.32
  */
-public final class GetCPUTime implements XmlGenerator {
+public final class GetCPUTime implements Generator {
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     int interval = req.parameter("interval").asInt().defaultValue(100);
 
     if (interval <= 0) {
-      xml.comment("Interval must be strictly positive");
-      return Response.status(ContentStatus.BAD_REQUEST);
+      return Response.problem(Problems.forInvalidParameter(InvalidParameterException.outOfRange(
+          "interval", String.valueOf(interval), "must be strictly positive")));
     }
 
     long threadId = req.parameter("thread").asLong().defaultValue(-1L);
@@ -93,17 +96,16 @@ public final class GetCPUTime implements XmlGenerator {
       long user = end.user() - start.user();
       long cpu = end.cpu() - start.cpu();
 
-      xml.openElement("sample");
-      xml.attribute("interval", interval);
-      xml.attribute("cpu", cpu * 100 / time);
-      xml.attribute("user", user * 100 / time);
-      xml.attribute("system", (cpu - user) * 100 / time);
-      xml.closeElement();
+      out.startObject("sample");
+      out.field("interval", interval);
+      out.field("cpu", cpu * 100 / time);
+      out.field("user", user * 100 / time);
+      out.field("system", (cpu - user) * 100 / time);
+      out.endObject();
 
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
-      xml.comment("CPU time sampling was interrupted");
-      return Response.status(ContentStatus.SERVICE_UNAVAILABLE);
+      return Response.problem(Problems.forHttpError(503, "CPU time sampling was interrupted"));
     }
     return Response.ok();
   }

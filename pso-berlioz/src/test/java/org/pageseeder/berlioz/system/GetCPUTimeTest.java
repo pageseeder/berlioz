@@ -5,7 +5,10 @@ import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.ParameterBuilder;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.error.ProblemDetails;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -19,35 +22,44 @@ import static org.junit.jupiter.api.Assertions.*;
 class GetCPUTimeTest {
 
   @Test
-  void testProcess_zeroInterval_setsBadRequest() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    Response response = new GetCPUTime().generate(request(0, -1L), xml);
+  void testProcessZeroIntervalReturnsBadRequestProblem() {
+    OutputWriter out = new XmlOutputAdapter();
+    Response response = new GetCPUTime().generate(request(0, -1L), out);
+    assertTrue(response.isProblem());
+    assertEquals(ContentStatus.BAD_REQUEST, response.status());
+    ProblemDetails problem = response.problem();
+    assertNotNull(problem);
+    assertEquals(400, problem.status());
+  }
+
+  @Test
+  void testProcessNegativeIntervalReturnsBadRequestProblem() {
+    OutputWriter out = new XmlOutputAdapter();
+    Response response = new GetCPUTime().generate(request(-5, -1L), out);
+    assertTrue(response.isProblem());
     assertEquals(ContentStatus.BAD_REQUEST, response.status());
   }
 
   @Test
-  void testProcess_negativeInterval_setsBadRequest() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    Response response = new GetCPUTime().generate(request(-5, -1L), xml);
-    assertEquals(ContentStatus.BAD_REQUEST, response.status());
+  void testProcessZeroIntervalWritesNothingToOutput() {
+    OutputWriter out = new XmlOutputAdapter();
+    new GetCPUTime().generate(request(0, -1L), out);
+    assertEquals("", out.toString(), "Generator should not write body content on a problem response");
   }
 
-  @Test
-  void testProcess_zeroInterval_writesComment() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new GetCPUTime().generate(request(0, -1L), xml);
-    assertTrue(xml.toString().contains("<!--"), "Should write comment on bad interval");
-  }
+  // process() tests — XML
+  // ---------------------------------------------------------------------------
 
   @Test
-  void testProcess_allThreads_writesSampleElement() throws Exception {
-    XmlStringBuilder xml = new XmlStringBuilder();
+  void testProcessAllThreadsWritesSampleElement() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
 
     // interval=1ms, all threads (thread=-1)
-    Response response = new GetCPUTime().generate(request(1, -1L), xml);
+    Response response = new GetCPUTime().generate(request(1, -1L), out);
 
     assertEquals(ContentStatus.OK, response.status(), "Valid call should not set error status");
-    Document doc = parse(xml.toString());
+    assertFalse(response.isProblem());
+    Document doc = parseXml(out.toString());
     Element sample = doc.getDocumentElement();
     assertEquals("sample", sample.getTagName());
     assertEquals("1", sample.getAttribute("interval"));
@@ -57,24 +69,41 @@ class GetCPUTimeTest {
   }
 
   @Test
-  void testProcess_singleThread_writesSampleElement() {
+  void testProcessSingleThreadWritesSampleElement() {
     long currentId = Thread.currentThread().getId();
-    XmlStringBuilder xml = new XmlStringBuilder();
+    OutputWriter out = new XmlOutputAdapter();
 
-    Response response = new GetCPUTime().generate(request(1, currentId), xml);
+    Response response = new GetCPUTime().generate(request(1, currentId), out);
 
     assertEquals(ContentStatus.OK, response.status());
-    assertTrue(xml.toString().contains("<sample"), "Should write <sample> element");
+    assertTrue(out.toString().contains("<sample"), "Should write <sample> element");
   }
 
   @Test
-  void testProcess_cpuAttributeIsNumeric() throws Exception {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    new GetCPUTime().generate(request(1, -1L), xml);
-    Document doc = parse(xml.toString());
+  void testProcessCpuAttributeIsNumeric() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    new GetCPUTime().generate(request(1, -1L), out);
+    Document doc = parseXml(out.toString());
     assertDoesNotThrow(() -> Long.parseLong(doc.getDocumentElement().getAttribute("cpu")));
     assertDoesNotThrow(() -> Long.parseLong(doc.getDocumentElement().getAttribute("user")));
     assertDoesNotThrow(() -> Long.parseLong(doc.getDocumentElement().getAttribute("system")));
+  }
+
+  // process() tests — JSON
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testProcessJsonAllThreadsWritesSampleObject() {
+    OutputWriter out = new JsonOutputAdapter();
+
+    Response response = new GetCPUTime().generate(request(1, -1L), out);
+
+    assertEquals(ContentStatus.OK, response.status());
+    String json = out.toString();
+    assertTrue(json.startsWith("{\"interval\":1,"), "Should include interval property");
+    assertTrue(json.contains("\"cpu\":"));
+    assertTrue(json.contains("\"user\":"));
+    assertTrue(json.contains("\"system\":"));
   }
 
   private static Request request(int interval, long threadId) {
@@ -99,7 +128,7 @@ class GetCPUTimeTest {
         });
   }
 
-  private static Document parse(String xml) throws Exception {
+  private static Document parseXml(String xml) throws Exception {
     return DocumentBuilderFactory.newInstance().newDocumentBuilder()
         .parse(new InputSource(new StringReader(xml)));
   }
