@@ -445,7 +445,7 @@ Likely outcome:
 
 - Should Jakarta support be a breaking major release, a parallel artifact, or a later 1.x line once the application migration window is clear?
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
-- How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?
+- ~~How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?~~ Decided: neither alone — `berlioz.control.key` (explicit key) and `berlioz.control.network` (default `off`) are independent channels, plus a fixed delegated-authorization request attribute for host applications
 - Should service-level metadata be part of normal output, diagnostic output, or both?
 - Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?
 - For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?
