@@ -16,13 +16,13 @@
 package org.pageseeder.berlioz.system;
 
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
-import org.pageseeder.berlioz.xml.XmlWriter;
+import org.pageseeder.berlioz.output.OutputWriter;
 
 /**
- * Returns JVM runtime information as XML.
+ * Returns JVM runtime information as XML or JSON.
  *
  * <h3>Parameters</h3>
  * <p>This generator does not use any parameter.</p>
@@ -33,6 +33,15 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *   <memory free="[bytes]" total="[bytes]" max="[bytes]"/>
  * </runtime>
  * }</pre>
+ *
+ * <h3>Returned JSON</h3>
+ * <pre>{@code
+ * {
+ *   "processors": [n],
+ *   "memory": {"free": [bytes], "total": [bytes], "max": [bytes]}
+ * }
+ * }</pre>
+ *
  * <dl>
  *   <dt>{@code processors}</dt><dd>Number of processors available to the JVM.</dd>
  *   <dt>{@code free}</dt><dd>Amount of free memory in the JVM heap, in bytes.</dd>
@@ -51,22 +60,22 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * @since 0.9.32
  */
 @Beta
-public class GetRuntimeInfo implements XmlGenerator {
+public class GetRuntimeInfo implements Generator {
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     Runtime runtime = Runtime.getRuntime();
 
-    xml.openElement("runtime");
-    xml.attribute("processors", runtime.availableProcessors());
+    out.startObject("runtime");
+    out.field("processors", runtime.availableProcessors());
 
-    xml.openElement("memory");
-    xml.attribute("free",  runtime.freeMemory());
-    xml.attribute("total", runtime.totalMemory());
-    xml.attribute("max",   runtime.maxMemory());
-    xml.closeElement();
+    out.startObject("memory");
+    out.field("free",  runtime.freeMemory());
+    out.field("total", runtime.totalMemory());
+    out.field("max",   runtime.maxMemory());
+    out.endObject();
 
-    xml.closeElement();
+    out.endObject();
     return Response.ok();
   }
 
