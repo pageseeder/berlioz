@@ -2,50 +2,131 @@ package org.pageseeder.berlioz.generator;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 
 import java.io.File;
 
+/**
+ * Golden-value tests for {@link GetGlobalConfig}.
+ *
+ * <p>Assertions on {@link #process(ContentRequest)} and {@link #processJson(ContentRequest)}
+ * use exact string equality rather than {@code contains}, so that any change to the XML shape
+ * (backward compatibility) or the JSON shape must be a deliberate, visible edit to this file
+ * rather than a side effect that slips through a looser check. Fixtures with more than one
+ * property use order-independent assertions since {@link GlobalSettings#getAll()} does not
+ * guarantee iteration order.
+ */
 class GetGlobalConfigTest {
 
-  private static final File WEB_INF =
-      new File("./src/test/resources/org/pageseeder/berlioz");
-
-  @BeforeEach
-  void setUp() {
-    GlobalSettings.setup(WEB_INF);
-  }
+  private static final File RESOURCES =
+      new File("./src/test/resources/org/pageseeder/berlioz/generator/getglobalconfig");
 
   @AfterEach
   void tearDown() {
     GlobalSettings.setup((InitEnvironment) null);
   }
 
-  // process() tests
+  // process() tests — XML
   // ---------------------------------------------------------------------------
 
   @Test
-  void testProcessAlwaysWritesPropertiesElement() {
+  void testProcessNoPropertiesWritesEmptyElement() {
+    GlobalSettings.setup(new File(RESOURCES, "empty"));
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assertions.assertTrue(out.contains("<properties"), "Should contain <properties>");
+    Assertions.assertEquals("<properties source=\"config.xml\"/>", out);
   }
 
   @Test
-  void testProcessIncludesSourceAttributeWhenConfigExists() {
+  void testProcessSingleProperty() {
+    GlobalSettings.setup(new File(RESOURCES, "single"));
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assertions.assertTrue(out.contains("source="), "Should include source attribute when config file is found");
+    Assertions.assertEquals(
+        "<properties source=\"config.properties\">"
+            + "<property name=\"app.name\" value=\"Test\"/>"
+            + "</properties>", out);
   }
+
+  @Test
+  void testProcessRedactsSensitivePropertyValue() {
+    GlobalSettings.setup(new File(RESOURCES, "redacted"));
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String out = process(req);
+    Assertions.assertEquals(
+        "<properties source=\"config.properties\">"
+            + "<property name=\"app.password\" value=\"[REDACTED]\"/>"
+            + "</properties>", out);
+  }
+
+  @Test
+  void testProcessMultiplePropertiesIncludesAllRegardlessOfOrder() {
+    GlobalSettings.setup(new File(RESOURCES, "multi"));
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String out = process(req);
+    Assertions.assertTrue(out.startsWith("<properties source=\"config.properties\">"));
+    Assertions.assertTrue(out.endsWith("</properties>"));
+    Assertions.assertTrue(out.contains("<property name=\"app.name\" value=\"Test\"/>"));
+    Assertions.assertTrue(out.contains("<property name=\"app.password\" value=\"[REDACTED]\"/>"));
+    Assertions.assertEquals(2, out.split("<property ").length - 1, "Should contain exactly 2 properties");
+  }
+
+  // process() tests — JSON
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testProcessJsonNoPropertiesWritesEmptyArray() {
+    GlobalSettings.setup(new File(RESOURCES, "empty"));
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String out = processJson(req);
+    Assertions.assertEquals("{\"source\":\"config.xml\",\"properties\":[]}", out);
+  }
+
+  @Test
+  void testProcessJsonSingleProperty() {
+    GlobalSettings.setup(new File(RESOURCES, "single"));
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String out = processJson(req);
+    Assertions.assertEquals(
+        "{\"source\":\"config.properties\","
+            + "\"properties\":[{\"name\":\"app.name\",\"value\":\"Test\"}]}", out);
+  }
+
+  @Test
+  void testProcessJsonRedactsSensitivePropertyValue() {
+    GlobalSettings.setup(new File(RESOURCES, "redacted"));
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String out = processJson(req);
+    Assertions.assertEquals(
+        "{\"source\":\"config.properties\","
+            + "\"properties\":[{\"name\":\"app.password\",\"value\":\"[REDACTED]\"}]}", out);
+  }
+
+  @Test
+  void testProcessJsonMultiplePropertiesIncludesAllRegardlessOfOrder() {
+    GlobalSettings.setup(new File(RESOURCES, "multi"));
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String out = processJson(req);
+    Assertions.assertTrue(out.startsWith("{\"source\":\"config.properties\",\"properties\":["));
+    Assertions.assertTrue(out.endsWith("]}"));
+    Assertions.assertTrue(out.contains("{\"name\":\"app.name\",\"value\":\"Test\"}"));
+    Assertions.assertTrue(out.contains("{\"name\":\"app.password\",\"value\":\"[REDACTED]\"}"));
+    Assertions.assertEquals(2, out.split("\\{\"name\"").length - 1, "Should contain exactly 2 properties");
+  }
+
+  // getETag() tests
+  // ---------------------------------------------------------------------------
 
   @Test
   void testETagNotNullWhenConfigFileExists() {
+    GlobalSettings.setup(new File(RESOURCES, "single"));
     GetGlobalConfig gen = new GetGlobalConfig();
     ContentRequest req = GeneratorTestSupport.request().build();
     String etag = gen.getETag((Request) req);
@@ -66,8 +147,15 @@ class GetGlobalConfigTest {
 
   private static String process(ContentRequest req) {
     GetGlobalConfig gen = new GetGlobalConfig();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    gen.generate(req, xml);
-    return xml.toString();
+    OutputWriter out = new XmlOutputAdapter();
+    gen.generate(req, out);
+    return out.toString();
+  }
+
+  private static String processJson(ContentRequest req) {
+    GetGlobalConfig gen = new GetGlobalConfig();
+    OutputWriter out = new JsonOutputAdapter();
+    gen.generate(req, out);
+    return out.toString();
   }
 }

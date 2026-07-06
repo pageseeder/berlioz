@@ -21,15 +21,15 @@ import java.util.Map.Entry;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Cacheable;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.util.Redaction;
 import org.pageseeder.berlioz.util.SHA256;
-import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns the global properties as XML.
+ * Returns the global properties as XML or JSON.
  *
  * <h3>Configuration</h3>
  * <p>There is no configuration associated with this generator.</p>
@@ -48,6 +48,19 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * </properties>
  * }</pre>
  *
+ * <h3>Returned JSON</h3>
+ * <p>This generator returns the same information as JSON as below:
+ * <pre>{@code
+ * {
+ *   "source": "[source]",
+ *   "properties": [
+ *     {"name": "[nameA]", "value": "[valueA]"},
+ *     {"name": "[nameB]", "value": "[REDACTED]"},
+ *     {"name": "[nameC]", "value": "[valueC]"}
+ *   ]
+ * }
+ * }</pre>
+ *
  * <p>Property values whose names match a sensitive keyword pattern (e.g. {@code password},
  * {@code secret}, {@code token}, {@code apikey}, {@code credential}, {@code privatekey})
  * are replaced with {@code [REDACTED]} to avoid exposing secrets via misconfiguration.
@@ -61,7 +74,7 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * @version 0.14.0
  * @since 0.8
  */
-public final class GetGlobalConfig implements XmlGenerator, Cacheable {
+public final class GetGlobalConfig implements Generator, Cacheable {
 
   @Override
   public @Nullable String getETag(Request req) {
@@ -71,24 +84,25 @@ public final class GetGlobalConfig implements XmlGenerator, Cacheable {
   }
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     File global = GlobalSettings.getPropertiesFile();
 
-    xml.openElement("properties", true);
+    out.startObject("properties");
     if (global != null) {
-      xml.attribute("source", global.getName());
+      out.field("source", global.getName());
     }
 
+    out.startArray("properties", OutputWriter.ContextOption.JSON_ONLY);
     for (Entry<String, String> e : GlobalSettings.getAll().entrySet()) {
       String name = e.getKey();
       String value = Redaction.redact(name, e.getValue());
-      xml.openElement("property", false);
-      xml.attribute("name", name);
-      xml.attribute("value", value);
-      xml.closeElement();
+      out.startObject("property");
+      out.field("name", name);
+      out.field("value", value);
+      out.endObject();
     }
-
-    xml.closeElement();
+    out.endArray();
+    out.endObject();
     return Response.ok();
   }
 
