@@ -28,7 +28,7 @@ import org.pageseeder.berlioz.output.OutputWriter;
  * @author Christophe Lauret
  *
  * @version 0.14.0
- * @since 0.9.32
+ * @since 0.14.0
  */
 final class Threads {
 
@@ -107,7 +107,7 @@ final class Threads {
    * @param out        The output writer.
    * @param stacktrace The stack trace to write, or {@code null} to write nothing.
    */
-  static void writeStackTrace(OutputWriter out, @Nullable StackTraceElement[] stacktrace) {
+  static void writeStackTrace(OutputWriter out, StackTraceElement @Nullable[] stacktrace) {
     if (stacktrace == null) return;
     out.startArray("stacktrace");
     for (StackTraceElement element : stacktrace) {
