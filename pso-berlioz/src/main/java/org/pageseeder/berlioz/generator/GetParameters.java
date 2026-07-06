@@ -15,12 +15,9 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.content.*;
+import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.util.SHA256;
-import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Returns the HTTP Parameters as XML.
@@ -35,7 +32,7 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *     <parameter name="[name-B]">[value-B2]</parameter>
  *     <parameter name="[name-C]">[value-C]</parameter>
  *     <parameter name="[name-D]">[value-D]</parameter>
- *     <code class="comment"><!-- ... --></code>
+ *     <!-- ... -->
  *   </parameters>
  * }</pre>
  *
@@ -51,7 +48,7 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * @version 0.14.0
  * @since 0.7
  */
-public final class GetParameters implements XmlGenerator, Cacheable {
+public final class GetParameters implements Generator, Cacheable {
 
   private static final int MAX_PARAMETERS = 50;
   private static final int MAX_VALUES = 20;
@@ -70,14 +67,16 @@ public final class GetParameters implements XmlGenerator, Cacheable {
   }
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
-    xml.openElement("parameters", true);
+  public Response generate(Request req, OutputWriter out) {
+    out.startObject("parameters");
+    out.startArray("parameters", OutputWriter.ContextOption.JSON_ONLY);
     int paramCount = 0;
     for (String name : req.parameterNames()) {
       if (++paramCount > MAX_PARAMETERS) break;
-      if (name.length() <= MAX_NAME_LENGTH) writeParameterValues(xml, name, req.parameterValues(name));
+      if (name.length() <= MAX_NAME_LENGTH) writeParameterValues(out, name, req.parameterValues(name));
     }
-    xml.closeElement();
+    out.endArray();
+    out.endObject();
     return Response.ok();
   }
 
@@ -90,19 +89,19 @@ public final class GetParameters implements XmlGenerator, Cacheable {
     }
   }
 
-  private static void writeParameterValues(XmlWriter xml, String name, Iterable<String> values) {
+  private static void writeParameterValues(OutputWriter out, String name, Iterable<String> values) {
     int valueCount = 0;
     for (String value : values) {
       if (++valueCount > MAX_VALUES) break;
-      xml.openElement("parameter", false);
-      xml.attribute("name", name);
+      out.startObject("parameter");
+      out.field("name", name);
       if (value.length() > MAX_VALUE_LENGTH) {
-        xml.attribute("truncated", true);
-        xml.text(value.substring(0, MAX_VALUE_LENGTH));
+        out.field("truncated", true);
+        out.field("value", value.substring(0, MAX_VALUE_LENGTH), OutputWriter.FieldOption.XML_TEXT);
       } else {
-        xml.text(value);
+        out.field("value", value, OutputWriter.FieldOption.XML_TEXT);
       }
-      xml.closeElement();
+      out.endObject();
     }
   }
 

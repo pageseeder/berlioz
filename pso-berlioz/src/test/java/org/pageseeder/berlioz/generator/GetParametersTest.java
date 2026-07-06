@@ -4,19 +4,28 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 
+/**
+ * Golden-value tests for {@link GetParameters}.
+ *
+ * <p>Assertions on {@link #process(ContentRequest)} and {@link #processJson(ContentRequest)}
+ * use exact string equality rather than {@code contains}, so that any change to the XML shape
+ * (backward compatibility) or the JSON shape must be a deliberate, visible edit to this file
+ * rather than a side effect that slips through a looser check.
+ */
 class GetParametersTest {
 
-  // process() tests
+  // process() tests — XML
   // ---------------------------------------------------------------------------
 
   @Test
   void testProcessNoParametersWritesEmptyElement() {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assertions.assertTrue(out.contains("<parameters"), "Should contain <parameters>");
-    Assertions.assertFalse(out.contains("<parameter "), "Should contain no <parameter> elements");
+    Assertions.assertEquals("<parameters/>", out);
   }
 
   @Test
@@ -25,8 +34,7 @@ class GetParametersTest {
         .parameter("name", "Alice")
         .build();
     String out = process(req);
-    Assertions.assertTrue(out.contains("name=\"name\""));
-    Assertions.assertTrue(out.contains("Alice"));
+    Assertions.assertEquals("<parameters><parameter name=\"name\">Alice</parameter></parameters>", out);
   }
 
   @Test
@@ -36,10 +44,8 @@ class GetParametersTest {
         .parameter("b", "2")
         .build();
     String out = process(req);
-    Assertions.assertTrue(out.contains("name=\"a\""));
-    Assertions.assertTrue(out.contains("name=\"b\""));
-    Assertions.assertTrue(out.contains(">1<"));
-    Assertions.assertTrue(out.contains(">2<"));
+    Assertions.assertEquals(
+        "<parameters><parameter name=\"a\">1</parameter><parameter name=\"b\">2</parameter></parameters>", out);
   }
 
   @Test
@@ -48,10 +54,164 @@ class GetParametersTest {
         .multiParameter("color", "red", "blue", "green")
         .build();
     String out = process(req);
-    // 3 <parameter> elements inside <parameters>
-    Assertions.assertTrue(out.contains("red"), "Should contain 3 parameter elements");
-    Assertions.assertTrue(out.contains("blue"));
-    Assertions.assertTrue(out.contains("green"));
+    Assertions.assertEquals("<parameters>"
+        + "<parameter name=\"color\">red</parameter>"
+        + "<parameter name=\"color\">blue</parameter>"
+        + "<parameter name=\"color\">green</parameter>"
+        + "</parameters>", out);
+  }
+
+  @Test
+  void testProcessNameOverMaxLengthIsSkipped() {
+    String longName = "n".repeat(101);
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter(longName, "v")
+        .parameter("ok", "1")
+        .build();
+    String out = process(req);
+    Assertions.assertEquals("<parameters><parameter name=\"ok\">1</parameter></parameters>", out);
+  }
+
+  @Test
+  void testProcessValueOverMaxLengthIsTruncated() {
+    String longValue = "x".repeat(2_010);
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter("big", longValue)
+        .build();
+    String out = process(req);
+    String truncated = "x".repeat(2_000);
+    Assertions.assertEquals(
+        "<parameters><parameter name=\"big\" truncated=\"true\">" + truncated + "</parameter></parameters>", out);
+  }
+
+  @Test
+  void testProcessValueAtMaxLengthIsNotTruncated() {
+    String value = "y".repeat(2_000);
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter("exact", value)
+        .build();
+    String out = process(req);
+    Assertions.assertFalse(out.contains("truncated"), "Value at exactly the limit should not be truncated");
+  }
+
+  @Test
+  void testProcessOverMaxParametersIsCapped() {
+    GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request();
+    for (int i = 0; i < 55; i++) builder.parameter("p" + i, "v" + i);
+    ContentRequest req = builder.build();
+    String out = process(req);
+    Assertions.assertTrue(out.contains("name=\"p49\""), "50th parameter should be included");
+    Assertions.assertFalse(out.contains("name=\"p50\""), "51st parameter should be dropped");
+  }
+
+  @Test
+  void testProcessOverMaxValuesIsCapped() {
+    String[] values = new String[25];
+    for (int i = 0; i < values.length; i++) values[i] = "v" + i;
+    ContentRequest req = GeneratorTestSupport.request()
+        .multiParameter("multi", values)
+        .build();
+    String out = process(req);
+    Assertions.assertTrue(out.contains(">v19<"), "20th value should be included");
+    Assertions.assertFalse(out.contains(">v20<"), "21st value should be dropped");
+  }
+
+  // process() tests — JSON
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testProcessJsonNoParametersWritesEmptyArray() {
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String out = processJson(req);
+    Assertions.assertEquals("{\"parameters\":[]}", out);
+  }
+
+  @Test
+  void testProcessJsonSingleParameter() {
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter("name", "Alice")
+        .build();
+    String out = processJson(req);
+    Assertions.assertEquals("{\"parameters\":[{\"name\":\"name\",\"value\":\"Alice\"}]}", out);
+  }
+
+  @Test
+  void testProcessJsonMultipleParameters() {
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter("a", "1")
+        .parameter("b", "2")
+        .build();
+    String out = processJson(req);
+    Assertions.assertEquals(
+        "{\"parameters\":[{\"name\":\"a\",\"value\":\"1\"},{\"name\":\"b\",\"value\":\"2\"}]}", out);
+  }
+
+  @Test
+  void testProcessJsonMultiValueParameter() {
+    ContentRequest req = GeneratorTestSupport.request()
+        .multiParameter("color", "red", "blue", "green")
+        .build();
+    String out = processJson(req);
+    Assertions.assertEquals("{\"parameters\":["
+        + "{\"name\":\"color\",\"value\":\"red\"},"
+        + "{\"name\":\"color\",\"value\":\"blue\"},"
+        + "{\"name\":\"color\",\"value\":\"green\"}"
+        + "]}", out);
+  }
+
+  @Test
+  void testProcessJsonNameOverMaxLengthIsSkipped() {
+    String longName = "n".repeat(101);
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter(longName, "v")
+        .parameter("ok", "1")
+        .build();
+    String out = processJson(req);
+    Assertions.assertEquals("{\"parameters\":[{\"name\":\"ok\",\"value\":\"1\"}]}", out);
+  }
+
+  @Test
+  void testProcessJsonValueOverMaxLengthIsTruncated() {
+    String longValue = "x".repeat(2_010);
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter("big", longValue)
+        .build();
+    String out = processJson(req);
+    String truncated = "x".repeat(2_000);
+    Assertions.assertEquals(
+        "{\"parameters\":[{\"name\":\"big\",\"truncated\":true,\"value\":\"" + truncated + "\"}]}", out);
+  }
+
+  @Test
+  void testProcessJsonValueAtMaxLengthIsNotTruncated() {
+    String value = "y".repeat(2_000);
+    ContentRequest req = GeneratorTestSupport.request()
+        .parameter("exact", value)
+        .build();
+    String out = processJson(req);
+    Assertions.assertFalse(out.contains("truncated"), "Value at exactly the limit should not be truncated");
+  }
+
+  @Test
+  void testProcessJsonOverMaxParametersIsCapped() {
+    GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request();
+    for (int i = 0; i < 55; i++) builder.parameter("p" + i, "v" + i);
+    ContentRequest req = builder.build();
+    String out = processJson(req);
+    Assertions.assertTrue(out.contains("\"name\":\"p49\""), "50th parameter should be included");
+    Assertions.assertFalse(out.contains("\"name\":\"p50\""), "51st parameter should be dropped");
+  }
+
+  @Test
+  void testProcessJsonOverMaxValuesIsCapped() {
+    String[] values = new String[25];
+    for (int i = 0; i < values.length; i++) values[i] = "v" + i;
+    ContentRequest req = GeneratorTestSupport.request()
+        .multiParameter("multi", values)
+        .build();
+    String out = processJson(req);
+    Assertions.assertTrue(out.contains("\"value\":\"v19\""), "20th value should be included");
+    Assertions.assertFalse(out.contains("\"value\":\"v20\""), "21st value should be dropped");
   }
 
   // getETag() tests
@@ -89,8 +249,15 @@ class GetParametersTest {
 
   private static String process(ContentRequest req) {
     GetParameters gen = new GetParameters();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    gen.generate(req, xml);
-    return xml.toString();
+    OutputWriter out = new XmlOutputAdapter();
+    gen.generate(req, out);
+    return out.toString();
+  }
+
+  private static String processJson(ContentRequest req) {
+    GetParameters gen = new GetParameters();
+    OutputWriter out = new JsonOutputAdapter();
+    gen.generate(req, out);
+    return out.toString();
   }
 }
