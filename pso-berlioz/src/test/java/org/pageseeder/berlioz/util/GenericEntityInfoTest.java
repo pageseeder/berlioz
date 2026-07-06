@@ -17,6 +17,7 @@ class GenericEntityInfoTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void testConstructor_date() {
     Date date = new Date(5000L);
     GenericEntityInfo info = new GenericEntityInfo(date, "application/json", "abc");

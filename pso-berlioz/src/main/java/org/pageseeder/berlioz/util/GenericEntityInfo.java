@@ -65,7 +65,12 @@ public class GenericEntityInfo implements EntityInfo {
    * @param modified    The last modified date of the entity.
    * @param contentType The content type of the entity.
    * @param etag        The etag for the entity.
+   *
+   * @deprecated Use {@link #GenericEntityInfo(long, String, String)} with
+   *             {@code modified.getTime()} or {@code instant.toEpochMilli()} instead;
+   *             {@link java.util.Date} is a legacy type.
    */
+  @Deprecated(since = "0.14.0")
   public GenericEntityInfo(Date modified, String contentType, @Nullable String etag) {
     this(modified.getTime(), contentType, etag);
   }
