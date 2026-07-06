@@ -658,4 +658,17 @@ class JsonOutputAdapterTest {
     assertEquals("{\"a\":\"x\",\"b\":1,\"c\":true}", sw.toString());
   }
 
+  // ---------------------------------------------------------------------------
+  // Default constructor — toString()
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void defaultConstructor_toStringReturnsBufferedOutput() {
+    JsonOutputAdapter out = new JsonOutputAdapter();
+    out.startObject("root");
+    out.field("a", "x");
+    out.endObject();
+    assertEquals("{\"a\":\"x\"}", out.toString());
+  }
+
 }

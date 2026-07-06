@@ -636,4 +636,17 @@ class XmlOutputAdapterTest {
     assertEquals("<root a=\"x\" b=\"1\" c=\"true\"/>", sw.toString());
   }
 
+  // ---------------------------------------------------------------------------
+  // Default constructor — toString()
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void defaultConstructor_toStringReturnsBufferedOutput() {
+    XmlOutputAdapter out = new XmlOutputAdapter();
+    out.startObject("root");
+    out.field("a", "x");
+    out.endObject();
+    assertEquals("<root a=\"x\"/>", out.toString());
+  }
+
 }

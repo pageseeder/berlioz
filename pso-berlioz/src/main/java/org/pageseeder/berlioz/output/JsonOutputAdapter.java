@@ -17,9 +17,9 @@ package org.pageseeder.berlioz.output;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.json.Json;
+import org.pageseeder.berlioz.json.JsonStringBuilder;
 import org.pageseeder.berlioz.json.JsonWriter;
 
-import java.io.StringWriter;
 import java.io.Writer;
 
 /**
@@ -28,7 +28,7 @@ import java.io.Writer;
  * <p>Field names are automatically converted to camelCase via {@link Json#camelify(String)}.
  * Fields and contexts flagged as {@link FieldOption#XML_ONLY} are silently skipped.</p>
  *
- * <p>By default, output is buffered in an internal {@link java.io.StringWriter} and can be
+ * <p>By default, output is buffered in an internal {@link JsonStringBuilder} and can be
  * retrieved via {@link #toString()}. Supply a custom {@link java.io.Writer} to direct output
  * elsewhere.</p>
  *
@@ -52,13 +52,12 @@ public class JsonOutputAdapter implements OutputWriter {
   private int suppressedDepth = 0;
 
   /**
-   * Creates a new JSON writer.
+   * Creates a new JSON writer buffering into an internal {@link JsonStringBuilder}.
    *
-   * <p>To capture the output as a string, supply a {@link java.io.StringWriter} via
-   * {@link #JsonOutputAdapter(Writer)} and call {@link java.io.StringWriter#toString()} on it.</p>
+   * <p>The accumulated output can be retrieved via {@link #toString()}.</p>
    */
   public JsonOutputAdapter() {
-    this(new StringWriter());
+    this(JsonStringBuilder.create());
   }
 
   /**

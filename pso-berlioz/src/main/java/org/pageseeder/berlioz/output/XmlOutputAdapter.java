@@ -17,9 +17,9 @@ package org.pageseeder.berlioz.output;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.xml.XmlAppendable;
+import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.berlioz.xml.XmlWriter;
 
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -33,7 +33,7 @@ import java.util.Deque;
  * Contexts (objects/arrays) flagged as {@link ContextOption#JSON_ONLY} have their wrapper
  * element omitted but their children are still written at the enclosing level.</p>
  *
- * <p>By default, output is buffered in an internal {@link java.io.StringWriter} and can be
+ * <p>By default, output is buffered in an internal {@link XmlStringBuilder} and can be
  * retrieved via {@link #toString()}. Supply a {@link java.io.Writer} or an existing
  * {@link XmlWriter} to direct output elsewhere.</p>
  *
@@ -57,13 +57,12 @@ public class XmlOutputAdapter implements OutputWriter {
   private final Deque<ContextOption> contextStack = new ArrayDeque<>();
 
   /**
-   * Creates a new XML writer.
+   * Creates a new XML writer buffering into an internal {@link XmlStringBuilder}.
    *
-   * <p>To capture the output as a string, supply a {@link java.io.StringWriter} via
-   * {@link #XmlOutputAdapter(Writer)} and call {@link java.io.StringWriter#toString()} on it.</p>
+   * <p>The accumulated output can be retrieved via {@link #toString()}.</p>
    */
   public XmlOutputAdapter() {
-    this(new StringWriter());
+    this(new XmlStringBuilder());
   }
 
   /**
