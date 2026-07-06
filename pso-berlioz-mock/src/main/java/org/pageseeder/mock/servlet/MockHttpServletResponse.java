@@ -21,7 +21,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Collection;
@@ -29,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
@@ -334,9 +335,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
   // --------------------------------------------------------------------------
 
   private String formatHTTPDate(long time) {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-    return dateFormat.format(time);
+    return DateTimeFormatter.RFC_1123_DATE_TIME.format(Instant.ofEpochMilli(time).atZone(ZoneOffset.UTC));
   }
 
   private void checkCommitted() {
