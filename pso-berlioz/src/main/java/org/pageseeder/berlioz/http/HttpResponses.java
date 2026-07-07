@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.http;
 
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -25,6 +26,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.util.Charsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility methods for working with HTTP servlet responses.
@@ -35,6 +39,11 @@ import org.pageseeder.berlioz.Beta;
  * @since 0.14.0
  */
 public final class HttpResponses {
+
+  /**
+   * Displays debug information.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(HttpResponses.class);
 
   /**
    * HTTP date formatter for the RFC 1123 date format (e.g. {@code Sat, 01 Jan 2000 00:00:00 GMT}).
@@ -63,6 +72,27 @@ public final class HttpResponses {
       // Set the content-length as String to be able to use a long value
       response.setHeader(HttpHeaders.CONTENT_LENGTH, "" + contentLength);
     }
+  }
+
+  /**
+   * Computes the byte length of {@code content} in the given charset and sets it as the
+   * response's {@code Content-Length}.
+   *
+   * <p>If the length cannot be determined (e.g. {@code content} contains an unpaired surrogate),
+   * the header is left unset so the container falls back to chunked transfer encoding, and a
+   * warning is logged rather than sending a bogus negative length.
+   *
+   * @param response The HTTP servlet response.
+   * @param content  The content that will be written to the response body.
+   * @param charset  The charset the content will be encoded with.
+   */
+  public static void setContentLength(HttpServletResponse response, CharSequence content, Charset charset) {
+    int length = Charsets.length(content, charset);
+    if (length < 0) {
+      LOGGER.warn("Unable to determine content length for charset {}; omitting Content-Length header", charset);
+      return;
+    }
+    setContentLength(response, length);
   }
 
   /**

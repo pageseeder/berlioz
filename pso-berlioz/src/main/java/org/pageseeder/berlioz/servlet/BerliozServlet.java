@@ -740,7 +740,7 @@ public final class BerliozServlet extends HttpServlet {
       out.flush();
     } else {
       // HEAD: report the length the client would receive without sending a body
-      res.setIntHeader(HttpHeaders.CONTENT_LENGTH, CharsetUtils.length(result.content(), charset));
+      HttpResponses.setContentLength(res, result.content(), charset);
     }
   }
 

@@ -43,7 +43,7 @@ import org.pageseeder.berlioz.error.LegacyError;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.http.HttpHeaders;
-import org.pageseeder.berlioz.util.CharsetUtils;
+import org.pageseeder.berlioz.http.HttpResponses;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -320,7 +320,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   private void writeResponse(HttpServletResponse res, String content, String mediaType) throws IOException {
     res.setContentType(mediaType);
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
-    res.setContentLength(CharsetUtils.length(content, StandardCharsets.UTF_8));
+    HttpResponses.setContentLength(res, content, StandardCharsets.UTF_8);
     res.setDateHeader(HttpHeaders.DATE, System.currentTimeMillis());
     res.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
     PrintWriter out = res.getWriter();

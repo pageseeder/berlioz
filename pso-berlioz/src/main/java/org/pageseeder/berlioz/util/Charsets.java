@@ -27,22 +27,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A bunch of utility functions for dealing with character sets.
+ * Functions for dealing with character sets.
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.14.0
  * @since 0.8.1
  */
-public final class CharsetUtils {
+public final class Charsets {
 
   /**
    * Displays debug information.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(CharsetUtils.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(Charsets.class);
 
   /** Utility class */
-  private CharsetUtils() {
+  private Charsets() {
   }
 
   /**
