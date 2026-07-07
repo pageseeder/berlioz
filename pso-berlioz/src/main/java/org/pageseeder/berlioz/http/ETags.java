@@ -18,8 +18,7 @@ package org.pageseeder.berlioz.http;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Utility methods for computing and comparing entity tags, including the GZip-variant
- * suffix used to distinguish compressed and uncompressed representations of a resource.
+ * Utility methods for computing entity tags for the GZip-variant representation of a resource.
  *
  * @author Christophe Lauret
  *
@@ -37,22 +36,6 @@ public final class ETags {
    * Utility class.
    */
   private ETags() {
-  }
-
-  /**
-   * Indicates whether the resource is compressible (only text is compressible by default).
-   *
-   * @param contentType The content type (MIME).
-   *
-   * @return <code>true</code> if the resource is compressible;
-   *         <code>false</code> otherwise.
-   */
-  public static boolean isCompressible(@Nullable String contentType) {
-    if (contentType == null) return false;
-    return contentType.startsWith("text")
-        || contentType.endsWith("xml")
-        || contentType.endsWith("json")
-        || contentType.endsWith("javascript");
   }
 
   /**

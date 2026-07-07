@@ -6,50 +6,6 @@ import org.junit.jupiter.api.Test;
 class ETagsTest {
 
   // ---------------------------------------------------------------------------
-  // isCompressible
-  // ---------------------------------------------------------------------------
-
-  @Test
-  void testIsCompressible_Null() {
-    Assertions.assertFalse(ETags.isCompressible(null));
-  }
-
-  @Test
-  void testIsCompressible_TextTypes() {
-    Assertions.assertTrue(ETags.isCompressible("text/html"));
-    Assertions.assertTrue(ETags.isCompressible("text/plain"));
-    Assertions.assertTrue(ETags.isCompressible("text/css"));
-    Assertions.assertTrue(ETags.isCompressible("text/javascript"));
-  }
-
-  @Test
-  void testIsCompressible_XmlTypes() {
-    Assertions.assertTrue(ETags.isCompressible("application/xml"));
-    Assertions.assertTrue(ETags.isCompressible("application/xhtml+xml"));
-    Assertions.assertTrue(ETags.isCompressible("image/svg+xml"));
-  }
-
-  @Test
-  void testIsCompressible_JsonTypes() {
-    Assertions.assertTrue(ETags.isCompressible("application/json"));
-    Assertions.assertTrue(ETags.isCompressible("application/geo+json"));
-  }
-
-  @Test
-  void testIsCompressible_JavascriptTypes() {
-    Assertions.assertTrue(ETags.isCompressible("application/javascript"));
-    Assertions.assertTrue(ETags.isCompressible("application/x-javascript"));
-  }
-
-  @Test
-  void testIsCompressible_BinaryTypes() {
-    Assertions.assertFalse(ETags.isCompressible("image/png"));
-    Assertions.assertFalse(ETags.isCompressible("image/jpeg"));
-    Assertions.assertFalse(ETags.isCompressible("application/pdf"));
-    Assertions.assertFalse(ETags.isCompressible("application/octet-stream"));
-  }
-
-  // ---------------------------------------------------------------------------
   // getETagForGZip
   // ---------------------------------------------------------------------------
 

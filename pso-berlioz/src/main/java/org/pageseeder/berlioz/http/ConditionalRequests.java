@@ -156,7 +156,7 @@ public final class ConditionalRequests {
         res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
         String etag = info.getETag();
         // Use the GZIP ETag for compressible resources
-        if (ETags.isCompressible(info.getMimeType()) && HttpRequests.acceptsGZipCompression(req)) {
+        if (HttpResponses.isCompressible(info.getMimeType()) && HttpRequests.acceptsGZipCompression(req)) {
           etag = ETags.getETagForGZip(etag);
         }
         res.setHeader(HttpHeaders.ETAG, etag);

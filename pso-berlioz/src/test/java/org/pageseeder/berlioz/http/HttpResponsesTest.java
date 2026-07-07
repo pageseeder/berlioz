@@ -12,6 +12,50 @@ import javax.servlet.http.HttpServletResponse;
 class HttpResponsesTest {
 
   // ---------------------------------------------------------------------------
+  // isCompressible
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testIsCompressible_Null() {
+    Assertions.assertFalse(HttpResponses.isCompressible(null));
+  }
+
+  @Test
+  void testIsCompressible_TextTypes() {
+    Assertions.assertTrue(HttpResponses.isCompressible("text/html"));
+    Assertions.assertTrue(HttpResponses.isCompressible("text/plain"));
+    Assertions.assertTrue(HttpResponses.isCompressible("text/css"));
+    Assertions.assertTrue(HttpResponses.isCompressible("text/javascript"));
+  }
+
+  @Test
+  void testIsCompressible_XmlTypes() {
+    Assertions.assertTrue(HttpResponses.isCompressible("application/xml"));
+    Assertions.assertTrue(HttpResponses.isCompressible("application/xhtml+xml"));
+    Assertions.assertTrue(HttpResponses.isCompressible("image/svg+xml"));
+  }
+
+  @Test
+  void testIsCompressible_JsonTypes() {
+    Assertions.assertTrue(HttpResponses.isCompressible("application/json"));
+    Assertions.assertTrue(HttpResponses.isCompressible("application/geo+json"));
+  }
+
+  @Test
+  void testIsCompressible_JavascriptTypes() {
+    Assertions.assertTrue(HttpResponses.isCompressible("application/javascript"));
+    Assertions.assertTrue(HttpResponses.isCompressible("application/x-javascript"));
+  }
+
+  @Test
+  void testIsCompressible_BinaryTypes() {
+    Assertions.assertFalse(HttpResponses.isCompressible("image/png"));
+    Assertions.assertFalse(HttpResponses.isCompressible("image/jpeg"));
+    Assertions.assertFalse(HttpResponses.isCompressible("application/pdf"));
+    Assertions.assertFalse(HttpResponses.isCompressible("application/octet-stream"));
+  }
+
+  // ---------------------------------------------------------------------------
   // toLastModified
   // ---------------------------------------------------------------------------
 

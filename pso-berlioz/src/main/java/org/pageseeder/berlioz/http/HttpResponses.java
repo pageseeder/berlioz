@@ -23,6 +23,7 @@ import java.util.Locale;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 
 /**
@@ -73,6 +74,22 @@ public final class HttpResponses {
    */
   public static String toLastModified(long modified) {
     return HTTP_DATE_FORMATTER.format(Instant.ofEpochMilli(modified));
+  }
+
+  /**
+   * Indicates whether the resource is compressible (only text is compressible by default).
+   *
+   * @param contentType The content type (MIME).
+   *
+   * @return <code>true</code> if the resource is compressible;
+   *         <code>false</code> otherwise.
+   */
+  public static boolean isCompressible(@Nullable String contentType) {
+    if (contentType == null) return false;
+    return contentType.startsWith("text")
+        || contentType.endsWith("xml")
+        || contentType.endsWith("json")
+        || contentType.endsWith("javascript");
   }
 
   /**
