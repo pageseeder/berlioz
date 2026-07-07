@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.http;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -56,32 +57,38 @@ class HttpResponsesTest {
   }
 
   // ---------------------------------------------------------------------------
-  // toLastModified
+  // toHttpDate
   // ---------------------------------------------------------------------------
 
   @Test
-  void testToLastModified_Epoch() {
+  void testToHttpDate_Epoch() {
     // Unix epoch is Thursday 1 January 1970 00:00:00 GMT
-    Assertions.assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", HttpResponses.toLastModified(0L));
+    Assertions.assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", HttpResponses.toHttpDate(0L));
   }
 
   @Test
-  void testToLastModified_KnownDate() {
+  void testToHttpDate_KnownDate() {
     // 2000-01-01T00:00:00Z = 946684800000 ms
-    Assertions.assertEquals("Sat, 01 Jan 2000 00:00:00 GMT", HttpResponses.toLastModified(946684800000L));
+    Assertions.assertEquals("Sat, 01 Jan 2000 00:00:00 GMT", HttpResponses.toHttpDate(946684800000L));
   }
 
   @Test
-  void testToLastModified_AlwaysGMT() {
-    String result = HttpResponses.toLastModified(System.currentTimeMillis());
+  void testToHttpDate_AlwaysGMT() {
+    String result = HttpResponses.toHttpDate(System.currentTimeMillis());
     Assertions.assertTrue(result.endsWith("GMT"), "Expected GMT timezone in header value");
   }
 
   @Test
-  void testToLastModified_Format() {
+  void testToHttpDate_Format() {
     // Verify the format matches: "EEE, dd MMM yyyy HH:mm:ss GMT"
-    String result = HttpResponses.toLastModified(0L);
+    String result = HttpResponses.toHttpDate(0L);
     Assertions.assertTrue(result.matches("[A-Z][a-z]{2}, \\d{2} [A-Z][a-z]{2} \\d{4} \\d{2}:\\d{2}:\\d{2} GMT"), "Expected format 'Day, DD Mon YYYY HH:MM:SS GMT'");
+  }
+
+  @Test
+  void testToHttpDate_Instant() {
+    // The Instant overload must format identically to the epoch-millisecond overload
+    Assertions.assertEquals(HttpResponses.toHttpDate(946684800000L), HttpResponses.toHttpDate(Instant.ofEpochMilli(946684800000L)));
   }
 
   // ---------------------------------------------------------------------------

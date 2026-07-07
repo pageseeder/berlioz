@@ -69,11 +69,22 @@ public final class HttpResponses {
    * Returns an HTTP date string for the given epoch-millisecond timestamp,
    * formatted according to RFC 1123 (e.g. {@code Sat, 01 Jan 2000 00:00:00 GMT}).
    *
-   * @param modified the last-modified time in milliseconds since the Unix epoch.
+   * @param instant the timestamp in milliseconds since the Unix epoch.
    * @return the timestamp formatted as an HTTP date string.
    */
-  public static String toLastModified(long modified) {
-    return HTTP_DATE_FORMATTER.format(Instant.ofEpochMilli(modified));
+  public static String toHttpDate(long instant) {
+    return toHttpDate(Instant.ofEpochMilli(instant));
+  }
+
+  /**
+   * Returns an HTTP date string for the given instant,
+   * formatted according to RFC 1123 (e.g. {@code Sat, 01 Jan 2000 00:00:00 GMT}).
+   *
+   * @param instant the timestamp to format.
+   * @return the timestamp formatted as an HTTP date string.
+   */
+  public static String toHttpDate(Instant instant) {
+    return HTTP_DATE_FORMATTER.format(instant);
   }
 
   /**
