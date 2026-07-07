@@ -129,4 +129,19 @@ class HttpRequestsTest {
     Assertions.assertEquals(8080, HttpRequests.effectivePort(noProxy));
   }
 
+  @Test
+  void testAcceptsGZipCompression() {
+    HttpServletRequest accepted = HttpTestSupport.request()
+        .header(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate")
+        .build();
+    HttpServletRequest rejected = HttpTestSupport.request()
+        .header(HttpHeaders.ACCEPT_ENCODING, "gzip;q=0")
+        .build();
+    HttpServletRequest absent = HttpTestSupport.request().build();
+
+    Assertions.assertTrue(HttpRequests.acceptsGZipCompression(accepted));
+    Assertions.assertFalse(HttpRequests.acceptsGZipCompression(rejected));
+    Assertions.assertFalse(HttpRequests.acceptsGZipCompression(absent));
+  }
+
 }

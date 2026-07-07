@@ -16,51 +16,37 @@
 package org.pageseeder.berlioz.http;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
 import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.util.EntityInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A utility class for HTTP headers.
+ * Evaluates the HTTP conditional request headers ({@code If-Match}, {@code If-Modified-Since},
+ * {@code If-None-Match}, {@code If-Unmodified-Since}) against an entity's metadata, updating
+ * the response as required.
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
- * @since 0.6
+ * @version 0.14.0
+ * @since 0.14.0
  */
-public final class HttpHeaderUtils {
+public final class ConditionalRequests {
 
   /**
    * Logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(HttpHeaderUtils.class);
-
-  private static final String GZIP_ETAG_SUFFIX = "-gzip\"";
-
-  /**
-   * HTTP date formatter for the RFC 1123 date format (e.g. {@code Sat, 01 Jan 2000 00:00:00 GMT}).
-   * {@link DateTimeFormatter} is immutable and thread-safe; no synchronization is needed.
-   */
-  private static final DateTimeFormatter HTTP_DATE_FORMATTER =
-      DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US)
-          .withZone(ZoneId.of("GMT"));
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConditionalRequests.class);
 
   /**
    * Utility class.
    */
-  private HttpHeaderUtils() {
+  private ConditionalRequests() {
   }
 
   /**
@@ -78,7 +64,7 @@ public final class HttpHeaderUtils {
    *
    * <p>When the entity info is available, this method should be used in the servlet as follows:
    * <pre>
-   *   if (!HttpHeaderUtils.checkIfHeaders(request, response, info)) {
+   *   if (!ConditionalRequests.checkIfHeaders(request, response, info)) {
    *     return;
    *   }
    * </pre>
@@ -128,7 +114,7 @@ public final class HttpHeaderUtils {
         while (!conditionSatisfied && commaTokenizer.hasMoreTokens()) {
           String currentToken = commaTokenizer.nextToken().trim();
           // Handle ETags of GZipped resources
-          if (currentToken.endsWith(GZIP_ETAG_SUFFIX)) {
+          if (currentToken.endsWith(ETags.GZIP_ETAG_SUFFIX)) {
             currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
           }
           if (currentToken.equals(eTag)) {
@@ -170,8 +156,8 @@ public final class HttpHeaderUtils {
         res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
         String etag = info.getETag();
         // Use the GZIP ETag for compressible resources
-        if (isCompressible(info.getMimeType()) && acceptsGZipCompression(req)) {
-          etag = getETagForGZip(etag);
+        if (ETags.isCompressible(info.getMimeType()) && HttpRequests.acceptsGZipCompression(req)) {
+          etag = ETags.getETagForGZip(etag);
         }
         res.setHeader(HttpHeaders.ETAG, etag);
         LOGGER.debug("If-Modified-Since check: NOT MODIFIED, etag={}", etag);
@@ -209,7 +195,7 @@ public final class HttpHeaderUtils {
 
     // For GET and HEAD respond with 304 Not Modified; for all other methods, 412 Precondition Failed.
     if ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod())) {
-      String responseETag = Boolean.TRUE.equals(gzipMatch) ? getETagForGZip(eTag) : eTag;
+      String responseETag = Boolean.TRUE.equals(gzipMatch) ? ETags.getETagForGZip(eTag) : eTag;
       res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
       res.setHeader(HttpHeaders.ETAG, responseETag);
       LOGGER.debug("If-None-Match check: match etag={}", responseETag);
@@ -235,8 +221,8 @@ public final class HttpHeaderUtils {
     StringTokenizer tokenizer = new StringTokenizer(headerValue, ",");
     while (tokenizer.hasMoreTokens()) {
       String token = tokenizer.nextToken().trim();
-      if (token.endsWith(GZIP_ETAG_SUFFIX)) {
-        String baseToken = token.substring(0, token.length() - GZIP_ETAG_SUFFIX.length()) + '"';
+      if (token.endsWith(ETags.GZIP_ETAG_SUFFIX)) {
+        String baseToken = token.substring(0, token.length() - ETags.GZIP_ETAG_SUFFIX.length()) + '"';
         if (baseToken.equals(eTag)) return Boolean.TRUE;
       } else if (token.equals(eTag)) {
         return Boolean.FALSE;
@@ -277,105 +263,4 @@ public final class HttpHeaderUtils {
     return true;
   }
 
-  /**
-   * Indicates whether the client accepts GZip compression.
-   *
-   * @param req The HTTP servlet request.
-   *
-   * @return <code>true</code> if the 'Accept-Encoding' header contains "gzip";
-   *         <code>false</code> otherwise.
-   */
-  public static boolean acceptsGZipCompression(HttpServletRequest req) {
-    String encoding = req.getHeader(HttpHeaders.ACCEPT_ENCODING);
-    return HttpAcceptHeader.accepts(encoding, "gzip");
-  }
-
-  /**
-   * Sets the content length handling the case when the value is larger than Max Integer.
-   *
-   * @param response      The HTTP servlet response.
-   * @param contentLength The content length to set.
-   */
-  public static void setContentLength(HttpServletResponse response, long contentLength) {
-    if (contentLength < Integer.MAX_VALUE) {
-      response.setContentLength((int)contentLength);
-    } else {
-      // Set the content-length as String to be able to use a long value
-      response.setHeader(HttpHeaders.CONTENT_LENGTH, "" + contentLength);
-    }
-  }
-
-  /**
-   * Indicates whether the resource is compressible (only text is compressible by default).
-   *
-   * @param contentType The content type (MIME).
-   *
-   * @return <code>true</code> if the resource is compressible;
-   *         <code>false</code> otherwise.
-   */
-  public static boolean isCompressible(@Nullable String contentType) {
-    if (contentType == null) return false;
-    return contentType.startsWith("text")
-        || contentType.endsWith("xml")
-        || contentType.endsWith("json")
-        || contentType.endsWith("javascript");
-  }
-
-  /**
-   * Returns the entity tag for a compressed response.
-   *
-   * @param etag the entity tag of the response before compression.
-   * @return the entity tag of the compressed response.
-   */
-  public static @Nullable String getETagForGZip(@Nullable String etag) {
-    if (etag == null) return null;
-    int q = etag.lastIndexOf("\"");
-    return (q > 0)? etag.substring(0, q)+GZIP_ETAG_SUFFIX : etag;
-  }
-
-  /**
-   * Returns the entity tag for an uncompressed response by stripping the GZip suffix.
-   *
-   * <p>For example, {@code "abc-gzip"} becomes {@code "abc"}.
-   * If the ETag does not carry the GZip suffix, it is returned unchanged.
-   *
-   * @param etag the entity tag, possibly carrying the GZip suffix.
-   * @return the base entity tag without the GZip suffix, or the original ETag unchanged.
-   */
-  public static @Nullable String getETagForUncompressed(@Nullable String etag) {
-    if (etag == null) return null;
-    int q = etag.lastIndexOf(GZIP_ETAG_SUFFIX);
-    return (q > 0) ? etag.substring(0, q) + '"' : etag;
-  }
-
-  /**
-   * Returns an HTTP date string for the given epoch-millisecond timestamp,
-   * formatted according to RFC 1123 (e.g. {@code Sat, 01 Jan 2000 00:00:00 GMT}).
-   *
-   * @param modified the last-modified time in milliseconds since the Unix epoch.
-   * @return the timestamp formatted as an HTTP date string.
-   */
-  public static String toLastModified(long modified) {
-    return HTTP_DATE_FORMATTER.format(Instant.ofEpochMilli(modified));
-  }
-
-  /**
-   * Returns a value suitable for the {@code Allow} response header listing the given HTTP methods.
-   *
-   * @param methods the list of allowed HTTP methods (e.g. {@code ["GET", "HEAD", "POST"]})
-   * @return a comma-separated list of the allowed methods.
-   */
-  @Beta public static String allow(List<String> methods) {
-    StringBuilder allow = new StringBuilder();
-    boolean first = true;
-    for (String m : methods) {
-      if (first) {
-        first = false;
-      } else {
-        allow.append(',');
-      }
-      allow.append(m);
-    }
-    return allow.toString();
-  }
 }

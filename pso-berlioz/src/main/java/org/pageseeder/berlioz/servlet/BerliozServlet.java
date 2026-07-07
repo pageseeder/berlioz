@@ -254,7 +254,7 @@ public final class BerliozServlet extends HttpServlet {
     ServiceRegistry services = getServiceRegistry();
     String path = HttpRequestWrapper.getBerliozPath(req);
     List<String> methods = services.allows(path);
-    res.setHeader(HttpHeaders.ALLOW, HttpHeaderUtils.allow(methods));
+    res.setHeader(HttpHeaders.ALLOW, HttpResponses.allow(methods));
   }
 
   // Standard HTTP Methods
@@ -375,7 +375,7 @@ public final class BerliozServlet extends HttpServlet {
         applyCacheHeaders(res, config, context.match, etag);
 
         // Check conditional request headers (may return 304 without generating content)
-        if (!HttpHeaderUtils.checkIfHeaders(req, res, new ServiceInfo(etag))) return;
+        if (!ConditionalRequests.checkIfHeaders(req, res, new ServiceInfo(etag))) return;
 
       } else {
         cacheable = false;
@@ -455,7 +455,7 @@ public final class BerliozServlet extends HttpServlet {
         applyCacheHeaders(res, config, ctx.match, etag);
 
         // Check if the conditions specified in the optional If headers are satisfied.
-        if (!HttpHeaderUtils.checkIfHeaders(req, res, new ServiceInfo(etag))) return;
+        if (!ConditionalRequests.checkIfHeaders(req, res, new ServiceInfo(etag))) return;
 
       } else {
         cacheable = false;
@@ -527,7 +527,7 @@ public final class BerliozServlet extends HttpServlet {
     if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
       List<String> methods = services.allows(path);
       if (!methods.isEmpty()) {
-        String allowed = HttpHeaderUtils.allow(methods);
+        String allowed = HttpResponses.allow(methods);
         res.setHeader(HttpHeaders.ALLOW, allowed);
         sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only the following are allowed: " + allowed, null);
         return;
@@ -712,16 +712,16 @@ public final class BerliozServlet extends HttpServlet {
     // content is large enough for compression to be worthwhile. Char count is a safe lower bound
     // on encoded byte length (every supported charset uses at least 1 byte per char), so it gates
     // the decision without a full encode pass.
-    boolean compressible = config.enableCompression() && HttpHeaderUtils.isCompressible(result.getMediaType())
+    boolean compressible = config.enableCompression() && ETags.isCompressible(result.getMediaType())
         && result.content().length() >= COMPRESSION_THRESHOLD;
-    if (compressible && HttpHeaderUtils.acceptsGZipCompression(req)) {
+    if (compressible && HttpRequests.acceptsGZipCompression(req)) {
       byte[] compressed = ResourceCompressor.compress(result.content(), charset);
       if (compressed.length > 0) {
         res.setIntHeader(HttpHeaders.CONTENT_LENGTH, compressed.length);
         res.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
         // ETag must reflect the encoding; replace it with the GZip variant
         if (etag != null) {
-          res.setHeader(HttpHeaders.ETAG, HttpHeaderUtils.getETagForGZip(etag));
+          res.setHeader(HttpHeaders.ETAG, ETags.getETagForGZip(etag));
         }
         if (includeContent) {
           ServletOutputStream out = res.getOutputStream();

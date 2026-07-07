@@ -44,6 +44,19 @@ public final class HttpRequests {
   private static final String HTTPS = "https";
 
   /**
+   * Indicates whether the client accepts GZip compression.
+   *
+   * @param req The HTTP servlet request.
+   *
+   * @return <code>true</code> if the 'Accept-Encoding' header contains "gzip";
+   *         <code>false</code> otherwise.
+   */
+  public static boolean acceptsGZipCompression(HttpServletRequest req) {
+    String encoding = req.getHeader(HttpHeaders.ACCEPT_ENCODING);
+    return HttpAcceptHeader.accepts(encoding, "gzip");
+  }
+
+  /**
    * Returns {@code true} only for URLs that are safe to use as redirect targets.
    *
    * <p>A URL is considered safe when it is one of:
