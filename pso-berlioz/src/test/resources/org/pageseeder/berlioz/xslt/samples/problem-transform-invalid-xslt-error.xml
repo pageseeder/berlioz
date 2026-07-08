@@ -3,23 +3,19 @@
   <type>urn:berlioz:problem:transform-invalid</type>
   <status>503</status>
   <title>Service Unavailable</title>
-  <detail>The XSLT stylesheet contains a static error and could not be compiled</detail>
-  <exception class="javax.xml.transform.TransformerConfigurationException" type="TransformerConfigurationException">
+  <detail>The element type "xsl:template" must be terminated by the matching end-tag &lt;/xsl:template&gt;.</detail>
+  <xslt-error class="javax.xml.transform.TransformerConfigurationException" kind="static" code="XTSE0003">
     <message>The element type "xsl:template" must be terminated by the matching end-tag &lt;/xsl:template&gt;.</message>
     <location system-id="/WEB-INF/xslt/html/default.xsl" line="42" column="12"/>
-  </exception>
-  <collected-errors>
-    <collected level="error">
-      <exception class="javax.xml.transform.TransformerConfigurationException" type="TransformerConfigurationException">
+    <collected>
+      <error level="error">
         <message>The element type "xsl:template" must be terminated by the matching end-tag &lt;/xsl:template&gt;.</message>
         <location system-id="/WEB-INF/xslt/html/default.xsl" line="42" column="12"/>
-      </exception>
-    </collected>
-    <collected level="warning">
-      <exception class="javax.xml.transform.TransformerConfigurationException" type="TransformerConfigurationException">
+      </error>
+      <error level="warning">
         <message>Premature end of file.</message>
         <location system-id="/WEB-INF/xslt/html/default.xsl" line="45" column="0"/>
-      </exception>
+      </error>
     </collected>
-  </collected-errors>
+  </xslt-error>
 </problem>

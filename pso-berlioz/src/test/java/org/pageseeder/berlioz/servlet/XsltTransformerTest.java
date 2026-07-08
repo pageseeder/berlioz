@@ -149,7 +149,10 @@ class XsltTransformerTest {
   }
 
   @Test
-  void toXml_problemFormat_withCollectedErrors_addsCollectedErrorsExtension() throws Exception {
+  void toXml_problemFormat_withCollectedErrors_addsXsltErrorDetailExtension() throws Exception {
+    // The xslt-error extension (including collected warnings/errors) is gated by ERROR_DETAIL,
+    // same as every other problem type's diagnostic extension — MINIMAL (the default) omits it.
+    setOption(BerliozOption.ERROR_DETAIL, "standard");
     XsltErrorCollector collector = new XsltErrorCollector(org.slf4j.LoggerFactory.getLogger(XsltTransformerTest.class));
     collector.collectQuietly(Level.ERROR, new TransformerException("first failure"));
     collector.collectQuietly(Level.WARNING, new TransformerException("second failure"));
@@ -158,11 +161,25 @@ class XsltTransformerTest {
 
     String xml = invokeToXml(wrapper, null);
 
-    Assertions.assertTrue(xml.contains("<collected-errors>"), xml);
-    Assertions.assertTrue(xml.contains("<collected level=\"error\">"), xml);
-    Assertions.assertTrue(xml.contains("<collected level=\"warning\">"), xml);
+    Assertions.assertTrue(xml.contains("<xslt-error"), xml);
+    Assertions.assertTrue(xml.contains("kind=\"static\""), xml);
+    Assertions.assertTrue(xml.contains("<collected>"), xml);
+    Assertions.assertTrue(xml.contains("<error level=\"error\">"), xml);
+    Assertions.assertTrue(xml.contains("<error level=\"warning\">"), xml);
     Assertions.assertTrue(xml.contains("first failure"), xml);
     Assertions.assertTrue(xml.contains("second failure"), xml);
+    // Never a stack trace for XSLT errors, regardless of ERROR_DETAIL
+    Assertions.assertFalse(xml.contains("<stack-trace>"), xml);
+  }
+
+  @Test
+  void toXml_problemFormat_minimalDetail_omitsXsltErrorDetail() throws Exception {
+    setOption(BerliozOption.ERROR_DETAIL, "minimal");
+    TransformerConfigurationException ex = new TransformerConfigurationException("bad stylesheet");
+
+    String xml = invokeToXml(ex, null);
+
+    Assertions.assertFalse(xml.contains("<xslt-error"), xml);
   }
 
   @Test

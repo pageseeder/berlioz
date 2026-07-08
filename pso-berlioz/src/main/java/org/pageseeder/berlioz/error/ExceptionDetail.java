@@ -20,7 +20,6 @@ import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.output.OutputWriter;
 
-import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import org.xml.sax.SAXParseException;
@@ -177,57 +176,6 @@ public final class ExceptionDetail implements ProblemExtension {
   private static String transformerType(TransformerException ex) {
     return ex instanceof TransformerConfigurationException
         ? "TransformerConfigurationException" : "TransformerException";
-  }
-
-  private static final class SourceLocation {
-
-    private final int line;
-    private final int column;
-    private final @Nullable String publicId;
-    private final @Nullable String systemId;
-
-    private SourceLocation(int line, int column, @Nullable String publicId,
-        @Nullable String systemId) {
-      this.line = line;
-      this.column = column;
-      this.publicId = publicId;
-      this.systemId = systemId;
-    }
-
-    private static @Nullable SourceLocation of(SAXParseException ex) {
-      return of(ex.getLineNumber(), ex.getColumnNumber(), ex.getPublicId(),
-          toWebPath(ex.getSystemId()));
-    }
-
-    private static @Nullable SourceLocation of(@Nullable SourceLocator loc) {
-      if (loc == null) return null;
-      return of(loc.getLineNumber(), loc.getColumnNumber(), loc.getPublicId(),
-          toWebPath(loc.getSystemId()));
-    }
-
-    private static @Nullable SourceLocation of(int line, int column,
-        @Nullable String publicId, @Nullable String systemId) {
-      if (!hasFields(line, column, publicId, systemId)) return null;
-      return new SourceLocation(line, column, publicId, systemId);
-    }
-
-    private void writeTo(OutputWriter out) {
-      out.startObject("location");
-      if (this.line != -1) out.field("line", this.line);
-      if (this.column != -1) out.field("column", this.column);
-      out.optionalField("public-id", this.publicId);
-      out.optionalField("system-id", this.systemId);
-      out.endObject();
-    }
-
-    private static @Nullable String toWebPath(@Nullable String systemId) {
-      return systemId != null ? Errors.toWebPath(systemId) : null;
-    }
-
-    private static boolean hasFields(int line, int column,
-        @Nullable String publicId, @Nullable String systemId) {
-      return line != -1 || column != -1 || publicId != null || systemId != null;
-    }
   }
 
 }

@@ -18,7 +18,9 @@ package org.pageseeder.berlioz.error;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.http.HttpStatusCodes;
+import org.pageseeder.berlioz.util.Errors;
 
+import javax.xml.transform.TransformerException;
 import java.util.regex.Pattern;
 
 /**
@@ -235,6 +237,30 @@ public final class Problems {
     if (throwable == null || detailLevel == DetailLevel.MINIMAL) return base;
     boolean includeStackTrace = detailLevel == DetailLevel.FULL;
     return base.extension(ExceptionDetail.of(throwable, includeStackTrace));
+  }
+
+  /**
+   * Creates a {@link ProblemDetails} for an XSLT transform failure, using an {@link XsltErrorDetail}
+   * extension rather than the generic {@link ExceptionDetail} used by {@link #forHttpError(int,
+   * String, String, Throwable, DetailLevel)}.
+   *
+   * <p>Unlike generic exception detail, {@code XsltErrorDetail} never carries a stack trace, so
+   * {@code STANDARD} and {@code FULL} produce identical output for this extension member; only
+   * {@code MINIMAL} omits it.
+   *
+   * @param code           an HTTP status code
+   * @param berliozErrorId a Berlioz error ID string, or {@code null}
+   * @param ex             the transformer exception that terminated the transform; if an
+   *                       {@link org.pageseeder.berlioz.xslt.XsltExceptionWrapper}, its collected
+   *                       warnings/errors are included automatically
+   * @param detailLevel    controls whether the {@code xslt-error} extension member is added
+   * @return a fully populated {@code ProblemDetails}
+   */
+  public static ProblemDetails forXsltError(int code, @Nullable String berliozErrorId,
+                                            TransformerException ex, DetailLevel detailLevel) {
+    ProblemDetails base = forHttpError(code, Errors.cleanMessage(ex), berliozErrorId);
+    if (detailLevel == DetailLevel.MINIMAL) return base;
+    return base.extension(XsltErrorDetail.of(ex));
   }
 
   // --- Private helpers -------------------------------------------------------------------------

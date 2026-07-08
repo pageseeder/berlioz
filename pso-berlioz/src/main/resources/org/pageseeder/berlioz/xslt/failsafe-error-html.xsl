@@ -319,10 +319,10 @@
     <xsl:apply-templates select="." mode="help"/>
     <!-- Structured exception extension (message, stack trace, cause chain) -->
     <xsl:apply-templates select="exception"/>
-    <!-- Secondary errors collected while processing this request (e.g. multiple XSLT errors) -->
-    <xsl:apply-templates select="collected-errors"/>
+    <!-- XSLT-specific structured error extension (kind, error code, location, collected errors) -->
+    <xsl:apply-templates select="xslt-error"/>
     <!-- Other non-standard extension members -->
-    <xsl:variable name="extensions" select="*[not(self::type|self::status|self::title|self::detail|self::instance|self::exception|self::collected-errors)]"/>
+    <xsl:variable name="extensions" select="*[not(self::type|self::status|self::title|self::detail|self::instance|self::exception|self::xslt-error)]"/>
     <xsl:if test="$extensions">
       <details class="extensions">
         <summary>Additional details</summary>
@@ -343,19 +343,44 @@
   </div>
 </xsl:template>
 
-<!-- Collected errors extension (RFC 9457 problem: <collected-errors><collected level="..."><exception>...) -->
-<xsl:template match="problem/collected-errors">
-  <div class="collected-errors">
-    <h3>Collected errors</h3>
+<!-- XSLT-specific structured error extension (RFC 9457 problem: <xslt-error kind="..." code="...">) -->
+<xsl:template match="problem/xslt-error">
+  <div class="exception">
+    <p class="location">
+      <xsl:text>Kind: </xsl:text><xsl:value-of select="@kind"/>
+      <xsl:if test="@code"> &#183; Code: <code><xsl:value-of select="@code"/></code></xsl:if>
+    </p>
+    <xsl:apply-templates select="location"/>
     <xsl:apply-templates select="collected"/>
   </div>
 </xsl:template>
 
-<xsl:template match="problem/collected-errors/collected">
-  <div class="exception {@level}">
-    <span class="level">[<xsl:value-of select="@level"/>]</span>
-    <xsl:apply-templates select="exception"/>
-  </div>
+<!-- Warnings/errors collected before the fatal one, grouped by stylesheet -->
+<xsl:template match="problem/xslt-error/collected">
+  <xsl:for-each-group select="error[location]" group-by="location/@system-id">
+    <h4><xsl:value-of select="location/@system-id"/></h4>
+    <ul class="collected">
+      <xsl:for-each select="current-group()">
+        <li class="{@level}">
+          <span class="level">[<xsl:value-of select="@level"/>]</span>
+          <span class="line">Line: <xsl:value-of select="location/@line"/></span>
+          <span class="col">Column: <xsl:value-of select="location/@column"/></span>
+          <span class="info"><xsl:value-of select="message"/></span>
+        </li>
+      </xsl:for-each>
+    </ul>
+  </xsl:for-each-group>
+  <!-- Collected entries without a location (e.g. no locator available) -->
+  <xsl:if test="error[not(location)]">
+    <ul class="collected">
+      <xsl:for-each select="error[not(location)]">
+        <li class="{@level}">
+          <span class="level">[<xsl:value-of select="@level"/>]</span>
+          <span class="info"><xsl:value-of select="message"/></span>
+        </li>
+      </xsl:for-each>
+    </ul>
+  </xsl:if>
 </xsl:template>
 
 

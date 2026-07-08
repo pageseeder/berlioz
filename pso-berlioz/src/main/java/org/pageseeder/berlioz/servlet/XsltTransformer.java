@@ -53,7 +53,6 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.aeson.JSONResult;
 import org.pageseeder.berlioz.content.Service;
-import org.pageseeder.berlioz.error.CollectedErrorsExtension;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
@@ -378,23 +377,26 @@ public final class XsltTransformer {
       }
     }
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
-      return toProblemXml(ex, actual, collector);
+      return toProblemXml(ex, actual);
     }
     return toLegacyXml(ex, actual, collector, parameters);
   }
 
   /**
    * Serializes transformation error details as an RFC 9457 {@code <problem>} document.
+   *
+   * <p>Uses {@link Problems#forXsltError(int, String, TransformerException, DetailLevel)}, which
+   * attaches an {@link org.pageseeder.berlioz.error.XsltErrorDetail} extension — carrying the
+   * error's kind, engine error code (when available), source location, and any collected
+   * warnings/errors — rather than the generic, stack-trace-oriented {@code exception} extension
+   * used for other error types. {@code ex} is passed as-is (not {@code actual}) so that a wrapped
+   * {@link XsltExceptionWrapper} is unwrapped by {@code XsltErrorDetail} itself, together with its
+   * collected errors.
    */
-  private static String toProblemXml(TransformerException ex, TransformerException actual,
-                                     @Nullable XsltErrorCollector collector) {
+  private static String toProblemXml(TransformerException ex, TransformerException actual) {
     BerliozErrorID id = toErrorID(actual);
     DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
-    ProblemDetails problem = Problems.forHttpError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-        Errors.cleanMessage(ex), id.id(), actual, level);
-    if (collector != null && !collector.getErrors().isEmpty()) {
-      problem = problem.extension(new CollectedErrorsExtension<>(collector.getErrors()));
-    }
+    ProblemDetails problem = Problems.forXsltError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, id.id(), ex, level);
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.declaration();
     xml.asXml(problem);

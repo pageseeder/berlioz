@@ -91,7 +91,7 @@ class FailsafeXsltTest {
         "problem-services-malformed.xml",
         "problem-transform-not-found.xml",
         "problem-transform-invalid.xml",
-        "problem-transform-invalid-collected-errors.xml",
+        "problem-transform-invalid-xslt-error.xml",
         "problem-transform-dynamic-error.xml",
         "problem-generator-error-unchecked.xml",
         "problem-generator-error-unforced.xml",

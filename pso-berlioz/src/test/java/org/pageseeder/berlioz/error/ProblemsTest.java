@@ -18,6 +18,9 @@ package org.pageseeder.berlioz.error;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+
 final class ProblemsTest {
 
   // --- forInvalidParameter() ---
@@ -233,6 +236,36 @@ final class ProblemsTest {
         new IllegalStateException("boom"), DetailLevel.MINIMAL);
     Assertions.assertEquals("urn:berlioz:problem:unexpected", p.type());
     Assertions.assertFalse(p.extensions().containsKey("exception"));
+  }
+
+  // --- forXsltError() ---
+
+  @Test
+  void testForXsltError_standardDetailAddsXsltErrorDetail() {
+    TransformerException ex = new TransformerConfigurationException("bad stylesheet");
+    ProblemDetails p = Problems.forXsltError(503, "berlioz-transform-invalid", ex, DetailLevel.STANDARD);
+    Assertions.assertEquals(503, p.status());
+    Assertions.assertEquals("urn:berlioz:problem:transform-invalid", p.type());
+    Assertions.assertEquals("bad stylesheet", p.detail());
+    Assertions.assertTrue(p.extensions().get("xslt-error") instanceof XsltErrorDetail);
+    // No separate generic "exception" extension — XsltErrorDetail replaces it for this path
+    Assertions.assertFalse(p.extensions().containsKey("exception"));
+  }
+
+  @Test
+  void testForXsltError_fullDetailAlsoAddsXsltErrorDetail() {
+    TransformerException ex = new TransformerException("dynamic type error");
+    ProblemDetails full = Problems.forXsltError(503, null, ex, DetailLevel.FULL);
+    ProblemDetails standard = Problems.forXsltError(503, null, ex, DetailLevel.STANDARD);
+    // Never a stack trace tier for XSLT errors: STANDARD and FULL produce the same extension
+    Assertions.assertEquals(full.extensions().keySet(), standard.extensions().keySet());
+  }
+
+  @Test
+  void testForXsltError_minimalDetailOmitsXsltErrorDetail() {
+    TransformerException ex = new TransformerConfigurationException("bad stylesheet");
+    ProblemDetails p = Problems.forXsltError(503, "berlioz-transform-invalid", ex, DetailLevel.MINIMAL);
+    Assertions.assertFalse(p.extensions().containsKey("xslt-error"));
   }
 
 }
