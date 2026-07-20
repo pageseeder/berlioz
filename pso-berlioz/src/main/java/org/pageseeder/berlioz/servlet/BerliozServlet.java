@@ -181,6 +181,8 @@ public final class BerliozServlet extends HttpServlet {
   // Standard HTTP Methods
   // ----------------------------------------------------------------------------------------------
 
+  // Overridden so the container always dispatches here regardless of HTTP method;
+  // the doXXX methods below are not reached via this path and exist for direct/test invocation.
   @Override
   protected void service(HttpServletRequest req, HttpServletResponse res) {
     try {
