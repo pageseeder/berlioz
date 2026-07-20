@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
@@ -166,7 +165,7 @@ public final class BerliozConfig {
     this.stylePath = this.getInitParameter("stylesheet", IDENTITY_TRANSFORM);
     this.allocation = toAllocation(this.stylePath);
     this.fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", "");
-    this.transformers = this.allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Collections.emptyMap();
+    this.transformers = this.allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Map.of();
     String rawContentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     this.mediaType = parseMediaType(rawContentType);
     this.charset = parseCharset(rawContentType);
