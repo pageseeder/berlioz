@@ -354,6 +354,7 @@ Next work:
 - Use `406 Not Acceptable` when the requested format is not supported by the service.
 - Decide how `Accept`-based negotiation interacts with extension-based format selection (precedence, override, fallback).
 - Decide whether content negotiation should be opt-in per service or enabled globally.
+- Revisit `BerliozServlet.process()`'s handling of a matched service that can't produce the requested output format (JSON unsupported and no XML+XSLT fallback available): it currently returns `404` rather than `406`, since 406 is conventionally tied to `Accept`-header negotiation and extension-based selection doesn't clearly fit that model yet.
 
 ### 8. Authentication And Authorization Guards
 
