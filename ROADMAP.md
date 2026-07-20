@@ -34,7 +34,7 @@ Expected default changes:
 
 Legacy error XML should be deprecated in 0.14.0, not removed. Applications can still opt back into the legacy `<server-error>` / `<client-error>` shape with `berlioz.errors.problem=false` while migrating custom error XSLT templates.
 
-### 0.14.x: Roadmap Themes 3-5
+### 0.14.x: Roadmap Themes 3-5, 13
 
 The 0.14.x cycle should deliver the remaining adoption and diagnostics work needed before Berlioz can reasonably call the core model 1.0-ready.
 
@@ -66,6 +66,13 @@ Theme 5, Configuration Requirements And Validation:
 - Add an option to fail startup or reload on error-level violations.
 - Add an opt-in generator that returns the current validation report as XML, with JSON support through the normal output pipeline.
 - Add tests for wildcard matching, presence semantics, each built-in constraint, reload behavior, fail-fast behavior, and safe diagnostic output.
+
+Theme 13, HTTP QUERY Method Support:
+
+- Add `QUERY` to `HttpMethod` as a mappable, safe/idempotent method alongside `GET`.
+- Treat `QUERY` like `GET`/`HEAD` for 404-vs-405 semantics, but not for ETag caching until the cache key can account for the request body.
+- Evaluate a scoped stopgap for reading `application/x-www-form-urlencoded` `QUERY` bodies as parameters, mirroring the container's implicit `POST` body parsing.
+- Add test coverage for `QUERY` dispatch and the body-parameter stopgap.
 
 After these are complete, Berlioz may be ready for a 1.0.0 release.
 
@@ -306,6 +313,25 @@ The first implementation should keep the constraint language small and declarati
 
 The diagnostic generator should emit the current validation report as XML, with JSON available through the normal output pipeline. It should be opt-in or intended for admin-only services.
 
+### 13. HTTP QUERY Method Support
+
+Several servlet containers are adding support for the HTTP `QUERY` method (a safe, idempotent method with a request body, intended to replace GET-with-oversized-query-string and ad-hoc POST-as-GET tunneling). Berlioz should support `QUERY` as a first-class mappable method.
+
+Already generic:
+
+- `ServiceRegistry` and `ServicesHandler10` are keyed off `HttpMethod` generically, so registering and matching `QUERY` services requires no structural change beyond adding the enum constant.
+
+Next work:
+
+- Add `QUERY` to `HttpMethod` as mappable (`HttpMethod.java`), alongside `GET`, `POST`, `PUT`, `PATCH`, `DELETE`.
+- In `BerliozServlet`, treat `QUERY` as safe/idempotent for `405`-vs-`404` handling (`handleNoMatch`) and add a `doQuery` override for symmetry with the other `doXXX` methods, even though `service()` already dispatches generically.
+- Do **not** extend the existing `GET`/`HEAD` ETag caching path (`processJson`/`processXml`) to `QUERY` without further design: the current ETag is derived from the URL alone, so two different `QUERY` bodies against the same URL would incorrectly share a cached response. Caching `QUERY` requires hashing the request body into the ETag seed.
+- Evaluate a stopgap for reading `application/x-www-form-urlencoded` `QUERY` bodies into request parameters, mirroring the container's implicit body-parsing for `POST`, since the Servlet spec does not extend that behavior to other methods:
+  - Scope it narrowly to the `application/x-www-form-urlencoded` content type only.
+  - Feature-detect whether the container already populated `getParameterMap()` before manually draining the input stream, so the stopgap doesn't conflict with native `QUERY` parsing once Tomcat/Jetty/Undertow ship it.
+  - Leave non-form `QUERY` bodies (JSON, GraphQL-style query languages) untouched so generators can read the raw body themselves.
+- Add test coverage for `QUERY` dispatch, the `Allow` header, and the body-parameter stopgap.
+
 ### 6. Finish Direct Output And Raw Output Support
 
 Direct JSON and direct XML services are now part of the pipeline. `RawGenerator` exists as an API shape, but servlet dispatch support is still future work.
@@ -465,3 +491,5 @@ Likely outcome:
 - Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?
 - Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
 - ~~Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses?~~ Decided: `minimal` suppresses only framework-internal diagnostics (stack traces, exception class, HTTP headers and parameters). The `detail` member in RFC 9457 responses always reflects the error message passed to `Problems.forHttpError()`, which is the HTTP status phrase — safe for production.
+- Should `QUERY` responses be cacheable, and if so should the ETag seed incorporate a hash of the request body?
+- Should the `application/x-www-form-urlencoded` `QUERY` body-parameter stopgap be always-on, or an explicit opt-in given that feature-detecting container-native `QUERY` parsing is inherently fragile?
