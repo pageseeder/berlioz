@@ -284,7 +284,7 @@ public final class XmlResponse {
     StringWriter sw = new StringWriter();
     BerliozException error = null;
     Response response = Response.ok();
-    @Nullable DetailLevel errorLevel = null;
+    DetailLevel errorLevel = null;
     long start = System.nanoTime();
     try {
       response = dispatchXml(generator, request, sw);
@@ -303,6 +303,7 @@ public final class XmlResponse {
 
     if (response.isProblem()) {
       ProblemDetails problem = response.problem();
+      assert problem != null; // Since isProblem() returns true
       this.topLevelProblem = problem;
       DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
       XmlStringBuilder problemXml = new XmlStringBuilder();
@@ -400,7 +401,7 @@ public final class XmlResponse {
     String result = null;
     BerliozException error = null;
     Response response = Response.ok();
-    @Nullable DetailLevel errorLevel = null;
+    DetailLevel errorLevel = null;
     long start = System.nanoTime();
     StringWriter sw = new StringWriter();
     try {
