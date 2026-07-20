@@ -416,11 +416,7 @@ public final class BerliozServlet extends HttpServlet {
     String jsonMediaType = topLevelProblem != null ? "application/problem+json" : "application/json";
     res.setContentType(jsonMediaType);
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
-    BerliozOutput jsonOutput = new BerliozOutput() {
-      public CharSequence content() { return content; }
-      public String getMediaType() { return "application/json"; }
-      public String getEncoding() { return StandardCharsets.UTF_8.name(); }
-    };
+    BerliozOutput jsonOutput = new JsonContent(content, jsonMediaType);
     writeOutput(req, res, jsonOutput, etag, StandardCharsets.UTF_8, config, context.includeContent);
   }
 
