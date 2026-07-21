@@ -4,7 +4,7 @@ Berlioz is a lightweight Java web framework built around URI templates, generato
 
 The 0.13.x releases delivered the complete roadmap for that cycle: typed request parameters, safer XML parsing and XSLT caching, output-aware generators, direct JSON responses, explicit response values, RFC 9457 Problem Details, stronger redirect/filesystem protections, and the full configurable error handling pipeline. **0.13.5 was released on 2026-07-03 as the final 0.13.x release.**
 
-This roadmap now focuses on the 0.14.x work needed to harden defaults, extend diagnostics, and complete the foundation before a 1.0 release.
+**0.14.0 was released on 2026-07-21.** It moved the framework to secure defaults, closed administration controls by default, strengthened the XSLT error pipeline, and modernized the built-in diagnostic generators. Development is now on **0.14.1-SNAPSHOT** and focuses on the remaining 0.14.x diagnostics, classpath overlay, configuration validation, and HTTP `QUERY` work before a 1.0 release.
 
 ## Guiding Principles
 
@@ -20,61 +20,63 @@ This roadmap now focuses on the 0.14.x work needed to harden defaults, extend di
 
 ## Release Plan
 
-### 0.14.0: Secure Defaults
+### 0.14.0: Secure Defaults ✓ Released 2026-07-21
 
-0.14.0 should be almost identical to 0.13.5 in API and behavior, except that framework defaults move to the secure/recommended side. This makes 0.14.0 the migration release for applications that want the 0.13.5 feature set with production-oriented defaults.
+0.14.0 was the secure-defaults migration release. It retained migration escape hatches while moving out-of-the-box behavior to the production-oriented side.
 
-Expected default changes:
+Completed release changes:
 
-- `berlioz.errors.problem=true` so framework-generated errors use RFC 9457 Problem Details by default.
-- `berlioz.errors.detail=minimal` so framework-generated error responses do not expose exception metadata, stack traces, headers, or request parameters by default.
-- `berlioz.http.get-via-post=false` so POST requests are not silently retried as GET unless applications opt in.
-- `berlioz.xml.header.version=1.0` so the modern XML header is the default.
-- Administration/control parameters should no longer be open by default. The exact shape still needs design: either require an explicit control key to enable request-level controls, or disable those controls unless a key is configured.
+- Made RFC 9457 Problem Details, minimal error detail, no GET-via-POST fallback, and XML 1.0 headers the defaults.
+- Closed administration/control parameters by default and added explicit authorization through a control key, network policy, or delegated request attribute.
+- Deprecated legacy non-Problem-Details error XML while retaining the unified `<error http-class="...">` migration format.
+- Routed XSLT failures through the standard HTTP 500 error pipeline and added sensitivity-aware XSLT diagnostics.
+- Modernized built-in system and diagnostic generators, including direct JSON output where supported.
+- Improved response efficiency and correctness with configurable gzip thresholds and UTF-8-aware content lengths.
 
-Legacy non-Problem-Details error XML should be deprecated in 0.14.0, not removed. Applications can still opt back into the unified `<error http-class="...">` shape with `berlioz.errors.problem=false` while migrating custom error XSLT templates. The older `<server-error>` / `<client-error>` element names are not restored.
+### 0.14.1: Runtime Introspection And HTTP QUERY
 
-### 0.14.x: Roadmap Themes 3-5, 13
+Development is now on 0.14.1-SNAPSHOT. This release should be deliberately focused: complete the runtime diagnostics model, add core HTTP `QUERY` dispatch, and resolve the smaller output/error contracts without taking on the larger overlay and configuration-lifecycle changes.
 
-The 0.14.x cycle should deliver the remaining adoption and diagnostics work needed before Berlioz can reasonably call the core model 1.0-ready.
+Planned work:
 
-Theme 3, Service Metadata And Diagnostics:
+- Complete service and generator capability metadata in the live diagnostic model, including each generator's explicit supported-output set.
+- Move reusable service metadata serialization to `OutputWriter` so `GetLiveServices` and `GetMatchingService` can provide stable XML and JSON representations.
+- Keep `GetServices` as the raw source-configuration view; runtime-derived capabilities belong in the live diagnostic generators.
+- Improve warnings for disjoint output sets, invalid direct services, duplicate mappings, and overridden mappings, with stable-schema tests at the diagnostic-generator level.
+- Add `QUERY` as a first-class mappable method, including dispatch, matching, `Allow`, `OPTIONS`, and 404-vs-405 coverage.
+- Exclude `QUERY` from ETag caching until a body-aware cache key is designed, and defer form-body parameter emulation because it may consume the generator's request stream.
+- Preserve XML/XSLT fallback for JSON-configured requests throughout 0.14.x; revisit it with content negotiation in 1.0.
+- Keep identity transformation explicitly XML-based and pass the resolved expected media type to the error pipeline instead of relying only on URL-extension inference.
+- Keep Problem Details body-only; transport response headers such as `Retry-After` through response/outcome metadata.
 
-- Add supported-output metadata to source or diagnostic output.
-- Expose direct handler and generator capability information.
-- Improve service registry diagnostic warnings.
-- Add tests for metadata stability.
+### 0.14.2: Classpath Overlay Discovery
 
-Theme 4, Classpath Overlay Discovery:
+0.14.2 should deliver reusable overlays as ordinary JAR dependencies:
 
-- Define the `META-INF/berlioz/services/` classpath convention for service configuration files.
-- Extend `ServiceLoader` to enumerate and merge classpath service configurations alongside filesystem ones.
-- Document load ordering and override behavior between classpath and filesystem sources.
-- Extend XSLT template resolution to support a `classpath:` prefix as a first-class option, not just a fallback mechanism.
-- Decide and implement staleness/cache-invalidation behavior for classpath-resident templates.
-- Add test coverage for classpath service discovery, XSLT classpath loading, and mixed classpath/filesystem configurations.
-- Verify that an overlay packaged as a JAR — with `META-INF/berlioz/services/`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT — deploys correctly without any host application changes beyond adding the dependency.
+- Use one exactly addressable `META-INF/berlioz/services.xml` resource per contributing JAR; an explicit index can be added later if multiple documents per JAR prove necessary.
+- Load classpath contributions first and filesystem configuration second, so application-owned filesystem mappings take precedence.
+- Define mapping conflicts by HTTP method and URI pattern, and report the origin of both the replaced and replacing declarations.
+- Make service loading transactional so an invalid contribution does not publish a partially populated registry.
+- Generalize service inputs from files to source descriptors carrying a URL and origin metadata.
+- Support `classpath:` primary XSLT templates while retaining `resource:` as a compatibility alias.
+- Treat classpath templates as immutable in `manual` and `auto` cache modes; `no` may recompile them on each use.
+- Verify discovery, conflict handling, XSLT imports/includes, static resources, and `web-fragment.xml` using a real packaged overlay JAR.
 
-Theme 5, Configuration Requirements And Validation:
+### 0.14.3: Configuration Requirements And Validation
 
-- Define a compact `config-requirements.xml` format for resolved global-property requirements.
-- Support exact and simple wildcard property-name matching.
-- Implement presence checks for defined, specified, and non-blank values.
+0.14.3 should add application-facing configuration validation with explicit property provenance and safe diagnostics:
+
+- Read requirements from a separate `WEB-INF/config/config-requirements.xml` file after variable resolution.
+- Preserve whether each resolved property was explicitly specified or inherited from a framework default.
+- Support exact and simple wildcard property matching and presence checks for `defined`, `specified`, and `has-value`.
+- Treat zero wildcard matches as a violation only when the requirement's presence rule requires a match.
 - Implement built-in constraints for boolean, integer, number, regex, enum, URL, URI, port, hostname, and path values.
-- Add a validation report model with severity, requirement identity, matched property name, and safe diagnostic messages.
-- Run validation after global configuration resolution and on configuration reload.
-- Add an option to fail startup or reload on error-level violations.
-- Add an opt-in generator that returns the current validation report as XML, with JSON support through the normal output pipeline.
-- Add tests for wildcard matching, presence semantics, each built-in constraint, reload behavior, fail-fast behavior, and safe diagnostic output.
+- Add a validation report model with severity, requirement identity, matched property name, and safe messages that omit raw values by default.
+- Default to report-and-continue behavior, with an option to fail startup or reload on error-level violations.
+- Validate reload candidates before publication so a failed reload retains the last valid configuration.
+- Add an opt-in XML/JSON diagnostic generator and tests for matching, presence, constraints, provenance, reload, fail-fast behavior, and redaction.
 
-Theme 13, HTTP QUERY Method Support:
-
-- Add `QUERY` to `HttpMethod` as a mappable, safe/idempotent method alongside `GET`.
-- Treat `QUERY` like `GET`/`HEAD` for 404-vs-405 semantics, but not for ETag caching until the cache key can account for the request body.
-- Evaluate a scoped stopgap for reading `application/x-www-form-urlencoded` `QUERY` bodies as parameters, mirroring the container's implicit `POST` body parsing.
-- Add test coverage for `QUERY` dispatch and the body-parameter stopgap.
-
-After these are complete, Berlioz may be ready for a 1.0.0 release.
+After these releases are complete, Berlioz may be ready for a 1.0.0 release.
 
 ### 1.0.x: Roadmap Themes 6-9
 
@@ -210,9 +212,21 @@ Release posture:
 - Keep detailed error output available for development, but support `berlioz.errors.detail=minimal` for production.
 - Preserve source compatibility where feasible for existing `ContentGenerator` applications.
 
+### 0.14.0: Secure Defaults And Diagnostics ✓ Released 2026-07-21
+
+The 0.14.0 release completed the secure-defaults migration and expanded the framework's production diagnostics:
+
+- Made RFC 9457 Problem Details the default framework error format and minimal error detail the default exposure level.
+- Disabled GET-via-POST fallback, made XML 1.0 headers the default, and added deprecation warnings for compatibility settings.
+- Closed request-level administration controls by default and centralized authorization across key, network, and delegated channels.
+- Unified legacy error XML under `<error>`, deprecated the legacy mode, and routed XSLT failures through the standard error pipeline.
+- Added structured, sensitivity-aware XSLT diagnostics and modernized built-in system generators with direct JSON support.
+- Added configurable gzip thresholds, corrected UTF-8 content-length handling, and completed several thread-safety and utility cleanups.
+- Preserved migration paths for applications that still require the former defaults.
+
 ## Current Development Themes
 
-### 2. Error Handling Pipeline ✓
+### 2. Error Handling Pipeline ✓ Completed In 0.14.0
 
 The error handling pipeline is complete. Applications can control diagnostic verbosity, use RFC 9457 Problem Details, supply a custom error stylesheet, and the built-in failsafe template renders cleanly across all error types.
 
@@ -222,39 +236,35 @@ Done:
 - `XsltErrorCollector` collects warnings, errors, and fatals during XSLT processing.
 - `XsltTransformer` catches both `TransformerConfigurationException` (static) and `TransformerException` (dynamic) and falls back to the failsafe template, with distinct `BerliozErrorID` values for each.
 - `ERROR_DETAIL` option controls diagnostic verbosity in both legacy XML and RFC 9457 problem responses.
-- `ERROR_PROBLEM_FORMAT` option switches `ErrorHandlerServlet` to emit RFC 9457 `<problem>` XML. It remains opt-in for 0.13.5 and should become the default in 0.14.0.
+- `ERROR_PROBLEM_FORMAT` makes `ErrorHandlerServlet` emit RFC 9457 `<problem>` XML by default. The deprecated legacy format remains available as a temporary migration option.
 - `ERROR_STYLESHEET` option lets applications supply a custom error XSLT, with automatic fallback to the built-in failsafe.
 - Modernized failsafe template: CSS variables, dark-mode support, responsive layout, collapsible stack traces via `<details>`/`<summary>`, structured `<exception>` rendering inside Problem Details responses, and `http-headers`/`http-parameters` diagnostic blocks in full-detail mode.
 - Sensitive values in diagnostic request headers and parameters are redacted before serialization.
 - Runtime XSLT 2.0 probing reports a clear static diagnostic when no XSLT 2.0 processor is available.
 
-The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage. The legacy non-Problem-Details error XML format should be deprecated when Problem Details becomes the default in 0.14.0, then removed only after a clear migration window; during that window it uses the unified `<error>` element rather than the older `<server-error>` / `<client-error>` names.
+The result is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage. Problem Details became the default in 0.14.0 and the legacy non-Problem-Details format is now deprecated. It should be removed only after a clear migration window; until then it uses the unified `<error>` element rather than the older `<server-error>` / `<client-error>` names.
 
 ### 3. Service Metadata And Diagnostics
 
 Service inspection is becoming more important now that services can expose different output formats and response modes.
 
-Potential metadata:
+Already done:
 
-- Service identifier and group.
-- Matched URI template.
-- HTTP method.
-- Supported output formats.
-- Direct handler flag.
-- Cache policy.
-- Generator list, names, targets, and cacheability.
-- Schema namespace resolution.
-- Diagnostic warnings for development mode.
+- `Service.toXml()` exposes service identifier, group, method, URI templates, direct mode, cacheability, cache policy, response-code rule, and the service's supported-output intersection.
+- Generator entries expose class, name, target, type, cacheability, status participation, and configured parameters.
+- `GetLiveServices` and `GetMatchingService` serialize the effective in-memory registry, while `GetServices` deliberately copies the source configuration.
 
-Potential output channels:
+0.14.1 work:
 
-- Existing source or diagnostic views.
-- XML metadata nodes.
-- JSON metadata properties.
-- HTTP headers where useful.
-- Test helpers for service registry assertions.
+- Add the explicit supported-output set to every generator entry, including custom `BerliozGenerator` implementations whose capabilities cannot be inferred from the type label alone.
+- Introduce reusable `OutputWriter` serialization for effective service metadata.
+- Convert `GetLiveServices` and `GetMatchingService` to format-agnostic generators with equivalent XML and JSON shapes.
+- Keep runtime metadata in diagnostic output rather than adding it to normal application responses.
+- Keep `GetServices` as a faithful source view rather than injecting runtime-derived attributes into copied configuration XML.
+- Improve diagnostic warnings for disjoint output sets, invalid direct services, duplicate mappings, and mapping overrides.
+- Add stable-schema tests around the public diagnostic generators.
 
-This should make services easier to inspect, document, test, and debug without adding heavy runtime machinery.
+This makes services easier to inspect, document, test, and debug without adding metadata to every normal response or introducing heavy runtime machinery.
 
 ### 4. Classpath Overlay Discovery
 
@@ -269,12 +279,14 @@ Already done:
 
 Next work:
 
-- Define a `META-INF/berlioz/services/` convention for service configuration files contributed by JARs on the classpath.
-- Extend `ServiceLoader` to enumerate classpath resources under that path using `ClassLoader.getResources()` and merge them with filesystem-loaded configurations.
-- Define load ordering and override behavior when the same service group is declared both on the classpath and on the filesystem.
-- Extend XSLT template resolution to support a `classpath:` prefix on primary templates, generalizing the existing `resource:` fallback mechanism in `BerliozConfig`.
-- Decide how the XSLT cache handles staleness for classpath resources, where `File.lastModified()` is not available.
-- Keep filesystem-first as the default: classpath discovery should supplement, not replace, the existing `WEB-INF/config/` resolution path.
+- Discover one exactly addressable `META-INF/berlioz/services.xml` resource per JAR. Class loaders cannot portably enumerate arbitrary children beneath a resource directory, so `META-INF/berlioz/services/` is not used as an implicit listing convention.
+- Enable discovery for this narrow convention by default: adding the overlay dependency is the explicit application action.
+- Load classpath configurations first and filesystem configurations second, giving application-owned filesystem mappings final precedence.
+- Define conflicts by HTTP method and URI pattern rather than group name alone, and include source origins in override diagnostics.
+- Generalize `ServiceLoader` from `File` inputs to source descriptors with a URL and origin, and publish a new registry only after all inputs parse successfully.
+- Extend XSLT template resolution with a `classpath:` prefix for primary templates while retaining `resource:` as a compatibility alias.
+- Refactor XSLT caching to support URL-backed templates. Classpath templates are immutable in `manual` and `auto` modes; `no` recompiles them when requested.
+- Verify the complete deployment model with a real JAR containing `META-INF/berlioz/services.xml`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT, including imports/includes.
 
 The goal is to allow a self-contained Berlioz overlay — XSLT templates, service configuration, static assets via `META-INF/resources/`, and a servlet filter via `web-fragment.xml` — to be distributed and consumed as a single JAR dependency.
 
@@ -288,18 +300,21 @@ Already done (groundwork):
 - `BerliozOption` is unchanged — deprecation metadata does not live on the enum.
 - `OptionDeprecations` is the internal precursor to Theme 5's `ConfigurationValidator`: the check-and-warn pattern it establishes will generalize into the declarative, application-facing validation layer.
 
-Recommended shape:
+Planned shape for 0.14.3:
 
-- Add a declarative requirement file, for example `WEB-INF/config/config-requirements.xml`, evaluated after global properties are fully resolved.
+- Add a separate declarative `WEB-INF/config/config-requirements.xml` file, evaluated after global properties are fully resolved.
+- Retain property provenance so validation can distinguish an explicitly specified value from a framework default.
 - Match requirements by property name, including simple wildcard patterns such as `test.*.url`.
 - Distinguish presence checks:
   - `defined`: the resolved property key exists.
   - `specified`: the application supplied the property rather than only inheriting a framework default.
   - `has-value`: the resolved value is non-null and non-blank after trimming.
+- Treat zero wildcard matches as a violation only when the applicable presence rule requires at least one match.
 - Support built-in value constraints for booleans, integers, numbers, regular expressions, enumerated values, URLs, URIs, ports, hostnames, and paths.
 - Record violations with severity (`error`, `warning`, `info`) and enough metadata to identify the requirement, matched property, and failing constraint.
-- Add an option to fail application startup or configuration reload when `error` violations are present, while keeping report-and-continue behavior available for development and diagnostics.
-- Avoid exposing raw property values in diagnostic output by default, especially for secret-like keys.
+- Omit raw values from diagnostic output by default, especially for secret-like keys.
+- Use report-and-continue behavior by default, with an option to fail application startup or configuration reload when `error` violations are present.
+- Validate a reload candidate before publishing it; failed validation retains the last valid configuration.
 
 Potential core model:
 
@@ -324,13 +339,10 @@ Already generic:
 Next work:
 
 - Add `QUERY` to `HttpMethod` as mappable (`HttpMethod.java`), alongside `GET`, `POST`, `PUT`, `PATCH`, `DELETE`.
-- In `BerliozServlet`, treat `QUERY` as safe/idempotent for `405`-vs-`404` handling (`handleNoMatch`) and add a `doQuery` override for symmetry with the other `doXXX` methods, even though `service()` already dispatches generically.
+- In `BerliozServlet`, treat `QUERY` as safe/idempotent for `405`-vs-`404` handling (`handleNoMatch`). The current Servlet 4.0 API has no `HttpServlet.doQuery()` method to override; Berlioz's generic `service()` dispatch already handles the method.
 - Do **not** extend the existing `GET`/`HEAD` ETag caching path (`processJson`/`processXml`) to `QUERY` without further design: the current ETag is derived from the URL alone, so two different `QUERY` bodies against the same URL would incorrectly share a cached response. Caching `QUERY` requires hashing the request body into the ETag seed.
-- Evaluate a stopgap for reading `application/x-www-form-urlencoded` `QUERY` bodies into request parameters, mirroring the container's implicit body-parsing for `POST`, since the Servlet spec does not extend that behavior to other methods:
-  - Scope it narrowly to the `application/x-www-form-urlencoded` content type only.
-  - Feature-detect whether the container already populated `getParameterMap()` before manually draining the input stream, so the stopgap doesn't conflict with native `QUERY` parsing once Tomcat/Jetty/Undertow ship it.
-  - Leave non-form `QUERY` bodies (JSON, GraphQL-style query languages) untouched so generators can read the raw body themselves.
-- Add test coverage for `QUERY` dispatch, the `Allow` header, and the body-parameter stopgap.
+- Defer `application/x-www-form-urlencoded` body-to-parameter emulation. Draining the request stream can prevent a generator from reading the body and container-native feature detection is fragile. If later evidence justifies a stopgap, it must be explicit opt-in and limited to that media type.
+- Add test coverage for `QUERY` dispatch, matching, 404-vs-405 behavior, and the `Allow`/`OPTIONS` headers.
 
 ### 6. Finish Direct Output And Raw Output Support
 
@@ -472,11 +484,11 @@ Likely outcome:
 
 - Should Jakarta support be a breaking major release, a parallel artifact, or a later 1.x line once the application migration window is clear?
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
-- ~~How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?~~ Decided: neither alone — `berlioz.control.key` (explicit key) and `berlioz.control.network` (default `off`) are independent channels, plus a fixed delegated-authorization request attribute for host applications
-- Should service-level metadata be part of normal output, diagnostic output, or both?
-- Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?
-- For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?
-- How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?
+- ~~How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?~~ Released outcome: controls are closed by default; `berlioz.control.key` (explicit key) and `berlioz.control.network` (default `off`) are independent channels, plus a fixed delegated-authorization request attribute for host applications.
+- ~~Should service-level metadata be part of normal output, diagnostic output, or both?~~ Decided for 0.14.1: runtime-derived metadata belongs in `GetLiveServices` and `GetMatchingService`; normal responses and the raw `GetServices` source view remain unchanged.
+- ~~Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?~~ Decided for 0.14.3: use a separate `WEB-INF/config/config-requirements.xml` file.
+- ~~For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?~~ Decided for 0.14.3: zero matches violate only a presence rule that requires at least one match.
+- ~~How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?~~ Decided for 0.14.3: preserve explicit/default provenance in the resolved configuration snapshot.
 - Should direct services support only one handler forever, or is there a future aggregation model?
 - How should raw output interact with cache headers, ETags, and content negotiation?
 - Should authorization requirements be declared primarily by generator interfaces, service configuration, or both?
@@ -485,12 +497,12 @@ Likely outcome:
 - Should interceptor hooks be added to core, or should they wait for optional observability modules?
 - Which integrations are valuable enough to maintain as official modules?
 - ~~Should the custom error XSLT be a single global stylesheet, or should it support per-group error templates?~~ Decided: single global stylesheet. Error dispatch bypasses the normal XSLT resolution path so per-group templates would add complexity without clear benefit.
-- ~~Should 0.14.0 remove the legacy Berlioz error XML format?~~ Decided: deprecate it in 0.14.0, make Problem Details the default, and keep `berlioz.errors.problem=false` as a migration opt-out.
-- Should classpath service discovery be enabled by default or require an explicit opt-in configuration flag?
-- Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?
-- Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?
-- Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?
+- ~~Should 0.14.0 remove the legacy Berlioz error XML format?~~ Released outcome: the format is deprecated, Problem Details is the default, and `berlioz.errors.problem=false` remains as a migration opt-out.
+- ~~Should classpath service discovery be enabled by default or require an explicit opt-in configuration flag?~~ Decided for 0.14.2: enable discovery by default for the narrow, exactly named overlay resource.
+- ~~Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?~~ Decided for 0.14.2: conflicts are determined by HTTP method and URI pattern; filesystem declarations load last and take precedence.
+- ~~Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?~~ Decided for 0.14.2: classpath templates are immutable in `manual` and `auto`; `no` recompiles them.
+- ~~Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?~~ Decided for 0.14.2: use one exact `META-INF/berlioz/services.xml` resource per JAR, with an explicit index reserved for a future multiple-file use case.
 - Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
 - ~~Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses?~~ Decided: `minimal` suppresses only framework-internal diagnostics (stack traces, exception class, HTTP headers and parameters). The `detail` member in RFC 9457 responses always reflects the error message passed to `Problems.forHttpError()`, which is the HTTP status phrase — safe for production.
 - Should `QUERY` responses be cacheable, and if so should the ETag seed incorporate a hash of the request body?
-- Should the `application/x-www-form-urlencoded` `QUERY` body-parameter stopgap be always-on, or an explicit opt-in given that feature-detecting container-native `QUERY` parsing is inherently fragile?
+- ~~Should the `application/x-www-form-urlencoded` `QUERY` body-parameter stopgap be always-on, or an explicit opt-in given that feature-detecting container-native `QUERY` parsing is inherently fragile?~~ Decided for 0.14.1: defer it; any later stopgap must be explicit opt-in.
