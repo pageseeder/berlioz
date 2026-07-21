@@ -176,6 +176,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static final String DEFAULT_EXTENSION = ".html";
 
+  /**
+   * The fallback content type used when the error response is not transformed to HTML.
+   */
+  private static final String APPLICATION_XML = "application/xml";
+
   // servlet methods ----------------------------------------------------------------------
 
   /**
@@ -302,7 +307,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     res.setStatus(code);
 
     // Write to the output
-    String fallbackType = "application/xml";
+    String fallbackType = APPLICATION_XML;
 
     // For non-HTML extensions (.xml, .src, etc.) return XML error directly, without the HTML
     // failsafe stylesheet. This respects the content type whether dispatched via the .auto
@@ -333,9 +338,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String ext = getExtension(getOriginalURI(req));
     if (DEFAULT_EXTENSION.equals(ext) || ext.isEmpty()) {
       String html = XsltTransformer.transformBuiltInFailSafe(xml);
-      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : "application/xml");
+      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : APPLICATION_XML);
     } else {
-      writeResponse(res, xml, "application/xml");
+      writeResponse(res, xml, APPLICATION_XML);
     }
   }
 
