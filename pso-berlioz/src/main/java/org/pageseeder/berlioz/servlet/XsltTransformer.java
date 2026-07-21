@@ -63,6 +63,8 @@ import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.berlioz.xslt.XsltTemplateCache;
 import org.pageseeder.berlioz.xslt.XsltErrorCollector;
 import org.pageseeder.berlioz.xslt.XsltExceptionWrapper;
+import org.pageseeder.berlioz.xslt.XsltTransformException;
+import org.pageseeder.berlioz.xslt.XsltTransformException.Phase;
 import org.pageseeder.xmlwriter.XMLWriter;
 import org.pageseeder.xmlwriter.XMLWriterImpl;
 import org.slf4j.Logger;
@@ -178,33 +180,47 @@ public final class XsltTransformer {
    * @return the results of the transformation.
    */
   public XsltTransformResult transform(String content, HttpServletRequest req, Service service) {
-    StringWriter buffer = new StringWriter();
-    long time;
-    Templates templates;
     Map<String, String> parameters = toParameters(req);
-
     try {
-      // Creates a transformer from the templates
-      templates = this.cache.getTemplates();
-
-      // Set up the source
-      Source source = toXMLSource(content, req, service);
-
-      // Set up the result
-      StreamResult result = new StreamResult(buffer);
-
-      // Transform!
-      time = execute(source, result, templates, parameters);
-
-      // very likely to be an error in the XML or a dynamic error
-    } catch (TransformerException ex) {
-      String error = toXml(ex, parameters);
+      return transformOrThrow(content, req, service);
+    } catch (XsltTransformException ex) {
+      String error = toXml(ex.transformerException(), parameters);
       // Try to use the fail-safe template to present the error
       error = transformFailSafe(error, FAILSAFE_TEMPLATES);
-      return new XsltTransformResult(error, ex, FAILSAFE_TEMPLATES);
+      return new XsltTransformResult(error, ex.transformerException(), FAILSAFE_TEMPLATES);
     }
+  }
 
-    // All good!
+  /**
+   * Transforms application content, reporting failures without selecting an HTTP error response.
+   *
+   * @param content The XML content to transform.
+   * @param req The HTTP servlet request.
+   * @param service The service, used to identify the source in diagnostics.
+   * @return the successful transformation result.
+   * @throws XsltTransformException if stylesheet loading, source preparation, or execution fails
+   */
+  public XsltTransformResult transformOrThrow(String content, HttpServletRequest req, Service service)
+      throws XsltTransformException {
+    Templates templates;
+    try {
+      templates = this.cache.getTemplates();
+    } catch (TransformerException ex) {
+      throw XsltTransformException.of(Phase.STYLESHEET, ex);
+    }
+    Source source;
+    try {
+      source = toXMLSource(content, req, service);
+    } catch (TransformerException ex) {
+      throw XsltTransformException.of(Phase.SOURCE_XML, ex);
+    }
+    StringWriter buffer = new StringWriter();
+    long time;
+    try {
+      time = execute(source, new StreamResult(buffer), templates, toParameters(req));
+    } catch (TransformerException ex) {
+      throw XsltTransformException.duringExecution(ex);
+    }
     return new XsltTransformResult(buffer.toString(), time, templates);
   }
 
@@ -218,6 +234,11 @@ public final class XsltTransformer {
    */
   public static String transformFailSafe(String content, URL url) {
     return transformFailSafe(content, XsltTemplateCache.compile(url));
+  }
+
+  /** Uses only the module-owned, precompiled fail-safe templates. */
+  static String transformBuiltInFailSafe(String content) {
+    return transformFailSafe(content, FAILSAFE_TEMPLATES);
   }
 
   /**

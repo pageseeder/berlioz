@@ -77,6 +77,29 @@ class ErrorHandlerServletTest {
   }
 
   @Test
+  void doGet_andDoPost_useTheSameErrorPipeline() {
+    HttpServletRequest get = ServletTestSupport.request().uri("/failure.xml")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "GET failure")
+        .build();
+    HttpServletRequest post = ServletTestSupport.request().method("POST").uri("/failure.xml")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "POST failure")
+        .build();
+    ServletTestSupport.ResponseRecorder getResponse = ServletTestSupport.response();
+    ServletTestSupport.ResponseRecorder postResponse = ServletTestSupport.response();
+    ErrorHandlerServlet servlet = new ErrorHandlerServlet();
+
+    servlet.doGet(get, getResponse.build());
+    servlet.doPost(post, postResponse.build());
+
+    assertAll(
+        () -> assertTrue(getResponse.content().contains("GET failure")),
+        () -> assertTrue(postResponse.content().contains("POST failure"))
+    );
+  }
+
+  @Test
   void init_withDefaultParametersDoesNotThrow() {
     ServletConfig config = (ServletConfig) Proxy.newProxyInstance(
         ServletConfig.class.getClassLoader(),
@@ -540,6 +563,90 @@ class ErrorHandlerServletTest {
         setWebInf(null);
       }
     }
+
+    @Test
+    void handle_withBrokenCustomStylesheet_retriesBuiltInStylesheet(@TempDir File tempDir) throws Exception {
+      File xsl = new File(tempDir, "error.xsl");
+      Files.writeString(xsl.toPath(),
+          "<?xml version=\"1.0\"?><xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
+          + "<xsl:template match=\"/\"><xsl:value-of select=\"(\"/></xsl:template></xsl:stylesheet>");
+
+      setWebInf(tempDir);
+      setOption(BerliozOption.ERROR_STYLESHEET, "error.xsl");
+      try {
+        HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+            .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+            .attribute(RequestDispatcher.ERROR_MESSAGE, "Original failure")
+            .build();
+        ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+        new ErrorHandlerServlet().handle(req, res.build());
+
+        assertAll(
+            () -> assertEquals(500, res.status),
+            () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+            () -> assertTrue(res.content().contains("Original failure")),
+            () -> assertEquals("no-store", res.header("Cache-Control"))
+        );
+      } finally {
+        setWebInf(null);
+      }
+    }
+  }
+
+  @Test
+  void handleTerminal_html_usesBuiltInRendererWithoutDispatch() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().uri("/failure.auto")
+        .attribute(RequestDispatcher.ERROR_REQUEST_URI, "/original.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 503)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Terminal failure")
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    ErrorHandlerServlet.handleTerminal(req, res.build());
+
+    assertAll(
+        () -> assertEquals(503, res.status),
+        () -> assertTrue(res.resetCalled),
+        () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+        () -> assertTrue(res.content().contains("Terminal failure")),
+        () -> assertEquals("no-store", res.header("Cache-Control"))
+    );
+  }
+
+  @Test
+  void handleTerminal_xml_returnsRawProblemDetails() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().uri("/failure.xml")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "XML terminal failure")
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    ErrorHandlerServlet.handleTerminal(req, res.build());
+
+    assertAll(
+        () -> assertEquals(500, res.status),
+        () -> assertEquals("application/xml;charset=UTF-8", res.contentType),
+        () -> assertTrue(res.content().contains("<problem")),
+        () -> assertTrue(res.content().contains("XML terminal failure"))
+    );
+  }
+
+  @Test
+  void handleTerminal_committedResponse_isNotModified() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().uri("/failure.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+    res.committed = true;
+
+    ErrorHandlerServlet.handleTerminal(req, res.build());
+
+    assertAll(
+        () -> assertFalse(res.resetCalled),
+        () -> assertEquals(200, res.status),
+        () -> assertTrue(res.content().isEmpty())
+    );
   }
 
   // Helpers

@@ -12,9 +12,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.http.HttpHeaders;
+import org.pageseeder.berlioz.xslt.XsltTransformException;
 import org.pageseeder.berlioz.servlet.fixtures.CacheableXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.DirectJsonGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.EchoXmlGenerator;
@@ -232,6 +237,74 @@ class BerliozServletTest {
   }
 
   @Test
+  void doGet_staticXsltFailure_delegatesToContainerOnce() throws Exception {
+    writeServices(service("broken", "get", "/broken", "generator", ECHO_XML));
+    writeBrokenStylesheet();
+    initServlet(Map.of("stylesheet", "transform.xsl", "content-type", "text/html;charset=utf-8"));
+    HttpServletRequest request = request("GET", "/broken.html");
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request, recorder.build());
+
+    assertEquals(500, recorder.status);
+    assertEquals("The service failed during XSLT transformation", recorder.errorMessage);
+    assertEquals(1, request.getAttribute(ErrorHandlerServlet.ERROR_RENDERING_DEPTH));
+    assertTrue(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION) instanceof XsltTransformException);
+    assertEquals("", recorder.content());
+  }
+
+  @Test
+  void doGet_xsltFailureDuringErrorRendering_usesTerminalRendererAndPreservesOriginal() throws Exception {
+    writeServices(service("error-page", "get", "/error-page", "generator", ECHO_XML));
+    writeBrokenStylesheet();
+    initServlet(Map.of("stylesheet", "transform.xsl", "content-type", "text/html;charset=utf-8"));
+    RuntimeException original = new RuntimeException("original exception");
+    HttpServletRequest request = ServletTestSupport.request()
+        .method("GET").servletPath("/error-page.html").uri("/error-page.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Original failure")
+        .attribute(RequestDispatcher.ERROR_REQUEST_URI, "/original.html")
+        .attribute(RequestDispatcher.ERROR_EXCEPTION, original)
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request, recorder.build());
+
+    assertEquals(404, recorder.status);
+    assertEquals(original, request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+    assertEquals(original, request.getAttribute(ErrorHandlerServlet.ORIGINAL_ERROR_EXCEPTION));
+    assertTrue(recorder.content().contains("Original failure"), recorder.content());
+    assertEquals("no-store", recorder.header(HttpHeaders.CACHE_CONTROL));
+  }
+
+  @Test
+  void doGet_namedErrorHandlerFailure_fallsBackWithoutRedispatch() throws Exception {
+    writeConfig(true);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("broken", "get", "/broken", "generator", ECHO_XML));
+    writeBrokenStylesheet();
+    AtomicInteger forwards = new AtomicInteger();
+    RequestDispatcher handler = new RequestDispatcher() {
+      @Override
+      public void forward(ServletRequest request, ServletResponse response) {
+        forwards.incrementAndGet();
+        throw new IllegalStateException("handler failed");
+      }
+      @Override
+      public void include(ServletRequest request, ServletResponse response) { }
+    };
+    initServlet(Map.of("stylesheet", "transform.xsl", "content-type", "text/html;charset=utf-8"), handler);
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request("GET", "/broken.html"), recorder.build());
+
+    assertEquals(1, forwards.get());
+    assertEquals(500, recorder.status);
+    assertTrue(recorder.content().contains("XSLT"), recorder.content());
+    assertEquals("no-store", recorder.header(HttpHeaders.CACHE_CONTROL));
+  }
+
+  @Test
   void doGet_jsonOnlyHandlerOnJsonServletReturnsOk() throws Exception {
     writeServices(service("json-ok", "get", "/json-ok", "handler", DIRECT_JSON));
     initServlet(Map.of("content-type", "application/json;charset=utf-8"));
@@ -258,8 +331,12 @@ class BerliozServletTest {
   }
 
   private void initServlet(Map<String, String> initParams) throws Exception {
+    initServlet(initParams, null);
+  }
+
+  private void initServlet(Map<String, String> initParams, RequestDispatcher errorHandler) throws Exception {
     this.servlet = new BerliozServlet();
-    this.servlet.init(servletConfig(initParams));
+    this.servlet.init(servletConfig(initParams, errorHandler));
   }
 
   private HttpServletRequest request(String method, String servletPath) {
@@ -280,13 +357,13 @@ class BerliozServletTest {
     return builder.build();
   }
 
-  private ServletConfig servletConfig(Map<String, String> initParams) {
+  private ServletConfig servletConfig(Map<String, String> initParams, RequestDispatcher errorHandler) {
     ServletContext context = (ServletContext) Proxy.newProxyInstance(
         ServletContext.class.getClassLoader(),
         new Class<?>[]{ServletContext.class},
         (proxy, method, args) -> {
           if ("getRealPath".equals(method.getName())) return realPath((String) args[0]);
-          if ("getNamedDispatcher".equals(method.getName())) return null;
+          if ("getNamedDispatcher".equals(method.getName())) return errorHandler;
           return ServletTestSupport.defaultValue(method.getReturnType());
         });
     return (ServletConfig) Proxy.newProxyInstance(
@@ -336,6 +413,13 @@ class BerliozServletTest {
         "    <xsl:value-of select=\"//message\"/>",
         "  </xsl:template>",
         "</xsl:stylesheet>").getBytes(StandardCharsets.UTF_8));
+  }
+
+  private void writeBrokenStylesheet() throws IOException {
+    Files.writeString(this.webInf.resolve("transform.xsl"),
+        "<xsl:stylesheet version=\"2.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
+            + "<xsl:template match=\"/\"><xsl:value-of select=\"unknown:(\"/></xsl:template>"
+            + "</xsl:stylesheet>", StandardCharsets.UTF_8);
   }
 
   private static String service(String id, String method, String pattern, String element, String className) {

@@ -47,6 +47,7 @@ import org.pageseeder.berlioz.http.HttpResponses;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.pageseeder.berlioz.xslt.XsltTransformException;
 
 /**
  * Servlet used to handle errors for a uniform response.
@@ -150,6 +151,10 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * The Berlioz error ID (String).
    */
   public static final String BERLIOZ_ERROR_ID = "org.pageseeder.berlioz.error_id";
+
+  static final String ERROR_RENDERING_DEPTH = "org.pageseeder.berlioz.error.rendering-depth";
+
+  static final String ORIGINAL_ERROR_EXCEPTION = "org.pageseeder.berlioz.error.original-exception";
 
   /**
    * The default list of extensions to preserve.
@@ -311,13 +316,48 @@ public final class ErrorHandlerServlet extends HttpServlet {
     URL url = resolveErrorStylesheet();
     if (url != null) {
       String html = XsltTransformer.transformFailSafe(xml, url);
+      if (Objects.equals(html, xml)) html = XsltTransformer.transformBuiltInFailSafe(xml);
       writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : fallbackType);
     } else {
       writeResponse(res, xml, fallbackType);
     }
   }
 
-  private void writeResponse(HttpServletResponse res, String content, String mediaType) throws IOException {
+  /** Writes the non-dispatching terminal response using only module-owned resources. */
+  static void handleTerminal(HttpServletRequest req, HttpServletResponse res) throws IOException {
+    if (res.isCommitted()) return;
+    int code = getErrorCode(req);
+    String xml = toXml(req);
+    res.reset();
+    res.setStatus(code);
+    String ext = getExtension(getOriginalURI(req));
+    if (DEFAULT_EXTENSION.equals(ext) || ext.isEmpty()) {
+      String html = XsltTransformer.transformBuiltInFailSafe(xml);
+      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : "application/xml");
+    } else {
+      writeResponse(res, xml, "application/xml");
+    }
+  }
+
+  static void prepareErrorAttributes(HttpServletRequest req, String servletName, int statusCode,
+                                     String message, @Nullable Throwable ex) {
+    req.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode);
+    req.setAttribute(RequestDispatcher.ERROR_MESSAGE, message);
+    if (req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI) == null) {
+      req.setAttribute(RequestDispatcher.ERROR_REQUEST_URI, req.getRequestURI());
+    }
+    if (req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME) == null) {
+      req.setAttribute(RequestDispatcher.ERROR_SERVLET_NAME, servletName);
+    }
+    if (ex != null) {
+      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION, ex);
+      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, ex.getClass());
+      ErrorID id = ex instanceof BerliozException ? ((BerliozException) ex).id() : null;
+      if (id != null) req.setAttribute(BERLIOZ_ERROR_ID, id.id());
+    }
+  }
+
+  private static void writeResponse(HttpServletResponse res, String content, String mediaType) throws IOException {
     res.setContentType(mediaType);
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     HttpResponses.setContentLength(res, content, StandardCharsets.UTF_8);
@@ -369,7 +409,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @param req The HTTP servlet request that caused the error.
    * @return the error details as XML
    */
-  @SuppressWarnings({"removal", "deprecation"}) // both removed in 1.0; legacy fallback guarded here until then
+  @SuppressWarnings("removal") // both removed in 1.0; legacy fallback guarded here until then
   private static String toXml(HttpServletRequest req) {
     if (GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
       int code = getErrorCode(req);
@@ -389,7 +429,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
     XmlStringBuilder xml = new XmlStringBuilder();
     try {
       xml.declaration();
-      ProblemDetails problem = Problems.forHttpError(code, message != null ? message : "", berliozErrorId, throwable, level);
+      ProblemDetails problem;
+      if (throwable instanceof XsltTransformException) {
+        XsltTransformException xslt = (XsltTransformException) throwable;
+        problem = Problems.forXsltError(code, berliozErrorId, xslt.transformerException(), level);
+      } else {
+        problem = Problems.forHttpError(code, message != null ? message : "", berliozErrorId, throwable, level);
+      }
       xml.asXml(problem);
       xml.flush();
     } catch (Exception ex) {

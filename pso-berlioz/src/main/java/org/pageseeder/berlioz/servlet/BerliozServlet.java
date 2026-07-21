@@ -48,9 +48,9 @@ import org.pageseeder.berlioz.json.Json;
 import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.pageseeder.berlioz.http.*;
-import org.pageseeder.berlioz.servlet.XsltTransformResult.Status;
 import org.pageseeder.berlioz.util.*;
 import org.pageseeder.berlioz.xml.Xml;
+import org.pageseeder.berlioz.xslt.XsltTransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -488,7 +488,13 @@ public final class BerliozServlet extends HttpServlet {
     xml.getHeaders().forEach(res::setHeader);
 
     // Produce the output (XSLT transform or pass through raw XML)
-    BerliozOutput result = executeTransform(content, req, xml, transformer, res, config, ctx);
+    BerliozOutput result;
+    try {
+      result = executeTransform(content, req, xml, transformer, res, config, ctx);
+    } catch (XsltTransformException ex) {
+      handleTransformFailure(req, res, ex);
+      return;
+    }
 
     // Resolve and validate encoding from XSLT output; canonical name is safe for HTTP headers
     Charset charset = resolveCharset(result.getEncoding());
@@ -658,7 +664,7 @@ public final class BerliozServlet extends HttpServlet {
    */
   private BerliozOutput executeTransform(String content, HttpServletRequest req, XmlResponse xml,
                                          @Nullable XsltTransformer transformer, HttpServletResponse res,
-                                         BerliozConfig config, ProcessingContext ctx) {
+                                         BerliozConfig config, ProcessingContext ctx) throws XsltTransformException {
     // Direct service with a problem response: return problem+xml, or apply failsafe stylesheet for
     // non-XML media types (e.g. text/html endpoints) so the client receives a rendered error page.
     if (transformer == null) {
@@ -673,19 +679,47 @@ public final class BerliozServlet extends HttpServlet {
       return new XmlContent(content);
     }
 
-    XsltTransformResult result = transformer.transform(content, req, xml.getService());
+    XsltTransformResult result = transformer.transformOrThrow(content, req, xml.getService());
     if (ctx.profile && LOGGER.isInfoEnabled()) {
       LOGGER.info("XSLT Transformation {} ms", ProfileFormat.format(result.time()));
     }
     if (ctx.serverTiming) {
       ServerTimingHeader.addMetricNano(res, "xslt", "XSLT Transform", result.time());
     }
-    // Signal the client that the service is temporarily unavailable when the transform failed
-    if (result.status() == Status.ERROR) {
-      res.reset();
-      res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-    }
     return result;
+  }
+
+  /** Gives application error handling one attempt, then uses the terminal built-in renderer. */
+  private void handleTransformFailure(HttpServletRequest req, HttpServletResponse res, XsltTransformException ex) {
+    Object depth = req.getAttribute(ErrorHandlerServlet.ERROR_RENDERING_DEPTH);
+    boolean renderingError = req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) != null
+        || depth instanceof Integer && ((Integer) depth) > 0;
+    if (renderingError) {
+      LOGGER.error("XSLT failed while rendering an error; using terminal fail-safe", ex);
+      Object originalAttribute = req.getAttribute(ErrorHandlerServlet.ORIGINAL_ERROR_EXCEPTION);
+      if (!(originalAttribute instanceof Throwable)) {
+        originalAttribute = req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+      }
+      Throwable original = originalAttribute instanceof Throwable ? (Throwable) originalAttribute : ex;
+      req.setAttribute(ErrorHandlerServlet.ORIGINAL_ERROR_EXCEPTION, original);
+      Object existingCode = req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+      int status = existingCode instanceof Integer
+          ? (Integer) existingCode : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+      Object existingMessage = req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
+      String message = existingMessage instanceof String
+          ? (String) existingMessage : "XSLT failed while rendering an error";
+      ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), status, message, original);
+      try {
+        ErrorHandlerServlet.handleTerminal(req, res);
+      } catch (IOException io) {
+        LOGGER.error("Terminal XSLT error response failed", io);
+      }
+      return;
+    }
+    req.setAttribute(ErrorHandlerServlet.ERROR_RENDERING_DEPTH, 1);
+    req.setAttribute(ErrorHandlerServlet.ORIGINAL_ERROR_EXCEPTION, ex);
+    sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+        "The service failed during XSLT transformation", ex);
   }
 
   /**
@@ -755,10 +789,13 @@ public final class BerliozServlet extends HttpServlet {
     // Is Berlioz already handling an error? (set by the servlet container per javax.servlet error dispatch contract)
     Integer error = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
 
+    int statusCode = Math.max(100, Math.min(599, error != null ? error : code));
+    prepareErrorAttributes(req, statusCode, message, ex);
+
     if (error == null && !GlobalSettings.has(BerliozOption.ERROR_HANDLER)) {
       logError(code, message, ex, "Berlioz sending error to Web container {} [{}]");
       try {
-        res.sendError(code, message);
+        res.sendError(statusCode, message);
       } catch (IOException e) {
         LOGGER.error("Failed to send error {} [{}] to client", message, code, e);
       }
@@ -775,19 +812,11 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
-    // Preserve the original error code when already handling an error; clamp to valid HTTP range to satisfy taint analysis
-    int statusCode = Math.max(100, Math.min(599, error != null ? error : code));
-    req.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode);
-    req.setAttribute(RequestDispatcher.ERROR_MESSAGE, message);
-    req.setAttribute(RequestDispatcher.ERROR_REQUEST_URI, req.getRequestURI());
-    req.setAttribute(RequestDispatcher.ERROR_SERVLET_NAME, getBerliozConfig().getName());
-
-    if (ex != null) {
-      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION, ex);
-      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, ex.getClass());
-    }
-
     dispatchError(req, res, code, message, ex);
+  }
+
+  private void prepareErrorAttributes(HttpServletRequest req, int statusCode, String message, @Nullable Throwable ex) {
+    ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), statusCode, message, ex);
   }
 
   /**
@@ -813,8 +842,15 @@ public final class BerliozServlet extends HttpServlet {
         logError(code, message, ex, "Berlioz handling error {} [{}] internally");
         new ErrorHandlerServlet().handle(req, res);
       }
-    } catch (IOException | ServletException e) {
+    } catch (IOException | ServletException | RuntimeException e) {
       LOGGER.error("Failed to dispatch error response {} [{}]", message, code, e);
+      if (!res.isCommitted()) {
+        try {
+          ErrorHandlerServlet.handleTerminal(req, res);
+        } catch (IOException terminal) {
+          LOGGER.error("Terminal error response also failed", terminal);
+        }
+      }
     }
   }
 

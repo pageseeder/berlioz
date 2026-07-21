@@ -161,6 +161,7 @@ public final class ServletTestSupport {
   static final class ResponseRecorder {
     int status = 200;
     boolean resetCalled = false;
+    boolean committed = false;
     String errorMessage = null;
     String contentType = null;
     String characterEncoding = null;
@@ -189,7 +190,8 @@ public final class ServletTestSupport {
           case "setContentLength":
           case "setContentLengthLong":  headers.put("Content-Length", String.valueOf(args[0])); return null;
           case "setCharacterEncoding":  setCharacterEncoding(String.valueOf(args[0])); return null;
-          case "flushBuffer":          return null;
+          case "flushBuffer":          committed = true; return null;
+          case "isCommitted":          return committed;
           case "setContentType":       setContentType((String) args[0]); return null;
           case "getStatus":            return status;
           case "getWriter":            return writer;

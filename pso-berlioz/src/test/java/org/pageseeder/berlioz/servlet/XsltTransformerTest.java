@@ -11,6 +11,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.xslt.XsltErrorCollector;
 import org.pageseeder.berlioz.xslt.XsltExceptionWrapper;
+import org.pageseeder.berlioz.xslt.XsltTransformException;
 
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -72,6 +73,88 @@ class XsltTransformerTest {
     String result = XsltTransformer.transformFailSafe("<root/>", stylesheet.toURI().toURL());
 
     Assertions.assertEquals("<out><included>ok</included></out>", result);
+  }
+
+  @Test
+  void transformOrThrow_missingStylesheet_reportsStylesheetFailure() {
+    XsltTransformer transformer = new XsltTransformer(this.temporary.resolve("missing.xsl"));
+
+    XsltTransformException failure = Assertions.assertThrows(XsltTransformException.class,
+        () -> transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), null));
+
+    Assertions.assertEquals(XsltTransformException.Phase.STYLESHEET, failure.phase());
+  }
+
+  @Test
+  void transformOrThrow_malformedSource_reportsSourceFailure() throws Exception {
+    Path stylesheet = writeStylesheet("valid.xsl",
+        "<xsl:template match=\"/\"><out/></xsl:template>");
+    XsltTransformer transformer = new XsltTransformer(stylesheet);
+
+    XsltTransformException failure = Assertions.assertThrows(XsltTransformException.class,
+        () -> transformer.transformOrThrow("<root>", ServletTestSupport.request().build(), null));
+
+    Assertions.assertEquals(XsltTransformException.Phase.SOURCE_XML, failure.phase());
+  }
+
+  @Test
+  void transformOrThrow_dynamicFailure_reportsExecutionFailure() throws Exception {
+    Path stylesheet = writeStylesheet("dynamic.xsl",
+        "<xsl:template match=\"/\"><xsl:message terminate=\"yes\">stop</xsl:message></xsl:template>");
+    XsltTransformer transformer = new XsltTransformer(stylesheet);
+
+    XsltTransformException failure = Assertions.assertThrows(XsltTransformException.class,
+        () -> transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), null));
+
+    Assertions.assertEquals(XsltTransformException.Phase.EXECUTION, failure.phase());
+  }
+
+  @Test
+  void transformOrThrow_successReturnsNormalResult() throws Exception {
+    Path stylesheet = writeStylesheet("success.xsl",
+        "<xsl:template match=\"/\"><out>ok</out></xsl:template>");
+    XsltTransformer transformer = new XsltTransformer(stylesheet);
+
+    XsltTransformResult result = transformer.transformOrThrow(
+        "<root/>", ServletTestSupport.request().build(), null);
+
+    Assertions.assertEquals(XsltTransformResult.Status.OK, result.status());
+    Assertions.assertTrue(result.content().toString().contains("<out>ok</out>"), result.content().toString());
+  }
+
+  @Test
+  void transformOrThrow_passesRequestXsltParameters() throws Exception {
+    Path stylesheet = writeStylesheet("parameter.xsl",
+        "<xsl:param name=\"label\"/><xsl:template match=\"/\"><out><xsl:value-of select=\"$label\"/></out></xsl:template>");
+    XsltTransformer transformer = new XsltTransformer(stylesheet);
+
+    XsltTransformResult result = transformer.transformOrThrow("<root/>",
+        ServletTestSupport.request().parameter("xsl-label", "configured").build(), null);
+
+    Assertions.assertTrue(result.content().toString().contains("<out>configured</out>"), result.content().toString());
+  }
+
+  @Test
+  void transform_compatibilityApi_selfRendersFailure() {
+    XsltTransformer transformer = new XsltTransformer(this.temporary.resolve("missing-compatibility.xsl"));
+
+    XsltTransformResult result = transformer.transform(
+        "<root/>", ServletTestSupport.request().build(), null);
+
+    Assertions.assertEquals(XsltTransformResult.Status.ERROR, result.status());
+    Assertions.assertTrue(result.content().toString().contains("XSLT"), result.content().toString());
+  }
+
+  @Test
+  void cacheApi_exposesPathAndCanBeCleared() throws Exception {
+    Path stylesheet = writeStylesheet("cache.xsl",
+        "<xsl:template match=\"/\"><out/></xsl:template>");
+    XsltTransformer transformer = new XsltTransformer(stylesheet);
+    transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), null);
+
+    Assertions.assertEquals(stylesheet, transformer.templatesPath());
+    Assertions.assertNotNull(transformer.getEtag());
+    Assertions.assertDoesNotThrow(transformer::clearCache);
   }
 
   // toXML(TransformerException, Map) — private, invoked via reflection to check the raw
@@ -204,6 +287,16 @@ class XsltTransformerTest {
     Method toXML = XsltTransformer.class.getDeclaredMethod("toXml", TransformerException.class, Map.class);
     toXML.setAccessible(true);
     return (String) toXML.invoke(null, ex, parameters);
+  }
+
+  private Path writeStylesheet(String name, String template) throws Exception {
+    Path stylesheet = Files.createFile(this.temporary.resolve(name));
+    Files.writeString(stylesheet, "<?xml version=\"1.0\"?>"
+        + "<xsl:stylesheet version=\"2.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
+        + "<xsl:output method=\"xml\" omit-xml-declaration=\"yes\"/>"
+        + template
+        + "</xsl:stylesheet>", StandardCharsets.UTF_8);
+    return stylesheet;
   }
 
   private static void setOption(BerliozOption option, String value) throws ReflectiveOperationException {
