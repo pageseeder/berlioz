@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz;
 
 import org.pageseeder.berlioz.xslt.XsltCacheMode;
+import org.pageseeder.berlioz.xslt.XsltErrorSensitivity;
 
 /**
  * An enumerated list of the Berlioz options globally available.
@@ -416,6 +417,35 @@ public enum BerliozOption {
    * @since 0.8.3
    */
   XSLT_CACHE("berlioz.xslt.cache", "manual"),
+
+  /**
+   * A string global option controlling which diagnostics reported by the JAXP XSLT
+   * {@link javax.xml.transform.ErrorListener} make stylesheet compilation or execution fail.
+   *
+   * <p>Three sensitivity levels are available:
+   * <ul>
+   *   <li><code>fatal</code> — only fatal diagnostics fail the operation;</li>
+   *   <li><code>error</code> — error and fatal diagnostics fail the operation;</li>
+   *   <li><code>warning</code> — every warning, error, or fatal diagnostic fails the operation.</li>
+   * </ul>
+   *
+   * <p>The terminal built-in fail-safe renderer does not use this setting, so it remains available
+   * even when warning-level sensitivity is selected.
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>XSLT error sensitivity</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.xslt.sensitivity</code></td>
+   *     <td><code>error</code></td>
+   *   </tr>
+   * </table>
+   *
+   * @see XsltErrorSensitivity
+   * @since 0.14.0
+   */
+  XSLT_SENSITIVITY("berlioz.xslt.sensitivity", "error"),
 
   /**
    * Indicates the version of the XML header format berlioz should use.

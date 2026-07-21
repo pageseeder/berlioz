@@ -18,6 +18,9 @@ package org.pageseeder.berlioz.xslt;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 
+import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.util.ErrorCollector;
 import org.slf4j.Logger;
@@ -27,7 +30,7 @@ import org.slf4j.Logger;
  *
  * @author Christophe Lauret
  *
- * @version 0.11.2
+ * @version 0.14.0
  * @since 0.8
  */
 public final class XsltErrorCollector extends ErrorCollector<TransformerException> implements ErrorListener {
@@ -37,13 +40,38 @@ public final class XsltErrorCollector extends ErrorCollector<TransformerExceptio
    */
   private final Logger logger;
 
+  /** The configured threshold at which diagnostics make the XSLT operation fail. */
+  private final XsltErrorSensitivity sensitivity;
+
   /**
    * Creates a new error collector.
    *
    * @param logger A logger to report errors when the listener's methods are called.
    */
   public XsltErrorCollector(Logger logger) {
+    this(logger, XsltErrorSensitivity.from(GlobalSettings.get(BerliozOption.XSLT_SENSITIVITY)));
+  }
+
+  XsltErrorCollector(Logger logger, XsltErrorSensitivity sensitivity) {
     this.logger = logger;
+    this.sensitivity = sensitivity;
+    setException(sensitivity.threshold());
+    setErrorFlag(sensitivity.threshold());
+  }
+
+  /**
+   * Throws the first collected diagnostic at or above the configured sensitivity.
+   *
+   * <p>This postcondition protects against processors that report a diagnostic to the listener but
+   * nevertheless return normally from the JAXP operation.
+   *
+   * @throws TransformerException if a collected diagnostic reached the configured sensitivity
+   */
+  public void throwIfThresholdReached() throws TransformerException {
+    if (!hasError()) return;
+    for (CollectedError<TransformerException> item : getErrors()) {
+      if (this.sensitivity.includes(item.level())) throw item.error();
+    }
   }
 
   /**

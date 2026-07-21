@@ -809,6 +809,7 @@ public abstract class AppInitializer {
         console(Phase.INIT, "Config: loaded OK ("+GlobalSettings.countProperties()+" properties found)");
         console(Phase.INIT, "Config: HTTP Compression = "+GlobalSettings.get(BerliozOption.HTTP_COMPRESSION));
         console(Phase.INIT, "Config: XSLT Caching = "+GlobalSettings.get(BerliozOption.XSLT_CACHE));
+        console(Phase.INIT, "Config: XSLT Sensitivity = "+GlobalSettings.get(BerliozOption.XSLT_SENSITIVITY));
         console(Phase.INIT, "Config: XML Strict Parse = "+GlobalSettings.get(BerliozOption.XML_PARSE_STRICT));
         console(Phase.INIT, "Config: XML Header Version = "+GlobalSettings.get(BerliozOption.XML_HEADER_VERSION));
         console(Phase.INIT, "Config: OK ----------------------------------------------------");

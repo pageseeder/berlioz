@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.1
+ * @version 0.14.0
  * @since 0.13.1
  */
 public final class XsltTemplateCache {
@@ -187,10 +187,8 @@ public final class XsltTemplateCache {
    */
   public static Templates compile(@Nullable URL url) {
     if (url == null) return IDENTITY_TEMPLATES;
-    try (InputStream in = url.openStream()) {
-      Source source = new StreamSource(in);
-      source.setSystemId(url.toString());
-      return newTransformerFactory().newTemplates(source);
+    try {
+      return compile(url, XsltErrorSensitivity.FATAL);
     } catch (IOException | TransformerException ex) {
       LOGGER.warn("Unable to compile templates from URL: {}", url, ex);
       return IDENTITY_TEMPLATES;
@@ -295,7 +293,13 @@ public final class XsltTemplateCache {
     } catch (NoSuchFileException ex) {
       if (fallback != null) {
         LOGGER.warn("Unable to find template file: {} — using fallback {}", stylepath, fallback);
-        return compile(fallback);
+        XsltErrorSensitivity sensitivity = XsltErrorSensitivity.from(
+            GlobalSettings.get(BerliozOption.XSLT_SENSITIVITY));
+        try {
+          return compile(fallback, sensitivity);
+        } catch (IOException ex2) {
+          throw new TransformerConfigurationException("Unable to read fallback stylesheet: " + fallback, ex2);
+        }
       }
       LOGGER.warn("Unable to find template file: {}", stylepath);
       throw new TransformerConfigurationException("Unable to find stylesheet: " + toWebPath(stylepath.toString()), ex);
@@ -307,9 +311,23 @@ public final class XsltTemplateCache {
   private static Templates newTemplates(TransformerFactory factory, Source source, XsltErrorCollector listener)
       throws TransformerException {
     try {
-      return factory.newTemplates(source);
-    } catch (TransformerConfigurationException ex) {
+      Templates templates = factory.newTemplates(source);
+      listener.throwIfThresholdReached();
+      return templates;
+    } catch (TransformerException ex) {
       throw new XsltExceptionWrapper(ex, listener);
+    }
+  }
+
+  private static Templates compile(URL url, XsltErrorSensitivity sensitivity)
+      throws IOException, TransformerException {
+    try (InputStream in = url.openStream()) {
+      Source source = new StreamSource(in);
+      source.setSystemId(url.toString());
+      TransformerFactory factory = newTransformerFactory();
+      XsltErrorCollector listener = new XsltErrorCollector(LOGGER, sensitivity);
+      factory.setErrorListener(listener);
+      return newTemplates(factory, source, listener);
     }
   }
 

@@ -83,7 +83,7 @@ import org.xml.sax.XMLReader;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.5
+ * @version 0.14.0
  * @since 0.7
  */
 public final class XsltTransformer {
@@ -294,6 +294,7 @@ public final class XsltTransformer {
     transformer.setErrorListener(listener);
     try {
       transformer.transform(source, r);
+      listener.throwIfThresholdReached();
     } catch (TransformerException ex) {
       throw new XsltExceptionWrapper(ex, listener);
     }
