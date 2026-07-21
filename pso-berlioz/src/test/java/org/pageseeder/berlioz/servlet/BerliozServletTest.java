@@ -291,7 +291,9 @@ class BerliozServletTest {
         throw new IllegalStateException("handler failed");
       }
       @Override
-      public void include(ServletRequest request, ServletResponse response) { }
+      public void include(ServletRequest request, ServletResponse response) {
+        // not used by this test
+      }
     };
     initServlet(Map.of("stylesheet", "transform.xsl", "content-type", "text/html;charset=utf-8"), handler);
     ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
