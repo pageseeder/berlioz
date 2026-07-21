@@ -296,4 +296,40 @@ final class ServiceRegistryTest {
     Assertions.assertTrue(patterns.contains("/a"), patterns.toString());
     Assertions.assertTrue(patterns.contains("/b"), patterns.toString());
   }
+
+  // --- overriding registrations ---
+
+  @Test
+  void testRegister_overridesPreviousServiceForSamePattern() {
+    Service first = buildService("first");
+    Service second = buildService("second");
+    registry.register(first, new URIPattern("/home"), HttpMethod.GET);
+    registry.register(second, new URIPattern("/home"), HttpMethod.GET);
+
+    MatchingService match = registry.get("/home", HttpMethod.GET);
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(second, match.service(), "The later registration should win");
+  }
+
+  // --- overrideWarning (static) ---
+
+  @Test
+  void testOverrideWarning_noPrevious_returnsNull() {
+    Service svc = buildService("svc");
+    Assertions.assertNull(ServiceRegistry.overrideWarning(null, svc, new URIPattern("/home")));
+  }
+
+  @Test
+  void testOverrideWarning_previousExists_namesBothServicesAndPattern() {
+    Service first = buildService("first");
+    Service second = buildService("second");
+    URIPattern pattern = new URIPattern("/home");
+
+    String warning = ServiceRegistry.overrideWarning(first, second, pattern);
+
+    Assertions.assertNotNull(warning);
+    Assertions.assertTrue(warning.contains(first.toString()), warning);
+    Assertions.assertTrue(warning.contains(second.toString()), warning);
+    Assertions.assertTrue(warning.contains("/home"), warning);
+  }
 }

@@ -79,6 +79,21 @@ public final class ServiceRegistry {
   }
 
   /**
+   * Computes a warning message when a service registration overrides a previously registered
+   * service for the same URI pattern.
+   *
+   * @param previous the service that was previously registered for the pattern, if any.
+   * @param next     the service being registered for the pattern.
+   * @param pattern  the URI pattern both services were registered against.
+   * @return the warning message, or {@code null} if there was no previous registration.
+   */
+  static @Nullable String overrideWarning(@Nullable Service previous, Service next, URIPattern pattern) {
+    if (previous == null) return null;
+    return next + " overrides " + previous + " for pattern " + pattern
+        + " - " + previous + " will no longer be reachable";
+  }
+
+  /**
    * Returns the list of content generators for this URL.
    *
    * <p>This method iterates over each HTTP method in the following order: GET, POST, PUT, DELETE.
@@ -305,8 +320,9 @@ public final class ServiceRegistry {
      */
     public boolean put(URIPattern pattern, Service service) {
       Service previous = this.mapping.put(pattern.toString(), service);
-      if (previous != null) {
-        this.logger.warn("Service ID={} was already registered to {}", previous, pattern);
+      String warning = overrideWarning(previous, service, pattern);
+      if (warning != null) {
+        this.logger.warn(warning);
       }
       this.patterns.add(pattern);
       return true;

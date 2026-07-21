@@ -433,6 +433,45 @@ public final class Service {
   }
 
   /**
+   * Computes a warning message when a service's generators share no common output format.
+   *
+   * @param service the service to check.
+   * @return the warning message, or {@code null} if the service has no generators or its
+   *         generators share at least one output format.
+   */
+  static @Nullable String disjointOutputWarning(Service service) {
+    if (!service.generators().isEmpty() && service.supported().isEmpty()) {
+      return "Service " + service.id() + " has generators with disjoint output formats - "
+          + "no format can be served (e.g. XmlGenerator mixed with JsonGenerator)";
+    }
+    return null;
+  }
+
+  /**
+   * Computes a warning message when a direct service is misconfigured.
+   *
+   * <p>A direct service must have exactly one generator, and that generator must support
+   * at least one output format; otherwise no response could ever be produced for it.</p>
+   *
+   * @param service the service to check.
+   * @return the warning message, or {@code null} if the service is not direct, or is validly
+   *         configured for direct output.
+   */
+  static @Nullable String invalidDirectWarning(Service service) {
+    if (!service.isDirect()) return null;
+    int count = service.generators().size();
+    if (count != 1) {
+      return "Service " + service.id() + " is configured as direct but has " + count
+          + " generators - direct requires exactly one generator; service will not be registered";
+    }
+    if (service.supported().isEmpty()) {
+      return "Service " + service.id() + " is configured as direct but its generator supports "
+          + "no output format; service will not be registered";
+    }
+    return null;
+  }
+
+  /**
    * Computes the intersection of supported output formats across all generators.
    *
    * @param generators the list of generators.

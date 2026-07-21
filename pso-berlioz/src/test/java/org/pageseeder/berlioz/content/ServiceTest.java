@@ -370,6 +370,71 @@ final class ServiceTest {
     Assertions.assertTrue(Service.computeSupported(Collections.emptyList()).isEmpty());
   }
 
+  // --- disjointOutputWarning (static) ---
+
+  @Test
+  void testDisjointOutputWarning_noGenerators_returnsNull() {
+    Service s = defaultBuilder("svc").build();
+    Assertions.assertNull(Service.disjointOutputWarning(s));
+  }
+
+  @Test
+  void testDisjointOutputWarning_compatibleGenerators_returnsNull() {
+    Service s = defaultBuilder("svc").add(new NoContent()).build();
+    Assertions.assertNull(Service.disjointOutputWarning(s));
+  }
+
+  @Test
+  void testDisjointOutputWarning_disjointGenerators_returnsWarning() {
+    ContentGenerator cg = (req, xml) -> {};
+    JsonGenerator jg = (req, json) -> Response.ok();
+    Service s = defaultBuilder("svc").add(cg).add(jg).build();
+    String warning = Service.disjointOutputWarning(s);
+    Assertions.assertNotNull(warning);
+    Assertions.assertTrue(warning.contains("svc"), warning);
+    Assertions.assertTrue(warning.contains("disjoint"), warning);
+  }
+
+  // --- invalidDirectWarning (static) ---
+
+  @Test
+  void testInvalidDirectWarning_notDirect_returnsNull() {
+    Service s = defaultBuilder("svc").add(new NoContent()).build();
+    Assertions.assertNull(Service.invalidDirectWarning(s));
+  }
+
+  @Test
+  void testInvalidDirectWarning_directWithOneValidGenerator_returnsNull() {
+    Service s = defaultBuilder("svc").direct(true).add(new NoContent()).build();
+    Assertions.assertNull(Service.invalidDirectWarning(s));
+  }
+
+  @Test
+  void testInvalidDirectWarning_directWithNoGenerators_returnsWarning() {
+    Service s = defaultBuilder("svc").direct(true).build();
+    String warning = Service.invalidDirectWarning(s);
+    Assertions.assertNotNull(warning);
+    Assertions.assertTrue(warning.contains("0 generators"), warning);
+  }
+
+  @Test
+  void testInvalidDirectWarning_directWithTwoGenerators_returnsWarning() {
+    Service s = defaultBuilder("svc").direct(true).add(new NoContent()).add(new NoContent()).build();
+    String warning = Service.invalidDirectWarning(s);
+    Assertions.assertNotNull(warning);
+    Assertions.assertTrue(warning.contains("2 generators"), warning);
+  }
+
+  @Test
+  void testInvalidDirectWarning_directWithEmptySupportedGenerator_returnsWarning() {
+    // A single generator that is direct-eligible by count but declares no usable output format.
+    BerliozGenerator g = () -> Set.of();
+    Service s = defaultBuilder("svc").direct(true).add(g).build();
+    String warning = Service.invalidDirectWarning(s);
+    Assertions.assertNotNull(warning);
+    Assertions.assertTrue(warning.contains("supports no output format"), warning);
+  }
+
   // --- parameters for unknown generator ---
 
   @Test

@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.generator.GetServices;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
@@ -93,6 +94,19 @@ class ServiceLoaderTest {
     Assertions.assertFalse(files.isEmpty(), "Expected at least one services file");
     boolean hasServicesXml = files.stream().anyMatch(f -> f.getName().equals("services.xml"));
     Assertions.assertTrue(hasServicesXml, "Expected services.xml in the list");
+  }
+
+  @Test
+  void testLoad_duplicatePatternWithinFile_onlyFirstServiceRegistered() throws BerliozException {
+    // Non-strict mode: the duplicate-pattern condition is a warning, not a fatal error.
+    GlobalSettings.setup((InitEnvironment) null);
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-duplicate-pattern.xml"));
+
+    MatchingService match = loader.getDefaultRegistry().get("/dup", HttpMethod.GET);
+    Assertions.assertNotNull(match, "The first service should still be registered for the pattern");
+    Assertions.assertEquals("first", match.service().id(),
+        "The duplicate pattern should be dropped from the second service, leaving the first registered");
   }
 
   // Namespace tests
