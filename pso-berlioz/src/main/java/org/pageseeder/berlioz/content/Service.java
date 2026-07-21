@@ -30,8 +30,9 @@ import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.ServiceStatusRule.SelectType;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.output.OutputType;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.OutputWriter.ContextOption;
 import org.pageseeder.berlioz.util.Strings;
-import org.pageseeder.berlioz.xml.XmlWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -274,90 +275,96 @@ public final class Service {
   }
 
   /**
-   * Serializes the specified service as XML.
+   * Serializes the specified service.
    *
-   * @param xml     the XML writer
-   * @param method  the HTTP method the service is mapped to.
-   * @param urls    the URI patterns this service matches
+   * @param out    the output writer
+   * @param method the HTTP method the service is mapped to.
+   * @param urls   the URI patterns this service matches
    */
   @Beta
-  public void toXml(XmlWriter xml, HttpMethod method, List<String> urls) {
-    toXml(xml, method, urls, null);
+  public void writeTo(OutputWriter out, HttpMethod method, List<String> urls) {
+    writeTo(out, method, urls, null);
   }
 
   /**
-   * Serializes the specified service as XML.
+   * Serializes the specified service.
    *
-   * @param xml          the XML writer
+   * @param out          the output writer
    * @param method       the HTTP method the service is mapped to.
    * @param urls         the URI patterns this service matches
    * @param cacheControl the cache control directives.
    */
   @Beta
-  public void toXml(XmlWriter xml, HttpMethod method, List<String> urls, @Nullable String cacheControl) {
-    xml.openElement("service", true);
-    xml.attribute("id", this.id);
-    xml.attribute("group", this.group);
-    xml.attribute("method", method.toString().toLowerCase());
+  public void writeTo(OutputWriter out, HttpMethod method, List<String> urls, @Nullable String cacheControl) {
+    out.startObject("service");
+    out.field("id", this.id);
+    out.field("group", this.group);
+    out.field("method", method.toString().toLowerCase());
     if (!this.flags.isEmpty()) {
-      xml.attribute("flags", this.flags);
+      out.field("flags", this.flags);
     }
     if (this.direct) {
-      xml.attribute("direct", "true");
+      out.field("direct", true);
     }
 
     // Caching information
-    xml.attribute("cacheable", Boolean.toString(this.cacheable));
+    out.field("cacheable", this.cacheable);
     if (this.cacheable) {
       if (!this.cache.isEmpty()) {
-        xml.attribute("cache-control", this.cache.length());
+        out.field("cache-control", this.cache);
       } else if (cacheControl != null) {
-        xml.attribute("cache-control", cacheControl);
+        out.field("cache-control", cacheControl);
       }
     }
 
-    xml.attribute("supported", supportedAttribute(this.supported));
+    out.field("supported", supportedAttribute(this.supported));
 
     // How the response code is calculated
-    xml.openElement("response-code", true);
-    xml.attribute("use", this.rule.use().toString().toLowerCase());
-    xml.attribute("rule", this.rule.rule().toString().toLowerCase());
-    xml.closeElement();
+    out.startObject("response-code");
+    out.field("use", this.rule.use().toString().toLowerCase());
+    out.field("rule", this.rule.rule().toString().toLowerCase());
+    out.endObject();
 
     // URI patterns
     //noinspection ConstantValue
     if (urls != null) {
+      out.startArray("urls", ContextOption.JSON_ONLY);
       for (String url : urls) {
-        xml.openElement("url", true);
-        xml.attribute("pattern", url);
-        xml.closeElement();
+        out.startObject("url");
+        out.field("pattern", url);
+        out.endObject();
       }
+      out.endArray();
     }
 
     // Generators
+    out.startArray("generators", ContextOption.JSON_ONLY);
     for (BerliozGenerator generator : this.generators) {
       String target = target(generator);
       List<Parameter> parameters = parameters(generator);
-      xml.openElement(GENERATOR, !parameters.isEmpty());
-      xml.attribute("class", generator.getClass().getName());
-      xml.attribute("name", name(generator));
-      if (target != null) {
-        xml.attribute("target", target);
+      out.startObject(GENERATOR);
+      out.field("class", generator.getClass().getName());
+      out.field("name", name(generator));
+      out.optionalField("target", target);
+      out.field("type", generatorType(generator));
+      out.field("cacheable", generator instanceof Cacheable);
+      out.field("affect-status", affectStatus(generator));
+      out.field("supported", supportedAttribute(generator.supported()));
+      if (!parameters.isEmpty()) {
+        out.startArray("parameters", ContextOption.JSON_ONLY);
+        for (Parameter p : parameters) {
+          out.startObject("parameter");
+          out.field("name", p.name());
+          out.field("value", p.value());
+          out.endObject();
+        }
+        out.endArray();
       }
-      xml.attribute("type", generatorType(generator));
-      xml.attribute("cacheable", Boolean.toString(generator instanceof Cacheable));
-      xml.attribute("affect-status", Boolean.toString(affectStatus(generator)));
-      xml.attribute("supported", supportedAttribute(generator.supported()));
-      for (Parameter p : parameters) {
-        xml.openElement("parameter", false);
-        xml.attribute("name", p.name());
-        xml.attribute("value", p.value());
-        xml.closeElement();
-      }
-      xml.closeElement();
+      out.endObject();
     }
+    out.endArray();
 
-    xml.closeElement();
+    out.endObject();
   }
 
   private static String supportedAttribute(Set<OutputType> types) {

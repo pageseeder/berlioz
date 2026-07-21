@@ -19,18 +19,19 @@ import java.util.List;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
-import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.OutputWriter.ContextOption;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns the live service registry as XML.
+ * Returns the live service registry as XML or JSON.
  *
  * <p>Unlike {@code GetServices}, which re-reads the services XML files from disk, this generator
  * reflects the current in-memory state of the service registry. It is intended for developers and
@@ -55,6 +56,24 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * </live-services>
  * }</pre>
  *
+ * <h3>Returned JSON</h3>
+ * <pre>{@code
+ * {
+ *   "liveServices": [
+ *     {
+ *       "id": "[id]", "group": "[group]", "method": "[method]", "cacheable": [true|false], ...,
+ *       "responseCode": {"use": "[use]", "rule": "[rule]"},
+ *       "urls": [{"pattern": "[uri-pattern]"}, ...],
+ *       "generators": [
+ *         {"class": "[class]", "name": "[name]", "type": "[type]", "cacheable": [true|false], ...},
+ *         ...
+ *       ]
+ *     },
+ *     ...
+ *   ]
+ * }
+ * }</pre>
+ *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
  * <pre>{@code <generator class="org.pageseeder.berlioz.generator.GetLiveServices"
@@ -66,11 +85,11 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.1
  * @since 0.9.3
  */
 @Beta
-public final class GetLiveServices implements XmlGenerator, Cacheable {
+public final class GetLiveServices implements Generator, Cacheable {
 
   @Override
   public String getETag(Request req) {
@@ -79,21 +98,22 @@ public final class GetLiveServices implements XmlGenerator, Cacheable {
   }
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
-    xml.openElement("live-services", true);
-
     HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
 
+    out.startObject("live-services");
+    out.startArray("live-services", ContextOption.JSON_ONLY);
     for (HttpMethod method : HttpMethod.mappable()) {
       List<Service> services = registry.getServices(method);
       for (Service service : services) {
         List<String> urls = registry.matches(service);
-        service.toXml(xml, method, urls, httpEnv.getCacheControl());
+        service.writeTo(out, method, urls, httpEnv.getCacheControl());
       }
     }
+    out.endArray();
+    out.endObject();
 
-    xml.closeElement();
     return Response.ok();
   }
 

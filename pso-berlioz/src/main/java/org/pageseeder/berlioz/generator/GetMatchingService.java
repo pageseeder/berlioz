@@ -20,21 +20,22 @@ import java.util.Objects;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Cacheable;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.ServiceRegistry;
-import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolveResult;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.OutputWriter.ContextOption;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
- * Returns the service that matches a given URL as XML.
+ * Returns the service that matches a given URL as XML or JSON.
  *
  * <p>This generator looks up the live service registry and reports which service (if any) would
  * handle the specified URL and HTTP method, together with the URI template variables extracted
@@ -52,9 +53,10 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * </dl>
  *
  * <h3>Returned XML</h3>
- * <p>When a matching service is found:
+ * <p>The root element always reports whether a service matched via the {@code matched} attribute.
+ * When a matching service is found:
  * <pre>{@code
- * <matching-service>
+ * <matching-service matched="true">
  *   <url path="[url]" pattern="[uri-pattern]">
  *     <parameter name="[var]" value="[extracted-value]"/>
  *     ...
@@ -65,7 +67,21 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * </matching-service>
  * }</pre>
  * <p>When no service matches:
- * <pre>{@code <no-matching-service/>}</pre>
+ * <pre>{@code <matching-service matched="false"/>}</pre>
+ *
+ * <h3>Returned JSON</h3>
+ * <pre>{@code
+ * {
+ *   "matched": true,
+ *   "url": {
+ *     "path": "[url]", "pattern": "[uri-pattern]",
+ *     "parameters": [{"name": "[var]", "value": "[extracted-value]"}, ...]
+ *   },
+ *   "service": {...}
+ * }
+ * }</pre>
+ * <p>When no service matches:
+ * <pre>{@code {"matched": false}}</pre>
  *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
@@ -78,11 +94,11 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.1
  * @since 0.9.3
  */
 @Beta
-public final class GetMatchingService implements XmlGenerator, Cacheable {
+public final class GetMatchingService implements Generator, Cacheable {
 
   @Override
   public String getETag(Request req) {
@@ -91,39 +107,42 @@ public final class GetMatchingService implements XmlGenerator, Cacheable {
   }
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     String url = req.parameter("url").asString().required();
     HttpMethod method = req.parameter("method").asEnum(HttpMethod.class).optional(HttpMethod.GET);
 
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     MatchingService match = registry.get(url, method);
 
-    if (match != null) {
-      xml.openElement("matching-service", true);
+    out.startObject("matching-service");
+    out.field("matched", match != null);
 
+    if (match != null) {
       URIPattern pattern = match.pattern();
-      xml.openElement("url", true);
-      xml.attribute("path", url);
-      xml.attribute("pattern", pattern.toString());
+      out.startObject("url");
+      out.field("path", url);
+      out.field("pattern", pattern.toString());
       URIResolveResult result = match.result();
-      for (String name : result.names()) {
-        String value = Objects.toString(result.get(name), "");
-        xml.openElement("parameter")
-            .attribute("name", name)
-            .attribute("value", value)
-            .closeElement();
+      if (!result.names().isEmpty()) {
+        out.startArray("parameters", ContextOption.JSON_ONLY);
+        for (String name : result.names()) {
+          String value = Objects.toString(result.get(name), "");
+          out.startObject("parameter");
+          out.field("name", name);
+          out.field("value", value);
+          out.endObject();
+        }
+        out.endArray();
       }
-      xml.closeElement();
+      out.endObject();
 
       Service service = match.service();
       List<String> urls = registry.matches(service);
       HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
-      service.toXml(xml, method, urls, httpEnv.getCacheControl());
-
-      xml.closeElement();
-    } else {
-      xml.emptyElement("no-matching-service");
+      service.writeTo(out, method, urls, httpEnv.getCacheControl());
     }
+
+    out.endObject();
 
     return Response.ok();
   }

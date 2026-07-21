@@ -25,9 +25,10 @@ import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.json.JsonWriter;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.output.OutputType;
 import org.pageseeder.berlioz.output.OutputWriter;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.xml.XmlWriter;
 import org.pageseeder.xmlwriter.XMLWriter;
 
@@ -403,122 +404,124 @@ final class ServiceTest {
     Assertions.assertFalse(s.affectStatus(g));
   }
 
-  // --- toXML ---
+  // --- writeTo (XML) ---
 
   @Test
-  void testToXML_basicAttributes() {
+  void testWriteToXml_basicAttributes() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/articles/{id}"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/articles/{id}"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("id=\"svc\""), out);
     Assertions.assertTrue(out.contains("group=\"test\""), out);
     Assertions.assertTrue(out.contains("method=\"get\""), out);
   }
 
   @Test
-  void testToXML_urlPatterns() {
+  void testWriteToXml_urlPatterns() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/articles/{id}", "/news/{id}"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/articles/{id}", "/news/{id}"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("pattern=\"/articles/{id}\""), out);
     Assertions.assertTrue(out.contains("pattern=\"/news/{id}\""), out);
   }
 
   @Test
-  void testToXML_generatorElement(){
+  void testWriteToXml_generatorElement(){
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).name("my-gen").build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("name=\"my-gen\""), out);
     Assertions.assertTrue(out.contains("class=\"" + NoContent.class.getName() + "\""), out);
   }
 
   @Test
-  void testToXML_cacheControlOverload() {
+  void testWriteToXml_cacheControlOverload() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"), "max-age=600");
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"), "max-age=600");
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("cache-control=\"max-age=600\""), out);
   }
 
   @Test
-  void testToXML_flagsAttribute() {
+  void testWriteToXml_cacheControlFixedValue() {
+    // Regression test: the fixed cache-control value must be written verbatim,
+    // not as the length of the configured string.
+    CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
+    Service s = defaultBuilder("svc").cache("max-age=3600").add(g).build();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
+    Assertions.assertTrue(out.contains("cache-control=\"max-age=3600\""), out);
+  }
+
+  @Test
+  void testWriteToXml_flagsAttribute() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").flags("secure").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("flags=\"secure\""), out);
   }
 
   @Test
-  void testToXML_directAttribute() {
+  void testWriteToXml_directAttribute() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").direct(true).add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("direct=\"true\""), out);
   }
 
   @Test
-  void testToXML_generatorParameterElement() {
+  void testWriteToXml_generatorParameterElement() {
     NoContent g = new NoContent();
     Parameter p = new Parameter("limit", "10");
     Service s = defaultBuilder("svc").add(g).parameter(p).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("name=\"limit\""), out);
     Assertions.assertTrue(out.contains("value=\"10\""), out);
   }
 
   @Test
-  void testToXML_supportedAttributeForContentGenerator() {
+  void testWriteToXml_supportedAttributeForContentGenerator() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("supported=\"xml\""), out);
   }
 
   @Test
-  void testToXML_supportedAttributeForGenerator() {
+  void testWriteToXml_supportedAttributeForGenerator() {
     CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("supported=\"xml,json\""), out);
   }
 
   @Test
-  void testToXML_perGeneratorSupportedAttributeIsDistinctFromServiceLevel() {
+  void testWriteToXml_perGeneratorSupportedAttributeIsDistinctFromServiceLevel() {
     BerliozGenerator xmlGen = new XmlOnlyGenerator();
     BerliozGenerator jsonGen = new JsonOnlyGenerator();
     Service s = defaultBuilder("svc").add(xmlGen).add(jsonGen).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     // The generators support disjoint formats, so the service-level intersection is empty...
     Assertions.assertTrue(out.contains("supported=\"\""), out);
     // ...but each generator entry still reports its own supported set.
@@ -527,36 +530,103 @@ final class ServiceTest {
   }
 
   @Test
-  void testToXML_perGeneratorSupportedAttributeForCustomGenerator() {
+  void testWriteToXml_perGeneratorSupportedAttributeForCustomGenerator() {
     BerliozGenerator g = () -> Set.of(OutputType.RAW);
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("supported=\"raw\""), out);
   }
 
   @Test
-  void testToXML_generatorTypeContent() {
+  void testWriteToXml_generatorTypeContent() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("type=\"xml\""), out);
   }
 
   @Test
-  void testToXML_generatorTypeGenerator() {
+  void testWriteToXml_generatorTypeGenerator() {
     CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
     Service s = defaultBuilder("svc").add(g).build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    s.toXml(xml, HttpMethod.GET, List.of("/"));
-    xml.flush();
-    String out = xml.toString();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
     Assertions.assertTrue(out.contains("type=\"generator\""), out);
+  }
+
+  // --- writeTo (JSON) ---
+
+  @Test
+  void testWriteToJson_basicFields() {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).build();
+    JsonOutputAdapter writer = new JsonOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/articles/{id}"));
+    String out = writer.toString();
+    Assertions.assertTrue(out.contains("\"id\":\"svc\""), out);
+    Assertions.assertTrue(out.contains("\"group\":\"test\""), out);
+    Assertions.assertTrue(out.contains("\"method\":\"get\""), out);
+  }
+
+  @Test
+  void testWriteToJson_urlPatternsAsArray() {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").add(g).build();
+    JsonOutputAdapter writer = new JsonOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/articles/{id}", "/news/{id}"));
+    String out = writer.toString();
+    Assertions.assertTrue(out.contains("\"urls\":[{\"pattern\":\"/articles/{id}\"},{\"pattern\":\"/news/{id}\"}]"), out);
+  }
+
+  @Test
+  void testWriteToJson_generatorArrayWithParameters() {
+    NoContent g = new NoContent();
+    Parameter p = new Parameter("limit", "10");
+    Service s = defaultBuilder("svc").add(g).name("my-gen").parameter(p).build();
+    JsonOutputAdapter writer = new JsonOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
+    Assertions.assertTrue(out.contains("\"generators\":[{"), out);
+    Assertions.assertTrue(out.contains("\"name\":\"my-gen\""), out);
+    Assertions.assertTrue(out.contains("\"parameters\":[{\"name\":\"limit\",\"value\":\"10\"}]"), out);
+  }
+
+  @Test
+  void testWriteToJson_cacheControlFixedValue() {
+    CacheableGeneratorByRequest g = new CacheableGeneratorByRequest();
+    Service s = defaultBuilder("svc").cache("max-age=3600").add(g).build();
+    JsonOutputAdapter writer = new JsonOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
+    Assertions.assertTrue(out.contains("\"cacheControl\":\"max-age=3600\""), out);
+  }
+
+  @Test
+  void testWriteToJson_directFieldIsBoolean() {
+    NoContent g = new NoContent();
+    Service s = defaultBuilder("svc").direct(true).add(g).build();
+    JsonOutputAdapter writer = new JsonOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
+    Assertions.assertTrue(out.contains("\"direct\":true"), out);
+  }
+
+  @Test
+  void testWriteToJson_perGeneratorSupportedAttributeIsDistinctFromServiceLevel() {
+    BerliozGenerator xmlGen = new XmlOnlyGenerator();
+    BerliozGenerator jsonGen = new JsonOnlyGenerator();
+    Service s = defaultBuilder("svc").add(xmlGen).add(jsonGen).build();
+    JsonOutputAdapter writer = new JsonOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
+    Assertions.assertTrue(out.contains("\"supported\":\"\""), out);
+    Assertions.assertTrue(out.contains("\"supported\":\"xml\""), out);
+    Assertions.assertTrue(out.contains("\"supported\":\"json\""), out);
   }
 
   // --- generatorType ---

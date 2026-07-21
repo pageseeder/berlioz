@@ -9,8 +9,10 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.error.InvalidParameterException;
+import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -43,9 +45,9 @@ class GetMatchingServiceTest {
   void testMissingUrlParameterWritesError() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request();
     ContentRequest req = builder.build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    XmlGenerator generator = new GetMatchingService();
-    Assertions.assertThrows(InvalidParameterException.class, () -> generator.generate(req, xml));
+    OutputWriter out = new XmlOutputAdapter();
+    Generator generator = new GetMatchingService();
+    Assertions.assertThrows(InvalidParameterException.class, () -> generator.generate(req, out));
   }
 
   @Test
@@ -54,21 +56,31 @@ class GetMatchingServiceTest {
         .parameter("url", "/home")
         .parameter("method", "INVALID");
     ContentRequest req = builder.build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    XmlGenerator generator = new GetMatchingService();
-    Assertions.assertThrows(InvalidParameterException.class, () -> generator.generate(req, xml));
+    OutputWriter out = new XmlOutputAdapter();
+    Generator generator = new GetMatchingService();
+    Assertions.assertThrows(InvalidParameterException.class, () -> generator.generate(req, out));
   }
 
   // No match
   // ---------------------------------------------------------------------------
 
   @Test
-  void testNoMatchWritesNoMatchingServiceElement() {
+  void testNoMatchWritesMatchedFalse() {
     GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
         .parameter("url", "/unknown/path")
         .parameter("method", "GET");
     String out = process(builder);
-    Assertions.assertTrue(out.contains("no-matching-service"), "Should write <no-matching-service> when no service matches");
+    Assertions.assertTrue(out.contains("matching-service"), "Should still write a <matching-service> root element");
+    Assertions.assertTrue(out.contains("matched=\"false\""), "Should report matched=\"false\" when no service matches");
+  }
+
+  @Test
+  void testNoMatchWritesMatchedFalseJson() {
+    GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
+        .parameter("url", "/unknown/path")
+        .parameter("method", "GET");
+    String out = processJson(builder);
+    Assertions.assertEquals("{\"matched\":false}", out);
   }
 
   // Match found
@@ -87,6 +99,7 @@ class GetMatchingServiceTest {
         .environment(env);
     String out = process(builder);
     Assertions.assertTrue(out.contains("matching-service"), "Should write <matching-service> for a known URL");
+    Assertions.assertTrue(out.contains("matched=\"true\""), "Should report matched=\"true\" when a service matches");
     Assertions.assertFalse(out.contains("<error"), "Should not write error element");
   }
 
@@ -104,6 +117,22 @@ class GetMatchingServiceTest {
     String out = process(builder);
     Assertions.assertTrue(out.contains("pattern="), "Should contain the matched URL pattern");
     Assertions.assertTrue(out.contains("path=\"/home\""), "Should contain the request path");
+  }
+
+  @Test
+  void testMatchFoundWritesMatchedTrueJson() throws Exception {
+    GlobalSettings.setup(WEB_INF);
+    ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
+
+    HttpEnvironment env = new HttpEnvironment(
+        Files.createDirectory(tmp.resolve("public")).toFile(), Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=3600");
+    GeneratorTestSupport.RequestBuilder builder = GeneratorTestSupport.request()
+        .parameter("url", "/home")
+        .parameter("method", "GET")
+        .environment(env);
+    String out = processJson(builder);
+    Assertions.assertTrue(out.startsWith("{\"matched\":true,"), out);
+    Assertions.assertTrue(out.contains("\"path\":\"/home\""), out);
   }
 
   // ETag
@@ -124,8 +153,16 @@ class GetMatchingServiceTest {
   private static String process(GeneratorTestSupport.RequestBuilder builder) {
     GetMatchingService gen = new GetMatchingService();
     ContentRequest req = builder.build();
-    XmlStringBuilder xml = new XmlStringBuilder();
-    gen.generate(req, xml);
-    return xml.toString();
+    OutputWriter out = new XmlOutputAdapter();
+    gen.generate(req, out);
+    return out.toString();
+  }
+
+  private static String processJson(GeneratorTestSupport.RequestBuilder builder) {
+    GetMatchingService gen = new GetMatchingService();
+    ContentRequest req = builder.build();
+    OutputWriter out = new JsonOutputAdapter();
+    gen.generate(req, out);
+    return out.toString();
   }
 }
