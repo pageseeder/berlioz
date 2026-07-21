@@ -32,7 +32,7 @@ Expected default changes:
 - `berlioz.xml.header.version=1.0` so the modern XML header is the default.
 - Administration/control parameters should no longer be open by default. The exact shape still needs design: either require an explicit control key to enable request-level controls, or disable those controls unless a key is configured.
 
-Legacy error XML should be deprecated in 0.14.0, not removed. Applications can still opt back into the legacy `<server-error>` / `<client-error>` shape with `berlioz.errors.problem=false` while migrating custom error XSLT templates.
+Legacy non-Problem-Details error XML should be deprecated in 0.14.0, not removed. Applications can still opt back into the unified `<error http-class="...">` shape with `berlioz.errors.problem=false` while migrating custom error XSLT templates. The older `<server-error>` / `<client-error>` element names are not restored.
 
 ### 0.14.x: Roadmap Themes 3-5, 13
 
@@ -228,7 +228,7 @@ Done:
 - Sensitive values in diagnostic request headers and parameters are redacted before serialization.
 - Runtime XSLT 2.0 probing reports a clear static diagnostic when no XSLT 2.0 processor is available.
 
-The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage. The legacy `<server-error>` / `<client-error>` error XML format should be deprecated when Problem Details becomes the default in 0.14.0, then removed only after a clear migration window.
+The goal is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage. The legacy non-Problem-Details error XML format should be deprecated when Problem Details becomes the default in 0.14.0, then removed only after a clear migration window; during that window it uses the unified `<error>` element rather than the older `<server-error>` / `<client-error>` names.
 
 ### 3. Service Metadata And Diagnostics
 

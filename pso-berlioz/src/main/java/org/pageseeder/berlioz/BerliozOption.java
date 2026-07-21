@@ -300,12 +300,14 @@ public enum BerliozOption {
    *
    * <p>When set to {@code true}, {@link org.pageseeder.berlioz.servlet.ErrorHandlerServlet}
    * emits a {@code <problem>} XML document (aligned with {@code application/problem+xml}) instead
-   * of the legacy {@code <server-error>} / {@code <client-error>} format. The failsafe XSLT
-   * template handles both formats, so existing error rendering continues to work.</p>
+   * of the deprecated non-Problem-Details {@code <error http-class="...">} format. The failsafe
+   * XSLT template handles both formats, so existing error rendering continues to work.</p>
    *
-   * <p>The legacy {@code <server-error>} / {@code <client-error>} format is deprecated since
-   * 0.14.0. Applications whose XSLT templates consume the legacy format can opt back in with
-   * {@code berlioz.errors.problem=false} while migrating to the {@code <problem>} format.</p>
+   * <p>The non-Problem-Details format is deprecated since 0.14.0. Applications whose XSLT
+   * templates consume it can opt back in with {@code berlioz.errors.problem=false} while
+   * migrating to the {@code <problem>} format. The older {@code <server-error>} and
+   * {@code <client-error>} element names are not restored; both use the unified {@code <error>}
+   * element in 0.14.0.</p>
    *
    * <h3>Property</h3>
    * <table>
@@ -334,7 +336,7 @@ public enum BerliozOption {
 
   /**
    * A string global option to control how much diagnostic detail is included in legacy
-   * framework-generated error responses (the {@code <server-error>} / {@code <client-error>} XML).
+   * framework-generated error responses (the non-Problem-Details {@code <error>} XML).
    *
    * <p>Three levels are available:
    * <ul>

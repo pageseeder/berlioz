@@ -54,7 +54,7 @@ final class OptionDeprecations {
             + " Declare explicit POST-mapped services and remove this property.");
 
     check(properties, BerliozOption.ERROR_PROBLEM_FORMAT, "false",
-        "Config berlioz.errors.problem=false enables legacy error XML (<server-error>/<client-error>),"
+        "Config berlioz.errors.problem=false enables deprecated non-Problem-Details <error> XML,"
             + " deprecated since 0.14.0 and will be removed in 1.0."
             + " Migrate XSLT error templates to use <problem> elements, then remove this property.");
 
