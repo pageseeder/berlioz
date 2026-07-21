@@ -511,6 +511,33 @@ final class ServiceTest {
   }
 
   @Test
+  void testToXML_perGeneratorSupportedAttributeIsDistinctFromServiceLevel() {
+    BerliozGenerator xmlGen = new XmlOnlyGenerator();
+    BerliozGenerator jsonGen = new JsonOnlyGenerator();
+    Service s = defaultBuilder("svc").add(xmlGen).add(jsonGen).build();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    // The generators support disjoint formats, so the service-level intersection is empty...
+    Assertions.assertTrue(out.contains("supported=\"\""), out);
+    // ...but each generator entry still reports its own supported set.
+    Assertions.assertTrue(out.contains("supported=\"xml\""), out);
+    Assertions.assertTrue(out.contains("supported=\"json\""), out);
+  }
+
+  @Test
+  void testToXML_perGeneratorSupportedAttributeForCustomGenerator() {
+    BerliozGenerator g = () -> Set.of(OutputType.RAW);
+    Service s = defaultBuilder("svc").add(g).build();
+    XmlStringBuilder xml = new XmlStringBuilder();
+    s.toXml(xml, HttpMethod.GET, List.of("/"));
+    xml.flush();
+    String out = xml.toString();
+    Assertions.assertTrue(out.contains("supported=\"raw\""), out);
+  }
+
+  @Test
   void testToXML_generatorTypeContent() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();

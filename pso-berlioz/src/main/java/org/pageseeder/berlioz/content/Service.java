@@ -316,7 +316,7 @@ public final class Service {
       }
     }
 
-    xml.attribute("supported", supportedAttribute());
+    xml.attribute("supported", supportedAttribute(this.supported));
 
     // How the response code is calculated
     xml.openElement("response-code", true);
@@ -347,6 +347,7 @@ public final class Service {
       xml.attribute("type", generatorType(generator));
       xml.attribute("cacheable", Boolean.toString(generator instanceof Cacheable));
       xml.attribute("affect-status", Boolean.toString(affectStatus(generator)));
+      xml.attribute("supported", supportedAttribute(generator.supported()));
       for (Parameter p : parameters) {
         xml.openElement("parameter", false);
         xml.attribute("name", p.name());
@@ -359,10 +360,10 @@ public final class Service {
     xml.closeElement();
   }
 
-  private String supportedAttribute() {
+  private static String supportedAttribute(Set<OutputType> types) {
     StringBuilder sb = new StringBuilder();
     for (OutputType t : OutputType.values()) {
-      if (this.supported.contains(t)) {
+      if (types.contains(t)) {
         if (sb.length() > 0) sb.append(',');
         sb.append(t.name().toLowerCase(Locale.ROOT));
       }
