@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.servlet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -154,6 +155,78 @@ class BerliozServletTest {
     assertEquals(405, recorder.status);
     assertTrue(recorder.header(HttpHeaders.ALLOW).contains("GET"));
     assertTrue(recorder.header(HttpHeaders.ALLOW).contains("HEAD"));
+  }
+
+  @Test
+  void query_matchingServiceDispatchesAndReturnsContent() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request("QUERY", "/search.xml"), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertTrue(recorder.content().contains("<message path=\"/search\">hello</message>"), recorder.content());
+  }
+
+  @Test
+  void query_unknownPathSendsNotFound() throws Exception {
+    writeServices(service("known", "get", "/known", "generator", ECHO_XML));
+    initServlet(Collections.emptyMap());
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request("QUERY", "/missing.xml"), recorder.build());
+
+    assertEquals(404, recorder.status);
+  }
+
+  @Test
+  void query_pathKnownOnlyForGetStillSendsNotFound() throws Exception {
+    // QUERY is treated as a safe/idempotent method like GET/HEAD: a miss is a plain 404,
+    // it does not probe other registered methods for a 405.
+    writeServices(service("get-only", "get", "/get-only", "generator", ECHO_XML));
+    initServlet(Collections.emptyMap());
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request("QUERY", "/get-only.xml"), recorder.build());
+
+    assertEquals(404, recorder.status);
+  }
+
+  @Test
+  void doPut_queryOnlyPathSendsMethodNotAllowedIncludingQuery() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", ECHO_XML));
+    initServlet(Collections.emptyMap());
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doPut(request("PUT", "/search.xml"), recorder.build());
+
+    assertEquals(405, recorder.status);
+    assertTrue(recorder.header(HttpHeaders.ALLOW).contains("QUERY"), recorder.header(HttpHeaders.ALLOW));
+  }
+
+  @Test
+  void doOptions_includesQueryInAllowHeader() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", ECHO_XML));
+    initServlet(Collections.emptyMap());
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doOptions(request("OPTIONS", "/search.xml"), recorder.build());
+
+    assertTrue(recorder.header(HttpHeaders.ALLOW).contains("QUERY"), recorder.header(HttpHeaders.ALLOW));
+  }
+
+  @Test
+  void query_cacheableServiceIsNotCachedOrGivenAnEtag() throws Exception {
+    writeServices(service("cached", "query", "/cached", "generator", CACHEABLE_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request("QUERY", "/cached.xml"), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertNull(recorder.header(HttpHeaders.ETAG));
+    assertEquals("no-cache", recorder.header(HttpHeaders.CACHE_CONTROL));
   }
 
   @Test

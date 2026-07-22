@@ -96,7 +96,8 @@ public final class ServiceRegistry {
   /**
    * Returns the list of content generators for this URL.
    *
-   * <p>This method iterates over each HTTP method in the following order: GET, POST, PUT, DELETE.
+   * <p>This method iterates over each mappable HTTP method, in enum declaration order (see
+   * {@link HttpMethod}).
    *
    * @param url The URL.
    *

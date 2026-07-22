@@ -12,6 +12,7 @@ class HttpMethodTest {
     Assertions.assertTrue(HttpMethod.PUT.isMappable());
     Assertions.assertTrue(HttpMethod.PATCH.isMappable());
     Assertions.assertTrue(HttpMethod.DELETE.isMappable());
+    Assertions.assertTrue(HttpMethod.QUERY.isMappable());
     Assertions.assertFalse(HttpMethod.HEAD.isMappable());
     Assertions.assertFalse(HttpMethod.OPTIONS.isMappable());
   }
@@ -23,8 +24,14 @@ class HttpMethodTest {
     Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.PUT));
     Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.PATCH));
     Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.DELETE));
+    Assertions.assertTrue(HttpMethod.mappable().contains(HttpMethod.QUERY));
     Assertions.assertFalse(HttpMethod.mappable().contains(HttpMethod.HEAD));
     Assertions.assertFalse(HttpMethod.mappable().contains(HttpMethod.OPTIONS));
+  }
+
+  @Test
+  void testValueOf_query() {
+    Assertions.assertEquals(HttpMethod.QUERY, HttpMethod.valueOf("QUERY"));
   }
 
 }

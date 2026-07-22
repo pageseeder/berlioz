@@ -71,12 +71,21 @@ public enum HttpMethod {
   /**
    * OPTIONS HTTP method.
    */
-  OPTIONS(false);
+  OPTIONS(false),
+
+  /**
+   * QUERY HTTP method: a safe, idempotent method with a request body, used to convey a query
+   * that would otherwise require an oversized GET query string or a POST-as-GET tunnel.
+   *
+   * @see <a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-09.html">
+   *      HTTP QUERY Method</a>
+   */
+  QUERY(true);
 
   /**
    * Set of HTTP methods mappable to a service.
    */
-  private static final EnumSet<HttpMethod> MAPPABLE_METHODS = EnumSet.of(GET, POST, PUT, PATCH, DELETE);
+  private static final EnumSet<HttpMethod> MAPPABLE_METHODS = EnumSet.of(GET, POST, PUT, PATCH, DELETE, QUERY);
 
   /**
    * Indicates whether it can be mapped to a content generator.

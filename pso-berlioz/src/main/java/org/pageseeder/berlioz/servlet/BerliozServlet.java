@@ -442,8 +442,9 @@ public final class BerliozServlet extends HttpServlet {
 
     // Compute the ETag for the request if cacheable and methods GET or HEAD
     String etag = null;
-    boolean cacheable = ctx.errorCode == null && ctx.match.isCacheable();
-    if (cacheable && (ctx.method == HttpMethod.GET || ctx.method == HttpMethod.HEAD)) {
+    boolean cacheable = ctx.errorCode == null && ctx.match.isCacheable()
+        && (ctx.method == HttpMethod.GET || ctx.method == HttpMethod.HEAD);
+    if (cacheable) {
       String etagXML = xml.getEtag();
       if (etagXML != null) {
         String etagXSL = transformer != null? transformer.getEtag() : null;
@@ -521,14 +522,15 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   /**
-   * Sends the appropriate error response when no service matches the request. For non-GET/HEAD
+   * Sends the appropriate error response when no service matches the request. For non-safe
    * methods Berlioz first checks whether the path is known for other methods and replies with
-   * {@code 405 Method Not Allowed} instead of {@code 404} when it is.
+   * {@code 405 Method Not Allowed} instead of {@code 404} when it is. {@code GET}, {@code HEAD},
+   * and {@code QUERY} are treated as safe/idempotent and always receive a plain {@code 404}.
    */
   private void handleNoMatch(HttpServletRequest req, HttpServletResponse res,
       ServiceRegistry services, String path, HttpMethod method) {
-    // If the method is different from GET or HEAD, look if it matches any other URL (just in case)
-    if (!(method == HttpMethod.HEAD || method == HttpMethod.GET)) {
+    // If the method is not safe/idempotent, look if the path matches any other method (just in case)
+    if (!(method == HttpMethod.HEAD || method == HttpMethod.GET || method == HttpMethod.QUERY)) {
       List<String> methods = services.allows(path);
       if (!methods.isEmpty()) {
         String allowed = HttpResponses.allow(methods);

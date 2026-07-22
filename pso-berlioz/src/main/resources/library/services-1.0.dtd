@@ -15,7 +15,7 @@
 <!ENTITY  % URI_PATTERN      "CDATA"                                          >
 
 <!-- The HTTP method for the associated service                             -->
-<!ENTITY  % HTTP_METHOD      "(get | put | delete | post | patch)"            >
+<!ENTITY  % HTTP_METHOD      "(get | put | delete | post | patch | query)"    >
 
 <!-- The rule to use to compute the response code                           -->
 <!ENTITY  % CODE_RULE        "(highest | lowest | first)"                     >

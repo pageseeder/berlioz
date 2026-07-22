@@ -263,6 +263,24 @@ final class ServiceRegistryTest {
   }
 
   @Test
+  void testGet_byMethodAndUrl_query_match() {
+    Service svc = buildService("search");
+    registry.register(svc, new URIPattern("/search"), HttpMethod.QUERY);
+
+    MatchingService match = registry.get("/search", HttpMethod.QUERY);
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(svc, match.service());
+  }
+
+  @Test
+  void testAllows_queryOnly_doesNotImplyHead() {
+    registry.register(buildService("search"), new URIPattern("/search"), HttpMethod.QUERY);
+    List<String> methods = registry.allows("/search");
+    Assertions.assertTrue(methods.contains("QUERY"), methods.toString());
+    Assertions.assertFalse(methods.contains("HEAD"), methods.toString());
+  }
+
+  @Test
   void testAllows_multipleMethodsSameUrl() {
     registry.register(buildService("get-home"),  new URIPattern("/home"), HttpMethod.GET);
     registry.register(buildService("post-home"), new URIPattern("/home"), HttpMethod.POST);
