@@ -348,10 +348,9 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    * @return A map of the parameters for the specified request and results
    */
   protected static Map<String, String> toParameters(HttpServletRequest req, URIResolveResult results) {
-    Map<String, String> parameters = new HashMap<>();
     // Load QUERY method body parameters first (lowest precedence); a no-op for methods other than
     // QUERY, non-form bodies, and engines that already expose them through getParameterMap()
-    parameters.putAll(QueryBodyParameters.parse(req));
+    Map<String, String> parameters = new HashMap<>(QueryBodyParameters.parse(req));
     // Load all HTTP parameters from the Query String first
     Map<String, String[]> map = req.getParameterMap();
     for (Entry<String, String[]> entry : map.entrySet()) {
