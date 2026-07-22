@@ -37,6 +37,7 @@ import org.pageseeder.berlioz.content.ContentRequest;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.Location;
 import org.pageseeder.berlioz.furi.URIResolveResult;
+import org.pageseeder.berlioz.http.QueryBodyParameters;
 import org.pageseeder.berlioz.util.ISO8601;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -334,6 +335,13 @@ public abstract class HttpRequestWrapper implements ContentRequest {
   /**
    * Configure this request wrapper for the specified service match.
    *
+   * <p>Precedence when the same parameter name is supplied more than once, lowest to highest:
+   * {@link QueryBodyParameters QUERY body parameters}, the URL query string, then URI template
+   * path variables. Neither the URL query string nor HTTP itself define what should happen when a
+   * name appears in more than one of these sources — this ordering is a Berlioz policy choice, not
+   * a requirement of any standard; see {@link QueryBodyParameters} for the QUERY-body case
+   * specifically.
+   *
    * @param req     The HTTP servlet request.
    * @param results The results of the URI resolution.
    *
@@ -341,6 +349,9 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    */
   protected static Map<String, String> toParameters(HttpServletRequest req, URIResolveResult results) {
     Map<String, String> parameters = new HashMap<>();
+    // Load QUERY method body parameters first (lowest precedence); a no-op for methods other than
+    // QUERY, non-form bodies, and engines that already expose them through getParameterMap()
+    parameters.putAll(QueryBodyParameters.parse(req));
     // Load all HTTP parameters from the Query String first
     Map<String, String[]> map = req.getParameterMap();
     for (Entry<String, String[]> entry : map.entrySet()) {

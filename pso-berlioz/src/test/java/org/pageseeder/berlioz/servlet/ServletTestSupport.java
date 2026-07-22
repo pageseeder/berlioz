@@ -2,12 +2,15 @@ package org.pageseeder.berlioz.servlet;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -68,6 +71,8 @@ public final class ServletTestSupport {
     private String queryString = null;
     private String characterEncoding = null;
     private String remoteAddr = "127.0.0.1";
+    private String contentType = null;
+    private byte[] body = new byte[0];
     private final Map<String, String> headers = new LinkedHashMap<>();
     private final Map<String, String> parameters = new LinkedHashMap<>();
     private final Map<String, Object> attributes = new LinkedHashMap<>();
@@ -87,6 +92,8 @@ public final class ServletTestSupport {
     public RequestBuilder parameter(String n, String v) { this.parameters.put(n, v); return this; }
     public RequestBuilder attribute(String n, Object v) { this.attributes.put(n, v); return this; }
     public RequestBuilder dispatcher(RequestDispatcher d) { this.dispatcher = d; return this; }
+    public RequestBuilder contentType(String v) { this.contentType = v; return this; }
+    public RequestBuilder body(String v)        { this.body = v.getBytes(StandardCharsets.UTF_8); return this; }
 
     public HttpServletRequest build() {
       InvocationHandler h = (proxy, m, args) -> {
@@ -122,6 +129,16 @@ public final class ServletTestSupport {
             parameters.forEach((k, v) -> map.put(k, new String[]{v}));
             return map;
           }
+          case "getContentType":       return contentType;
+          case "getContentLength":     return body.length;
+          case "getContentLengthLong": return (long) body.length;
+          case "getInputStream":       return new ServletInputStream() {
+            private final ByteArrayInputStream in = new ByteArrayInputStream(body);
+            @Override public boolean isFinished() { return in.available() == 0; }
+            @Override public boolean isReady() { return true; }
+            @Override public void setReadListener(ReadListener readListener) { throw new UnsupportedOperationException(); }
+            @Override public int read() { return in.read(); }
+          };
           case "getAttribute":    return attributes.get(args[0]);
           case "setAttribute":    attributes.put((String) args[0], args[1]); return null;
           case "getAttributeNames": return Collections.enumeration(attributes.keySet());

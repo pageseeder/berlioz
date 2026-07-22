@@ -1,13 +1,17 @@
 package org.pageseeder.berlioz.http;
 
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,13 +33,43 @@ final class HttpTestSupport {
 
     private final Map<String, String> headers = new LinkedHashMap<>();
     private final Map<String, Long> dateHeaders = new LinkedHashMap<>();
+    private final Map<String, String[]> parameterMap = new LinkedHashMap<>();
     private String method = "GET";
     private String serverName = "example.org";
     private int serverPort = 80;
     private String scheme = null;
+    private String requestURI = "/";
+    private String queryString = null;
+    private String contentType = null;
+    private byte[] body = new byte[0];
 
     RequestBuilder method(String value) {
       this.method = value;
+      return this;
+    }
+
+    RequestBuilder uri(String value) {
+      this.requestURI = value;
+      return this;
+    }
+
+    RequestBuilder queryString(String value) {
+      this.queryString = value;
+      return this;
+    }
+
+    RequestBuilder parameter(String name, String value) {
+      this.parameterMap.put(name, new String[]{value});
+      return this;
+    }
+
+    RequestBuilder contentType(String value) {
+      this.contentType = value;
+      return this;
+    }
+
+    RequestBuilder body(String value) {
+      this.body = value.getBytes(StandardCharsets.UTF_8);
       return this;
     }
 
@@ -69,6 +103,18 @@ final class HttpTestSupport {
         if ("getScheme".equals(name)) return this.scheme;
         if ("getServerName".equals(name)) return this.serverName;
         if ("getServerPort".equals(name)) return this.serverPort;
+        if ("getRequestURI".equals(name)) return this.requestURI;
+        if ("getQueryString".equals(name)) return this.queryString;
+        if ("getParameterMap".equals(name)) return this.parameterMap;
+        if ("getContentType".equals(name)) return this.contentType;
+        if ("getContentLength".equals(name)) return this.body.length;
+        if ("getInputStream".equals(name)) return new ServletInputStream() {
+          private final ByteArrayInputStream in = new ByteArrayInputStream(body);
+          @Override public boolean isFinished() { return this.in.available() == 0; }
+          @Override public boolean isReady() { return true; }
+          @Override public void setReadListener(ReadListener readListener) { throw new UnsupportedOperationException(); }
+          @Override public int read() { return this.in.read(); }
+        };
         if ("toString".equals(name)) return "RequestBuilder";
         if ("hashCode".equals(name)) return System.identityHashCode(proxy);
         if ("equals".equals(name)) return proxy == args[0];

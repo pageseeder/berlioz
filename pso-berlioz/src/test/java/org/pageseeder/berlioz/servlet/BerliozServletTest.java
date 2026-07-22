@@ -33,6 +33,7 @@ import org.pageseeder.berlioz.xslt.XsltTransformException;
 import org.pageseeder.berlioz.servlet.fixtures.CacheableXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.DirectJsonGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.EchoXmlGenerator;
+import org.pageseeder.berlioz.servlet.fixtures.ParameterEchoXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.RedirectXmlGenerator;
 
 class BerliozServletTest {
@@ -41,6 +42,7 @@ class BerliozServletTest {
   private static final String CACHEABLE_XML = CacheableXmlGenerator.class.getName();
   private static final String REDIRECT_XML = RedirectXmlGenerator.class.getName();
   private static final String DIRECT_JSON = DirectJsonGenerator.class.getName();
+  private static final String PARAMETER_ECHO_XML = ParameterEchoXmlGenerator.class.getName();
 
   @TempDir
   Path temp;
@@ -214,6 +216,40 @@ class BerliozServletTest {
     this.servlet.doOptions(request("OPTIONS", "/search.xml"), recorder.build());
 
     assertTrue(recorder.header(HttpHeaders.ALLOW).contains("QUERY"), recorder.header(HttpHeaders.ALLOW));
+  }
+
+  @Test
+  void query_bodyParametersEmulatedForFormUrlEncodedBody() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", PARAMETER_ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    HttpServletRequest request = ServletTestSupport.request()
+        .method("QUERY").servletPath("/search.xml").uri("/search.xml")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=hello+world")
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request, recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertTrue(recorder.content().contains("q=\"hello world\""), recorder.content());
+  }
+
+  @Test
+  void query_bodyParametersNotParsedForNonFormContentType() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", PARAMETER_ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    HttpServletRequest request = ServletTestSupport.request()
+        .method("QUERY").servletPath("/search.xml").uri("/search.xml")
+        .contentType("application/json")
+        .body("{\"q\":\"hello\"}")
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request, recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertTrue(recorder.content().contains("q=\"\""), recorder.content());
   }
 
   @Test
