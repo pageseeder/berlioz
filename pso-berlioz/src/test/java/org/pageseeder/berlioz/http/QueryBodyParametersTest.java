@@ -86,6 +86,24 @@ class QueryBodyParametersTest {
   }
 
   @Test
+  void testParse_repeatedQueryStringParameter_bodyIsStillParsed() {
+    // A URL query string with a repeated key (e.g. "?tag=a&tag=b") legitimately produces a
+    // multi-valued getParameterMap() entry with no body involved at all; that must not be
+    // mistaken for the container having parsed the QUERY body.
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .queryString("tag=a&tag=b")
+        .parameter("tag", "a", "b")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=hello")
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals("hello", params.get("q"));
+  }
+
+  @Test
   void testParse_oversizedBody_returnsEmptyWithoutThrowing() {
     String hugeValue = "x".repeat(2 * 1024 * 1024);
     HttpServletRequest req = HttpTestSupport.request()

@@ -58,8 +58,8 @@ final class HttpTestSupport {
       return this;
     }
 
-    RequestBuilder parameter(String name, String value) {
-      this.parameterMap.put(name, new String[]{value});
+    RequestBuilder parameter(String name, String... values) {
+      this.parameterMap.put(name, values);
       return this;
     }
 

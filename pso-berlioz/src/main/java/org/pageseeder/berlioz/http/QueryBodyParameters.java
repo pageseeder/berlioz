@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -108,15 +111,15 @@ public final class QueryBodyParameters {
 
   /**
    * Detects native {@code QUERY} body support: {@code true} when {@code getParameterMap()}
-   * contains a parameter that a plain parse of the URL query string alone would not account for,
-   * meaning the engine must have parsed the body itself to produce it.
+   * contains a parameter whose values (including repeated occurrences of the same name in the
+   * URL query string, e.g. {@code ?tag=a&tag=b}) do not match a plain parse of the URL query
+   * string alone, meaning the engine must have parsed the body itself to produce them.
    */
   private static boolean engineAlreadyExposesBody(HttpServletRequest req) {
-    Map<String, String> fromQueryString = decode(req.getQueryString());
+    Map<String, List<String>> fromQueryString = decodeMulti(req.getQueryString());
     for (Entry<String, String[]> entry : req.getParameterMap().entrySet()) {
-      String expected = fromQueryString.get(entry.getKey());
-      String[] actual = entry.getValue();
-      if (expected == null || actual.length != 1 || !expected.equals(actual[0])) return true;
+      List<String> expected = fromQueryString.getOrDefault(entry.getKey(), List.of());
+      if (!expected.equals(Arrays.asList(entry.getValue()))) return true;
     }
     return false;
   }
@@ -125,7 +128,11 @@ public final class QueryBodyParameters {
    * Reads the full request body as UTF-8, refusing to buffer more than {@link #MAX_BODY_BYTES}.
    */
   private static String readBody(HttpServletRequest req) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(req.getContentLength(), 0));
+    // Content-Length is client-supplied and untrusted: clamp it so a forged large value can't
+    // force an oversized allocation before the byte-counted loop below gets to enforce the cap.
+    int contentLength = req.getContentLength();
+    int initialCapacity = contentLength > 0 ? Math.min(contentLength, MAX_BODY_BYTES) : 8192;
+    ByteArrayOutputStream out = new ByteArrayOutputStream(initialCapacity);
     byte[] buffer = new byte[8192];
     int total = 0;
     try (InputStream in = req.getInputStream()) {
@@ -143,16 +150,31 @@ public final class QueryBodyParameters {
     return out.toString(StandardCharsets.UTF_8);
   }
 
-  /** Decodes an {@code application/x-www-form-urlencoded} string into a name-value map. */
+  /**
+   * Decodes an {@code application/x-www-form-urlencoded} string into a name-value map, collapsing
+   * repeated names to their last value.
+   */
   private static Map<String, String> decode(@Nullable String encoded) {
-    if (encoded == null || encoded.isEmpty()) return Map.of();
     Map<String, String> result = new LinkedHashMap<>();
+    decodeMulti(encoded).forEach((name, values) -> result.put(name, values.get(values.size() - 1)));
+    return result;
+  }
+
+  /**
+   * Decodes an {@code application/x-www-form-urlencoded} string into a name to values map,
+   * preserving every occurrence of a repeated name in encounter order.
+   */
+  private static Map<String, List<String>> decodeMulti(@Nullable String encoded) {
+    if (encoded == null || encoded.isEmpty()) return Map.of();
+    Map<String, List<String>> result = new LinkedHashMap<>();
     for (String pair : encoded.split("&")) {
       if (pair.isEmpty()) continue;
       int equals = pair.indexOf('=');
       String rawName = equals >= 0 ? pair.substring(0, equals) : pair;
       String rawValue = equals >= 0 ? pair.substring(equals + 1) : "";
-      result.put(URLDecoder.decode(rawName, StandardCharsets.UTF_8), URLDecoder.decode(rawValue, StandardCharsets.UTF_8));
+      String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
+      String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
+      result.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
     }
     return result;
   }
