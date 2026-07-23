@@ -114,4 +114,15 @@ class QueryBodyParametersTest {
 
     assertTrue(QueryBodyParameters.parse(req).isEmpty());
   }
+
+  @Test
+  void testParse_malformedPercentEscape_returnsEmptyWithoutThrowing() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=%2")
+        .build();
+
+    assertTrue(QueryBodyParameters.parse(req).isEmpty());
+  }
 }

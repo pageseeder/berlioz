@@ -92,8 +92,8 @@ public final class QueryBodyParameters {
     if (engineAlreadyExposesBody(req)) return Map.of();
     try {
       return decode(readBody(req));
-    } catch (IOException ex) {
-      LOGGER.warn("Unable to read QUERY request body for {}", req.getRequestURI(), ex);
+    } catch (IOException | IllegalArgumentException ex) {
+      LOGGER.warn("Unable to parse QUERY request body for {}", req.getRequestURI(), ex);
       return Map.of();
     }
   }
