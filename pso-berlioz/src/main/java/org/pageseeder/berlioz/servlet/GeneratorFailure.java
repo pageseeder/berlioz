@@ -26,6 +26,8 @@ import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
 
+import java.util.Map;
+
 /**
  * The framework error policy for a generator invocation.
  *
@@ -68,10 +70,25 @@ final class GeneratorFailure {
   }
 
   private static Response toResponse(Exception ex, DetailLevel level) {
-    if (GeneratorDispatch.useProblemFormat()) {
-      return Response.problem(toProblem(ex, level));
+    Response response = GeneratorDispatch.useProblemFormat()
+        ? Response.problem(toProblem(ex, level))
+        : Response.status(toLegacyStatus(ex));
+    return withExceptionHeaders(response, ex);
+  }
+
+  /**
+   * Carries any response headers set on an {@link HttpException} (e.g. {@code Retry-After}) onto
+   * the {@link Response} built from it, through the same header mechanism a generator would use
+   * by returning {@code Response.header(...)} directly.
+   */
+  private static Response withExceptionHeaders(Response response, Exception ex) {
+    HttpException signal = HttpException.findIn(ex);
+    if (signal == null) return response;
+    Response result = response;
+    for (Map.Entry<String, String> header : signal.headers().entrySet()) {
+      result = result.header(header.getKey(), header.getValue());
     }
-    return Response.status(toLegacyStatus(ex));
+    return result;
   }
 
   private static ProblemDetails toProblem(Exception ex, DetailLevel level) {

@@ -35,11 +35,13 @@ import org.pageseeder.berlioz.servlet.fixtures.DirectJsonGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.EchoXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.ParameterEchoXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.RedirectXmlGenerator;
+import org.pageseeder.berlioz.servlet.fixtures.RetryAfterJsonGenerator;
 
 class BerliozServletTest {
 
   private static final String ECHO_XML = EchoXmlGenerator.class.getName();
   private static final String CACHEABLE_XML = CacheableXmlGenerator.class.getName();
+  private static final String RETRY_AFTER_JSON = RetryAfterJsonGenerator.class.getName();
   private static final String REDIRECT_XML = RedirectXmlGenerator.class.getName();
   private static final String DIRECT_JSON = DirectJsonGenerator.class.getName();
   private static final String PARAMETER_ECHO_XML = ParameterEchoXmlGenerator.class.getName();
@@ -434,6 +436,23 @@ class BerliozServletTest {
     assertEquals("application/json", request.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE));
     assertEquals("application/problem+json;charset=UTF-8", recorder.contentType);
     assertTrue(recorder.content().startsWith("{"), recorder.content());
+  }
+
+  @Test
+  void doGet_jsonHandlerThrowsHttpExceptionWithHeader_propagatesRetryAfterHeader() throws Exception {
+    // generator-catch=false (writeConfig(true)) routes the error through checkAndSendError() ->
+    // sendError(), which wraps the original HttpException in a BerliozException; the response
+    // must still surface the Retry-After header via HttpException.findIn() unwrapping the cause.
+    writeConfig(true);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("retry-after", "get", "/retry-after", "handler", RETRY_AFTER_JSON));
+    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request("GET", "/retry-after.json"), recorder.build());
+
+    assertEquals(503, recorder.status);
+    assertEquals("30", recorder.header("Retry-After"));
   }
 
   @Test

@@ -22,6 +22,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.servlet.RequestDispatcher;
@@ -40,6 +41,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.error.DetailLevel;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.content.ServiceLoader;
@@ -810,8 +812,10 @@ public final class BerliozServlet extends HttpServlet {
     if (error == null && Json.isJsonMediaType(getBerliozConfig().getMediaType())) {
       DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
       ProblemDetails problem = Problems.forHttpError(code, message, extractErrorId(req, ex), ex, level);
+      HttpException signal = HttpException.findIn(ex);
+      Map<String, String> headers = signal != null ? signal.headers() : Map.of();
       logError(code, message, ex, "Berlioz sending problem JSON {} [{}]");
-      writeProblemJson(res, problem);
+      writeProblemJson(res, problem, headers);
       return;
     }
 
@@ -858,9 +862,15 @@ public final class BerliozServlet extends HttpServlet {
     }
   }
 
-  /** Writes a complete {@code application/problem+json} response directly to {@code res}. */
-  private static void writeProblemJson(HttpServletResponse res, ProblemDetails problem) {
+  /**
+   * Writes a complete {@code application/problem+json} response directly to {@code res}.
+   *
+   * <p>{@code extraHeaders} (e.g. {@code Retry-After} from an {@link HttpException}) is applied
+   * first so the framework-owned {@code Content-Type} set afterward always wins on a name clash.
+   */
+  private static void writeProblemJson(HttpServletResponse res, ProblemDetails problem, Map<String, String> extraHeaders) {
     try {
+      extraHeaders.forEach(res::setHeader);
       res.setStatus(problem.status());
       res.setContentType("application/problem+json");
       res.setCharacterEncoding(StandardCharsets.UTF_8.name());

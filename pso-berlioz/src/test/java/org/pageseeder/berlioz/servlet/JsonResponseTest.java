@@ -224,6 +224,20 @@ class JsonResponseTest {
   }
 
   @Test
+  void generate_generatorThrowsHttpExceptionWithHeader_propagatesRetryAfterHeader() {
+    JsonGenerator gen = (req, json) -> {
+      throw new HttpException("service busy", 503) {}.header("Retry-After", "30");
+    };
+    Service service = directGenerator(gen);
+    JsonResponse jr = new JsonResponse(req(), res(), config, matchFor(service), false);
+
+    jr.generate();
+
+    assertEquals(503, jr.getStatusCode());
+    assertEquals("30", jr.getHeaders().get("Retry-After"));
+  }
+
+  @Test
   void generate_generatorThrowsRuntimeException_setsInternalError() {
     JsonGenerator gen = (req, json) -> {
       throw new RuntimeException("unexpected");

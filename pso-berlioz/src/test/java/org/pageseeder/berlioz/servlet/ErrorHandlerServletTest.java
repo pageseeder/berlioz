@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
@@ -118,6 +119,49 @@ class ErrorHandlerServletTest {
   void testBerliozErrorIdConstant_isNonNull() {
     assertNotNull(ErrorHandlerServlet.BERLIOZ_ERROR_ID);
     assertFalse(ErrorHandlerServlet.BERLIOZ_ERROR_ID.isEmpty());
+  }
+
+  // Retry-After (and other) headers carried by the triggering HttpException
+
+  @Test
+  void handle_httpExceptionWithHeader_propagatesHeaderToResponse() throws Exception {
+    Exception cause = new HttpException("service busy", 503) {}.header("Retry-After", "30");
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 503)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Service busy")
+        .attribute(RequestDispatcher.ERROR_EXCEPTION, cause)
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+    new ErrorHandlerServlet().handle(req, res.build());
+    assertAll(
+        () -> assertEquals(503, res.status),
+        () -> assertEquals("30", res.header("Retry-After"))
+    );
+  }
+
+  @Test
+  void handle_httpExceptionWrappedInCause_stillPropagatesHeaderToResponse() throws Exception {
+    HttpException signal = new HttpException("service busy", 503) {}.header("Retry-After", "30");
+    Exception wrapper = new RuntimeException("wrapped", signal);
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 503)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Service busy")
+        .attribute(RequestDispatcher.ERROR_EXCEPTION, wrapper)
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+    new ErrorHandlerServlet().handle(req, res.build());
+    assertEquals("30", res.header("Retry-After"));
+  }
+
+  @Test
+  void handle_noHttpException_noExtraHeaders() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+    new ErrorHandlerServlet().handle(req, res.build());
+    assertNull(res.header("Retry-After"));
   }
 
   // Legacy format (opt-in since 0.14.0: berlioz.errors.problem = false)

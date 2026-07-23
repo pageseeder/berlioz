@@ -350,6 +350,20 @@ class XmlResponseTest {
   }
 
   @Test
+  void generate_directService_httpExceptionWithHeader_propagatesRetryAfterHeader() throws IOException {
+    XmlGenerator gen = (req, xml) -> {
+      throw new HttpException("service busy", 503) {}.header("Retry-After", "30");
+    };
+    Service service = directGenerator(gen);
+    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+    xr.generate();
+
+    assertEquals(503, xr.getStatusCode());
+    assertEquals("30", xr.getHeaders().get("Retry-After"));
+  }
+
+  @Test
   void generate_directService_runtimeException_internalServerError() throws IOException {
     XmlGenerator gen = (req, xml) -> {
       throw new RuntimeException("boom");

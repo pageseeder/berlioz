@@ -153,4 +153,59 @@ public final class HttpResponses {
     return allow.toString();
   }
 
+  /**
+   * Indicates whether the given string is a valid HTTP header field name (RFC 9110 §5.1 token).
+   *
+   * @param name the header name to check
+   * @return {@code true} if {@code name} is a non-empty valid token
+   */
+  public static boolean isValidHeaderName(String name) {
+    if (name.isEmpty()) return false;
+    for (int i = 0; i < name.length(); i++) {
+      if (!isHeaderNameChar(name.charAt(i))) return false;
+    }
+    return true;
+  }
+
+  private static boolean isHeaderNameChar(char c) {
+    if (c >= 'a' && c <= 'z') return true;
+    if (c >= 'A' && c <= 'Z') return true;
+    if (c >= '0' && c <= '9') return true;
+    switch (c) {
+      case '!':
+      case '#':
+      case '$':
+      case '%':
+      case '&':
+      case '\'':
+      case '*':
+      case '+':
+      case '-':
+      case '.':
+      case '^':
+      case '_':
+      case '`':
+      case '|':
+      case '~':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Indicates whether the given string is a valid HTTP header field value: no control characters
+   * other than horizontal tab, which rules out CR/LF header-injection payloads (RFC 9110 §5.5).
+   *
+   * @param value the header value to check
+   * @return {@code true} if {@code value} contains no disallowed control characters
+   */
+  public static boolean isValidHeaderValue(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if ((c < 0x20 && c != '\t') || c == 0x7f) return false;
+    }
+    return true;
+  }
+
 }

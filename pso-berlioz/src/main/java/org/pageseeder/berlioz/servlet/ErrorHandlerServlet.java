@@ -39,6 +39,7 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.ErrorID;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.DetailLevel;
+import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.LegacyError;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
@@ -318,6 +319,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
     String resolvedMediaType = (String) req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE);
     boolean jsonExpected = resolvedMediaType != null ? Json.isJsonMediaType(resolvedMediaType) : ".json".equals(ext);
 
+    // Extra response headers (e.g. Retry-After) carried by the HttpException that triggered this
+    // error, if any. ProblemDetails stays body-only per RFC 9457; this is the transport for
+    // headers that belong on the response itself.
+    Map<String, String> headers = resolveExceptionHeaders(req);
+
     // Reset the response (in case the ETag, etc. has been set...)
     res.reset();
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -326,7 +332,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // JSON is only available in the RFC 9457 Problem Details format; the legacy format has no
     // JSON representation, so a JSON-expecting request falls through to XML in that case.
     if (jsonExpected && GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
-      writeResponse(res, toProblemJson(req), "application/problem+json");
+      writeResponse(res, toProblemJson(req), "application/problem+json", headers);
       return;
     }
 
@@ -340,7 +346,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // failsafe stylesheet. This respects the content type whether dispatched via the .auto
     // error-page mechanism or forwarded directly from BerliozServlet (ERROR_HANDLER=true).
     if (!DEFAULT_EXTENSION.equals(ext) && !ext.isEmpty()) {
-      writeResponse(res, xml, fallbackType);
+      writeResponse(res, xml, fallbackType, headers);
       return;
     }
 
@@ -349,9 +355,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
     if (url != null) {
       String html = XsltTransformer.transformFailSafe(xml, url);
       if (Objects.equals(html, xml)) html = XsltTransformer.transformBuiltInFailSafe(xml);
-      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : fallbackType);
+      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : fallbackType, headers);
     } else {
-      writeResponse(res, xml, fallbackType);
+      writeResponse(res, xml, fallbackType, headers);
     }
   }
 
@@ -360,15 +366,25 @@ public final class ErrorHandlerServlet extends HttpServlet {
     if (res.isCommitted()) return;
     int code = getErrorCode(req);
     String xml = toXml(req);
+    Map<String, String> headers = resolveExceptionHeaders(req);
     res.reset();
     res.setStatus(code);
     String ext = getExtension(getOriginalURI(req));
     if (DEFAULT_EXTENSION.equals(ext) || ext.isEmpty()) {
       String html = XsltTransformer.transformBuiltInFailSafe(xml);
-      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : APPLICATION_XML);
+      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : APPLICATION_XML, headers);
     } else {
-      writeResponse(res, xml, APPLICATION_XML);
+      writeResponse(res, xml, APPLICATION_XML, headers);
     }
+  }
+
+  /**
+   * Returns the response headers carried by the {@link HttpException} that triggered this error,
+   * if the request's error exception is one; empty otherwise.
+   */
+  private static Map<String, String> resolveExceptionHeaders(HttpServletRequest req) {
+    HttpException signal = HttpException.findIn(getErrorException(req));
+    return signal != null ? signal.headers() : Map.of();
   }
 
   static void prepareErrorAttributes(HttpServletRequest req, String servletName, int statusCode,
@@ -392,7 +408,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
     }
   }
 
-  private static void writeResponse(HttpServletResponse res, String content, String mediaType) throws IOException {
+  /**
+   * Writes the error response body, applying {@code extraHeaders} first so the framework-owned
+   * headers set afterward ({@code Content-Type}, {@code Date}, {@code Cache-Control}) always win
+   * if a name collides.
+   */
+  private static void writeResponse(HttpServletResponse res, String content, String mediaType,
+                                    Map<String, String> extraHeaders) throws IOException {
+    extraHeaders.forEach(res::setHeader);
     res.setContentType(mediaType);
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     HttpResponses.setContentLength(res, content, StandardCharsets.UTF_8);
