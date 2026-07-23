@@ -44,6 +44,7 @@ import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpResponses;
+import org.pageseeder.berlioz.json.Json;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,6 +153,16 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   public static final String BERLIOZ_ERROR_ID = "org.pageseeder.berlioz.error_id";
 
+  /**
+   * The media type resolved by {@link BerliozServlet} from the matched service's configured
+   * content type (String), set before dispatching to this servlet. When present, this takes
+   * precedence over inferring the expected media type from the request URL's extension, which
+   * is unreliable for non-standard URL patterns. Absent for errors that reach this servlet
+   * directly via the container's {@code <error-page>} mechanism (unmapped paths, static-resource
+   * errors) without going through {@link BerliozServlet}.
+   */
+  public static final String BERLIOZ_ERROR_MEDIA_TYPE = "org.pageseeder.berlioz.error_media_type";
+
   static final String ERROR_RENDERING_DEPTH = "org.pageseeder.berlioz.error.rendering-depth";
 
   static final String ORIGINAL_ERROR_EXCEPTION = "org.pageseeder.berlioz.error.original-exception";
@@ -241,6 +252,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException      Should an I/O error occur.
    */
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; legacy fallback guarded here until then
   public void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
     // Grab the status code (Default to 200 OK)
@@ -298,13 +310,28 @@ public final class ErrorHandlerServlet extends HttpServlet {
       }
     }
 
-    // Generate error details as XML
-    String xml = toXml(req);
+    // Resolve the expected media type: prefer the value BerliozServlet resolved from the
+    // matched service's configured content type over the URL extension, which is unreliable
+    // for non-standard URL patterns. Falls back to extension inference when the error reaches
+    // this servlet directly via the container's <error-page> mechanism (no BerliozServlet
+    // involved, e.g. unmapped paths or static-resource errors).
+    String resolvedMediaType = (String) req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE);
+    boolean jsonExpected = resolvedMediaType != null ? Json.isJsonMediaType(resolvedMediaType) : ".json".equals(ext);
 
     // Reset the response (in case the ETag, etc. has been set...)
     res.reset();
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     res.setStatus(code);
+
+    // JSON is only available in the RFC 9457 Problem Details format; the legacy format has no
+    // JSON representation, so a JSON-expecting request falls through to XML in that case.
+    if (jsonExpected && GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
+      writeResponse(res, toProblemJson(req), "application/problem+json");
+      return;
+    }
+
+    // Generate error details as XML
+    String xml = toXml(req);
 
     // Write to the output
     String fallbackType = APPLICATION_XML;
@@ -345,7 +372,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   static void prepareErrorAttributes(HttpServletRequest req, String servletName, int statusCode,
-                                     String message, @Nullable Throwable ex) {
+                                     String message, @Nullable Throwable ex, @Nullable String mediaType) {
     req.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode);
     req.setAttribute(RequestDispatcher.ERROR_MESSAGE, message);
     if (req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI) == null) {
@@ -353,6 +380,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
     }
     if (req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME) == null) {
       req.setAttribute(RequestDispatcher.ERROR_SERVLET_NAME, servletName);
+    }
+    if (mediaType != null && req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE) == null) {
+      req.setAttribute(BERLIOZ_ERROR_MEDIA_TYPE, mediaType);
     }
     if (ex != null) {
       req.setAttribute(RequestDispatcher.ERROR_EXCEPTION, ex);
@@ -426,22 +456,28 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
+   * Builds the {@link ProblemDetails} for the given error, choosing the XSLT-specific or
+   * generic HTTP problem factory as appropriate.
+   */
+  private static ProblemDetails toProblemDetails(int code, @Nullable String message,
+                                                 @Nullable String berliozErrorId, @Nullable Throwable throwable) {
+    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
+    if (throwable instanceof XsltTransformException) {
+      XsltTransformException xslt = (XsltTransformException) throwable;
+      return Problems.forXsltError(code, berliozErrorId, xslt.transformerException(), level);
+    }
+    return Problems.forHttpError(code, message != null ? message : "", berliozErrorId, throwable, level);
+  }
+
+  /**
    * Serializes the error as an RFC 9457 {@code <problem>} XML document.
    */
   private static String toProblemXml(int code, @Nullable String message,
                                      @Nullable String berliozErrorId, @Nullable Throwable throwable) {
-    DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
     XmlStringBuilder xml = new XmlStringBuilder();
     try {
       xml.declaration();
-      ProblemDetails problem;
-      if (throwable instanceof XsltTransformException) {
-        XsltTransformException xslt = (XsltTransformException) throwable;
-        problem = Problems.forXsltError(code, berliozErrorId, xslt.transformerException(), level);
-      } else {
-        problem = Problems.forHttpError(code, message != null ? message : "", berliozErrorId, throwable, level);
-      }
-      xml.asXml(problem);
+      xml.asXml(toProblemDetails(code, message, berliozErrorId, throwable));
       xml.flush();
     } catch (Exception ex) {
       // ProblemDetails should not cause problem, but custom problem extensions might...
@@ -449,6 +485,27 @@ public final class ErrorHandlerServlet extends HttpServlet {
       return fallbackProblemXml(code);
     }
     return xml.toString();
+  }
+
+  /**
+   * Handles an HTTP error using servlet error request attributes, serialized as an RFC 9457
+   * {@code <problem>} JSON document.
+   *
+   * @param req The HTTP servlet request that caused the error.
+   * @return the error details as JSON
+   */
+  private static String toProblemJson(HttpServletRequest req) {
+    int code = getErrorCode(req);
+    String message = (String) req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
+    Throwable throwable = getErrorException(req);
+    String berliozErrorId = extractErrorId(req, throwable);
+    try {
+      return toProblemDetails(code, message, berliozErrorId, throwable).toJson();
+    } catch (Exception ex) {
+      // ProblemDetails should not cause problem, but custom problem extensions might...
+      LOGGER.warn("Unable to produce problem details JSON for status {}", code, ex);
+      return fallbackProblemJson(code);
+    }
   }
 
   /**
@@ -558,6 +615,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
         .toXml(xml);
     xml.flush();
     return xml.toString();
+  }
+
+  private static String fallbackProblemJson(int code) {
+    return ProblemDetails.of(code)
+        .type("urn:berlioz:problem:error")
+        .title("HTTP " + code)
+        .detail("Unable to serialize problem details.")
+        .toJson();
   }
 
 }

@@ -710,7 +710,8 @@ public final class BerliozServlet extends HttpServlet {
       Object existingMessage = req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
       String message = existingMessage instanceof String
           ? (String) existingMessage : "XSLT failed while rendering an error";
-      ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), status, message, original);
+      ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), status, message, original,
+          getBerliozConfig().getMediaType());
       try {
         ErrorHandlerServlet.handleTerminal(req, res);
       } catch (IOException io) {
@@ -818,7 +819,8 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   private void prepareErrorAttributes(HttpServletRequest req, int statusCode, String message, @Nullable Throwable ex) {
-    ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), statusCode, message, ex);
+    ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), statusCode, message, ex,
+        getBerliozConfig().getMediaType());
   }
 
   /**

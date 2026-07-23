@@ -241,6 +241,24 @@ class ErrorHandlerServletTest {
     );
   }
 
+  @Test
+  void handle_legacyFormat_jsonExpected_fallsBackToXml() throws Exception {
+    // Legacy error format has no JSON representation, so a JSON-expecting request still gets XML.
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Resource not found")
+        .attribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE, "application/json")
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+    new ErrorHandlerServlet().handle(req, res.build());
+    assertAll(
+        () -> assertEquals(404, res.status),
+        () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+        () -> assertTrue(res.content().contains("http-class=\"client-error\""),
+            "legacy XML embedded in the failsafe HTML should still be present")
+    );
+  }
+
   } // end WithLegacyFormat
 
   @Test
@@ -349,6 +367,61 @@ class ErrorHandlerServletTest {
           () -> assertTrue(body.contains("401 - Unauthorized"), "status and title should appear in heading"),
           () -> assertTrue(body.contains("Authentication required"), "detail should appear as message"),
           () -> assertTrue(body.contains("urn:berlioz:problem:error"), "generic problem type should be present")
+      );
+    }
+
+    // Resolved media type (BERLIOZ_ERROR_MEDIA_TYPE) takes precedence over URL extension
+
+    @Test
+    void handle_resolvedMediaTypeJson_emitsProblemJsonRegardlessOfExtension() throws Exception {
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Resource not found")
+          .attribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE, "application/json")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+      new ErrorHandlerServlet().handle(req, res.build());
+      String body = res.content();
+      assertAll(
+          () -> assertEquals(404, res.status),
+          () -> assertEquals("application/problem+json;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.startsWith("{"), "should be a JSON document"),
+          () -> assertTrue(body.contains("\"status\":404") || body.contains("\"status\": 404"),
+              "status should be present"),
+          () -> assertTrue(body.contains("Resource not found"), "detail should be present")
+      );
+    }
+
+    @Test
+    void handle_extensionJson_emitsProblemJsonWhenNoResolvedMediaType() throws Exception {
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.json")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+      new ErrorHandlerServlet().handle(req, res.build());
+      String body = res.content();
+      assertAll(
+          () -> assertEquals(500, res.status),
+          () -> assertEquals("application/problem+json;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.startsWith("{"), "should be a JSON document")
+      );
+    }
+
+    @Test
+    void handle_resolvedMediaTypeXml_overridesJsonExtension() throws Exception {
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.json")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .attribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE, "application/xml")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+      new ErrorHandlerServlet().handle(req, res.build());
+      String body = res.content();
+      assertAll(
+          () -> assertEquals(500, res.status),
+          () -> assertEquals("application/xml;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.contains("<problem"), "should be the XML problem document")
       );
     }
   }

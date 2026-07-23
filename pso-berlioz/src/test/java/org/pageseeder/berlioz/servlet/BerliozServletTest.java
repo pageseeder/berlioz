@@ -416,6 +416,27 @@ class BerliozServletTest {
   }
 
   @Test
+  void doGet_jsonConfiguredServlet_errorRedispatch_resolvesJsonMediaTypeForErrorHandler() throws Exception {
+    // Simulates the container re-dispatching to this servlet as its own <error-page> target
+    // (RequestDispatcher.ERROR_STATUS_CODE already set), which routes through dispatchError()
+    // rather than the direct writeProblemJson() shortcut. ErrorHandlerServlet must still resolve
+    // JSON from BerliozConfig's configured media type rather than the .json URL extension alone.
+    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
+    HttpServletRequest request = ServletTestSupport.request()
+        .method("GET").uri("/missing.json")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request, recorder.build());
+
+    assertEquals(404, recorder.status);
+    assertEquals("application/json", request.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE));
+    assertEquals("application/problem+json;charset=UTF-8", recorder.contentType);
+    assertTrue(recorder.content().startsWith("{"), recorder.content());
+  }
+
+  @Test
   void doGet_jsonOnlyHandlerOnJsonServletReturnsOk() throws Exception {
     writeServices(service("json-ok", "get", "/json-ok", "handler", DIRECT_JSON));
     initServlet(Map.of("content-type", "application/json;charset=utf-8"));
