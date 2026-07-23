@@ -33,21 +33,29 @@ Completed release changes:
 - Modernized built-in system and diagnostic generators, including direct JSON output where supported.
 - Improved response efficiency and correctness with configurable gzip thresholds and UTF-8-aware content lengths.
 
-### 0.14.1: Runtime Introspection And HTTP QUERY
+### 0.14.1: Runtime Introspection And HTTP QUERY ✓ Planned work complete, pending release
 
-Development is now on 0.14.1-SNAPSHOT. This release should be deliberately focused: complete the runtime diagnostics model, add core HTTP `QUERY` dispatch, and resolve the smaller output/error contracts without taking on the larger overlay and configuration-lifecycle changes.
+0.14.1-SNAPSHOT's planned scope — the runtime diagnostics model, core HTTP `QUERY` dispatch, and the smaller output/error contracts — is complete. No further coding work is planned before release; the overlay and configuration-lifecycle work stays deferred to 0.14.2/0.14.3.
 
-Planned work:
+Completed so far:
 
-- Complete service and generator capability metadata in the live diagnostic model, including each generator's explicit supported-output set.
-- Move reusable service metadata serialization to `OutputWriter` so `GetLiveServices` and `GetMatchingService` can provide stable XML and JSON representations.
-- Keep `GetServices` as the raw source-configuration view; runtime-derived capabilities belong in the live diagnostic generators.
-- Improve warnings for disjoint output sets, invalid direct services, duplicate mappings, and overridden mappings, with stable-schema tests at the diagnostic-generator level.
-- Add `QUERY` as a first-class mappable method, including dispatch, matching, `Allow`, `OPTIONS`, and 404-vs-405 coverage.
-- Exclude `QUERY` from ETag caching until a body-aware cache key is designed, and defer form-body parameter emulation because it may consume the generator's request stream.
-- Preserve XML/XSLT fallback for JSON-configured requests throughout 0.14.x; revisit it with content negotiation in 1.0.
-- Keep identity transformation explicitly XML-based and pass the resolved expected media type to the error pipeline instead of relying only on URL-extension inference.
-- Keep Problem Details body-only; transport response headers such as `Retry-After` through response/outcome metadata.
+- Added the explicit supported-output set to every generator entry in `Service.writeTo()`, including custom `BerliozGenerator` implementations whose capabilities cannot be inferred from the type label alone.
+- Migrated service metadata serialization from XML-only `Service.toXml()` to format-agnostic `Service.writeTo(OutputWriter, ...)`, and converted `GetLiveServices` and `GetMatchingService` to `Generator` implementations with equivalent, stable XML and JSON shapes (plural JSON array keys: `generators`, `parameters`, `urls`).
+- Fixed a pre-existing bug where the service `cache-control` diagnostic attribute reported the configured string's length instead of its value.
+- Gave `GetMatchingService` a single stable root shape (`matched` boolean field) instead of two different root elements for the found/not-found cases, so JSON output is unambiguous.
+- Kept `GetServices` as the raw source-configuration view; runtime-derived capabilities remain confined to the live diagnostic generators.
+- Extracted the disjoint-output-set and invalid-direct-service warning conditions into testable static methods (`Service.disjointOutputWarning()`, `Service.invalidDirectWarning()`), and extended the invalid-direct check to also reject a direct service whose single generator supports no output format (previously registered silently).
+- Improved the service-registry override warning (`ServiceRegistry.overrideWarning()`) to name both the replaced and replacing service, not just the replaced one.
+- Added test coverage that didn't exist before: per-generator/service supported-output schema tests (XML and JSON), duplicate-pattern-within-file registration behavior, and registry-level mapping-override behavior.
+- Added `QUERY` as a first-class mappable `HttpMethod`, so `ServiceRegistry`, `ServicesHandler10` (`method="query"` in `services.xml`, DTD updated), `GetLiveServices`, and `GetMatchingService` all support it with no special-casing beyond the enum constant; `BerliozServlet`'s generic `service()` dispatch already routes it to the same `process()` path as the other methods since there is no `HttpServlet.doQuery()` to override.
+- Treated `QUERY` as safe/idempotent alongside `GET`/`HEAD` in `BerliozServlet.handleNoMatch()`: an unmatched `QUERY` request always gets a plain `404` rather than probing other registered methods for a `405`.
+- Excluded `QUERY` from ETag/conditional-request caching in both `processJson()` and `processXml()` pending a body-aware cache key design. While fixing this, found and fixed a pre-existing bug in `processXml()`: for any non-GET/HEAD method against a cacheable service, the `cacheable` flag never got reset to `false` when the ETag block was skipped, so neither cache headers nor the `no-cache` fallback were written; `processJson()` did not have this bug. Both methods now compute `cacheable` (including the method check) up front.
+- Added test coverage for `QUERY` dispatch/matching, the safe-method 404-vs-405 behavior, `Allow`/`OPTIONS` including `QUERY`, and the no-ETag/no-cache behavior for `QUERY` against a cacheable service.
+- Added `application/x-www-form-urlencoded` body-to-parameter emulation for `QUERY` (new `QueryBodyParameters` class) so generators can read `QUERY` payloads through the normal `Request` parameter API. Unconditional rather than a `BerliozOption`: since `QUERY` dispatch is new, no existing generator can depend on the body being left alone, and the engine-detection check (comparing `getParameterMap()` against a plain parse of the URL query string) is itself the cheap, self-limiting guard — the class becomes a no-op the moment a container adds native `QUERY` support, with no configuration to revisit.
+- Passed the resolved expected media type to the error pipeline instead of relying only on URL-extension inference: `BerliozServlet` now records the matched servlet mapping's configured `BerliozConfig.getMediaType()` onto the request as `ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE` (via the shared `prepareErrorAttributes()`) before forwarding or handling an error, and `ErrorHandlerServlet.handle()` prefers that attribute over guessing from the URL extension. Extension inference remains the fallback for errors that reach the servlet directly through the container's `<error-page>` mechanism (unmapped paths, static-resource errors) with no `BerliozServlet` involved. Also added the JSON branch that `ErrorHandlerServlet` was missing entirely: a resolved or inferred JSON expectation now emits `application/problem+json` when the RFC 9457 Problem Details format is active; the legacy XML-only format has no JSON representation, so it still falls through to XML in that case.
+- Kept Problem Details body-only and added `HttpException.header(name, value)`/`headers()` as the transport for response headers such as `Retry-After` that belong on the response itself rather than the RFC 9457 body. Threaded through all three paths that can turn an `HttpException` into a response: `GeneratorFailure` now folds the exception's headers onto the `Response` it builds (reaching the client through the existing `Response.header()`/`GeneratorDispatch.accumulateHeaders()` mechanism generators already use), and both `BerliozServlet.writeProblemJson()` and `ErrorHandlerServlet`'s `writeResponse()` apply them directly for the framework's own synthetic error paths. Added `HttpException.findIn(Throwable)` to recover the signal even after it has been wrapped in a `BerliozException` on the way to a servlet-level handler, so headers survive that indirection too. Extracted the header name/value validation `Response.header()` already had into `HttpResponses.isValidHeaderName()`/`isValidHeaderValue()` so `HttpException.header()` enforces the same CRLF-injection guard rather than duplicating it.
+
+Retained decision (not a task): preserve the XML/XSLT fallback for JSON-configured requests throughout 0.14.x; revisit only with content negotiation in 1.0.
 
 ### 0.14.2: Classpath Overlay Discovery
 
@@ -244,25 +252,18 @@ Done:
 
 The result is predictable, configurable error presentation that helps developers during development while protecting production environments from information leakage. Problem Details became the default in 0.14.0 and the legacy non-Problem-Details format is now deprecated. It should be removed only after a clear migration window; until then it uses the unified `<error>` element rather than the older `<server-error>` / `<client-error>` names.
 
-### 3. Service Metadata And Diagnostics
+### 3. Service Metadata And Diagnostics ✓ Completed In 0.14.1
 
 Service inspection is becoming more important now that services can expose different output formats and response modes.
 
 Already done:
 
-- `Service.toXml()` exposes service identifier, group, method, URI templates, direct mode, cacheability, cache policy, response-code rule, and the service's supported-output intersection.
+- `Service.writeTo(OutputWriter, ...)` exposes service identifier, group, method, URI templates, direct mode, cacheability, cache policy, response-code rule, and both the service's supported-output intersection and each generator's own explicit supported-output set (including custom `BerliozGenerator` implementations, whose capabilities cannot be inferred from the type label alone).
 - Generator entries expose class, name, target, type, cacheability, status participation, and configured parameters.
-- `GetLiveServices` and `GetMatchingService` serialize the effective in-memory registry, while `GetServices` deliberately copies the source configuration.
-
-0.14.1 work:
-
-- Add the explicit supported-output set to every generator entry, including custom `BerliozGenerator` implementations whose capabilities cannot be inferred from the type label alone.
-- Introduce reusable `OutputWriter` serialization for effective service metadata.
-- Convert `GetLiveServices` and `GetMatchingService` to format-agnostic generators with equivalent XML and JSON shapes.
-- Keep runtime metadata in diagnostic output rather than adding it to normal application responses.
-- Keep `GetServices` as a faithful source view rather than injecting runtime-derived attributes into copied configuration XML.
-- Improve diagnostic warnings for disjoint output sets, invalid direct services, duplicate mappings, and mapping overrides.
-- Add stable-schema tests around the public diagnostic generators.
+- `GetLiveServices` and `GetMatchingService` are format-agnostic `Generator` implementations that serialize the effective in-memory registry with equivalent, stable XML and JSON shapes; `GetServices` deliberately continues to copy the source configuration and carries no runtime-derived attributes.
+- `GetMatchingService` reports a single stable root shape (`matched` boolean) rather than two different root elements for the found/not-found cases, keeping its JSON output unambiguous.
+- Diagnostic warnings for disjoint output sets and invalid direct services are computed by testable static methods (`Service.disjointOutputWarning()`, `Service.invalidDirectWarning()`); the invalid-direct check also rejects a direct service whose single generator supports no output format. The registry override warning (`ServiceRegistry.overrideWarning()`) now names both the replaced and replacing service.
+- Stable-schema XML/JSON tests exist for `Service.writeTo()`, `GetLiveServices`, and `GetMatchingService`, plus registration-behavior tests for duplicate patterns within a file and mapping overrides across registrations.
 
 This makes services easier to inspect, document, test, and debug without adding metadata to every normal response or introducing heavy runtime machinery.
 
@@ -328,21 +329,21 @@ The first implementation should keep the constraint language small and declarati
 
 The diagnostic generator should emit the current validation report as XML, with JSON available through the normal output pipeline. It should be opt-in or intended for admin-only services.
 
-### 13. HTTP QUERY Method Support
+### 13. HTTP QUERY Method Support ✓ Completed In 0.14.1
 
-Several servlet containers are adding support for the HTTP `QUERY` method (a safe, idempotent method with a request body, intended to replace GET-with-oversized-query-string and ad-hoc POST-as-GET tunneling). Berlioz should support `QUERY` as a first-class mappable method.
+Several servlet containers are adding support for the HTTP `QUERY` method (a safe, idempotent method with a request body, intended to replace GET-with-oversized-query-string and ad-hoc POST-as-GET tunneling). Berlioz supports `QUERY` as a first-class mappable method.
 
-Already generic:
+Done:
 
-- `ServiceRegistry` and `ServicesHandler10` are keyed off `HttpMethod` generically, so registering and matching `QUERY` services requires no structural change beyond adding the enum constant.
+- Added `QUERY` to `HttpMethod` as mappable (`HttpMethod.java`), alongside `GET`, `POST`, `PUT`, `PATCH`, `DELETE`; `ServiceRegistry` and `ServicesHandler10` were already keyed off `HttpMethod` generically, so registering and matching `QUERY` services required no structural change beyond the enum constant (plus allowing `query` in the `services-1.0.dtd` `method` attribute).
+- In `BerliozServlet`, `QUERY` is treated as safe/idempotent for `405`-vs-`404` handling (`handleNoMatch`): an unmatched `QUERY` request always gets a plain `404` rather than probing other registered methods for a `405`, the same treatment as `GET`/`HEAD`. The current Servlet 4.0 API has no `HttpServlet.doQuery()` method to override; Berlioz's generic `service()` dispatch already routes `QUERY` through the same `process()` path as the other methods.
+- Did **not** extend the existing `GET`/`HEAD` ETag caching path (`processJson`/`processXml`) to `QUERY`: the current ETag is derived from the URL alone, so two different `QUERY` bodies against the same URL would incorrectly share a cached response. Caching `QUERY` will require hashing the request body into the ETag seed, deferred until that design exists.
+- Added test coverage for `QUERY` dispatch, matching, 404-vs-405 behavior, the `Allow`/`OPTIONS` headers, and the no-ETag/no-cache behavior against a cacheable service.
+- Added `application/x-www-form-urlencoded` body-to-parameter emulation. `QueryBodyParameters` (in `org.pageseeder.berlioz.http`) checks whether the servlet engine already exposes body parameters through `getParameterMap()` — by comparing it against a plain parse of the URL query string alone — and only reads and parses the body itself when the engine clearly has not; a container with native `QUERY` support is left untouched. No `BerliozOption` gate: since `QUERY` dispatch is new in this release, no existing generator can be relying on the body being left alone, and the engine-detection check is itself the safety net, so an on/off switch would only add configuration surface without adding safety. Wired into `HttpRequestWrapper.toParameters()` (lowest precedence, below the URL query string and URI template variables) so the parsed values reach generators through the existing `Request`/`ContentRequest` parameter API with no new generator-facing surface.
 
-Next work:
+Still deferred:
 
-- Add `QUERY` to `HttpMethod` as mappable (`HttpMethod.java`), alongside `GET`, `POST`, `PUT`, `PATCH`, `DELETE`.
-- In `BerliozServlet`, treat `QUERY` as safe/idempotent for `405`-vs-`404` handling (`handleNoMatch`). The current Servlet 4.0 API has no `HttpServlet.doQuery()` method to override; Berlioz's generic `service()` dispatch already handles the method.
-- Do **not** extend the existing `GET`/`HEAD` ETag caching path (`processJson`/`processXml`) to `QUERY` without further design: the current ETag is derived from the URL alone, so two different `QUERY` bodies against the same URL would incorrectly share a cached response. Caching `QUERY` requires hashing the request body into the ETag seed.
-- Defer `application/x-www-form-urlencoded` body-to-parameter emulation. Draining the request stream can prevent a generator from reading the body and container-native feature detection is fragile. If later evidence justifies a stopgap, it must be explicit opt-in and limited to that media type.
-- Add test coverage for `QUERY` dispatch, matching, 404-vs-405 behavior, and the `Allow`/`OPTIONS` headers.
+- A body-aware ETag/cache key design for `QUERY` — see above.
 
 ### 6. Finish Direct Output And Raw Output Support
 
@@ -505,4 +506,4 @@ Likely outcome:
 - Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
 - ~~Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses?~~ Decided: `minimal` suppresses only framework-internal diagnostics (stack traces, exception class, HTTP headers and parameters). The `detail` member in RFC 9457 responses always reflects the error message passed to `Problems.forHttpError()`, which is the HTTP status phrase — safe for production.
 - Should `QUERY` responses be cacheable, and if so should the ETag seed incorporate a hash of the request body?
-- ~~Should the `application/x-www-form-urlencoded` `QUERY` body-parameter stopgap be always-on, or an explicit opt-in given that feature-detecting container-native `QUERY` parsing is inherently fragile?~~ Decided for 0.14.1: defer it; any later stopgap must be explicit opt-in.
+- ~~Should the `application/x-www-form-urlencoded` `QUERY` body-parameter stopgap be always-on, or an explicit opt-in given that feature-detecting container-native `QUERY` parsing is inherently fragile?~~ Decided for 0.14.1: always-on, no `BerliozOption`. There is no backward-compatibility risk to gate against — `QUERY` dispatch is new in this same release, so no existing generator can depend on the body being left untouched — and the container-detection check (comparing `getParameterMap()` against a plain parse of the URL query string) is a reliable data comparison, not a fragile stream-consumption probe, so it is safe to rely on unconditionally.
