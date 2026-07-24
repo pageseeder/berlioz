@@ -86,7 +86,8 @@ final class HttpExceptionTest {
   @Test
   void headers_returnsUnmodifiableView() {
     HttpException ex = new HttpException("busy", 503) {}.header("Retry-After", "30");
-    assertThrows(UnsupportedOperationException.class, () -> ex.headers().put("X", "y"));
+    Map<String, String> headers = ex.headers();
+    assertThrows(UnsupportedOperationException.class, () -> headers.put("X", "y"));
   }
 
   // findIn ---------------------------------------------------------------------------------------
