@@ -30,6 +30,7 @@ import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.xml.BerliozEntityResolver;
@@ -52,7 +53,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.1
  * @since 0.6
  */
 @SuppressWarnings("java:S6548")
@@ -81,6 +82,13 @@ public enum ServiceLoader {
   private volatile boolean loaded = false;
 
   /**
+   * Warnings collected while parsing the services configuration files during the last successful
+   * {@link #load()} or {@link #load(File)} call (e.g. a service that could not be registered
+   * because it was misconfigured). Empty if the last load reported no warnings.
+   */
+  private volatile List<CollectedError<SAXParseException>> lastWarnings = List.of();
+
+  /**
    * @return The service loader
    */
   public static ServiceLoader getInstance() {
@@ -94,6 +102,23 @@ public enum ServiceLoader {
    */
   public ServiceRegistry getDefaultRegistry() {
     return this.services;
+  }
+
+  /**
+   * Returns the warnings collected while parsing the services configuration during the last
+   * successful load.
+   *
+   * <p>These do not prevent Berlioz from starting, but generally indicate that one or more
+   * services were not registered (e.g. a service configured for direct output whose generator
+   * supports no output format). This is the only place besides the logs where such issues can be
+   * discovered.
+   *
+   * @return the warnings from the last load, or an empty list if there were none.
+   *
+   * @since 0.14.1
+   */
+  public List<CollectedError<SAXParseException>> getLastLoadWarnings() {
+    return this.lastWarnings;
   }
 
   /**
@@ -119,9 +144,12 @@ public enum ServiceLoader {
    */
   public synchronized void load() throws BerliozException {
     List<File> files = listServiceFiles();
+    List<CollectedError<SAXParseException>> warnings = new ArrayList<>();
     for (File f : files) {
       load(f);
+      warnings.addAll(this.lastWarnings);
     }
+    this.lastWarnings = List.copyOf(warnings);
   }
 
   /**
@@ -204,6 +232,7 @@ public enum ServiceLoader {
       LOGGER.error("An I/O error occurred while reading XML service configuration: {}", ex.getMessage());
       throw new BerliozException("Unable to read services configuration file.", ex, BerliozErrorID.SERVICES_NOT_FOUND);
     }
+    this.lastWarnings = List.copyOf(collector.getErrors());
     this.services.touch();
   }
 
@@ -214,6 +243,7 @@ public enum ServiceLoader {
     LOGGER.info("Clearing content manager");
     this.services.clear();
     this.loaded = false;
+    this.lastWarnings = List.of();
   }
 
   // Inner class to determine which handler to use --------------------------------------------------

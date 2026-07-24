@@ -32,6 +32,8 @@ import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.generator.GetServices;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.util.CollectedError;
+import org.xml.sax.SAXParseException;
 
 class ServiceLoaderTest {
 
@@ -107,6 +109,24 @@ class ServiceLoaderTest {
     Assertions.assertNotNull(match, "The first service should still be registered for the pattern");
     Assertions.assertEquals("first", match.service().id(),
         "The duplicate pattern should be dropped from the second service, leaving the first registered");
+  }
+
+  @Test
+  void testLoad_invalidDirectService_notRegisteredButWarningRetained() throws BerliozException {
+    // Non-strict mode: an invalid direct service is a warning, not a fatal error.
+    GlobalSettings.setup((InitEnvironment) null);
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-invalid-direct.xml"));
+
+    MatchingService match = loader.getDefaultRegistry().get("/no-output", HttpMethod.GET);
+    Assertions.assertNull(match, "A direct service whose generator supports no output format must not be registered");
+
+    List<CollectedError<SAXParseException>> warnings = loader.getLastLoadWarnings();
+    Assertions.assertFalse(warnings.isEmpty(), "The rejection must be discoverable via getLastLoadWarnings(), not just the logs");
+    boolean hasExpectedWarning = warnings.stream()
+        .anyMatch(w -> w.error().getMessage() != null && w.error().getMessage().contains("no-output")
+            && w.error().getMessage().contains("no output format"));
+    Assertions.assertTrue(hasExpectedWarning, "Expected a warning explaining why 'no-output' was not registered");
   }
 
   // Namespace tests

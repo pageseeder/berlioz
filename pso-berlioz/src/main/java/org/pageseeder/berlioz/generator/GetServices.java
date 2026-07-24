@@ -26,9 +26,11 @@ import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.content.XmlGenerator;
 import org.pageseeder.berlioz.error.DetailLevel;
+import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.SHA256;
 import org.pageseeder.berlioz.xml.XmlCopier;
 import org.pageseeder.berlioz.xml.XmlWriter;
+import org.xml.sax.SAXParseException;
 
 /**
  * Returns the current service configuration as XML.
@@ -55,6 +57,17 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  * {@code berlioz.errors.detail} option is set to {@code standard} or {@code full}; a malformed
  * services file never fails this generator, it only replaces that file's content with this element.
  *
+ * <h3>Registration warnings</h3>
+ * <p>Configuration issues that did not prevent Berlioz from starting, but caused one or more
+ * services not to be registered (e.g. a direct service whose generator supports no output format),
+ * are reported as:
+ * <pre>{@code <warnings>
+ *   <warning line="[line]">[message]</warning>
+ * </warnings>}</pre>
+ * <p>The {@code warnings} element is omitted when the last load reported none. The {@code line}
+ * attribute is only included when {@code berlioz.errors.detail} is {@code standard} or
+ * {@code full}.
+ *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
  * <pre>{@code <generator class="org.pageseeder.berlioz.generator.GetServices"
@@ -65,7 +78,7 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.1
  * @since 0.8
  */
 public final class GetServices implements XmlGenerator, Cacheable {
@@ -95,6 +108,22 @@ public final class GetServices implements XmlGenerator, Cacheable {
       xml.openElement("service-modules", true);
       for (int i = 1; i < files.size(); i++) {
         XmlCopier.copyTo(files.get(i), xml, includeDetails);
+      }
+      xml.closeElement();
+    }
+
+    List<CollectedError<SAXParseException>> warnings = ServiceLoader.getInstance().getLastLoadWarnings();
+    if (!warnings.isEmpty()) {
+      xml.openElement("warnings", true);
+      for (CollectedError<SAXParseException> warning : warnings) {
+        SAXParseException ex = warning.error();
+        xml.openElement("warning", false);
+        if (includeDetails && ex.getLineNumber() >= 0) {
+          xml.attribute("line", ex.getLineNumber());
+        }
+        String message = ex.getMessage();
+        xml.text(message != null ? message : "(No message)");
+        xml.closeElement();
       }
       xml.closeElement();
     }
