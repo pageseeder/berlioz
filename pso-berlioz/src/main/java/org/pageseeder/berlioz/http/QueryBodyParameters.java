@@ -49,7 +49,7 @@ import org.pageseeder.berlioz.error.ProblemDetails;
  *
  * <p>Reading the body does consume it, so a {@code QUERY} generator that wants to read a
  * {@code application/x-www-form-urlencoded} body itself (e.g. for multi-valued fields, which this
- * class collapses to the last value, matching {@code HttpRequestWrapper}'s existing behaviour for
+ * class collapses to the first value, matching {@code HttpRequestWrapper}'s existing behaviour for
  * query-string and POST parameters) will find it already drained. A generator using any other
  * content type is untouched.
  *
@@ -169,7 +169,7 @@ public final class QueryBodyParameters {
 
   /**
    * Decodes an {@code application/x-www-form-urlencoded} string into a name-value map, collapsing
-   * repeated names to their last value.
+   * repeated names to their first value.
    */
   private static Map<String, String> decode(@Nullable String encoded) {
     if (encoded == null || encoded.isEmpty()) return Map.of();
@@ -190,7 +190,7 @@ public final class QueryBodyParameters {
         String rawValue = equals < end ? encoded.substring(equals + 1, end) : "";
         String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
         String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
-        result.put(name, value);
+        result.putIfAbsent(name, value);
       }
       if (end == encoded.length()) break;
       start = end + 1;

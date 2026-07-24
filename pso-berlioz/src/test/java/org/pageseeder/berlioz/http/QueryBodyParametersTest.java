@@ -58,7 +58,7 @@ class QueryBodyParametersTest {
   }
 
   @Test
-  void testParse_repeatedBodyParameter_lastValueWins() {
+  void testParse_repeatedBodyParameter_firstValueWins() {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
         .contentType("application/x-www-form-urlencoded")
@@ -67,7 +67,7 @@ class QueryBodyParametersTest {
 
     Map<String, String> params = QueryBodyParameters.parse(req);
 
-    assertEquals("last", params.get("q"));
+    assertEquals("first", params.get("q"));
     assertEquals(1, params.size());
   }
 

@@ -1,8 +1,14 @@
 package org.pageseeder.berlioz.servlet;
 
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.furi.URIPattern;
+import org.pageseeder.berlioz.furi.URIResolveResult;
+import org.pageseeder.berlioz.furi.URIResolver;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -64,5 +70,24 @@ class HttpRequestWrapperTest {
         .pathInfo(null)
         .build();
     assertEquals("/api/users", HttpRequestWrapper.getBerliozPath(req));
+  }
+
+  @Test
+  void testToParameters_nativeRepeatedBodyParameter_firstValueWins() {
+    HttpServletRequest base = ServletTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=raw-body-should-be-ignored")
+        .build();
+    HttpServletRequest req = new HttpServletRequestWrapper(base) {
+      @Override
+      public Map<String, String[]> getParameterMap() {
+        return Map.of("q", new String[]{"first", "last"});
+      }
+    };
+    URIPattern pattern = new URIPattern("/search");
+    URIResolveResult result = new URIResolver("/search").resolve(pattern);
+
+    assertEquals("first", HttpRequestWrapper.toParameters(req, result).get("q"));
   }
 }
