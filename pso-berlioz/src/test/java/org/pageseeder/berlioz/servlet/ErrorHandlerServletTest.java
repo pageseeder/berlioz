@@ -286,8 +286,9 @@ class ErrorHandlerServletTest {
   }
 
   @Test
-  void handle_legacyFormat_jsonExpected_fallsBackToXml() throws Exception {
-    // Legacy error format has no JSON representation, so a JSON-expecting request still gets XML.
+  void handle_legacyFormat_jsonExpected_stillEmitsProblemJson() throws Exception {
+    // berlioz.errors.problem=false only restores the legacy XML/HTML output; there was never a
+    // legacy JSON representation, so a JSON-expecting request still gets problem+json.
     HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
         .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
         .attribute(RequestDispatcher.ERROR_MESSAGE, "Resource not found")
@@ -295,11 +296,12 @@ class ErrorHandlerServletTest {
         .build();
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
     new ErrorHandlerServlet().handle(req, res.build());
+    String body = res.content();
     assertAll(
         () -> assertEquals(404, res.status),
-        () -> assertEquals("text/html;charset=UTF-8", res.contentType),
-        () -> assertTrue(res.content().contains("http-class=\"client-error\""),
-            "legacy XML embedded in the failsafe HTML should still be present")
+        () -> assertEquals("application/problem+json;charset=UTF-8", res.contentType),
+        () -> assertTrue(body.startsWith("{"), "should be a JSON document"),
+        () -> assertTrue(body.contains("Resource not found"), "detail should be present")
     );
   }
 

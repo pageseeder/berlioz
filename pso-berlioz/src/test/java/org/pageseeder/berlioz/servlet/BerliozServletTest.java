@@ -324,6 +324,31 @@ class BerliozServletTest {
   }
 
   @Test
+  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; covers legacy migration path
+  void doGet_jsonServletServiceLoadError_legacyFormatStillWritesProblemJson() throws Exception {
+    // The deprecated berlioz.errors.problem=false escape hatch only restores the legacy XML/HTML
+    // output; there was never a legacy JSON representation, so the direct-error shortcut in
+    // BerliozServlet.sendError() must keep emitting problem+json regardless of the flag.
+    writeConfig(true, false);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(String.join("\n",
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+        "<service-config version=\"1.0\">",
+        "  <services group=\"default\">",
+        "    <service id=\"broken\" method=\"get\">"));
+    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request("GET", "/broken.json"), recorder.build());
+
+    String body = recorder.content();
+    assertEquals(503, recorder.status);
+    assertEquals("application/problem+json;charset=UTF-8", recorder.contentType);
+    assertTrue(body.contains("\"type\":\"urn:berlioz:problem:services-malformed\""), body);
+    assertTrue(body.contains("\"status\":503"), body);
+  }
+
+  @Test
   void doGet_jsonOnlyHandlerOnXmlServletReturnsNotFound() throws Exception {
     writeServices(service("json-only", "get", "/json-only", "handler", DIRECT_JSON));
     initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
@@ -544,11 +569,15 @@ class BerliozServletTest {
   }
 
   private void writeConfig(boolean handleErrors) throws IOException {
+    writeConfig(handleErrors, true);
+  }
+
+  private void writeConfig(boolean handleErrors, boolean problemFormat) throws IOException {
     Files.write(this.webInf.resolve("config").resolve("config.xml"), String.join("\n",
         "<?xml version=\"1.0\"?>",
         "<global>",
         "  <berlioz>",
-        "    <errors handle=\"" + handleErrors + "\" generator-catch=\"false\"/>",
+        "    <errors handle=\"" + handleErrors + "\" generator-catch=\"false\" problem=\"" + problemFormat + "\"/>",
         "    <http compression=\"false\" get-via-post=\"true\"/>",
         "  </berlioz>",
         "</global>").getBytes(StandardCharsets.UTF_8));

@@ -309,6 +309,10 @@ public enum BerliozOption {
    * {@code <client-error>} element names are not restored; both use the unified {@code <error>}
    * element in 0.14.0.</p>
    *
+   * <p>This option only affects the XML/HTML error output. Error responses for JSON-configured
+   * requests always use {@code application/problem+json} regardless of this setting, since there
+   * was never a legacy JSON error representation to opt back into.</p>
+   *
    * <h3>Property</h3>
    * <table>
    *   <caption>Problem format usage</caption>

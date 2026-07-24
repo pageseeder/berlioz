@@ -253,7 +253,6 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @throws ServletException Should a servlet exception occur.
    * @throws IOException      Should an I/O error occur.
    */
-  @SuppressWarnings("removal") // ERROR_PROBLEM_FORMAT removed in 1.0; legacy fallback guarded here until then
   public void handle(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
     // Grab the status code (Default to 200 OK)
@@ -329,9 +328,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     res.setStatus(code);
 
-    // JSON is only available in the RFC 9457 Problem Details format; the legacy format has no
-    // JSON representation, so a JSON-expecting request falls through to XML in that case.
-    if (jsonExpected && GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT)) {
+    // JSON is only ever available in the RFC 9457 Problem Details format; there was never a
+    // legacy JSON representation, so ERROR_PROBLEM_FORMAT=false (the deprecated escape hatch back
+    // to the legacy XML/HTML output) does not apply here — a JSON-expecting request always gets
+    // problem+json, regardless of the flag.
+    if (jsonExpected) {
       writeResponse(res, toProblemJson(req), "application/problem+json", headers);
       return;
     }

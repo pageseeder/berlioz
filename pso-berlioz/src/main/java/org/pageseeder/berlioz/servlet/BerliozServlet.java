@@ -808,7 +808,9 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     // For JSON-configured servlets with ERROR_HANDLER=true, produce application/problem+json directly
-    // instead of dispatching to ErrorHandlerServlet (which always renders XML/HTML).
+    // instead of dispatching to ErrorHandlerServlet (which always renders XML/HTML). Unconditional:
+    // there was never a legacy JSON representation, so the deprecated ERROR_PROBLEM_FORMAT=false
+    // escape hatch (which only restores the legacy XML/HTML output) does not apply to JSON.
     if (error == null && Json.isJsonMediaType(getBerliozConfig().getMediaType())) {
       DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
       ProblemDetails problem = Problems.forHttpError(code, message, extractErrorId(req, ex), ex, level);
