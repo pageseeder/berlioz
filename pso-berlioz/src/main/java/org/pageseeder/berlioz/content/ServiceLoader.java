@@ -86,7 +86,7 @@ public enum ServiceLoader {
    * {@link #load()} or {@link #load(File)} call (e.g. a service that could not be registered
    * because it was misconfigured). Empty if the last load reported no warnings.
    */
-  private volatile List<CollectedError<SAXParseException>> lastWarnings = List.of();
+  private List<CollectedError<SAXParseException>> lastWarnings = List.of();
 
   /**
    * @return The service loader
@@ -117,7 +117,7 @@ public enum ServiceLoader {
    *
    * @since 0.14.1
    */
-  public List<CollectedError<SAXParseException>> getLastLoadWarnings() {
+  public synchronized List<CollectedError<SAXParseException>> getLastLoadWarnings() {
     return this.lastWarnings;
   }
 
