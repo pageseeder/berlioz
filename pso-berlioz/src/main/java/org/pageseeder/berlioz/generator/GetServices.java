@@ -97,11 +97,21 @@ public final class GetServices implements XmlGenerator, Cacheable {
     List<File> files = ServiceLoader.getInstance().listServiceFiles();
     boolean includeDetails = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
 
-    if (!files.isEmpty()) {
-      File main = files.get(0);
-      if (main.exists()) {
-        XmlCopier.copyTo(main, xml, includeDetails);
-      }
+    writeMainAndModules(files, xml, includeDetails);
+    writeWarnings(ServiceLoader.getInstance().getLastLoadWarnings(), xml, includeDetails);
+
+    return Response.ok();
+  }
+
+  /**
+   * Writes the main services file followed by any additional service modules.
+   */
+  private static void writeMainAndModules(List<File> files, XmlWriter xml, boolean includeDetails) {
+    if (files.isEmpty()) return;
+
+    File main = files.get(0);
+    if (main.exists()) {
+      XmlCopier.copyTo(main, xml, includeDetails);
     }
 
     if (files.size() > 1) {
@@ -111,23 +121,26 @@ public final class GetServices implements XmlGenerator, Cacheable {
       }
       xml.closeElement();
     }
+  }
 
-    List<CollectedError<SAXParseException>> warnings = ServiceLoader.getInstance().getLastLoadWarnings();
-    if (!warnings.isEmpty()) {
-      xml.openElement("warnings", true);
-      for (CollectedError<SAXParseException> warning : warnings) {
-        SAXParseException ex = warning.error();
-        xml.openElement("warning", false);
-        if (includeDetails && ex.getLineNumber() >= 0) {
-          xml.attribute("line", ex.getLineNumber());
-        }
-        String message = ex.getMessage();
-        xml.text(message != null ? message : "(No message)");
-        xml.closeElement();
+  /**
+   * Writes the registration warnings collected during the last service load, if any.
+   */
+  private static void writeWarnings(List<CollectedError<SAXParseException>> warnings, XmlWriter xml, boolean includeDetails) {
+    if (warnings.isEmpty()) return;
+
+    xml.openElement("warnings", true);
+    for (CollectedError<SAXParseException> warning : warnings) {
+      SAXParseException ex = warning.error();
+      xml.openElement("warning", false);
+      if (includeDetails && ex.getLineNumber() >= 0) {
+        xml.attribute("line", ex.getLineNumber());
       }
+      String message = ex.getMessage();
+      xml.text(message != null ? message : "(No message)");
       xml.closeElement();
     }
-    return Response.ok();
+    xml.closeElement();
   }
 
 }
