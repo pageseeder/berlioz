@@ -21,11 +21,9 @@ import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -123,17 +121,51 @@ public final class QueryBodyParameters {
 
   /**
    * Detects native {@code QUERY} body support: {@code true} when {@code getParameterMap()}
-   * contains a parameter whose values (including repeated occurrences of the same name in the
-   * URL query string, e.g. {@code ?tag=a&tag=b}) do not match a plain parse of the URL query
-   * string alone, meaning the engine must have parsed the body itself to produce them.
+   * exposes more parameter occurrences than the URL query string contains, meaning the engine
+   * must have parsed the body and aggregated its parameters itself.
+   *
+   * <p>This deliberately compares counts rather than decoded names and values. Query-string
+   * decoding is container-specific and may use a different character encoding from the UTF-8
+   * form-body policy used here.
    */
   private static boolean engineAlreadyExposesBody(HttpServletRequest req) {
-    Map<String, List<String>> fromQueryString = decodeMulti(req.getQueryString());
-    for (Entry<String, String[]> entry : req.getParameterMap().entrySet()) {
-      List<String> expected = fromQueryString.getOrDefault(entry.getKey(), List.of());
-      if (!expected.equals(Arrays.asList(entry.getValue()))) return true;
+    int queryParameterCount = countQueryParameters(req.getQueryString());
+    int exposedParameterCount = 0;
+    for (String[] values : req.getParameterMap().values()) {
+      exposedParameterCount += values.length;
+      if (exposedParameterCount > queryParameterCount) return true;
     }
     return false;
+  }
+
+  /**
+   * Counts non-empty ampersand-delimited query parameter occurrences without decoding them.
+   *
+   * <p>Percent escapes are still validated so malformed query components retain the existing
+   * HTTP 400 behaviour.
+   */
+  private static int countQueryParameters(@Nullable String encoded) {
+    if (encoded == null || encoded.isEmpty()) return 0;
+    int count = 0;
+    boolean hasContent = false;
+    for (int i = 0; i < encoded.length(); i++) {
+      char c = encoded.charAt(i);
+      if (c == '&') {
+        if (hasContent) count++;
+        hasContent = false;
+      } else {
+        hasContent = true;
+        if (c == '%') {
+          if (i + 2 >= encoded.length()
+              || Character.digit(encoded.charAt(i + 1), 16) < 0
+              || Character.digit(encoded.charAt(i + 2), 16) < 0) {
+            throw new IllegalArgumentException("Invalid percent escape in URI query component");
+          }
+          i += 2;
+        }
+      }
+    }
+    return hasContent ? count + 1 : count;
   }
 
   /**
@@ -180,18 +212,6 @@ public final class QueryBodyParameters {
     Map<String, String> result = new LinkedHashMap<>();
     for (String[] pair : pairs) {
       result.putIfAbsent(pair[0], pair[1]);
-    }
-    return result;
-  }
-
-  /**
-   * Decodes an {@code application/x-www-form-urlencoded} string into a name to values map,
-   * preserving every occurrence of a repeated name in encounter order.
-   */
-  private static Map<String, List<String>> decodeMulti(@Nullable String encoded) {
-    Map<String, List<String>> result = new LinkedHashMap<>();
-    for (String[] pair : splitPairs(encoded)) {
-      result.computeIfAbsent(pair[0], k -> new ArrayList<>()).add(pair[1]);
     }
     return result;
   }

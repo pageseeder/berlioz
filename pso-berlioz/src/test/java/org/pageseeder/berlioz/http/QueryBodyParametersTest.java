@@ -121,6 +121,51 @@ class QueryBodyParametersTest {
   }
 
   @Test
+  void testParse_containerUsesDifferentQueryValueEncoding_bodyIsStillParsed() {
+    // The raw query is UTF-8 for "é", while the simulated container decoded the same bytes as
+    // ISO-8859-1. A decoded-value comparison would mistake that difference for a body parameter.
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .queryString("city=%C3%A9")
+        .parameter("city", "Ã©")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=hello")
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals("hello", params.get("q"));
+  }
+
+  @Test
+  void testParse_containerUsesDifferentQueryNameEncoding_bodyIsStillParsed() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .queryString("caf%C3%A9=value")
+        .parameter("cafÃ©", "value")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=hello")
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals("hello", params.get("q"));
+  }
+
+  @Test
+  void testParse_engineAggregatesBodyWithSameNamedQueryParameter_bodyIsNotParsed() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .queryString("q=query")
+        .parameter("q", "query", "already-exposed-body")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=raw-body-should-be-ignored")
+        .build();
+
+    assertTrue(QueryBodyParameters.parse(req).isEmpty());
+  }
+
+  @Test
   void testParse_oversizedBody_throwsPayloadTooLarge() {
     String hugeValue = "x".repeat(2 * 1024 * 1024);
     HttpServletRequest req = HttpTestSupport.request()
