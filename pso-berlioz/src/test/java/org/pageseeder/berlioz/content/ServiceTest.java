@@ -428,7 +428,7 @@ final class ServiceTest {
   @Test
   void testInvalidDirectWarning_directWithEmptySupportedGenerator_returnsWarning() {
     // A single generator that is direct-eligible by count but declares no usable output format.
-    BerliozGenerator g = () -> Set.of();
+    BerliozGenerator g = Set::of;
     Service s = defaultBuilder("svc").direct(true).add(g).build();
     String warning = Service.invalidDirectWarning(s);
     Assertions.assertNotNull(warning);
