@@ -74,7 +74,7 @@ import java.util.Objects;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.5
+ * @version 0.14.1
  * @since 0.13.5
  */
 @Beta
@@ -84,7 +84,9 @@ public abstract class HttpException extends RuntimeException {
 
   private final int httpCode;
 
-  /** Lazily allocated: most instances never carry an extra header. */
+  // S1165: mutable by design — header() is a builder-style call made after construction, so the
+  // field can't be final. Reassigned to a new immutable snapshot each time; see header() below.
+  @SuppressWarnings("java:S1165")
   private @Nullable Map<String, String> headers;
 
   /**
