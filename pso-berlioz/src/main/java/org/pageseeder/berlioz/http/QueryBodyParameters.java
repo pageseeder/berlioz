@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -48,6 +49,10 @@ import org.pageseeder.berlioz.error.ProblemDetails;
  * class collapses to the first value, matching {@code HttpRequestWrapper}'s existing behaviour for
  * query-string and POST parameters) will find it already drained. A generator using any other
  * content type is untouched.
+ *
+ * <p>The body is always decoded as UTF-8; a declared {@code charset} parameter other than UTF-8
+ * is rejected with a 400 rather than silently mis-decoded, since supporting other encodings is
+ * out of scope for this class.
  *
  * <p><b>Precedence when a name appears in both the URL and the body:</b> neither RFC 3986/9110
  * (the URI and HTTP standards, which treat a query string as an opaque string with no defined
@@ -86,12 +91,15 @@ public final class QueryBodyParameters {
    *
    * @param req the HTTP servlet request
    * @return the body parameters, or an empty map when none of the above apply
-   * @throws HttpException with status 400 if the form body cannot be read or decoded, or status
-   *                       413 if it exceeds the supported byte or parameter-count limits
+   * @throws HttpException with status 400 if the form body cannot be read or decoded, or a
+   *                       non-UTF-8 charset is declared, or status 413 if it exceeds the
+   *                       supported byte or parameter-count limits
    */
   public static Map<String, String> parse(HttpServletRequest req) {
     if (!"QUERY".equalsIgnoreCase(req.getMethod())) return Map.of();
-    if (!isFormUrlEncoded(req.getContentType())) return Map.of();
+    String contentType = req.getContentType();
+    if (!isFormUrlEncoded(contentType)) return Map.of();
+    requireUtf8Charset(contentType);
     try {
       if (engineAlreadyExposesBody(req)) return Map.of();
     } catch (IllegalArgumentException ex) {
@@ -115,6 +123,37 @@ public final class QueryBodyParameters {
     int semicolon = contentType.indexOf(';');
     String type = (semicolon >= 0 ? contentType.substring(0, semicolon) : contentType).strip();
     return FORM_URLENCODED.equalsIgnoreCase(type);
+  }
+
+  /**
+   * Rejects a QUERY body whose {@code Content-Type} declares a charset other than UTF-8.
+   *
+   * <p>This class only ever decodes the body as UTF-8 (see {@link #readBody} and
+   * {@link #parsePair}); accepting a declared mismatch would silently mis-decode the body
+   * instead of reporting it. A missing charset parameter defaults to UTF-8 and is accepted.
+   *
+   * @param contentType the request's {@code Content-Type}, already confirmed to be
+   *                     {@code application/x-www-form-urlencoded} by {@link #isFormUrlEncoded}
+   * @throws HttpException with status 400 if a non-UTF-8 or unrecognised charset is declared
+   */
+  private static void requireUtf8Charset(String contentType) {
+    int semicolon = contentType.indexOf(';');
+    if (semicolon < 0) return;
+    for (String param : contentType.substring(semicolon + 1).split(";")) {
+      int equals = param.indexOf('=');
+      if (equals < 0 || !"charset".equalsIgnoreCase(param.substring(0, equals).strip())) continue;
+      String declared = param.substring(equals + 1).strip().replaceAll("^\"|\"$", "");
+      Charset charset;
+      try {
+        charset = Charset.forName(declared);
+      } catch (IllegalArgumentException ex) {
+        throw invalidBody("QUERY body declares an unsupported charset: " + declared, ex);
+      }
+      if (!charset.equals(StandardCharsets.UTF_8)) {
+        throw invalidBody("QUERY body charset must be UTF-8, got: " + declared,
+            new IllegalArgumentException("Unsupported charset: " + declared));
+      }
+    }
   }
 
   /**

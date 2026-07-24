@@ -258,6 +258,43 @@ class QueryBodyParametersTest {
   }
 
   @Test
+  void testParse_declaredUtf8Charset_bodyIsParsed() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded;charset=utf8")
+        .body("q=hello")
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals("hello", params.get("q"));
+  }
+
+  @Test
+  void testParse_declaredNonUtf8Charset_throwsBadRequest() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded;charset=ISO-8859-1")
+        .body("q=hello")
+        .build();
+
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(400, ex.getHttpCode());
+  }
+
+  @Test
+  void testParse_unrecognisedCharset_throwsBadRequest() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded;charset=not-a-real-charset")
+        .body("q=hello")
+        .build();
+
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(400, ex.getHttpCode());
+  }
+
+  @Test
   void testParse_malformedQueryString_throwsBadRequest() {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
