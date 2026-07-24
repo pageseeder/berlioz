@@ -42,6 +42,8 @@ final class HttpTestSupport {
     private String queryString = null;
     private String contentType = null;
     private byte[] body = new byte[0];
+    private Long contentLength = null;
+    private boolean inputStreamAccessed = false;
 
     RequestBuilder method(String value) {
       this.method = value;
@@ -71,6 +73,15 @@ final class HttpTestSupport {
     RequestBuilder body(String value) {
       this.body = value.getBytes(StandardCharsets.UTF_8);
       return this;
+    }
+
+    RequestBuilder contentLength(long value) {
+      this.contentLength = value;
+      return this;
+    }
+
+    boolean inputStreamAccessed() {
+      return this.inputStreamAccessed;
     }
 
     RequestBuilder server(String name, int port) {
@@ -107,14 +118,22 @@ final class HttpTestSupport {
         if ("getQueryString".equals(name)) return this.queryString;
         if ("getParameterMap".equals(name)) return this.parameterMap;
         if ("getContentType".equals(name)) return this.contentType;
-        if ("getContentLength".equals(name)) return this.body.length;
-        if ("getInputStream".equals(name)) return new ServletInputStream() {
-          private final ByteArrayInputStream in = new ByteArrayInputStream(body);
-          @Override public boolean isFinished() { return this.in.available() == 0; }
-          @Override public boolean isReady() { return true; }
-          @Override public void setReadListener(ReadListener readListener) { throw new UnsupportedOperationException(); }
-          @Override public int read() { return this.in.read(); }
-        };
+        if ("getContentLength".equals(name)) {
+          if (this.contentLength == null) return this.body.length;
+          return this.contentLength <= Integer.MAX_VALUE ? this.contentLength.intValue() : -1;
+        }
+        if ("getContentLengthLong".equals(name))
+          return this.contentLength != null ? this.contentLength : (long) this.body.length;
+        if ("getInputStream".equals(name)) {
+          this.inputStreamAccessed = true;
+          return new ServletInputStream() {
+            private final ByteArrayInputStream in = new ByteArrayInputStream(body);
+            @Override public boolean isFinished() { return this.in.available() == 0; }
+            @Override public boolean isReady() { return true; }
+            @Override public void setReadListener(ReadListener readListener) { throw new UnsupportedOperationException(); }
+            @Override public int read() { return this.in.read(); }
+          };
+        }
         if ("toString".equals(name)) return "RequestBuilder";
         if ("hashCode".equals(name)) return System.identityHashCode(proxy);
         if ("equals".equals(name)) return proxy == args[0];

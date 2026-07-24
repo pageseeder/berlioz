@@ -74,6 +74,12 @@ public final class QueryBodyParameters {
   /** Bounds how much of a QUERY body is buffered; larger bodies are rejected with HTTP 413. */
   private static final int MAX_BODY_BYTES = 1024 * 1024;
 
+  /** Bounds decoded field occurrences, including repetitions of the same field name. */
+  private static final int MAX_FORM_PARAMETERS = 1_000;
+
+  /** Avoids trusting a client-supplied Content-Length for a large eager allocation. */
+  private static final int INITIAL_BODY_CAPACITY = 8192;
+
   private QueryBodyParameters() {}
 
   /**
@@ -85,7 +91,7 @@ public final class QueryBodyParameters {
    * @param req the HTTP servlet request
    * @return the body parameters, or an empty map when none of the above apply
    * @throws HttpException with status 400 if the form body cannot be read or decoded, or status
-   *                       413 if it exceeds the supported size
+   *                       413 if it exceeds the supported byte or parameter-count limits
    */
   public static Map<String, String> parse(HttpServletRequest req) {
     if (!"QUERY".equalsIgnoreCase(req.getMethod())) return Map.of();
@@ -134,22 +140,26 @@ public final class QueryBodyParameters {
    * Reads the full request body as UTF-8, refusing to buffer more than {@link #MAX_BODY_BYTES}.
    */
   private static String readBody(HttpServletRequest req) throws IOException {
-    // Content-Length is client-supplied and untrusted: clamp it so a forged large value can't
-    // force an oversized allocation before the byte-counted loop below gets to enforce the cap.
-    int contentLength = req.getContentLength();
-    int initialCapacity = contentLength > 0 ? Math.min(contentLength, MAX_BODY_BYTES) : 8192;
+    long contentLength = req.getContentLengthLong();
+    if (contentLength > MAX_BODY_BYTES) {
+      throw queryBodyTooLarge("QUERY request body exceeds " + MAX_BODY_BYTES + " bytes");
+    }
+    if (contentLength == 0) return "";
+
+    // Content-Length is client-supplied and untrusted. It can justify an early rejection above,
+    // but never an eager allocation larger than this small starting buffer.
+    int initialCapacity = contentLength > 0
+        ? (int) Math.min(contentLength, INITIAL_BODY_CAPACITY)
+        : INITIAL_BODY_CAPACITY;
     ByteArrayOutputStream out = new ByteArrayOutputStream(initialCapacity);
-    byte[] buffer = new byte[8192];
+    byte[] buffer = new byte[INITIAL_BODY_CAPACITY];
     int total = 0;
     try (InputStream in = req.getInputStream()) {
       int read;
       while ((read = in.read(buffer)) != -1) {
         total += read;
         if (total > MAX_BODY_BYTES) {
-          throw HttpException.of(ProblemDetails.of(ContentStatus.PAYLOAD_TOO_LARGE)
-              .type("urn:berlioz:problem:query-body-too-large")
-              .title("Payload Too Large")
-              .detail("QUERY request body exceeds " + MAX_BODY_BYTES + " bytes"));
+          throw queryBodyTooLarge("QUERY request body exceeds " + MAX_BODY_BYTES + " bytes");
         }
         out.write(buffer, 0, read);
       }
@@ -162,8 +172,29 @@ public final class QueryBodyParameters {
    * repeated names to their last value.
    */
   private static Map<String, String> decode(@Nullable String encoded) {
+    if (encoded == null || encoded.isEmpty()) return Map.of();
     Map<String, String> result = new LinkedHashMap<>();
-    decodeMulti(encoded).forEach((name, values) -> result.put(name, values.get(values.size() - 1)));
+    int count = 0;
+    int start = 0;
+    while (start <= encoded.length()) {
+      int end = encoded.indexOf('&', start);
+      if (end < 0) end = encoded.length();
+      if (end > start) {
+        if (++count > MAX_FORM_PARAMETERS) {
+          throw queryBodyTooLarge("QUERY form body contains more than "
+              + MAX_FORM_PARAMETERS + " parameters");
+        }
+        int equals = encoded.indexOf('=', start);
+        if (equals < 0 || equals > end) equals = end;
+        String rawName = encoded.substring(start, equals);
+        String rawValue = equals < end ? encoded.substring(equals + 1, end) : "";
+        String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
+        String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
+        result.put(name, value);
+      }
+      if (end == encoded.length()) break;
+      start = end + 1;
+    }
     return result;
   }
 
@@ -174,16 +205,30 @@ public final class QueryBodyParameters {
   private static Map<String, List<String>> decodeMulti(@Nullable String encoded) {
     if (encoded == null || encoded.isEmpty()) return Map.of();
     Map<String, List<String>> result = new LinkedHashMap<>();
-    for (String pair : encoded.split("&")) {
-      if (pair.isEmpty()) continue;
-      int equals = pair.indexOf('=');
-      String rawName = equals >= 0 ? pair.substring(0, equals) : pair;
-      String rawValue = equals >= 0 ? pair.substring(equals + 1) : "";
-      String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
-      String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
-      result.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+    int start = 0;
+    while (start <= encoded.length()) {
+      int end = encoded.indexOf('&', start);
+      if (end < 0) end = encoded.length();
+      if (end > start) {
+        int equals = encoded.indexOf('=', start);
+        if (equals < 0 || equals > end) equals = end;
+        String rawName = encoded.substring(start, equals);
+        String rawValue = equals < end ? encoded.substring(equals + 1, end) : "";
+        String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
+        String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
+        result.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+      }
+      if (end == encoded.length()) break;
+      start = end + 1;
     }
     return result;
+  }
+
+  private static HttpException queryBodyTooLarge(String detail) {
+    return HttpException.of(ProblemDetails.of(ContentStatus.PAYLOAD_TOO_LARGE)
+        .type("urn:berlioz:problem:query-body-too-large")
+        .title("Payload Too Large")
+        .detail(detail));
   }
 
   private static HttpException invalidBody(String detail, Exception cause) {

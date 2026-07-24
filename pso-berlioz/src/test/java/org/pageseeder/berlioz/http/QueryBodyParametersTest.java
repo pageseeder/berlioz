@@ -1,6 +1,7 @@
 package org.pageseeder.berlioz.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,6 +55,20 @@ class QueryBodyParametersTest {
 
     assertEquals("hello world", params.get("q"));
     assertEquals("2", params.get("page"));
+  }
+
+  @Test
+  void testParse_repeatedBodyParameter_lastValueWins() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=first&q=last")
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals("last", params.get("q"));
+    assertEquals(1, params.size());
   }
 
   @Test
@@ -111,7 +126,61 @@ class QueryBodyParametersTest {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
         .contentType("application/x-www-form-urlencoded")
+        .contentLength(-1)
         .body("q=" + hugeValue)
+        .build();
+
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(413, ex.getHttpCode());
+  }
+
+  @Test
+  void testParse_declaredOversizedBody_rejectedBeforeReadingStream() {
+    HttpTestSupport.RequestBuilder builder = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .contentLength((long) Integer.MAX_VALUE + 1)
+        .body("q=small");
+
+    HttpException ex = assertThrows(HttpException.class,
+        () -> QueryBodyParameters.parse(builder.build()));
+
+    assertEquals(413, ex.getHttpCode());
+    assertFalse(builder.inputStreamAccessed());
+  }
+
+  @Test
+  void testParse_maximumParameterOccurrences_succeeds() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .body(formParameters(1_000, false))
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals(1_000, params.size());
+    assertEquals("999", params.get("p999"));
+  }
+
+  @Test
+  void testParse_tooManyDistinctParameters_throwsPayloadTooLarge() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .body(formParameters(1_001, false))
+        .build();
+
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(413, ex.getHttpCode());
+  }
+
+  @Test
+  void testParse_tooManyRepeatedParameters_throwsPayloadTooLarge() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .body(formParameters(1_001, true))
         .build();
 
     HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
@@ -141,5 +210,14 @@ class QueryBodyParametersTest {
 
     HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
     assertEquals(400, ex.getHttpCode());
+  }
+
+  private static String formParameters(int count, boolean repeatedName) {
+    StringBuilder form = new StringBuilder(count * 10);
+    for (int i = 0; i < count; i++) {
+      if (i > 0) form.append('&');
+      form.append(repeatedName ? "p" : "p" + i).append('=').append(i);
+    }
+    return form.toString();
   }
 }
