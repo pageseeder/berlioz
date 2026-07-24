@@ -30,8 +30,9 @@ import java.util.Map.Entry;
 import javax.servlet.http.HttpServletRequest;
 
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.berlioz.error.HttpException;
+import org.pageseeder.berlioz.error.ProblemDetails;
 
 /**
  * Emulates {@code application/x-www-form-urlencoded} body-parameter parsing for the HTTP
@@ -68,11 +69,9 @@ import org.slf4j.LoggerFactory;
  */
 public final class QueryBodyParameters {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(QueryBodyParameters.class);
-
   private static final String FORM_URLENCODED = "application/x-www-form-urlencoded";
 
-  /** Bounds how much of a QUERY body is buffered; larger bodies are not parsed as parameters. */
+  /** Bounds how much of a QUERY body is buffered; larger bodies are rejected with HTTP 413. */
   private static final int MAX_BODY_BYTES = 1024 * 1024;
 
   private QueryBodyParameters() {}
@@ -85,16 +84,23 @@ public final class QueryBodyParameters {
    *
    * @param req the HTTP servlet request
    * @return the body parameters, or an empty map when none of the above apply
+   * @throws HttpException with status 400 if the form body cannot be read or decoded, or status
+   *                       413 if it exceeds the supported size
    */
   public static Map<String, String> parse(HttpServletRequest req) {
     if (!"QUERY".equalsIgnoreCase(req.getMethod())) return Map.of();
     if (!isFormUrlEncoded(req.getContentType())) return Map.of();
-    if (engineAlreadyExposesBody(req)) return Map.of();
+    try {
+      if (engineAlreadyExposesBody(req)) return Map.of();
+    } catch (IllegalArgumentException ex) {
+      throw invalidBody("Malformed URI query component on QUERY request", ex);
+    }
     try {
       return decode(readBody(req));
-    } catch (IOException | IllegalArgumentException ex) {
-      LOGGER.warn("Unable to parse QUERY request body for {}", req.getRequestURI(), ex);
-      return Map.of();
+    } catch (IOException ex) {
+      throw invalidBody("Unable to read the QUERY request body", ex);
+    } catch (IllegalArgumentException ex) {
+      throw invalidBody("Malformed application/x-www-form-urlencoded QUERY request body", ex);
     }
   }
 
@@ -140,9 +146,10 @@ public final class QueryBodyParameters {
       while ((read = in.read(buffer)) != -1) {
         total += read;
         if (total > MAX_BODY_BYTES) {
-          LOGGER.warn("QUERY request body for {} exceeds {} bytes; not parsed as parameters",
-              req.getRequestURI(), MAX_BODY_BYTES);
-          return "";
+          throw HttpException.of(ProblemDetails.of(ContentStatus.PAYLOAD_TOO_LARGE)
+              .type("urn:berlioz:problem:query-body-too-large")
+              .title("Payload Too Large")
+              .detail("QUERY request body exceeds " + MAX_BODY_BYTES + " bytes"));
         }
         out.write(buffer, 0, read);
       }
@@ -177,6 +184,13 @@ public final class QueryBodyParameters {
       result.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
     }
     return result;
+  }
+
+  private static HttpException invalidBody(String detail, Exception cause) {
+    return HttpException.of(ProblemDetails.of(ContentStatus.BAD_REQUEST)
+        .type("urn:berlioz:problem:invalid-query-body")
+        .title("Bad Request")
+        .detail(detail), cause);
   }
 
 }

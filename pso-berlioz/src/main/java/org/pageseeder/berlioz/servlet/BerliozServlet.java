@@ -320,6 +320,10 @@ public final class BerliozServlet extends HttpServlet {
       return;
     }
 
+    // RFC 10008 requires every QUERY request to identify the media type of its query content.
+    // Validate only after routing so an unknown resource still receives the expected 404.
+    if (!validateQueryContentType(req, res, method)) return;
+
     var service = match.service();
 
     // Include the service as a header for information
@@ -346,11 +350,33 @@ public final class BerliozServlet extends HttpServlet {
     }
 
     ProcessingContext context = new ProcessingContext(match, method, code, profile, serverTiming, includeContent);
-    if (serviceSupportsJson) {
-      processJson(req, res, config, context);
-    } else {
-      processXml(req, res, config, context);
+    try {
+      if (serviceSupportsJson) {
+        processJson(req, res, config, context);
+      } else {
+        processXml(req, res, config, context);
+      }
+    } catch (HttpException ex) {
+      if (method != HttpMethod.QUERY) throw ex;
+      String message = Objects.requireNonNullElse(ex.getMessage(), "Invalid QUERY request");
+      sendError(req, res, ex.getHttpCode(), message, null);
     }
+  }
+
+  /**
+   * Validates the media-type requirement for a matched {@code QUERY} request.
+   *
+   * <p>RFC 10008 requires the server to fail a QUERY request when its {@code Content-Type} field
+   * is missing. Whether a present media type is supported remains specific to the matched
+   * resource and is therefore validated by its generator.</p>
+   */
+  private boolean validateQueryContentType(HttpServletRequest req, HttpServletResponse res, HttpMethod method) {
+    if (method != HttpMethod.QUERY) return true;
+    String contentType = req.getContentType();
+    if (contentType != null && !contentType.isBlank()) return true;
+    sendError(req, res, HttpServletResponse.SC_BAD_REQUEST,
+        "QUERY requests require a Content-Type header", null);
+    return false;
   }
 
   /**

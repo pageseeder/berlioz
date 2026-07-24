@@ -167,10 +167,54 @@ class BerliozServletTest {
     initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
     ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
 
-    this.servlet.service(request("QUERY", "/search.xml"), recorder.build());
+    this.servlet.service(queryRequest("/search.xml", "application/octet-stream"), recorder.build());
 
     assertEquals(200, recorder.status);
     assertTrue(recorder.content().contains("<message path=\"/search\">hello</message>"), recorder.content());
+  }
+
+  @Test
+  void query_matchingServiceWithoutContentTypeSendsBadRequest() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request("QUERY", "/search.xml"), recorder.build());
+
+    assertEquals(400, recorder.status);
+    assertEquals("QUERY requests require a Content-Type header", recorder.errorMessage);
+  }
+
+  @Test
+  void query_matchingXmlServiceWithoutContentTypeWritesProblemXml() throws Exception {
+    writeConfig(true);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("search", "query", "/search", "handler", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request("QUERY", "/search.xml"), recorder.build());
+
+    assertEquals(400, recorder.status);
+    assertEquals("application/xml;charset=UTF-8", recorder.contentType);
+    assertTrue(recorder.content().contains("<problem"), recorder.content());
+    assertTrue(recorder.content().contains("<status>400</status>"), recorder.content());
+  }
+
+  @Test
+  void query_matchingJsonServiceWithoutContentTypeWritesProblemJson() throws Exception {
+    writeConfig(true);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("search", "query", "/search", "handler", ECHO_XML));
+    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request("QUERY", "/search.json"), recorder.build());
+
+    assertEquals(400, recorder.status);
+    assertEquals("application/problem+json;charset=UTF-8", recorder.contentType);
+    assertTrue(recorder.content().contains("\"status\":400"), recorder.content());
+    assertTrue(recorder.content().contains("QUERY requests require a Content-Type header"), recorder.content());
   }
 
   @Test
@@ -255,12 +299,46 @@ class BerliozServletTest {
   }
 
   @Test
+  void query_malformedFormBodySendsBadRequest() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", PARAMETER_ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    HttpServletRequest request = ServletTestSupport.request()
+        .method("QUERY").servletPath("/search.xml").uri("/search.xml")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=%2")
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request, recorder.build());
+
+    assertEquals(400, recorder.status);
+    assertEquals("Malformed application/x-www-form-urlencoded QUERY request body", recorder.errorMessage);
+  }
+
+  @Test
+  void query_oversizedFormBodySendsPayloadTooLarge() throws Exception {
+    writeServices(service("search", "query", "/search", "handler", PARAMETER_ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    HttpServletRequest request = ServletTestSupport.request()
+        .method("QUERY").servletPath("/search.xml").uri("/search.xml")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=" + "x".repeat(1024 * 1024))
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.service(request, recorder.build());
+
+    assertEquals(413, recorder.status);
+    assertEquals("QUERY request body exceeds 1048576 bytes", recorder.errorMessage);
+  }
+
+  @Test
   void query_cacheableServiceIsNotCachedOrGivenAnEtag() throws Exception {
     writeServices(service("cached", "query", "/cached", "generator", CACHEABLE_XML));
     initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
     ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
 
-    this.servlet.service(request("QUERY", "/cached.xml"), recorder.build());
+    this.servlet.service(queryRequest("/cached.xml", "application/octet-stream"), recorder.build());
 
     assertEquals(200, recorder.status);
     assertNull(recorder.header(HttpHeaders.ETAG));
@@ -531,6 +609,20 @@ class BerliozServletTest {
         .uri(servletPath);
     headers.forEach(builder::header);
     return builder.build();
+  }
+
+  private HttpServletRequest queryRequest(String servletPath, String contentType) {
+    return ServletTestSupport.request()
+        .method("QUERY")
+        .scheme("http")
+        .host("localhost")
+        .port(80)
+        .contextPath("")
+        .servletPath(servletPath)
+        .pathInfo(null)
+        .uri(servletPath)
+        .contentType(contentType)
+        .build();
   }
 
   private ServletConfig servletConfig(Map<String, String> initParams, RequestDispatcher errorHandler) {

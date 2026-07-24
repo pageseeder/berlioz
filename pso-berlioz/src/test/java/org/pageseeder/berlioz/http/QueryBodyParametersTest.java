@@ -1,6 +1,7 @@
 package org.pageseeder.berlioz.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.error.HttpException;
 
 class QueryBodyParametersTest {
 
@@ -104,7 +106,7 @@ class QueryBodyParametersTest {
   }
 
   @Test
-  void testParse_oversizedBody_returnsEmptyWithoutThrowing() {
+  void testParse_oversizedBody_throwsPayloadTooLarge() {
     String hugeValue = "x".repeat(2 * 1024 * 1024);
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
@@ -112,17 +114,32 @@ class QueryBodyParametersTest {
         .body("q=" + hugeValue)
         .build();
 
-    assertTrue(QueryBodyParameters.parse(req).isEmpty());
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(413, ex.getHttpCode());
   }
 
   @Test
-  void testParse_malformedPercentEscape_returnsEmptyWithoutThrowing() {
+  void testParse_malformedPercentEscape_throwsBadRequest() {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
         .contentType("application/x-www-form-urlencoded")
         .body("q=%2")
         .build();
 
-    assertTrue(QueryBodyParameters.parse(req).isEmpty());
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(400, ex.getHttpCode());
+  }
+
+  @Test
+  void testParse_malformedQueryString_throwsBadRequest() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .queryString("page=%2")
+        .contentType("application/x-www-form-urlencoded")
+        .body("q=hello")
+        .build();
+
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(400, ex.getHttpCode());
   }
 }
