@@ -470,6 +470,45 @@ class ErrorHandlerServletTest {
           () -> assertTrue(body.contains("<problem"), "should be the XML problem document")
       );
     }
+
+    @Test
+    void handle_resolvedMediaTypeXml_overridesHtmlExtension() throws Exception {
+      // Service configured with content-type application/xml but mapped via a .html URL pattern:
+      // the raw XML problem document must be returned, not an HTML-rendered page.
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .attribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE, "application/xml")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+      new ErrorHandlerServlet().handle(req, res.build());
+      String body = res.content();
+      assertAll(
+          () -> assertEquals(500, res.status),
+          () -> assertEquals("application/xml;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.contains("<problem"), "should be the raw XML problem document"),
+          () -> assertFalse(body.contains("<html"), "must not be HTML-rendered")
+      );
+    }
+
+    @Test
+    void handle_resolvedMediaTypeHtml_overridesXmlExtension() throws Exception {
+      // Service configured with content-type text/html but mapped via a .xml URL pattern:
+      // the HTML failsafe rendering must be used, not raw XML.
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.xml")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .attribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE, "text/html")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+      new ErrorHandlerServlet().handle(req, res.build());
+      String body = res.content();
+      assertAll(
+          () -> assertEquals(500, res.status),
+          () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+          () -> assertTrue(body.contains("Unexpected error"), "detail should appear as message")
+      );
+    }
   }
 
   // Detail level: standard (exception summary only, no headers/parameters)
@@ -748,6 +787,42 @@ class ErrorHandlerServletTest {
         () -> assertEquals("application/xml;charset=UTF-8", res.contentType),
         () -> assertTrue(res.content().contains("<problem")),
         () -> assertTrue(res.content().contains("XML terminal failure"))
+    );
+  }
+
+  @Test
+  void handleTerminal_resolvedMediaTypeJson_emitsProblemJson() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().uri("/failure.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Terminal JSON failure")
+        .attribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE, "application/json")
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    ErrorHandlerServlet.handleTerminal(req, res.build());
+
+    assertAll(
+        () -> assertEquals(500, res.status),
+        () -> assertEquals("application/problem+json;charset=UTF-8", res.contentType),
+        () -> assertTrue(res.content().startsWith("{"), "should be a JSON document"),
+        () -> assertTrue(res.content().contains("Terminal JSON failure"))
+    );
+  }
+
+  @Test
+  void handleTerminal_extensionJson_emitsProblemJson() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().uri("/failure.json")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Terminal JSON failure")
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    ErrorHandlerServlet.handleTerminal(req, res.build());
+
+    assertAll(
+        () -> assertEquals(500, res.status),
+        () -> assertEquals("application/problem+json;charset=UTF-8", res.contentType),
+        () -> assertTrue(res.content().startsWith("{"), "should be a JSON document")
     );
   }
 

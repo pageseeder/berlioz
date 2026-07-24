@@ -46,6 +46,7 @@ import org.pageseeder.berlioz.error.Problems;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpResponses;
 import org.pageseeder.berlioz.json.Json;
+import org.pageseeder.berlioz.xml.Xml;
 import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,11 +60,14 @@ import org.pageseeder.berlioz.xslt.XsltTransformException;
  * {@code <problem>} XML document (default since 0.14.0) or the legacy Berlioz
  * {@code <error>} XML format (opt-in via {@code berlioz.errors.problem=false}).
  *
- * <p>For {@code .html} requests the XML is further transformed by an XSLT stylesheet
- * (custom via {@link BerliozOption#ERROR_STYLESHEET}, or the built-in failsafe template).
- * For other extensions ({@code .xml}, {@code .src}, etc.) raw XML is returned directly.
- * Static resource errors ({@code .jpg}, {@code .png}, {@code .css}, {@code .js}) are
- * answered with an empty body and the original status code.
+ * <p>The expected response format (JSON, HTML or raw XML) is resolved from the
+ * {@link #BERLIOZ_ERROR_MEDIA_TYPE} request attribute set by {@link BerliozServlet} when
+ * available, falling back to the request URL's extension otherwise. JSON-expecting
+ * requests always receive {@code application/problem+json}. For HTML requests the XML is
+ * further transformed by an XSLT stylesheet (custom via {@link BerliozOption#ERROR_STYLESHEET},
+ * or the built-in failsafe template). Other requests ({@code .xml}, {@code .src}, etc.)
+ * receive raw XML directly. Static resource errors ({@code .jpg}, {@code .png}, {@code .css},
+ * {@code .js}) are answered with an empty body and the original status code.
  *
  * <p>This servlet should be configured as:
  *
@@ -310,13 +314,12 @@ public final class ErrorHandlerServlet extends HttpServlet {
       }
     }
 
-    // Resolve the expected media type: prefer the value BerliozServlet resolved from the
+    // Resolve the expected response format: prefer the value BerliozServlet resolved from the
     // matched service's configured content type over the URL extension, which is unreliable
     // for non-standard URL patterns. Falls back to extension inference when the error reaches
     // this servlet directly via the container's <error-page> mechanism (no BerliozServlet
     // involved, e.g. unmapped paths or static-resource errors).
-    String resolvedMediaType = (String) req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE);
-    boolean jsonExpected = resolvedMediaType != null ? Json.isJsonMediaType(resolvedMediaType) : ".json".equals(ext);
+    ResponseFormat format = resolveFormat(req, ext);
 
     // Extra response headers (e.g. Retry-After) carried by the HttpException that triggered this
     // error, if any. ProblemDetails stays body-only per RFC 9457; this is the transport for
@@ -332,7 +335,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // legacy JSON representation, so ERROR_PROBLEM_FORMAT=false (the deprecated escape hatch back
     // to the legacy XML/HTML output) does not apply here — a JSON-expecting request always gets
     // problem+json, regardless of the flag.
-    if (jsonExpected) {
+    if (format == ResponseFormat.JSON) {
       writeResponse(res, toProblemJson(req), "application/problem+json", headers);
       return;
     }
@@ -340,14 +343,12 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // Generate error details as XML
     String xml = toXml(req);
 
-    // Write to the output
-    String fallbackType = APPLICATION_XML;
-
-    // For non-HTML extensions (.xml, .src, etc.) return XML error directly, without the HTML
-    // failsafe stylesheet. This respects the content type whether dispatched via the .auto
-    // error-page mechanism or forwarded directly from BerliozServlet (ERROR_HANDLER=true).
-    if (!DEFAULT_EXTENSION.equals(ext) && !ext.isEmpty()) {
-      writeResponse(res, xml, fallbackType, headers);
+    // For non-HTML formats (.xml, .src, etc., or a resolved non-HTML/non-JSON media type) return
+    // XML error directly, without the HTML failsafe stylesheet. This respects the content type
+    // whether dispatched via the .auto error-page mechanism or forwarded directly from
+    // BerliozServlet (ERROR_HANDLER=true).
+    if (format == ResponseFormat.XML) {
+      writeResponse(res, xml, APPLICATION_XML, headers);
       return;
     }
 
@@ -356,22 +357,53 @@ public final class ErrorHandlerServlet extends HttpServlet {
     if (url != null) {
       String html = XsltTransformer.transformFailSafe(xml, url);
       if (Objects.equals(html, xml)) html = XsltTransformer.transformBuiltInFailSafe(xml);
-      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : fallbackType, headers);
+      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : APPLICATION_XML, headers);
     } else {
-      writeResponse(res, xml, fallbackType, headers);
+      writeResponse(res, xml, APPLICATION_XML, headers);
     }
+  }
+
+  /** The resolved response format for an error, in order of precedence checked. */
+  private enum ResponseFormat { JSON, HTML, XML }
+
+  /**
+   * Resolves the response format for the given error request: JSON, HTML (subject to XSLT
+   * rendering), or raw XML.
+   *
+   * <p>Prefers the {@link #BERLIOZ_ERROR_MEDIA_TYPE} request attribute set by
+   * {@link BerliozServlet} from the matched service's configured content type, over the request
+   * URL's extension, which is unreliable for non-standard URL patterns. Falls back to extension
+   * inference when the attribute is absent (errors reaching this servlet directly via the
+   * container's {@code <error-page>} mechanism, with no {@code BerliozServlet} involved).
+   *
+   * @param req The HTTP servlet request that caused the error.
+   * @param ext The extension of the original request URI.
+   * @return the resolved response format.
+   */
+  private static ResponseFormat resolveFormat(HttpServletRequest req, String ext) {
+    String resolvedMediaType = (String) req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE);
+    if (resolvedMediaType != null) {
+      if (Json.isJsonMediaType(resolvedMediaType)) return ResponseFormat.JSON;
+      return Xml.isXmlMediaType(resolvedMediaType) ? ResponseFormat.XML : ResponseFormat.HTML;
+    }
+    if (".json".equals(ext)) return ResponseFormat.JSON;
+    return DEFAULT_EXTENSION.equals(ext) || ext.isEmpty() ? ResponseFormat.HTML : ResponseFormat.XML;
   }
 
   /** Writes the non-dispatching terminal response using only module-owned resources. */
   static void handleTerminal(HttpServletRequest req, HttpServletResponse res) throws IOException {
     if (res.isCommitted()) return;
     int code = getErrorCode(req);
-    String xml = toXml(req);
     Map<String, String> headers = resolveExceptionHeaders(req);
     res.reset();
     res.setStatus(code);
-    String ext = getExtension(getOriginalURI(req));
-    if (DEFAULT_EXTENSION.equals(ext) || ext.isEmpty()) {
+    ResponseFormat format = resolveFormat(req, getExtension(getOriginalURI(req)));
+    if (format == ResponseFormat.JSON) {
+      writeResponse(res, toProblemJson(req), "application/problem+json", headers);
+      return;
+    }
+    String xml = toXml(req);
+    if (format == ResponseFormat.HTML) {
       String html = XsltTransformer.transformBuiltInFailSafe(xml);
       writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : APPLICATION_XML, headers);
     } else {
