@@ -441,8 +441,8 @@ public final class Service {
    */
   static @Nullable String disjointOutputWarning(Service service) {
     if (!service.generators().isEmpty() && service.supported().isEmpty()) {
-      return "Service " + service.id() + " has generators with disjoint output formats - "
-          + "no format can be served (e.g. XmlGenerator mixed with JsonGenerator)";
+      return serviceWarning(service, "has generators with disjoint output formats - "
+          + "no format can be served (e.g. XmlGenerator mixed with JsonGenerator)");
     }
     return null;
   }
@@ -461,14 +461,25 @@ public final class Service {
     if (!service.isDirect()) return null;
     int count = service.generators().size();
     if (count != 1) {
-      return "Service " + service.id() + " is configured as direct but has " + count
-          + " generators - direct requires exactly one generator; service will not be registered";
+      return serviceWarning(service, "is configured as direct but has " + count
+          + " generators - direct requires exactly one generator; service will not be registered");
     }
     if (service.supported().isEmpty()) {
-      return "Service " + service.id() + " is configured as direct but its generator supports "
-          + "no output format; service will not be registered";
+      return serviceWarning(service, "is configured as direct but its generator supports "
+          + "no output format; service will not be registered");
     }
     return null;
+  }
+
+  /**
+   * Prefixes a warning message with the service's identity.
+   *
+   * @param service the service the warning relates to.
+   * @param message the warning message, without the leading "Service &lt;id&gt;" prefix.
+   * @return the combined warning message.
+   */
+  private static String serviceWarning(Service service, String message) {
+    return "Service " + service.id() + " " + message;
   }
 
   /**
