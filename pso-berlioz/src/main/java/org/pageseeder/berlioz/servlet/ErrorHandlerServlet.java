@@ -621,7 +621,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     else if (o instanceof Integer) {
       return (Integer) o;
     } else {
-      LOGGER.error("The 'javax.servlet.error.status_code' must contain an Integer, but was of type: {}", o.getClass().getSimpleName());
+      LOGGER.error("The '{}' must contain an Integer, but was of type: {}", RequestDispatcher.ERROR_STATUS_CODE, o.getClass().getSimpleName());
       return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
     }
   }
@@ -637,7 +637,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     if (o == null) return null;
     else if (o instanceof Throwable) return (Throwable) o;
     else {
-      LOGGER.error("The 'javax.servlet.error.exception' must contain a Throwable, but was of type: {}", o.getClass().getSimpleName());
+      LOGGER.error("The '{}' must contain a Throwable, but was of type: {}", RequestDispatcher.ERROR_EXCEPTION, o.getClass().getSimpleName());
       return null;
     }
   }
