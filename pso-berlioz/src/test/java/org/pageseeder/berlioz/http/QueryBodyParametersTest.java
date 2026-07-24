@@ -141,9 +141,10 @@ class QueryBodyParametersTest {
         .contentType("application/x-www-form-urlencoded")
         .contentLength((long) Integer.MAX_VALUE + 1)
         .body("q=small");
+    HttpServletRequest req = builder.build();
 
     HttpException ex = assertThrows(HttpException.class,
-        () -> QueryBodyParameters.parse(builder.build()));
+        () -> QueryBodyParameters.parse(req));
 
     assertEquals(413, ex.getHttpCode());
     assertFalse(builder.inputStreamAccessed());
