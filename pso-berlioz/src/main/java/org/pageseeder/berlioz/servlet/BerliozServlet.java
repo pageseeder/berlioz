@@ -357,9 +357,10 @@ public final class BerliozServlet extends HttpServlet {
         processXml(req, res, config, context);
       }
     } catch (HttpException ex) {
-      if (method != HttpMethod.QUERY) throw ex;
-      String message = Objects.requireNonNullElse(ex.getMessage(), "Invalid QUERY request");
-      sendError(req, res, ex.getHttpCode(), message, null);
+      // HttpExceptions thrown by generators are handled by GeneratorFailure and do not reach this
+      // catch; this is the boundary for signals escaping before or after generator invocation.
+      String message = Objects.requireNonNullElse(ex.getMessage(), "HTTP " + ex.getHttpCode());
+      sendError(req, res, ex.getHttpCode(), message, ex);
     }
   }
 

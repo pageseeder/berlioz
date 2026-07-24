@@ -33,6 +33,7 @@ import org.pageseeder.berlioz.xslt.XsltTransformException;
 import org.pageseeder.berlioz.servlet.fixtures.CacheableXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.DirectJsonGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.EchoXmlGenerator;
+import org.pageseeder.berlioz.servlet.fixtures.FailingEtagXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.ParameterEchoXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.RedirectXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.RetryAfterJsonGenerator;
@@ -41,6 +42,7 @@ class BerliozServletTest {
 
   private static final String ECHO_XML = EchoXmlGenerator.class.getName();
   private static final String CACHEABLE_XML = CacheableXmlGenerator.class.getName();
+  private static final String FAILING_ETAG_XML = FailingEtagXmlGenerator.class.getName();
   private static final String RETRY_AFTER_JSON = RetryAfterJsonGenerator.class.getName();
   private static final String REDIRECT_XML = RedirectXmlGenerator.class.getName();
   private static final String DIRECT_JSON = DirectJsonGenerator.class.getName();
@@ -313,6 +315,7 @@ class BerliozServletTest {
 
     assertEquals(400, recorder.status);
     assertEquals("Malformed application/x-www-form-urlencoded QUERY request body", recorder.errorMessage);
+    assertNotNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
   }
 
   @Test
@@ -363,6 +366,23 @@ class BerliozServletTest {
 
     assertEquals(304, second.status);
     assertEquals("", second.content());
+  }
+
+  @Test
+  void doGet_etagCallbackThrowsHttpException_handlesSignalAtServletBoundary() throws Exception {
+    writeConfig(true);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("failing-etag", "get", "/failing-etag", "generator", FAILING_ETAG_XML));
+    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
+    HttpServletRequest request = request("GET", "/failing-etag.json");
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request, recorder.build());
+
+    assertEquals(503, recorder.status);
+    assertEquals("30", recorder.header("Retry-After"));
+    assertTrue(recorder.content().contains("\"detail\":\"HTTP 503\""), recorder.content());
+    assertNotNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
   }
 
   @Test
