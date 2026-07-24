@@ -16,6 +16,9 @@
 package org.pageseeder.berlioz.content;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -127,6 +131,25 @@ class ServiceLoaderTest {
         .anyMatch(w -> w.error().getMessage() != null && w.error().getMessage().contains("no-output")
             && w.error().getMessage().contains("no output format"));
     Assertions.assertTrue(hasExpectedWarning, "Expected a warning explaining why 'no-output' was not registered");
+  }
+
+  @Test
+  void testLoad_malformedModule_preservesWarningsFromLastSuccessfulLoad(@TempDir Path webInf)
+      throws BerliozException, IOException {
+    GlobalSettings.setup((InitEnvironment) null);
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(new File(WEB_INF, "config/services-invalid-direct.xml"));
+    List<CollectedError<SAXParseException>> previousWarnings = loader.getLastLoadWarnings();
+    Assertions.assertFalse(previousWarnings.isEmpty(), "The initial successful load must report a warning");
+
+    Path config = Files.createDirectories(webInf.resolve("config"));
+    Files.copy(new File(WEB_INF, "config/services.xml").toPath(), config.resolve("services.xml"));
+    Files.writeString(config.resolve("services!malformed.xml"), "<service-config>");
+    GlobalSettings.setup(webInf.toFile());
+
+    Assertions.assertThrows(BerliozException.class, loader::load);
+    Assertions.assertSame(previousWarnings, loader.getLastLoadWarnings(),
+        "A failed aggregate load must not replace warnings from the last successful load");
   }
 
   // Namespace tests

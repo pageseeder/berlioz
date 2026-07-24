@@ -146,8 +146,7 @@ public enum ServiceLoader {
     List<File> files = listServiceFiles();
     List<CollectedError<SAXParseException>> warnings = new ArrayList<>();
     for (File f : files) {
-      load(f);
-      warnings.addAll(this.lastWarnings);
+      warnings.addAll(loadFile(f));
     }
     this.lastWarnings = List.copyOf(warnings);
   }
@@ -200,6 +199,19 @@ public enum ServiceLoader {
    * @throws BerliozException Should something unexpected happen.
    */
   public synchronized void load(File xml) throws BerliozException {
+    this.lastWarnings = loadFile(xml);
+  }
+
+  /**
+   * Loads one content access file and returns any warnings collected while parsing it.
+   *
+   * @param xml The XML file to load.
+   *
+   * @return the warnings collected while loading the file.
+   *
+   * @throws BerliozException Should something unexpected happen.
+   */
+  private List<CollectedError<SAXParseException>> loadFile(File xml) throws BerliozException {
     Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
     // Okay, let's start
     SAXParser parser = Xml.safeParser(true);
@@ -232,8 +244,8 @@ public enum ServiceLoader {
       LOGGER.error("An I/O error occurred while reading XML service configuration: {}", ex.getMessage());
       throw new BerliozException("Unable to read services configuration file.", ex, BerliozErrorID.SERVICES_NOT_FOUND);
     }
-    this.lastWarnings = List.copyOf(collector.getErrors());
     this.services.touch();
+    return List.copyOf(collector.getErrors());
   }
 
   /**
