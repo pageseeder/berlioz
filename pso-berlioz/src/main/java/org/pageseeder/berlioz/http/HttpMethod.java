@@ -77,7 +77,7 @@ public enum HttpMethod {
    * QUERY HTTP method: a safe, idempotent method with a request body, used to convey a query
    * that would otherwise require an oversized GET query string or a POST-as-GET tunnel.
    *
-   * @see <a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-09.html">
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc10008.html">
    *      HTTP QUERY Method</a>
    */
   QUERY(true);
