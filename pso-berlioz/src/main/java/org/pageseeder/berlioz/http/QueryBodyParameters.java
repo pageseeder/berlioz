@@ -172,28 +172,14 @@ public final class QueryBodyParameters {
    * repeated names to their first value.
    */
   private static Map<String, String> decode(@Nullable String encoded) {
-    if (encoded == null || encoded.isEmpty()) return Map.of();
+    List<String[]> pairs = splitPairs(encoded);
+    if (pairs.size() > MAX_FORM_PARAMETERS) {
+      throw queryBodyTooLarge("QUERY form body contains more than "
+          + MAX_FORM_PARAMETERS + " parameters");
+    }
     Map<String, String> result = new LinkedHashMap<>();
-    int count = 0;
-    int start = 0;
-    while (start <= encoded.length()) {
-      int end = encoded.indexOf('&', start);
-      if (end < 0) end = encoded.length();
-      if (end > start) {
-        if (++count > MAX_FORM_PARAMETERS) {
-          throw queryBodyTooLarge("QUERY form body contains more than "
-              + MAX_FORM_PARAMETERS + " parameters");
-        }
-        int equals = encoded.indexOf('=', start);
-        if (equals < 0 || equals > end) equals = end;
-        String rawName = encoded.substring(start, equals);
-        String rawValue = equals < end ? encoded.substring(equals + 1, end) : "";
-        String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
-        String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
-        result.putIfAbsent(name, value);
-      }
-      if (end == encoded.length()) break;
-      start = end + 1;
+    for (String[] pair : pairs) {
+      result.putIfAbsent(pair[0], pair[1]);
     }
     return result;
   }
@@ -203,25 +189,42 @@ public final class QueryBodyParameters {
    * preserving every occurrence of a repeated name in encounter order.
    */
   private static Map<String, List<String>> decodeMulti(@Nullable String encoded) {
-    if (encoded == null || encoded.isEmpty()) return Map.of();
     Map<String, List<String>> result = new LinkedHashMap<>();
+    for (String[] pair : splitPairs(encoded)) {
+      result.computeIfAbsent(pair[0], k -> new ArrayList<>()).add(pair[1]);
+    }
+    return result;
+  }
+
+  /**
+   * Splits an {@code application/x-www-form-urlencoded} string into decoded
+   * {@code {name, value}} pairs, in encounter order, without collapsing repeated names.
+   */
+  private static List<String[]> splitPairs(@Nullable String encoded) {
+    if (encoded == null || encoded.isEmpty()) return List.of();
+    List<String[]> pairs = new ArrayList<>();
     int start = 0;
     while (start <= encoded.length()) {
       int end = encoded.indexOf('&', start);
       if (end < 0) end = encoded.length();
-      if (end > start) {
-        int equals = encoded.indexOf('=', start);
-        if (equals < 0 || equals > end) equals = end;
-        String rawName = encoded.substring(start, equals);
-        String rawValue = equals < end ? encoded.substring(equals + 1, end) : "";
-        String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
-        String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
-        result.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
-      }
+      if (end > start) pairs.add(parsePair(encoded, start, end));
       if (end == encoded.length()) break;
       start = end + 1;
     }
-    return result;
+    return pairs;
+  }
+
+  /**
+   * Decodes the {@code name=value} segment of {@code encoded} delimited by {@code [start, end)}.
+   */
+  private static String[] parsePair(String encoded, int start, int end) {
+    int equals = encoded.indexOf('=', start);
+    if (equals < 0 || equals > end) equals = end;
+    String rawName = encoded.substring(start, equals);
+    String rawValue = equals < end ? encoded.substring(equals + 1, end) : "";
+    String name = URLDecoder.decode(rawName, StandardCharsets.UTF_8);
+    String value = URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
+    return new String[] {name, value};
   }
 
   private static HttpException queryBodyTooLarge(String detail) {
