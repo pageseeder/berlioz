@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -204,34 +202,25 @@ public final class QueryBodyParameters {
    * repeated names to their first value.
    */
   private static Map<String, String> decode(@Nullable String encoded) {
-    List<String[]> pairs = splitPairs(encoded);
-    if (pairs.size() > MAX_FORM_PARAMETERS) {
-      throw queryBodyTooLarge("QUERY form body contains more than "
-          + MAX_FORM_PARAMETERS + " parameters");
-    }
     Map<String, String> result = new LinkedHashMap<>();
-    for (String[] pair : pairs) {
-      result.putIfAbsent(pair[0], pair[1]);
-    }
-    return result;
-  }
-
-  /**
-   * Splits an {@code application/x-www-form-urlencoded} string into decoded
-   * {@code {name, value}} pairs, in encounter order, without collapsing repeated names.
-   */
-  private static List<String[]> splitPairs(@Nullable String encoded) {
-    if (encoded == null || encoded.isEmpty()) return List.of();
-    List<String[]> pairs = new ArrayList<>();
+    if (encoded == null || encoded.isEmpty()) return result;
+    int count = 0;
     int start = 0;
     while (start <= encoded.length()) {
       int end = encoded.indexOf('&', start);
       if (end < 0) end = encoded.length();
-      if (end > start) pairs.add(parsePair(encoded, start, end));
+      if (end > start) {
+        if (++count > MAX_FORM_PARAMETERS) {
+          throw queryBodyTooLarge("QUERY form body contains more than "
+              + MAX_FORM_PARAMETERS + " parameters");
+        }
+        String[] pair = parsePair(encoded, start, end);
+        result.putIfAbsent(pair[0], pair[1]);
+      }
       if (end == encoded.length()) break;
       start = end + 1;
     }
-    return pairs;
+    return result;
   }
 
   /**

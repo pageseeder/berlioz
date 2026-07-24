@@ -234,6 +234,18 @@ class QueryBodyParametersTest {
   }
 
   @Test
+  void testParse_malformedExcessParameter_rejectedBeforeDecoding() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded")
+        .body(formParameters(1_000, false) + "&bad=%")
+        .build();
+
+    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
+    assertEquals(413, ex.getHttpCode());
+  }
+
+  @Test
   void testParse_malformedPercentEscape_throwsBadRequest() {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
