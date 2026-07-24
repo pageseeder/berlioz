@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.error;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -109,6 +110,39 @@ final class HttpExceptionTest {
   void findIn_noHttpExceptionInChain_returnsNull() {
     Exception plain = new RuntimeException("boom", new IllegalStateException("cause"));
     assertNull(HttpException.findIn(plain));
+  }
+
+  @Test
+  void findIn_cyclicCauseChain_returnsNull() {
+    Exception first = new RuntimeException("first");
+    Exception second = new RuntimeException("second");
+    first.initCause(second);
+    second.initCause(first);
+
+    assertTimeoutPreemptively(Duration.ofSeconds(1),
+        () -> assertNull(HttpException.findIn(first)));
+  }
+
+  @Test
+  void findIn_atMaximumCauseDepth_findsHttpException() {
+    HttpException signal = new HttpException("busy", 503) {};
+    Throwable wrapper = signal;
+    for (int depth = 1; depth < 100; depth++) {
+      wrapper = new RuntimeException("wrapper " + depth, wrapper);
+    }
+
+    assertSame(signal, HttpException.findIn(wrapper));
+  }
+
+  @Test
+  void findIn_beyondMaximumCauseDepth_returnsNull() {
+    HttpException signal = new HttpException("busy", 503) {};
+    Throwable wrapper = signal;
+    for (int depth = 0; depth < 100; depth++) {
+      wrapper = new RuntimeException("wrapper " + depth, wrapper);
+    }
+
+    assertNull(HttpException.findIn(wrapper));
   }
 
   @Test

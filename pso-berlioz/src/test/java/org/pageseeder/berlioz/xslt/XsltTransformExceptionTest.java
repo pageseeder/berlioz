@@ -1,6 +1,7 @@
 package org.pageseeder.berlioz.xslt;
 
 import java.nio.file.NoSuchFileException;
+import java.time.Duration;
 
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -48,6 +49,21 @@ class XsltTransformExceptionTest {
   void ordinaryExecutionFailure_isDynamic() {
     XsltTransformException failure = XsltTransformException.duringExecution(
         new TransformerException("dynamic"));
+
+    assertEquals(XsltTransformException.Phase.EXECUTION, failure.phase());
+    assertEquals(BerliozErrorID.TRANSFORM_DYNAMIC_ERROR, failure.id());
+  }
+
+  @Test
+  void cyclicCauseChain_isBounded() {
+    RuntimeException first = new RuntimeException("first");
+    RuntimeException second = new RuntimeException("second");
+    first.initCause(second);
+    second.initCause(first);
+    TransformerException cause = new TransformerException("dynamic", first);
+
+    XsltTransformException failure = assertTimeoutPreemptively(Duration.ofSeconds(1),
+        () -> XsltTransformException.duringExecution(cause));
 
     assertEquals(XsltTransformException.Phase.EXECUTION, failure.phase());
     assertEquals(BerliozErrorID.TRANSFORM_DYNAMIC_ERROR, failure.id());

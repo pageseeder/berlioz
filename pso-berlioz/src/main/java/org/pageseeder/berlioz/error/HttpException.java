@@ -82,6 +82,8 @@ public abstract class HttpException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
+  private static final int MAX_CAUSE_DEPTH = 100;
+
   private final int httpCode;
 
   // S1165: mutable by design — header() is a builder-style call made after construction, so the
@@ -209,13 +211,15 @@ public abstract class HttpException extends RuntimeException {
    * <p>Useful where the original signal may have been wrapped, for example in a
    * {@code BerliozException} on the way to a servlet-level error handler, so that response
    * headers set via {@link #header(String, String)} are not lost along the way.
+   * The search is limited to {@value #MAX_CAUSE_DEPTH} throwables to ensure malformed cause
+   * chains cannot make error handling loop indefinitely.
    *
    * @param throwable the throwable to search, or {@code null}
    * @return the first {@code HttpException} found in the cause chain; {@code null} if none
    */
   public static @Nullable HttpException findIn(@Nullable Throwable throwable) {
     Throwable cause = throwable;
-    while (cause != null) {
+    for (int depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++) {
       if (cause instanceof HttpException) return (HttpException) cause;
       cause = cause.getCause();
     }

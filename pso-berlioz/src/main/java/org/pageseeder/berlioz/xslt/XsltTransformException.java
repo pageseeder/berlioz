@@ -38,6 +38,8 @@ public final class XsltTransformException extends BerliozException {
 
   private static final long serialVersionUID = 8508866905853577647L;
 
+  private static final int MAX_CAUSE_DEPTH = 100;
+
   /** The stage of transformation that failed. */
   public enum Phase {
     /** Loading or compiling the application stylesheet. */
@@ -117,11 +119,9 @@ public final class XsltTransformException extends BerliozException {
 
   private static boolean hasCause(Throwable throwable, Class<? extends Throwable> type) {
     Throwable current = throwable;
-    while (current != null) {
+    for (int depth = 0; current != null && depth < MAX_CAUSE_DEPTH; depth++) {
       if (type.isInstance(current)) return true;
-      Throwable next = current.getCause();
-      if (next == current) break;
-      current = next;
+      current = current.getCause();
     }
     return false;
   }
