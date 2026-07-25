@@ -66,6 +66,11 @@ final class ServicesHandler10 extends DefaultHandler {
   private final SAXErrorCollector collector;
 
   /**
+   * The classloader used to instantiate generator classes declared by the parsed source.
+   */
+  private final ClassLoader classLoader;
+
+  /**
    * The elements used recognized by this handler.
    */
   private enum Element {
@@ -188,14 +193,18 @@ final class ServicesHandler10 extends DefaultHandler {
    *
    * <p>Note: it is more efficient to pass the generators rather than access the outer class.
    *
-   * @param registry  The service registry to use.
-   * @param collector The error handler to collect errors.
+   * @param registry    The service registry to use.
+   * @param collector   The error handler to collect errors.
+   * @param classLoader The classloader used to instantiate generator classes; if it cannot find a
+   *                    class, the classloader that loaded {@code ServicesHandler10} is tried as a
+   *                    fallback so framework-owned generators keep resolving.
    *
    * @throws NullPointerException If any of the method arguments is <code>null</code>.
    */
-  public ServicesHandler10(ServiceRegistry registry, SAXErrorCollector collector) {
+  public ServicesHandler10(ServiceRegistry registry, SAXErrorCollector collector, ClassLoader classLoader) {
     this.registry = Objects.requireNonNull(registry, "service registry is required");
     this.collector = Objects.requireNonNull(collector, "error collector is required");
+    this.classLoader = Objects.requireNonNull(classLoader, "classLoader is required");
   }
 
   @Override
@@ -443,6 +452,28 @@ final class ServicesHandler10 extends DefaultHandler {
   }
 
   /**
+   * Loads a generator class, preferring the classloader supplied to this handler (the deployed
+   * application's classloader, so overlay generators packaged inside a contributing JAR resolve
+   * correctly) and falling back to the classloader that loaded {@code ServicesHandler10} itself,
+   * so framework-owned generators keep resolving even if the supplied classloader cannot see them.
+   *
+   * @param className The fully-qualified generator class name.
+   *
+   * @return The loaded class.
+   *
+   * @throws ClassNotFoundException If the class could not be found by either classloader.
+   */
+  private Class<?> loadGeneratorClass(String className) throws ClassNotFoundException {
+    try {
+      return Class.forName(className, true, this.classLoader);
+    } catch (ClassNotFoundException ex) {
+      ClassLoader fallback = ServicesHandler10.class.getClassLoader();
+      if (fallback == this.classLoader) throw ex;
+      return Class.forName(className, true, fallback);
+    }
+  }
+
+  /**
    * Handles the loading of the content generator.
    *
    * @param atts The attributes of the 'content-generator' element.
@@ -459,7 +490,7 @@ final class ServicesHandler10 extends DefaultHandler {
       if (className == null || className.isEmpty()) {
         generator = new NoContent();
       } else {
-        Object instance = Class.forName(className).getDeclaredConstructor().newInstance();
+        Object instance = loadGeneratorClass(className).getDeclaredConstructor().newInstance();
         if (instance instanceof BerliozGenerator) {
           generator = (BerliozGenerator) instance;
         } else {

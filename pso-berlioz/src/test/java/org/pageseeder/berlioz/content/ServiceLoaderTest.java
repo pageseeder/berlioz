@@ -17,9 +17,13 @@ package org.pageseeder.berlioz.content;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -176,4 +180,133 @@ class ServiceLoaderTest {
     Assertions.assertEquals(1, generators.size());
     Assertions.assertInstanceOf(expectedClass, generators.get(0), message);
   }
+
+  // Classpath discovery ------------------------------------------------------------------------
+
+  @Test
+  void testDiscoverClasspathSources_dedupesIdenticalUrl(@TempDir Path dir) throws IOException {
+    writeMinimalServicesXml(dir);
+    URL dirUrl = dir.toUri().toURL();
+    try (URLClassLoader classLoader = new URLClassLoader(new URL[] {dirUrl, dirUrl}, null)) {
+      List<ServiceSource> sources = ServiceLoader.getInstance().discoverClasspathSources(classLoader);
+      Assertions.assertEquals(1, sources.size(), "Identical classpath resource URLs must be deduplicated");
+      Assertions.assertEquals(ServiceSourceKind.CLASSPATH, sources.get(0).kind());
+    }
+  }
+
+  @Test
+  void testDiscoverClasspathSources_orderingIsStableAcrossRepeatedCalls(@TempDir Path root) throws IOException {
+    Path dirA = Files.createDirectories(root.resolve("a"));
+    Path dirB = Files.createDirectories(root.resolve("b"));
+    writeMinimalServicesXml(dirA);
+    writeMinimalServicesXml(dirB);
+    URL[] urls = {dirA.toUri().toURL(), dirB.toUri().toURL()};
+    try (URLClassLoader classLoader = new URLClassLoader(urls, null)) {
+      List<ServiceSource> first = ServiceLoader.getInstance().discoverClasspathSources(classLoader);
+      List<ServiceSource> second = ServiceLoader.getInstance().discoverClasspathSources(classLoader);
+      Assertions.assertEquals(2, first.size());
+      Assertions.assertEquals(first, second, "Discovery order must be stable across repeated calls");
+    }
+  }
+
+  @Test
+  void testDiscoverSources_classpathSourcesComeBeforeFilesystemSources(@TempDir Path dir) throws IOException {
+    writeMinimalServicesXml(dir);
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    try (URLClassLoader classpathLoader = new URLClassLoader(new URL[] {dir.toUri().toURL()}, original)) {
+      Thread.currentThread().setContextClassLoader(classpathLoader);
+      List<ServiceSource> sources = ServiceLoader.getInstance().discoverSources();
+      Assertions.assertFalse(sources.isEmpty());
+      Assertions.assertEquals(ServiceSourceKind.CLASSPATH, sources.get(0).kind(),
+          "Classpath sources must be discovered before filesystem sources");
+      boolean hasFilesystemSource = sources.stream().anyMatch(s -> s.kind() == ServiceSourceKind.FILESYSTEM);
+      Assertions.assertTrue(hasFilesystemSource, "Filesystem sources should still be discovered");
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
+  private static void writeMinimalServicesXml(Path dir) throws IOException {
+    Path metaInf = Files.createDirectories(dir.resolve("META-INF/berlioz"));
+    Files.writeString(metaInf.resolve("services.xml"), "<service-config version=\"1.0\"/>");
+  }
+
+  // Filesystem module ordering -------------------------------------------------------------------
+
+  @Test
+  void testListServiceFiles_modulesAreLexicallyOrdered(@TempDir Path webInf) throws IOException {
+    Path config = Files.createDirectories(webInf.resolve("config"));
+    Files.writeString(config.resolve("services!bbb.xml"), "<services group=\"bbb\"/>");
+    Files.writeString(config.resolve("services!aaa.xml"), "<services group=\"aaa\"/>");
+    Files.writeString(config.resolve("services!ccc.xml"), "<services group=\"ccc\"/>");
+    GlobalSettings.setup(webInf.toFile());
+
+    List<File> files = ServiceLoader.getInstance().listServiceFiles();
+    List<String> names = files.stream().map(File::getName).collect(Collectors.toList());
+    Assertions.assertEquals(List.of("services!aaa.xml", "services!bbb.xml", "services!ccc.xml"), names);
+  }
+
+  // Generator classloader correction --------------------------------------------------------------
+
+  @Test
+  void testLoad_generatorsAreLoadedThroughContextClassLoader() throws BerliozException {
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    RecordingClassLoader recording = new RecordingClassLoader(original);
+    Thread.currentThread().setContextClassLoader(recording);
+    try {
+      ServiceLoader loader = ServiceLoader.getInstance();
+      loader.load(new File(WEB_INF, "config/services.xml"));
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+    Assertions.assertTrue(recording.requested.contains(NoContent.class.getName()),
+        "Expected the generator class to be resolved through the context classloader");
+  }
+
+  @Test
+  void testLoad_generatorClassloaderFallback_stillResolvesBuiltInGenerator() throws BerliozException {
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    DenyingClassLoader denying = new DenyingClassLoader(original, NoContent.class.getName());
+    Thread.currentThread().setContextClassLoader(denying);
+    try {
+      ServiceLoader loader = ServiceLoader.getInstance();
+      loader.load(new File(WEB_INF, "config/services.xml"));
+      MatchingService match = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
+      Assertions.assertNotNull(match, "Built-in generator should still resolve via the fallback classloader");
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
+  private static final class RecordingClassLoader extends ClassLoader {
+
+    private final List<String> requested = new ArrayList<>();
+
+    RecordingClassLoader(ClassLoader parent) {
+      super(parent);
+    }
+
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+      this.requested.add(name);
+      return super.loadClass(name, resolve);
+    }
+  }
+
+  private static final class DenyingClassLoader extends ClassLoader {
+
+    private final String denied;
+
+    DenyingClassLoader(ClassLoader parent, String denied) {
+      super(parent);
+      this.denied = denied;
+    }
+
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+      if (this.denied.equals(name)) throw new ClassNotFoundException(name);
+      return super.loadClass(name, resolve);
+    }
+  }
+
 }

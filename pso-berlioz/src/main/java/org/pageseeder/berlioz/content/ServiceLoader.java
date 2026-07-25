@@ -18,9 +18,14 @@ package org.pageseeder.berlioz.content;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.xml.parsers.SAXParser;
@@ -144,9 +149,10 @@ public enum ServiceLoader {
    */
   public synchronized void load() throws BerliozException {
     List<File> files = listServiceFiles();
+    File configDir = GlobalSettings.getConfig();
     List<CollectedError<SAXParseException>> warnings = new ArrayList<>();
     for (File f : files) {
-      warnings.addAll(loadFile(f));
+      warnings.addAll(parseSource(ServiceSource.filesystem(f, configDir)));
     }
     this.lastWarnings = List.copyOf(warnings);
   }
@@ -185,6 +191,7 @@ public enum ServiceLoader {
       if (xml.exists()) {
         files.add(xml);
       }
+      Arrays.sort(subs, Comparator.comparing(File::getName));
       Collections.addAll(files, subs);
     }
 
@@ -201,6 +208,68 @@ public enum ServiceLoader {
   }
 
   /**
+   * Discovers all service configuration sources, classpath sources first and filesystem sources
+   * second, so that application-owned filesystem declarations are parsed — and take precedence —
+   * last.
+   *
+   * <p>Note: unlike {@link #load()}, this method only discovers and describes sources; it does not
+   * parse or register them.
+   *
+   * @return the discovered sources, classpath sources first.
+   *
+   * @since 0.14.2
+   */
+  public List<ServiceSource> discoverSources() {
+    List<ServiceSource> sources = new ArrayList<>(discoverClasspathSources(resolveApplicationClassLoader()));
+    for (File file : listServiceFiles()) {
+      sources.add(ServiceSource.filesystem(file, GlobalSettings.getConfig()));
+    }
+    return List.copyOf(sources);
+  }
+
+  /**
+   * Discovers {@code META-INF/berlioz/services.xml} resources visible to the given classloader.
+   *
+   * <p>Identical resource URLs (e.g. the same classpath entry contributed twice) are returned only
+   * once. The result is sorted by {@link ServiceSource#orderingKey()} so that discovery order is
+   * stable across repeated calls, regardless of classloader enumeration order.
+   *
+   * @param classLoader the classloader to enumerate resources from.
+   *
+   * @return the discovered classpath sources, deduplicated and deterministically ordered.
+   *
+   * @since 0.14.2
+   */
+  List<ServiceSource> discoverClasspathSources(ClassLoader classLoader) {
+    Objects.requireNonNull(classLoader, "classLoader is required");
+    Map<String, ServiceSource> byUrl = new LinkedHashMap<>();
+    try {
+      for (URL url : Collections.list(classLoader.getResources(ServiceOrigin.CLASSPATH_RESOURCE_PATH))) {
+        byUrl.putIfAbsent(url.toExternalForm(), ServiceSource.classpath(url));
+      }
+    } catch (IOException ex) {
+      LOGGER.warn("Unable to enumerate classpath service configuration resources: {}", ex.getMessage());
+    }
+    List<ServiceSource> sources = new ArrayList<>(byUrl.values());
+    sources.sort(Comparator.comparing(ServiceSource::orderingKey));
+    return List.copyOf(sources);
+  }
+
+  /**
+   * Resolves the classloader to use for classpath discovery and generator instantiation: the
+   * current thread's context classloader, falling back to the classloader that loaded Berlioz
+   * itself if unavailable.
+   *
+   * @return the resolved application classloader.
+   *
+   * @since 0.14.2
+   */
+  static ClassLoader resolveApplicationClassLoader() {
+    ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+    return contextLoader != null ? contextLoader : ServiceLoader.class.getClassLoader();
+  }
+
+  /**
    * Loads the content access file.
    *
    * @param xml    The XML file to load.
@@ -208,20 +277,20 @@ public enum ServiceLoader {
    * @throws BerliozException Should something unexpected happen.
    */
   public synchronized void load(File xml) throws BerliozException {
-    this.lastWarnings = loadFile(xml);
+    Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
+    this.lastWarnings = parseSource(ServiceSource.filesystem(xml, GlobalSettings.getConfig()));
   }
 
   /**
-   * Loads one content access file and returns any warnings collected while parsing it.
+   * Parses one service configuration source and returns any warnings collected while parsing it.
    *
-   * @param xml The XML file to load.
+   * @param source The service configuration source.
    *
-   * @return the warnings collected while loading the file.
+   * @return the warnings collected while loading the source.
    *
    * @throws BerliozException Should something unexpected happen.
    */
-  private List<CollectedError<SAXParseException>> loadFile(File xml) throws BerliozException {
-    Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
+  private List<CollectedError<SAXParseException>> parseSource(ServiceSource source) throws BerliozException {
     // Okay, let's start
     SAXParser parser = Xml.safeParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
@@ -232,12 +301,13 @@ public enum ServiceLoader {
     // Load the services
     try {
       XMLReader reader = parser.getXMLReader();
-      HandlingDispatcher dispatcher = new HandlingDispatcher(reader, this.services);
+      ClassLoader classLoader = resolveApplicationClassLoader();
+      HandlingDispatcher dispatcher = new HandlingDispatcher(reader, this.services, classLoader);
       reader.setContentHandler(dispatcher);
       reader.setEntityResolver(BerliozEntityResolver.getInstance());
       reader.setErrorHandler(collector);
-      LOGGER.info("Parsing {}", xml.toURI());
-      reader.parse(new InputSource(xml.toURI().toString()));
+      LOGGER.info("Parsing {}", source.origin());
+      reader.parse(new InputSource(source.url().toExternalForm()));
       // if the error threshold was reached, throw an error!
       if (collector.hasError()) {
         id = BerliozErrorID.SERVICES_INVALID;
@@ -286,6 +356,11 @@ public enum ServiceLoader {
     private final XMLReader reader;
 
     /**
+     * The classloader used to instantiate generators declared by the parsed source.
+     */
+    private final ClassLoader classLoader;
+
+    /**
      * The document locator for use when reporting the location of errors and warnings.
      */
     private @Nullable Locator locator;
@@ -293,12 +368,14 @@ public enum ServiceLoader {
     /**
      * Create a new version sniffer for the specified XML reader.
      *
-     * @param reader   The XML Reader in use.
-     * @param registry The service registry.
+     * @param reader      The XML Reader in use.
+     * @param registry    The service registry.
+     * @param classLoader The classloader used to instantiate generators.
      */
-    public HandlingDispatcher(XMLReader reader, ServiceRegistry registry) {
+    public HandlingDispatcher(XMLReader reader, ServiceRegistry registry, ClassLoader classLoader) {
       this.reader = reader;
       this.registry = registry;
+      this.classLoader = classLoader;
     }
 
     @Override
@@ -346,12 +423,12 @@ public enum ServiceLoader {
         // Version 1.0
         if ("1.0".equals(version)) {
           LOGGER.info("Service configuration 1.0 detected");
-          return new ServicesHandler10(this.registry, collector);
+          return new ServicesHandler10(this.registry, collector, this.classLoader);
 
         // Unknown version (assume 1.0)
         } else {
           LOGGER.info("Service configuration version unavailable, assuming 1.0");
-          return new ServicesHandler10(this.registry, collector);
+          return new ServicesHandler10(this.registry, collector, this.classLoader);
         }
 
       // A group override file (services!<group>.xml): a bare <services> root, no <service-config>
@@ -359,7 +436,7 @@ public enum ServiceLoader {
       } else if ("services".equals(name)) {
 
         LOGGER.info("Services group using 1.0");
-        return new ServicesHandler10(this.registry, collector);
+        return new ServicesHandler10(this.registry, collector, this.classLoader);
 
       // Definitely not supported
       } else {
