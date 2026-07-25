@@ -31,6 +31,11 @@
 <!--
   A container for services.
 
+  May appear nested under <service-config>, or as the document's own root element in a
+  "services!<group>.xml" override file (loaded in addition to the main services.xml). As a root
+  element it must NOT be wrapped in <service-config>: that element clears any services already
+  registered by files loaded earlier, so only the main services.xml should use it.
+
   @attribute group A name to group these services together.
 -->
 <!ELEMENT services                               ( namespace*, response-code?, service* ) >

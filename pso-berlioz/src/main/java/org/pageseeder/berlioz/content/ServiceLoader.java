@@ -161,6 +161,15 @@ public enum ServiceLoader {
    * <p>If it exists, the main file is always returned first. There is no
    * guaranteed ordering for the other services files.
    *
+   * <p><b>Root element matters:</b> the main file must use <code>&lt;service-config&gt;</code> as
+   * its root element; loading it clears the registry before its own services are registered, since
+   * it is always loaded first. Group override files must instead use a bare
+   * <code>&lt;services group="..."&gt;</code> as their root element (no
+   * <code>&lt;service-config&gt;</code> wrapper) so that loading them adds to the registry rather
+   * than clearing services already registered by the main file or by other override files loaded
+   * before them. See {@link HandlingDispatcher#getHandler} for how the root element selects between
+   * the two.
+   *
    * @return the list of services files.
    */
   public List<File> listServiceFiles() {
@@ -329,7 +338,8 @@ public enum ServiceLoader {
     private ContentHandler getHandler(String name, Attributes atts) throws SAXException {
       SAXErrorCollector collector = getErrorCollector(this.reader);
 
-      // Service configuration
+      // Service configuration: the main services.xml file. ServicesHandler10 clears the registry
+      // when it sees this root element, so only the main file (always loaded first) should use it.
       if ("service-config".equals(name)) {
         String version = atts.getValue("version");
 
@@ -344,6 +354,8 @@ public enum ServiceLoader {
           return new ServicesHandler10(this.registry, collector);
         }
 
+      // A group override file (services!<group>.xml): a bare <services> root, no <service-config>
+      // wrapper, so ServicesHandler10 registers into the existing registry instead of clearing it.
       } else if ("services".equals(name)) {
 
         LOGGER.info("Services group using 1.0");
