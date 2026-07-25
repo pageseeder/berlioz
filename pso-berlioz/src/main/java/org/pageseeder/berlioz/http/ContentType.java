@@ -138,7 +138,6 @@ public final class ContentType {
       while (this.index < this.length) {
         require(';');
         skipWhitespace();
-        if (this.index == this.length || this.value.charAt(this.index) == ';') continue;
         String name = token("parameter name");
         skipWhitespace();
         require('=');
