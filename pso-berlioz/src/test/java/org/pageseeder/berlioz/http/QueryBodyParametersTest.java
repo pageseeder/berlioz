@@ -6,10 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.pageseeder.berlioz.error.HttpException;
 
 class QueryBodyParametersTest {
@@ -245,16 +249,25 @@ class QueryBodyParametersTest {
     assertEquals(413, ex.getHttpCode());
   }
 
-  @Test
-  void testParse_malformedPercentEscape_throwsBadRequest() {
+  @ParameterizedTest(name = "{2}")
+  @MethodSource("badRequestCases")
+  void testParse_malformedInput_throwsBadRequest(String contentType, String body, String description) {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
-        .contentType("application/x-www-form-urlencoded")
-        .body("q=%2")
+        .contentType(contentType)
+        .body(body)
         .build();
 
     HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
     assertEquals(400, ex.getHttpCode());
+  }
+
+  private static Stream<Arguments> badRequestCases() {
+    return Stream.of(
+        Arguments.of("application/x-www-form-urlencoded", "q=%2", "malformed percent escape"),
+        Arguments.of("application/x-www-form-urlencoded;charset=ISO-8859-1", "q=hello", "declared non-UTF-8 charset"),
+        Arguments.of("application/x-www-form-urlencoded;charset=not-a-real-charset", "q=hello", "unrecognised charset")
+    );
   }
 
   @Test
@@ -268,30 +281,6 @@ class QueryBodyParametersTest {
     Map<String, String> params = QueryBodyParameters.parse(req);
 
     assertEquals("hello", params.get("q"));
-  }
-
-  @Test
-  void testParse_declaredNonUtf8Charset_throwsBadRequest() {
-    HttpServletRequest req = HttpTestSupport.request()
-        .method("QUERY")
-        .contentType("application/x-www-form-urlencoded;charset=ISO-8859-1")
-        .body("q=hello")
-        .build();
-
-    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
-    assertEquals(400, ex.getHttpCode());
-  }
-
-  @Test
-  void testParse_unrecognisedCharset_throwsBadRequest() {
-    HttpServletRequest req = HttpTestSupport.request()
-        .method("QUERY")
-        .contentType("application/x-www-form-urlencoded;charset=not-a-real-charset")
-        .body("q=hello")
-        .build();
-
-    HttpException ex = assertThrows(HttpException.class, () -> QueryBodyParameters.parse(req));
-    assertEquals(400, ex.getHttpCode());
   }
 
   @Test
