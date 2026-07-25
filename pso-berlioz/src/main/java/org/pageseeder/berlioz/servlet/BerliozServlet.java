@@ -195,7 +195,7 @@ public final class BerliozServlet extends HttpServlet {
         process(req, res, method, method != HttpMethod.HEAD);
       }
     } catch (IllegalArgumentException ex) {
-      sendError(req, res, HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported HTTP method", null);
+      routeError(req, res, HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported HTTP method", null);
     } catch (IOException ex) {
       logIOError(req, ex);
     }
@@ -252,7 +252,7 @@ public final class BerliozServlet extends HttpServlet {
     try {
       loader.loadIfRequired();
     } catch (BerliozException ex) {
-      sendError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
+      routeError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
       return;
     }
     ServiceRegistry services = getServiceRegistry();
@@ -306,7 +306,7 @@ public final class BerliozServlet extends HttpServlet {
         ServerTimingHeader.addMetricNano(res,"load", "Loading services", System.nanoTime() - beforeLoad);
       }
     } catch (BerliozException ex) {
-      sendError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
+      routeError(req, res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service configuration Error", ex);
       return;
     }
 
@@ -344,7 +344,7 @@ public final class BerliozServlet extends HttpServlet {
     // JSON requests fall back to XML+XSLT when the service doesn't support JSON directly,
     // but if the service doesn't support XML either, nothing can be produced.
     if (!serviceSupportsJson && !service.supported().contains(OutputType.XML)) {
-      sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+      routeError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
       LOGGER.debug("Service {} does not support the requested output format for: {}", service.id(), req.getRequestURI());
       return;
     }
@@ -360,7 +360,7 @@ public final class BerliozServlet extends HttpServlet {
       // HttpExceptions thrown by generators are handled by GeneratorFailure and do not reach this
       // catch; this is the boundary for signals escaping before or after generator invocation.
       String message = Objects.requireNonNullElse(ex.getMessage(), "HTTP " + ex.getHttpCode());
-      sendError(req, res, ex.getHttpCode(), message, ex);
+      routeError(req, res, ex.getHttpCode(), message, ex);
     }
   }
 
@@ -375,7 +375,7 @@ public final class BerliozServlet extends HttpServlet {
     if (method != HttpMethod.QUERY) return true;
     String contentType = req.getContentType();
     if (contentType != null && !contentType.isBlank()) return true;
-    sendError(req, res, HttpServletResponse.SC_BAD_REQUEST,
+    routeError(req, res, HttpServletResponse.SC_BAD_REQUEST,
         "QUERY requests require a Content-Type header", null);
     return false;
   }
@@ -432,7 +432,7 @@ public final class BerliozServlet extends HttpServlet {
     res.setStatus(statusCode);
 
     // If errors occurred and should percolate
-    if (checkAndSendError(req, res, statusCode, json.getError())) return;
+    if (routeGeneratorError(req, res, statusCode, json.getError())) return;
 
     // Redirection
     if (handleRedirect(req, res, status, json.getRedirectUrl())) return;
@@ -509,7 +509,7 @@ public final class BerliozServlet extends HttpServlet {
     res.setStatus(statusCode);
 
     // If errors occurred and should percolate
-    if (checkAndSendError(req, res, statusCode, xml.getError())) return;
+    if (routeGeneratorError(req, res, statusCode, xml.getError())) return;
 
     // Redirection (Beta)
     if (handleRedirect(req, res, status, xml.getRedirectURL())) return;
@@ -564,11 +564,11 @@ public final class BerliozServlet extends HttpServlet {
       if (!methods.isEmpty()) {
         String allowed = HttpResponses.allow(methods);
         res.setHeader(HttpHeaders.ALLOW, allowed);
-        sendError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only the following are allowed: " + allowed, null);
+        routeError(req, res, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only the following are allowed: " + allowed, null);
         return;
       }
     }
-    sendError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+    routeError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
     LOGGER.debug("No matching service for: {}", req.getRequestURI());
   }
 
@@ -602,15 +602,15 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   /**
-   * Forwards an error to the client when a generator threw an exception and the global option
+   * Routes an error when a generator threw an exception and the global option
    * {@link BerliozOption#ERROR_GENERATOR_CATCH} is not set.
    *
-   * @return {@code true} when an error was sent and the caller must return immediately.
+   * @return {@code true} when the error was routed and the caller must return immediately.
    */
-  private boolean checkAndSendError(HttpServletRequest req, HttpServletResponse res,
+  private boolean routeGeneratorError(HttpServletRequest req, HttpServletResponse res,
       int statusCode, @Nullable Exception error) {
     if (error == null || GlobalSettings.has(BerliozOption.ERROR_GENERATOR_CATCH)) return false;
-    sendError(req, res, statusCode, "The service failed because of errors thrown by generators", error);
+    routeError(req, res, statusCode, "The service failed because of errors thrown by generators", error);
     return true;
   }
 
@@ -630,7 +630,7 @@ public final class BerliozServlet extends HttpServlet {
       res.setHeader("Location", res.encodeRedirectURL(url));
     } else {
       LOGGER.warn("Blocked unsafe redirect URL: {}", url);
-      sendError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
+      routeError(req, res, HttpServletResponse.SC_BAD_REQUEST, "Invalid redirect URL", null);
     }
     return true;
   }
@@ -750,7 +750,7 @@ public final class BerliozServlet extends HttpServlet {
     }
     req.setAttribute(ErrorHandlerServlet.ERROR_RENDERING_DEPTH, 1);
     req.setAttribute(ErrorHandlerServlet.ORIGINAL_ERROR_EXCEPTION, ex);
-    sendError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+    routeError(req, res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
         "The service failed during XSLT transformation", ex);
   }
 
@@ -809,7 +809,7 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   /**
-   * Handles the specified error.
+   * Routes the specified error through the configured error handling mechanism.
    *
    * @param req     The HTTP Servlet request.
    * @param res     The HTTP Servlet response.
@@ -817,7 +817,7 @@ public final class BerliozServlet extends HttpServlet {
    * @param message The message for the message.
    * @param ex      Any caught exception (might be <code>null</code>).
    */
-  private void sendError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex) {
+  private void routeError(HttpServletRequest req, HttpServletResponse res, int code, String message, @Nullable Exception ex) {
     // Is Berlioz already handling an error? (set by the servlet container per javax.servlet error dispatch contract)
     Integer error = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
 
