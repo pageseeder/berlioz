@@ -15,8 +15,13 @@
  */
 package org.pageseeder.berlioz.content;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -349,5 +354,187 @@ final class ServiceRegistryTest {
     Assertions.assertTrue(warning.contains(first.toString()), warning);
     Assertions.assertTrue(warning.contains(second.toString()), warning);
     Assertions.assertTrue(warning.contains("/home"), warning);
+  }
+
+  // --- duplicate-pattern fix on override ---
+
+  @Test
+  void testRegister_overrideDoesNotAccumulateDuplicatePatterns() throws Exception {
+    URIPattern pattern = new URIPattern("/items/{id}");
+    registry.register(buildService("v1"), pattern, HttpMethod.GET);
+    registry.register(buildService("v2"), pattern, HttpMethod.GET);
+    registry.register(buildService("v3"), pattern, HttpMethod.GET);
+
+    List<?> patterns = patternsFor(registry, HttpMethod.GET);
+    Assertions.assertEquals(1, patterns.size(),
+        "Repeated overrides of the same pattern must not accumulate stale duplicate entries");
+  }
+
+  @Test
+  void testRegister_overrideStillResolvesLatestServiceForTemplatePattern() {
+    URIPattern pattern = new URIPattern("/items/{id}");
+    registry.register(buildService("v1"), pattern, HttpMethod.GET);
+    registry.register(buildService("v2"), pattern, HttpMethod.GET);
+    Service latest = buildService("v3");
+    registry.register(latest, pattern, HttpMethod.GET);
+
+    MatchingService match = registry.get("/items/42", HttpMethod.GET);
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(latest, match.service());
+  }
+
+  @Test
+  void testRegister_overrideDoesNotShiftTieBreakPositionForOtherPatterns() {
+    // "/{x}" and "/{y}" are pure-template patterns with equal (zero) literal score, so both
+    // match "/z" with a tie; BEST_MATCH keeps whichever was encountered first.
+    Service firstA = buildService("a1");
+    Service b = buildService("b");
+    Service overriddenA = buildService("a2");
+    registry.register(firstA, new URIPattern("/{x}"), HttpMethod.GET);
+    registry.register(b, new URIPattern("/{y}"), HttpMethod.GET);
+    registry.register(overriddenA, new URIPattern("/{x}"), HttpMethod.GET);
+
+    MatchingService match = registry.get("/z", HttpMethod.GET);
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(overriddenA, match.service(),
+        "Overriding a pattern must keep the tie-break position it held before the override, "
+            + "not move it after patterns registered later");
+  }
+
+  /**
+   * Reads the private {@code patterns} list of the {@code ServiceMap} for the given method via
+   * reflection, to verify the internal no-duplicate-entries invariant directly since it is not
+   * otherwise observable through the public API.
+   */
+  private static List<?> patternsFor(ServiceRegistry target, HttpMethod method) throws Exception {
+    Field stateField = ServiceRegistry.class.getDeclaredField("state");
+    stateField.setAccessible(true);
+    Object state = stateField.get(target);
+    Field mappingField = state.getClass().getDeclaredField("mapping");
+    mappingField.setAccessible(true);
+    Map<?, ?> mapping = (Map<?, ?>) mappingField.get(state);
+    Object serviceMap = mapping.get(method);
+    Field patternsField = serviceMap.getClass().getDeclaredField("patterns");
+    patternsField.setAccessible(true);
+    return (List<?>) patternsField.get(serviceMap);
+  }
+
+  // --- atomic state publication (replaceWith) ---
+
+  @Test
+  void testReplaceWith_publishesCandidateContent() {
+    ServiceRegistry candidate = new ServiceRegistry();
+    Service svc = buildService("candidate-service");
+    candidate.register(svc, new URIPattern("/candidate"), HttpMethod.GET);
+
+    registry.replaceWith(candidate);
+
+    MatchingService match = registry.get("/candidate", HttpMethod.GET);
+    Assertions.assertNotNull(match);
+    Assertions.assertSame(svc, match.service());
+  }
+
+  @Test
+  void testReplaceWith_removesPreviousContent() {
+    registry.register(buildService("old"), new URIPattern("/old"), HttpMethod.GET);
+    ServiceRegistry candidate = new ServiceRegistry();
+    candidate.register(buildService("new"), new URIPattern("/new"), HttpMethod.GET);
+
+    registry.replaceWith(candidate);
+
+    Assertions.assertNull(registry.get("/old", HttpMethod.GET),
+        "replaceWith must fully replace the previous state, not merge with it");
+    Assertions.assertNotNull(registry.get("/new", HttpMethod.GET));
+  }
+
+  @Test
+  void testReplaceWith_incrementsVersionExactlyOnce() {
+    long before = registry.version();
+    ServiceRegistry candidate = new ServiceRegistry();
+    candidate.register(buildService("svc"), new URIPattern("/a"), HttpMethod.GET);
+
+    registry.replaceWith(candidate);
+    long afterFirst = registry.version();
+
+    registry.replaceWith(candidate);
+    long afterSecond = registry.version();
+
+    Assertions.assertTrue(afterFirst >= before);
+    Assertions.assertTrue(afterSecond >= afterFirst);
+  }
+
+  @Test
+  void testReplaceWith_nullCandidate_throwsNullPointerException() {
+    Assertions.assertThrows(NullPointerException.class, () -> registry.replaceWith(null));
+  }
+
+  // --- toRegistrations ---
+
+  @Test
+  void testToRegistrations_extractsAllRegistrationsWithOrigin() {
+    Service getSvc = buildService("get-svc");
+    Service postSvc = buildService("post-svc");
+    registry.register(getSvc, new URIPattern("/a"), HttpMethod.GET);
+    registry.register(postSvc, new URIPattern("/b"), HttpMethod.POST);
+    ServiceOrigin origin = ServiceOrigin.forFile(new java.io.File("services.xml"), null);
+
+    List<ServiceRegistration> registrations = registry.toRegistrations(origin);
+
+    Assertions.assertEquals(2, registrations.size());
+    Assertions.assertTrue(registrations.stream().allMatch(r -> r.origin() == origin));
+    Assertions.assertTrue(registrations.stream().anyMatch(
+        r -> r.service() == getSvc && r.method() == HttpMethod.GET && "/a".equals(r.pattern().toString())));
+    Assertions.assertTrue(registrations.stream().anyMatch(
+        r -> r.service() == postSvc && r.method() == HttpMethod.POST && "/b".equals(r.pattern().toString())));
+  }
+
+  @Test
+  void testToRegistrations_empty() {
+    ServiceOrigin origin = ServiceOrigin.forFile(new java.io.File("services.xml"), null);
+    Assertions.assertTrue(registry.toRegistrations(origin).isEmpty());
+  }
+
+  // --- concurrent reads during publication ---
+
+  @Test
+  void testReplaceWith_concurrentReadsNeverObserveAPartialMix() throws InterruptedException {
+    ServiceRegistry stateA = new ServiceRegistry();
+    Service svcA = buildService("state-a");
+    stateA.register(svcA, new URIPattern("/shared"), HttpMethod.GET);
+
+    ServiceRegistry stateB = new ServiceRegistry();
+    Service svcB = buildService("state-b");
+    stateB.register(svcB, new URIPattern("/shared"), HttpMethod.GET);
+
+    registry.replaceWith(stateA);
+
+    AtomicBoolean running = new AtomicBoolean(true);
+    AtomicReference<String> failure = new AtomicReference<>();
+    CountDownLatch started = new CountDownLatch(1);
+    Thread reader = new Thread(() -> {
+      started.countDown();
+      while (running.get()) {
+        MatchingService match = registry.get("/shared", HttpMethod.GET);
+        if (match == null) {
+          failure.set("Observed no match mid-publication");
+          break;
+        }
+        Service seen = match.service();
+        if (seen != svcA && seen != svcB) {
+          failure.set("Observed a service belonging to neither published state: " + seen);
+          break;
+        }
+      }
+    });
+    reader.start();
+    Assertions.assertTrue(started.await(5, TimeUnit.SECONDS));
+
+    for (int i = 0; i < 2000; i++) {
+      registry.replaceWith(i % 2 == 0 ? stateB : stateA);
+    }
+    running.set(false);
+    reader.join(5000);
+
+    Assertions.assertNull(failure.get(), failure.get());
   }
 }

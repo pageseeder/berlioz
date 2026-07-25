@@ -145,6 +145,7 @@ class ServiceLoaderTest {
     loader.load(new File(WEB_INF, "config/services-invalid-direct.xml"));
     List<CollectedError<SAXParseException>> previousWarnings = loader.getLastLoadWarnings();
     Assertions.assertFalse(previousWarnings.isEmpty(), "The initial successful load must report a warning");
+    long previousVersion = loader.getDefaultRegistry().version();
 
     Path config = Files.createDirectories(webInf.resolve("config"));
     Files.copy(new File(WEB_INF, "config/services.xml").toPath(), config.resolve("services.xml"));
@@ -154,6 +155,112 @@ class ServiceLoaderTest {
     Assertions.assertThrows(BerliozException.class, loader::load);
     Assertions.assertSame(previousWarnings, loader.getLastLoadWarnings(),
         "A failed aggregate load must not replace warnings from the last successful load");
+    Assertions.assertEquals(previousVersion, loader.getDefaultRegistry().version(),
+        "A failed aggregate load must not change the registry version");
+    Assertions.assertNull(loader.getDefaultRegistry().get("/home", HttpMethod.GET),
+        "A failed aggregate load must not publish any part of the failed candidate ('/home' "
+            + "belongs to the malformed candidate's main services.xml, not the previous load)");
+  }
+
+  // Transactional merge across sources -------------------------------------------------------------
+
+  private static final String SERVICE_CONFIG_HEADER =
+      "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+      + "<!DOCTYPE service-config PUBLIC \"-//Berlioz//DTD::Services 1.0//EN\"\n"
+      + "    \"https://pageseeder.org/schema/berlioz/services-1.0.dtd\">\n";
+
+  private static String mainFile(String id, String pattern, String method) {
+    return serviceConfigFile("default", id, pattern, method);
+  }
+
+  /**
+   * Builds a complete {@code <service-config>} document, the shape every classpath JAR overlay is
+   * expected to use for its own {@code META-INF/berlioz/services.xml} (see the class javadoc of
+   * {@link ServiceLoader#parseSource}). Used here for filesystem modules too, since per-source
+   * isolation means a module using this root no longer erases another source's contributions.
+   */
+  private static String moduleFile(String group, String id, String pattern, String method) {
+    return serviceConfigFile(group, id, pattern, method);
+  }
+
+  private static String serviceConfigFile(String group, String id, String pattern, String method) {
+    return SERVICE_CONFIG_HEADER
+        + "<service-config version=\"1.0\">\n"
+        + "  <services group=\"" + group + "\">\n"
+        + "    <service id=\"" + id + "\" method=\"" + method + "\">\n"
+        + "      <url pattern=\"" + pattern + "\"/>\n"
+        + "      <generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>\n"
+        + "    </service>\n"
+        + "  </services>\n"
+        + "</service-config>\n";
+  }
+
+  @Test
+  void testLoad_mergesMainFileAndModuleWithoutLosingEitherSource(@TempDir Path webInf) throws BerliozException, IOException {
+    GlobalSettings.setup((InitEnvironment) null);
+    ServiceLoader loader = ServiceLoader.getInstance();
+    Path config = Files.createDirectories(webInf.resolve("config"));
+    Files.writeString(config.resolve("services.xml"), mainFile("home", "/home", "get"));
+    Files.writeString(config.resolve("services!extra.xml"), moduleFile("extra", "extra", "/extra", "get"));
+    GlobalSettings.setup(webInf.toFile());
+
+    loader.load();
+
+    Assertions.assertNotNull(loader.getDefaultRegistry().get("/home", HttpMethod.GET),
+        "The main file's service must survive merging with a module (per-source isolation must not erase it)");
+    Assertions.assertNotNull(loader.getDefaultRegistry().get("/extra", HttpMethod.GET),
+        "The module's own service must be registered");
+  }
+
+  @Test
+  void testLoad_conflictingPattern_laterSourceWinsAndWarnsWithBothOrigins(@TempDir Path webInf)
+      throws BerliozException, IOException {
+    GlobalSettings.setup((InitEnvironment) null);
+    ServiceLoader loader = ServiceLoader.getInstance();
+    Path config = Files.createDirectories(webInf.resolve("config"));
+    Files.writeString(config.resolve("services.xml"), mainFile("home", "/home", "get"));
+    Files.writeString(config.resolve("services!override.xml"), moduleFile("override", "home-override", "/home", "get"));
+    GlobalSettings.setup(webInf.toFile());
+
+    loader.load();
+
+    MatchingService match = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
+    Assertions.assertNotNull(match);
+    Assertions.assertEquals("home-override", match.service().id(),
+        "The module loaded after the main file must win the conflict");
+
+    List<CollectedError<SAXParseException>> warnings = loader.getLastLoadWarnings();
+    boolean hasConflictWarning = warnings.stream().anyMatch(w -> {
+      String message = w.error().getMessage();
+      return message != null && message.contains("home-override") && message.contains("home")
+          && message.contains("services.xml") && message.contains("services!override.xml");
+    });
+    Assertions.assertTrue(hasConflictWarning,
+        "Expected a warning naming both the replaced and replacing service and origin: " + warnings);
+  }
+
+  @Test
+  void testLoad_samePatternDifferentMethod_doesNotConflict(@TempDir Path webInf) throws BerliozException, IOException {
+    GlobalSettings.setup((InitEnvironment) null);
+    ServiceLoader loader = ServiceLoader.getInstance();
+    Path config = Files.createDirectories(webInf.resolve("config"));
+    Files.writeString(config.resolve("services.xml"), mainFile("home-get", "/home", "get"));
+    Files.writeString(config.resolve("services!post.xml"), moduleFile("post", "home-post", "/home", "post"));
+    GlobalSettings.setup(webInf.toFile());
+
+    loader.load();
+
+    MatchingService get = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
+    MatchingService post = loader.getDefaultRegistry().get("/home", HttpMethod.POST);
+    Assertions.assertNotNull(get);
+    Assertions.assertEquals("home-get", get.service().id());
+    Assertions.assertNotNull(post);
+    Assertions.assertEquals("home-post", post.service().id());
+
+    boolean hasOverrideWarning = loader.getLastLoadWarnings().stream()
+        .anyMatch(w -> w.error().getMessage() != null && w.error().getMessage().contains("overrides"));
+    Assertions.assertFalse(hasOverrideWarning,
+        "Different HTTP methods sharing the same pattern must not be reported as a conflict");
   }
 
   // Namespace tests
