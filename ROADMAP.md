@@ -4,7 +4,9 @@ Berlioz is a lightweight Java web framework built around URI templates, generato
 
 The 0.13.x releases delivered the complete roadmap for that cycle: typed request parameters, safer XML parsing and XSLT caching, output-aware generators, direct JSON responses, explicit response values, RFC 9457 Problem Details, stronger redirect/filesystem protections, and the full configurable error handling pipeline. **0.13.5 was released on 2026-07-03 as the final 0.13.x release.**
 
-**0.14.0 was released on 2026-07-21.** It moved the framework to secure defaults, closed administration controls by default, strengthened the XSLT error pipeline, and modernized the built-in diagnostic generators. Development is now on **0.14.1-SNAPSHOT** and focuses on the remaining 0.14.x diagnostics, classpath overlay, configuration validation, and HTTP `QUERY` work before a 1.0 release.
+**0.14.0 was released on 2026-07-21.** It moved the framework to secure defaults, closed administration controls by default, strengthened the XSLT error pipeline, and modernized the built-in diagnostic generators.
+
+**0.14.1 was released on 2026-07-25.** It delivered the runtime service-diagnostics model, first-class HTTP `QUERY` support, and hardened Content-Type/header handling across the servlet layer. Development is now on **0.14.2-SNAPSHOT** and focuses on classpath overlay discovery before configuration validation and a 1.0 release.
 
 ## Guiding Principles
 
@@ -33,11 +35,11 @@ Completed release changes:
 - Modernized built-in system and diagnostic generators, including direct JSON output where supported.
 - Improved response efficiency and correctness with configurable gzip thresholds and UTF-8-aware content lengths.
 
-### 0.14.1: Runtime Introspection And HTTP QUERY ✓ Planned work complete, pending release
+### 0.14.1: Runtime Introspection And HTTP QUERY ✓ Released 2026-07-25
 
-0.14.1-SNAPSHOT's planned scope — the runtime diagnostics model, core HTTP `QUERY` dispatch, and the smaller output/error contracts — is complete. No further coding work is planned before release; the overlay and configuration-lifecycle work stays deferred to 0.14.2/0.14.3.
+0.14.1 delivered the runtime diagnostics model, core HTTP `QUERY` dispatch, and the smaller output/error contracts. The overlay and configuration-lifecycle work stays deferred to 0.14.2/0.14.3.
 
-Completed so far:
+Completed:
 
 - Added the explicit supported-output set to every generator entry in `Service.writeTo()`, including custom `BerliozGenerator` implementations whose capabilities cannot be inferred from the type label alone.
 - Migrated service metadata serialization from XML-only `Service.toXml()` to format-agnostic `Service.writeTo(OutputWriter, ...)`, and converted `GetLiveServices` and `GetMatchingService` to `Generator` implementations with equivalent, stable XML and JSON shapes (plural JSON array keys: `generators`, `parameters`, `urls`).
@@ -56,6 +58,10 @@ Completed so far:
 - Passed the resolved expected media type to the error pipeline instead of relying only on URL-extension inference: `BerliozServlet` now records the matched servlet mapping's configured `BerliozConfig.getMediaType()` onto the request as `ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE` (via the shared `prepareErrorAttributes()`) before forwarding or handling an error, and `ErrorHandlerServlet.handle()` prefers that attribute over guessing from the URL extension. When an exception escapes before the attribute can be set, the handler uses the standard originating servlet-name attribute to retrieve the exact `BerliozServlet` registration and its configured content type; extension inference remains the fallback for non-Berlioz errors. Default `.auto` forwarding is likewise derived from the extension mappings of deployed Berlioz servlets, so the standard `.json` and `.src` mappings and application-defined formats are recognized without a hard-coded list; an explicit `forward-extensions` parameter remains authoritative. Also added the JSON branch that `ErrorHandlerServlet` was missing entirely: a resolved or inferred JSON expectation now always emits `application/problem+json`, unconditionally — there was never a legacy JSON representation to fall back to, so the deprecated `berlioz.errors.problem=false` escape hatch (which only restores the legacy XML/HTML output) does not apply to JSON. Aligned `BerliozServlet`'s direct-error `application/problem+json` shortcut with the same rule for consistency.
 - Modernized static-asset error suppression and media-type lookup for common web formats including WebP, AVIF, APNG, HEIC/HEIF, JPEG XL, WOFF/WOFF2, WebAssembly, ES modules, web manifests, WebM, FLAC, Opus, and M4A. Unknown non-asset document extensions now receive the useful HTML failsafe page rather than raw XML; `.xml` and `.src` retain the raw XML response.
 - Kept Problem Details body-only and added `HttpException.header(name, value)`/`headers()` as the transport for response headers such as `Retry-After` that belong on the response itself rather than the RFC 9457 body. Threaded through all three paths that can turn an `HttpException` into a response: `GeneratorFailure` now folds the exception's headers onto the `Response` it builds (reaching the client through the existing `Response.header()`/`GeneratorDispatch.accumulateHeaders()` mechanism generators already use), and both `BerliozServlet.writeProblemJson()` and `ErrorHandlerServlet`'s `writeResponse()` apply them directly for the framework's own synthetic error paths. Added `HttpException.findIn(Throwable)` to recover the signal even after it has been wrapped in a `BerliozException` on the way to a servlet-level handler, so headers survive that indirection too. Extracted the header name/value validation `Response.header()` already had into `HttpResponses.isValidHeaderName()`/`isValidHeaderValue()` so `HttpException.header()` enforces the same CRLF-injection guard rather than duplicating it.
+- Added a `ContentType` class (`org.pageseeder.berlioz.http`) for RFC-conformant `Content-Type` parsing and parameter/charset handling, replacing ad hoc string splitting in `BerliozConfig`, `ErrorHandlerServlet`, and `QueryBodyParameters` with one shared, tested implementation.
+- Unified response-header handling behind `Response.setHeaders()`/`HttpResponses.headersIn()`, removing duplicated header-copying logic between `BerliozServlet`, `ErrorHandlerServlet`, and `GeneratorFailure`.
+- Added a warnings pass for misconfigured service registrations, surfaced through `GetServices` alongside the existing source-configuration view.
+- Limited exception cause-chain traversal to 100 levels in `HttpException` and `XsltTransformException`, guarding against cyclic or pathologically deep cause chains during error rendering.
 
 Retained decision (not a task): preserve the XML/XSLT fallback for JSON-configured requests throughout 0.14.x; revisit only with content negotiation in 1.0.
 
