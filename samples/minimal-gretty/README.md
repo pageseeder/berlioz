@@ -7,6 +7,10 @@ This module is a small WAR application that demonstrates the minimum pieces of a
 - `WEB-INF/config/config.xml` plus `config-local.xml` for base and local-mode settings.
 - `WEB-INF/xslt/html/default.xsl` for HTML rendering.
 - `WEB-INF/xslt/xml/default.xsl` and `WEB-INF/xslt/json/default.xsl` for simple format checks.
+- `WEB-INF/web.xml` sets `index.html` as the welcome file. Since `*.html` is mapped to Berlioz, that
+  resolves to the `index` service (an `org.pageseeder.berlioz.generator.NoContent` generator, whose
+  only job is to be picked up by `default.xsl`); a static `index.html` file would never be reached.
+- `favicon.svg` / `favicon.ico` are genuinely static files — no extension mapping intercepts them.
 
 Run it locally:
 
@@ -14,7 +18,7 @@ Run it locally:
 ./gradlew :samples:minimal-gretty:appRun
 ```
 
-Then try:
+Then open http://localhost:8999/ for a welcome page linking to every route below, or try them directly:
 
 - http://localhost:8999/hello.html
 - http://localhost:8999/hello.xml

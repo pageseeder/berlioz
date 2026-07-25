@@ -5,6 +5,11 @@
 
   <services group="default">
     <namespace package="org.pageseeder.berlioz.sample"/>
+    <service id="index" method="get">
+      <url pattern="/index"/>
+      <generator class="org.pageseeder.berlioz.generator.NoContent"/>
+    </service>
+
     <service id="hello" method="get">
       <url pattern="/hello"/>
       <generator class="HelloGenerator"/>
