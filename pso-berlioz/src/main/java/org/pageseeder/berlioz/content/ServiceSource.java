@@ -88,11 +88,15 @@ public final class ServiceSource {
   }
 
   /**
-   * @return a deterministic key used to order sources of the same kind so that discovery order is
-   *         stable across repeated loads, regardless of classloader/filesystem enumeration order.
+   * <p>The safe display name comes first to keep the key readable in debugging output. The internal
+   * URL makes the key unique when display names collide, such as for multiple exploded classpath
+   * resources or same-named JARs. This key may contain an absolute deployment path and must not be
+   * exposed by diagnostic generators.
+   *
+   * @return the complete deterministic key used to order sources of the same kind.
    */
   public String orderingKey() {
-    return this.origin.displayName();
+    return this.origin.displayName() + " @ " + this.url.toExternalForm();
   }
 
   @Override

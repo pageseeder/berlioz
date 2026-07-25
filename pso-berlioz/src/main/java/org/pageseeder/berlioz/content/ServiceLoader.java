@@ -164,8 +164,8 @@ public enum ServiceLoader {
    * <p>This list includes the main file <code>services.xml</code> as well as
    * any file starting with <code>services!</code> and ending in <code>.xml</code>.
    *
-   * <p>If it exists, the main file is always returned first. There is no
-   * guaranteed ordering for the other services files.
+   * <p>If it exists, the main file is always returned first. The other service files are returned
+   * in lexical filename order.
    *
    * <p><b>Root element matters:</b> the main file must use <code>&lt;service-config&gt;</code> as
    * its root element; loading it clears the registry before its own services are registered, since
@@ -232,7 +232,7 @@ public enum ServiceLoader {
    *
    * <p>Identical resource URLs (e.g. the same classpath entry contributed twice) are returned only
    * once. The result is sorted by {@link ServiceSource#orderingKey()} so that discovery order is
-   * stable across repeated calls, regardless of classloader enumeration order.
+   * stable across repeated calls regardless of classloader enumeration order.
    *
    * @param classLoader the classloader to enumerate resources from.
    *

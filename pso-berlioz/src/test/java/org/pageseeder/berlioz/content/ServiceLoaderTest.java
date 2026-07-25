@@ -195,17 +195,19 @@ class ServiceLoaderTest {
   }
 
   @Test
-  void testDiscoverClasspathSources_orderingIsStableAcrossRepeatedCalls(@TempDir Path root) throws IOException {
+  void testDiscoverClasspathSources_orderingIsIndependentOfEnumerationOrder(@TempDir Path root) throws IOException {
     Path dirA = Files.createDirectories(root.resolve("a"));
     Path dirB = Files.createDirectories(root.resolve("b"));
     writeMinimalServicesXml(dirA);
     writeMinimalServicesXml(dirB);
-    URL[] urls = {dirA.toUri().toURL(), dirB.toUri().toURL()};
-    try (URLClassLoader classLoader = new URLClassLoader(urls, null)) {
-      List<ServiceSource> first = ServiceLoader.getInstance().discoverClasspathSources(classLoader);
-      List<ServiceSource> second = ServiceLoader.getInstance().discoverClasspathSources(classLoader);
+    URL urlA = dirA.toUri().toURL();
+    URL urlB = dirB.toUri().toURL();
+    try (URLClassLoader forward = new URLClassLoader(new URL[] {urlA, urlB}, null);
+         URLClassLoader reverse = new URLClassLoader(new URL[] {urlB, urlA}, null)) {
+      List<ServiceSource> first = ServiceLoader.getInstance().discoverClasspathSources(forward);
+      List<ServiceSource> second = ServiceLoader.getInstance().discoverClasspathSources(reverse);
       Assertions.assertEquals(2, first.size());
-      Assertions.assertEquals(first, second, "Discovery order must be stable across repeated calls");
+      Assertions.assertEquals(first, second, "Discovery order must not depend on classloader enumeration order");
     }
   }
 

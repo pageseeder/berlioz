@@ -30,7 +30,9 @@ class ServiceSourceTest {
     ServiceSource source = ServiceSource.classpath(url);
 
     Assertions.assertEquals(ServiceSourceKind.CLASSPATH, source.kind());
-    Assertions.assertEquals("my-overlay.jar!META-INF/berlioz/services.xml", source.orderingKey());
+    Assertions.assertEquals(
+        "my-overlay.jar!META-INF/berlioz/services.xml @ " + url.toExternalForm(),
+        source.orderingKey());
     Assertions.assertEquals(url, source.url());
   }
 
@@ -41,7 +43,7 @@ class ServiceSourceTest {
     ServiceSource source = ServiceSource.filesystem(file, configDir);
 
     Assertions.assertEquals(ServiceSourceKind.FILESYSTEM, source.kind());
-    Assertions.assertEquals("services.xml", source.orderingKey());
+    Assertions.assertEquals("services.xml @ " + source.url().toExternalForm(), source.orderingKey());
   }
 
   @Test
