@@ -435,20 +435,27 @@ public final class ErrorHandlerServlet extends HttpServlet {
       Map<String, ? extends ServletRegistration> registrations = context.getServletRegistrations();
       if (registrations == null) return;
       for (ServletRegistration registration : registrations.values()) {
-        if (isBerliozRegistration(registration)) {
-          Collection<String> mappings = registration.getMappings();
-          if (mappings != null) {
-            for (String mapping : mappings) {
-              if (mapping != null && mapping.startsWith("*.") && mapping.length() > 2) {
-                extensions.add(normalizeExtension(mapping.substring(1)));
-              }
-            }
-          }
-        }
+        collectExtensionMappings(registration, extensions);
       }
     } catch (UnsupportedOperationException ex) {
       LOGGER.debug("Servlet registration discovery is unavailable; using legacy forwarding defaults", ex);
     }
+  }
+
+  /** Adds the extension mappings of the given registration to {@code extensions}, if it is a Berlioz servlet. */
+  private static void collectExtensionMappings(ServletRegistration registration, Set<String> extensions) {
+    if (!isBerliozRegistration(registration)) return;
+    Collection<String> mappings = registration.getMappings();
+    if (mappings == null) return;
+    for (String mapping : mappings) {
+      if (isExtensionMapping(mapping)) {
+        extensions.add(normalizeExtension(mapping.substring(1)));
+      }
+    }
+  }
+
+  private static boolean isExtensionMapping(@Nullable String mapping) {
+    return mapping != null && mapping.startsWith("*.") && mapping.length() > 2;
   }
 
   private static boolean isBerliozRegistration(@Nullable ServletRegistration registration) {
