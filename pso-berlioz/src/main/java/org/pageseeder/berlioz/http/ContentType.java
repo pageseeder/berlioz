@@ -169,10 +169,10 @@ public final class ContentType {
 
     private String quotedString() {
       this.index++;
-      StringBuilder value = new StringBuilder();
+      StringBuilder builder = new StringBuilder();
       while (this.index < this.length) {
         char c = this.value.charAt(this.index++);
-        if (c == '"') return value.toString();
+        if (c == '"') return builder.toString();
         if (c == '\\') {
           if (this.index == this.length) throw malformed("Unterminated quoted parameter value");
           c = this.value.charAt(this.index++);
@@ -180,7 +180,7 @@ public final class ContentType {
         } else if (!isQuotedTextCharacter(c)) {
           throw malformed("Invalid quoted-string character");
         }
-        value.append(c);
+        builder.append(c);
       }
       throw malformed("Unterminated quoted parameter value");
     }
@@ -203,25 +203,26 @@ public final class ContentType {
     private IllegalArgumentException malformed(String message) {
       return new IllegalArgumentException(message + " at index " + this.index);
     }
+
+    private static boolean isTokenCharacter(char c) {
+      return c >= '0' && c <= '9'
+          || c >= 'A' && c <= 'Z'
+          || c >= 'a' && c <= 'z'
+          || "!#$%&'*+-.^_`|~".indexOf(c) >= 0;
+    }
+
+    private static boolean isQuotedTextCharacter(char c) {
+      return c == '\t'
+          || c == ' '
+          || c == '!'
+          || c >= '#' && c <= '['
+          || c >= ']' && c <= '~'
+          || c >= 0x80;
+    }
+
+    private static boolean isQuotedPairCharacter(char c) {
+      return c == '\t' || c == ' ' || c >= '!' && c <= '~' || c >= 0x80;
+    }
   }
 
-  private static boolean isTokenCharacter(char c) {
-    return c >= '0' && c <= '9'
-        || c >= 'A' && c <= 'Z'
-        || c >= 'a' && c <= 'z'
-        || "!#$%&'*+-.^_`|~".indexOf(c) >= 0;
-  }
-
-  private static boolean isQuotedTextCharacter(char c) {
-    return c == '\t'
-        || c == ' '
-        || c == '!'
-        || c >= '#' && c <= '['
-        || c >= ']' && c <= '~'
-        || c >= 0x80;
-  }
-
-  private static boolean isQuotedPairCharacter(char c) {
-    return c == '\t' || c == ' ' || c >= '!' && c <= '~' || c >= 0x80;
-  }
 }
