@@ -32,6 +32,8 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.LifecycleListener;
 import org.pageseeder.berlioz.InitEnvironment;
+import org.pageseeder.berlioz.content.ServiceLoader;
+import org.pageseeder.berlioz.content.ServiceSourceKind;
 import org.pageseeder.berlioz.servlet.Overlays.Overlay;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
@@ -629,7 +631,8 @@ public abstract class AppInitializer {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Checking that the '[config]/services.xml' is there
+   * Checking that service configuration is available, either as a filesystem
+   * '[config]/services.xml' or as one or more classpath-discovered overlay sources.
    *
    * @param env The Web application init environment
    */
@@ -638,6 +641,13 @@ public abstract class AppInitializer {
     Path services = env.webInf().toPath().resolve(servicesFile);
     if (Files.exists(services)) {
       console(Phase.INIT, "Services: found " + servicesFile);
+      console(Phase.INIT, "Services: OK --------------------------------------------------");
+      return;
+    }
+    boolean hasClasspathServices = ServiceLoader.getInstance().discoverSources().stream()
+        .anyMatch(source -> source.kind() == ServiceSourceKind.CLASSPATH);
+    if (hasClasspathServices) {
+      console(Phase.INIT, "Services: no " + servicesFile + " - service configuration provided by classpath");
       console(Phase.INIT, "Services: OK --------------------------------------------------");
     } else {
       console(Phase.INIT, "(!) Could not find " + servicesFile);

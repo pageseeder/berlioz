@@ -35,9 +35,11 @@ import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CollectedError.Level;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
+import org.pageseeder.berlioz.util.Pair;
 import org.pageseeder.berlioz.xml.BerliozEntityResolver;
 import org.pageseeder.berlioz.xml.SAXErrorCollector;
 import org.pageseeder.berlioz.xml.Xml;
@@ -58,7 +60,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.1
+ * @version 0.14.2
  * @since 0.6
  */
 @SuppressWarnings("java:S6548")
@@ -78,6 +80,11 @@ public enum ServiceLoader {
 
   /**
    * Maps content generators URL patterns to their content generator instance.
+   *
+   * <p>This is the stable object returned by {@link #getDefaultRegistry()}; its identity never
+   * changes across reloads (so references retained by e.g. {@code BerliozServlet} stay valid), but
+   * its internal state is atomically replaced wholesale by {@link ServiceRegistry#replaceWith}
+   * once a candidate aggregate registry has been fully built and validated.
    */
   private final ServiceRegistry services = new ServiceRegistry();
 
@@ -143,17 +150,40 @@ public enum ServiceLoader {
   }
 
   /**
-   * Loads the content access file from all services files.
+   * Discovers, parses and publishes the complete service configuration: every classpath
+   * {@code META-INF/berlioz/services.xml} resource followed by the filesystem {@code services.xml}
+   * and {@code services!*.xml} modules (see {@link #discoverSources()}).
    *
-   * @throws BerliozException Should something unexpected happen.
+   * <p>Each source is parsed in isolation (see {@link #parseSource(ServiceSource)}) so that one
+   * source's {@code <service-config>} root cannot erase another source's contributions, then all
+   * sources' registrations are merged in source order (see {@link #mergeRegistrations(List)}):
+   * a later declaration for the same HTTP method and URI pattern replaces an earlier one, and the
+   * replacement is reported as a warning naming both origins. Different methods sharing the same
+   * pattern never conflict.
+   *
+   * <p>The resulting aggregate candidate is only published — replacing the live registry
+   * atomically and updating {@link #getLastLoadWarnings()} — once every source has parsed without
+   * a fatal error. If any source fails, this method throws and the previously published registry,
+   * version, and warnings are left completely untouched.
+   *
+   * @throws BerliozException Should any source fail to parse.
    */
   public synchronized void load() throws BerliozException {
-    List<File> files = listServiceFiles();
-    File configDir = GlobalSettings.getConfig();
+    List<ServiceSource> sources = discoverSources();
     List<CollectedError<SAXParseException>> warnings = new ArrayList<>();
-    for (File f : files) {
-      warnings.addAll(parseSource(ServiceSource.filesystem(f, configDir)));
+    List<List<ServiceRegistration>> perSourceRegistrations = new ArrayList<>(sources.size());
+    for (ServiceSource source : sources) {
+      ParsedSource parsed = parseSource(source);
+      warnings.addAll(parsed.warnings);
+      perSourceRegistrations.add(parsed.registrations);
     }
+    MergeResult merged = mergeRegistrations(perSourceRegistrations);
+    warnings.addAll(merged.warnings);
+    ServiceRegistry candidate = new ServiceRegistry();
+    for (ServiceRegistration registration : merged.registrations) {
+      candidate.register(registration.service(), registration.pattern(), registration.method());
+    }
+    this.services.replaceWith(candidate);
     this.lastWarnings = List.copyOf(warnings);
   }
 
@@ -168,13 +198,14 @@ public enum ServiceLoader {
    * in lexical filename order.
    *
    * <p><b>Root element matters:</b> the main file must use <code>&lt;service-config&gt;</code> as
-   * its root element; loading it clears the registry before its own services are registered, since
-   * it is always loaded first. Group override files must instead use a bare
+   * its root element; group override files must instead use a bare
    * <code>&lt;services group="..."&gt;</code> as their root element (no
-   * <code>&lt;service-config&gt;</code> wrapper) so that loading them adds to the registry rather
-   * than clearing services already registered by the main file or by other override files loaded
-   * before them. See {@link HandlingDispatcher#getHandler} for how the root element selects between
-   * the two.
+   * <code>&lt;service-config&gt;</code> wrapper). Since each file is now parsed into its own
+   * isolated registry (see {@link #parseSource(ServiceSource)}) before being merged into the
+   * aggregate candidate, this distinction no longer controls whether a file erases another file's
+   * contributions — it did in previous versions, when files were parsed directly into one shared
+   * registry — but it is retained for clarity and forward compatibility. See
+   * {@link HandlingDispatcher#getHandler} for how the root element selects between the two.
    *
    * @return the list of services files.
    */
@@ -270,27 +301,41 @@ public enum ServiceLoader {
   }
 
   /**
-   * Loads the content access file.
+   * Loads a single, ad hoc service configuration file, replacing the complete live registry with
+   * this file's content alone.
    *
-   * @param xml    The XML file to load.
+   * <p>The file is parsed in isolation first (see {@link #parseSource(ServiceSource)}); the live
+   * registry and {@link #getLastLoadWarnings()} are only replaced once parsing succeeds, so a
+   * malformed file leaves the previous registry and warnings completely untouched.
+   *
+   * @param xml The XML file to load.
    *
    * @throws BerliozException Should something unexpected happen.
    */
   public synchronized void load(File xml) throws BerliozException {
     Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
-    this.lastWarnings = parseSource(ServiceSource.filesystem(xml, GlobalSettings.getConfig()));
+    ParsedSource parsed = parseSource(ServiceSource.filesystem(xml, GlobalSettings.getConfig()));
+    ServiceRegistry candidate = new ServiceRegistry();
+    for (ServiceRegistration registration : parsed.registrations) {
+      candidate.register(registration.service(), registration.pattern(), registration.method());
+    }
+    this.services.replaceWith(candidate);
+    this.lastWarnings = parsed.warnings;
   }
 
   /**
-   * Parses one service configuration source and returns any warnings collected while parsing it.
+   * Parses one service configuration source into a fresh, isolated {@link ServiceRegistry} — never
+   * the live/shared one — so that a source using a {@code <service-config>} root (expected of every
+   * classpath JAR) cannot erase another source's contributions when sources are later merged.
    *
    * @param source The service configuration source.
    *
-   * @return the warnings collected while loading the source.
+   * @return the warnings collected while parsing the source, and the registrations it declared
+   *         (each tagged with the source's origin).
    *
    * @throws BerliozException Should something unexpected happen.
    */
-  private List<CollectedError<SAXParseException>> parseSource(ServiceSource source) throws BerliozException {
+  private ParsedSource parseSource(ServiceSource source) throws BerliozException {
     // Okay, let's start
     SAXParser parser = Xml.safeParser(true);
     SAXErrorCollector collector = new SAXErrorCollector(LOGGER);
@@ -298,11 +343,12 @@ public enum ServiceLoader {
       collector.setErrorFlag(Level.WARNING);
     }
     BerliozErrorID id = null;
+    ServiceRegistry isolated = new ServiceRegistry();
     // Load the services
     try {
       XMLReader reader = parser.getXMLReader();
       ClassLoader classLoader = resolveApplicationClassLoader();
-      HandlingDispatcher dispatcher = new HandlingDispatcher(reader, this.services, classLoader);
+      HandlingDispatcher dispatcher = new HandlingDispatcher(reader, isolated, classLoader);
       reader.setContentHandler(dispatcher);
       reader.setEntityResolver(BerliozEntityResolver.getInstance());
       reader.setErrorHandler(collector);
@@ -323,8 +369,54 @@ public enum ServiceLoader {
       LOGGER.error("An I/O error occurred while reading XML service configuration: {}", ex.getMessage());
       throw new BerliozException("Unable to read services configuration file.", ex, BerliozErrorID.SERVICES_NOT_FOUND);
     }
-    this.services.touch();
-    return List.copyOf(collector.getErrors());
+    List<ServiceRegistration> registrations = isolated.toRegistrations(source.origin());
+    return new ParsedSource(List.copyOf(collector.getErrors()), registrations);
+  }
+
+  /**
+   * Merges the registrations extracted from each parsed source into a single aggregate candidate,
+   * in source order.
+   *
+   * <p>Registrations are keyed by HTTP method and URI pattern: when two sources declare the same
+   * key, the later source's registration replaces the earlier one, and a warning is recorded
+   * naming the HTTP method, the URI pattern, the replaced service and its origin, and the
+   * replacing service and its origin. Different methods sharing the same URI pattern are
+   * independent registrations and never conflict.
+   *
+   * @param perSourceRegistrations the registrations extracted from each source, in source order.
+   *
+   * @return the merged, conflict-free registrations and the warnings describing any replacements.
+   */
+  private static MergeResult mergeRegistrations(List<List<ServiceRegistration>> perSourceRegistrations) {
+    Map<Pair<HttpMethod, String>, ServiceRegistration> byKey = new LinkedHashMap<>();
+    List<CollectedError<SAXParseException>> warnings = new ArrayList<>();
+    for (List<ServiceRegistration> sourceRegistrations : perSourceRegistrations) {
+      for (ServiceRegistration registration : sourceRegistrations) {
+        Pair<HttpMethod, String> key = new Pair<>(registration.method(), registration.pattern().toString());
+        ServiceRegistration previous = byKey.put(key, registration);
+        if (previous != null) {
+          String message = conflictWarning(previous, registration);
+          LOGGER.warn(message);
+          warnings.add(new CollectedError<>(Level.WARNING, new SAXParseException(message, null)));
+        }
+      }
+    }
+    return new MergeResult(List.copyOf(byKey.values()), List.copyOf(warnings));
+  }
+
+  /**
+   * Builds the warning message reported when a registration replaces another one previously
+   * registered for the same HTTP method and URI pattern, naming both origins.
+   *
+   * @param previous the registration being replaced.
+   * @param next     the replacing registration.
+   *
+   * @return the warning message.
+   */
+  private static String conflictWarning(ServiceRegistration previous, ServiceRegistration next) {
+    return next.service() + " from " + next.origin() + " overrides " + previous.service() + " from "
+        + previous.origin() + " for " + next.method() + " " + next.pattern()
+        + " - " + previous.service() + " will no longer be reachable";
   }
 
   /**
@@ -335,6 +427,38 @@ public enum ServiceLoader {
     this.services.clear();
     this.loaded = false;
     this.lastWarnings = List.of();
+  }
+
+  /**
+   * The result of parsing a single {@link ServiceSource} in isolation: the warnings collected
+   * while parsing it, and the registrations it declared (each tagged with the source's origin).
+   */
+  private static final class ParsedSource {
+
+    private final List<CollectedError<SAXParseException>> warnings;
+
+    private final List<ServiceRegistration> registrations;
+
+    ParsedSource(List<CollectedError<SAXParseException>> warnings, List<ServiceRegistration> registrations) {
+      this.warnings = warnings;
+      this.registrations = registrations;
+    }
+  }
+
+  /**
+   * The result of merging every source's registrations into a single aggregate candidate: the
+   * conflict-free registrations to publish, and the warnings describing any replacements.
+   */
+  private static final class MergeResult {
+
+    private final List<ServiceRegistration> registrations;
+
+    private final List<CollectedError<SAXParseException>> warnings;
+
+    MergeResult(List<ServiceRegistration> registrations, List<CollectedError<SAXParseException>> warnings) {
+      this.registrations = registrations;
+      this.warnings = warnings;
+    }
   }
 
   // Inner class to determine which handler to use --------------------------------------------------
@@ -415,8 +539,9 @@ public enum ServiceLoader {
     private ContentHandler getHandler(String name, Attributes atts) throws SAXException {
       SAXErrorCollector collector = getErrorCollector(this.reader);
 
-      // Service configuration: the main services.xml file. ServicesHandler10 clears the registry
-      // when it sees this root element, so only the main file (always loaded first) should use it.
+      // Service configuration: the main services.xml file, or any classpath source (each parsed
+      // into its own isolated registry, so clearing it here only clears that empty isolated
+      // registry, never another source's contributions).
       if ("service-config".equals(name)) {
         String version = atts.getValue("version");
 
