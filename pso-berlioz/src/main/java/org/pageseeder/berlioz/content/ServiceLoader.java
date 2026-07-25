@@ -420,7 +420,24 @@ public enum ServiceLoader {
   }
 
   /**
-   * Update the patterns based on the current generators.
+   * Marks the service configuration for reload without changing the currently published registry.
+   *
+   * <p>The next call to {@link #loadIfRequired()} builds and validates a complete candidate before
+   * replacing the live registry. If that load fails, the last successful registry, version, and
+   * warnings remain available.
+   *
+   * @since 0.14.2
+   */
+  public synchronized void requestReload() {
+    LOGGER.info("Marking content manager for reload");
+    this.loaded = false;
+  }
+
+  /**
+   * Clears the currently published registry and marks the service configuration for reload.
+   *
+   * <p>This method retains its destructive public semantics. Use {@link #requestReload()} when the
+   * live registry must remain available until a replacement has been loaded successfully.
    */
   public synchronized void clear() {
     LOGGER.info("Clearing content manager");

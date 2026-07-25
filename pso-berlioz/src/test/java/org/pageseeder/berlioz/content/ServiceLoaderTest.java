@@ -98,6 +98,35 @@ class ServiceLoaderTest {
   }
 
   @Test
+  void testRequestReload_malformedCandidateRetainsLastSuccessfulRegistry(@TempDir Path webInf)
+      throws BerliozException, IOException {
+    Path config = Files.createDirectories(webInf.resolve("config"));
+    Files.copy(new File(WEB_INF, "config/services.xml").toPath(), config.resolve("services.xml"));
+    GlobalSettings.setup(webInf.toFile());
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.loadIfRequired();
+
+    MatchingService previous = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
+    Assertions.assertNotNull(previous);
+    long previousVersion = loader.getDefaultRegistry().version();
+    List<CollectedError<SAXParseException>> previousWarnings = loader.getLastLoadWarnings();
+
+    Files.writeString(config.resolve("services!malformed.xml"), "<service-config>");
+    loader.requestReload();
+
+    Assertions.assertNotNull(loader.getDefaultRegistry().get("/home", HttpMethod.GET),
+        "Requesting a reload must not clear the live registry before a candidate is available");
+    Assertions.assertThrows(BerliozException.class, loader::loadIfRequired);
+    MatchingService retained = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
+    Assertions.assertNotNull(retained, "A failed requested reload must retain the last successful registry");
+    Assertions.assertEquals(previous.service().id(), retained.service().id());
+    Assertions.assertEquals(previousVersion, loader.getDefaultRegistry().version(),
+        "A failed requested reload must retain the last successful registry version");
+    Assertions.assertSame(previousWarnings, loader.getLastLoadWarnings(),
+        "A failed requested reload must retain warnings from the last successful load");
+  }
+
+  @Test
   void testListServiceFiles_returnsServicesXml() {
     ServiceLoader loader = ServiceLoader.getInstance();
     List<File> files = loader.listServiceFiles();

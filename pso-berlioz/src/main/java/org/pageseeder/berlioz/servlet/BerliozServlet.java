@@ -654,7 +654,7 @@ public final class BerliozServlet extends HttpServlet {
    *
    * @param req     The HTTP servlet request.
    * @param config  The Berlioz configuration.
-   * @param loader  The service loader (might be cleared on reload).
+   * @param loader  The service loader (might be marked for reload).
    * @param profile Whether profiling was already enabled via global settings.
    * @return {@code true} if profiling should be active for this request.
    */
@@ -673,8 +673,8 @@ public final class BerliozServlet extends HttpServlet {
     // Reload the global configuration from disk
     if (reload) { GlobalSettings.load(); }
 
-    // Clear the service configuration so it is re-read on the next request
-    if (reload || isTrue(req.getParameter("reload-services"))) { loader.clear(); }
+    // Mark the service configuration for replacement after a complete candidate has been built
+    if (reload || isTrue(req.getParameter("reload-services"))) { loader.requestReload(); }
 
     // Profile flag can also be enabled per-request via URL parameter
     return profile || isTrue(req.getParameter("berlioz-profile"));
