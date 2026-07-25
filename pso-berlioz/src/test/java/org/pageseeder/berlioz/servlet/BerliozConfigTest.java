@@ -6,8 +6,10 @@ import org.junit.jupiter.api.io.TempDir;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,7 +37,38 @@ class BerliozConfigTest {
     );
   }
 
+  @Test
+  void contentType_usesNamedCharsetParameter(@TempDir Path contextRoot) throws Exception {
+    Files.createDirectories(contextRoot.resolve("WEB-INF"));
+    ServletConfig servletConfig = servletConfig(contextRoot, Map.of(
+        "content-type", "text/plain;note=\"charset=ISO-8859-1\"; charset = \"UTF-16\""));
+
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
+
+    assertAll(
+        () -> assertEquals("text/plain", config.getMediaType()),
+        () -> assertEquals(StandardCharsets.UTF_16, config.getCharset()),
+        () -> assertEquals("text/plain;charset=UTF-16", config.getContentType())
+    );
+  }
+
+  @Test
+  void contentType_charsetTextInAnotherParameterDefaultsToUtf8(@TempDir Path contextRoot)
+      throws Exception {
+    Files.createDirectories(contextRoot.resolve("WEB-INF"));
+    ServletConfig servletConfig = servletConfig(contextRoot,
+        Map.of("content-type", "text/plain;note=\"charset=ISO-8859-1\""));
+
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
+
+    assertEquals(StandardCharsets.UTF_8, config.getCharset());
+  }
+
   private static ServletConfig servletConfig(Path contextRoot) {
+    return servletConfig(contextRoot, Map.of());
+  }
+
+  private static ServletConfig servletConfig(Path contextRoot, Map<String, String> initParameters) {
     ServletContext context = (ServletContext) Proxy.newProxyInstance(
         ServletContext.class.getClassLoader(),
         new Class<?>[]{ServletContext.class},
@@ -49,7 +82,7 @@ class BerliozConfigTest {
         (proxy, m, args) -> {
           if ("getServletContext".equals(m.getName())) return context;
           if ("getServletName".equals(m.getName())) return "test-config";
-          if ("getInitParameter".equals(m.getName())) return null;
+          if ("getInitParameter".equals(m.getName())) return initParameters.get(args[0]);
           return ServletTestSupport.defaultValue(m.getReturnType());
         });
   }

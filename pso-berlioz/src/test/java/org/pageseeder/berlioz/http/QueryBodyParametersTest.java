@@ -266,7 +266,10 @@ class QueryBodyParametersTest {
     return Stream.of(
         Arguments.of("application/x-www-form-urlencoded", "q=%2", "malformed percent escape"),
         Arguments.of("application/x-www-form-urlencoded;charset=ISO-8859-1", "q=hello", "declared non-UTF-8 charset"),
-        Arguments.of("application/x-www-form-urlencoded;charset=not-a-real-charset", "q=hello", "unrecognised charset")
+        Arguments.of("application/x-www-form-urlencoded;charset=not-a-real-charset", "q=hello", "unrecognised charset"),
+        Arguments.of("application/x-www-form-urlencoded;charset=\"UTF-8", "q=hello", "malformed Content-Type"),
+        Arguments.of("application/x-www-form-urlencoded;charset=UTF-8;CHARSET=UTF-8", "q=hello",
+            "duplicate charset")
     );
   }
 
@@ -275,6 +278,32 @@ class QueryBodyParametersTest {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
         .contentType("application/x-www-form-urlencoded;charset=utf8")
+        .body("q=hello")
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals("hello", params.get("q"));
+  }
+
+  @Test
+  void testParse_charsetWithOptionalWhitespace_bodyIsParsed() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded; charset = UTF-8")
+        .body("q=hello")
+        .build();
+
+    Map<String, String> params = QueryBodyParameters.parse(req);
+
+    assertEquals("hello", params.get("q"));
+  }
+
+  @Test
+  void testParse_charsetTextInAnotherParameter_bodyIsParsedAsUtf8() {
+    HttpServletRequest req = HttpTestSupport.request()
+        .method("QUERY")
+        .contentType("application/x-www-form-urlencoded;note=\"charset=ISO-8859-1\"")
         .body("q=hello")
         .build();
 

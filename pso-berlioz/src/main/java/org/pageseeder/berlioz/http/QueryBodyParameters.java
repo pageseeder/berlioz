@@ -97,8 +97,15 @@ public final class QueryBodyParameters {
    */
   public static Map<String, String> parse(HttpServletRequest req) {
     if (!"QUERY".equalsIgnoreCase(req.getMethod())) return Map.of();
-    String contentType = req.getContentType();
-    if (!isFormUrlEncoded(contentType)) return Map.of();
+    String rawContentType = req.getContentType();
+    if (rawContentType == null) return Map.of();
+    ContentType contentType;
+    try {
+      contentType = ContentType.parse(rawContentType);
+    } catch (IllegalArgumentException ex) {
+      throw invalidBody("Malformed Content-Type on QUERY request", ex);
+    }
+    if (!contentType.is(FORM_URLENCODED)) return Map.of();
     try {
       if (engineAlreadyExposesBody(req)) return Map.of();
     } catch (IllegalArgumentException ex) {
@@ -115,44 +122,28 @@ public final class QueryBodyParameters {
   }
 
   /**
-   * @return {@code true} if {@code contentType} is {@code application/x-www-form-urlencoded},
-   *         ignoring case and any parameters (e.g. {@code charset}).
-   */
-  private static boolean isFormUrlEncoded(@Nullable String contentType) {
-    if (contentType == null) return false;
-    int semicolon = contentType.indexOf(';');
-    String type = (semicolon >= 0 ? contentType.substring(0, semicolon) : contentType).strip();
-    return FORM_URLENCODED.equalsIgnoreCase(type);
-  }
-
-  /**
    * Rejects a QUERY body whose {@code Content-Type} declares a charset other than UTF-8.
    *
    * <p>This class only ever decodes the body as UTF-8 (see {@link #readBody} and
    * {@link #parsePair}); accepting a declared mismatch would silently mis-decode the body
    * instead of reporting it. A missing charset parameter defaults to UTF-8 and is accepted.
    *
-   * @param contentType the request's {@code Content-Type}, already confirmed to be
-   *                     {@code application/x-www-form-urlencoded} by {@link #isFormUrlEncoded}
+   * @param contentType the parsed request {@code Content-Type}, already confirmed to be
+   *                    {@code application/x-www-form-urlencoded}
    * @throws HttpException with status 400 if a non-UTF-8 or unrecognised charset is declared
    */
-  private static void requireUtf8Charset(String contentType) {
-    int semicolon = contentType.indexOf(';');
-    if (semicolon < 0) return;
-    for (String param : contentType.substring(semicolon + 1).split(";")) {
-      int equals = param.indexOf('=');
-      if (equals < 0 || !"charset".equalsIgnoreCase(param.substring(0, equals).strip())) continue;
-      String declared = param.substring(equals + 1).strip().replaceFirst("^\"", "").replaceFirst("\"$", "");
-      Charset charset;
-      try {
-        charset = Charset.forName(declared);
-      } catch (IllegalArgumentException ex) {
-        throw invalidBody("QUERY body declares an unsupported charset: " + declared, ex);
-      }
-      if (!charset.equals(StandardCharsets.UTF_8)) {
-        throw invalidBody("QUERY body charset must be UTF-8, got: " + declared,
-            new IllegalArgumentException("Unsupported charset: " + declared));
-      }
+  private static void requireUtf8Charset(ContentType contentType) {
+    String declared = contentType.parameter("charset");
+    if (declared == null) return;
+    Charset charset;
+    try {
+      charset = contentType.charset();
+    } catch (IllegalArgumentException ex) {
+      throw invalidBody("QUERY body declares an unsupported charset: " + declared, ex);
+    }
+    if (!StandardCharsets.UTF_8.equals(charset)) {
+      throw invalidBody("QUERY body charset must be UTF-8, got: " + declared,
+          new IllegalArgumentException("Unsupported charset: " + declared));
     }
   }
 

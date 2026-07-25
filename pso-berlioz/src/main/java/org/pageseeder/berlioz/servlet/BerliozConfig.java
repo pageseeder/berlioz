@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +42,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.http.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,8 +167,9 @@ public final class BerliozConfig {
     this.fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", "");
     this.transformers = this.allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Map.of();
     String rawContentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
-    this.mediaType = parseMediaType(rawContentType);
-    this.charset = parseCharset(rawContentType);
+    ContentType contentType = ContentType.parse(rawContentType);
+    this.mediaType = contentType.mediaType();
+    this.charset = parseCharset(contentType, rawContentType);
     if (IDENTITY_TRANSFORM.equals(this.stylePath) && !this.mediaType.contains("xml")) {
       LOGGER.warn("Servlet {} specified content type {} but output is XML", servletConfig.getServletName(), this.mediaType);
     }
@@ -282,8 +283,9 @@ public final class BerliozConfig {
    */
   @Deprecated(forRemoval = true, since = "0.13.5")
   public void setContentType(String contentType) {
-    this.mediaType = parseMediaType(contentType);
-    this.charset = parseCharset(contentType);
+    ContentType parsed = ContentType.parse(contentType);
+    this.mediaType = parsed.mediaType();
+    this.charset = parseCharset(parsed, contentType);
   }
 
   /**
@@ -349,32 +351,17 @@ public final class BerliozConfig {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Extracts the bare media type from a {@code Content-Type} value, discarding parameters.
-   *
-   * <p>For example, {@code "text/html;charset=utf-8"} returns {@code "text/html"}.</p>
-   */
-  private static String parseMediaType(String contentType) {
-    int semi = contentType.indexOf(';');
-    return (semi < 0 ? contentType : contentType.substring(0, semi)).trim();
-  }
-
-  /**
    * Extracts the {@code charset} parameter from a {@code Content-Type} value.
    *
    * <p>Returns {@link StandardCharsets#UTF_8} when the parameter is absent or the named charset
-   * is not supported. Quoted-string values (RFC 2045 §5.1) are unquoted before lookup.</p>
+   * is not supported.</p>
    */
-  private static Charset parseCharset(String contentType) {
-    int idx = contentType.toLowerCase(Locale.ROOT).indexOf("charset=");
-    if (idx < 0) return StandardCharsets.UTF_8;
-    int start = idx + 8;
-    int end = contentType.indexOf(';', start);
-    String name = (end < 0 ? contentType.substring(start) : contentType.substring(start, end)).trim();
-    if (name.startsWith("\"") && name.endsWith("\"") && name.length() > 1) {
-      name = name.substring(1, name.length() - 1);
-    }
+  private static Charset parseCharset(ContentType parsed, String contentType) {
+    String name = parsed.parameter("charset");
+    if (name == null) return StandardCharsets.UTF_8;
     try {
-      return Charset.forName(name);
+      Charset charset = parsed.charset();
+      return charset != null ? charset : StandardCharsets.UTF_8;
     } catch (IllegalCharsetNameException | UnsupportedCharsetException ex) {
       LOGGER.warn("Unknown charset '{}' in content type '{}', defaulting to UTF-8", name, contentType);
       return StandardCharsets.UTF_8;

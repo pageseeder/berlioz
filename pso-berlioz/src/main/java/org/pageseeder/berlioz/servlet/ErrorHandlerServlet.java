@@ -45,6 +45,7 @@ import org.pageseeder.berlioz.error.HttpException;
 import org.pageseeder.berlioz.error.LegacyError;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.error.Problems;
+import org.pageseeder.berlioz.http.ContentType;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpResponses;
 import org.pageseeder.berlioz.json.Json;
@@ -407,7 +408,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
   private static @Nullable String resolveMediaType(HttpServletRequest req) {
     Object resolved = req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE);
     if (resolved instanceof String && !((String) resolved).isBlank()) {
-      return bareMediaType((String) resolved);
+      return mediaTypeOf((String) resolved);
     }
     Object servletName = req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME);
     ServletContext context = req.getServletContext();
@@ -416,7 +417,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       ServletRegistration registration = context.getServletRegistration((String) servletName);
       if (!isBerliozRegistration(registration)) return null;
       String contentType = registration.getInitParameter("content-type");
-      return bareMediaType(contentType != null ? contentType : "text/html;charset=utf-8");
+      return mediaTypeOf(contentType != null ? contentType : "text/html;charset=utf-8");
     } catch (UnsupportedOperationException ex) {
       LOGGER.debug("Servlet registration lookup is unavailable; falling back to extension inference", ex);
       return null;
@@ -474,9 +475,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return normalized.isEmpty() || normalized.startsWith(".") ? normalized : "." + normalized;
   }
 
-  private static String bareMediaType(String contentType) {
-    int semi = contentType.indexOf(';');
-    return (semi < 0 ? contentType : contentType.substring(0, semi)).trim();
+  private static @Nullable String mediaTypeOf(String contentType) {
+    try {
+      return ContentType.parse(contentType).mediaType();
+    } catch (IllegalArgumentException ex) {
+      LOGGER.debug("Ignoring malformed Content-Type while resolving error response format", ex);
+      return null;
+    }
   }
 
   /** Writes the non-dispatching terminal response using only module-owned resources. */
