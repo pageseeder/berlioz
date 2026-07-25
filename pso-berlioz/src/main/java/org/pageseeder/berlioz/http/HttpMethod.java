@@ -23,7 +23,7 @@ import java.util.Set;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.1
  * @since 0.8.2
  */
 public enum HttpMethod {
@@ -79,6 +79,7 @@ public enum HttpMethod {
    *
    * @see <a href="https://www.rfc-editor.org/rfc/rfc10008.html">
    *      HTTP QUERY Method</a>
+   * @since 0.14.1
    */
   QUERY(true);
 

@@ -167,6 +167,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * precedence over the originating servlet registration and request URL extension. The
    * registration can recover the configured media type when an exception escaped Berlioz before
    * this attribute was set; extension inference remains the fallback for non-Berlioz errors.
+   *
+   * @since 0.14.1
    */
   public static final String BERLIOZ_ERROR_MEDIA_TYPE = "org.pageseeder.berlioz.error_media_type";
 

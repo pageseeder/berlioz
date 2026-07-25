@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.1
  * @since 0.14.0
  */
 public final class HttpResponses {
@@ -68,6 +68,7 @@ public final class HttpResponses {
    *
    * @param response the HTTP servlet response
    * @param headers  the headers to apply
+   * @since 0.14.1
    */
   public static void setHeaders(HttpServletResponse response, Map<String, String> headers) {
     headers.forEach(response::setHeader);
@@ -172,6 +173,7 @@ public final class HttpResponses {
    *
    * @param name the header name to check
    * @return {@code true} if {@code name} is a non-empty valid token
+   * @since 0.14.1
    */
   public static boolean isValidHeaderName(String name) {
     if (name.isEmpty()) return false;
@@ -213,6 +215,7 @@ public final class HttpResponses {
    *
    * @param value the header value to check
    * @return {@code true} if {@code value} contains no disallowed control characters
+   * @since 0.14.1
    */
   public static boolean isValidHeaderValue(String value) {
     for (int i = 0; i < value.length(); i++) {

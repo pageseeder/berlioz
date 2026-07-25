@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.1
  * @since 0.7
  */
 public final class Service {
@@ -280,6 +280,7 @@ public final class Service {
    * @param out    the output writer
    * @param method the HTTP method the service is mapped to.
    * @param urls   the URI patterns this service matches
+   * @since 0.14.1
    */
   @Beta
   public void writeTo(OutputWriter out, HttpMethod method, List<String> urls) {
@@ -293,6 +294,7 @@ public final class Service {
    * @param method       the HTTP method the service is mapped to.
    * @param urls         the URI patterns this service matches
    * @param cacheControl the cache control directives.
+   * @since 0.14.1
    */
   @Beta
   public void writeTo(OutputWriter out, HttpMethod method, List<String> urls, @Nullable String cacheControl) {
