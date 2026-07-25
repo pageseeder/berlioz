@@ -17,6 +17,8 @@ import org.pageseeder.berlioz.util.ErrorCollector;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletRegistration;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -111,6 +114,55 @@ class ErrorHandlerServletTest {
           return ServletTestSupport.defaultValue(m.getReturnType());
         });
     assertDoesNotThrow(() -> new ErrorHandlerServlet().init(config));
+  }
+
+  @Test
+  void init_discoversDeployedBerliozExtensionMappings() throws Exception {
+    ServletRegistration berlioz = servletRegistration(BerliozServlet.class.getName(),
+        Set.of("*.json", "*.pdf", "/api/*"), Map.of("content-type", "application/json;charset=utf-8"));
+    ServletRegistration csv = servletRegistration("example.OtherServlet",
+        Set.of("*.csv"), Map.of("content-type", "text/csv"));
+    ErrorHandlerServlet servlet = new ErrorHandlerServlet();
+
+    servlet.init(servletConfig(servletContext(Map.of("berlioz", berlioz, "csv", csv)), Map.of()));
+
+    Set<String> extensions = extensions(servlet, "forwardExtensions");
+    assertAll(
+        () -> assertEquals(Set.of(".json", ".pdf"), extensions),
+        () -> assertFalse(extensions.contains("/api/*")),
+        () -> assertFalse(extensions.contains(".csv"))
+    );
+  }
+
+  @Test
+  void init_explicitForwardExtensionsOverrideDiscoveryAndAreNormalized() throws Exception {
+    ServletRegistration json = servletRegistration(BerliozServlet.class.getName(),
+        Set.of("*.json"), Map.of("content-type", "application/json"));
+    ErrorHandlerServlet servlet = new ErrorHandlerServlet();
+
+    servlet.init(servletConfig(servletContext(Map.of("json", json)),
+        Map.of("forward-extensions", " CSV, .PDF ")));
+
+    assertEquals(Set.of(".csv", ".pdf"), extensions(servlet, "forwardExtensions"));
+  }
+
+  @Test
+  void handle_defaultIgnoredModernAsset_returnsEmptyBody() throws Exception {
+    ErrorHandlerServlet servlet = new ErrorHandlerServlet();
+    servlet.init(servletConfig(servletContext(Map.of()), Map.of()));
+    HttpServletRequest req = ServletTestSupport.request().uri("/images/missing.webp")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    servlet.handle(req, res.build());
+
+    assertAll(
+        () -> assertEquals(404, res.status),
+        () -> assertEquals("text/plain;charset=UTF-8", res.contentType),
+        () -> assertEquals("0", res.header("Content-Length")),
+        () -> assertTrue(res.content().isEmpty())
+    );
   }
 
   // Null-safety on getErrorCode with valid Integer attribute (tested via constant)
@@ -455,6 +507,39 @@ class ErrorHandlerServletTest {
     }
 
     @Test
+    void handle_sourceExtension_returnsRawXmlWhenNoResolvedMediaType() throws Exception {
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.src")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+      new ErrorHandlerServlet().handle(req, res.build());
+
+      assertAll(
+          () -> assertEquals("application/xml;charset=UTF-8", res.contentType),
+          () -> assertTrue(res.content().contains("<problem")),
+          () -> assertFalse(res.content().contains("<html"))
+      );
+    }
+
+    @Test
+    void handle_unknownDocumentExtension_returnsHtmlWhenNoResolvedMediaType() throws Exception {
+      HttpServletRequest req = ServletTestSupport.request().uri("/report.pdf")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Report not found")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+      new ErrorHandlerServlet().handle(req, res.build());
+
+      assertAll(
+          () -> assertEquals("text/html;charset=UTF-8", res.contentType),
+          () -> assertTrue(res.content().contains("Report not found"))
+      );
+    }
+
+    @Test
     void handle_resolvedMediaTypeXml_overridesJsonExtension() throws Exception {
       HttpServletRequest req = ServletTestSupport.request().uri("/test.json")
           .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
@@ -508,6 +593,44 @@ class ErrorHandlerServletTest {
           () -> assertEquals("text/html;charset=UTF-8", res.contentType),
           () -> assertTrue(body.contains("Unexpected error"), "detail should appear as message")
       );
+    }
+
+    @Test
+    void handle_originatingBerliozRegistration_resolvesConfiguredJsonMediaType() throws Exception {
+      ServletRegistration registration = servletRegistration(BerliozServlet.class.getName(),
+          Set.of("*.json"), Map.of("content-type", "application/json;charset=utf-8"));
+      ServletContext context = servletContext(Map.of("BerliozJSON", registration));
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.html").servletContext(context)
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .attribute(RequestDispatcher.ERROR_SERVLET_NAME, "BerliozJSON")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+      new ErrorHandlerServlet().handle(req, res.build());
+
+      assertAll(
+          () -> assertEquals(500, res.status),
+          () -> assertEquals("application/problem+json;charset=UTF-8", res.contentType),
+          () -> assertTrue(res.content().startsWith("{"))
+      );
+    }
+
+    @Test
+    void handle_nonBerliozRegistration_doesNotTrustContentTypeInitParameter() throws Exception {
+      ServletRegistration registration = servletRegistration("example.OtherServlet",
+          Set.of("*.json"), Map.of("content-type", "application/json"));
+      ServletContext context = servletContext(Map.of("Other", registration));
+      HttpServletRequest req = ServletTestSupport.request().uri("/test.html").servletContext(context)
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unexpected error")
+          .attribute(RequestDispatcher.ERROR_SERVLET_NAME, "Other")
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+      new ErrorHandlerServlet().handle(req, res.build());
+
+      assertEquals("text/html;charset=UTF-8", res.contentType);
     }
   }
 
@@ -850,6 +973,51 @@ class ErrorHandlerServletTest {
     Path outDir = Paths.get("build/error-samples");
     Files.createDirectories(outDir);
     Files.writeString(outDir.resolve(name + ".html"), html, StandardCharsets.UTF_8);
+  }
+
+  private static ServletConfig servletConfig(ServletContext context, Map<String, String> initParameters) {
+    return (ServletConfig) Proxy.newProxyInstance(
+        ServletConfig.class.getClassLoader(),
+        new Class<?>[]{ServletConfig.class},
+        (proxy, method, args) -> {
+          if ("getServletName".equals(method.getName())) return "error";
+          if ("getServletContext".equals(method.getName())) return context;
+          if ("getInitParameter".equals(method.getName())) return initParameters.get(args[0]);
+          return ServletTestSupport.defaultValue(method.getReturnType());
+        });
+  }
+
+  private static ServletContext servletContext(Map<String, ServletRegistration> registrations) {
+    return (ServletContext) Proxy.newProxyInstance(
+        ServletContext.class.getClassLoader(),
+        new Class<?>[]{ServletContext.class},
+        (proxy, method, args) -> {
+          if ("getServletRegistrations".equals(method.getName())) return registrations;
+          if ("getServletRegistration".equals(method.getName())) return registrations.get(args[0]);
+          return ServletTestSupport.defaultValue(method.getReturnType());
+        });
+  }
+
+  private static ServletRegistration servletRegistration(String className, Set<String> mappings,
+      Map<String, String> initParameters) {
+    return (ServletRegistration) Proxy.newProxyInstance(
+        ServletRegistration.class.getClassLoader(),
+        new Class<?>[]{ServletRegistration.class},
+        (proxy, method, args) -> {
+          if ("getClassName".equals(method.getName())) return className;
+          if ("getMappings".equals(method.getName())) return mappings;
+          if ("getInitParameter".equals(method.getName())) return initParameters.get(args[0]);
+          if ("getInitParameters".equals(method.getName())) return initParameters;
+          return ServletTestSupport.defaultValue(method.getReturnType());
+        });
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Set<String> extensions(ErrorHandlerServlet servlet, String fieldName)
+      throws ReflectiveOperationException {
+    Field field = ErrorHandlerServlet.class.getDeclaredField(fieldName);
+    field.setAccessible(true);
+    return Set.copyOf((Set<String>) field.get(servlet));
   }
 
   private static void setOption(BerliozOption option, boolean value) throws ReflectiveOperationException {

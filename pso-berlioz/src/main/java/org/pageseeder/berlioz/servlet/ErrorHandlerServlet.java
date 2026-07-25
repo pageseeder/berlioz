@@ -26,8 +26,10 @@ import java.util.*;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRegistration;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -62,12 +64,12 @@ import org.pageseeder.berlioz.xslt.XsltTransformException;
  *
  * <p>The expected response format (JSON, HTML or raw XML) is resolved from the
  * {@link #BERLIOZ_ERROR_MEDIA_TYPE} request attribute set by {@link BerliozServlet} when
- * available, falling back to the request URL's extension otherwise. JSON-expecting
- * requests always receive {@code application/problem+json}. For HTML requests the XML is
- * further transformed by an XSLT stylesheet (custom via {@link BerliozOption#ERROR_STYLESHEET},
- * or the built-in failsafe template). Other requests ({@code .xml}, {@code .src}, etc.)
- * receive raw XML directly. Static resource errors ({@code .jpg}, {@code .png}, {@code .css},
- * {@code .js}) are answered with an empty body and the original status code.
+ * available, then from the originating Berlioz servlet registration, and finally from the
+ * request URL's extension. JSON-expecting requests always receive
+ * {@code application/problem+json}; XML expectations and {@code .xml}/{@code .src} requests
+ * receive raw XML. Other requests receive an HTML error page transformed by a custom
+ * {@link BerliozOption#ERROR_STYLESHEET} or the built-in failsafe template. Common static asset
+ * errors are answered with an empty body and the original status code.
  *
  * <p>This servlet should be configured as:
  *
@@ -81,7 +83,7 @@ import org.pageseeder.berlioz.xslt.XsltTransformException;
  * }</pre>
  *
  * @author Christophe Lauret
- * @version 0.14.0
+ * @version 0.14.1
  * @since 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -161,10 +163,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
   /**
    * The media type resolved by {@link BerliozServlet} from the matched service's configured
    * content type (String), set before dispatching to this servlet. When present, this takes
-   * precedence over inferring the expected media type from the request URL's extension, which
-   * is unreliable for non-standard URL patterns. Absent for errors that reach this servlet
-   * directly via the container's {@code <error-page>} mechanism (unmapped paths, static-resource
-   * errors) without going through {@link BerliozServlet}.
+   * precedence over the originating servlet registration and request URL extension. The
+   * registration can recover the configured media type when an exception escaped Berlioz before
+   * this attribute was set; extension inference remains the fallback for non-Berlioz errors.
    */
   public static final String BERLIOZ_ERROR_MEDIA_TYPE = "org.pageseeder.berlioz.error_media_type";
 
@@ -173,14 +174,18 @@ public final class ErrorHandlerServlet extends HttpServlet {
   static final String ORIGINAL_ERROR_EXCEPTION = "org.pageseeder.berlioz.error.original-exception";
 
   /**
-   * The default list of extensions to preserve.
+   * The legacy list of extensions to preserve when servlet registration discovery is unavailable.
    */
-  private static final String FORWARD_EXTENSIONS = ".html,.xml";
+  private static final String LEGACY_FORWARD_EXTENSIONS = ".html,.xml";
 
   /**
    * The default list of extensions to ignore.
    */
-  private static final String IGNORE_EXTENSIONS = ".jpg,.png,.css,.js";
+  private static final String IGNORE_EXTENSIONS =
+      ".jpg,.jpeg,.png,.gif,.webp,.avif,.apng,.heic,.heif,.jxl,.svg,.svgz,.ico"
+      + ",.css,.js,.mjs,.map,.wasm,.webmanifest"
+      + ",.woff,.woff2,.ttf,.otf,.eot"
+      + ",.mp3,.mp4,.m4a,.webm,.ogg,.oga,.ogv,.opus,.wav,.flac";
 
   /**
    * The default extension to use for extensions which are neither preserved nor ignored.
@@ -219,16 +224,20 @@ public final class ErrorHandlerServlet extends HttpServlet {
     super.init(config);
     String preserve = config.getInitParameter("forward-extensions");
     if (preserve == null) {
-      preserve = FORWARD_EXTENSIONS;
+      discoverBerliozExtensions(config.getServletContext(), forwardExtensions);
+      if (forwardExtensions.isEmpty()) {
+        addExtensions(forwardExtensions, LEGACY_FORWARD_EXTENSIONS);
+      }
+    } else {
+      addExtensions(forwardExtensions, preserve);
     }
-    Collections.addAll(forwardExtensions, preserve.split(","));
     String ignore = config.getInitParameter("ignore-extensions");
     if (ignore == null) {
       ignore = IGNORE_EXTENSIONS;
     }
-    Collections.addAll(ignoreExtensions, ignore.split(","));
+    addExtensions(ignoreExtensions, ignore);
     String defExt = config.getInitParameter("forward-default");
-    defaultExtension = defExt != null ? defExt : DEFAULT_EXTENSION;
+    defaultExtension = normalizeExtension(defExt != null ? defExt : DEFAULT_EXTENSION);
   }
 
   @Override
@@ -343,10 +352,9 @@ public final class ErrorHandlerServlet extends HttpServlet {
     // Generate error details as XML
     String xml = toXml(req);
 
-    // For non-HTML formats (.xml, .src, etc., or a resolved non-HTML/non-JSON media type) return
-    // XML error directly, without the HTML failsafe stylesheet. This respects the content type
-    // whether dispatched via the .auto error-page mechanism or forwarded directly from
-    // BerliozServlet (ERROR_HANDLER=true).
+    // For XML formats return the error document directly, without the HTML failsafe stylesheet.
+    // This respects the configured media type whether dispatched via the .auto error-page
+    // mechanism or forwarded directly from BerliozServlet (ERROR_HANDLER=true).
     if (format == ResponseFormat.XML) {
       writeResponse(res, xml, APPLICATION_XML, headers);
       return;
@@ -371,23 +379,95 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * rendering), or raw XML.
    *
    * <p>Prefers the {@link #BERLIOZ_ERROR_MEDIA_TYPE} request attribute set by
-   * {@link BerliozServlet} from the matched service's configured content type, over the request
-   * URL's extension, which is unreliable for non-standard URL patterns. Falls back to extension
-   * inference when the attribute is absent (errors reaching this servlet directly via the
-   * container's {@code <error-page>} mechanism, with no {@code BerliozServlet} involved).
+   * {@link BerliozServlet} from the matched service's configured content type. If it is absent,
+   * the originating servlet registration is consulted before falling back to extension inference.
    *
    * @param req The HTTP servlet request that caused the error.
    * @param ext The extension of the original request URI.
    * @return the resolved response format.
    */
   private static ResponseFormat resolveFormat(HttpServletRequest req, String ext) {
-    String resolvedMediaType = (String) req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE);
+    String resolvedMediaType = resolveMediaType(req);
     if (resolvedMediaType != null) {
       if (Json.isJsonMediaType(resolvedMediaType)) return ResponseFormat.JSON;
       return Xml.isXmlMediaType(resolvedMediaType) ? ResponseFormat.XML : ResponseFormat.HTML;
     }
     if (".json".equals(ext)) return ResponseFormat.JSON;
-    return DEFAULT_EXTENSION.equals(ext) || ext.isEmpty() ? ResponseFormat.HTML : ResponseFormat.XML;
+    return ".xml".equals(ext) || ".src".equals(ext) ? ResponseFormat.XML : ResponseFormat.HTML;
+  }
+
+  /**
+   * Resolves the media type expected by the Berlioz servlet that originated the error.
+   *
+   * <p>The request attribute set directly by {@link BerliozServlet} is authoritative. If an
+   * exception escaped to the container before Berlioz could set that attribute, the standard
+   * error servlet-name attribute identifies the exact originating deployment; its registration
+   * then provides the configured content type without reimplementing servlet URL matching.</p>
+   */
+  private static @Nullable String resolveMediaType(HttpServletRequest req) {
+    Object resolved = req.getAttribute(BERLIOZ_ERROR_MEDIA_TYPE);
+    if (resolved instanceof String && !((String) resolved).isBlank()) {
+      return bareMediaType((String) resolved);
+    }
+    Object servletName = req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME);
+    ServletContext context = req.getServletContext();
+    if (!(servletName instanceof String) || context == null) return null;
+    try {
+      ServletRegistration registration = context.getServletRegistration((String) servletName);
+      if (!isBerliozRegistration(registration)) return null;
+      String contentType = registration.getInitParameter("content-type");
+      return bareMediaType(contentType != null ? contentType : "text/html;charset=utf-8");
+    } catch (UnsupportedOperationException ex) {
+      LOGGER.debug("Servlet registration lookup is unavailable; falling back to extension inference", ex);
+      return null;
+    }
+  }
+
+  /**
+   * Adds the extension mappings of every deployed Berlioz servlet.
+   *
+   * <p>Only extension mappings can be substituted for the {@code .auto} suffix. Exact, path and
+   * default mappings remain the container's responsibility.</p>
+   */
+  private static void discoverBerliozExtensions(@Nullable ServletContext context, Set<String> extensions) {
+    if (context == null) return;
+    try {
+      Map<String, ? extends ServletRegistration> registrations = context.getServletRegistrations();
+      if (registrations == null) return;
+      for (ServletRegistration registration : registrations.values()) {
+        if (!isBerliozRegistration(registration)) continue;
+        Collection<String> mappings = registration.getMappings();
+        if (mappings == null) continue;
+        for (String mapping : mappings) {
+          if (mapping != null && mapping.startsWith("*.") && mapping.length() > 2) {
+            extensions.add(normalizeExtension(mapping.substring(1)));
+          }
+        }
+      }
+    } catch (UnsupportedOperationException ex) {
+      LOGGER.debug("Servlet registration discovery is unavailable; using legacy forwarding defaults", ex);
+    }
+  }
+
+  private static boolean isBerliozRegistration(@Nullable ServletRegistration registration) {
+    return registration != null && BerliozServlet.class.getName().equals(registration.getClassName());
+  }
+
+  private static void addExtensions(Set<String> extensions, String csv) {
+    for (String extension : csv.split(",")) {
+      String normalized = normalizeExtension(extension);
+      if (!normalized.isEmpty()) extensions.add(normalized);
+    }
+  }
+
+  private static String normalizeExtension(String extension) {
+    String normalized = extension.trim().toLowerCase(Locale.ROOT);
+    return normalized.isEmpty() || normalized.startsWith(".") ? normalized : "." + normalized;
+  }
+
+  private static String bareMediaType(String contentType) {
+    int semi = contentType.indexOf(';');
+    return (semi < 0 ? contentType : contentType.substring(0, semi)).trim();
   }
 
   /** Writes the non-dispatching terminal response using only module-owned resources. */
@@ -594,7 +674,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static String getExtension(String uri) {
     int dot = uri.lastIndexOf('.');
-    return dot >= 0 ? uri.substring(dot) : "";
+    return dot >= 0 ? uri.substring(dot).toLowerCase(Locale.ROOT) : "";
   }
 
   /**

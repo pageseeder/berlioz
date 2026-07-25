@@ -73,6 +73,7 @@ public final class ServletTestSupport {
     private String remoteAddr = "127.0.0.1";
     private String contentType = null;
     private byte[] body = new byte[0];
+    private ServletContext servletContext = null;
     private final Map<String, String> headers = new LinkedHashMap<>();
     private final Map<String, String> parameters = new LinkedHashMap<>();
     private final Map<String, Object> attributes = new LinkedHashMap<>();
@@ -88,6 +89,7 @@ public final class ServletTestSupport {
     public RequestBuilder uri(String v)         { this.requestURI = v; return this; }
     public RequestBuilder query(String v)       { this.queryString = v; return this; }
     public RequestBuilder remoteAddr(String v)  { this.remoteAddr = v; return this; }
+    public RequestBuilder servletContext(ServletContext v) { this.servletContext = v; return this; }
     public RequestBuilder header(String n, String v)    { this.headers.put(n, v); return this; }
     public RequestBuilder parameter(String n, String v) { this.parameters.put(n, v); return this; }
     public RequestBuilder attribute(String n, Object v) { this.attributes.put(n, v); return this; }
@@ -109,6 +111,7 @@ public final class ServletTestSupport {
           case "getRequestURL":   return requestURL();
           case "getQueryString":  return queryString;
           case "getRemoteAddr":   return remoteAddr;
+          case "getServletContext": return servletContext;
           case "getHeader":       return headers.get(args[0]);
           case "getDateHeader":   return dateHeader((String) args[0]);
           case "setCharacterEncoding": characterEncoding = (String) args[0]; return null;
