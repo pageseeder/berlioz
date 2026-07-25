@@ -435,12 +435,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
       Map<String, ? extends ServletRegistration> registrations = context.getServletRegistrations();
       if (registrations == null) return;
       for (ServletRegistration registration : registrations.values()) {
-        if (!isBerliozRegistration(registration)) continue;
-        Collection<String> mappings = registration.getMappings();
-        if (mappings == null) continue;
-        for (String mapping : mappings) {
-          if (mapping != null && mapping.startsWith("*.") && mapping.length() > 2) {
-            extensions.add(normalizeExtension(mapping.substring(1)));
+        if (isBerliozRegistration(registration)) {
+          Collection<String> mappings = registration.getMappings();
+          if (mappings != null) {
+            for (String mapping : mappings) {
+              if (mapping != null && mapping.startsWith("*.") && mapping.length() > 2) {
+                extensions.add(normalizeExtension(mapping.substring(1)));
+              }
+            }
           }
         }
       }
