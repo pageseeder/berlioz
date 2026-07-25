@@ -314,9 +314,9 @@ final class ResponseTest {
   @Test
   void testHeaders_rejectsInvalidEntryAtomically() {
     Response original = Response.ok().header("X-Existing", "value");
+    Map<String, String> invalid = Map.of("Retry-After", "30", "Bad Header", "value");
 
-    Assertions.assertThrows(IllegalArgumentException.class,
-        () -> original.headers(Map.of("Retry-After", "30", "Bad Header", "value")));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> original.headers(invalid));
     Assertions.assertEquals(Map.of("X-Existing", "value"), original.headers());
   }
 
