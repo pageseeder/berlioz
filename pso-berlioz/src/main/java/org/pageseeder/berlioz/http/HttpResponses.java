@@ -21,6 +21,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -57,6 +58,19 @@ public final class HttpResponses {
    * Utility class.
    */
   private HttpResponses() {
+  }
+
+  /**
+   * Applies the supplied headers using replace semantics.
+   *
+   * <p>Application-owned headers should be applied before framework-owned headers so the
+   * framework can subsequently enforce its values on a name collision.
+   *
+   * @param response the HTTP servlet response
+   * @param headers  the headers to apply
+   */
+  public static void setHeaders(HttpServletResponse response, Map<String, String> headers) {
+    headers.forEach(response::setHeader);
   }
 
   /**

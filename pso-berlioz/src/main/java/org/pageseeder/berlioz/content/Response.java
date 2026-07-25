@@ -53,7 +53,7 @@ import java.util.*;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.5
+ * @version 0.14.1
  * @since 0.13.2
  */
 public final class Response {
@@ -157,6 +157,32 @@ public final class Response {
       throw new IllegalArgumentException("Invalid HTTP header value for: " + name);
     Map<String, String> copy = new LinkedHashMap<>(this.headers);
     copy.put(name, value);
+    return new Response(this.status, this.statusCode, this.redirectLocation, this.problem, Map.copyOf(copy));
+  }
+
+  /**
+   * Returns a copy of this response with all supplied headers merged into it.
+   *
+   * <p>The supplied headers replace existing values with the same name. All names and values are
+   * validated before a new response is created.
+   *
+   * @param headers the headers to merge
+   * @return a new {@code Response} containing the merged headers
+   * @throws IllegalArgumentException if a header name or value is not valid for HTTP
+   */
+  public Response headers(Map<String, String> headers) {
+    Objects.requireNonNull(headers, "headers");
+    if (headers.isEmpty()) return this;
+    headers.forEach((name, value) -> {
+      Objects.requireNonNull(name, "name");
+      Objects.requireNonNull(value, "value");
+      if (!HttpResponses.isValidHeaderName(name))
+        throw new IllegalArgumentException("Invalid HTTP header name");
+      if (!HttpResponses.isValidHeaderValue(value))
+        throw new IllegalArgumentException("Invalid HTTP header value for: " + name);
+    });
+    Map<String, String> copy = new LinkedHashMap<>(this.headers);
+    copy.putAll(headers);
     return new Response(this.status, this.statusCode, this.redirectLocation, this.problem, Map.copyOf(copy));
   }
 

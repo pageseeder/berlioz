@@ -2,6 +2,7 @@ package org.pageseeder.berlioz.servlet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -565,7 +566,7 @@ class BerliozServletTest {
   void doGet_jsonHandlerThrowsHttpExceptionWithHeader_propagatesRetryAfterHeader() throws Exception {
     // generator-catch=false (writeConfig(true)) routes the error through checkAndSendError() ->
     // sendError(), which wraps the original HttpException in a BerliozException; the response
-    // must still surface the Retry-After header via HttpException.findIn() unwrapping the cause.
+    // must still surface the Retry-After header via HttpException.headersIn() unwrapping the cause.
     writeConfig(true);
     GlobalSettings.setup(this.webInf.toFile());
     writeServices(service("retry-after", "get", "/retry-after", "handler", RETRY_AFTER_JSON));
@@ -576,6 +577,11 @@ class BerliozServletTest {
 
     assertEquals(503, recorder.status);
     assertEquals("30", recorder.header("Retry-After"));
+    assertEquals("application/problem+json;charset=UTF-8", recorder.contentType);
+    assertEquals("no-store", recorder.header(HttpHeaders.CACHE_CONTROL));
+    assertEquals(Integer.toString(recorder.content().getBytes(StandardCharsets.UTF_8).length),
+        recorder.header(HttpHeaders.CONTENT_LENGTH));
+    assertNotEquals("0", recorder.header(HttpHeaders.DATE));
   }
 
   @Test

@@ -150,4 +150,24 @@ final class HttpExceptionTest {
     assertNull(HttpException.findIn(null));
   }
 
+  // headersIn ------------------------------------------------------------------------------------
+
+  @Test
+  void headersIn_wrappedSignal_returnsSignalHeaders() {
+    HttpException signal = new HttpException("busy", 503) {}.header("Retry-After", "30");
+    Exception wrapper = new RuntimeException("wrapped", signal);
+
+    assertSame(signal.headers(), HttpException.headersIn(wrapper));
+  }
+
+  @Test
+  void headersIn_noSignal_returnsEmptyMap() {
+    assertTrue(HttpException.headersIn(new RuntimeException("boom")).isEmpty());
+  }
+
+  @Test
+  void headersIn_null_returnsEmptyMap() {
+    assertTrue(HttpException.headersIn(null).isEmpty());
+  }
+
 }

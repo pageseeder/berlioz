@@ -226,6 +226,21 @@ public abstract class HttpException extends RuntimeException {
     return null;
   }
 
+  /**
+   * Returns the response headers carried by the first {@code HttpException} in the cause chain.
+   *
+   * <p>This is the null-safe counterpart to {@link #findIn(Throwable)} for response-writing code:
+   * callers can apply the returned map directly without independently handling the absence of an
+   * HTTP signal.
+   *
+   * @param throwable the throwable to search, or {@code null}
+   * @return the HTTP signal's unmodifiable response headers; empty if no signal was found
+   */
+  public static Map<String, String> headersIn(@Nullable Throwable throwable) {
+    HttpException exception = findIn(throwable);
+    return exception != null ? exception.headers() : Map.of();
+  }
+
   // --- Registry pattern factory ----------------------------------------------------------------
 
   /**

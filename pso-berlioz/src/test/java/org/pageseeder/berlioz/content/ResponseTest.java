@@ -295,4 +295,29 @@ final class ResponseTest {
     Assertions.assertEquals("one two\tthree", r.headers().get("X-Test"));
   }
 
+  @Test
+  void testHeaders_mergesMapWithReplaceSemantics() {
+    Response original = Response.ok()
+        .header("X-Existing", "old")
+        .header("X-Preserved", "yes");
+
+    Response updated = original.headers(Map.of(
+        "X-Existing", "new",
+        "Retry-After", "30"));
+
+    Assertions.assertEquals("new", updated.headers().get("X-Existing"));
+    Assertions.assertEquals("yes", updated.headers().get("X-Preserved"));
+    Assertions.assertEquals("30", updated.headers().get("Retry-After"));
+    Assertions.assertEquals("old", original.headers().get("X-Existing"));
+  }
+
+  @Test
+  void testHeaders_rejectsInvalidEntryAtomically() {
+    Response original = Response.ok().header("X-Existing", "value");
+
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> original.headers(Map.of("Retry-After", "30", "Bad Header", "value")));
+    Assertions.assertEquals(Map.of("X-Existing", "value"), original.headers());
+  }
+
 }

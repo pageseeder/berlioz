@@ -505,8 +505,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * if the request's error exception is one; empty otherwise.
    */
   private static Map<String, String> resolveExceptionHeaders(HttpServletRequest req) {
-    HttpException signal = HttpException.findIn(getErrorException(req));
-    return signal != null ? signal.headers() : Map.of();
+    return HttpException.headersIn(getErrorException(req));
   }
 
   static void prepareErrorAttributes(HttpServletRequest req, String servletName, int statusCode,
@@ -537,7 +536,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private static void writeResponse(HttpServletResponse res, String content, String mediaType,
                                     Map<String, String> extraHeaders) throws IOException {
-    extraHeaders.forEach(res::setHeader);
+    HttpResponses.setHeaders(res, extraHeaders);
     res.setContentType(mediaType);
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     HttpResponses.setContentLength(res, content, StandardCharsets.UTF_8);

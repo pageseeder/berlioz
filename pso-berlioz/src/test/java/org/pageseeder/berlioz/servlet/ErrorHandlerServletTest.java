@@ -11,6 +11,7 @@ import org.pageseeder.berlioz.BerliozErrorID;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.HttpException;
+import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.util.CollectedError;
 import org.pageseeder.berlioz.util.CompoundBerliozException;
 import org.pageseeder.berlioz.util.ErrorCollector;
@@ -203,6 +204,31 @@ class ErrorHandlerServletTest {
     ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
     new ErrorHandlerServlet().handle(req, res.build());
     assertEquals("30", res.header("Retry-After"));
+  }
+
+  @Test
+  void handle_httpExceptionCannotOverrideFrameworkHeaders() throws Exception {
+    HttpException signal = new HttpException("service busy", 503) {}
+        .header("Content-Type", "text/plain")
+        .header("Content-Length", "1")
+        .header("Date", "0")
+        .header("Cache-Control", "public");
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.json")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 503)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Service busy")
+        .attribute(RequestDispatcher.ERROR_EXCEPTION, signal)
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+
+    new ErrorHandlerServlet().handle(req, res.build());
+
+    assertAll(
+        () -> assertEquals("application/problem+json;charset=UTF-8", res.contentType),
+        () -> assertEquals("no-store", res.header(HttpHeaders.CACHE_CONTROL)),
+        () -> assertEquals(Integer.toString(res.content().getBytes(StandardCharsets.UTF_8).length),
+            res.header(HttpHeaders.CONTENT_LENGTH)),
+        () -> assertNotEquals("0", res.header(HttpHeaders.DATE))
+    );
   }
 
   @Test

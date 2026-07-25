@@ -11,6 +11,12 @@ public final class RetryAfterJsonGenerator implements JsonGenerator {
 
   @Override
   public Response generate(Request req, JsonWriter json) {
-    throw new HttpException("Service busy", 503) {}.header("Retry-After", "30");
+    throw new HttpException("Service busy", 503) {}
+        .header("Retry-After", "30")
+        // Deliberate collisions: the framework must overwrite its own transport headers.
+        .header("Content-Type", "text/plain")
+        .header("Content-Length", "1")
+        .header("Date", "0")
+        .header("Cache-Control", "public");
   }
 }

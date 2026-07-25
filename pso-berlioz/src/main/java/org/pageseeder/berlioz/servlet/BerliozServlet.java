@@ -438,7 +438,7 @@ public final class BerliozServlet extends HttpServlet {
     if (handleRedirect(req, res, status, json.getRedirectUrl())) return;
 
     // Apply generator response headers
-    json.getHeaders().forEach(res::setHeader);
+    HttpResponses.setHeaders(res, json.getHeaders());
 
     // Write JSON — with optional GZip compression; use problem+json when a top-level problem was signalled
     ProblemDetails topLevelProblem = json.getProblem();
@@ -515,7 +515,7 @@ public final class BerliozServlet extends HttpServlet {
     if (handleRedirect(req, res, status, xml.getRedirectURL())) return;
 
     // Apply response headers set by generators (last-writer-wins per name).
-    xml.getHeaders().forEach(res::setHeader);
+    HttpResponses.setHeaders(res, xml.getHeaders());
 
     // Produce the output (XSLT transform or pass through raw XML)
     BerliozOutput result;
@@ -841,10 +841,8 @@ public final class BerliozServlet extends HttpServlet {
     if (error == null && Json.isJsonMediaType(getBerliozConfig().getMediaType())) {
       DetailLevel level = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL));
       ProblemDetails problem = Problems.forHttpError(code, message, extractErrorId(req, ex), ex, level);
-      HttpException signal = HttpException.findIn(ex);
-      Map<String, String> headers = signal != null ? signal.headers() : Map.of();
       logError(code, message, ex, "Berlioz sending problem JSON {} [{}]");
-      writeProblemJson(res, problem, headers);
+      writeProblemJson(res, problem, HttpException.headersIn(ex));
       return;
     }
 
@@ -899,12 +897,16 @@ public final class BerliozServlet extends HttpServlet {
    */
   private static void writeProblemJson(HttpServletResponse res, ProblemDetails problem, Map<String, String> extraHeaders) {
     try {
-      extraHeaders.forEach(res::setHeader);
+      String content = problem.toJson();
+      HttpResponses.setHeaders(res, extraHeaders);
       res.setStatus(problem.status());
       res.setContentType("application/problem+json");
       res.setCharacterEncoding(StandardCharsets.UTF_8.name());
+      HttpResponses.setContentLength(res, content, StandardCharsets.UTF_8);
+      res.setDateHeader(HttpHeaders.DATE, System.currentTimeMillis());
+      res.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
       PrintWriter out = res.getWriter();
-      out.print(problem.toJson());
+      out.print(content);
       out.flush();
     } catch (IOException e) {
       LOGGER.error("Failed to write problem JSON response for status {}", problem.status(), e);

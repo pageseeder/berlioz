@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -116,6 +117,25 @@ class HttpResponsesTest {
     String result = HttpResponses.allow(Arrays.asList("GET", "POST"));
     Assertions.assertFalse(result.endsWith(","), "Allow header must not end with a comma");
     Assertions.assertFalse(result.startsWith(","), "Allow header must not start with a comma");
+  }
+
+  // ---------------------------------------------------------------------------
+  // setHeaders
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testSetHeaders_AppliesAllWithReplaceSemantics() {
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+    HttpServletResponse response = recorder.build();
+    response.setHeader("Retry-After", "10");
+
+    HttpResponses.setHeaders(response, Map.of(
+        "Retry-After", "30",
+        "X-Rate-Limit-Reset", "1700000000"));
+
+    Assertions.assertEquals("30", recorder.header("Retry-After"));
+    Assertions.assertEquals("1700000000", recorder.header("X-Rate-Limit-Reset"));
+    Assertions.assertEquals(1, recorder.headers("Retry-After").size());
   }
 
   // ---------------------------------------------------------------------------
