@@ -110,6 +110,7 @@ class ServiceLoaderTest {
     Assertions.assertNotNull(previous);
     long previousVersion = loader.getDefaultRegistry().version();
     List<CollectedError<SAXParseException>> previousWarnings = loader.getLastLoadWarnings();
+    List<ServiceRegistration> previousRegistrations = loader.getDefaultRegistry().registrations();
 
     Files.writeString(config.resolve("services!malformed.xml"), "<service-config>");
     loader.requestReload();
@@ -124,6 +125,8 @@ class ServiceLoaderTest {
         "A failed requested reload must retain the last successful registry version");
     Assertions.assertSame(previousWarnings, loader.getLastLoadWarnings(),
         "A failed requested reload must retain warnings from the last successful load");
+    Assertions.assertSame(previousRegistrations, loader.getDefaultRegistry().registrations(),
+        "A failed requested reload must retain origins from the last successful load");
   }
 
   @Test
@@ -259,6 +262,8 @@ class ServiceLoaderTest {
         "The module loaded after the main file must win the conflict");
 
     List<CollectedError<SAXParseException>> warnings = loader.getLastLoadWarnings();
+    Assertions.assertSame(warnings, loader.getDefaultRegistry().warnings(),
+        "The loader must expose warnings from the current registry publication");
     boolean hasConflictWarning = warnings.stream().anyMatch(w -> {
       String message = w.error().getMessage();
       return message != null && message.contains("home-override") && message.contains("home")
@@ -266,6 +271,15 @@ class ServiceLoaderTest {
     });
     Assertions.assertTrue(hasConflictWarning,
         "Expected a warning naming both the replaced and replacing service and origin: " + warnings);
+
+    ServiceRegistration published = loader.getDefaultRegistry().registrations().stream()
+        .filter(registration -> registration.method() == HttpMethod.GET
+            && "/home".equals(registration.pattern().toString()))
+        .findFirst()
+        .orElseThrow();
+    Assertions.assertEquals("home-override", published.service().id());
+    Assertions.assertEquals("services!override.xml", published.origin().displayName(),
+        "The published registration must retain the winning declaration's origin");
   }
 
   @Test

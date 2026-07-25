@@ -29,6 +29,9 @@ import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.generator.NoContent;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.util.CollectedError;
+import org.pageseeder.berlioz.util.CollectedError.Level;
+import org.xml.sax.SAXParseException;
 
 final class ServiceRegistryTest {
 
@@ -466,6 +469,43 @@ final class ServiceRegistryTest {
   @Test
   void testReplaceWith_nullCandidate_throwsNullPointerException() {
     Assertions.assertThrows(NullPointerException.class, () -> registry.replaceWith(null));
+  }
+
+  @Test
+  void testReplaceWith_publishesOriginsAndWarningsWithCandidate() {
+    ServiceRegistry candidate = new ServiceRegistry();
+    Service service = buildService("candidate-service");
+    URIPattern pattern = new URIPattern("/candidate");
+    candidate.register(service, pattern, HttpMethod.GET);
+    ServiceOrigin origin = ServiceOrigin.forFile(new java.io.File("services.xml"), null);
+    ServiceRegistration registration = new ServiceRegistration(service, HttpMethod.GET, pattern, origin);
+    CollectedError<SAXParseException> warning = new CollectedError<>(Level.WARNING,
+        new SAXParseException("candidate warning", null));
+
+    registry.replaceWith(candidate, List.of(registration), List.of(warning));
+
+    Assertions.assertEquals(List.of(registration), registry.registrations());
+    Assertions.assertEquals(List.of(warning), registry.warnings());
+    Assertions.assertNotNull(registry.get("/candidate", HttpMethod.GET));
+  }
+
+  @Test
+  void testClear_clearsMappingsOriginsAndWarningsInOnePublication() {
+    ServiceRegistry candidate = new ServiceRegistry();
+    Service service = buildService("candidate-service");
+    URIPattern pattern = new URIPattern("/candidate");
+    candidate.register(service, pattern, HttpMethod.GET);
+    ServiceOrigin origin = ServiceOrigin.forFile(new java.io.File("services.xml"), null);
+    ServiceRegistration registration = new ServiceRegistration(service, HttpMethod.GET, pattern, origin);
+    CollectedError<SAXParseException> warning = new CollectedError<>(Level.WARNING,
+        new SAXParseException("candidate warning", null));
+    registry.replaceWith(candidate, List.of(registration), List.of(warning));
+
+    registry.clear();
+
+    Assertions.assertNull(registry.get("/candidate", HttpMethod.GET));
+    Assertions.assertTrue(registry.registrations().isEmpty());
+    Assertions.assertTrue(registry.warnings().isEmpty());
   }
 
   // --- toRegistrations ---

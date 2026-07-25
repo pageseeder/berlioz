@@ -94,13 +94,6 @@ public enum ServiceLoader {
   private volatile boolean loaded = false;
 
   /**
-   * Warnings collected while parsing the services configuration files during the last successful
-   * {@link #load()} or {@link #load(File)} call (e.g. a service that could not be registered
-   * because it was misconfigured). Empty if the last load reported no warnings.
-   */
-  private List<CollectedError<SAXParseException>> lastWarnings = List.of();
-
-  /**
    * @return The service loader
    */
   public static ServiceLoader getInstance() {
@@ -130,7 +123,7 @@ public enum ServiceLoader {
    * @since 0.14.1
    */
   public synchronized List<CollectedError<SAXParseException>> getLastLoadWarnings() {
-    return this.lastWarnings;
+    return this.services.warnings();
   }
 
   /**
@@ -183,8 +176,7 @@ public enum ServiceLoader {
     for (ServiceRegistration registration : merged.registrations) {
       candidate.register(registration.service(), registration.pattern(), registration.method());
     }
-    this.services.replaceWith(candidate);
-    this.lastWarnings = List.copyOf(warnings);
+    this.services.replaceWith(candidate, merged.registrations, warnings);
   }
 
   /**
@@ -319,8 +311,7 @@ public enum ServiceLoader {
     for (ServiceRegistration registration : parsed.registrations) {
       candidate.register(registration.service(), registration.pattern(), registration.method());
     }
-    this.services.replaceWith(candidate);
-    this.lastWarnings = parsed.warnings;
+    this.services.replaceWith(candidate, parsed.registrations, parsed.warnings);
   }
 
   /**
@@ -443,7 +434,6 @@ public enum ServiceLoader {
     LOGGER.info("Clearing content manager");
     this.services.clear();
     this.loaded = false;
-    this.lastWarnings = List.of();
   }
 
   /**

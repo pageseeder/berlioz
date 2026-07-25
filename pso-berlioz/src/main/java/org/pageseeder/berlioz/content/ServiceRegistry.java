@@ -23,20 +23,21 @@ import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.furi.URIResolver;
 import org.pageseeder.berlioz.furi.URIResolver.MatchRule;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.util.CollectedError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXParseException;
 
 /**
  * A registry for services.
  *
  * <p>Reads always observe a single, internally consistent snapshot of the registry: the mapping
- * of services and the registry {@link #version()} are held together in an immutable
- * {@link RegistryState} behind a single volatile reference, so a concurrent reader never sees a
- * mapping paired with the wrong version. Incremental mutation via {@link #register(Service,
- * URIPattern, HttpMethod)} and {@link #clear()} still mutates the live state in place — these are
- * low-level operations retained for direct/legacy use — whereas {@link #replaceWith(ServiceRegistry)}
- * swaps the entire state in a single assignment, which is what {@link ServiceLoader} uses to
- * publish a fully-built candidate registry atomically.
+ * of services, registry {@link #version()}, load warnings, and origin-bearing registrations are
+ * held together in one {@link RegistryState} publication behind a single volatile reference.
+ * Incremental mutation via {@link #register(Service, URIPattern, HttpMethod)} remains a low-level
+ * operation retained for direct/legacy use, whereas {@link #replaceWith(ServiceRegistry, List,
+ * List)} swaps the entire publication state in a single assignment, which is what
+ * {@link ServiceLoader} uses to publish a fully-built candidate registry atomically.
  *
  * <p>Note: this class is not synchronized and must be synchronized externally for compound
  * (read-then-write) operations; each individual method call is internally consistent.
@@ -49,8 +50,7 @@ import org.slf4j.LoggerFactory;
 public final class ServiceRegistry {
 
   /**
-   * The current, immutable state of this registry (mapping and version together), published as a
-   * whole so readers never observe a mapping paired with a mismatched version.
+   * The current registry publication, including mappings, version, warnings, and origins.
    */
   private volatile RegistryState state;
 
@@ -58,12 +58,7 @@ public final class ServiceRegistry {
    * Creates a new registry.
    */
   public ServiceRegistry() {
-    Map<HttpMethod, ServiceMap> mapping = new EnumMap<>(HttpMethod.class);
-    // Create a map for each mappable HTTP method
-    for (HttpMethod m : HttpMethod.mappable()) {
-      mapping.put(m, new ServiceMap());
-    }
-    this.state = new RegistryState(mapping, System.currentTimeMillis());
+    this.state = new RegistryState(newMapping(), System.currentTimeMillis(), List.of(), List.of());
   }
 
   /**
@@ -257,9 +252,8 @@ public final class ServiceRegistry {
    * {@link ServiceLoader} reload, which must leave the previously published registry untouched.
    */
   public void clear() {
-    for (ServiceMap map : this.state.mapping.values()) {
-      map.clear();
-    }
+    RegistryState current = this.state;
+    this.state = new RegistryState(newMapping(), current.version, List.of(), List.of());
   }
 
   /**
@@ -273,7 +267,9 @@ public final class ServiceRegistry {
    * Changed the version of this registry.
    */
   void touch() {
-    this.state = new RegistryState(this.state.mapping, System.currentTimeMillis());
+    RegistryState current = this.state;
+    this.state = new RegistryState(current.mapping, System.currentTimeMillis(), current.warnings,
+        current.registrations);
   }
 
   /**
@@ -299,6 +295,24 @@ public final class ServiceRegistry {
   }
 
   /**
+   * Returns the warnings committed with the current registry publication.
+   *
+   * @return the current publication's warnings.
+   */
+  List<CollectedError<SAXParseException>> warnings() {
+    return this.state.warnings;
+  }
+
+  /**
+   * Returns the origin-bearing registrations committed with the current registry publication.
+   *
+   * @return the current publication's merged registrations.
+   */
+  List<ServiceRegistration> registrations() {
+    return this.state.registrations;
+  }
+
+  /**
    * Atomically replaces the complete state of this registry (mapping and version together) with
    * the state currently held by {@code candidate}, in a single volatile assignment.
    *
@@ -315,7 +329,27 @@ public final class ServiceRegistry {
    */
   void replaceWith(ServiceRegistry candidate) {
     Objects.requireNonNull(candidate, "candidate is required");
-    this.state = new RegistryState(candidate.state.mapping, System.currentTimeMillis());
+    RegistryState candidateState = candidate.state;
+    this.state = new RegistryState(candidateState.mapping, System.currentTimeMillis(),
+        candidateState.warnings, candidateState.registrations);
+  }
+
+  /**
+   * Atomically publishes a candidate registry together with the warnings and origin-bearing
+   * registrations that describe it.
+   *
+   * @param candidate     the fully-built candidate registry.
+   * @param registrations the merged registrations, including their declaration origins.
+   * @param warnings      the parsing and merge warnings for this candidate.
+   */
+  void replaceWith(ServiceRegistry candidate, List<ServiceRegistration> registrations,
+      List<CollectedError<SAXParseException>> warnings) {
+    Objects.requireNonNull(candidate, "candidate is required");
+    Objects.requireNonNull(registrations, "registrations are required");
+    Objects.requireNonNull(warnings, "warnings are required");
+    RegistryState candidateState = candidate.state;
+    this.state = new RegistryState(candidateState.mapping, System.currentTimeMillis(),
+        List.copyOf(warnings), List.copyOf(registrations));
   }
 
   /**
@@ -338,9 +372,16 @@ public final class ServiceRegistry {
     return mapping;
   }
 
+  private static Map<HttpMethod, ServiceMap> newMapping() {
+    Map<HttpMethod, ServiceMap> mapping = new EnumMap<>(HttpMethod.class);
+    for (HttpMethod method : HttpMethod.mappable()) {
+      mapping.put(method, new ServiceMap());
+    }
+    return mapping;
+  }
+
   /**
-   * The immutable pairing of a registry's service mapping and its version, published as a whole
-   * behind {@link ServiceRegistry#state} so the two never observably drift apart.
+   * The complete registry publication, swapped as a whole behind {@link ServiceRegistry#state}.
    */
   private static final class RegistryState {
 
@@ -348,9 +389,16 @@ public final class ServiceRegistry {
 
     private final long version;
 
-    RegistryState(Map<HttpMethod, ServiceMap> mapping, long version) {
+    private final List<CollectedError<SAXParseException>> warnings;
+
+    private final List<ServiceRegistration> registrations;
+
+    RegistryState(Map<HttpMethod, ServiceMap> mapping, long version,
+        List<CollectedError<SAXParseException>> warnings, List<ServiceRegistration> registrations) {
       this.mapping = mapping;
       this.version = version;
+      this.warnings = warnings;
+      this.registrations = registrations;
     }
   }
 
