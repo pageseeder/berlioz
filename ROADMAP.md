@@ -68,6 +68,9 @@ Retained decision (not a task): preserve the XML/XSLT fallback for JSON-configur
 - Define mapping conflicts by HTTP method and URI pattern, and report the origin of both the replaced and replacing declarations.
 - Make service loading transactional so an invalid contribution does not publish a partially populated registry.
 - Generalize service inputs from files to source descriptors carrying a URL and origin metadata.
+- Add format-agnostic `GetBerliozConfig` and `GetErrorHandlerConfig` diagnostic generators so admin overlays can inspect how the deployed Berlioz and error-handler servlets are actually configured and mapped.
+- Have the Berlioz diagnostic expose each servlet name, URL mappings, effective media type and charset, stylesheet/fallback allocation, cache policy, and compression setting; have the error-handler diagnostic expose its mappings, explicit versus discovered forward extensions, ignored extensions, default extension, and effective problem/detail/stylesheet options.
+- Give both diagnostics stable equivalent XML/JSON schemas, correlate entries by servlet name and mapping, omit sensitive values, and document them as opt-in/admin-only services.
 - Support `classpath:` primary XSLT templates while retaining `resource:` as a compatibility alias.
 - Treat classpath templates as immutable in `manual` and `auto` cache modes; `no` may recompile them on each use.
 - Verify discovery, conflict handling, XSLT imports/includes, static resources, and `web-fragment.xml` using a real packaged overlay JAR.
@@ -287,6 +290,9 @@ Next work:
 - Load classpath configurations first and filesystem configurations second, giving application-owned filesystem mappings final precedence.
 - Define conflicts by HTTP method and URI pattern rather than group name alone, and include source origins in override diagnostics.
 - Generalize `ServiceLoader` from `File` inputs to source descriptors with a URL and origin, and publish a new registry only after all inputs parse successfully.
+- Add format-agnostic `GetBerliozConfig` and `GetErrorHandlerConfig` generators for reusable admin overlays. `GetBerliozConfig` should enumerate deployed Berlioz servlet registrations and effective runtime settings (name, mappings, media type/charset, stylesheet and fallback allocation, cache policy, and compression). `GetErrorHandlerConfig` should expose the error-handler registration and effective routing/rendering policy (mappings, explicit or deployment-discovered forward extensions, ignored/default extensions, Problem Details mode, detail level, and custom/failsafe stylesheet selection).
+- Use stable equivalent XML/JSON schemas, identify configured versus derived values where relevant, correlate the two views by servlet name and mapping, omit secrets and arbitrary raw global-property values, and keep the generators opt-in/admin-only.
+- Add schema and deployment tests using the packaged overlay JAR so admin tools see the same servlet registrations and effective configuration that the runtime error-selection path uses.
 - Extend XSLT template resolution with a `classpath:` prefix for primary templates while retaining `resource:` as a compatibility alias.
 - Refactor XSLT caching to support URL-backed templates. Classpath templates are immutable in `manual` and `auto` modes; `no` recompiles them when requested.
 - Verify the complete deployment model with a real JAR containing `META-INF/berlioz/services.xml`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT, including imports/includes.
