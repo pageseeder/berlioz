@@ -99,12 +99,12 @@ public final class QueryBodyParameters {
     if (!"QUERY".equalsIgnoreCase(req.getMethod())) return Map.of();
     String contentType = req.getContentType();
     if (!isFormUrlEncoded(contentType)) return Map.of();
-    requireUtf8Charset(contentType);
     try {
       if (engineAlreadyExposesBody(req)) return Map.of();
     } catch (IllegalArgumentException ex) {
       throw invalidBody("Malformed URI query component on QUERY request", ex);
     }
+    requireUtf8Charset(contentType);
     try {
       return decode(readBody(req));
     } catch (IOException ex) {
