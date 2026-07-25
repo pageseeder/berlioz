@@ -273,11 +273,12 @@ class QueryBodyParametersTest {
     );
   }
 
-  @Test
-  void testParse_declaredUtf8Charset_bodyIsParsed() {
+  @ParameterizedTest(name = "{1}")
+  @MethodSource("utf8CharsetCases")
+  void testParse_utf8CompatibleContentType_bodyIsParsed(String contentType, String description) {
     HttpServletRequest req = HttpTestSupport.request()
         .method("QUERY")
-        .contentType("application/x-www-form-urlencoded;charset=utf8")
+        .contentType(contentType)
         .body("q=hello")
         .build();
 
@@ -286,30 +287,13 @@ class QueryBodyParametersTest {
     assertEquals("hello", params.get("q"));
   }
 
-  @Test
-  void testParse_charsetWithOptionalWhitespace_bodyIsParsed() {
-    HttpServletRequest req = HttpTestSupport.request()
-        .method("QUERY")
-        .contentType("application/x-www-form-urlencoded; charset = UTF-8")
-        .body("q=hello")
-        .build();
-
-    Map<String, String> params = QueryBodyParameters.parse(req);
-
-    assertEquals("hello", params.get("q"));
-  }
-
-  @Test
-  void testParse_charsetTextInAnotherParameter_bodyIsParsedAsUtf8() {
-    HttpServletRequest req = HttpTestSupport.request()
-        .method("QUERY")
-        .contentType("application/x-www-form-urlencoded;note=\"charset=ISO-8859-1\"")
-        .body("q=hello")
-        .build();
-
-    Map<String, String> params = QueryBodyParameters.parse(req);
-
-    assertEquals("hello", params.get("q"));
+  private static Stream<Arguments> utf8CharsetCases() {
+    return Stream.of(
+        Arguments.of("application/x-www-form-urlencoded;charset=utf8", "declared UTF-8 charset"),
+        Arguments.of("application/x-www-form-urlencoded; charset = UTF-8", "charset with optional whitespace"),
+        Arguments.of("application/x-www-form-urlencoded;note=\"charset=ISO-8859-1\"",
+            "charset text in another parameter")
+    );
   }
 
   @Test
