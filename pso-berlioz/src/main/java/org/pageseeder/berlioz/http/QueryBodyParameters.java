@@ -142,7 +142,7 @@ public final class QueryBodyParameters {
     for (String param : contentType.substring(semicolon + 1).split(";")) {
       int equals = param.indexOf('=');
       if (equals < 0 || !"charset".equalsIgnoreCase(param.substring(0, equals).strip())) continue;
-      String declared = param.substring(equals + 1).strip().replaceAll("^\"|\"$", "");
+      String declared = param.substring(equals + 1).strip().replaceFirst("^\"", "").replaceFirst("\"$", "");
       Charset charset;
       try {
         charset = Charset.forName(declared);
@@ -185,24 +185,36 @@ public final class QueryBodyParameters {
     if (encoded == null || encoded.isEmpty()) return 0;
     int count = 0;
     boolean hasContent = false;
-    for (int i = 0; i < encoded.length(); i++) {
+    int i = 0;
+    while (i < encoded.length()) {
       char c = encoded.charAt(i);
       if (c == '&') {
         if (hasContent) count++;
         hasContent = false;
+        i++;
+        continue;
+      }
+      hasContent = true;
+      if (c == '%') {
+        requireValidPercentEscape(encoded, i);
+        i += 3;
       } else {
-        hasContent = true;
-        if (c == '%') {
-          if (i + 2 >= encoded.length()
-              || Character.digit(encoded.charAt(i + 1), 16) < 0
-              || Character.digit(encoded.charAt(i + 2), 16) < 0) {
-            throw new IllegalArgumentException("Invalid percent escape in URI query component");
-          }
-          i += 2;
-        }
+        i++;
       }
     }
     return hasContent ? count + 1 : count;
+  }
+
+  /**
+   * Validates that {@code encoded} has two hexadecimal digits following the {@code %} at index
+   * {@code i}.
+   */
+  private static void requireValidPercentEscape(String encoded, int i) {
+    if (i + 2 >= encoded.length()
+        || Character.digit(encoded.charAt(i + 1), 16) < 0
+        || Character.digit(encoded.charAt(i + 2), 16) < 0) {
+      throw new IllegalArgumentException("Invalid percent escape in URI query component");
+    }
   }
 
   /**
