@@ -23,17 +23,31 @@ class MediaTypesTest {
   @CsvSource({
       "file.html, text/html",
       "file.css,  text/css",
-      "file.js,   text/javascript",
-      "file.xml,  application/xml",
+      "file.js,   application/javascript",
+      "file.xml,  text/xml",
       "file.json, application/json",
       "file.png,  image/png",
       "file.jpg,  image/jpeg",
       "file.gif,  image/gif",
-      "file.pdf,  application/pdf"
+      "file.pdf,  application/pdf",
+      "file.webp, image/webp",
+      "file.avif, image/avif",
+      "file.apng, image/apng",
+      "file.heic, image/heic",
+      "file.heif, image/heif",
+      "file.jxl, image/jxl",
+      "file.woff, font/woff",
+      "file.woff2, font/woff2",
+      "file.wasm, application/wasm",
+      "file.mjs, text/javascript",
+      "file.webmanifest, application/manifest+json",
+      "file.webm, video/webm",
+      "file.flac, audio/flac",
+      "file.opus, audio/opus",
+      "file.m4a, audio/mp4"
   })
   void getMediaType_knownExtensions_returnsCorrectType(String filename, String expected) {
-    assertNotNull(MediaTypes.getMediaType(new File(filename)),
-        "Expected a non-null media type for " + filename);
+    assertEquals(expected, MediaTypes.getMediaType(new File(filename)));
   }
 
   @Test
