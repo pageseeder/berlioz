@@ -1,7 +1,12 @@
 package org.pageseeder.berlioz.servlet;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.content.ServiceTestHelper;
+import org.pageseeder.berlioz.xslt.StylesheetSourceKind;
+import org.pageseeder.berlioz.xslt.XsltTemplateCache;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -62,6 +67,79 @@ class BerliozConfigTest {
     BerliozConfig config = BerliozConfig.newConfig(servletConfig);
 
     assertEquals(StandardCharsets.UTF_8, config.getCharset());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stylesheet resolution — classpath:/resource: primary and fallback stylesheets
+  // ---------------------------------------------------------------------------
+
+  private static final String CLASSPATH_STYLE =
+      "org/pageseeder/berlioz/servlet/berliozconfigtest/style.xsl";
+
+  @AfterEach
+  void clearXsltCache() {
+    XsltTemplateCache.clearAllCache();
+  }
+
+  @Test
+  void getTransformer_classpathStylesheet_resolvesToClasspathLocation(@TempDir Path contextRoot) throws Exception {
+    Files.createDirectories(contextRoot.resolve("WEB-INF"));
+    ServletConfig servletConfig = servletConfig(contextRoot, Map.of("stylesheet", "classpath:" + CLASSPATH_STYLE));
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
+    Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+
+    XsltTransformer transformer = config.getTransformer(service);
+
+    assertNotNull(transformer);
+    assertEquals(StylesheetSourceKind.CLASSPATH, transformer.location().kind());
+    String result = transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), service)
+        .content().toString();
+    assertTrue(result.contains("classpath-ok"), result);
+  }
+
+  @Test
+  void getTransformer_classpathStylesheetWithLeadingSlash_resolvesSameResource(@TempDir Path contextRoot) throws Exception {
+    Files.createDirectories(contextRoot.resolve("WEB-INF"));
+    ServletConfig servletConfig = servletConfig(contextRoot, Map.of("stylesheet", "classpath:/" + CLASSPATH_STYLE));
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
+    Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+
+    XsltTransformer transformer = config.getTransformer(service);
+
+    assertNotNull(transformer);
+    assertEquals(StylesheetSourceKind.CLASSPATH, transformer.location().kind());
+    assertNotNull(transformer.getEtag());
+  }
+
+  @Test
+  void getTransformer_resourcePrefix_stillResolvesAsClasspathAlias(@TempDir Path contextRoot) throws Exception {
+    Files.createDirectories(contextRoot.resolve("WEB-INF"));
+    ServletConfig servletConfig = servletConfig(contextRoot, Map.of("stylesheet", "resource:" + CLASSPATH_STYLE));
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
+    Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+
+    XsltTransformer transformer = config.getTransformer(service);
+
+    assertNotNull(transformer);
+    assertEquals(StylesheetSourceKind.CLASSPATH, transformer.location().kind());
+    assertNotNull(transformer.getEtag());
+  }
+
+  @Test
+  void getTransformer_missingFilesystemStylesheetWithClasspathFallback_usesFallback(@TempDir Path contextRoot) throws Exception {
+    Files.createDirectories(contextRoot.resolve("WEB-INF"));
+    ServletConfig servletConfig = servletConfig(contextRoot, Map.of(
+        "stylesheet", "xslt/does-not-exist.xsl",
+        "fallback-stylesheet", "classpath:" + CLASSPATH_STYLE));
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig);
+    Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+
+    XsltTransformer transformer = config.getTransformer(service);
+
+    assertNotNull(transformer);
+    String result = transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), service)
+        .content().toString();
+    assertTrue(result.contains("classpath-ok"), result);
   }
 
   private static ServletConfig servletConfig(Path contextRoot) {

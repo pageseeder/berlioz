@@ -62,7 +62,7 @@ final class XsltTemplateCacheTest {
 
   @Test
   void constructor_nullPath_throwsNPE() {
-    Assertions.assertThrows(NullPointerException.class, () -> new XsltTemplateCache(null, null));
+    Assertions.assertThrows(NullPointerException.class, () -> new XsltTemplateCache((Path) null, null));
   }
 
   // ---------------------------------------------------------------------------

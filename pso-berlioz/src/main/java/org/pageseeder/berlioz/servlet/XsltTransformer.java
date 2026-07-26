@@ -63,6 +63,7 @@ import org.pageseeder.berlioz.xml.XmlStringBuilder;
 import org.pageseeder.berlioz.xslt.XsltTemplateCache;
 import org.pageseeder.berlioz.xslt.XsltErrorCollector;
 import org.pageseeder.berlioz.xslt.XsltExceptionWrapper;
+import org.pageseeder.berlioz.xslt.StylesheetLocation;
 import org.pageseeder.berlioz.xslt.XsltTransformException;
 import org.pageseeder.berlioz.xslt.XsltTransformException.Phase;
 import org.pageseeder.xmlwriter.XMLWriter;
@@ -144,7 +145,7 @@ public final class XsltTransformer {
    */
   public XsltTransformer(Path templates, @Nullable URL fallback) {
     Objects.requireNonNull(templates, "The template path is required");
-    this.cache = new XsltTemplateCache(templates, fallback);
+    this.cache = new XsltTemplateCache(StylesheetLocation.forFile(templates), fallback);
   }
 
   /**
@@ -168,6 +169,40 @@ public final class XsltTransformer {
   @Deprecated(since = "0.13.1")
   public XsltTransformer(File templates, @Nullable URL fallback) {
     this(templates.toPath(), fallback);
+  }
+
+  /**
+   * Creates a new XSLT Transformer with no fallback templates, from a classpath resource.
+   *
+   * @param templates The URL of the templates (typically a {@code classpath:}-resolved resource).
+   *
+   * @since 0.14.2
+   */
+  public XsltTransformer(URL templates) {
+    this(templates, null);
+  }
+
+  /**
+   * Creates a new XSLT Transformer from a classpath resource.
+   *
+   * @param templates The URL of the templates (typically a {@code classpath:}-resolved resource).
+   * @param fallback  The URL to the fallback templates (optional).
+   *
+   * @since 0.14.2
+   */
+  public XsltTransformer(URL templates, @Nullable URL fallback) {
+    Objects.requireNonNull(templates, "The template URL is required");
+    this.cache = new XsltTemplateCache(StylesheetLocation.forClasspath(templates, templates.toString()), fallback);
+  }
+
+  /**
+   * Creates a new XSLT Transformer for the given resolved stylesheet location.
+   *
+   * @param location The resolved stylesheet location.
+   * @param fallback The URL to the fallback templates (optional).
+   */
+  XsltTransformer(StylesheetLocation location, @Nullable URL fallback) {
+    this.cache = new XsltTemplateCache(location, fallback);
   }
 
   /**
@@ -245,6 +280,9 @@ public final class XsltTransformer {
    * Returns the path used by this transformer to locate the templates.
    *
    * @return the path to the templates file.
+   *
+   * @throws UnsupportedOperationException if this transformer's stylesheet is not a filesystem
+   *         path (e.g. a classpath-backed stylesheet); use {@link #location()} instead.
    */
   public Path templatesPath() {
     return this.cache.templatesPath();
@@ -259,6 +297,19 @@ public final class XsltTransformer {
   @Deprecated(since = "0.13.1")
   public File templates() {
     return this.cache.templatesPath().toFile();
+  }
+
+  /**
+   * Returns the resolved location of this transformer's stylesheet — the safe, kind-agnostic
+   * accessor to use for diagnostics and failure reporting, whether the stylesheet is filesystem-
+   * or classpath-backed.
+   *
+   * @return the stylesheet location.
+   *
+   * @since 0.14.2
+   */
+  public StylesheetLocation location() {
+    return this.cache.location();
   }
 
   /**

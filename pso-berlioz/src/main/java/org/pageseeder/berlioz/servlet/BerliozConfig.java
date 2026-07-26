@@ -18,13 +18,11 @@ package org.pageseeder.berlioz.servlet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
-import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -43,6 +41,7 @@ import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.http.ContentType;
+import org.pageseeder.berlioz.xslt.StylesheetLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -470,11 +469,11 @@ public final class BerliozConfig {
         .replace("{GROUP}", service.group())
         .replace("{SERVICE}", service.id());
     try {
-      Path styleSheet = this.env.getPrivateFile(path).toPath();
-      return new XsltTransformer(styleSheet, toURL(this.fallbackStyleSheet));
+      StylesheetLocation location = resolveStylesheetLocation(path);
+      return new XsltTransformer(location, resolveFallbackUrl());
     } catch (IllegalArgumentException ex) {
       LOGGER.warn("Stylesheet '{}' for service '{}' resolves outside private folder — using fallback", path, service.id());
-      return new XsltTransformer(this.env.getPrivateFolder().toPath(), toURL(this.fallbackStyleSheet));
+      return new XsltTransformer(StylesheetLocation.forFile(this.env.getPrivateFolder().toPath()), resolveFallbackUrl());
     }
   }
 
@@ -495,32 +494,49 @@ public final class BerliozConfig {
   }
 
   /**
-   * Returns the URL instance from the specified path.
+   * Resolves a configured stylesheet value (the primary {@code stylesheet} or the
+   * {@code fallback-stylesheet} init parameter) to a {@link StylesheetLocation}.
    *
-   * <p>If the path starts with "resource:", the XSLT will be loaded from a resource
-   * using the same class loader as Berlioz.
+   * <p>A {@code classpath:} or {@code resource:} prefix (the latter retained as a compatibility
+   * alias) resolves through the application classloader; any other value resolves as a filesystem
+   * path contained within {@code WEB-INF}.
    *
-   * @param path the path to create the URL
-   * @return the corresponding URL.
+   * @param value the configured stylesheet value.
+   * @return the resolved location.
+   *
+   * @throws IllegalArgumentException if a filesystem value resolves outside the private folder.
    */
-  private @Nullable URL toURL(String path) {
-    if (path.isEmpty()) return null;
-    URL url = null;
-    if (path.startsWith("resource:")) {
-      ClassLoader loader = BerliozConfig.class.getClassLoader();
-      url = loader.getResource(path.substring("resource:".length()));
+  private StylesheetLocation resolveStylesheetLocation(String value) {
+    String classpathPath = StylesheetLocation.extractClasspathReference(value);
+    if (classpathPath != null) {
+      ClassLoader loader = StylesheetLocation.resolveApplicationClassLoader();
+      URL url = loader.getResource(classpathPath);
       if (url == null) {
-        LOGGER.warn("Unable to load {} as fallback templates", path);
+        LOGGER.warn("Unable to resolve classpath stylesheet '{}'", value);
       }
-    } else {
-      File file = this.env.getPrivateFile(path);
-      try {
-        url = file.toURI().toURL();
-      } catch (MalformedURLException ex) {
-        LOGGER.warn("Unable to load {} as fallback templates", path, ex);
-      }
+      return StylesheetLocation.forClasspath(url, "classpath:" + classpathPath);
     }
-    return url;
+    return StylesheetLocation.forFile(this.env.getPrivateFile(value).toPath());
+  }
+
+  /**
+   * Resolves the configured {@code fallback-stylesheet} init parameter to a URL, using the same
+   * resolution rules as the primary stylesheet.
+   *
+   * @return the fallback URL, or {@code null} if none is configured or it cannot be resolved.
+   */
+  private @Nullable URL resolveFallbackUrl() {
+    if (this.fallbackStyleSheet.isEmpty()) return null;
+    try {
+      URL url = resolveStylesheetLocation(this.fallbackStyleSheet).toUrl();
+      if (url == null) {
+        LOGGER.warn("Unable to load {} as fallback templates", this.fallbackStyleSheet);
+      }
+      return url;
+    } catch (IllegalArgumentException ex) {
+      LOGGER.warn("Fallback stylesheet '{}' resolves outside private folder", this.fallbackStyleSheet);
+      return null;
+    }
   }
 
 }

@@ -15,8 +15,10 @@
  */
 package org.pageseeder.berlioz.xslt;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -46,17 +48,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Manages the compilation and caching of XSLT templates for a single stylesheet path.
+ * Manages the compilation and caching of XSLT templates for a single stylesheet location.
  *
  * <p>The caching behavior is controlled by the {@code berlioz.xslt.cache} property
- * (see {@link BerliozOption#XSLT_CACHE} and {@link XsltCacheMode}).
+ * (see {@link BerliozOption#XSLT_CACHE} and {@link XsltCacheMode}). Filesystem stylesheets are
+ * mutable: {@code auto} mode monitors them for changes and {@code no} recompiles on every access.
+ * Classpath stylesheets are treated as immutable — {@code auto} and {@code manual} both reuse the
+ * compiled templates without ever scanning the filesystem; only {@code no} recompiles them.
  *
  * <p>A single static cache is shared across all instances. Use {@link #clearCache()} to
  * invalidate this instance's entry, or {@link #clearAllCache()} to flush everything.
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.2
  * @since 0.13.1
  */
 public final class XsltTemplateCache {
@@ -84,14 +89,14 @@ public final class XsltTemplateCache {
   };
 
   /**
-   * Shared cache: maps each stylesheet path to its compiled entry.
+   * Shared cache: maps each stylesheet location's cache key to its compiled entry.
    */
-  private static final Map<Path, CachedEntry> CACHE = new ConcurrentHashMap<>();
+  private static final Map<String, CachedEntry> CACHE = new ConcurrentHashMap<>();
 
   // Instance state
   // ----------------------------------------------------------------------------------------------
 
-  private final Path templatesPath;
+  private final StylesheetLocation location;
   private final @Nullable URL fallback;
   private @Nullable String etag;
 
@@ -102,9 +107,21 @@ public final class XsltTemplateCache {
    * @param fallback      a fallback URL used when the main path does not exist (optional).
    */
   public XsltTemplateCache(Path templatesPath, @Nullable URL fallback) {
-    this.templatesPath = Objects.requireNonNull(templatesPath, "templatesPath is required");
+    this(StylesheetLocation.forFile(Objects.requireNonNull(templatesPath, "templatesPath is required")), fallback);
+  }
+
+  /**
+   * Creates a cache for the given stylesheet location.
+   *
+   * @param location the location of the main XSLT stylesheet.
+   * @param fallback a fallback URL used when the main location does not exist (optional).
+   *
+   * @since 0.14.2
+   */
+  public XsltTemplateCache(StylesheetLocation location, @Nullable URL fallback) {
+    this.location = Objects.requireNonNull(location, "location is required");
     this.fallback = fallback;
-    this.etag = computeEtag(templatesPath, fallback);
+    this.etag = computeEtag(location, fallback);
   }
 
   // Public API
@@ -118,32 +135,35 @@ public final class XsltTemplateCache {
    * @throws TransformerException if the stylesheet cannot be compiled.
    */
   public synchronized Templates getTemplates() throws TransformerException {
+    if (this.location.isIdentity()) return IDENTITY_TEMPLATES;
+
     XsltCacheMode mode = XsltCacheMode.from(GlobalSettings.get(BerliozOption.XSLT_CACHE));
-    String stylesheet = toWebPath(this.templatesPath.toAbsolutePath().toString());
+    String key = this.location.cacheKey();
 
     if (mode == XsltCacheMode.NO) {
-      LOGGER.info("Loading XSLT stylesheet '{}' [caching disabled]", stylesheet);
+      LOGGER.info("Loading XSLT stylesheet '{}' [caching disabled]", this.location.logicalPath());
       return compile();
     }
 
-    CachedEntry cached = CACHE.get(this.templatesPath);
+    CachedEntry cached = CACHE.get(key);
     if (cached != null) {
-      if (mode == XsltCacheMode.MANUAL || !isStale(this.templatesPath, cached)) {
-        return cached.templates;
-      }
-      LOGGER.info("XSLT stylesheet '{}' changed, reloading", stylesheet);
-      CACHE.remove(this.templatesPath);
+      boolean stale = this.location.isMutable() && mode == XsltCacheMode.AUTO && isStale(this.location.path(), cached);
+      if (!stale) return cached.templates;
+      LOGGER.info("XSLT stylesheet '{}' changed, reloading", this.location.logicalPath());
+      CACHE.remove(key);
     } else {
-      LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", stylesheet, mode);
+      LOGGER.info("Loading XSLT stylesheet '{}' [caching {}]", this.location.logicalPath(), mode);
     }
 
     Templates templates = compile();
-    CACHE.put(this.templatesPath, new CachedEntry(templates, maxLastModified(this.templatesPath.getParent())));
+    long maxLastModified = this.location.kind() == StylesheetSourceKind.FILESYSTEM
+        ? maxLastModified(Objects.requireNonNull(this.location.path()).getParent()) : 0L;
+    CACHE.put(key, new CachedEntry(templates, maxLastModified));
     return templates;
   }
 
   /**
-   * Returns the ETag for the current state of the stylesheet directory.
+   * Returns the ETag for the current state of the stylesheet.
    *
    * @return the ETag, or {@code null} if it cannot be computed.
    */
@@ -152,20 +172,38 @@ public final class XsltTemplateCache {
   }
 
   /**
+   * Returns the location of the main XSLT stylesheet.
+   *
+   * @return the stylesheet location.
+   *
+   * @since 0.14.2
+   */
+  public StylesheetLocation location() {
+    return this.location;
+  }
+
+  /**
    * Returns the path to the main XSLT stylesheet.
    *
    * @return the templates path.
+   *
+   * @throws UnsupportedOperationException if this cache's location is not a filesystem path;
+   *         use {@link #location()} instead.
    */
   public Path templatesPath() {
-    return this.templatesPath;
+    Path path = this.location.path();
+    if (path == null) {
+      throw new UnsupportedOperationException("Stylesheet location is not a filesystem path: " + this.location);
+    }
+    return path;
   }
 
   /**
    * Removes the cached entry for this instance's stylesheet.
    */
   public synchronized void clearCache() {
-    LOGGER.debug("Clearing XSLT cache for '{}'.", this.templatesPath.getFileName());
-    CACHE.remove(this.templatesPath);
+    LOGGER.debug("Clearing XSLT cache for '{}'.", this.location.logicalPath());
+    CACHE.remove(this.location.cacheKey());
   }
 
   /**
@@ -210,13 +248,15 @@ public final class XsltTemplateCache {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Compiles the stylesheet at {@link #templatesPath} and updates {@link #etag}.
+   * Compiles the stylesheet at {@link #location} and updates {@link #etag}.
    */
   private Templates compile() throws TransformerException {
     long t0 = System.currentTimeMillis();
-    Templates templates = toTemplates(this.templatesPath, this.fallback);
+    Templates templates = this.location.kind() == StylesheetSourceKind.FILESYSTEM
+        ? toTemplatesFromFile(Objects.requireNonNull(this.location.path()), this.fallback)
+        : toTemplatesFromClasspath(this.location, this.fallback);
     LOGGER.debug("Templates compiled in {}ms", System.currentTimeMillis() - t0);
-    this.etag = computeEtag(this.templatesPath, this.fallback);
+    this.etag = computeEtag(this.location, this.fallback);
     return templates;
   }
 
@@ -224,7 +264,8 @@ public final class XsltTemplateCache {
    * Returns whether the cached entry is stale. Debounces the filesystem scan to at most once
    * per {@link #AUTO_CHECK_INTERVAL_MS} by updating {@code checkedAt} on every call.
    */
-  private static boolean isStale(Path p, CachedEntry entry) {
+  private static boolean isStale(@Nullable Path p, CachedEntry entry) {
+    if (p == null) return false;
     long now = System.currentTimeMillis();
     if (now - entry.checkedAt < AUTO_CHECK_INTERVAL_MS) return false;
     entry.checkedAt = now;
@@ -253,10 +294,20 @@ public final class XsltTemplateCache {
   }
 
   /**
+   * Computes the ETag for the stylesheet location, dispatching on its kind.
+   */
+  private static @Nullable String computeEtag(StylesheetLocation location, @Nullable URL fallback) {
+    if (location.isIdentity()) return null;
+    return location.kind() == StylesheetSourceKind.FILESYSTEM
+        ? computeFileEtag(Objects.requireNonNull(location.path()), fallback)
+        : computeClasspathEtag(location, fallback);
+  }
+
+  /**
    * Computes the ETag for the template directory by hashing the path, size, and last-modified
    * of every file. Falls back to hashing the fallback URL string if the main file is absent.
    */
-  private static @Nullable String computeEtag(Path templates, @Nullable URL fallback) {
+  private static @Nullable String computeFileEtag(Path templates, @Nullable URL fallback) {
     if (!Files.exists(templates)) {
       if (fallback != null) return SHA256.hash(fallback.toString());
       LOGGER.error("Unable to find XSLT stylesheet '{}'.", templates.getFileName());
@@ -280,9 +331,51 @@ public final class XsltTemplateCache {
   }
 
   /**
+   * Computes the ETag for a classpath stylesheet location.
+   *
+   * <p>For a resource inside a JAR, hashes the JAR file's own identity metadata (path, size,
+   * last-modified) so that a rebuilt artifact — including changes to templates it imports/includes
+   * — invalidates the ETag without reading every entry. For an exploded/development classpath
+   * resource (a plain {@code file:} URL, no enclosing JAR), hashes the resource's own content;
+   * no directory is scanned.
+   */
+  private static @Nullable String computeClasspathEtag(StylesheetLocation location, @Nullable URL fallback) {
+    URL url = location.url();
+    if (url == null) {
+      if (fallback != null) return SHA256.hash(fallback.toString());
+      LOGGER.error("Unable to find classpath XSLT stylesheet '{}'.", location.logicalPath());
+      return null;
+    }
+    try {
+      Path jarFile = jarFileOf(url);
+      if (jarFile != null) return SHA256.hash(jarFile, false);
+      try (InputStream in = url.openStream()) {
+        return SHA256.hash(in);
+      }
+    } catch (IOException ex) {
+      LOGGER.warn("Error thrown while trying to calculate classpath template etag", ex);
+      return null;
+    }
+  }
+
+  /**
+   * Returns the path of the JAR file backing a {@code jar:} URL, or {@code null} if {@code url}
+   * does not use the {@code jar} protocol.
+   */
+  private static @Nullable Path jarFileOf(URL url) {
+    if (!"jar".equals(url.getProtocol())) return null;
+    try {
+      JarURLConnection connection = (JarURLConnection) url.openConnection();
+      return Path.of(connection.getJarFile().getName());
+    } catch (IOException | ClassCastException ex) {
+      return null;
+    }
+  }
+
+  /**
    * Compiles a stylesheet from {@code stylepath}, using {@code fallback} if the file is absent.
    */
-  private static Templates toTemplates(Path stylepath, @Nullable URL fallback) throws TransformerException {
+  private static Templates toTemplatesFromFile(Path stylepath, @Nullable URL fallback) throws TransformerException {
     try (InputStream in = Files.newInputStream(stylepath)) {
       Source source = new StreamSource(in);
       source.setSystemId(stylepath.toUri().toString());
@@ -302,10 +395,46 @@ public final class XsltTemplateCache {
         }
       }
       LOGGER.warn("Unable to find template file: {}", stylepath);
-      throw new TransformerConfigurationException("Unable to find stylesheet: " + toWebPath(stylepath.toString()), ex);
+      throw new TransformerConfigurationException(
+          "Unable to find stylesheet: " + StylesheetLocation.forFile(stylepath).logicalPath(), ex);
     } catch (IOException ex) {
-      throw new TransformerConfigurationException("Unable to read stylesheet: " + toWebPath(stylepath.toString()), ex);
+      throw new TransformerConfigurationException(
+          "Unable to read stylesheet: " + StylesheetLocation.forFile(stylepath).logicalPath(), ex);
     }
+  }
+
+  /**
+   * Compiles a stylesheet from a classpath location, using {@code fallback} if the resource
+   * could not be resolved.
+   */
+  private static Templates toTemplatesFromClasspath(StylesheetLocation location, @Nullable URL fallback)
+      throws TransformerException {
+    URL url = location.url();
+    if (url != null) {
+      try (InputStream in = url.openStream()) {
+        Source source = new StreamSource(in);
+        source.setSystemId(url.toString());
+        TransformerFactory factory = newTransformerFactory();
+        XsltErrorCollector listener = new XsltErrorCollector(LOGGER);
+        factory.setErrorListener(listener);
+        return newTemplates(factory, source, listener);
+      } catch (IOException ex) {
+        throw new TransformerConfigurationException("Unable to read stylesheet: " + location.logicalPath(), ex);
+      }
+    }
+    if (fallback != null) {
+      LOGGER.warn("Unable to find classpath template: {} — using fallback {}", location.logicalPath(), fallback);
+      XsltErrorSensitivity sensitivity = XsltErrorSensitivity.from(
+          GlobalSettings.get(BerliozOption.XSLT_SENSITIVITY));
+      try {
+        return compile(fallback, sensitivity);
+      } catch (IOException ex2) {
+        throw new TransformerConfigurationException("Unable to read fallback stylesheet: " + fallback, ex2);
+      }
+    }
+    LOGGER.warn("Unable to find classpath template: {}", location.logicalPath());
+    throw new TransformerConfigurationException("Unable to find stylesheet: " + location.logicalPath(),
+        new FileNotFoundException(location.logicalPath()));
   }
 
   private static Templates newTemplates(TransformerFactory factory, Source source, XsltErrorCollector listener)
@@ -331,19 +460,14 @@ public final class XsltTemplateCache {
     }
   }
 
-  @SuppressWarnings("java:S2755") // file-only access is required for xsl:import/include
+  @SuppressWarnings("java:S2755") // access is restricted to file/jar and a constrained resolver below
   static TransformerFactory newTransformerFactory() throws TransformerConfigurationException {
     TransformerFactory factory = TransformerFactory.newInstance();
     factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "file");
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "file,jar");
+    factory.setURIResolver(new SecureXsltUriResolver(StylesheetLocation.resolveApplicationClassLoader()));
     return factory;
-  }
-
-  private static String toWebPath(String s) {
-    String from = "WEB-INF";
-    int x = s.indexOf(from);
-    return x != -1 ? s.substring(x + from.length()).replace('\\', '/') : s.replace('\\', '/');
   }
 
   // Inner types

@@ -9,8 +9,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.util.CollectedError.Level;
+import org.pageseeder.berlioz.xslt.StylesheetSourceKind;
 import org.pageseeder.berlioz.xslt.XsltErrorCollector;
 import org.pageseeder.berlioz.xslt.XsltExceptionWrapper;
+import org.pageseeder.berlioz.xslt.XsltTemplateCache;
 import org.pageseeder.berlioz.xslt.XsltTransformException;
 
 import javax.xml.transform.TransformerConfigurationException;
@@ -18,6 +20,8 @@ import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -155,6 +159,64 @@ class XsltTransformerTest {
     Assertions.assertEquals(stylesheet, transformer.templatesPath());
     Assertions.assertNotNull(transformer.getEtag());
     Assertions.assertDoesNotThrow(transformer::clearCache);
+  }
+
+  @Test
+  void location_filesystemTransformer_returnsFilesystemKind() throws Exception {
+    Path stylesheet = writeStylesheet("location.xsl", "<xsl:template match=\"/\"><out/></xsl:template>");
+    XsltTransformer transformer = new XsltTransformer(stylesheet);
+
+    Assertions.assertEquals(StylesheetSourceKind.FILESYSTEM, transformer.location().kind());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Classpath-backed construction (URL)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void urlConstructor_compilesAndTransformsFromClasspathResource() throws Exception {
+    writeStylesheet("classpath-style.xsl", "<xsl:template match=\"/\"><out>ok</out></xsl:template>");
+    try (URLClassLoader loader = new URLClassLoader(new URL[] { this.temporary.toUri().toURL() }, null)) {
+      URL url = loader.getResource("classpath-style.xsl");
+      XsltTransformer transformer = new XsltTransformer(url);
+
+      XsltTransformResult result = transformer.transformOrThrow(
+          "<root/>", ServletTestSupport.request().build(), null);
+
+      Assertions.assertTrue(result.content().toString().contains("<out>ok</out>"), result.content().toString());
+      Assertions.assertEquals(StylesheetSourceKind.CLASSPATH, transformer.location().kind());
+      Assertions.assertNotNull(transformer.getEtag());
+    } finally {
+      XsltTemplateCache.clearAllCache();
+    }
+  }
+
+  @Test
+  void urlConstructor_templatesPath_throwsUnsupportedOperationException() throws Exception {
+    writeStylesheet("classpath-unsupported.xsl", "<xsl:template match=\"/\"><out/></xsl:template>");
+    try (URLClassLoader loader = new URLClassLoader(new URL[] { this.temporary.toUri().toURL() }, null)) {
+      URL url = loader.getResource("classpath-unsupported.xsl");
+      XsltTransformer transformer = new XsltTransformer(url);
+
+      Assertions.assertThrows(UnsupportedOperationException.class, transformer::templatesPath);
+    } finally {
+      XsltTemplateCache.clearAllCache();
+    }
+  }
+
+  @Test
+  void urlConstructor_missingResource_reportsStylesheetFailure() throws Exception {
+    try (URLClassLoader loader = new URLClassLoader(new URL[] { this.temporary.toUri().toURL() }, null)) {
+      URL missing = new URL(this.temporary.toUri().toURL(), "does-not-exist.xsl");
+      XsltTransformer transformer = new XsltTransformer(missing);
+
+      XsltTransformException failure = Assertions.assertThrows(XsltTransformException.class,
+          () -> transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), null));
+
+      Assertions.assertEquals(XsltTransformException.Phase.STYLESHEET, failure.phase());
+    } finally {
+      XsltTemplateCache.clearAllCache();
+    }
   }
 
   // toXML(TransformerException, Map) — private, invoked via reflection to check the raw
