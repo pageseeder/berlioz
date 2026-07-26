@@ -131,7 +131,7 @@
     </init-param>
     <init-param>
       <param-name>fallback-stylesheet</param-name>
-      <param-value>resource:/org/pageseeder/berlioz/kickstart/fallback-xml.xsl</param-value>
+      <param-value>classpath:org/pageseeder/berlioz/kickstart/fallback-xml.xsl</param-value>
     </init-param>
     <init-param>
       <param-name>content-type</param-name>
@@ -177,7 +177,7 @@
     </init-param>
     <init-param>
       <param-name>fallback-stylesheet</param-name>
-      <param-value>resource:/org/pageseeder/berlioz/kickstart/fallback-json.xsl</param-value>
+      <param-value>classpath:org/pageseeder/berlioz/kickstart/fallback-json.xsl</param-value>
     </init-param>
     <init-param>
       <param-name>content-type</param-name>
