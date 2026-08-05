@@ -75,6 +75,9 @@ final class SecureXsltUriResolver implements URIResolver {
     if (url == null) {
       throw new TransformerException("Unable to resolve classpath XSLT import/include: " + href);
     }
+    if (!ALLOWED_SCHEMES.contains(url.getProtocol().toLowerCase())) {
+      throw new TransformerException("Denied external protocol for XSLT import/include: " + url.getProtocol());
+    }
     return new StreamSource(url.toString());
   }
 

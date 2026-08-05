@@ -192,6 +192,22 @@ class XsltTransformerTest {
   }
 
   @Test
+  void urlConstructor_logicalPath_doesNotLeakAbsoluteDeploymentPath() throws Exception {
+    writeStylesheet("classpath-safe-path.xsl", "<xsl:template match=\"/\"><out/></xsl:template>");
+    try (URLClassLoader loader = new URLClassLoader(new URL[] { this.temporary.toUri().toURL() }, null)) {
+      URL url = loader.getResource("classpath-safe-path.xsl");
+      XsltTransformer transformer = new XsltTransformer(url);
+
+      String logicalPath = transformer.location().logicalPath();
+      Assertions.assertEquals("classpath:classpath-safe-path.xsl", logicalPath);
+      Assertions.assertFalse(logicalPath.contains(this.temporary.toString()),
+          "logical path must not expose the absolute deployment path: " + logicalPath);
+    } finally {
+      XsltTemplateCache.clearAllCache();
+    }
+  }
+
+  @Test
   void urlConstructor_templatesPath_throwsUnsupportedOperationException() throws Exception {
     writeStylesheet("classpath-unsupported.xsl", "<xsl:template match=\"/\"><out/></xsl:template>");
     try (URLClassLoader loader = new URLClassLoader(new URL[] { this.temporary.toUri().toURL() }, null)) {

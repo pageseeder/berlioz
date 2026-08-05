@@ -105,7 +105,8 @@ public final class StylesheetLocation {
    */
   public static StylesheetLocation forClasspath(@Nullable URL url, String logicalPath) {
     Objects.requireNonNull(logicalPath, "logicalPath is required");
-    String key = url != null ? url.toExternalForm() : logicalPath;
+    String classLoaderId = Integer.toHexString(System.identityHashCode(resolveApplicationClassLoader()));
+    String key = classLoaderId + ':' + (url != null ? url.toExternalForm() : logicalPath);
     return new StylesheetLocation(StylesheetSourceKind.CLASSPATH, null, url, logicalPath, false, key);
   }
 
@@ -158,7 +159,9 @@ public final class StylesheetLocation {
   /**
    * @return a stable key distinguishing this location from any other, suitable for use in a
    *         shared cache. Distinguishes identically named classpath resources contributed by
-   *         different JARs.
+   *         different JARs, and — for classpath locations — different application classloaders,
+   *         so that a compiled template whose {@code classpath:} imports were resolved through one
+   *         classloader is never reused for another (e.g. two webapps sharing the same JVM).
    */
   public String cacheKey() {
     return this.cacheKey;
@@ -213,6 +216,30 @@ public final class StylesheetLocation {
 
   private static String normalizeLeadingSlash(String path) {
     return path.startsWith("/") ? path.substring(1) : path;
+  }
+
+  /**
+   * Derives a safe, loggable <code>classpath:</code> reference from a resolved resource URL,
+   * for callers that only have a {@link URL} and no original classpath-relative string to hand.
+   *
+   * <p>For a resource packaged in a JAR (a <code>jar:...!/entry</code> URL) this recovers the
+   * entry path, which is exactly the classpath-relative reference that resolved it. For an
+   * exploded/development classpath resource (a plain <code>file:</code> URL) there is no portable
+   * way to recover the classpath-relative subpath from the URL alone, so only the file name is
+   * kept — never the absolute path.
+   *
+   * @param url the resolved classpath resource URL.
+   *
+   * @return a safe <code>classpath:</code> reference, suitable for use as a {@link #logicalPath()}.
+   */
+  public static String safeClasspathLogicalPath(URL url) {
+    Objects.requireNonNull(url, "url is required");
+    String external = url.toExternalForm();
+    int bang = external.lastIndexOf("!/");
+    if (bang != -1) return CLASSPATH_PREFIX + external.substring(bang + 2);
+    String path = url.getPath();
+    int slash = path.lastIndexOf('/');
+    return CLASSPATH_PREFIX + (slash != -1 ? path.substring(slash + 1) : path);
   }
 
   @Override

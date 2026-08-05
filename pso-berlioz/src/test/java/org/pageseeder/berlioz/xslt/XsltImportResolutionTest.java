@@ -162,6 +162,34 @@ final class XsltImportResolutionTest {
     Assertions.assertThrows(TransformerException.class, () -> compile("main-network-import.xsl"));
   }
 
+  @Test
+  void explicitClasspathReference_classLoaderReturnsDisallowedProtocol_isDenied() throws IOException {
+    write("main-classpath-forged.xsl",
+        stylesheet("<xsl:include href=\"classpath:evil.xsl\"/>"
+            + "<xsl:template match=\"/\"><out/></xsl:template>"));
+
+    // A classloader is trusted to resolve resource *names*, not to guarantee the protocol of the
+    // URL it hands back. Simulate one (e.g. an OSGi bundle loader or vfs-backed loader) that
+    // resolves "evil.xsl" to a network URL, and confirm the resolver still denies it — the
+    // file/jar restriction must not rely on the classloader's own good behavior.
+    ClassLoader forging = new ClassLoader(this.classLoader) {
+      @Override
+      public URL getResource(String name) {
+        if ("evil.xsl".equals(name)) {
+          try {
+            return new URL("http://example.invalid/evil.xsl");
+          } catch (java.net.MalformedURLException ex) {
+            throw new AssertionError(ex);
+          }
+        }
+        return super.getResource(name);
+      }
+    };
+    Thread.currentThread().setContextClassLoader(forging);
+
+    Assertions.assertThrows(TransformerException.class, () -> compile("main-classpath-forged.xsl"));
+  }
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------

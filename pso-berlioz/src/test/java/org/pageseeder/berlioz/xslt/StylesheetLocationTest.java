@@ -100,7 +100,7 @@ final class StylesheetLocationTest {
     StylesheetLocation location = StylesheetLocation.forClasspath(null, "classpath:missing.xsl");
     Assertions.assertNull(location.url());
     Assertions.assertNull(location.toUrl());
-    Assertions.assertEquals("classpath:missing.xsl", location.cacheKey());
+    Assertions.assertTrue(location.cacheKey().endsWith(":classpath:missing.xsl"));
   }
 
   @Test
@@ -117,6 +117,53 @@ final class StylesheetLocationTest {
     // Same logical path (e.g. same resource name in two different JARs), different cache key.
     Assertions.assertEquals(locationA.logicalPath(), locationB.logicalPath());
     Assertions.assertNotEquals(locationA.cacheKey(), locationB.cacheKey());
+  }
+
+  @Test
+  void forClasspath_sameUrl_differentClassLoaders_haveDifferentCacheKeys() throws MalformedURLException {
+    URL url = this.tempDir.resolve("shared.xsl").toUri().toURL();
+    ClassLoader previous = Thread.currentThread().getContextClassLoader();
+    ClassLoader webappA = new ClassLoader(previous) { };
+    ClassLoader webappB = new ClassLoader(previous) { };
+    try {
+      Thread.currentThread().setContextClassLoader(webappA);
+      StylesheetLocation locationA = StylesheetLocation.forClasspath(url, "classpath:shared.xsl");
+
+      Thread.currentThread().setContextClassLoader(webappB);
+      StylesheetLocation locationB = StylesheetLocation.forClasspath(url, "classpath:shared.xsl");
+
+      // Same primary URL (e.g. shared/common classloader), but resolved for two different
+      // application classloaders — a compiled template resolved for one must never be reused
+      // for the other, since their classpath: imports can resolve differently.
+      Assertions.assertNotEquals(locationA.cacheKey(), locationB.cacheKey());
+    } finally {
+      Thread.currentThread().setContextClassLoader(previous);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // safeClasspathLogicalPath(URL)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void safeClasspathLogicalPath_jarUrl_recoversEntryPath() throws MalformedURLException {
+    URL url = new URL("jar:file:/absolute/deployment/path/app.jar!/xslt/html/global.xsl");
+    String logicalPath = StylesheetLocation.safeClasspathLogicalPath(url);
+    Assertions.assertEquals("classpath:xslt/html/global.xsl", logicalPath);
+    Assertions.assertFalse(logicalPath.contains("/absolute/deployment/path"));
+  }
+
+  @Test
+  void safeClasspathLogicalPath_fileUrl_keepsOnlyFileName() throws MalformedURLException {
+    URL url = this.tempDir.resolve("secret-dir").resolve("style.xsl").toUri().toURL();
+    String logicalPath = StylesheetLocation.safeClasspathLogicalPath(url);
+    Assertions.assertEquals("classpath:style.xsl", logicalPath);
+    Assertions.assertFalse(logicalPath.contains(this.tempDir.toString()));
+  }
+
+  @Test
+  void safeClasspathLogicalPath_nullUrl_throwsNPE() {
+    Assertions.assertThrows(NullPointerException.class, () -> StylesheetLocation.safeClasspathLogicalPath(null));
   }
 
   // ---------------------------------------------------------------------------

@@ -185,6 +185,12 @@ public final class XsltTransformer {
   /**
    * Creates a new XSLT Transformer from a classpath resource.
    *
+   * <p>Since a bare {@link URL} carries no original classpath-relative string, the logical path
+   * reported for this location is derived from the URL on a best-effort basis: for a resource
+   * packaged in a JAR, the entry path is recovered; otherwise only the file name is kept. Prefer
+   * resolving through {@code classpath:}/{@code resource:} configuration values where possible, as
+   * those retain the exact reference.
+   *
    * @param templates The URL of the templates (typically a {@code classpath:}-resolved resource).
    * @param fallback  The URL to the fallback templates (optional).
    *
@@ -192,7 +198,8 @@ public final class XsltTransformer {
    */
   public XsltTransformer(URL templates, @Nullable URL fallback) {
     Objects.requireNonNull(templates, "The template URL is required");
-    this.cache = new XsltTemplateCache(StylesheetLocation.forClasspath(templates, templates.toString()), fallback);
+    String logicalPath = StylesheetLocation.safeClasspathLogicalPath(templates);
+    this.cache = new XsltTemplateCache(StylesheetLocation.forClasspath(templates, logicalPath), fallback);
   }
 
   /**
