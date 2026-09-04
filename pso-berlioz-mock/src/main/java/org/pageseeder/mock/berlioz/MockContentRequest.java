@@ -131,7 +131,7 @@ public class MockContentRequest implements ContentRequest{
 
   @Override
   public HttpSession getSession() {
-    return this.http.getSession();
+    return this.http.getSession(false);
   }
 
   @Override
