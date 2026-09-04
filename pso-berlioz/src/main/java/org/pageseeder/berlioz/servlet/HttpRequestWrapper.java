@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * @author Christophe Lauret
  * @author Tu Tak Tran
  *
- * @version 0.13.1
+ * @version 0.14.2
  * @since 0.7
  */
 public abstract class HttpRequestWrapper implements ContentRequest {
@@ -296,7 +296,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
    */
   @Override
   public final @Nullable HttpSession getSession() {
-    return this.req.getSession();
+    return this.req.getSession(false);
   }
 
   // utility methods
