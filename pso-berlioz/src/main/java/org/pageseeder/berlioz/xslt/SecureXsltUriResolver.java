@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.xslt;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Set;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
@@ -42,7 +41,7 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>As defense in depth beyond the {@code accessExternalStylesheet} restriction, this resolver
  * independently rejects any reference — relative or absolute — that resolves to a protocol other
- * than {@code file} or {@code jar}, so network schemes are never followed even if a processor's
+ * than local {@code file} or {@code jar:file}, so network schemes are never followed even if a processor's
  * own enforcement differs.
  *
  * @author Christophe Lauret
@@ -51,8 +50,6 @@ import org.jspecify.annotations.Nullable;
  * @since 0.14.3
  */
 final class SecureXsltUriResolver implements URIResolver {
-
-  private static final Set<String> ALLOWED_SCHEMES = Set.of("file", "jar");
 
   private final ClassLoader classLoader;
 
@@ -75,22 +72,38 @@ final class SecureXsltUriResolver implements URIResolver {
     if (url == null) {
       throw new TransformerException("Unable to resolve classpath XSLT import/include: " + href);
     }
-    if (!ALLOWED_SCHEMES.contains(url.getProtocol().toLowerCase())) {
-      throw new TransformerException("Denied external protocol for XSLT import/include: " + url.getProtocol());
-    }
+    requireLocalUrl(url);
     return new StreamSource(url.toString());
   }
 
   private void denyUnlessApprovedScheme(String href, @Nullable String base) throws TransformerException {
     try {
       URL resolved = base != null ? new URL(new URL(base), href) : new URL(href);
-      String scheme = resolved.getProtocol();
-      if (!ALLOWED_SCHEMES.contains(scheme.toLowerCase())) {
-        throw new TransformerException("Denied external protocol for XSLT import/include: " + scheme);
-      }
+      requireLocalUrl(resolved);
     } catch (MalformedURLException ex) {
-      // Not a URL this resolver understands (e.g. a bare relative path with no usable base);
-      // fall through and let the processor's own default resolution and access checks apply.
+      throw new TransformerException("Unable to resolve XSLT resource URL", ex);
+    }
+  }
+
+  /**
+   * Validates before opening a connection, including the backing URL of a JAR resource.
+   * Only local files and a single JAR backed by a local file are supported.
+   */
+  static void requireLocalUrl(URL url) throws TransformerException {
+    URL backing = url;
+    if ("jar".equalsIgnoreCase(url.getProtocol())) {
+      String path = url.getFile();
+      int separator = path.indexOf("!/");
+      if (separator < 0) throw new TransformerException("Invalid XSLT JAR resource URL");
+      try {
+        backing = new URL(path.substring(0, separator));
+      } catch (MalformedURLException ex) {
+        throw new TransformerException("Invalid XSLT JAR backing URL", ex);
+      }
+    }
+    if (!"file".equalsIgnoreCase(backing.getProtocol())
+        || (!backing.getHost().isEmpty() && !"localhost".equalsIgnoreCase(backing.getHost()))) {
+      throw new TransformerException("Denied non-local XSLT resource protocol: " + backing.getProtocol());
     }
   }
 

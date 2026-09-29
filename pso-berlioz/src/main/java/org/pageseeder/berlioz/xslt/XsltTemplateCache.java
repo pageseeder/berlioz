@@ -347,12 +347,13 @@ public final class XsltTemplateCache {
       return null;
     }
     try {
+      SecureXsltUriResolver.requireLocalUrl(url);
       Path jarFile = jarFileOf(url);
       if (jarFile != null) return SHA256.hash(jarFile, false);
       try (InputStream in = url.openStream()) {
         return SHA256.hash(in);
       }
-    } catch (IOException ex) {
+    } catch (IOException | TransformerException ex) {
       LOGGER.warn("Error thrown while trying to calculate classpath template etag", ex);
       return null;
     }
@@ -411,6 +412,7 @@ public final class XsltTemplateCache {
       throws TransformerException {
     URL url = location.url();
     if (url != null) {
+      SecureXsltUriResolver.requireLocalUrl(url);
       try (InputStream in = url.openStream()) {
         Source source = new StreamSource(in);
         source.setSystemId(url.toString());
@@ -450,6 +452,7 @@ public final class XsltTemplateCache {
 
   private static Templates compile(URL url, XsltErrorSensitivity sensitivity)
       throws IOException, TransformerException {
+    SecureXsltUriResolver.requireLocalUrl(url);
     try (InputStream in = url.openStream()) {
       Source source = new StreamSource(in);
       source.setSystemId(url.toString());
@@ -460,12 +463,12 @@ public final class XsltTemplateCache {
     }
   }
 
-  @SuppressWarnings("java:S2755") // access is restricted to file/jar and a constrained resolver below
+  @SuppressWarnings("java:S2755") // access is restricted to local files/JARs and a constrained resolver below
   static TransformerFactory newTransformerFactory() throws TransformerConfigurationException {
     TransformerFactory factory = TransformerFactory.newInstance();
     factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "file,jar");
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "file,jar:file");
     factory.setURIResolver(new SecureXsltUriResolver(StylesheetLocation.resolveApplicationClassLoader()));
     return factory;
   }
