@@ -331,6 +331,70 @@ class ServiceLoaderTest {
     Assertions.assertInstanceOf(expectedClass, generators.get(0), message);
   }
 
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+  void uncheckedDiscoveryFailureIsThrottledAndRecovers(boolean reload) throws Exception {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    if (reload) loader.loadIfRequired();
+    ServiceRegistry registry = loader.getDefaultRegistry();
+    long version = registry.version();
+    List<ServiceRegistration> registrations = registry.registrations();
+    List<CollectedError<SAXParseException>> warnings = loader.getLastLoadWarnings();
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    IllegalStateException cause = new IllegalStateException("broken resource enumeration");
+    int[] attempts = {0};
+    try {
+      Thread.currentThread().setContextClassLoader(new ClassLoader(original) {
+        @Override
+        public java.util.Enumeration<URL> getResources(String name) {
+          attempts[0]++;
+          throw cause;
+        }
+      });
+      loader.requestReload();
+      long now = System.nanoTime();
+      if (reload) {
+        Assertions.assertFalse(loader.loadIfRequired(now));
+        Assertions.assertFalse(loader.loadIfRequired(now + ServiceLoader.RETRY_DELAY_NANOS - 1));
+        Assertions.assertNotNull(registry.get("/home", HttpMethod.GET));
+      } else {
+        BerliozException failure = Assertions.assertThrows(BerliozException.class,
+            () -> loader.loadIfRequired(now));
+        Assertions.assertSame(cause, failure.getCause());
+        Assertions.assertSame(failure, Assertions.assertThrows(BerliozException.class,
+            () -> loader.loadIfRequired(now + ServiceLoader.RETRY_DELAY_NANOS - 1)));
+      }
+      Assertions.assertEquals(1, attempts[0]);
+      Assertions.assertEquals(reload ? "reload-failed" : "startup-failed", loader.getLoadStatus());
+      Assertions.assertEquals(version, registry.version());
+      Assertions.assertSame(registrations, registry.registrations());
+      Assertions.assertSame(warnings, loader.getLastLoadWarnings());
+      Thread.currentThread().setContextClassLoader(original);
+      Assertions.assertTrue(loader.loadIfRequired(now + ServiceLoader.RETRY_DELAY_NANOS));
+      Assertions.assertEquals("ready", loader.getLoadStatus());
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
+  @Test
+  void jvmErrorsAreNotConvertedToLoadFailures() {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    LinkageError failure = new LinkageError("broken classloader");
+    try {
+      Thread.currentThread().setContextClassLoader(new ClassLoader(original) {
+        @Override
+        public java.util.Enumeration<URL> getResources(String name) {
+          throw failure;
+        }
+      });
+      Assertions.assertSame(failure, Assertions.assertThrows(LinkageError.class, loader::loadIfRequired));
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
   @Test
   void discoveryFailureKeepsRegistryAndRetriesAfterDelay() throws Exception {
     ServiceLoader loader = ServiceLoader.getInstance();

@@ -169,13 +169,17 @@ public enum ServiceLoader {
     try {
       load();
       return true;
-    } catch (BerliozException ex) {
-      this.lastFailure = ex;
+    } catch (BerliozException | RuntimeException ex) {
+      // Third-party classloaders and parser/generator initialization can fail unchecked too.
+      // Keep them inside the same retry boundary; JVM Errors deliberately propagate.
+      BerliozException failure = ex instanceof BerliozException ? (BerliozException) ex
+          : new BerliozException("Unexpected failure loading service configuration", ex);
+      this.lastFailure = failure;
       this.retryAfterNanos = now + RETRY_DELAY_NANOS;
       LOGGER.error(this.published
           ? "Service reload rejected; continuing with the last valid registry. Retry in 30 seconds."
           : "Service startup failed; no registry published. Retry in 30 seconds.", ex);
-      if (!this.published) throw ex;
+      if (!this.published) throw failure;
       return false;
     }
   }
