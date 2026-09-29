@@ -645,6 +645,18 @@ class XmlResponseTest {
   }
 
   @Test
+  void getEtag_cacheableGeneratorThrowsFromGetETag_treatedAsNonCacheable() {
+    class ThrowingCacheableGen implements XmlGenerator, Cacheable {
+      @Override public String getETag(Request req) { throw new java.io.UncheckedIOException(new IOException("boom")); }
+      @Override public Response generate(Request req, org.pageseeder.berlioz.xml.XmlWriter xml) { return Response.ok(); }
+    }
+    Service service = singleGenerator(new ThrowingCacheableGen());
+    XmlResponse xr = new XmlResponse(req(), res(), config, matchFor(service), false);
+
+    assertNull(xr.getEtag(), "A generator whose getETag() throws must not crash the request; treat as non-cacheable");
+  }
+
+  @Test
   void getEtag_multipleCacheableGenerators_combinesEtags() {
     Service service = ServiceTestHelper.build("multi-cache", ServiceTestHelper.highestRule(),
         new NoContent(), new NoContent());
