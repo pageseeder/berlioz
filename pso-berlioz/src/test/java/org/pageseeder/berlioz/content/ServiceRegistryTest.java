@@ -529,6 +529,39 @@ final class ServiceRegistryTest {
   }
 
   @Test
+  void testToRegistrations_preservesEqualScoreRoutingOrderAfterReplacement() {
+    Service first = buildService("first");
+    Service second = buildService("second");
+    Service replacement = buildService("replacement");
+    URIPattern firstPattern = new URIPattern("/{a}");
+    registry.register(first, firstPattern, HttpMethod.GET);
+    registry.register(second, new URIPattern("/{b}"), HttpMethod.GET);
+    ServiceOrigin origin = ServiceOrigin.forFile(new java.io.File("services.xml"), null);
+
+    assertRoutingOrderSurvivesRebuild(origin, first);
+
+    // Replacing a pattern changes its service, but must retain its tie-break position.
+    registry.register(replacement, firstPattern, HttpMethod.GET);
+    registry.register(buildService("unrelated"), new URIPattern("/unrelated/path"), HttpMethod.GET);
+    assertRoutingOrderSurvivesRebuild(origin, replacement);
+  }
+
+  private void assertRoutingOrderSurvivesRebuild(ServiceOrigin origin, Service expected) {
+    MatchingService before = registry.get("/example", HttpMethod.GET);
+    Assertions.assertNotNull(before);
+    Assertions.assertSame(expected, before.service());
+
+    ServiceRegistry rebuilt = new ServiceRegistry();
+    for (ServiceRegistration registration : registry.toRegistrations(origin)) {
+      rebuilt.register(registration.service(), registration.pattern(), registration.method());
+    }
+    MatchingService after = rebuilt.get("/example", HttpMethod.GET);
+    Assertions.assertNotNull(after);
+    Assertions.assertSame(expected, after.service(),
+        "Extracting and rebuilding registrations must preserve equal-score routing priority");
+  }
+
+  @Test
   void testToRegistrations_empty() {
     ServiceOrigin origin = ServiceOrigin.forFile(new java.io.File("services.xml"), null);
     Assertions.assertTrue(registry.toRegistrations(origin).isEmpty());

@@ -287,8 +287,10 @@ public final class ServiceRegistry {
     List<ServiceRegistration> registrations = new ArrayList<>();
     for (Entry<HttpMethod, ServiceMap> e : this.state.mapping.entrySet()) {
       HttpMethod method = e.getKey();
-      for (Entry<String, Service> se : e.getValue().mapping.entrySet()) {
-        registrations.add(new ServiceRegistration(se.getValue(), method, new URIPattern(se.getKey()), origin));
+      ServiceMap map = e.getValue();
+      // Preserve the routing order used to break ties between equally specific patterns.
+      for (URIPattern pattern : map.patterns) {
+        registrations.add(new ServiceRegistration(map.mapping.get(pattern.toString()), method, pattern, origin));
       }
     }
     return registrations;
