@@ -89,15 +89,16 @@ public final class XsltTemplateCache {
   };
 
   /**
-   * Shared cache: maps each stylesheet location's cache key to its compiled entry.
+   * Shared cache: maps the primary location and fallback URL to their compiled entry.
    */
-  private static final Map<String, CachedEntry> CACHE = new ConcurrentHashMap<>();
+  private static final Map<List<String>, CachedEntry> CACHE = new ConcurrentHashMap<>();
 
   // Instance state
   // ----------------------------------------------------------------------------------------------
 
   private final StylesheetLocation location;
   private final @Nullable URL fallback;
+  private final List<String> cacheKey;
   private @Nullable String etag;
 
   /**
@@ -121,6 +122,7 @@ public final class XsltTemplateCache {
   public XsltTemplateCache(StylesheetLocation location, @Nullable URL fallback) {
     this.location = Objects.requireNonNull(location, "location is required");
     this.fallback = fallback;
+    this.cacheKey = List.of(location.cacheKey(), fallback != null ? fallback.toExternalForm() : "");
     this.etag = computeEtag(location, fallback);
   }
 
@@ -138,7 +140,7 @@ public final class XsltTemplateCache {
     if (this.location.isIdentity()) return IDENTITY_TEMPLATES;
 
     XsltCacheMode mode = XsltCacheMode.from(GlobalSettings.get(BerliozOption.XSLT_CACHE));
-    String key = this.location.cacheKey();
+    List<String> key = this.cacheKey;
 
     if (mode == XsltCacheMode.NO) {
       LOGGER.info("Loading XSLT stylesheet '{}' [caching disabled]", this.location.logicalPath());
@@ -203,7 +205,7 @@ public final class XsltTemplateCache {
    */
   public synchronized void clearCache() {
     LOGGER.debug("Clearing XSLT cache for '{}'.", this.location.logicalPath());
-    CACHE.remove(this.location.cacheKey());
+    CACHE.remove(this.cacheKey);
   }
 
   /**

@@ -20,10 +20,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -54,6 +60,41 @@ final class XsltTemplateCacheTest {
   @AfterEach
   void clearCacheAfter() {
     XsltTemplateCache.clearAllCache();
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void fallbackCache_isolatesConfigurationsAndInvalidation(boolean classpath) throws Exception {
+    StylesheetLocation primary = classpath
+        ? StylesheetLocation.forClasspath(null, "classpath:missing.xsl")
+        : StylesheetLocation.forFile(this.tempDir.resolve("missing.xsl"));
+    URL fallbackA = Files.writeString(this.tempDir.resolve("a.xsl"),
+        MINIMAL_XSL.replace("<xsl:template match=\"/\"/>",
+            "<xsl:template match=\"/\"><a/></xsl:template>")).toUri().toURL();
+    URL fallbackB = Files.writeString(this.tempDir.resolve("b.xsl"),
+        MINIMAL_XSL.replace("<xsl:template match=\"/\"/>",
+            "<xsl:template match=\"/\"><b/></xsl:template>")).toUri().toURL();
+    XsltTemplateCache cacheA = new XsltTemplateCache(primary, fallbackA);
+    XsltTemplateCache cacheB = new XsltTemplateCache(primary, fallbackB);
+    Templates templatesA = cacheA.getTemplates();
+    Templates templatesB = cacheB.getTemplates();
+    Assertions.assertTrue(render(templatesA).contains("<a/>"));
+    Assertions.assertTrue(render(templatesB).contains("<b/>"));
+    Assertions.assertThrows(TransformerException.class,
+        () -> new XsltTemplateCache(primary, null).getTemplates());
+
+    // Equivalent URL objects reuse the same entry; invalidation affects only that configuration.
+    XsltTemplateCache equivalentA = new XsltTemplateCache(primary, new URL(fallbackA.toExternalForm()));
+    Assertions.assertSame(templatesA, equivalentA.getTemplates());
+    equivalentA.clearCache();
+    Assertions.assertNotSame(templatesA, cacheA.getTemplates());
+    Assertions.assertSame(templatesB, cacheB.getTemplates());
+  }
+
+  private static String render(Templates templates) throws TransformerException {
+    StringWriter result = new StringWriter();
+    templates.newTransformer().transform(new StreamSource(new StringReader("<root/>")), new StreamResult(result));
+    return result.toString();
   }
 
   // ---------------------------------------------------------------------------
