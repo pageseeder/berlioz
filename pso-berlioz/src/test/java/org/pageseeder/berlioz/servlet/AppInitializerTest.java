@@ -78,6 +78,25 @@ class AppInitializerTest {
     Assertions.assertTrue(output.contains("FAIL"), output);
   }
 
+  @Test
+  void testCheckServices_discoveryFailureIsReportedDistinctly(@TempDir Path webInf) throws Exception {
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    try {
+      Thread.currentThread().setContextClassLoader(new ClassLoader(original) {
+        @Override
+        public java.util.Enumeration<URL> getResources(String name) throws IOException {
+          throw new IOException("unavailable classpath");
+        }
+      });
+      String output = invokeCheckServices(InitEnvironment.create(webInf.toFile()));
+      Assertions.assertTrue(output.contains("Service configuration discovery failed"), output);
+      Assertions.assertTrue(output.contains("Services: FAIL"), output);
+      Assertions.assertFalse(output.contains("Could not find"), output);
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
   private static String invokeCheckServices(InitEnvironment env)
       throws NoSuchMethodException, IllegalAccessException, IOException {
     Method method = AppInitializer.class.getDeclaredMethod("checkServices", InitEnvironment.class);

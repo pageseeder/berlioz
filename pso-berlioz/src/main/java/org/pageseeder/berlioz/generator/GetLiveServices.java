@@ -34,6 +34,7 @@ import org.pageseeder.berlioz.servlet.HttpEnvironment;
  * Returns the live service registry as XML or JSON.
  *
  * <p>Unlike {@code GetServices}, which re-reads the services XML files from disk, this generator
+ * exposes a safe {@code load-status} field (pending, ready, startup-failed, or reload-failed) and
  * reflects the current in-memory state of the service registry. It is intended for developers and
  * operations tooling to inspect which services are actually loaded and active.
  *
@@ -45,7 +46,7 @@ import org.pageseeder.berlioz.servlet.HttpEnvironment;
  *
  * <h3>Returned XML</h3>
  * <pre>{@code
- * <live-services>
+ * <live-services load-status="ready">
  *   <service id="[id]" group="[group]" method="[method]" cacheable="[true|false]" ...>
  *     <response-code use="[use]" rule="[rule]"/>
  *     <url pattern="[uri-pattern]"/>
@@ -59,6 +60,7 @@ import org.pageseeder.berlioz.servlet.HttpEnvironment;
  * <h3>Returned JSON</h3>
  * <pre>{@code
  * {
+ *   "loadStatus": "ready",
  *   "liveServices": [
  *     {
  *       "id": "[id]", "group": "[group]", "method": "[method]", "cacheable": [true|false], ...,
@@ -81,11 +83,12 @@ import org.pageseeder.berlioz.servlet.HttpEnvironment;
  *
  * <h3>Etag</h3>
  * <p>The ETag is the registry version counter, which increments each time the services are
- * reloaded. This ensures the response is invalidated whenever the service configuration changes.
+ * reloaded, together with the load status. This invalidates the response when the configuration
+ * or load status changes.
  *
  * @author Christophe Lauret
  *
- * @version 0.14.1
+ * @version 0.14.3
  * @since 0.9.3
  */
 @Beta
@@ -94,7 +97,7 @@ public final class GetLiveServices implements Generator, Cacheable {
   @Override
   public String getETag(Request req) {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
-    return Long.toString(registry.version());
+    return registry.version() + "-" + ServiceLoader.getInstance().getLoadStatus();
   }
 
   @Override
@@ -103,6 +106,7 @@ public final class GetLiveServices implements Generator, Cacheable {
     HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
 
     out.startObject("live-services");
+    out.field("load-status", ServiceLoader.getInstance().getLoadStatus());
     out.startArray("live-services", ContextOption.JSON_ONLY);
     for (HttpMethod method : HttpMethod.mappable()) {
       List<Service> services = registry.getServices(method);

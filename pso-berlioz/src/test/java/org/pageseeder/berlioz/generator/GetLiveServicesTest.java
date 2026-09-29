@@ -78,7 +78,38 @@ class GetLiveServicesTest {
         Files.createDirectory(tmp.resolve("public")).toFile(), Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=3600");
     ContentRequest req = GeneratorTestSupport.request().environment(env).build();
     String out = processJson(req);
-    Assertions.assertTrue(out.startsWith("{\"liveServices\":["), out);
+    Assertions.assertTrue(out.contains("\"liveServices\":["), out);
+  }
+
+  @Test
+  void failedReloadIsVisibleInBothFormatsAndInvalidatesETag() throws Exception {
+    Path config = Files.createDirectories(tmp.resolve("config"));
+    Path services = config.resolve("services.xml");
+    Files.copy(new File(WEB_INF, "config/services.xml").toPath(), services);
+    GlobalSettings.setup(tmp.toFile());
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.loadIfRequired();
+    HttpEnvironment env = new HttpEnvironment(
+        Files.createDirectory(tmp.resolve("public")).toFile(),
+        Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=0");
+    ContentRequest req = GeneratorTestSupport.request().environment(env).build();
+    GetLiveServices generator = new GetLiveServices();
+    String healthy = generator.getETag((Request) req);
+    Files.writeString(services, "<sensitive-invalid-root/>");
+    loader.requestReload();
+    Assertions.assertFalse(loader.loadIfRequired());
+    Assertions.assertNotEquals(healthy, generator.getETag((Request) req));
+    String xml = process(req);
+    String json = processJson(req);
+    Assertions.assertTrue(xml.contains("load-status=\"reload-failed\""), xml);
+    Assertions.assertTrue(json.contains("\"loadStatus\":\"reload-failed\""), json);
+    Assertions.assertFalse(xml.contains("sensitive-invalid-root"));
+    Assertions.assertFalse(json.contains(tmp.toString()));
+    Files.copy(new File(WEB_INF, "config/services.xml").toPath(), services,
+        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    loader.requestReload();
+    Assertions.assertTrue(loader.loadIfRequired());
+    Assertions.assertTrue(processJson(req).contains("\"loadStatus\":\"ready\""));
   }
 
   // helpers

@@ -38,6 +38,30 @@ The Java API documentation can be found [here](https://javadoc.io/doc/org.pagese
 
 Berlioz uses RFC 9457 Problem Details support for generator and framework errors.
 
+## Service configuration loading and reloads
+
+Service discovery and parsing are transactional: an I/O or fatal parsing error rejects the
+whole candidate configuration. An absent optional configuration directory is valid for
+classpath-only applications; failure to enumerate an existing directory or the classpath is not.
+
+Before the first successful load, requests receive a service-configuration `503` on failure.
+Berlioz loads services lazily, so this does not itself prevent the servlet container from
+starting; deployment readiness checks should exercise a known Berlioz route.
+
+After a successful load, a failed reload keeps serving the complete last valid registry,
+including its original warnings and source metadata. No partial contributions are published.
+Failed loads are retried on the next request after a 30-second delay. An authorized
+`reload-services` control request (or `ServiceLoader.requestReload()`) allows an immediate
+retry. Explicit `ServiceLoader.load()` calls still throw on failure; `clear()` deliberately
+removes the retained registry.
+
+Each attempted failure is logged with its cause, and recovery is logged when publication
+succeeds. The opt-in administrative `GetLiveServices` diagnostic reports `load-status` in XML
+and `loadStatus` in JSON: `pending`, `ready`, `startup-failed`, or `reload-failed`. Its ETag
+includes that status so a rejected reload becomes visible even though the registry is unchanged.
+Exception details and source paths are not included in this status field. Protect diagnostic
+mappings with application or container security.
+
 ## Roadmap
 
 The current development roadmap is available in [ROADMAP.md](ROADMAP.md).

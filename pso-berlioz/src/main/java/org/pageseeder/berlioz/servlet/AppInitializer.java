@@ -28,6 +28,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.BerliozException;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.LifecycleListener;
@@ -644,8 +645,16 @@ public abstract class AppInitializer {
       console(Phase.INIT, "Services: OK --------------------------------------------------");
       return;
     }
-    boolean hasClasspathServices = ServiceLoader.getInstance().discoverSources().stream()
-        .anyMatch(source -> source.kind() == ServiceSourceKind.CLASSPATH);
+    boolean hasClasspathServices;
+    try {
+      hasClasspathServices = ServiceLoader.getInstance().discoverSources().stream()
+          .anyMatch(source -> source.kind() == ServiceSourceKind.CLASSPATH);
+    } catch (BerliozException ex) {
+      console(Phase.INIT, "(!) Service configuration discovery failed; see server logs");
+      consoleException(Phase.INIT, ex);
+      console(Phase.INIT, "Services: FAIL ------------------------------------------------");
+      return;
+    }
     if (hasClasspathServices) {
       console(Phase.INIT, "Services: no " + servicesFile + " - service configuration provided by classpath");
       console(Phase.INIT, "Services: OK --------------------------------------------------");

@@ -83,7 +83,7 @@ Planned scope:
 - Use one exactly addressable `META-INF/berlioz/services.xml` resource per contributing JAR; an explicit index can be added later if multiple documents per JAR prove necessary.
 - Load classpath contributions first and filesystem configuration second, so application-owned filesystem mappings take precedence.
 - Define mapping conflicts by HTTP method and URI pattern, and report the origin of both the replaced and replacing declarations.
-- Make service loading transactional so an invalid contribution does not publish a partially populated registry.
+- Make service loading transactional so discovery failures or invalid contributions do not publish a partially populated registry; retain and serve the last valid registry after a failed reload, with controlled retries and visible diagnostic status.
 - Generalize service inputs from files to source descriptors carrying a URL and origin metadata.
 - Add format-agnostic `GetBerliozConfig` and `GetErrorHandlerConfig` diagnostic generators so admin overlays can inspect how the deployed Berlioz and error-handler servlets are actually configured and mapped.
 - Have the Berlioz diagnostic expose each servlet name, URL mappings, effective media type and charset, stylesheet/fallback allocation, cache policy, and compression setting; have the error-handler diagnostic expose its mappings, explicit versus discovered forward extensions, ignored extensions, default extension, and effective problem/detail/stylesheet options.

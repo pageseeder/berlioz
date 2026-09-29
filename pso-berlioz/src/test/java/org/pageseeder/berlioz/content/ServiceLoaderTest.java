@@ -117,7 +117,7 @@ class ServiceLoaderTest {
 
     Assertions.assertNotNull(loader.getDefaultRegistry().get("/home", HttpMethod.GET),
         "Requesting a reload must not clear the live registry before a candidate is available");
-    Assertions.assertThrows(BerliozException.class, loader::loadIfRequired);
+    Assertions.assertFalse(loader.loadIfRequired());
     MatchingService retained = loader.getDefaultRegistry().get("/home", HttpMethod.GET);
     Assertions.assertNotNull(retained, "A failed requested reload must retain the last successful registry");
     Assertions.assertEquals(previous.service().id(), retained.service().id());
@@ -331,10 +331,112 @@ class ServiceLoaderTest {
     Assertions.assertInstanceOf(expectedClass, generators.get(0), message);
   }
 
+  @Test
+  void discoveryFailureKeepsRegistryAndRetriesAfterDelay() throws Exception {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.loadIfRequired();
+    ServiceRegistry registry = loader.getDefaultRegistry();
+    long version = registry.version();
+    List<ServiceRegistration> registrations = registry.registrations();
+    List<CollectedError<SAXParseException>> warnings = loader.getLastLoadWarnings();
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    int[] attempts = {0};
+    ClassLoader broken = new ClassLoader(original) {
+      @Override
+      public java.util.Enumeration<URL> getResources(String name) throws IOException {
+        attempts[0]++;
+        throw new IOException("sensitive deployment path");
+      }
+    };
+    try {
+      Thread.currentThread().setContextClassLoader(broken);
+      loader.requestReload();
+      long now = System.nanoTime();
+      Assertions.assertFalse(loader.loadIfRequired(now));
+      Assertions.assertEquals("reload-failed", loader.getLoadStatus());
+      Assertions.assertNotNull(registry.get("/home", HttpMethod.GET));
+      Assertions.assertEquals(version, registry.version());
+      Assertions.assertSame(registrations, registry.registrations());
+      Assertions.assertSame(warnings, loader.getLastLoadWarnings());
+      Assertions.assertFalse(loader.loadIfRequired(now + ServiceLoader.RETRY_DELAY_NANOS - 1));
+      Assertions.assertEquals(1, attempts[0]);
+      Assertions.assertFalse(loader.loadIfRequired(now + ServiceLoader.RETRY_DELAY_NANOS));
+      Assertions.assertEquals(2, attempts[0]);
+      Thread.currentThread().setContextClassLoader(original);
+      Assertions.assertTrue(loader.loadIfRequired(now + 2 * ServiceLoader.RETRY_DELAY_NANOS));
+      Assertions.assertEquals("ready", loader.getLoadStatus());
+      Assertions.assertNotSame(registrations, registry.registrations());
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
+  @Test
+  void startupDiscoveryFailureIsNotPublishedAndExplicitRetryRecovers() throws Exception {
+    ServiceLoader loader = ServiceLoader.getInstance();
+    long version = loader.getDefaultRegistry().version();
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    IOException cause = new IOException("discovery failed");
+    int[] attempts = {0};
+    try {
+      Thread.currentThread().setContextClassLoader(new ClassLoader(original) {
+        @Override
+        public java.util.Enumeration<URL> getResources(String name) throws IOException {
+          attempts[0]++;
+          throw cause;
+        }
+      });
+      BerliozException failure = Assertions.assertThrows(BerliozException.class, loader::loadIfRequired);
+      Assertions.assertSame(cause, failure.getCause());
+      Assertions.assertSame(failure, Assertions.assertThrows(BerliozException.class, loader::loadIfRequired));
+      Assertions.assertEquals(1, attempts[0]);
+      Assertions.assertEquals(version, loader.getDefaultRegistry().version());
+      Assertions.assertEquals("startup-failed", loader.getLoadStatus());
+      Thread.currentThread().setContextClassLoader(original);
+      loader.requestReload();
+      Assertions.assertTrue(loader.loadIfRequired());
+      Assertions.assertEquals("ready", loader.getLoadStatus());
+      loader.clear();
+      Assertions.assertEquals("pending", loader.getLoadStatus());
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
+  @Test
+  void filesystemDiscoveryDistinguishesAbsentDirectoryFromInvalidDirectory(@TempDir Path webInf)
+      throws Exception {
+    GlobalSettings.setup(webInf.toFile());
+    ServiceLoader loader = ServiceLoader.getInstance();
+    Assertions.assertTrue(loader.discoverSources().isEmpty());
+    // A regular file in place of a directory deterministically fails enumeration on all platforms.
+    Files.writeString(webInf.resolve("config"), "not a directory");
+    Assertions.assertThrows(BerliozException.class, loader::discoverSources);
+    Assertions.assertThrows(BerliozException.class, loader::loadIfRequired);
+    Assertions.assertEquals("startup-failed", loader.getLoadStatus());
+  }
+
+  @Test
+  void filesystemDiscoveryFailureRetainsSuccessfulEmptyRegistry(@TempDir Path webInf) throws Exception {
+    GlobalSettings.setup(webInf.toFile());
+    ServiceLoader loader = ServiceLoader.getInstance();
+    Assertions.assertTrue(loader.loadIfRequired());
+    long version = loader.getDefaultRegistry().version();
+    Files.writeString(webInf.resolve("config"), "not a directory");
+    loader.requestReload();
+    Assertions.assertFalse(loader.loadIfRequired());
+    Assertions.assertEquals("reload-failed", loader.getLoadStatus());
+    Assertions.assertEquals(version, loader.getDefaultRegistry().version());
+    Files.delete(webInf.resolve("config"));
+    loader.requestReload();
+    Assertions.assertTrue(loader.loadIfRequired());
+    Assertions.assertEquals("ready", loader.getLoadStatus());
+  }
+
   // Classpath discovery ------------------------------------------------------------------------
 
   @Test
-  void testDiscoverClasspathSources_dedupesIdenticalUrl(@TempDir Path dir) throws IOException {
+  void testDiscoverClasspathSources_dedupesIdenticalUrl(@TempDir Path dir) throws Exception {
     writeMinimalServicesXml(dir);
     URL dirUrl = dir.toUri().toURL();
     try (URLClassLoader classLoader = new URLClassLoader(new URL[] {dirUrl, dirUrl}, null)) {
@@ -345,7 +447,7 @@ class ServiceLoaderTest {
   }
 
   @Test
-  void testDiscoverClasspathSources_orderingIsIndependentOfEnumerationOrder(@TempDir Path root) throws IOException {
+  void testDiscoverClasspathSources_orderingIsIndependentOfEnumerationOrder(@TempDir Path root) throws Exception {
     Path dirA = Files.createDirectories(root.resolve("a"));
     Path dirB = Files.createDirectories(root.resolve("b"));
     writeMinimalServicesXml(dirA);
@@ -362,7 +464,7 @@ class ServiceLoaderTest {
   }
 
   @Test
-  void testDiscoverSources_classpathSourcesComeBeforeFilesystemSources(@TempDir Path dir) throws IOException {
+  void testDiscoverSources_classpathSourcesComeBeforeFilesystemSources(@TempDir Path dir) throws Exception {
     writeMinimalServicesXml(dir);
     ClassLoader original = Thread.currentThread().getContextClassLoader();
     try (URLClassLoader classpathLoader = new URLClassLoader(new URL[] {dir.toUri().toURL()}, original)) {

@@ -16,17 +16,21 @@
 package org.pageseeder.berlioz.content;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.SAXParser;
 
@@ -74,11 +78,6 @@ public enum ServiceLoader {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServiceLoader.class);
 
   /**
-   * The file filter to
-   */
-  private static final FilenameFilter FILE_FILTER = (dir, name) -> name.startsWith("services!") && name.endsWith(".xml");
-
-  /**
    * Maps content generators URL patterns to their content generator instance.
    *
    * <p>This is the stable object returned by {@link #getDefaultRegistry()}; its identity never
@@ -89,9 +88,27 @@ public enum ServiceLoader {
   private final ServiceRegistry services = new ServiceRegistry();
 
   /**
-   * Indicates whether the boolean value was loaded.
+   * Whether the current load request has completed successfully.
    */
-  private volatile boolean loaded = false;
+  private boolean loaded = false;
+
+  private boolean published = false;
+
+  private @Nullable BerliozException lastFailure;
+
+  private long retryAfterNanos;
+
+  static final long RETRY_DELAY_NANOS = TimeUnit.SECONDS.toNanos(30);
+
+  /**
+   * Safe diagnostic status; exception details are confined to server logs.
+   * @return pending, ready, startup-failed, or reload-failed
+   * @since 0.14.3
+   */
+  public synchronized String getLoadStatus() {
+    if (this.lastFailure != null) return this.published ? "reload-failed" : "startup-failed";
+    return this.loaded ? "ready" : "pending";
+  }
 
   /**
    * @return The service loader
@@ -129,17 +146,38 @@ public enum ServiceLoader {
   /**
    * Update the patterns based on the current generators.
    *
-   * @return true is the services were reloaded.
+   * <p>A failed reload keeps serving the last valid registry. Failed attempts are retried on
+   * demand after 30 seconds; {@link #requestReload()} permits an immediate retry.
    *
-   * @throws BerliozException Should something unexpected happen.
+   * @return true if a new registry was published, false if already loaded or retaining the old one.
+   *
+   * @throws BerliozException if loading fails before any valid registry has been published.
    *
    * @since 0.8.2
    */
   public synchronized boolean loadIfRequired() throws BerliozException {
+    return loadIfRequired(System.nanoTime());
+  }
+
+  // Monotonic time supplied separately for deterministic retry tests.
+  synchronized boolean loadIfRequired(long now) throws BerliozException {
     if (this.loaded) return false;
-    load();
-    this.loaded = true;
-    return true;
+    if (this.lastFailure != null && now - this.retryAfterNanos < 0) {
+      if (!this.published) throw this.lastFailure;
+      return false;
+    }
+    try {
+      load();
+      return true;
+    } catch (BerliozException ex) {
+      this.lastFailure = ex;
+      this.retryAfterNanos = now + RETRY_DELAY_NANOS;
+      LOGGER.error(this.published
+          ? "Service reload rejected; continuing with the last valid registry. Retry in 30 seconds."
+          : "Service startup failed; no registry published. Retry in 30 seconds.", ex);
+      if (!this.published) throw ex;
+      return false;
+    }
   }
 
   /**
@@ -159,7 +197,7 @@ public enum ServiceLoader {
    * a fatal error. If any source fails, this method throws and the previously published registry,
    * version, and warnings are left completely untouched.
    *
-   * @throws BerliozException Should any source fail to parse.
+   * @throws BerliozException if discovery or parsing of any source fails.
    */
   public synchronized void load() throws BerliozException {
     List<ServiceSource> sources = discoverSources();
@@ -177,6 +215,7 @@ public enum ServiceLoader {
       candidate.register(registration.service(), registration.pattern(), registration.method());
     }
     this.services.replaceWith(candidate, merged.registrations, warnings);
+    loadedSuccessfully();
   }
 
   /**
@@ -200,34 +239,26 @@ public enum ServiceLoader {
    * {@link HandlingDispatcher#getHandler} for how the root element selects between the two.
    *
    * @return the list of services files.
+   * @throws UncheckedIOException if the configuration directory cannot be enumerated.
    */
   public List<File> listServiceFiles() {
     File config = GlobalSettings.getConfig();
     if (config == null) return List.of();
-    File xml = new File(config, "services.xml");
-    File[] subs = config.listFiles(FILE_FILTER);
-    List<File> files;
-
-    // `services.xml` file and/or at least one module
-    if (subs != null && subs.length > 0) {
-      files = new ArrayList<>(subs.length+1);
-      if (xml.exists()) {
-        files.add(xml);
-      }
-      Arrays.sort(subs, Comparator.comparing(File::getName));
-      Collections.addAll(files, subs);
+    Path directory = config.toPath();
+    // An absent optional configuration directory supports classpath-only applications.
+    // Unknown/inaccessible paths must be opened so the I/O failure is not treated as absence.
+    if (Files.notExists(directory)) return List.of();
+    try (Stream<Path> entries = Files.list(directory)) {
+      return entries.filter(path -> {
+        String name = path.getFileName().toString();
+        return name.equals("services.xml") || (name.startsWith("services!") && name.endsWith(".xml"));
+      }).map(Path::toFile)
+          .sorted(Comparator.comparing((File file) -> !file.getName().equals("services.xml"))
+              .thenComparing(File::getName))
+          .collect(Collectors.toList());
+    } catch (IOException ex) {
+      throw new UncheckedIOException("Unable to enumerate filesystem service configuration", ex);
     }
-
-    // Single `services.xml` file
-    else if (xml.exists()) {
-      files = Collections.singletonList(xml);
-    }
-
-    // No services file at all!
-    else {
-      files = Collections.emptyList();
-    }
-    return files;
   }
 
   /**
@@ -239,13 +270,19 @@ public enum ServiceLoader {
    * parse or register them.
    *
    * @return the discovered sources, classpath sources first.
+   * @throws BerliozException if any source discovery fails.
    *
    * @since 0.14.3
    */
-  public List<ServiceSource> discoverSources() {
+  public List<ServiceSource> discoverSources() throws BerliozException {
     List<ServiceSource> sources = new ArrayList<>(discoverClasspathSources(resolveApplicationClassLoader()));
-    for (File file : listServiceFiles()) {
-      sources.add(ServiceSource.filesystem(file, GlobalSettings.getConfig()));
+    try {
+      for (File file : listServiceFiles()) {
+        sources.add(ServiceSource.filesystem(file, GlobalSettings.getConfig()));
+      }
+    } catch (UncheckedIOException | SecurityException ex) {
+      throw new BerliozException("Unable to discover filesystem service configuration", ex,
+          BerliozErrorID.SERVICES_NOT_FOUND);
     }
     return List.copyOf(sources);
   }
@@ -260,18 +297,20 @@ public enum ServiceLoader {
    * @param classLoader the classloader to enumerate resources from.
    *
    * @return the discovered classpath sources, deduplicated and deterministically ordered.
+   * @throws BerliozException if classpath enumeration fails.
    *
    * @since 0.14.3
    */
-  List<ServiceSource> discoverClasspathSources(ClassLoader classLoader) {
+  List<ServiceSource> discoverClasspathSources(ClassLoader classLoader) throws BerliozException {
     Objects.requireNonNull(classLoader, "classLoader is required");
     Map<String, ServiceSource> byUrl = new LinkedHashMap<>();
     try {
       for (URL url : Collections.list(classLoader.getResources(ServiceOrigin.CLASSPATH_RESOURCE_PATH))) {
         byUrl.putIfAbsent(url.toExternalForm(), ServiceSource.classpath(url));
       }
-    } catch (IOException ex) {
-      LOGGER.warn("Unable to enumerate classpath service configuration resources: {}", ex.getMessage());
+    } catch (IOException | UncheckedIOException | SecurityException ex) {
+      throw new BerliozException("Unable to discover classpath service configuration", ex,
+          BerliozErrorID.SERVICES_NOT_FOUND);
     }
     List<ServiceSource> sources = new ArrayList<>(byUrl.values());
     sources.sort(Comparator.comparing(ServiceSource::orderingKey));
@@ -312,6 +351,7 @@ public enum ServiceLoader {
       candidate.register(registration.service(), registration.pattern(), registration.method());
     }
     this.services.replaceWith(candidate, parsed.registrations, parsed.warnings);
+    loadedSuccessfully();
   }
 
   /**
@@ -422,6 +462,7 @@ public enum ServiceLoader {
   public synchronized void requestReload() {
     LOGGER.info("Marking content manager for reload");
     this.loaded = false;
+    this.retryAfterNanos = System.nanoTime();
   }
 
   /**
@@ -434,6 +475,17 @@ public enum ServiceLoader {
     LOGGER.info("Clearing content manager");
     this.services.clear();
     this.loaded = false;
+    this.published = false;
+    this.lastFailure = null;
+    this.retryAfterNanos = 0;
+  }
+
+  private void loadedSuccessfully() {
+    if (this.lastFailure != null) LOGGER.info("Service configuration recovered; new registry published.");
+    this.published = true;
+    this.loaded = true;
+    this.lastFailure = null;
+    this.retryAfterNanos = 0;
   }
 
   /**

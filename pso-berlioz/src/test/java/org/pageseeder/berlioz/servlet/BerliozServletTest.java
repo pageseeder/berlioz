@@ -30,6 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.http.HttpHeaders;
+import org.pageseeder.berlioz.http.HttpMethod;
 import org.pageseeder.berlioz.xslt.XsltTransformException;
 import org.pageseeder.berlioz.servlet.fixtures.CacheableXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.DirectJsonGenerator;
@@ -74,6 +75,45 @@ class BerliozServletTest {
     }
     ServiceLoader.getInstance().clear();
     XsltTransformer.clearAllCache();
+  }
+
+  @Test
+  void failedReloadKeepsServingGetAndOptionsAndCanRecover() throws Exception {
+    writeServices(service("hello", "get", "/hello", "handler", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder initial = ServletTestSupport.response();
+    this.servlet.doGet(request("GET", "/hello.xml"), initial.build());
+    assertEquals(200, initial.status);
+
+    writeServices("<service-config>");
+    ServiceLoader.getInstance().requestReload();
+    ServletTestSupport.ResponseRecorder retained = ServletTestSupport.response();
+    this.servlet.doGet(request("GET", "/hello.xml"), retained.build());
+    assertEquals(200, retained.status);
+    assertTrue(retained.content().contains("hello"));
+    assertEquals("reload-failed", ServiceLoader.getInstance().getLoadStatus());
+    ServletTestSupport.ResponseRecorder options = ServletTestSupport.response();
+    this.servlet.doOptions(request("OPTIONS", "/hello.xml"), options.build());
+    assertEquals(200, options.status);
+    assertTrue(options.header(HttpHeaders.ALLOW).contains("GET"));
+
+    writeServices(service("recovered", "get", "/recovered", "handler", ECHO_XML));
+    ServiceLoader.getInstance().requestReload();
+    ServletTestSupport.ResponseRecorder recovered = ServletTestSupport.response();
+    this.servlet.doGet(request("GET", "/recovered.xml"), recovered.build());
+    assertEquals(200, recovered.status);
+    assertEquals("ready", ServiceLoader.getInstance().getLoadStatus());
+    assertNull(ServiceLoader.getInstance().getDefaultRegistry().get("/hello", HttpMethod.GET));
+  }
+
+  @Test
+  void malformedStartupReturnsServiceUnavailable() throws Exception {
+    writeServices("<service-config>");
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder response = ServletTestSupport.response();
+    this.servlet.doGet(request("GET", "/hello.xml"), response.build());
+    assertEquals(503, response.status);
+    assertEquals("startup-failed", ServiceLoader.getInstance().getLoadStatus());
   }
 
   @Test
