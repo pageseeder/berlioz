@@ -6,7 +6,9 @@ The 0.13.x releases delivered the complete roadmap for that cycle: typed request
 
 **0.14.0 was released on 2026-07-21.** It moved the framework to secure defaults, closed administration controls by default, strengthened the XSLT error pipeline, and modernized the built-in diagnostic generators.
 
-**0.14.1 was released on 2026-07-25.** It delivered the runtime service-diagnostics model, first-class HTTP `QUERY` support, and hardened Content-Type/header handling across the servlet layer. Development is now on **0.14.2-SNAPSHOT** and focuses on classpath overlay discovery before configuration validation and a 1.0 release.
+**0.14.1 was released on 2026-07-25.** It delivered the runtime service-diagnostics model, first-class HTTP `QUERY` support, and hardened Content-Type/header handling across the servlet layer.
+
+**0.14.2 was released on 2026-09-04 as a hotfix.** It prevented unintended session creation and updated dependencies. The hotfix shifted the planned overlay release to 0.14.3 and configuration validation to 0.14.4. Development is now on **0.14.3-SNAPSHOT** and focuses on classpath overlay discovery before configuration validation and a 1.0 release.
 
 ## Guiding Principles
 
@@ -37,7 +39,7 @@ Completed release changes:
 
 ### 0.14.1: Runtime Introspection And HTTP QUERY ✓ Released 2026-07-25
 
-0.14.1 delivered the runtime diagnostics model, core HTTP `QUERY` dispatch, and the smaller output/error contracts. The overlay and configuration-lifecycle work stays deferred to 0.14.2/0.14.3.
+0.14.1 delivered the runtime diagnostics model, core HTTP `QUERY` dispatch, and the smaller output/error contracts. The overlay and configuration-lifecycle work stays deferred to 0.14.3/0.14.4.
 
 Completed:
 
@@ -65,9 +67,18 @@ Completed:
 
 Retained decision (not a task): preserve the XML/XSLT fallback for JSON-configured requests throughout 0.14.x; revisit only with content negotiation in 1.0.
 
-### 0.14.2: Classpath Overlay Discovery
+### 0.14.2: Session Creation Hotfix ✓ Released 2026-09-04
 
-0.14.2 should deliver reusable overlays as ordinary JAR dependencies:
+Completed release changes:
+
+- Used `getSession(false)` to prevent unintended session creation in request wrappers.
+- Updated Jackson to 2.22.2 and JSpecify to 1.0.1.
+
+### 0.14.3: Classpath Overlay Discovery
+
+0.14.3 should deliver reusable overlays as ordinary JAR dependencies. The implementation workstreams and progress checklist are tracked in [`PLAN-0.14.3.md`](PLAN-0.14.3.md).
+
+Planned scope:
 
 - Use one exactly addressable `META-INF/berlioz/services.xml` resource per contributing JAR; an explicit index can be added later if multiple documents per JAR prove necessary.
 - Load classpath contributions first and filesystem configuration second, so application-owned filesystem mappings take precedence.
@@ -81,9 +92,9 @@ Retained decision (not a task): preserve the XML/XSLT fallback for JSON-configur
 - Treat classpath templates as immutable in `manual` and `auto` cache modes; `no` may recompile them on each use.
 - Verify discovery, conflict handling, XSLT imports/includes, static resources, and `web-fragment.xml` using a real packaged overlay JAR.
 
-### 0.14.3: Configuration Requirements And Validation
+### 0.14.4: Configuration Requirements And Validation
 
-0.14.3 should add application-facing configuration validation with explicit property provenance and safe diagnostics:
+0.14.4 should add application-facing configuration validation with explicit property provenance and safe diagnostics:
 
 - Read requirements from a separate `WEB-INF/config/config-requirements.xml` file after variable resolution.
 - Preserve whether each resolved property was explicitly specified or inherited from a framework default.
@@ -315,7 +326,7 @@ Already done (groundwork):
 - `BerliozOption` is unchanged — deprecation metadata does not live on the enum.
 - `OptionDeprecations` is the internal precursor to Theme 5's `ConfigurationValidator`: the check-and-warn pattern it establishes will generalize into the declarative, application-facing validation layer.
 
-Planned shape for 0.14.3:
+Planned shape for 0.14.4:
 
 - Add a separate declarative `WEB-INF/config/config-requirements.xml` file, evaluated after global properties are fully resolved.
 - Retain property provenance so validation can distinguish an explicitly specified value from a framework default.
@@ -502,9 +513,9 @@ Likely outcome:
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
 - ~~How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?~~ Released outcome: controls are closed by default; `berlioz.control.key` (explicit key) and `berlioz.control.network` (default `off`) are independent channels, plus a fixed delegated-authorization request attribute for host applications.
 - ~~Should service-level metadata be part of normal output, diagnostic output, or both?~~ Decided for 0.14.1: runtime-derived metadata belongs in `GetLiveServices` and `GetMatchingService`; normal responses and the raw `GetServices` source view remain unchanged.
-- ~~Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?~~ Decided for 0.14.3: use a separate `WEB-INF/config/config-requirements.xml` file.
-- ~~For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?~~ Decided for 0.14.3: zero matches violate only a presence rule that requires at least one match.
-- ~~How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?~~ Decided for 0.14.3: preserve explicit/default provenance in the resolved configuration snapshot.
+- ~~Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?~~ Decided for 0.14.4: use a separate `WEB-INF/config/config-requirements.xml` file.
+- ~~For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?~~ Decided for 0.14.4: zero matches violate only a presence rule that requires at least one match.
+- ~~How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?~~ Decided for 0.14.4: preserve explicit/default provenance in the resolved configuration snapshot.
 - Should direct services support only one handler forever, or is there a future aggregation model?
 - How should raw output interact with cache headers, ETags, and content negotiation?
 - Should authorization requirements be declared primarily by generator interfaces, service configuration, or both?
@@ -514,10 +525,10 @@ Likely outcome:
 - Which integrations are valuable enough to maintain as official modules?
 - ~~Should the custom error XSLT be a single global stylesheet, or should it support per-group error templates?~~ Decided: single global stylesheet. Error dispatch bypasses the normal XSLT resolution path so per-group templates would add complexity without clear benefit.
 - ~~Should 0.14.0 remove the legacy Berlioz error XML format?~~ Released outcome: the format is deprecated, Problem Details is the default, and `berlioz.errors.problem=false` remains as a migration opt-out.
-- ~~Should classpath service discovery be enabled by default or require an explicit opt-in configuration flag?~~ Decided for 0.14.2: enable discovery by default for the narrow, exactly named overlay resource.
-- ~~Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?~~ Decided for 0.14.2: conflicts are determined by HTTP method and URI pattern; filesystem declarations load last and take precedence.
-- ~~Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?~~ Decided for 0.14.2: classpath templates are immutable in `manual` and `auto`; `no` recompiles them.
-- ~~Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?~~ Decided for 0.14.2: use one exact `META-INF/berlioz/services.xml` resource per JAR, with an explicit index reserved for a future multiple-file use case.
+- ~~Should classpath service discovery be enabled by default or require an explicit opt-in configuration flag?~~ Decided for 0.14.3: enable discovery by default for the narrow, exactly named overlay resource.
+- ~~Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?~~ Decided for 0.14.3: conflicts are determined by HTTP method and URI pattern; filesystem declarations load last and take precedence.
+- ~~Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?~~ Decided for 0.14.3: classpath templates are immutable in `manual` and `auto`; `no` recompiles them.
+- ~~Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?~~ Decided for 0.14.3: use one exact `META-INF/berlioz/services.xml` resource per JAR, with an explicit index reserved for a future multiple-file use case.
 - Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
 - ~~Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses?~~ Decided: `minimal` suppresses only framework-internal diagnostics (stack traces, exception class, HTTP headers and parameters). The `detail` member in RFC 9457 responses always reflects the error message passed to `Problems.forHttpError()`, which is the HTTP status phrase — safe for production.
 - Should `QUERY` responses be cacheable, and if so should the ETag seed incorporate a hash of the request body?
