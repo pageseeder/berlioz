@@ -60,7 +60,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.2
+ * @version 0.14.3
  * @since 0.6
  */
 @SuppressWarnings("java:S6548")
@@ -240,7 +240,7 @@ public enum ServiceLoader {
    *
    * @return the discovered sources, classpath sources first.
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   public List<ServiceSource> discoverSources() {
     List<ServiceSource> sources = new ArrayList<>(discoverClasspathSources(resolveApplicationClassLoader()));
@@ -261,7 +261,7 @@ public enum ServiceLoader {
    *
    * @return the discovered classpath sources, deduplicated and deterministically ordered.
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   List<ServiceSource> discoverClasspathSources(ClassLoader classLoader) {
     Objects.requireNonNull(classLoader, "classLoader is required");
@@ -285,7 +285,7 @@ public enum ServiceLoader {
    *
    * @return the resolved application classloader.
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   static ClassLoader resolveApplicationClassLoader() {
     ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
@@ -417,7 +417,7 @@ public enum ServiceLoader {
    * replacing the live registry. If that load fails, the last successful registry, version, and
    * warnings remain available.
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   public synchronized void requestReload() {
     LOGGER.info("Marking content manager for reload");

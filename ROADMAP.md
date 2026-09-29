@@ -91,6 +91,9 @@ Planned scope:
 - Support `classpath:` primary XSLT templates while retaining `resource:` as a compatibility alias.
 - Treat classpath templates as immutable in `manual` and `auto` cache modes; `no` may recompile them on each use.
 - Verify discovery, conflict handling, XSLT imports/includes, static resources, and `web-fragment.xml` using a real packaged overlay JAR.
+- Rename `GetLiveServices` to `ListRuntimeServices`, retaining `GetLiveServices` as a deprecated forwarding alias until 1.0.
+
+Implemented on `dev`: service-source discovery and origin tracking, transactional registry publication and reload retention, and classpath-backed XSLT resolution/caching. Remaining release work: failure-path and security review, servlet configuration diagnostics, the compatibility alias, packaged deployment verification, and user/migration documentation.
 
 ### 0.14.4: Configuration Requirements And Validation
 
@@ -291,16 +294,16 @@ This makes services easier to inspect, document, test, and debug without adding 
 
 ### 4. Classpath Overlay Discovery
 
-Berlioz currently requires all service configurations and XSLT templates to be present on the filesystem under `WEB-INF/`. This means reusable admin or utility overlays must be distributed as WAR overlays — ZIP archives that are merged into the host application at build time. A classpath-based discovery model would allow an overlay to be packaged as a plain JAR dependency, with no file-system merging step required.
+The released 0.14.2 line requires service configuration and primary XSLT templates on the filesystem under `WEB-INF/`. This means reusable admin or utility overlays must be distributed as WAR overlays — ZIP archives that are merged into the host application at build time. A classpath-based discovery model would allow an overlay to be packaged as a plain JAR dependency, with no file-system merging step required.
 
-Already done:
+Existing foundations in the released line:
 
 - `BerliozConfig.toURL()` supports a `resource:` prefix for loading fallback and kickstart XSLT templates from the classpath.
 - The failsafe error stylesheet is already loaded from the classpath via `ClassLoader.getResource()`.
 - `web-fragment.xml` in `pso-berlioz-kickstart` already registers servlet mappings without requiring changes to the host application's `web.xml`.
 - `java.util.ServiceLoader` is already used for `RedirectPolicy` discovery via `META-INF/services/`, establishing a workable SPI pattern.
 
-Next work:
+0.14.3 scope (implementation status is tracked in [`PLAN-0.14.3.md`](PLAN-0.14.3.md)):
 
 - Discover one exactly addressable `META-INF/berlioz/services.xml` resource per JAR. Class loaders cannot portably enumerate arbitrary children beneath a resource directory, so `META-INF/berlioz/services/` is not used as an implicit listing convention.
 - Enable discovery for this narrow convention by default: adding the overlay dependency is the explicit application action.

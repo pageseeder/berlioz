@@ -32,7 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.InitEnvironment;
 
 /**
- * Tests for {@link AppInitializer}'s service configuration check, specifically the 0.14.2 rule
+ * Tests for {@link AppInitializer}'s service configuration check, specifically the 0.14.3 rule
  * that a missing filesystem {@code services.xml} is no longer reported as a failure when a
  * classpath-discovered overlay source is available.
  */

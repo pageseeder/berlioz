@@ -47,8 +47,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.2
- * @since 0.14.2
+ * @version 0.14.3
+ * @since 0.14.3
  */
 final class SecureXsltUriResolver implements URIResolver {
 

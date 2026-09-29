@@ -176,7 +176,7 @@ public final class XsltTransformer {
    *
    * @param templates The URL of the templates (typically a {@code classpath:}-resolved resource).
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   public XsltTransformer(URL templates) {
     this(templates, null);
@@ -194,7 +194,7 @@ public final class XsltTransformer {
    * @param templates The URL of the templates (typically a {@code classpath:}-resolved resource).
    * @param fallback  The URL to the fallback templates (optional).
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   public XsltTransformer(URL templates, @Nullable URL fallback) {
     Objects.requireNonNull(templates, "The template URL is required");
@@ -313,7 +313,7 @@ public final class XsltTransformer {
    *
    * @return the stylesheet location.
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   public StylesheetLocation location() {
     return this.cache.location();

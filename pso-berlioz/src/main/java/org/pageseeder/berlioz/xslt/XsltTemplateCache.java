@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.2
+ * @version 0.14.3
  * @since 0.13.1
  */
 public final class XsltTemplateCache {
@@ -116,7 +116,7 @@ public final class XsltTemplateCache {
    * @param location the location of the main XSLT stylesheet.
    * @param fallback a fallback URL used when the main location does not exist (optional).
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   public XsltTemplateCache(StylesheetLocation location, @Nullable URL fallback) {
     this.location = Objects.requireNonNull(location, "location is required");
@@ -176,7 +176,7 @@ public final class XsltTemplateCache {
    *
    * @return the stylesheet location.
    *
-   * @since 0.14.2
+   * @since 0.14.3
    */
   public StylesheetLocation location() {
     return this.location;
