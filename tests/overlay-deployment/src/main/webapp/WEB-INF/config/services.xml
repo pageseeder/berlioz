@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE service-config PUBLIC "-//Berlioz//DTD::Services 1.0//EN"
+  "https://pageseeder.org/schema/berlioz/services-1.0.dtd">
+<service-config version="1.0"><services group="overlay">
+  <service id="host-conflict" method="get"><url pattern="/conflict"/>
+    <generator class="org.pageseeder.berlioz.generator.NoContent" name="host"/>
+  </service>
+</services></service-config>

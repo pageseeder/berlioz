@@ -1,0 +1,29 @@
+<web-fragment xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="4.0">
+  <name>overlay-fixture</name>
+  <filter><filter-name>OverlayMarker</filter-name><filter-class>org.pageseeder.berlioz.fixture.FragmentFilter</filter-class></filter>
+  <filter-mapping><filter-name>OverlayMarker</filter-name><url-pattern>/*</url-pattern></filter-mapping>
+  <servlet><servlet-name>Initialiser</servlet-name><servlet-class>org.pageseeder.berlioz.servlet.InitServlet</servlet-class><load-on-startup>1</load-on-startup></servlet>
+  <servlet><servlet-name>BerliozHTML</servlet-name><servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+    <init-param><param-name>stylesheet</param-name><param-value>classpath:overlay/xslt/main.xsl</param-value></init-param>
+    <init-param><param-name>content-type</param-name><param-value>text/html;charset=utf-8</param-value></init-param>
+    <init-param><param-name>http-compression</param-name><param-value>false</param-value></init-param>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  <servlet-mapping><servlet-name>BerliozHTML</servlet-name><url-pattern>*.html</url-pattern></servlet-mapping>
+  <servlet><servlet-name>BerliozXML</servlet-name><servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+    <init-param><param-name>stylesheet</param-name><param-value>IDENTITY</param-value></init-param>
+    <init-param><param-name>content-type</param-name><param-value>application/xml;charset=utf-8</param-value></init-param>
+    <init-param><param-name>http-compression</param-name><param-value>false</param-value></init-param>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  <servlet-mapping><servlet-name>BerliozXML</servlet-name><url-pattern>*.xml</url-pattern></servlet-mapping>
+  <servlet><servlet-name>BerliozJSON</servlet-name><servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+    <init-param><param-name>stylesheet</param-name><param-value>IDENTITY</param-value></init-param>
+    <init-param><param-name>content-type</param-name><param-value>application/json;charset=utf-8</param-value></init-param>
+    <init-param><param-name>http-compression</param-name><param-value>false</param-value></init-param>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  <servlet-mapping><servlet-name>BerliozJSON</servlet-name><url-pattern>*.json</url-pattern></servlet-mapping>
+  <servlet><servlet-name>ErrorHandlerServlet</servlet-name><servlet-class>org.pageseeder.berlioz.servlet.ErrorHandlerServlet</servlet-class><load-on-startup>3</load-on-startup></servlet>
+  <servlet-mapping><servlet-name>ErrorHandlerServlet</servlet-name><url-pattern>*.error</url-pattern></servlet-mapping>
+</web-fragment>

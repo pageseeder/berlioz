@@ -143,3 +143,10 @@ tasks.wrapper {
 jreleaser {
   configFile.set(file("jreleaser.toml"))
 }
+
+val overlayIntegrationTest = tasks.register("overlayIntegrationTest") {
+  description = "Verify packaged overlay deployment in a real servlet container"
+  group = "verification"
+  dependsOn(":tests:overlay-deployment:integrationTest")
+}
+tasks.named("check") { dependsOn(overlayIntegrationTest) }

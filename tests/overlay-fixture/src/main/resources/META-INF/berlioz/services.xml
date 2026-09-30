@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE service-config PUBLIC "-//Berlioz//DTD::Services 1.0//EN"
+  "https://pageseeder.org/schema/berlioz/services-1.0.dtd">
+<service-config version="1.0"><services group="overlay">
+  <service id="overlay" method="get"><url pattern="/overlay"/><generator class="org.pageseeder.berlioz.fixture.OverlayGenerator" name="data"/></service>
+  <service id="overlay-conflict" method="get"><url pattern="/conflict"/><generator class="org.pageseeder.berlioz.fixture.OverlayGenerator" name="data"/></service>
+  <service id="config" method="get"><url pattern="/admin/config"/><generator class="org.pageseeder.berlioz.generator.GetBerliozConfig" name="data"/></service>
+  <service id="errors" method="get"><url pattern="/admin/errors"/><generator class="org.pageseeder.berlioz.generator.GetErrorHandlerConfig" name="data"/></service>
+  <service id="runtime" method="get"><url pattern="/admin/runtime"/><generator class="org.pageseeder.berlioz.generator.GetLiveServices" name="data"/></service>
+  <service id="sources" method="get"><url pattern="/admin/sources"/><generator class="org.pageseeder.berlioz.generator.GetServices" name="data"/></service>
+</services></service-config>

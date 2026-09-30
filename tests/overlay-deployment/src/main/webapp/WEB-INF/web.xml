@@ -1,0 +1,3 @@
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="4.0">
+  <!-- All servlet mappings come from the packaged fixture's web fragment. -->
+</web-app>

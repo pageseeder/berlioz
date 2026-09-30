@@ -122,6 +122,13 @@ fingerprint; unrelated settings and secrets do not. Diagnostics perform no JAR e
 transformer creation, or stylesheet compilation. Error stylesheet selection performs only a
 small availability check. Deployment assumes Berlioz is in each application's `WEB-INF/lib`.
 
+## Packaged overlay verification
+
+Run `./gradlew overlayIntegrationTest` to deploy the test overlay JAR in a real Jetty WAR
+and verify discovery, precedence, XSLT, static resources, web fragments, diagnostics, and
+reload retention over HTTP. It also runs as part of `check` and `build`.
+See [the deployment test documentation](tests/overlay-deployment/README.md) for setup and coverage.
+
 ## Roadmap
 
 The current development roadmap is available in [ROADMAP.md](ROADMAP.md).

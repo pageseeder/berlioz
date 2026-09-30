@@ -18,3 +18,4 @@
 /TODO.md
 /samples/minimal-gretty/build/
 .DS_Store
+/tests/*/build/
