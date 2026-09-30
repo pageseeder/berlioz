@@ -161,13 +161,14 @@ public final class BerliozServlet extends HttpServlet {
   @Override
   public void init(ServletConfig servletConfig) throws ServletException {
     super.init(servletConfig);
-    this.berliozConfig = BerliozConfig.newConfig(servletConfig);
+    this.berliozConfig = BerliozConfig.unregisteredConfig(servletConfig);
     this.serviceRegistry = ServiceLoader.getInstance().getDefaultRegistry();
     this.errorHandler = servletConfig.getServletContext().getNamedDispatcher("ErrorHandlerServlet");
     if (this.errorHandler == null) {
       LOGGER.info("No ErrorHandlerServlet is defined in the Web descriptor");
       LOGGER.info("Berlioz will use the fail safe error handler instead");
     }
+    BerliozConfig.register(this.berliozConfig);
   }
 
   @Override

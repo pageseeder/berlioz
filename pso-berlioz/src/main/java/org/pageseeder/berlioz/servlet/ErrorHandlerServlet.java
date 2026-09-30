@@ -222,14 +222,43 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private String defaultExtension = DEFAULT_EXTENSION;
 
+  private static final Map<String, Map<String, Object>> CONFIGS =
+      new java.util.concurrent.ConcurrentHashMap<>();
+  private @Nullable Map<String, Object> diagnosticConfig;
+
+  @Override
+  public void destroy() {
+    if (this.diagnosticConfig != null) CONFIGS.computeIfPresent(getServletName(), (name, current) -> current == this.diagnosticConfig ? null : current);
+    super.destroy();
+  }
+
+  /** @return safe initialized forwarding configuration and current rendering settings */
+  @SuppressWarnings("removal")
+  public static ConfigurationSnapshot diagnosticSnapshot() {
+    boolean problem = GlobalSettings.has(BerliozOption.ERROR_PROBLEM_FORMAT);
+    String detail = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)).name().toLowerCase(Locale.ROOT);
+    ErrorStylesheet selection = selectErrorStylesheet();
+    List<Map<String, Object>> entries = new ArrayList<>();
+    CONFIGS.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(registration -> {
+      Map<String, Object> init = registration.getValue();
+      Map<String, Object> entry = DiagnosticConfiguration.fields(
+          "name", registration.getKey(), "mappings", init.get("mappings"), "problem-xml", problem, "detail", detail,
+          "forward", init.get("forward"), "ignore", init.get("ignore"), "stylesheet", selection.fields);
+      entries.add(entry);
+    });
+    return new ConfigurationSnapshot("error-handler-config", entries);
+  }
+
   @Override
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
     String preserve = config.getInitParameter("forward-extensions");
+    String source = preserve == null ? "discovered" : "explicit";
     if (preserve == null) {
       discoverBerliozExtensions(config.getServletContext(), forwardExtensions);
       if (forwardExtensions.isEmpty()) {
         addExtensions(forwardExtensions, LEGACY_FORWARD_EXTENSIONS);
+        source = "legacy-default";
       }
     } else {
       addExtensions(forwardExtensions, preserve);
@@ -241,6 +270,20 @@ public final class ErrorHandlerServlet extends HttpServlet {
     addExtensions(ignoreExtensions, ignore);
     String defExt = config.getInitParameter("forward-default");
     defaultExtension = normalizeExtension(defExt != null ? defExt : DEFAULT_EXTENSION);
+    this.diagnosticConfig = DiagnosticConfiguration.fields("mappings", DiagnosticConfiguration.mappings(config),
+        "forward", DiagnosticConfiguration.fields("source", source,
+            "extensions", diagnosticExtensions(forwardExtensions), "default-extension", diagnosticExtension(defaultExtension)),
+        "ignore", DiagnosticConfiguration.fields("extensions", diagnosticExtensions(ignoreExtensions)));
+    CONFIGS.put(config.getServletName(), this.diagnosticConfig);
+  }
+
+  private static String diagnosticExtension(String extension) {
+    return extension.startsWith(".") ? extension.substring(1) : extension;
+  }
+
+  private static List<String> diagnosticExtensions(Set<String> extensions) {
+    return extensions.stream().map(ErrorHandlerServlet::diagnosticExtension).sorted()
+        .collect(java.util.stream.Collectors.toUnmodifiableList());
   }
 
   @Override
@@ -567,26 +610,47 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * @return the URL to use, or {@code null} if no stylesheet is available
    */
   static @Nullable URL resolveErrorStylesheet() {
-    String configured = GlobalSettings.get(BerliozOption.ERROR_STYLESHEET);
+    ErrorStylesheet selection = selectErrorStylesheet();
+    if (selection.fields.containsKey("fallback-reason")) {
+      LOGGER.warn("Custom error stylesheet unavailable; using {}", selection.fields.get("selected"));
+    }
+    return selection.url;
+  }
+
+  static final class ErrorStylesheet {
+    final @Nullable URL url;
+    final Map<String, Object> fields;
+    ErrorStylesheet(@Nullable URL url, Map<String, Object> fields) {
+      this.url = url;
+      this.fields = fields;
+    }
+  }
+
+  private static ErrorStylesheet selectErrorStylesheet() {
+    return selectErrorStylesheet(GlobalSettings.get(BerliozOption.ERROR_STYLESHEET), GlobalSettings.getWebInf(),
+        ErrorHandlerServlet.class.getClassLoader().getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl"));
+  }
+
+  static ErrorStylesheet selectErrorStylesheet(String configured, @Nullable File webInf, @Nullable URL builtin) {
+    Map<String, Object> fields = DiagnosticConfiguration.fields("configured", configured.isEmpty() ? "built-in" : "custom");
     if (!configured.isEmpty()) {
-      File webInf = GlobalSettings.getWebInf();
+      String safe = configured.contains(":") ? null : DiagnosticConfiguration.safePath(configured);
+      if (safe != null) fields.put("path", safe);
       if (webInf != null) {
         File xsl = new File(webInf, configured);
         if (xsl.isFile() && xsl.canRead()) {
           try {
-            return xsl.toURI().toURL();
+            fields.put("selected", "custom");
+            return new ErrorStylesheet(xsl.toURI().toURL(), fields);
           } catch (MalformedURLException ex) {
-            LOGGER.warn("Cannot convert custom error stylesheet path to URL: {}", xsl, ex);
+            // Fall through to the built-in stylesheet.
           }
-        } else {
-          LOGGER.warn("Custom error stylesheet not found or not readable: {} (falling back to built-in)", xsl);
         }
-      } else {
-        LOGGER.warn("berlioz.errors.stylesheet is configured but WEB-INF is not initialised — falling back to built-in");
       }
     }
-    ClassLoader loader = ErrorHandlerServlet.class.getClassLoader();
-    return loader.getResource("org/pageseeder/berlioz/xslt/failsafe-error-html.xsl");
+    fields.put("selected", builtin == null ? "none" : "built-in");
+    if (!configured.isEmpty()) fields.put("fallback-reason", "missing-or-unreadable");
+    return new ErrorStylesheet(builtin, fields);
   }
 
   /**

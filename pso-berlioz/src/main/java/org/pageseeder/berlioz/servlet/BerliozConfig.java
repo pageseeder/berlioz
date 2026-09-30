@@ -27,6 +27,11 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.LinkedHashMap;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -93,6 +98,8 @@ public final class BerliozConfig {
    * The Servlet configuration.
    */
   private final ServletConfig servletConfig;
+
+  private final Map<String, Object> diagnosticDefaults;
 
   /**
    * The media type (without parameters) for responses from this Berlioz instance.
@@ -180,6 +187,10 @@ public final class BerliozConfig {
     this.compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
     this.env = new HttpEnvironment(contextPath, webinfPath, this.cacheControl);
     this.etagSeed = loadEtagSeed();
+    this.diagnosticDefaults = DiagnosticConfiguration.fields(
+        "name", servletConfig.getServletName(), "mappings", DiagnosticConfiguration.mappings(servletConfig),
+        "media-type", this.mediaType, "charset", this.charset.name(),
+        "cache-control", this.cacheControl, "compression", this.compression);
   }
 
   /**
@@ -312,9 +323,16 @@ public final class BerliozConfig {
    */
   public static synchronized BerliozConfig newConfig(ServletConfig servletConfig) {
     BerliozConfig config = new BerliozConfig(servletConfig);
-    String name = servletConfig.getServletName();
-    CONFIGS.put(name, config);
+    register(config);
     return config;
+  }
+
+  static BerliozConfig unregisteredConfig(ServletConfig servletConfig) {
+    return new BerliozConfig(servletConfig);
+  }
+
+  static void register(BerliozConfig config) {
+    CONFIGS.put(config.getName(), config);
   }
 
   /**
@@ -326,7 +344,7 @@ public final class BerliozConfig {
    */
   public static synchronized boolean unregister(BerliozConfig config) {
     String name = config.servletConfig.getServletName();
-    return CONFIGS.remove(name) != null;
+    return CONFIGS.remove(name, config);
   }
 
   /**
@@ -344,6 +362,25 @@ public final class BerliozConfig {
   @Beta
   public static synchronized @Nullable GeneratorListener getListener() {
     return XmlResponse.getListener();
+  }
+
+  /** @return a safe immutable view of initialized servlet defaults */
+  public static ConfigurationSnapshot diagnosticSnapshot() {
+    List<Map<String, Object>> entries = new ArrayList<>();
+    String mode = org.pageseeder.berlioz.xslt.XsltCacheMode.from(
+        GlobalSettings.get(BerliozOption.XSLT_CACHE)).toString();
+    CONFIGS.values().stream().sorted(Comparator.comparing(BerliozConfig::getName)).forEach(config -> {
+      Map<String, Object> entry = new LinkedHashMap<>(config.diagnosticDefaults);
+      entry.put("xslt-cache", mode);
+      Map<String, Object> style = DiagnosticConfiguration.fields("allocation",
+          config.allocation == TransformAllocation.NIL ? "identity"
+              : config.allocation.name().toLowerCase(Locale.ROOT));
+      if (config.allocation != TransformAllocation.NIL) style.putAll(DiagnosticConfiguration.stylesheet(config.stylePath));
+      entry.put("stylesheet", style);
+      if (!config.fallbackStyleSheet.isEmpty()) entry.put("fallback", DiagnosticConfiguration.stylesheet(config.fallbackStyleSheet));
+      entries.add(entry);
+    });
+    return new ConfigurationSnapshot("berlioz-config", entries);
   }
 
   // private helpers

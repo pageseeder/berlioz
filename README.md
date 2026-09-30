@@ -62,6 +62,66 @@ includes that status so a rejected reload becomes visible even though the regist
 Exception details and source paths are not included in this status field. Protect diagnostic
 mappings with application or container security.
 
+## Runtime configuration diagnostics
+
+`org.pageseeder.berlioz.generator.GetBerliozConfig` and
+`org.pageseeder.berlioz.generator.GetErrorHandlerConfig` report the configuration of
+initialized servlets. Add them explicitly to administrative services and protect those
+services through your application's filters or container security. The generators do not
+perform authorization themselves.
+
+Both implement `Generator` and `Cacheable` and work with XML and JSON output. XML roots are
+`berlioz-config` and `error-handler-config`, containing `servlet` elements; standalone JSON
+uses a top-level `servlets` array, without a named root wrapper. Scalar fields become XML
+attributes and JSON properties (hyphenated XML names become camelCase in JSON). Booleans
+remain JSON booleans. Mappings and extensions are sorted string arrays in JSON and
+space-separated XML attributes; optional fields are omitted. An empty registry produces
+`<berlioz-config/>` or `<error-handler-config/>` and `{"servlets":[]}`.
+
+`GetBerliozConfig` reports servlet defaults, which individual services or responses can
+override: `name`, `mappings`, `media-type`, `charset`, `cache-control`, `compression`, and
+`xslt-cache`. Compression means compression is permitted; `xslt-cache` describes the current
+runtime template cache mode, separately from HTTP caching. `stylesheet` contains
+`allocation` (`identity`, `global`, `group`, or `service`), with `source` (`filesystem` or
+`classpath`) and a safe logical `path` when applicable. Identity contains only `allocation`.
+An optional `fallback` contains its source and safe path. Group/service placeholders are
+reported as configured, without creating a transformer or resolving a specific service.
+
+For example:
+
+```xml
+<berlioz-config>
+  <servlet name="html" mappings="*.html" media-type="text/html" charset="UTF-8"
+           cache-control="no-cache" compression="true" xslt-cache="manual">
+    <stylesheet allocation="group" source="classpath" path="classpath:xslt/{GROUP}.xsl"/>
+  </servlet>
+</berlioz-config>
+```
+
+`GetErrorHandlerConfig` reports `name`, `mappings`, `problem-xml`, and `detail`, followed by:
+
+- `forward`: `source` (`explicit`, `discovered`, or `legacy-default`), `extensions`, and
+  `default-extension`. Diagnostic extension names omit the leading dot.
+- `ignore`: sorted `extensions`.
+- `stylesheet`: `configured` (`custom` or `built-in`), optional safe custom `path`, and
+  `selected` (`custom`, `built-in`, or `none`). An unavailable custom stylesheet includes
+  `fallback-reason="missing-or-unreadable"`. Selection reflects availability, not successful
+  XSLT compilation; `none` means raw XML fallback.
+
+Servlet mappings are deployed URL patterns, not the container's error-page registrations.
+Initialization settings are captured when each servlet starts and registrations are removed
+on destruction. Error rendering options and XSLT cache mode reflect current global settings.
+The snapshot uses only allowlisted fields; arbitrary parameters, secrets, absolute paths,
+raw JAR URLs, exception messages, and internal ETag seeds are never included. Unsafe paths
+are omitted while preserving source/selection information. Filesystem paths are relative to
+`WEB-INF`; `resource:` references are reported using canonical `classpath:` names.
+
+Each generator captures one immutable snapshot per request and reuses it for its response
+and unquoted SHA-256 ETag, whichever is requested first. Only emitted content affects the
+fingerprint; unrelated settings and secrets do not. Diagnostics perform no JAR enumeration,
+transformer creation, or stylesheet compilation. Error stylesheet selection performs only a
+small availability check. Deployment assumes Berlioz is in each application's `WEB-INF/lib`.
+
 ## Roadmap
 
 The current development roadmap is available in [ROADMAP.md](ROADMAP.md).

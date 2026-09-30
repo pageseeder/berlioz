@@ -1,16 +1,14 @@
 package org.pageseeder.berlioz.servlet.fixtures;
 
-import java.io.IOException;
-
 import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.ContentGenerator;
-import org.pageseeder.berlioz.content.ContentRequest;
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.error.HttpException;
-import org.pageseeder.xmlwriter.XMLWriter;
+import org.pageseeder.berlioz.output.OutputWriter;
 
-/** Throws an HTTP signal from the cache callback, outside generator invocation. */
-public final class FailingEtagXmlGenerator implements ContentGenerator, Cacheable {
+/** Throws from the cache callback but successfully generates XML or JSON content. */
+public final class FailingEtagXmlGenerator implements Generator, Cacheable {
 
   @Override
   public String getETag(Request req) {
@@ -18,7 +16,10 @@ public final class FailingEtagXmlGenerator implements ContentGenerator, Cacheabl
   }
 
   @Override
-  public void process(ContentRequest req, XMLWriter xml) throws IOException {
-    xml.element("unused", "unused");
+  public Response generate(Request req, OutputWriter out) {
+    out.startObject("result");
+    out.field("message", "generated");
+    out.endObject();
+    return Response.ok();
   }
 }

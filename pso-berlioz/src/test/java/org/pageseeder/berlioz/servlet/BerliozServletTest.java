@@ -410,20 +410,35 @@ class BerliozServletTest {
   }
 
   @Test
-  void doGet_etagCallbackThrowsHttpException_handlesSignalAtServletBoundary() throws Exception {
+  void doGet_etagCallbackThrowsHttpException_generatesUncachedJson() throws Exception {
+    assertEtagFailureGeneratesUncachedResponse("json", "application/json;charset=utf-8",
+        "\"message\":\"generated\"");
+  }
+
+  @Test
+  void doGet_etagCallbackThrowsHttpException_generatesUncachedXml() throws Exception {
+    assertEtagFailureGeneratesUncachedResponse("xml", "application/xml;charset=utf-8",
+        "<result message=\"generated\"/>");
+  }
+
+  private void assertEtagFailureGeneratesUncachedResponse(String extension, String contentType,
+                                                        String expectedContent) throws Exception {
     writeConfig(true);
     GlobalSettings.setup(this.webInf.toFile());
     writeServices(service("failing-etag", "get", "/failing-etag", "generator", FAILING_ETAG_XML));
-    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
-    HttpServletRequest request = request("GET", "/failing-etag.json");
+    initServlet(Map.of("content-type", contentType));
+    HttpServletRequest request = request("GET", "/failing-etag." + extension,
+        Map.of(HttpHeaders.IF_NONE_MATCH, "\"previous-etag\""));
     ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
 
     this.servlet.doGet(request, recorder.build());
 
-    assertEquals(503, recorder.status);
-    assertEquals("30", recorder.header("Retry-After"));
-    assertTrue(recorder.content().contains("\"detail\":\"HTTP 503\""), recorder.content());
-    assertNotNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+    assertEquals(200, recorder.status);
+    assertTrue(recorder.content().contains(expectedContent), recorder.content());
+    assertNull(recorder.header(HttpHeaders.ETAG));
+    assertEquals("no-cache", recorder.header(HttpHeaders.CACHE_CONTROL));
+    assertNull(recorder.header("Retry-After"));
+    assertNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
   }
 
   @Test
