@@ -180,7 +180,8 @@ class ConfigurationDiagnosticsTest {
     ServletConfig failingConfig = (ServletConfig) Proxy.newProxyInstance(getClass().getClassLoader(),
         new Class<?>[]{ServletConfig.class}, (proxy, method, args) ->
             method.getName().equals("getServletContext") ? failingContext : method.invoke(ordinary, args));
-    assertThrows(IllegalStateException.class, () -> new BerliozServlet().init(failingConfig));
+    BerliozServlet servlet = new BerliozServlet();
+    assertThrows(IllegalStateException.class, () -> servlet.init(failingConfig));
     assertEquals("{\"servlets\":[]}", json(new GetBerliozConfig(), request()));
   }
 
