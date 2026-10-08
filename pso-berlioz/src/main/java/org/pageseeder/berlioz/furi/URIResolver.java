@@ -15,12 +15,12 @@
  */
 package org.pageseeder.berlioz.furi;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.URIResolveResult.Status;
@@ -43,7 +43,7 @@ import org.pageseeder.berlioz.furi.URIResolveResult.Status;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.3
  * @since 0.9.32
  */
 public final class URIResolver {
@@ -131,15 +131,7 @@ public final class URIResolver {
    * @return The list of matching URI patterns in the order of the supplied patterns
    */
   public List<URIPattern> findAll(List<URIPattern> patterns) {
-    List<URIPattern> matches = new ArrayList<>();
-    if (patterns.isEmpty())
-      return matches;
-    for (URIPattern p : patterns) {
-      if (p.match(this.uri)) {
-        matches.add(p);
-      }
-    }
-    return matches;
+    return patterns.stream().filter(p -> p.match(this.uri)).collect(Collectors.toList());
   }
 
   /**
