@@ -190,11 +190,14 @@ final class GeneratorDispatch {
   /**
    * Returns the cached ETag for the given request, computing and caching it on first call.
    *
-   * <p>Returns an empty string when the generator is not {@link Cacheable}, returns {@code null},
-   * or throws while computing its ETag — the response is simply treated as non-cacheable so the
-   * matching {@link org.pageseeder.berlioz.content.BerliozGenerator#generate} call, which is
-   * already wrapped in error handling, can surface the underlying failure through the normal
-   * error pipeline instead of it escaping here uncaught.
+   * <p>Returns an empty string when the generator is not {@link Cacheable}, returns {@code null}
+   * or an empty ETag, or throws a {@link RuntimeException} while computing its ETag. Exceptions
+   * are logged and the empty result is cached for this request, disabling response caching and
+   * allowing content generation to continue. This includes {@link HttpException}: its HTTP
+   * status and headers are not applied here.
+   *
+   * <p>ETag computation is a best-effort caching hook, not an HTTP short-circuit mechanism.
+   * Content generation has its own error handling and need not reproduce an ETag failure.
    */
   static String retrieveETag(HttpContentRequest request, Map<Integer, String> etags) {
     Integer key = request.order();

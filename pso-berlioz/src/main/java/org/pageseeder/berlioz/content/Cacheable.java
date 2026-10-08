@@ -37,6 +37,17 @@ public interface Cacheable {
   /**
    * Returns the ETag for the specified request context.
    *
+   * <p>This method is a best-effort caching hook. Implementations should be efficient, avoid
+   * side effects, and return {@code null} when a reliable ETag cannot be computed. A matching
+   * ETag can allow the framework to respond without invoking content generation.
+   *
+   * <p>If this method throws a {@link RuntimeException}, the servlet layer logs the failure,
+   * treats the response as non-cacheable, and continues with content generation. This includes
+   * {@link org.pageseeder.berlioz.error.HttpException}: its HTTP status and headers are not
+   * applied. Deliberate HTTP signals belong in the content generation method, where normal
+   * generator error handling applies. Checks that must run on every request, such as
+   * authorization, must occur before conditional cache handling can skip generation.
+   *
    * <p>All generator types may override this method. The default dispatches to
    * {@link #getETag(ContentRequest)} only when this cacheable object is a legacy
    * {@link ContentGenerator} and the request is a {@link ContentRequest}, allowing old
@@ -57,6 +68,9 @@ public interface Cacheable {
 
   /**
    * Returns the ETag for the specified content request.
+   *
+   * <p>The best-effort caching contract and runtime exception handling documented in
+   * {@link #getETag(Request)} also apply to this overload.
    *
    * <p>Legacy {@link ContentGenerator} implementations may override this method.
    * Other generator types must override {@link #getETag(Request)} instead.
