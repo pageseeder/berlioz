@@ -243,7 +243,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       Map<String, Object> init = registration.getValue();
       Map<String, Object> entry = DiagnosticConfiguration.fields(
           "name", registration.getKey(), "mappings", init.get("mappings"), "problem-xml", problem, "detail", detail,
-          "forward", init.get("forward"), "ignore", init.get("ignore"), "stylesheet", selection.fields);
+          "forward", init.get("forward"), "ignore", init.get("ignore"), "stylesheet", selection.toDiagnosticFields());
       entries.add(entry);
     });
     return new ConfigurationSnapshot("error-handler-config", entries);
@@ -611,18 +611,48 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   static @Nullable URL resolveErrorStylesheet() {
     ErrorStylesheet selection = selectErrorStylesheet();
-    if (selection.fields.containsKey("fallback-reason")) {
-      LOGGER.warn("Custom error stylesheet unavailable; using {}", selection.fields.get("selected"));
+    if (selection.isFallback()) {
+      LOGGER.warn("Custom error stylesheet unavailable; using {}", selection.selected.value);
     }
     return selection.url;
   }
 
+  private enum StylesheetSource {
+    CUSTOM("custom"), BUILT_IN("built-in"), NONE("none");
+
+    final String value;
+
+    StylesheetSource(String value) {
+      this.value = value;
+    }
+  }
+
+  /** Stylesheet selection state, independent of its diagnostic representation. */
   static final class ErrorStylesheet {
     final @Nullable URL url;
-    final Map<String, Object> fields;
-    ErrorStylesheet(@Nullable URL url, Map<String, Object> fields) {
+    private final String configured;
+    private final StylesheetSource selected;
+
+    private ErrorStylesheet(@Nullable URL url, String configured, StylesheetSource selected) {
       this.url = url;
-      this.fields = fields;
+      this.configured = configured;
+      this.selected = selected;
+    }
+
+    boolean isFallback() {
+      return !this.configured.isEmpty() && this.selected != StylesheetSource.CUSTOM;
+    }
+
+    Map<String, Object> toDiagnosticFields() {
+      StylesheetSource source = this.configured.isEmpty() ? StylesheetSource.BUILT_IN : StylesheetSource.CUSTOM;
+      Map<String, Object> fields = DiagnosticConfiguration.fields("configured", source.value);
+      if (!this.configured.isEmpty()) {
+        String safe = this.configured.contains(":") ? null : DiagnosticConfiguration.safePath(this.configured);
+        if (safe != null) fields.put("path", safe);
+      }
+      fields.put("selected", this.selected.value);
+      if (isFallback()) fields.put("fallback-reason", "missing-or-unreadable");
+      return fields;
     }
   }
 
@@ -632,25 +662,20 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   static ErrorStylesheet selectErrorStylesheet(String configured, @Nullable File webInf, @Nullable URL builtin) {
-    Map<String, Object> fields = DiagnosticConfiguration.fields("configured", configured.isEmpty() ? "built-in" : "custom");
-    if (!configured.isEmpty()) {
-      String safe = configured.contains(":") ? null : DiagnosticConfiguration.safePath(configured);
-      if (safe != null) fields.put("path", safe);
-      if (webInf != null) {
-        File xsl = new File(webInf, configured);
-        if (xsl.isFile() && xsl.canRead()) {
-          try {
-            fields.put("selected", "custom");
-            return new ErrorStylesheet(xsl.toURI().toURL(), fields);
-          } catch (MalformedURLException ex) {
-            // Fall through to the built-in stylesheet.
-          }
-        }
-      }
+    URL custom = resolveCustomStylesheet(configured, webInf);
+    if (custom != null) return new ErrorStylesheet(custom, configured, StylesheetSource.CUSTOM);
+    return new ErrorStylesheet(builtin, configured, builtin == null ? StylesheetSource.NONE : StylesheetSource.BUILT_IN);
+  }
+
+  private static @Nullable URL resolveCustomStylesheet(String configured, @Nullable File webInf) {
+    if (configured.isEmpty() || webInf == null) return null;
+    File xsl = new File(webInf, configured);
+    if (!xsl.isFile() || !xsl.canRead()) return null;
+    try {
+      return xsl.toURI().toURL();
+    } catch (MalformedURLException ex) {
+      return null;
     }
-    fields.put("selected", builtin == null ? "none" : "built-in");
-    if (!configured.isEmpty()) fields.put("fallback-reason", "missing-or-unreadable");
-    return new ErrorStylesheet(builtin, fields);
   }
 
   /**

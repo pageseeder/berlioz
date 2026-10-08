@@ -64,10 +64,38 @@ class ConfigurationSnapshotTest {
   @Test void stylesheetSelectionSupportsRawXmlFallback(@TempDir Path root) {
     ErrorHandlerServlet.ErrorStylesheet missing = ErrorHandlerServlet.selectErrorStylesheet("missing.xsl", root.toFile(), null);
     assertNull(missing.url);
-    assertEquals("none", missing.fields.get("selected"));
-    assertEquals("missing-or-unreadable", missing.fields.get("fallback-reason"));
+    assertEquals("none", missing.toDiagnosticFields().get("selected"));
+    assertEquals("missing-or-unreadable", missing.toDiagnosticFields().get("fallback-reason"));
     ErrorHandlerServlet.ErrorStylesheet builtinMissing = ErrorHandlerServlet.selectErrorStylesheet("", null, null);
-    assertEquals(Map.of("configured", "built-in", "selected", "none"), builtinMissing.fields);
+    assertEquals(Map.of("configured", "built-in", "selected", "none"), builtinMissing.toDiagnosticFields());
+  }
+
+  @Test void stylesheetDiagnosticsPreserveSelectionAndFallback(@TempDir Path root) throws Exception {
+    java.net.URL builtin = root.resolve("builtin.xsl").toUri().toURL();
+    ErrorHandlerServlet.ErrorStylesheet defaults = ErrorHandlerServlet.selectErrorStylesheet("", root.toFile(), builtin);
+    assertEquals(builtin, defaults.url);
+    assertFalse(defaults.isFallback());
+    assertEquals(Map.of("configured", "built-in", "selected", "built-in"), defaults.toDiagnosticFields());
+
+    ErrorHandlerServlet.ErrorStylesheet missing = ErrorHandlerServlet.selectErrorStylesheet("missing.xsl", root.toFile(), builtin);
+    assertEquals(builtin, missing.url);
+    assertTrue(missing.isFallback());
+    assertEquals(Map.of("configured", "custom", "path", "missing.xsl", "selected", "built-in",
+        "fallback-reason", "missing-or-unreadable"), missing.toDiagnosticFields());
+
+    Path custom = java.nio.file.Files.createFile(root.resolve("custom.xsl"));
+    ErrorHandlerServlet.ErrorStylesheet selected = ErrorHandlerServlet.selectErrorStylesheet("custom.xsl", root.toFile(), builtin);
+    assertEquals(custom.toUri().toURL(), selected.url);
+    assertFalse(selected.isFallback());
+    assertEquals(Map.of("configured", "custom", "path", "custom.xsl", "selected", "custom"), selected.toDiagnosticFields());
+  }
+
+  @Test void stylesheetDiagnosticsOmitUnsafeConfiguredPaths() {
+    for (String path : List.of("../private.xsl", "https://example.test/style.xsl")) {
+      ErrorHandlerServlet.ErrorStylesheet selection = ErrorHandlerServlet.selectErrorStylesheet(path, null, null);
+      assertEquals(Map.of("configured", "custom", "selected", "none", "fallback-reason", "missing-or-unreadable"),
+          selection.toDiagnosticFields());
+    }
   }
 
   @Test void unsafePathsAreOmitted() {
