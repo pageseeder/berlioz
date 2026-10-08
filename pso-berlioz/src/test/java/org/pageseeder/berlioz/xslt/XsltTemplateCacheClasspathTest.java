@@ -63,7 +63,7 @@ final class XsltTemplateCacheClasspathTest {
   private URLClassLoader classLoader;
 
   @BeforeEach
-  void setUp() throws IOException, ReflectiveOperationException {
+  void setUp() throws IOException {
     XsltTemplateCache.clearAllCache();
     this.classLoader = new URLClassLoader(new URL[] { this.tempDir.toUri().toURL() },
         XsltTemplateCacheClasspathTest.class.getClassLoader());
