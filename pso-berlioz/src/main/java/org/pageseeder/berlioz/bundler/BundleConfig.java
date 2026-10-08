@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.3
  * @since 0.9.32
  */
 public final class BundleConfig implements Serializable {
@@ -305,11 +305,9 @@ public final class BundleConfig implements Serializable {
    * @return the corresponding list of instances.
    */
   private List<BundleInstance> instantiate(Service service) {
-    List<BundleInstance> bundles = new ArrayList<>(this.definitions.size());
-    for (BundleDefinition def : this.definitions) {
-      bundles.add(BundleInstance.instantiate(this, def, service));
-    }
-    return bundles;
+    return this.definitions.stream()
+        .map(def -> BundleInstance.instantiate(this, def, service))
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   /**
