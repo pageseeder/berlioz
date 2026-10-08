@@ -176,6 +176,24 @@ public class Json {
       return hasClass(className());
     }
 
+
+    /**
+     * Indicates whether a class is available in the classpath.
+     *
+     * @param className the name of the class to look for
+     *
+     * @return <code>true</code> if available; <code>false</code> otherwise.
+     */
+    private static boolean hasClass(String className) {
+      try  {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Class.forName(className, false, cl != null ? cl : Json.class.getClassLoader());
+        return true;
+      } catch (ClassNotFoundException | LinkageError ex) {
+        return false;
+      }
+    }
+
   }
 
   /** Indicates whether we have identified our json provider. */
@@ -296,23 +314,6 @@ public class Json {
         }
         return;
       }
-    }
-  }
-
-  /**
-   * Indicates whether a class is available in the classpath.
-   *
-   * @param className the name of the class to look for
-   *
-   * @return <code>true</code> if available; <code>false</code> otherwise.
-   */
-  private static boolean hasClass(String className) {
-    try  {
-      ClassLoader cl = Thread.currentThread().getContextClassLoader();
-      Class.forName(className, false, cl != null ? cl : Json.class.getClassLoader());
-      return true;
-    } catch (ClassNotFoundException | LinkageError ex) {
-      return false;
     }
   }
 
