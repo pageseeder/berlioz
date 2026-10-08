@@ -16,8 +16,10 @@
 package org.pageseeder.berlioz.furi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 
@@ -29,7 +31,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.3
  * @since 0.9.32
  */
 abstract class TokenBase implements Token {
@@ -120,11 +122,9 @@ abstract class TokenBase implements Token {
    */
   protected static List<Variable> toVariables(String exp) throws URITemplateSyntaxException {
     String[] exps = exp.split(",");
-    List<Variable> vars = new ArrayList<>(exps.length);
-    for (String e : exps) {
-      vars.add(Variable.parse(e));
-    }
-    return vars;
+    return Arrays.stream(exps)
+        .map(Variable::parse)
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
 }
