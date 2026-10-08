@@ -32,12 +32,12 @@ final class StylesheetLocationTest {
   Path tempDir;
 
   // ---------------------------------------------------------------------------
-  // identity()
+  // forIdentity()
   // ---------------------------------------------------------------------------
 
   @Test
-  void identity_isIdentityKind() {
-    StylesheetLocation location = StylesheetLocation.identity();
+  void forIdentity_isIdentityKind() {
+    StylesheetLocation location = StylesheetLocation.forIdentity();
     Assertions.assertEquals(StylesheetSourceKind.IDENTITY, location.kind());
     Assertions.assertTrue(location.isIdentity());
     Assertions.assertEquals("IDENTITY", location.logicalPath());

@@ -74,7 +74,7 @@ public final class StylesheetLocation {
   /**
    * @return the identity location: no stylesheet is applied.
    */
-  public static StylesheetLocation identity() {
+  public static StylesheetLocation forIdentity() {
     return new StylesheetLocation(StylesheetSourceKind.IDENTITY, null, null, IDENTITY, false, IDENTITY);
   }
 
