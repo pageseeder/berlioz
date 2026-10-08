@@ -50,7 +50,7 @@ final class DiagnosticConfiguration {
 
   static @Nullable String safePath(String value) {
     String path = value;
-    boolean classpath = path.startsWith("classpath:") || path.startsWith("resource:");
+    boolean classpath = isClasspath(path);
     if (classpath) path = path.substring(path.indexOf(':') + 1).replaceFirst("^/+", "");
     if (path.isEmpty() || path.startsWith("/") || path.contains("\\") || path.contains(":")
         || path.contains("%") || path.chars().anyMatch(Character::isISOControl)) return null;
@@ -59,10 +59,13 @@ final class DiagnosticConfiguration {
   }
 
   static Map<String, Object> stylesheet(String value) {
-    Map<String, Object> result = fields("source",
-        value.startsWith("classpath:") || value.startsWith("resource:") ? "classpath" : "filesystem");
+    Map<String, Object> result = fields("source", isClasspath(value) ? "classpath" : "filesystem");
     String safe = safePath(value);
     if (safe != null) result.put("path", safe);
     return result;
+  }
+
+  private static boolean isClasspath(String value) {
+    return value.startsWith("classpath:") || value.startsWith("resource:");
   }
 }
