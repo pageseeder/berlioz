@@ -26,9 +26,9 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * A structured, XSLT-specific extension member for an RFC 9457 problem details response.
@@ -44,7 +44,7 @@ import java.util.Objects;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.3
  * @since 0.14.0
  */
 @Beta
@@ -122,12 +122,9 @@ public final class XsltErrorDetail implements ProblemExtension {
     Objects.requireNonNull(ex, "ex");
     Objects.requireNonNull(collected, "collected");
     Kind kind = ex instanceof TransformerConfigurationException ? Kind.STATIC : Kind.DYNAMIC;
-    List<CollectedItem> items = new ArrayList<>(collected.size());
-    for (CollectedError<TransformerException> item : collected) {
-      items.add(CollectedItem.of(item));
-    }
+    List<CollectedItem> items = collected.stream().map(CollectedItem::of).collect(Collectors.toUnmodifiableList());
     return new XsltErrorDetail(ex.getClass().getName(), kind, errorCode(ex),
-        Errors.cleanMessage(ex), SourceLocation.of(ex.getLocator()), List.copyOf(items));
+        Errors.cleanMessage(ex), SourceLocation.of(ex.getLocator()), items);
   }
 
   /**
