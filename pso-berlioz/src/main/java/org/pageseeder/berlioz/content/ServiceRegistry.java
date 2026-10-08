@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.content;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.furi.URIPattern;
@@ -374,6 +375,7 @@ public final class ServiceRegistry {
     return mapping;
   }
 
+  @SuppressWarnings("java:S9391") // Populate an EnumMap directly; a stream collector would require redundant merge and supplier plumbing.
   private static Map<HttpMethod, ServiceMap> newMapping() {
     Map<HttpMethod, ServiceMap> mapping = new EnumMap<>(HttpMethod.class);
     for (HttpMethod method : HttpMethod.mappable()) {
@@ -498,13 +500,10 @@ public final class ServiceRegistry {
      * @return the list URI pattern is matches
      */
     public List<String> matches(Service service) {
-      List<String> urls = new ArrayList<>();
-      for (Entry<String, Service> e : this.mapping.entrySet()) {
-        if (e.getValue() == service) {
-          urls.add(e.getKey());
-        }
-      }
-      return urls;
+      return this.mapping.entrySet().stream()
+          .filter(e -> e.getValue() == service)
+          .map(Entry::getKey)
+          .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
