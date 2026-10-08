@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -222,9 +223,26 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   private String defaultExtension = DEFAULT_EXTENSION;
 
-  private static final Map<String, Map<String, Object>> CONFIGS =
-      new java.util.concurrent.ConcurrentHashMap<>();
-  private @Nullable Map<String, Object> diagnosticConfig;
+  private static final Map<String, InitializedConfiguration> CONFIGS = new ConcurrentHashMap<>();
+  private @Nullable InitializedConfiguration diagnosticConfig;
+
+  /** Immutable initialized values; diagnostic field names belong to snapshot serialization. */
+  private static final class InitializedConfiguration {
+    final List<String> mappings;
+    final String source;
+    final List<String> forwardExtensions;
+    final String defaultExtension;
+    final List<String> ignoreExtensions;
+
+    InitializedConfiguration(List<String> mappings, String source, List<String> forwardExtensions,
+        String defaultExtension, List<String> ignoreExtensions) {
+      this.mappings = List.copyOf(mappings);
+      this.source = source;
+      this.forwardExtensions = List.copyOf(forwardExtensions);
+      this.defaultExtension = defaultExtension;
+      this.ignoreExtensions = List.copyOf(ignoreExtensions);
+    }
+  }
 
   @Override
   public void destroy() {
@@ -240,10 +258,13 @@ public final class ErrorHandlerServlet extends HttpServlet {
     ErrorStylesheet selection = selectErrorStylesheet();
     List<Map<String, Object>> entries = new ArrayList<>();
     CONFIGS.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(registration -> {
-      Map<String, Object> init = registration.getValue();
+      InitializedConfiguration init = registration.getValue();
       Map<String, Object> entry = DiagnosticConfiguration.fields(
-          "name", registration.getKey(), "mappings", init.get("mappings"), "problem-xml", problem, "detail", detail,
-          "forward", init.get("forward"), "ignore", init.get("ignore"), "stylesheet", selection.toDiagnosticFields());
+          "name", registration.getKey(), "mappings", init.mappings, "problem-xml", problem, "detail", detail,
+          "forward", DiagnosticConfiguration.fields("source", init.source,
+              "extensions", init.forwardExtensions, "default-extension", init.defaultExtension),
+          "ignore", DiagnosticConfiguration.fields("extensions", init.ignoreExtensions),
+          "stylesheet", selection.toDiagnosticFields());
       entries.add(entry);
     });
     return new ConfigurationSnapshot("error-handler-config", entries);
@@ -270,10 +291,8 @@ public final class ErrorHandlerServlet extends HttpServlet {
     addExtensions(ignoreExtensions, ignore);
     String defExt = config.getInitParameter("forward-default");
     defaultExtension = normalizeExtension(defExt != null ? defExt : DEFAULT_EXTENSION);
-    this.diagnosticConfig = DiagnosticConfiguration.fields("mappings", DiagnosticConfiguration.mappings(config),
-        "forward", DiagnosticConfiguration.fields("source", source,
-            "extensions", diagnosticExtensions(forwardExtensions), "default-extension", diagnosticExtension(defaultExtension)),
-        "ignore", DiagnosticConfiguration.fields("extensions", diagnosticExtensions(ignoreExtensions)));
+    this.diagnosticConfig = new InitializedConfiguration(DiagnosticConfiguration.mappings(config), source,
+        diagnosticExtensions(forwardExtensions), diagnosticExtension(defaultExtension), diagnosticExtensions(ignoreExtensions));
     CONFIGS.put(config.getServletName(), this.diagnosticConfig);
   }
 
