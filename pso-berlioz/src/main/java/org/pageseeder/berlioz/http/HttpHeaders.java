@@ -164,7 +164,7 @@ public final class HttpHeaders { // NO_UCD
    * }</pre>
    * <p>Example:</p>
    * <pre>{@code
-   *   Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+   *   Authorization: Basic <base64-encoded-credentials>
    * }</pre>
    * @see <a href="http://tools.ietf.org/html/rfc2616#section-14.8">HTTP/1.1 - 14.8 Authorization</a>
    */
