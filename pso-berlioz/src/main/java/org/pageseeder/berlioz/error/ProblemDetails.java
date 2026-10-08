@@ -252,6 +252,7 @@ public final class ProblemDetails implements OutputWritable, XmlWritable, JsonWr
     return new ProblemDetails(this.status, this.type, this.title, this.detail, this.instance, copy, this.diagnostics, this.diagnosticCause);
   }
 
+  @SuppressWarnings("java:S9391") // Validate and copy a general Iterable directly, without StreamSupport/spliterator boilerplate.
   private static List<String> copyValues(Iterable<String> values) {
     Objects.requireNonNull(values, "values");
     List<String> copy = new ArrayList<>();

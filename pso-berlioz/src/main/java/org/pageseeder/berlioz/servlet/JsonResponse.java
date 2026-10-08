@@ -207,6 +207,7 @@ public final class JsonResponse {
    *
    * @return the JSON body string
    */
+  @SuppressWarnings("java:S9391") // Invoke generators in order with shared response side effects and a one-based timing position.
   public String generate() {
     Service service = this.match.service();
     List<GeneratorResult> results = new ArrayList<>(this.requests.size());
