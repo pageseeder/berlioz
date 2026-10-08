@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.generator;
 
 import java.io.File;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 import org.pageseeder.berlioz.BerliozOption;
@@ -56,6 +57,9 @@ import org.xml.sax.SAXParseException;
  * <p>The {@code message} (and {@code line}/{@code column}) attributes are only included when the
  * {@code berlioz.errors.detail} option is set to {@code standard} or {@code full}; a malformed
  * services file never fails this generator, it only replaces that file's content with this element.
+ * <p>If the configuration directory cannot be enumerated, generation returns
+ * {@code <copy-error reason="discovery"/>} followed by any registration warnings from the last
+ * load. The {@code message} attribute is included only at {@code standard} or {@code full} detail.
  *
  * <h3>Registration warnings</h3>
  * <p>Configuration issues that did not prevent Berlioz from starting, but caused one or more
@@ -75,6 +79,8 @@ import org.xml.sax.SAXParseException;
  *
  * <h3>Etag</h3>
  * <p>This generator uses an etag based on the name, length, and last modified date of the file.
+ * Discovery failures in this caching hook are handled by the servlet layer, which disables caching
+ * and continues with content generation.
  *
  * @author Christophe Lauret
  *
@@ -94,8 +100,19 @@ public final class GetServices implements XmlGenerator, Cacheable {
 
   @Override
   public Response generate(Request req, XmlWriter xml) {
-    List<File> files = ServiceLoader.getInstance().listServiceFiles();
     boolean includeDetails = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
+    List<File> files;
+    try {
+      files = ServiceLoader.getInstance().listServiceFiles();
+    } catch (UncheckedIOException | SecurityException ex) {
+      xml.openElement("copy-error", false);
+      xml.attribute("reason", "discovery");
+      if (includeDetails && ex.getMessage() != null) {
+        xml.attribute("message", ex.getMessage());
+      }
+      xml.closeElement();
+      files = List.of();
+    }
 
     writeMainAndModules(files, xml, includeDetails);
     writeWarnings(ServiceLoader.getInstance().getLastLoadWarnings(), xml, includeDetails);
