@@ -98,7 +98,7 @@ class AppInitializerTest {
   }
 
   private static String invokeCheckServices(InitEnvironment env)
-      throws NoSuchMethodException, IllegalAccessException, IOException {
+      throws NoSuchMethodException, IllegalAccessException {
     Method method = AppInitializer.class.getDeclaredMethod("checkServices", InitEnvironment.class);
     method.setAccessible(true);
     PrintStream original = System.out;
