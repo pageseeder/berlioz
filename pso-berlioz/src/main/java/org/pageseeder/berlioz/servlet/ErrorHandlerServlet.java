@@ -831,21 +831,20 @@ public final class ErrorHandlerServlet extends HttpServlet {
   private static String fallbackProblemXml(int code) {
     XmlStringBuilder xml = new XmlStringBuilder();
     xml.declaration();
-    ProblemDetails.of(code)
-        .type("urn:berlioz:problem:error")
-        .title("HTTP " + code)
-        .detail("Unable to serialize problem details.")
-        .toXml(xml);
+    fallbackProblem(code).toXml(xml);
     xml.flush();
     return xml.toString();
   }
 
   private static String fallbackProblemJson(int code) {
+    return fallbackProblem(code).toJson();
+  }
+
+  private static ProblemDetails fallbackProblem(int code) {
     return ProblemDetails.of(code)
         .type("urn:berlioz:problem:error")
         .title("HTTP " + code)
-        .detail("Unable to serialize problem details.")
-        .toJson();
+        .detail("Unable to serialize problem details.");
   }
 
 }
