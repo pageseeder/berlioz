@@ -19,7 +19,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.Service;
@@ -33,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.3
  * @since 0.9.32
  */
 final class BundleInstance implements Serializable {
@@ -190,13 +192,7 @@ final class BundleInstance implements Serializable {
   private static List<File> computeFiles(File[] files) {
     if (files.length > 1) {
       // multiple paths specified
-      List<File> existing = new ArrayList<>(files.length);
-      for (File f : files) {
-        if (f.exists()) {
-          existing.add(f);
-        }
-      }
-      return existing;
+      return Arrays.stream(files).filter(File::exists).collect(Collectors.toList());
     }
     // only one path
     if (files.length == 1 && files[0].exists()) return List.of(files[0]);
