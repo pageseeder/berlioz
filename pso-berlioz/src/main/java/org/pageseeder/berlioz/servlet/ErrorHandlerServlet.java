@@ -336,37 +336,14 @@ public final class ErrorHandlerServlet extends HttpServlet {
 
     // Check if we should just ignore it
     if (ignoreExtensions.contains(ext)) {
-      res.reset();
-      res.setStatus(code);
-      res.setContentType("text/plain;charset=UTF-8");
-      ServletOutputStream o = res.getOutputStream();
-      o.close();
-      res.setIntHeader("Content-Length", 0);
-      res.flushBuffer();
+      writeIgnoredResponse(res, code);
       return;
     }
 
     // When processing an .auto URI
     if (uri.endsWith(AUTO_EXTENSION)) {
-
-      // Check if we need to preserve the extension
-      if (!forwardExtensions.contains(ext)) {
-        ext = defaultExtension;
-      }
-
-      // Replace the '.auto' by the original extension (.html, .xml, .json, etc...)
-      String to = replaceAutoURI(uri, ext, req.getContextPath());
-      to = Paths.get(to).normalize().toString();
-
-      // If we do not detect a loop, we forward the request
-      if (!uri.equals(to)) {
-
-        // Let's forward the request
-        RequestDispatcher dispatcher = req.getRequestDispatcher(to);
-        dispatcher.forward(req, res);
-        return;
-
-      }
+      ext = forwardExtensions.contains(ext) ? ext : defaultExtension;
+      if (forwardAutoRequest(req, res, ext)) return;
     }
 
     // Resolve the expected response format: prefer the value BerliozServlet resolved from the
@@ -386,35 +363,51 @@ public final class ErrorHandlerServlet extends HttpServlet {
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     res.setStatus(code);
 
-    // JSON is only ever available in the RFC 9457 Problem Details format; there was never a
-    // legacy JSON representation, so ERROR_PROBLEM_FORMAT=false (the deprecated escape hatch back
-    // to the legacy XML/HTML output) does not apply here — a JSON-expecting request always gets
-    // problem+json, regardless of the flag.
+    renderError(req, res, format, headers, RenderingPolicy.CONFIGURED_STYLESHEET);
+  }
+
+  private static void writeIgnoredResponse(HttpServletResponse res, int code) throws IOException {
+    res.reset();
+    res.setStatus(code);
+    res.setContentType("text/plain;charset=UTF-8");
+    ServletOutputStream out = res.getOutputStream();
+    out.close();
+    res.setIntHeader("Content-Length", 0);
+    res.flushBuffer();
+  }
+
+  /** Forwards an .auto request unless the normalized target is the current URI. */
+  private static boolean forwardAutoRequest(HttpServletRequest req, HttpServletResponse res, String ext)
+      throws ServletException, IOException {
+    String uri = req.getRequestURI();
+    String target = Paths.get(replaceAutoURI(uri, ext, req.getContextPath())).normalize().toString();
+    if (uri.equals(target)) return false;
+    req.getRequestDispatcher(target).forward(req, res);
+    return true;
+  }
+
+  private enum RenderingPolicy { CONFIGURED_STYLESHEET, BUILT_IN_ONLY }
+
+  /** Renders the body without dispatching or resetting the response. */
+  private static void renderError(HttpServletRequest req, HttpServletResponse res, ResponseFormat format,
+      Map<String, String> headers, RenderingPolicy policy) throws IOException {
+    // JSON always uses Problem Details, regardless of the legacy XML format setting.
     if (format == ResponseFormat.JSON) {
       writeResponse(res, toProblemJson(req), "application/problem+json", headers);
       return;
     }
-
-    // Generate error details as XML
     String xml = toXml(req);
+    String content = format == ResponseFormat.HTML ? renderHtml(xml, policy) : xml;
+    writeResponse(res, content, Objects.equals(content, xml) ? APPLICATION_XML : "text/html", headers);
+  }
 
-    // For XML formats return the error document directly, without the HTML failsafe stylesheet.
-    // This respects the configured media type whether dispatched via the .auto error-page
-    // mechanism or forwarded directly from BerliozServlet (ERROR_HANDLER=true).
-    if (format == ResponseFormat.XML) {
-      writeResponse(res, xml, APPLICATION_XML, headers);
-      return;
-    }
-
-    // Resolve stylesheet: custom → built-in failsafe → raw XML
+  /** Applies the permitted stylesheet fallback chain, returning XML if transformation fails. */
+  private static String renderHtml(String xml, RenderingPolicy policy) {
+    if (policy == RenderingPolicy.BUILT_IN_ONLY) return XsltTransformer.transformBuiltInFailSafe(xml);
     URL url = resolveErrorStylesheet();
-    if (url != null) {
-      String html = XsltTransformer.transformFailSafe(xml, url);
-      if (Objects.equals(html, xml)) html = XsltTransformer.transformBuiltInFailSafe(xml);
-      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : APPLICATION_XML, headers);
-    } else {
-      writeResponse(res, xml, APPLICATION_XML, headers);
-    }
+    if (url == null) return xml;
+    String html = XsltTransformer.transformFailSafe(xml, url);
+    return Objects.equals(html, xml) ? XsltTransformer.transformBuiltInFailSafe(xml) : html;
   }
 
   /** The resolved response format for an error, in order of precedence checked. */
@@ -537,17 +530,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     res.reset();
     res.setStatus(code);
     ResponseFormat format = resolveFormat(req, getExtension(getOriginalURI(req)));
-    if (format == ResponseFormat.JSON) {
-      writeResponse(res, toProblemJson(req), "application/problem+json", headers);
-      return;
-    }
-    String xml = toXml(req);
-    if (format == ResponseFormat.HTML) {
-      String html = XsltTransformer.transformBuiltInFailSafe(xml);
-      writeResponse(res, html, !Objects.equals(html, xml) ? "text/html" : APPLICATION_XML, headers);
-    } else {
-      writeResponse(res, xml, APPLICATION_XML, headers);
-    }
+    renderError(req, res, format, headers, RenderingPolicy.BUILT_IN_ONLY);
   }
 
   /**

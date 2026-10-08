@@ -872,6 +872,29 @@ class ErrorHandlerServletTest {
     }
 
     @Test
+    void handleTerminal_ignoresCustomStylesheet(@TempDir File tempDir) throws Exception {
+      File xsl = new File(tempDir, "error.xsl");
+      Files.writeString(xsl.toPath(),
+          "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">"
+          + "<xsl:template match=\"/\"><html>CUSTOM_ONLY</html></xsl:template></xsl:stylesheet>");
+      setWebInf(tempDir);
+      setOption(BerliozOption.ERROR_STYLESHEET, "error.xsl");
+      try {
+        HttpServletRequest req = ServletTestSupport.request().uri("/failure.auto")
+            .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+            .attribute(RequestDispatcher.ERROR_MESSAGE, "Original terminal failure")
+            .build();
+        ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+        ErrorHandlerServlet.handleTerminal(req, res.build());
+        assertEquals("text/html;charset=UTF-8", res.contentType);
+        assertTrue(res.content().contains("Original terminal failure"));
+        assertFalse(res.content().contains("CUSTOM_ONLY"));
+      } finally {
+        setWebInf(null);
+      }
+    }
+
+    @Test
     void handle_withBrokenCustomStylesheet_retriesBuiltInStylesheet(@TempDir File tempDir) throws Exception {
       File xsl = new File(tempDir, "error.xsl");
       Files.writeString(xsl.toPath(),
@@ -898,6 +921,24 @@ class ErrorHandlerServletTest {
       } finally {
         setWebInf(null);
       }
+    }
+  }
+
+  @Test
+  void handle_autoLoop_usesEffectiveDefaultExtension() throws Exception {
+    ErrorHandlerServlet servlet = new ErrorHandlerServlet();
+    servlet.init(servletConfig(servletContext(Map.of()), Map.of("forward-default", ".auto")));
+    try {
+      HttpServletRequest req = ServletTestSupport.request().uri("/failure.auto")
+          .attribute(RequestDispatcher.ERROR_REQUEST_URI, "/original.json")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 500)
+          .build();
+      ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+      servlet.handle(req, res.build());
+      assertEquals(500, res.status);
+      assertEquals("text/html;charset=UTF-8", res.contentType);
+    } finally {
+      servlet.destroy();
     }
   }
 
