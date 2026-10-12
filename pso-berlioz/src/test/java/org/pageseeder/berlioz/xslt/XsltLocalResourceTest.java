@@ -29,6 +29,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerConfigurationException;
 
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -82,10 +83,17 @@ final class XsltLocalResourceTest {
     assertThrows(TransformerException.class, primary::getTemplates);
     assertTrue(XsltTemplateCache.isIdentity(XsltTemplateCache.compile(url)));
     XsltTemplateCache fileFallback = new XsltTemplateCache(directory.resolve("missing.xsl"), url);
-    assertThrows(TransformerException.class, fileFallback::getTemplates);
+    TransformerConfigurationException fileFailure =
+        assertThrows(TransformerConfigurationException.class, fileFallback::getTemplates);
     XsltTemplateCache classpathFallback = new XsltTemplateCache(
         StylesheetLocation.forClasspath(null, "classpath:missing.xsl"), url);
-    assertThrows(TransformerException.class, classpathFallback::getTemplates);
+    TransformerConfigurationException classpathFailure =
+        assertThrows(TransformerConfigurationException.class, classpathFallback::getTemplates);
+    for (TransformerConfigurationException failure : new TransformerConfigurationException[] {fileFailure, classpathFailure}) {
+      assertEquals("Unable to compile fallback stylesheet: " + url, failure.getMessage());
+      assertInstanceOf(TransformerException.class, failure.getCause());
+      assertTrue(failure.getCause().getMessage().contains("Denied non-local XSLT resource protocol"));
+    }
     assertEquals(0, connections.get());
   }
 
@@ -96,6 +104,32 @@ final class XsltLocalResourceTest {
     SecureXsltUriResolver resolver = new SecureXsltUriResolver(getClass().getClassLoader());
     assertDoesNotThrow(() -> resolver.resolve(file.toString(), null));
     assertDoesNotThrow(() -> resolver.resolve(jar.toString(), null));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void fallbackFailuresRetainContextAndCompilerDiagnostics(boolean classpath) throws Exception {
+    StylesheetLocation primary = classpath
+        ? StylesheetLocation.forClasspath(null, "classpath:missing.xsl")
+        : StylesheetLocation.forFile(directory.resolve("missing.xsl"));
+    URL unreadable = directory.resolve("missing-fallback.xsl").toUri().toURL();
+    TransformerConfigurationException readFailure = assertThrows(TransformerConfigurationException.class,
+        () -> new XsltTemplateCache(primary, unreadable).getTemplates());
+    assertEquals("Unable to compile fallback stylesheet: " + unreadable, readFailure.getMessage());
+    assertInstanceOf(IOException.class, readFailure.getCause());
+
+    URL malformed = Files.writeString(directory.resolve("malformed.xsl"),
+        "<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>").toUri().toURL();
+    XsltExceptionWrapper failure = assertThrows(XsltExceptionWrapper.class,
+        () -> new XsltTemplateCache(primary, malformed).getTemplates());
+    TransformerConfigurationException contextual =
+        assertInstanceOf(TransformerConfigurationException.class, failure.getException());
+    assertEquals("Unable to compile fallback stylesheet: " + malformed, contextual.getMessage());
+    XsltExceptionWrapper original = assertInstanceOf(XsltExceptionWrapper.class, contextual.getCause());
+    assertSame(original.collector(), failure.collector());
+    assertFalse(failure.collector().getErrors().isEmpty());
+    TransformerException compilerFailure = assertInstanceOf(TransformerException.class, original.getException());
+    assertSame(compilerFailure.getLocator(), contextual.getLocator());
   }
 
   @Test

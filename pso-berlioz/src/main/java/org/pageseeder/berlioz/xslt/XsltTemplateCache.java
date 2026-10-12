@@ -389,13 +389,7 @@ public final class XsltTemplateCache {
     } catch (NoSuchFileException ex) {
       if (fallback != null) {
         LOGGER.warn("Unable to find template file: {} — using fallback {}", stylepath, fallback);
-        XsltErrorSensitivity sensitivity = XsltErrorSensitivity.from(
-            GlobalSettings.get(BerliozOption.XSLT_SENSITIVITY));
-        try {
-          return compile(fallback, sensitivity);
-        } catch (IOException ex2) {
-          throw new TransformerConfigurationException("Unable to read fallback stylesheet: " + fallback, ex2);
-        }
+        return compileFallback(fallback);
       }
       LOGGER.warn("Unable to find template file: {}", stylepath);
       throw new TransformerConfigurationException(
@@ -428,17 +422,35 @@ public final class XsltTemplateCache {
     }
     if (fallback != null) {
       LOGGER.warn("Unable to find classpath template: {} — using fallback {}", location.logicalPath(), fallback);
-      XsltErrorSensitivity sensitivity = XsltErrorSensitivity.from(
-          GlobalSettings.get(BerliozOption.XSLT_SENSITIVITY));
-      try {
-        return compile(fallback, sensitivity);
-      } catch (IOException ex2) {
-        throw new TransformerConfigurationException("Unable to read fallback stylesheet: " + fallback, ex2);
-      }
+      return compileFallback(fallback);
     }
     LOGGER.warn("Unable to find classpath template: {}", location.logicalPath());
     throw new TransformerConfigurationException("Unable to find stylesheet: " + location.logicalPath(),
         new FileNotFoundException(location.logicalPath()));
+  }
+
+  /**
+   * Adds fallback context to loading, URL validation, and compilation failures.
+   */
+  private static Templates compileFallback(URL fallback) throws TransformerException {
+    XsltErrorSensitivity sensitivity = XsltErrorSensitivity.from(
+        GlobalSettings.get(BerliozOption.XSLT_SENSITIVITY));
+    try {
+      return compile(fallback, sensitivity);
+    } catch (IOException | TransformerException ex) {
+      TransformerConfigurationException failure = new TransformerConfigurationException(
+          "Unable to compile fallback stylesheet: " + fallback, ex);
+      if (ex instanceof XsltExceptionWrapper) {
+        XsltExceptionWrapper wrapper = (XsltExceptionWrapper) ex;
+        Throwable original = wrapper.getException();
+        if (original instanceof TransformerException) {
+          failure.setLocator(((TransformerException) original).getLocator());
+        }
+        // Reporters inspect the outer wrapper to retrieve collected compiler diagnostics.
+        throw new XsltExceptionWrapper(failure, wrapper.collector());
+      }
+      throw failure;
+    }
   }
 
   private static Templates newTemplates(TransformerFactory factory, Source source, XsltErrorCollector listener)
