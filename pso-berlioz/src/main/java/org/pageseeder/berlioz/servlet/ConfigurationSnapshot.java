@@ -102,8 +102,15 @@ public final class ConfigurationSnapshot {
   @SuppressWarnings("unchecked")
   private static Map<String, Object> freeze(Map<String, Object> values) {
     Map<String, Object> copy = new LinkedHashMap<>();
-    values.forEach((key, value) -> copy.put(key, value instanceof Map
-        ? freeze((Map<String, Object>) value) : value instanceof List ? List.copyOf((List<?>) value) : value));
+    values.forEach((key, value) -> {
+      Object frozen = value;
+      if (value instanceof Map) {
+        frozen = freeze((Map<String, Object>) value);
+      } else if (value instanceof List) {
+        frozen = List.copyOf((List<?>) value);
+      }
+      copy.put(key, frozen);
+    });
     return Collections.unmodifiableMap(copy);
   }
 
