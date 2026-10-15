@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.content;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
@@ -34,7 +35,7 @@ import org.xml.sax.SAXParseException;
  *
  * <p>Reads always observe a single, internally consistent snapshot of the registry: the mapping
  * of services, registry {@link #version()}, load warnings, and origin-bearing registrations are
- * held together in one {@link RegistryState} publication behind a single volatile reference.
+ * held together in one {@link RegistryState} publication behind a single atomic reference.
  * Incremental mutation via {@link #register(Service, URIPattern, HttpMethod)} remains a low-level
  * operation retained for direct/legacy use, whereas {@link #replaceWith(ServiceRegistry, List,
  * List)} swaps the entire publication state in a single assignment, which is what
@@ -52,15 +53,13 @@ public final class ServiceRegistry {
 
   /**
    * The current registry publication, including mappings, version, warnings, and origins.
+   *
+   * <p>An {@link AtomicReference} is used (rather than a {@code volatile} field) so that the
+   * holder itself is a thread-safe type, and so that it is unconditionally initialized here
+   * rather than in a constructor.
    */
-  private volatile RegistryState state;
-
-  /**
-   * Creates a new registry.
-   */
-  public ServiceRegistry() {
-    this.state = new RegistryState(newMapping(), System.currentTimeMillis(), List.of(), List.of());
-  }
+  private final AtomicReference<RegistryState> state =
+      new AtomicReference<>(new RegistryState(newMapping(), System.currentTimeMillis(), List.of(), List.of()));
 
   /**
    * Register the content generator.
@@ -106,7 +105,7 @@ public final class ServiceRegistry {
    * @return A content generator which URI pattern matches this URL or <code>null</code>.
    */
   public @Nullable MatchingService get(String url) {
-    for (Entry<HttpMethod, ServiceRegistry.ServiceMap> allMethods : this.state.mapping.entrySet()) {
+    for (Entry<HttpMethod, ServiceRegistry.ServiceMap> allMethods : this.state.get().mapping.entrySet()) {
       ServiceMap mapping = allMethods.getValue();
       MatchingService service = mapping.match(url);
       if (service != null) return service;
@@ -127,7 +126,7 @@ public final class ServiceRegistry {
    */
   public List<String> allows(String url) {
     List<String> methods = new ArrayList<>();
-    for (Entry<HttpMethod, ServiceMap> e : this.state.mapping.entrySet()) {
+    for (Entry<HttpMethod, ServiceMap> e : this.state.get().mapping.entrySet()) {
       HttpMethod m = e.getKey();
       ServiceMap mapping = e.getValue();
       MatchingService service = mapping.match(url);
@@ -150,7 +149,7 @@ public final class ServiceRegistry {
    */
   public @Nullable HttpMethod getMethod(@Nullable Service service) {
     if (service == null) return null;
-    for (Entry<HttpMethod, ServiceMap> e : this.state.mapping.entrySet()) {
+    for (Entry<HttpMethod, ServiceMap> e : this.state.get().mapping.entrySet()) {
       ServiceMap mapping = e.getValue();
       if (mapping.isMapped(service)) return e.getKey();
     }
@@ -166,7 +165,7 @@ public final class ServiceRegistry {
    */
   public List<String> matches(@Nullable Service service) {
     if (service == null) return List.of();
-    for (ServiceMap mapping : this.state.mapping.values()) {
+    for (ServiceMap mapping : this.state.get().mapping.values()) {
       boolean mapped = mapping.isMapped(service);
       if (mapped) return mapping.matches(service);
     }
@@ -228,7 +227,7 @@ public final class ServiceRegistry {
    */
   public List<Service> getServices() {
     List<Service> services = new ArrayList<>();
-    for (ServiceMap map : this.state.mapping.values()) {
+    for (ServiceMap map : this.state.get().mapping.values()) {
      services.addAll(map.mapping.values());
     }
     return services;
@@ -253,24 +252,24 @@ public final class ServiceRegistry {
    * {@link ServiceLoader} reload, which must leave the previously published registry untouched.
    */
   public void clear() {
-    RegistryState current = this.state;
-    this.state = new RegistryState(newMapping(), current.version, List.of(), List.of());
+    RegistryState current = this.state.get();
+    this.state.set(new RegistryState(newMapping(), current.version, List.of(), List.of()));
   }
 
   /**
    * @return The version of this registry.
    */
   public long version() {
-    return this.state.version;
+    return this.state.get().version;
   }
 
   /**
    * Changed the version of this registry.
    */
   void touch() {
-    RegistryState current = this.state;
-    this.state = new RegistryState(current.mapping, System.currentTimeMillis(), current.warnings,
-        current.registrations);
+    RegistryState current = this.state.get();
+    this.state.set(new RegistryState(current.mapping, System.currentTimeMillis(), current.warnings,
+        current.registrations));
   }
 
   /**
@@ -286,7 +285,7 @@ public final class ServiceRegistry {
    */
   List<ServiceRegistration> toRegistrations(ServiceOrigin origin) {
     List<ServiceRegistration> registrations = new ArrayList<>();
-    for (Entry<HttpMethod, ServiceMap> e : this.state.mapping.entrySet()) {
+    for (Entry<HttpMethod, ServiceMap> e : this.state.get().mapping.entrySet()) {
       HttpMethod method = e.getKey();
       ServiceMap map = e.getValue();
       // Preserve the routing order used to break ties between equally specific patterns.
@@ -303,7 +302,7 @@ public final class ServiceRegistry {
    * @return the current publication's warnings.
    */
   List<CollectedError<SAXParseException>> warnings() {
-    return this.state.warnings;
+    return this.state.get().warnings;
   }
 
   /**
@@ -312,7 +311,7 @@ public final class ServiceRegistry {
    * @return the current publication's merged registrations.
    */
   List<ServiceRegistration> registrations() {
-    return this.state.registrations;
+    return this.state.get().registrations;
   }
 
   /**
@@ -332,9 +331,9 @@ public final class ServiceRegistry {
    */
   void replaceWith(ServiceRegistry candidate) {
     Objects.requireNonNull(candidate, "candidate is required");
-    RegistryState candidateState = candidate.state;
-    this.state = new RegistryState(candidateState.mapping, System.currentTimeMillis(),
-        candidateState.warnings, candidateState.registrations);
+    RegistryState candidateState = candidate.state.get();
+    this.state.set(new RegistryState(candidateState.mapping, System.currentTimeMillis(),
+        candidateState.warnings, candidateState.registrations));
   }
 
   /**
@@ -350,9 +349,9 @@ public final class ServiceRegistry {
     Objects.requireNonNull(candidate, "candidate is required");
     Objects.requireNonNull(registrations, "registrations are required");
     Objects.requireNonNull(warnings, "warnings are required");
-    RegistryState candidateState = candidate.state;
-    this.state = new RegistryState(candidateState.mapping, System.currentTimeMillis(),
-        List.copyOf(warnings), List.copyOf(registrations));
+    RegistryState candidateState = candidate.state.get();
+    this.state.set(new RegistryState(candidateState.mapping, System.currentTimeMillis(),
+        List.copyOf(warnings), List.copyOf(registrations)));
   }
 
   /**
@@ -369,7 +368,7 @@ public final class ServiceRegistry {
   }
 
   private ServiceMap getMapping(HttpMethod method) {
-    ServiceMap mapping = this.state.mapping.get(method);
+    ServiceMap mapping = this.state.get().mapping.get(method);
     // this should never happen since we initialize method
     if (mapping == null) throw new IllegalStateException("Failure to initialize service registry");
     return mapping;

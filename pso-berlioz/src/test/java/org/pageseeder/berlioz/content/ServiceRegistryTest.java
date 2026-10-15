@@ -412,7 +412,8 @@ final class ServiceRegistryTest {
   private static List<?> patternsFor(ServiceRegistry target, HttpMethod method) throws Exception {
     Field stateField = ServiceRegistry.class.getDeclaredField("state");
     stateField.setAccessible(true);
-    Object state = stateField.get(target);
+    Object stateRef = stateField.get(target);
+    Object state = ((AtomicReference<?>) stateRef).get();
     Field mappingField = state.getClass().getDeclaredField("mapping");
     mappingField.setAccessible(true);
     Map<?, ?> mapping = (Map<?, ?>) mappingField.get(state);
