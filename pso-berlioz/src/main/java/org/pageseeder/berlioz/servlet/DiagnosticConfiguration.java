@@ -67,6 +67,6 @@ final class DiagnosticConfiguration {
   }
 
   private static boolean isClasspath(String value) {
-    return StylesheetLocation.extractClasspathReference(value) != null || value.startsWith("jar:");
+    return StylesheetLocation.extractClasspathReference(value) != null;
   }
 }
