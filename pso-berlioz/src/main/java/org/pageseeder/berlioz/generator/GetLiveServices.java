@@ -15,110 +15,24 @@
  */
 package org.pageseeder.berlioz.generator;
 
-import java.util.List;
-
 import org.pageseeder.berlioz.Beta;
-import org.pageseeder.berlioz.content.Cacheable;
-import org.pageseeder.berlioz.content.Generator;
-import org.pageseeder.berlioz.content.Request;
-import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.Service;
-import org.pageseeder.berlioz.content.ServiceLoader;
-import org.pageseeder.berlioz.content.ServiceRegistry;
-import org.pageseeder.berlioz.http.HttpMethod;
-import org.pageseeder.berlioz.output.OutputWriter;
-import org.pageseeder.berlioz.output.OutputWriter.ContextOption;
-import org.pageseeder.berlioz.servlet.HttpEnvironment;
 
 /**
- * Returns the live service registry as XML or JSON.
+ * Deprecated forwarding alias of {@link ListRuntimeServices}.
  *
- * <p>Unlike {@code GetServices}, which re-reads the services XML files from disk, this generator
- * exposes a safe {@code load-status} field (pending, ready, startup-failed, or reload-failed) and
- * reflects the current in-memory state of the service registry. It is intended for developers and
- * operations tooling to inspect which services are actually loaded and active.
- *
- * <h3>Configuration</h3>
- * <p>There is no configuration associated with this generator.</p>
- *
- * <h3>Parameters</h3>
- * <p>This generator does not use any parameter.</p>
- *
- * <h3>Returned XML</h3>
- * <pre>{@code
- * <live-services load-status="ready">
- *   <service id="[id]" group="[group]" method="[method]" cacheable="[true|false]" ...>
- *     <response-code use="[use]" rule="[rule]"/>
- *     <url pattern="[uri-pattern]"/>
- *     <generator class="[class]" name="[name]" type="[type]" cacheable="[true|false]" .../>
- *     ...
- *   </service>
- *   ...
- * </live-services>
- * }</pre>
- *
- * <h3>Returned JSON</h3>
- * <pre>{@code
- * {
- *   "loadStatus": "ready",
- *   "liveServices": [
- *     {
- *       "id": "[id]", "group": "[group]", "method": "[method]", "cacheable": [true|false], ...,
- *       "responseCode": {"use": "[use]", "rule": "[rule]"},
- *       "urls": [{"pattern": "[uri-pattern]"}, ...],
- *       "generators": [
- *         {"class": "[class]", "name": "[name]", "type": "[type]", "cacheable": [true|false], ...},
- *         ...
- *       ]
- *     },
- *     ...
- *   ]
- * }
- * }</pre>
- *
- * <h3>Usage</h3>
- * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
- * <pre>{@code <generator class="org.pageseeder.berlioz.generator.GetLiveServices"
- *                         name="[name]" target="[target]"/>}</pre>
- *
- * <h3>Etag</h3>
- * <p>The ETag is the registry version counter, which increments each time the services are
- * reloaded, together with the load status. This invalidates the response when the configuration
- * or load status changes.
+ * <p>Retained so that existing {@code services.xml} generator references naming
+ * {@code org.pageseeder.berlioz.generator.GetLiveServices} keep resolving without an
+ * application change. New configuration should reference {@link ListRuntimeServices} directly.
+ * This alias will be removed at 1.0.
  *
  * @author Christophe Lauret
  *
  * @version 0.14.3
  * @since 0.9.3
+ *
+ * @deprecated Use {@link ListRuntimeServices} instead; this alias is retained until 1.0.
  */
 @Beta
-public final class GetLiveServices implements Generator, Cacheable {
-
-  @Override
-  public String getETag(Request req) {
-    ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
-    return registry.version() + "-" + ServiceLoader.getInstance().getLoadStatus();
-  }
-
-  @Override
-  public Response generate(Request req, OutputWriter out) {
-    ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
-    HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
-
-    out.startObject("live-services");
-    out.field("load-status", ServiceLoader.getInstance().getLoadStatus());
-    out.startArray("live-services", ContextOption.JSON_ONLY);
-    for (HttpMethod method : HttpMethod.mappable()) {
-      List<Service> services = registry.getServices(method);
-      for (Service service : services) {
-        List<String> urls = registry.matches(service);
-        service.writeTo(out, method, urls, httpEnv.getCacheControl());
-      }
-    }
-    out.endArray();
-    out.endObject();
-
-    return Response.ok();
-  }
-
+@Deprecated
+public class GetLiveServices extends ListRuntimeServices {
 }

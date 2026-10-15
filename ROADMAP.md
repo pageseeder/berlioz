@@ -93,7 +93,7 @@ Planned scope:
 - Verify discovery, conflict handling, XSLT imports/includes, static resources, and `web-fragment.xml` using a real packaged overlay JAR.
 - Rename `GetLiveServices` to `ListRuntimeServices`, retaining `GetLiveServices` as a deprecated forwarding alias until 1.0.
 
-Implemented on `dev`: service-source discovery and origin tracking, transactional registry publication and reload retention, and classpath-backed XSLT resolution/caching. Remaining release work: failure-path and security review, servlet configuration diagnostics, the compatibility alias, packaged deployment verification, and user/migration documentation.
+Implemented on `dev`: service-source discovery and origin tracking, transactional registry publication and reload retention, classpath-backed XSLT resolution/caching, the `GetBerliozConfig`/`GetErrorHandlerConfig` diagnostics, the packaged overlay deployment fixture, and the `ListRuntimeServices` rename (with `GetLiveServices` retained as a deprecated forwarding alias until 1.0). Remaining release work: user/migration documentation and final release verification.
 
 ### 0.14.4: Configuration Requirements And Validation
 

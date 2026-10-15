@@ -16,9 +16,14 @@ import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
+/**
+ * Compatibility coverage for the deprecated {@link GetLiveServices} forwarding alias.
+ *
+ * <p>Full behavioral coverage of the generator now lives in {@link ListRuntimeServicesTest}.
+ */
 class GetLiveServicesTest {
 
   private static final File WEB_INF =
@@ -40,92 +45,42 @@ class GetLiveServicesTest {
   }
 
   @Test
-  void testProcessWritesLiveServicesElementWhenRegistryEmpty() throws Exception {
-    HttpEnvironment env = new HttpEnvironment(
-        Files.createDirectory(tmp.resolve("public")).toFile(), Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=0");
-    ContentRequest req = GeneratorTestSupport.request().environment(env).build();
-    String out = process(req);
-    Assertions.assertTrue(out.contains("live-services"), "Should produce a <live-services> element");
-  }
-
-  @Test
-  void testETagReflectsRegistryVersion() {
-    GetLiveServices gen = new GetLiveServices();
-    ContentRequest req = GeneratorTestSupport.request().build();
-    String etag = gen.getETag((Request) req);
-    Assertions.assertNotNull(etag);
-    Assertions.assertFalse(etag.isEmpty());
-  }
-
-  @Test
-  void testProcessWithLoadedServicesContainsServiceEntries() throws Exception {
+  void deprecatedAliasProducesIdenticalOutputToListRuntimeServices() throws Exception {
     GlobalSettings.setup(WEB_INF);
     ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
 
     HttpEnvironment env = new HttpEnvironment(
-        Files.createDirectory(tmp.resolve("public")).toFile(), Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=3600");
+        Files.createDirectory(tmp.resolve("public")).toFile(),
+        Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=3600");
     ContentRequest req = GeneratorTestSupport.request().environment(env).build();
-    String out = process(req);
-    Assertions.assertTrue(out.contains("service"), "Live services output should contain service data");
+
+    GetLiveServices alias = new GetLiveServices();
+    ListRuntimeServices primary = new ListRuntimeServices();
+
+    Assertions.assertEquals(primary.getETag((Request) req), alias.getETag((Request) req));
+
+    OutputWriter aliasXml = new XmlOutputAdapter();
+    alias.generate(req, aliasXml);
+    OutputWriter primaryXml = new XmlOutputAdapter();
+    primary.generate(req, primaryXml);
+    Assertions.assertEquals(primaryXml.toString(), aliasXml.toString());
+
+    OutputWriter aliasJson = new JsonOutputAdapter();
+    alias.generate(req, aliasJson);
+    OutputWriter primaryJson = new JsonOutputAdapter();
+    primary.generate(req, primaryJson);
+    Assertions.assertEquals(primaryJson.toString(), aliasJson.toString());
   }
 
   @Test
-  void testProcessJsonWithLoadedServicesContainsServiceEntries() throws Exception {
-    GlobalSettings.setup(WEB_INF);
-    ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
-
-    HttpEnvironment env = new HttpEnvironment(
-        Files.createDirectory(tmp.resolve("public")).toFile(), Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=3600");
-    ContentRequest req = GeneratorTestSupport.request().environment(env).build();
-    String out = processJson(req);
-    Assertions.assertTrue(out.contains("\"liveServices\":["), out);
-  }
-
-  @Test
-  void failedReloadIsVisibleInBothFormatsAndInvalidatesETag() throws Exception {
-    Path config = Files.createDirectories(tmp.resolve("config"));
-    Path services = config.resolve("services.xml");
-    Files.copy(new File(WEB_INF, "config/services.xml").toPath(), services);
-    GlobalSettings.setup(tmp.toFile());
-    ServiceLoader loader = ServiceLoader.getInstance();
-    loader.loadIfRequired();
+  void deprecatedAliasRemainsUsableAsConfiguredGenerator() throws Exception {
     HttpEnvironment env = new HttpEnvironment(
         Files.createDirectory(tmp.resolve("public")).toFile(),
         Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=0");
     ContentRequest req = GeneratorTestSupport.request().environment(env).build();
-    GetLiveServices generator = new GetLiveServices();
-    String healthy = generator.getETag((Request) req);
-    Files.writeString(services, "<sensitive-invalid-root/>");
-    loader.requestReload();
-    Assertions.assertFalse(loader.loadIfRequired());
-    Assertions.assertNotEquals(healthy, generator.getETag((Request) req));
-    String xml = process(req);
-    String json = processJson(req);
-    Assertions.assertTrue(xml.contains("load-status=\"reload-failed\""), xml);
-    Assertions.assertTrue(json.contains("\"loadStatus\":\"reload-failed\""), json);
-    Assertions.assertFalse(xml.contains("sensitive-invalid-root"));
-    Assertions.assertFalse(json.contains(tmp.toString()));
-    Files.copy(new File(WEB_INF, "config/services.xml").toPath(), services,
-        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-    loader.requestReload();
-    Assertions.assertTrue(loader.loadIfRequired());
-    Assertions.assertTrue(processJson(req).contains("\"loadStatus\":\"ready\""));
-  }
-
-  // helpers
-  // ---------------------------------------------------------------------------
-
-  private static String process(ContentRequest req) {
-    GetLiveServices gen = new GetLiveServices();
+    GetLiveServices alias = new GetLiveServices();
     OutputWriter out = new XmlOutputAdapter();
-    gen.generate(req, out);
-    return out.toString();
-  }
-
-  private static String processJson(ContentRequest req) {
-    GetLiveServices gen = new GetLiveServices();
-    OutputWriter out = new JsonOutputAdapter();
-    gen.generate(req, out);
-    return out.toString();
+    alias.generate(req, out);
+    Assertions.assertTrue(out.toString().contains("live-services"));
   }
 }

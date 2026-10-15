@@ -56,8 +56,9 @@ retry. Explicit `ServiceLoader.load()` calls still throw on failure; `clear()` d
 removes the retained registry.
 
 Each attempted failure is logged with its cause, and recovery is logged when publication
-succeeds. The opt-in administrative `GetLiveServices` diagnostic reports `load-status` in XML
-and `loadStatus` in JSON: `pending`, `ready`, `startup-failed`, or `reload-failed`. Its ETag
+succeeds. The opt-in administrative `ListRuntimeServices` diagnostic (`GetLiveServices` remains
+available as a deprecated forwarding alias until 1.0) reports `load-status` in XML and
+`loadStatus` in JSON: `pending`, `ready`, `startup-failed`, or `reload-failed`. Its ETag
 includes that status so a rejected reload becomes visible even though the registry is unchanged.
 Exception details and source paths are not included in this status field. Protect diagnostic
 mappings with application or container security.
