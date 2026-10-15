@@ -38,6 +38,124 @@ The Java API documentation can be found [here](https://javadoc.io/doc/org.pagese
 
 Berlioz uses RFC 9457 Problem Details support for generator and framework errors.
 
+## Classpath overlays
+
+A Berlioz overlay is an ordinary JAR dependency that contributes services, generators, XSLT,
+static resources, and servlet components without copying anything into the host application's
+`WEB-INF` directory. Adding the dependency is the only application action required; discovery
+is on by default.
+
+An overlay JAR may contain:
+
+- `META-INF/berlioz/services.xml` — exactly one per JAR, using the same `<service-config>`
+  format as a filesystem `services.xml`.
+- Generator classes referenced from that document.
+- Classpath XSLT templates (see [Classpath and filesystem XSLT](#classpath-and-filesystem-xslt)
+  below), including their relative `xsl:import`/`xsl:include` targets.
+- Static resources under `META-INF/resources/`, served by the servlet container's standard
+  resource-serving mechanism for packaged web fragments.
+- Servlet, filter, and listener declarations in `META-INF/web-fragment.xml`, using a `<name>`
+  so the host application can control fragment ordering if needed.
+
+These are plain Servlet 3.0+ container mechanisms; Berlioz itself serves no part of this beyond
+reading `META-INF/berlioz/services.xml`. `META-INF/resources` and `web-fragment.xml` only work
+when the fragment JAR sits in the web application's own `WEB-INF/lib` (the scope these features
+target); a container-wide shared classloader is not supported.
+
+### Discovery and precedence
+
+At each successful load, Berlioz calls `getResources("META-INF/berlioz/services.xml")` on the
+web application's context classloader (falling back to the classloader that loaded Berlioz if
+no context loader is available), so every contributing JAR on the classpath is found. Exploded
+classpath directories resolve the same way, which is convenient during local development.
+
+- Classpath sources are parsed before filesystem sources, so filesystem declarations always
+  take precedence.
+- A conflict is the same HTTP method and URI pattern declared more than once. The later
+  declaration — in classpath-then-filesystem order — replaces the earlier one.
+- Two classpath JARs that conflict with each other resolve deterministically (sorted by a safe
+  display name, not classloader-dependent enumeration order), with a warning naming both the
+  replaced and replacing declaration and their origins (e.g. `my-overlay.jar!META-INF/berlioz/services.xml`
+  vs. `other-overlay.jar!META-INF/berlioz/services.xml`).
+- A filesystem declaration always overrides a classpath declaration for the same method and
+  pattern, regardless of load order.
+- Declarations using the same URI pattern but different HTTP methods never conflict.
+
+An application with no filesystem `services.xml` is officially supported: it loads from
+classpath sources alone, and `AppInitializer` reports configuration as classpath-provided rather
+than treating the missing file as an error.
+
+### Transactional loading and reload failure
+
+Every source is parsed in isolation and merged into a single candidate registry; the candidate
+is only published if every source parses successfully. This matters for classpath overlays in
+particular, since each overlay JAR's `services.xml` has its own `<service-config>` root, which
+would otherwise clear everything parsed before it.
+
+A malformed or unreachable source — classpath or filesystem — rejects the whole candidate:
+
+- On startup, a failed load leaves the empty initial registry; requests receive the existing
+  service-configuration `503` response until a load succeeds.
+- On reload, a failed load keeps serving the last successfully published registry, including
+  its warnings, source metadata, version, and content ETags, so existing requests and caches
+  are unaffected by a bad deployment.
+
+See [Service configuration loading and reloads](#service-configuration-loading-and-reloads)
+below for the retry and diagnostic-visibility behavior shared with filesystem-only deployments.
+
+## Classpath and filesystem XSLT
+
+Primary and fallback stylesheets accept three kinds of value:
+
+- `IDENTITY` — no transformation.
+- A `classpath:` or `resource:` reference — resolved through the application classloader.
+  `resource:` is a compatibility alias for `classpath:` with identical behavior. Both accept an
+  optional leading slash: `classpath:xslt/main.xsl` and `classpath:/xslt/main.xsl` resolve to
+  the same resource.
+- Any other value — resolved as a filesystem path contained beneath `WEB-INF`, as before.
+
+`{GROUP}` and `{SERVICE}` substitution is applied before resolution, for both primary and
+fallback stylesheets.
+
+```xml
+<init-param>
+  <param-name>stylesheet</param-name>
+  <param-value>classpath:xslt/{GROUP}.xsl</param-value>
+</init-param>
+```
+
+A classpath stylesheet may use relative `xsl:import`/`xsl:include` to reach other templates
+packaged in the *same* JAR — the importing stylesheet's own resource URL is used as the
+transform's system ID, so relative resolution stays within that artifact:
+
+```xml
+<xsl:import href="parts/imported.xsl"/>
+<xsl:include href="parts/included.xsl"/>
+```
+
+Reaching a template in a *different* JAR (or in the filesystem) requires an explicit
+`classpath:`/`resource:` reference as the `href`. Every import/include — relative or explicit —
+is restricted to local `file:`/`jar:file:` resources; HTTP(S) and other network schemes are
+always rejected, independently of the underlying XSLT processor's own `accessExternalStylesheet`
+enforcement.
+
+### Cache-mode behavior
+
+`BerliozOption.XSLT_CACHE` (`no`, `auto`, `manual`) applies differently to filesystem and
+classpath/JAR-backed templates, because a classpath resource cannot change without a
+redeployment:
+
+| Mode     | Filesystem                          | Classpath / `resource:`        |
+| -------- | ------------------------------------ | ------------------------------- |
+| `no`     | Recompile every use                  | Recompile every use             |
+| `auto`   | Recompile when the file changes      | Treated as immutable, reused    |
+| `manual` | Reused until explicitly cleared      | Treated as immutable, reused    |
+
+Classpath cache keys distinguish identically named resources contributed by different JARs (and
+by different application classloaders in the same JVM), so `clearCache()`/`clearAllCache()` can
+still invalidate them individually, and an overlay's XSLT ETag changes when its own artifact —
+including same-JAR imported/included templates — changes.
+
 ## Service configuration loading and reloads
 
 Service discovery and parsing are transactional: an I/O or fatal parsing error rejects the
@@ -129,6 +247,35 @@ Run `./gradlew overlayIntegrationTest` to deploy the test overlay JAR in a real 
 and verify discovery, precedence, XSLT, static resources, web fragments, diagnostics, and
 reload retention over HTTP. It also runs as part of `check` and `build`.
 See [the deployment test documentation](tests/overlay-deployment/README.md) for setup and coverage.
+
+## Migrating to 0.14.3
+
+0.14.3 adds classpath overlay discovery, classpath-backed XSLT, and two new runtime
+diagnostics. None of it requires a configuration change for an existing filesystem-only
+application:
+
+- An application with a `WEB-INF/config/services.xml` and no classpath overlay dependencies
+  behaves exactly as before: there is nothing on the classpath to discover, so filesystem
+  services remain the only source, and existing mapping precedence is unchanged.
+- Existing `resource:` stylesheet references continue to resolve exactly as before;
+  `classpath:` is the new canonical spelling of the same resolution, not a replacement
+  requiring edits.
+- `services!*.xml` filesystem modules now load in deterministic lexical order. Previously this
+  followed directory-listing order, which was not guaranteed across platforms; an application
+  relying on a specific non-alphabetical load order (uncommon, since override behavior did not
+  previously distinguish file origin) should rename its modules accordingly.
+- A failed *reload* (not startup) now keeps serving the last successful registry, including its
+  warnings and ETags, instead of leaving the application with a cleared registry while the retry
+  is pending. This is a reliability fix, not a behavior an application should have depended on.
+- Adding a classpath overlay dependency is new, additive behavior: it only takes effect once
+  such a dependency is actually present on the classpath. Filesystem declarations deterministically
+  override classpath declarations for the same method and URI pattern, so an existing
+  application can add an overlay dependency without its own `services.xml` losing precedence.
+- `org.pageseeder.berlioz.generator.GetLiveServices` is renamed to
+  `org.pageseeder.berlioz.generator.ListRuntimeServices`. `GetLiveServices` remains available
+  as a deprecated forwarding alias with identical behavior and output until removal at 1.0;
+  existing `services.xml` generator references do not need to change, but new configuration
+  should reference `ListRuntimeServices` directly.
 
 ## Roadmap
 
