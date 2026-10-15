@@ -96,7 +96,7 @@ class HttpRequestsTest {
   // box; the others enable the opt-in to prove the (still-available) proxy-aware behaviour.
 
   @Test
-  void testIsSafeRedirectURL_ForwardedHostIgnoredByDefault() throws ReflectiveOperationException {
+  void testIsSafeRedirectURL_ForwardedHostIgnoredByDefault() {
     // No REDIRECT_TRUST_FORWARDED_HEADERS configured: a forged X-Forwarded-Host must not be
     // able to make an external host pass as "the current host".
     HttpServletRequest request = HttpTestSupport.request()
