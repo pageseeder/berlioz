@@ -16,10 +16,10 @@
 package org.pageseeder.berlioz.bundler;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.Cacheable;
@@ -123,13 +123,23 @@ public final class GetWebBundles implements XmlGenerator, Cacheable {
 
   /**
    * The CSS bundle configuration - static as it is common to all generators.
+   *
+   * <p>Keys are restricted to declared configuration names by {@link #getConfig(String, BundleType, File)}
+   * before insertion, so this map stays bounded to a finite, administrator controlled set.
+   *
+   * <p>Package-private so tests can assert it stays bounded.
    */
-  private static final Map<String, BundleConfig> CSS_CONFIGS = new HashMap<>();
+  static final Map<String, BundleConfig> CSS_CONFIGS = new ConcurrentHashMap<>();
 
   /**
    * The JS bundle configuration - static as it is common to all generators.
+   *
+   * <p>Keys are restricted to declared configuration names by {@link #getConfig(String, BundleType, File)}
+   * before insertion, so this map stays bounded to a finite, administrator controlled set.
+   *
+   * <p>Package-private so tests can assert it stays bounded.
    */
-  private static final Map<String, BundleConfig> JS_CONFIGS = new HashMap<>();
+  static final Map<String, BundleConfig> JS_CONFIGS = new ConcurrentHashMap<>();
 
   private enum Writable { UNKNOWN, YES, NO }
 
@@ -204,7 +214,7 @@ public final class GetWebBundles implements XmlGenerator, Cacheable {
   // ----------------------------------------------------------------------------------------------
 
   private static String getConfig(Request req) {
-    return Objects.requireNonNull(req.getParameter("config", "default"));
+    return Objects.requireNonNull(req.getParameter("config", BundleConfig.DEFAULT_CONFIG));
   }
 
   private static void ensureWritableChecked(File store) {
@@ -245,9 +255,10 @@ public final class GetWebBundles implements XmlGenerator, Cacheable {
    *
    * @return the bundle config for the given type creating a new instance if necessary.
    */
-  private BundleConfig getConfig(String name, BundleType type, File root) {
+  BundleConfig getConfig(String name, BundleType type, File root) {
     Map<String, BundleConfig> configs = type == BundleType.JS? JS_CONFIGS : CSS_CONFIGS;
-    return configs.computeIfAbsent(name, key -> BundleConfig.newInstance(key, type, root));
+    String safeName = BundleConfig.sanitizeConfigName(name, type);
+    return configs.computeIfAbsent(safeName, key -> BundleConfig.newInstance(key, type, root));
   }
 
 }

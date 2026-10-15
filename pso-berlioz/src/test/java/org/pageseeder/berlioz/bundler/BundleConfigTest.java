@@ -88,8 +88,73 @@ final class BundleConfigTest {
     Assertions.assertArrayEquals(new String[]{"/script/{GROUP}/extra.js"}, definition.paths());
   }
 
+  @Test
+  void testSanitizeConfigNameKeepsDeclaredName() throws IOException {
+    setupGlobalSettings(
+        "<global>"
+      + "  <berlioz>"
+      + "    <jsbundler>"
+      + "      <configs custom=\"group\"/>"
+      + "    </jsbundler>"
+      + "  </berlioz>"
+      + "</global>");
+
+    Assertions.assertEquals("custom", BundleConfig.sanitizeConfigName("custom", BundleType.JS));
+  }
+
+  @Test
+  void testSanitizeConfigNameCollapsesUnknownNameToDefault() throws IOException {
+    setupGlobalSettings(
+        "<global>"
+      + "  <berlioz>"
+      + "    <jsbundler>"
+      + "      <configs custom=\"group\"/>"
+      + "    </jsbundler>"
+      + "  </berlioz>"
+      + "</global>");
+
+    for (int i = 0; i < 1000; i++) {
+      Assertions.assertEquals(BundleConfig.DEFAULT_CONFIG,
+          BundleConfig.sanitizeConfigName("attacker-" + i, BundleType.JS));
+    }
+  }
+
+  @Test
+  void testSanitizeConfigNameIsPerBundleType() throws IOException {
+    setupGlobalSettings(
+        "<global>"
+      + "  <berlioz>"
+      + "    <jsbundler>"
+      + "      <configs jsonly=\"group\"/>"
+      + "    </jsbundler>"
+      + "  </berlioz>"
+      + "</global>");
+
+    Assertions.assertEquals("jsonly", BundleConfig.sanitizeConfigName("jsonly", BundleType.JS));
+    Assertions.assertEquals(BundleConfig.DEFAULT_CONFIG,
+        BundleConfig.sanitizeConfigName("jsonly", BundleType.CSS));
+  }
+
+  @Test
+  void testSanitizeConfigNameCacheRefreshesAfterReload() throws IOException {
+    setupGlobalSettings("<global/>");
+    Assertions.assertEquals(BundleConfig.DEFAULT_CONFIG,
+        BundleConfig.sanitizeConfigName("reloaded", BundleType.JS));
+
+    setupGlobalSettings(
+        "<global>"
+      + "  <berlioz>"
+      + "    <jsbundler>"
+      + "      <configs reloaded=\"group\"/>"
+      + "    </jsbundler>"
+      + "  </berlioz>"
+      + "</global>");
+
+    Assertions.assertEquals("reloaded", BundleConfig.sanitizeConfigName("reloaded", BundleType.JS));
+  }
+
   private void setupGlobalSettings(String xml) throws IOException {
-    File webinf = Files.createDirectory(this.temporary.resolve("WEB-INF")).toFile();
+    File webinf = this.temporary.resolve("WEB-INF").toFile();
     File config = new File(webinf, "config");
     Files.createDirectories(config.toPath());
     Files.writeString(new File(config, "config.xml").toPath(), xml, StandardCharsets.UTF_8);

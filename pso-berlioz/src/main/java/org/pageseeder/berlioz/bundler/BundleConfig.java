@@ -21,9 +21,11 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -48,6 +50,11 @@ public final class BundleConfig implements Serializable {
   private static final String GLOBAL_LEVEL = "global";
   private static final String GROUP_LEVEL = "group";
   private static final String SERVICE_LEVEL = "service";
+
+  /**
+   * Name of the fallback configuration used when a requested name isn't explicitly configured.
+   */
+  static final String DEFAULT_CONFIG = "default";
 
   /** Serializable */
   private static final long serialVersionUID = 5709906856099064344L;
@@ -247,6 +254,72 @@ public final class BundleConfig implements Serializable {
 
   // static helpers
   // ----------------------------------------------------------------------------------------------
+
+  /**
+   * Caches, per bundle type, the configuration names explicitly declared in the global settings
+   * (via <code>berlioz.&lt;type&gt;bundler.configs.&lt;name&gt;</code>).
+   *
+   * <p>Cleared whenever the global settings are (re)loaded so a reload is reflected without
+   * requiring a restart.
+   */
+  private static final Map<BundleType, Set<String>> KNOWN_CONFIG_NAMES = new ConcurrentHashMap<>();
+
+  static {
+    GlobalSettings.registerListener(BundleConfig::clearKnownConfigNamesCache);
+  }
+
+  /**
+   * Restricts a requested configuration name to one that an administrator has actually declared,
+   * falling back to {@value #DEFAULT_CONFIG} otherwise.
+   *
+   * <p>An unrecognized name resolves to the same fallback bundle definitions as
+   * {@value #DEFAULT_CONFIG} anyway (see {@link #getBundleNames(String)}), so collapsing it to
+   * that name before it is used as a cache key changes no observable behavior. This keeps the
+   * per-type configuration caches in {@code GetWebBundles} bounded to a finite, administrator
+   * controlled set of names instead of letting an arbitrary request parameter value grow them
+   * indefinitely.
+   *
+   * @param name The requested configuration name.
+   * @param type The bundle type.
+   *
+   * @return <code>name</code> if it is declared for this type; {@value #DEFAULT_CONFIG} otherwise.
+   */
+  static String sanitizeConfigName(String name, BundleType type) {
+    if (DEFAULT_CONFIG.equals(name) || knownConfigNames(type).contains(name)) return name;
+    return DEFAULT_CONFIG;
+  }
+
+  /**
+   * @param type The bundle type.
+   * @return the configuration names declared for that type, computing and caching them if needed.
+   */
+  private static Set<String> knownConfigNames(BundleType type) {
+    return KNOWN_CONFIG_NAMES.computeIfAbsent(type, BundleConfig::loadKnownConfigNames);
+  }
+
+  /**
+   * Scans the global settings for configuration names declared for the specified bundle type.
+   *
+   * @param type The bundle type.
+   * @return the declared configuration names for that type.
+   */
+  private static Set<String> loadKnownConfigNames(BundleType type) {
+    String prefix = "berlioz." + type.name().toLowerCase() + "bundler.configs.";
+    Set<String> names = new HashSet<>();
+    for (String key : GlobalSettings.getAll().keySet()) {
+      if (key.startsWith(prefix) && key.length() > prefix.length()) {
+        names.add(key.substring(prefix.length()));
+      }
+    }
+    return Set.copyOf(names);
+  }
+
+  /**
+   * Clears the cached, per-type sets of declared configuration names.
+   */
+  private static void clearKnownConfigNamesCache() {
+    KNOWN_CONFIG_NAMES.clear();
+  }
 
   /**
    * Creates a new instance of a bundle configuration.
