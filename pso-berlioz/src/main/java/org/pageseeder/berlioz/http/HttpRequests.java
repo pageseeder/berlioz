@@ -153,21 +153,22 @@ public final class HttpRequests {
    * Otherwise always returns {@code req.getServerPort()}.
    */
   static int effectivePort(HttpServletRequest req) {
-    if (trustForwardedHeaders()) {
-      String forwardedProto = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
-      if (HTTP.equals(forwardedProto) || HTTPS.equals(forwardedProto)) {
-        String forwardedHost = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
-        if (forwardedHost != null) {
-          int colon = forwardedHost.indexOf(':');
-          if (colon > 0) {
-            int port = parsePort(forwardedHost.substring(colon + 1).strip());
-            if (port != -1) return port;
-          }
-        }
-        return -1;
-      }
-    }
-    return req.getServerPort();
+    if (!trustForwardedHeaders()) return req.getServerPort();
+    String forwardedProto = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
+    if (!HTTP.equals(forwardedProto) && !HTTPS.equals(forwardedProto)) return req.getServerPort();
+    return forwardedPort(req);
+  }
+
+  /**
+   * Returns the port from the {@code host:port} part of {@code X-Forwarded-Host}, or
+   * {@code -1} if absent or not parseable (meaning "use the scheme default").
+   */
+  private static int forwardedPort(HttpServletRequest req) {
+    String forwardedHost = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
+    if (forwardedHost == null) return -1;
+    int colon = forwardedHost.indexOf(':');
+    if (colon <= 0) return -1;
+    return parsePort(forwardedHost.substring(colon + 1).strip());
   }
 
   /**
