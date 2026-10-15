@@ -24,6 +24,7 @@ import java.nio.file.Path;
  *
  * <p>Full behavioral coverage of the generator now lives in {@link ListRuntimeServicesTest}.
  */
+@SuppressWarnings("java:S5738") // Deliberately exercises a forRemoval=true alias to prove it still works.
 class GetLiveServicesTest {
 
   private static final File WEB_INF =
