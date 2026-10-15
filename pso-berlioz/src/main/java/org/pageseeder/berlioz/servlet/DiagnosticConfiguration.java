@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletRegistration;
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.xslt.StylesheetLocation;
 
 /** Internal helpers for allowlisted configuration diagnostics. */
 final class DiagnosticConfiguration {
@@ -49,9 +50,9 @@ final class DiagnosticConfiguration {
   }
 
   static @Nullable String safePath(String value) {
-    String path = value;
-    boolean classpath = isClasspath(path);
-    if (classpath) path = path.substring(path.indexOf(':') + 1).replaceFirst("^/+", "");
+    String reference = StylesheetLocation.extractClasspathReference(value);
+    boolean classpath = reference != null;
+    String path = classpath ? reference.replaceFirst("^/+", "") : value;
     if (path.isEmpty() || path.startsWith("/") || path.contains("\\") || path.contains(":")
         || path.contains("%") || path.chars().anyMatch(Character::isISOControl)) return null;
     for (String segment : path.split("/")) if (segment.equals("..")) return null;
@@ -66,6 +67,6 @@ final class DiagnosticConfiguration {
   }
 
   private static boolean isClasspath(String value) {
-    return value.startsWith("classpath:") || value.startsWith("resource:");
+    return StylesheetLocation.extractClasspathReference(value) != null || value.startsWith("jar:");
   }
 }

@@ -116,6 +116,8 @@ class ConfigurationDiagnosticsTest {
     String json = json(generator, request());
     assertTrue(json.indexOf("\"name\":\"a\"") < json.indexOf("\"name\":\"z\""));
     assertTrue(json.contains("\"stylesheet\":{\"allocation\":\"identity\"}"));
+    assertTrue(json.contains("\"fallback\":{\"source\":\"classpath\"}"));
+    assertTrue(xml(generator, request()).contains("<fallback source=\"classpath\"/>"));
     assertFalse(json.contains("SECRET"));
     assertFalse(xml(generator, request()).contains("SECRET"));
     String etag = generator.getETag(request());
