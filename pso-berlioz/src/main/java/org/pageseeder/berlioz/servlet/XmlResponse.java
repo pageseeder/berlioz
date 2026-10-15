@@ -154,24 +154,7 @@ public final class XmlResponse {
    * @since 0.8.0
    */
   public @Nullable String getEtag() {
-    Service service = this.match.service();
-    boolean cacheable = service.isCacheable();
-    StringBuilder etag = new StringBuilder();
-    if (cacheable) {
-      for (HttpContentRequest request : this.requests) {
-        BerliozGenerator generator = request.generator();
-        // Check if cacheable
-        if (generator instanceof Cacheable) {
-          String localTag = GeneratorDispatch.retrieveETag(request, this.etags);
-          if (localTag.isEmpty()) return null;
-          etag.append(localTag).append('/');
-        } else {
-          cacheable = false;
-          break;
-        }
-      }
-    }
-    return cacheable? etag.toString() : null;
+    return GeneratorDispatch.combineETags(this.match.service(), this.requests, this.etags);
   }
 
   /**

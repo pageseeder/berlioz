@@ -188,6 +188,24 @@ final class GeneratorDispatch {
   }
 
   /**
+   * Combines generator ETags in request order, retaining a trailing slash after each tag.
+   * Returns {@code null} if the service or any generator is not cacheable, or if any
+   * generator returns a null or empty ETag or fails to compute one.
+   */
+  static @Nullable String combineETags(Service service, List<HttpContentRequest> requests,
+      Map<Integer, String> etags) {
+    if (!service.isCacheable()) return null;
+    StringBuilder etag = new StringBuilder();
+    for (HttpContentRequest request : requests) {
+      if (!(request.generator() instanceof Cacheable)) return null;
+      String localTag = retrieveETag(request, etags);
+      if (localTag.isEmpty()) return null;
+      etag.append(localTag).append('/');
+    }
+    return etag.toString();
+  }
+
+  /**
    * Returns the cached ETag for the given request, computing and caching it on first call.
    *
    * <p>Returns an empty string when the generator is not {@link Cacheable}, returns {@code null}

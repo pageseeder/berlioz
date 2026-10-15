@@ -32,7 +32,6 @@ import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.error.DetailLevel;
-import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
@@ -180,23 +179,7 @@ public final class JsonResponse {
    * @return the combined ETag if all generators are cacheable; {@code null} otherwise
    */
   public @Nullable String getEtag() {
-    Service service = this.match.service();
-    boolean cacheable = service.isCacheable();
-    StringBuilder etag = new StringBuilder();
-    if (cacheable) {
-      for (HttpContentRequest request : this.requests) {
-        BerliozGenerator generator = request.generator();
-        if (generator instanceof Cacheable) {
-          String localTag = GeneratorDispatch.retrieveETag(request, this.etags);
-          if (localTag.isEmpty()) return null;
-          etag.append(localTag).append('/');
-        } else {
-          cacheable = false;
-          break;
-        }
-      }
-    }
-    return cacheable ? etag.toString() : null;
+    return GeneratorDispatch.combineETags(this.match.service(), this.requests, this.etags);
   }
 
   /**
