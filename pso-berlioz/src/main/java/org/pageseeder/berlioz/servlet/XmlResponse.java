@@ -43,7 +43,6 @@ import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.XmlGenerator;
-import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.util.Errors;
 import org.pageseeder.berlioz.util.ProfileFormat;
@@ -278,11 +277,8 @@ public final class XmlResponse {
       errorLevel = failure.detailLevel();
     }
     long end = System.nanoTime();
-    outcome.handleStatus(response, generator, service);
-    GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
-    addServerTimingMetric(request, 1, service, end - start);
-    GeneratorListener listener = GeneratorDispatch.getListener();
-    if (listener != null) listener.generate(service, generator, response.status(), request.getProfileEtag(), end - start);
+    GeneratorDispatch.complete(request, response, service, this.outcome, this.responseHeaders,
+        this.serverTiming ? "xml1" : null, end - start);
 
     if (response.isProblem()) {
       ProblemDetails problem = response.problem();
@@ -400,26 +396,14 @@ public final class XmlResponse {
     long end = System.nanoTime();
 
     ContentStatus generatorStatus = response.status();
-    outcome.handleStatus(response, generator, service);
-
-    // Accumulate response headers (last-writer-wins). Framework-owned headers are warned and dropped.
-    GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
+    GeneratorDispatch.complete(request, response, service, this.outcome, this.responseHeaders,
+        this.serverTiming ? "xml" + position : null, end - start);
     xml.attribute("status", generatorStatus.toString());
     if (this.profile) {
       xml.attribute("profile-etag", ProfileFormat.format(request.getProfileEtag()));
       xml.attribute("profile-process", ProfileFormat.format(end - start));
       xml.attribute("profile", ProfileFormat.format(request.getProfileEtag() + end - start));
     }
-    if (this.serverTiming) {
-      addServerTimingMetric(request, position, service, end - start);
-    }
-
-    // Report if requested
-    GeneratorListener listener = GeneratorDispatch.getListener();
-    if (listener != null) {
-      listener.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
-    }
-
 
     // Write the XML: legacy errors stay in the old berlioz-exception shape unless
     // problem format is explicitly enabled.
@@ -434,14 +418,6 @@ public final class XmlResponse {
     }
 
     xml.closeElement();
-  }
-
-  private void addServerTimingMetric(HttpContentRequest request, int position, Service service, long processTime) {
-    if (!this.serverTiming) return;
-    String name = service.name(request.generator());
-    String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
-    ServerTimingHeader.addMetricNano(this.core.response(), "xml" + position, "Source " + safeName,
-        request.getProfileEtag() + processTime);
   }
 
   private static DetailLevel detailLevelOrMinimal(@Nullable DetailLevel level) {

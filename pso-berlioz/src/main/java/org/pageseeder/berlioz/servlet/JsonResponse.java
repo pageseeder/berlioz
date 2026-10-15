@@ -40,7 +40,6 @@ import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.error.ProblemDetails;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
-import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.pageseeder.berlioz.json.JsonStringBuilder;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.util.ProfileFormat;
@@ -68,7 +67,6 @@ public final class JsonResponse {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JsonResponse.class);
 
-  private final CoreHttpRequest core;
   private final MatchingService match;
   private final List<HttpContentRequest> requests;
 
@@ -86,9 +84,9 @@ public final class JsonResponse {
 
   public JsonResponse(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
                       MatchingService match, boolean profile) {
-    this.core = new CoreHttpRequest(req, res, config.getEnvironment());
+    CoreHttpRequest core = new CoreHttpRequest(req, res, config.getEnvironment());
     this.match = match;
-    this.requests = GeneratorDispatch.configure(this.core, match);
+    this.requests = GeneratorDispatch.configure(core, match);
     this.profile = profile;
   }
 
@@ -238,17 +236,8 @@ public final class JsonResponse {
     }
 
     long end = System.nanoTime();
-    ContentStatus generatorStatus = response.status();
-    outcome.handleStatus(response, generator, service);
-    GeneratorDispatch.accumulateHeaders(generator, response, this.responseHeaders);
-
-    if (this.serverTiming) {
-      String safeName = name.replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
-      ServerTimingHeader.addMetricNano(this.core.response(), "json" + position, "Source " + safeName, request.getProfileEtag() + end - start);
-    }
-
-    GeneratorListener listener = GeneratorDispatch.getListener();
-    if (listener != null) listener.generate(service, generator, generatorStatus, request.getProfileEtag(), end - start);
+    GeneratorDispatch.complete(request, response, service, this.outcome, this.responseHeaders,
+        this.serverTiming ? "json" + position : null, end - start);
 
     ProblemDetails problem = response.isProblem() ? response.problem() : null;
     return new GeneratorResult(name, json, problem, error, request.getProfileEtag(), end - start);

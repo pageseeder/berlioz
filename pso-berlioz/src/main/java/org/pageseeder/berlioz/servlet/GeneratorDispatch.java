@@ -23,6 +23,7 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.Cacheable;
+import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.error.HttpException;
@@ -32,6 +33,7 @@ import org.pageseeder.berlioz.content.MatchingService;
 import org.pageseeder.berlioz.content.Parameter;
 import org.pageseeder.berlioz.content.Response;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.http.ServerTimingHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,6 +155,28 @@ final class GeneratorDispatch {
         target.put(name, value);
       }
     });
+  }
+
+  /**
+   * Applies a generator's outcome and headers, then records timing and notifies the listener.
+   * A null metric name disables Server-Timing reporting. Output assembly stays with the caller.
+   */
+  static void complete(HttpContentRequest request, Response response, Service service,
+      GeneratorOutcome outcome, Map<String, String> headers, @Nullable String metricName,
+      long processTime) {
+    BerliozGenerator generator = request.generator();
+    ContentStatus status = response.status();
+    outcome.handleStatus(response, generator, service);
+    accumulateHeaders(generator, response, headers);
+    if (metricName != null) {
+      String safeName = service.name(generator).replaceAll("[^!#$%&'*+\\-.^_`|~0-9a-zA-Z]", "_");
+      ServerTimingHeader.addMetricNano(request.getHttpResponse(), metricName, "Source " + safeName,
+          request.getProfileEtag() + processTime);
+    }
+    GeneratorListener currentListener = getListener();
+    if (currentListener != null) {
+      currentListener.generate(service, generator, status, request.getProfileEtag(), processTime);
+    }
   }
 
   /**
