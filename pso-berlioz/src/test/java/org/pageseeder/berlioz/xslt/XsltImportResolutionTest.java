@@ -86,6 +86,28 @@ final class XsltImportResolutionTest {
   }
 
   @Test
+  void absoluteInclude_resolvesWithRelativeSystemId() throws IOException, TransformerException {
+    write("included.xsl",
+        stylesheet("<xsl:template name=\"included\"><out>absolute-ok</out></xsl:template>"));
+    StreamSource source = new StreamSource(new StringReader(stylesheet(
+        "<xsl:include href=\"" + this.tempDir.resolve("included.xsl").toUri() + "\"/>"
+            + "<xsl:template match=\"/\"><xsl:call-template name=\"included\"/></xsl:template>")));
+    source.setSystemId("main.xsl");
+    Templates templates = XsltTemplateCache.newTransformerFactory().newTemplates(source);
+    StringWriter out = new StringWriter();
+    templates.newTransformer().transform(new StreamSource(new StringReader("<root/>")), new StreamResult(out));
+    Assertions.assertEquals("<out>absolute-ok</out>", out.toString());
+  }
+
+  @Test
+  void relativeInclude_withoutSystemId_isRejected() throws IOException {
+    write("included.xsl", stylesheet("<xsl:template name=\"included\"/>"));
+    StreamSource source = new StreamSource(new StringReader(stylesheet("<xsl:include href='included.xsl'/>")));
+    Assertions.assertThrows(TransformerException.class,
+        () -> XsltTemplateCache.newTransformerFactory().newTemplates(source));
+  }
+
+  @Test
   void relativeImport_resolvesWithinSameClasspathResource() throws IOException, TransformerException {
     write("imported.xsl",
         stylesheet("<xsl:template name=\"imported\"><out>imported-ok</out></xsl:template>"));

@@ -44,6 +44,12 @@ import org.jspecify.annotations.Nullable;
  * than local {@code file} or {@code jar:file}, so network schemes are never followed even if a processor's
  * own enforcement differs.
  *
+ * <p>Relative references require an absolute, usable base URL so their locality can be checked.
+ * Missing, empty, or relative bases are rejected rather than delegated to processor-specific
+ * resolution against the working directory. Absolute references are validated independently
+ * of the base. Unrecognized or malformed URLs are also rejected; parsing failure never bypasses
+ * the local-resource checks.
+ *
  * @author Christophe Lauret
  *
  * @version 0.14.3
@@ -78,10 +84,19 @@ final class SecureXsltUriResolver implements URIResolver {
 
   private void denyUnlessApprovedScheme(String href, @Nullable String base) throws TransformerException {
     try {
-      URL resolved = base != null ? new URL(new URL(base), href) : new URL(href);
+      URL resolved;
+      try {
+        // An absolute reference does not depend on the importing stylesheet's base.
+        resolved = new URL(href);
+      } catch (MalformedURLException ex) {
+        if (base == null) throw ex;
+        resolved = new URL(new URL(base), href);
+      }
       requireLocalUrl(resolved);
     } catch (MalformedURLException ex) {
-      throw new TransformerException("Unable to resolve XSLT resource URL", ex);
+      throw new TransformerException("Unable to resolve XSLT resource URL: href='" + href
+          + "', base=" + (base == null ? "<absent>" : "'" + base + "'")
+          + ". Expected an absolute resource URL or a relative reference with an absolute base URL.", ex);
     }
   }
 

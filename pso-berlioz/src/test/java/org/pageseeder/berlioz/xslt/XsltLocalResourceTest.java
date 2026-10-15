@@ -36,6 +36,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,6 +75,9 @@ final class XsltLocalResourceTest {
     assertThrows(TransformerException.class, () -> resolver.resolve("classpath:style.xsl", null));
     assertThrows(TransformerException.class, () -> resolver.resolve("resource:style.xsl", null));
     assertThrows(TransformerException.class, () -> resolver.resolve(location, null));
+    TransformerException absoluteFailure = assertThrows(TransformerException.class,
+        () -> resolver.resolve(location, "main.xsl"));
+    assertTrue(absoluteFailure.getMessage().contains("Denied non-local XSLT resource protocol"));
     assertThrows(TransformerException.class, () -> resolver.resolve("other.xsl", location));
 
     // Construction computes the ETag and must not read even JAR metadata remotely.
@@ -104,6 +108,47 @@ final class XsltLocalResourceTest {
     SecureXsltUriResolver resolver = new SecureXsltUriResolver(getClass().getClassLoader());
     assertDoesNotThrow(() -> resolver.resolve(file.toString(), null));
     assertDoesNotThrow(() -> resolver.resolve(jar.toString(), null));
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"main.xsl", "unknown:main.xsl", "http://[invalid"})
+  void absoluteLocalReferencesDoNotRequireAUsableBase(String base) throws Exception {
+    SecureXsltUriResolver resolver = new SecureXsltUriResolver(getClass().getClassLoader());
+    String file = directory.resolve("style.xsl").toUri().toString();
+    String jar = "jar:" + directory.resolve("styles.jar").toUri() + "!/style.xsl";
+    assertNull(resolver.resolve(file, base));
+    assertNull(resolver.resolve(jar, base));
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"main.xsl", "unknown:main.xsl", "http://[invalid"})
+  void relativeReferencesRequireAUsableBaseAndReportContext(String base) {
+    SecureXsltUriResolver resolver = new SecureXsltUriResolver(getClass().getClassLoader());
+    TransformerException failure = assertThrows(TransformerException.class,
+        () -> resolver.resolve("part.xsl", base));
+    assertTrue(failure.getMessage().contains("href='part.xsl'"));
+    assertTrue(failure.getMessage().contains("base=" + (base == null ? "<absent>" : "'" + base + "'")));
+    assertInstanceOf(java.net.MalformedURLException.class, failure.getCause());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"unknown:part.xsl", "jar:file:/styles.jar", "http://[invalid"})
+  void malformedAndUnknownReferencesNeverFallThrough(String href) {
+    SecureXsltUriResolver resolver = new SecureXsltUriResolver(getClass().getClassLoader());
+    String base = directory.resolve("main.xsl").toUri().toString();
+    assertThrows(TransformerException.class, () -> resolver.resolve(href, null));
+    assertThrows(TransformerException.class, () -> resolver.resolve(href, base));
+  }
+
+  @Test
+  void relativeLocalReferencesStillDelegateToTheProcessor() throws Exception {
+    SecureXsltUriResolver resolver = new SecureXsltUriResolver(getClass().getClassLoader());
+    String fileBase = directory.resolve("main.xsl").toUri().toString();
+    String jarBase = "jar:" + directory.resolve("styles.jar").toUri() + "!/main.xsl";
+    assertNull(resolver.resolve("part.xsl", fileBase));
+    assertNull(resolver.resolve("part.xsl", jarBase));
   }
 
   @ParameterizedTest
