@@ -21,7 +21,6 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -298,20 +297,29 @@ public final class BundleConfig implements Serializable {
   }
 
   /**
+   * Builds a global settings key of the form <code>berlioz.&lt;type&gt;bundler.&lt;suffix&gt;</code>.
+   *
+   * @param type   The bundle type.
+   * @param suffix The part of the key following <code>bundler.</code>.
+   *
+   * @return the corresponding global settings key.
+   */
+  private static String bundlerKey(BundleType type, String suffix) {
+    return "berlioz." + type.name().toLowerCase() + "bundler." + suffix;
+  }
+
+  /**
    * Scans the global settings for configuration names declared for the specified bundle type.
    *
    * @param type The bundle type.
    * @return the declared configuration names for that type.
    */
   private static Set<String> loadKnownConfigNames(BundleType type) {
-    String prefix = "berlioz." + type.name().toLowerCase() + "bundler.configs.";
-    Set<String> names = new HashSet<>();
-    for (String key : GlobalSettings.getAll().keySet()) {
-      if (key.startsWith(prefix) && key.length() > prefix.length()) {
-        names.add(key.substring(prefix.length()));
-      }
-    }
-    return Set.copyOf(names);
+    String prefix = bundlerKey(type, "configs.");
+    return GlobalSettings.getAll().keySet().stream()
+        .filter(key -> key.startsWith(prefix) && key.length() > prefix.length())
+        .map(key -> key.substring(prefix.length()))
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   /**
@@ -331,16 +339,14 @@ public final class BundleConfig implements Serializable {
    * @return the corresponding configuration.
    */
   public static BundleConfig newInstance(String name, BundleType type, File root) {
-    final String berliozPrefix = "berlioz.";
-    String lcType = type.name().toLowerCase();
-    List<String> names = getBundleNames(berliozPrefix+lcType+"bundler.configs."+name);
+    List<String> names = getBundleNames(bundlerKey(type, "configs." + name));
     Map<String, BundleDefinition> defaults = BundleType.JS == type? DEFAULT_JS_BUNDLE : DEFAULT_CSS_BUNDLE;
-    List<BundleDefinition> definitions = loadDefinitions(names, "berlioz."+lcType+"bundler.bundles.", defaults);
-    boolean minimize = GlobalSettings.get(berliozPrefix+lcType+"bundler.minimize", true);
+    List<BundleDefinition> definitions = loadDefinitions(names, bundlerKey(type, "bundles."), defaults);
+    boolean minimize = GlobalSettings.get(bundlerKey(type, "minimize"), true);
 
     // Create the bundle store
     String defaultLocation = getDefaultLocation(type);
-    String location = GlobalSettings.get(berliozPrefix+lcType+"bundler.location", defaultLocation);
+    String location = GlobalSettings.get(bundlerKey(type, "location"), defaultLocation);
     File store = new File(root, location);
     try {
       Files.createDirectories(store.toPath());
@@ -365,7 +371,7 @@ public final class BundleConfig implements Serializable {
     WebBundleTool tool = new WebBundleTool(new File(this.root, this.location));
     tool.setRoot(this.root);
     if (this.type == BundleType.CSS) {
-      int threshold = GlobalSettings.get("berlioz.cssbundler.datauris.threshold", 4096);
+      int threshold = GlobalSettings.get(bundlerKey(BundleType.CSS, "datauris.threshold"), 4096);
       tool.setDataURIThreshold(threshold);
     }
     return tool;
