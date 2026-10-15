@@ -704,7 +704,60 @@ public enum BerliozOption {
    *
    * @since 0.13.2
    */
-  REDIRECT_ALLOWED_HOSTS("berlioz.redirect.allowed-hosts", "");
+  REDIRECT_ALLOWED_HOSTS("berlioz.redirect.allowed-hosts", ""),
+
+  /**
+   * A boolean global option controlling whether {@code X-Forwarded-Host} and
+   * {@code X-Forwarded-Proto} are trusted to determine the effective request origin used by the
+   * same-host check in
+   * {@link org.pageseeder.berlioz.http.HttpRequests#isSafeRedirectURL(String, javax.servlet.http.HttpServletRequest)}.
+   *
+   * <p>Defaults to {@code false}: these headers are <b>ignored</b> for this decision, and the
+   * effective host/scheme/port are always taken from {@code req.getServerName()},
+   * {@code req.getScheme()} and {@code req.getServerPort()}. This is the safe default and
+   * requires zero configuration.
+   *
+   * <p><b>Why this defaults to off:</b> {@code X-Forwarded-Host} is ordinary request header
+   * content — any direct caller can set it, not only a trusted reverse proxy. The same-host
+   * branch of {@code isSafeRedirectURL} is deliberately permissive (it does not consult
+   * {@link #REDIRECT_ALLOWED_HOSTS} or any {@link org.pageseeder.berlioz.http.RedirectPolicy}),
+   * so trusting an unauthenticated header for it would let any caller nominate an arbitrary
+   * external host as "the current host" and bypass the external-host allowlist entirely —
+   * whether by reaching the backend directly (bypassing the real proxy) or through a proxy
+   * that forwards the header unchanged instead of overwriting it (a common misconfiguration,
+   * e.g. a bare {@code proxy_pass} with no explicit {@code X-Forwarded-Host} directive).
+   *
+   * <p><b>Preferred alternative — fix this at the proxy/container boundary:</b> a deployment
+   * genuinely behind a reverse proxy should configure the servlet container's own
+   * forwarded-header support (for example Jetty's {@code ForwardedRequestCustomizer} or
+   * Tomcat's {@code RemoteIpValve}/{@code RemoteIpFilter}), restricted to the proxy's own
+   * address. Those mechanisms are purpose-built for this and only honour the header from a
+   * configured trusted peer; once enabled, {@code req.getServerName()}/{@code getScheme()}/
+   * {@code getServerPort()} already reflect the true public origin, and Berlioz needs no
+   * special-casing at all.
+   *
+   * <p>Set this option to {@code true} only when forwarded headers cannot be handled at the
+   * container level and the deployment has independently verified that every path reaching
+   * this application — direct and proxied — only ever carries a forwarded-host value supplied
+   * by a trusted proxy (i.e. the application is never reachable without going through it, and
+   * that proxy always overwrites rather than passes through client-supplied values for these
+   * headers).
+   *
+   * <h3>Property</h3>
+   * <table>
+   *   <caption>Redirect trust forwarded headers usage</caption>
+   *   <tr><th>Name</th><th>Value</th></tr>
+   *   <tr>
+   *     <td><code>berlioz.redirect.trust-forwarded-headers</code></td>
+   *     <td><code>false</code></td>
+   *   </tr>
+   * </table>
+   *
+   * @see #REDIRECT_ALLOWED_HOSTS
+   * @since 0.14.3
+   */
+  @Beta
+  REDIRECT_TRUST_FORWARDED_HEADERS("berlioz.redirect.trust-forwarded-headers", Boolean.FALSE);
 
   /**
    * The name of the property in the global settings.

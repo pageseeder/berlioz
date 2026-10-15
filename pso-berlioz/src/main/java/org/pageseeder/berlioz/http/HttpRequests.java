@@ -71,9 +71,13 @@ public final class HttpRequests {
    * an HTTP-to-HTTPS scheme upgrade is always permitted even when the ports differ
    * (e.g. {@code http://host:8080} redirecting to {@code https://host:8443}).
    *
-   * <p>When the application runs behind a reverse proxy, the effective origin is derived
-   * from {@code X-Forwarded-Host} and {@code X-Forwarded-Proto} headers when present,
-   * matching the behaviour of {@link org.pageseeder.berlioz.servlet.HttpLocation}.
+   * <p>By default the effective origin is always {@code req.getServerName()}/
+   * {@code getScheme()}/{@code getServerPort()}: {@code X-Forwarded-Host} and
+   * {@code X-Forwarded-Proto} are attacker-controllable request headers and are ignored for
+   * this decision. When {@link BerliozOption#REDIRECT_TRUST_FORWARDED_HEADERS} is explicitly
+   * enabled, the effective origin is derived from those headers instead, for deployments
+   * behind a reverse proxy that cannot honour them at the container level — see that option's
+   * Javadoc for the trust model and the preferred container-level alternative.
    *
    * <p>Protocol-relative URLs ({@code //host/path}) are treated as absolute. URLs with
    * three or more leading slashes (e.g. {@code ///host/path}) are rejected outright:
@@ -107,48 +111,70 @@ public final class HttpRequests {
   }
 
   /**
-   * Returns the effective server name for the request, honouring {@code X-Forwarded-Host}
-   * when present (host part only, port stripped).
+   * Returns the effective server name for the request.
+   *
+   * <p>Honours {@code X-Forwarded-Host} (host part only, port stripped) only when
+   * {@link BerliozOption#REDIRECT_TRUST_FORWARDED_HEADERS} is enabled; otherwise always
+   * returns {@code req.getServerName()}. See that option's Javadoc for why this is not trusted
+   * by default.
    */
   static String effectiveHost(HttpServletRequest req) {
-    String forwarded = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
-    if (forwarded != null && !forwarded.isEmpty()) {
-      int colon = forwarded.indexOf(':');
-      return (colon > 0 ? forwarded.substring(0, colon) : forwarded).strip();
+    if (trustForwardedHeaders()) {
+      String forwarded = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
+      if (forwarded != null && !forwarded.isEmpty()) {
+        int colon = forwarded.indexOf(':');
+        return (colon > 0 ? forwarded.substring(0, colon) : forwarded).strip();
+      }
     }
     return req.getServerName();
   }
 
   /**
-   * Returns the effective scheme for the request, honouring {@code X-Forwarded-Proto}
-   * when it is {@code "http"} or {@code "https"}.
+   * Returns the effective scheme for the request.
+   *
+   * <p>Honours {@code X-Forwarded-Proto} (when it is {@code "http"} or {@code "https"}) only
+   * when {@link BerliozOption#REDIRECT_TRUST_FORWARDED_HEADERS} is enabled; otherwise always
+   * returns {@code req.getScheme()}.
    */
   static String effectiveScheme(HttpServletRequest req) {
-    String forwarded = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
-    return (HTTP.equals(forwarded) || HTTPS.equals(forwarded)) ? forwarded : req.getScheme();
+    if (trustForwardedHeaders()) {
+      String forwarded = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
+      if (HTTP.equals(forwarded) || HTTPS.equals(forwarded)) return forwarded;
+    }
+    return req.getScheme();
   }
 
   /**
    * Returns the effective server port for the request.
    *
-   * <p>When {@code X-Forwarded-Proto} is present the port is taken from the
-   * {@code host:port} part of {@code X-Forwarded-Host} (if supplied), or {@code -1}
-   * to indicate "use the scheme default".
+   * <p>Only when {@link BerliozOption#REDIRECT_TRUST_FORWARDED_HEADERS} is enabled: if
+   * {@code X-Forwarded-Proto} is present, the port is taken from the {@code host:port} part of
+   * {@code X-Forwarded-Host} (if supplied), or {@code -1} to indicate "use the scheme default".
+   * Otherwise always returns {@code req.getServerPort()}.
    */
   static int effectivePort(HttpServletRequest req) {
-    String forwardedProto = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
-    if (HTTP.equals(forwardedProto) || HTTPS.equals(forwardedProto)) {
-      String forwardedHost = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
-      if (forwardedHost != null) {
-        int colon = forwardedHost.indexOf(':');
-        if (colon > 0) {
-          int port = parsePort(forwardedHost.substring(colon + 1).strip());
-          if (port != -1) return port;
+    if (trustForwardedHeaders()) {
+      String forwardedProto = req.getHeader(HttpHeaders.X_FORWARDED_PROTO);
+      if (HTTP.equals(forwardedProto) || HTTPS.equals(forwardedProto)) {
+        String forwardedHost = req.getHeader(HttpHeaders.X_FORWARDED_HOST);
+        if (forwardedHost != null) {
+          int colon = forwardedHost.indexOf(':');
+          if (colon > 0) {
+            int port = parsePort(forwardedHost.substring(colon + 1).strip());
+            if (port != -1) return port;
+          }
         }
+        return -1;
       }
-      return -1;
     }
     return req.getServerPort();
+  }
+
+  /**
+   * @return {@code true} if {@link BerliozOption#REDIRECT_TRUST_FORWARDED_HEADERS} is enabled.
+   */
+  private static boolean trustForwardedHeaders() {
+    return GlobalSettings.has(BerliozOption.REDIRECT_TRUST_FORWARDED_HEADERS);
   }
 
   // Private helpers -----------------------------------------------------------------------

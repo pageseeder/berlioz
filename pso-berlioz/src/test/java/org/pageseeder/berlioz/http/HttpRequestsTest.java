@@ -1,11 +1,24 @@
 package org.pageseeder.berlioz.http;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
 import javax.servlet.http.HttpServletRequest;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.BerliozOption;
+import org.pageseeder.berlioz.GlobalSettings;
 
 class HttpRequestsTest {
+
+  @AfterEach
+  void resetRedirectSettings() throws ReflectiveOperationException {
+    removeOption(BerliozOption.REDIRECT_TRUST_FORWARDED_HEADERS);
+  }
 
   @Test
   void testIsSafeRedirectURL_Relative() {
@@ -76,9 +89,57 @@ class HttpRequestsTest {
   }
 
   // Proxy-aware tests ---------------------------------------------------------------------
+  //
+  // SEC-03: X-Forwarded-Host/-Proto are attacker-controllable headers, so they are ignored for
+  // the same-host redirect decision unless BerliozOption.REDIRECT_TRUST_FORWARDED_HEADERS is
+  // explicitly enabled. The "_SecureDefault" tests below prove the header is ignored out of the
+  // box; the others enable the opt-in to prove the (still-available) proxy-aware behaviour.
 
   @Test
-  void testIsSafeRedirectURL_ProxyHost() {
+  void testIsSafeRedirectURL_ForwardedHostIgnoredByDefault() throws ReflectiveOperationException {
+    // No REDIRECT_TRUST_FORWARDED_HEADERS configured: a forged X-Forwarded-Host must not be
+    // able to make an external host pass as "the current host".
+    HttpServletRequest request = HttpTestSupport.request()
+        .server("app.example", 443).scheme("https")
+        .header(HttpHeaders.X_FORWARDED_HOST, "attacker.example")
+        .build();
+    Assertions.assertFalse(HttpRequests.isSafeRedirectURL("https://attacker.example/phish", request),
+        "Forged X-Forwarded-Host must not grant same-host status by default");
+    Assertions.assertTrue(HttpRequests.isSafeRedirectURL("https://app.example/new", request),
+        "The real server name is still treated as same-host");
+  }
+
+  @Test
+  void testEffectiveHost_ForwardedHeaderIgnoredByDefault() {
+    HttpServletRequest request = HttpTestSupport.request()
+        .server("app.example", 8080)
+        .header(HttpHeaders.X_FORWARDED_HOST, "attacker.example")
+        .build();
+    Assertions.assertEquals("app.example", HttpRequests.effectiveHost(request));
+  }
+
+  @Test
+  void testEffectiveScheme_ForwardedHeaderIgnoredByDefault() {
+    HttpServletRequest request = HttpTestSupport.request()
+        .server("app.example", 8080).scheme("http")
+        .header(HttpHeaders.X_FORWARDED_PROTO, "https")
+        .build();
+    Assertions.assertEquals("http", HttpRequests.effectiveScheme(request));
+  }
+
+  @Test
+  void testEffectivePort_ForwardedHeaderIgnoredByDefault() {
+    HttpServletRequest request = HttpTestSupport.request()
+        .server("app.example", 8080)
+        .header(HttpHeaders.X_FORWARDED_PROTO, "https")
+        .header(HttpHeaders.X_FORWARDED_HOST, "app.example:8443")
+        .build();
+    Assertions.assertEquals(8080, HttpRequests.effectivePort(request));
+  }
+
+  @Test
+  void testIsSafeRedirectURL_ProxyHost() throws ReflectiveOperationException {
+    setOption(BerliozOption.REDIRECT_TRUST_FORWARDED_HEADERS, "true");
     // Backend sees "localhost" but the public host is "example.org" via X-Forwarded-Host
     HttpServletRequest request = HttpTestSupport.request()
         .server("localhost", 8080)
@@ -93,7 +154,8 @@ class HttpRequestsTest {
   }
 
   @Test
-  void testIsSafeRedirectURL_ProxyHttpToHttpsUpgrade() {
+  void testIsSafeRedirectURL_ProxyHttpToHttpsUpgrade() throws ReflectiveOperationException {
+    setOption(BerliozOption.REDIRECT_TRUST_FORWARDED_HEADERS, "true");
     // Proxy terminates HTTPS: X-Forwarded-Proto=https, backend sees http on port 8080
     // A redirect from the public HTTPS origin to HTTPS on 443 should be safe
     HttpServletRequest request = HttpTestSupport.request()
@@ -107,7 +169,8 @@ class HttpRequestsTest {
   }
 
   @Test
-  void testEffectiveHost_ForwardedHeader() {
+  void testEffectiveHost_ForwardedHeader() throws ReflectiveOperationException {
+    setOption(BerliozOption.REDIRECT_TRUST_FORWARDED_HEADERS, "true");
     HttpServletRequest withPort = HttpTestSupport.request()
         .server("localhost", 8080)
         .header(HttpHeaders.X_FORWARDED_HOST, "example.org:443")
@@ -125,7 +188,8 @@ class HttpRequestsTest {
   }
 
   @Test
-  void testEffectivePort_ForwardedHeader() {
+  void testEffectivePort_ForwardedHeader() throws ReflectiveOperationException {
+    setOption(BerliozOption.REDIRECT_TRUST_FORWARDED_HEADERS, "true");
     HttpServletRequest withPort = HttpTestSupport.request()
         .server("localhost", 8080)
         .header(HttpHeaders.X_FORWARDED_PROTO, "https")
@@ -157,6 +221,26 @@ class HttpRequestsTest {
     Assertions.assertTrue(HttpRequests.acceptsGZipCompression(accepted));
     Assertions.assertFalse(HttpRequests.acceptsGZipCompression(rejected));
     Assertions.assertFalse(HttpRequests.acceptsGZipCompression(absent));
+  }
+
+  // GlobalSettings test helpers ------------------------------------------------------------
+
+  private static void setOption(BerliozOption option, String value) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    ref.compareAndSet(null, new HashMap<>());
+    ref.get().put(option.property(), value);
+  }
+
+  private static void removeOption(BerliozOption option) throws ReflectiveOperationException {
+    AtomicReference<Map<String, String>> ref = settingsRef();
+    if (ref.get() != null) ref.get().remove(option.property());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static AtomicReference<Map<String, String>> settingsRef() throws ReflectiveOperationException {
+    Field f = GlobalSettings.class.getDeclaredField("SETTINGS");
+    f.setAccessible(true);
+    return (AtomicReference<Map<String, String>>) f.get(null);
   }
 
 }
