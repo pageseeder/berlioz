@@ -112,11 +112,7 @@ public final class ConditionalRequests {
         boolean conditionSatisfied = false;
 
         while (!conditionSatisfied && commaTokenizer.hasMoreTokens()) {
-          String currentToken = commaTokenizer.nextToken().trim();
-          // Handle ETags of GZipped resources
-          if (currentToken.endsWith(ETags.GZIP_ETAG_SUFFIX)) {
-            currentToken = currentToken.substring(0, currentToken.length()-6) +'\"';
-          }
+          String currentToken = ETags.normalizeGZipToken(commaTokenizer.nextToken().trim());
           if (currentToken.equals(eTag)) {
             conditionSatisfied = true;
           }
@@ -221,12 +217,8 @@ public final class ConditionalRequests {
     StringTokenizer tokenizer = new StringTokenizer(headerValue, ",");
     while (tokenizer.hasMoreTokens()) {
       String token = tokenizer.nextToken().trim();
-      if (token.endsWith(ETags.GZIP_ETAG_SUFFIX)) {
-        String baseToken = token.substring(0, token.length() - ETags.GZIP_ETAG_SUFFIX.length()) + '"';
-        if (baseToken.equals(eTag)) return Boolean.TRUE;
-      } else if (token.equals(eTag)) {
-        return Boolean.FALSE;
-      }
+      String baseToken = ETags.normalizeGZipToken(token);
+      if (baseToken.equals(eTag)) return !baseToken.equals(token);
     }
     return null;
   }

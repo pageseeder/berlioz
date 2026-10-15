@@ -10,6 +10,56 @@ import javax.servlet.http.HttpServletResponse;
 class ConditionalRequestsTest {
 
   @Test
+  void testCheckIfHeaders_IfMatchGZipTokenInList() throws Exception {
+    HttpServletRequest request = HttpTestSupport.request()
+        .header(HttpHeaders.IF_MATCH, "\"other\",  \"abc-gzip\"  ")
+        .build();
+    HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+
+    Assertions.assertTrue(ConditionalRequests.checkIfHeaders(request, recorder.build(),
+        new GenericEntityInfo(1000, "text/plain", "\"abc\"")));
+    Assertions.assertFalse(recorder.errorSent());
+  }
+
+  @Test
+  void testCheckIfHeaders_IfNoneMatchGZipPreservesMethodAndRepresentation() throws Exception {
+    for (String method : new String[]{"GET", "HEAD", "POST"}) {
+      HttpServletRequest request = HttpTestSupport.request()
+          .method(method)
+          .header(HttpHeaders.IF_NONE_MATCH, "\"other\",  \"abc-gzip\"  ")
+          .build();
+      HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+
+      Assertions.assertFalse(ConditionalRequests.checkIfHeaders(request, recorder.build(),
+          new GenericEntityInfo(1000, "text/plain", "\"abc\"")), method);
+      if ("POST".equals(method)) {
+        Assertions.assertEquals(HttpServletResponse.SC_PRECONDITION_FAILED, recorder.status());
+        Assertions.assertTrue(recorder.errorSent());
+      } else {
+        Assertions.assertEquals(HttpServletResponse.SC_NOT_MODIFIED, recorder.status());
+        Assertions.assertEquals("\"abc-gzip\"", recorder.header(HttpHeaders.ETAG));
+        Assertions.assertFalse(recorder.errorSent());
+      }
+    }
+  }
+
+  @Test
+  void testCheckIfHeaders_EmbeddedGZipMarkerDoesNotMatchBaseETag() throws Exception {
+    for (String header : new String[]{HttpHeaders.IF_MATCH, HttpHeaders.IF_NONE_MATCH}) {
+      HttpServletRequest request = HttpTestSupport.request()
+          .method("GET")
+          .header(header, "\"abc-gzip\"extra")
+          .build();
+      HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();
+
+      boolean proceed = ConditionalRequests.checkIfHeaders(request, recorder.build(),
+          new GenericEntityInfo(1000, "text/plain", "\"abc\""));
+      Assertions.assertEquals(HttpHeaders.IF_NONE_MATCH.equals(header), proceed, header);
+      Assertions.assertEquals(HttpHeaders.IF_MATCH.equals(header), recorder.errorSent(), header);
+    }
+  }
+
+  @Test
   void testCheckIfHeaders_NoConditions() throws Exception {
     HttpServletRequest request = HttpTestSupport.request().build();
     HttpTestSupport.ResponseRecorder recorder = HttpTestSupport.response();

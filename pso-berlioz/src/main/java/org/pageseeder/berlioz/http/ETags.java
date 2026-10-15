@@ -62,7 +62,21 @@ public final class ETags {
   public static @Nullable String getETagForUncompressed(@Nullable String etag) {
     if (etag == null) return null;
     int q = etag.lastIndexOf(GZIP_ETAG_SUFFIX);
-    return (q > 0) ? etag.substring(0, q) + '"' : etag;
+    return (q > 0) ? stripGZipSuffix(etag, q) : etag;
+  }
+
+  /**
+   * Normalizes a conditional-header token only when the GZip marker is a trailing suffix.
+   * Kept separate from the public helper's historical handling of embedded markers.
+   */
+  static String normalizeGZipToken(String token) {
+    return token.endsWith(GZIP_ETAG_SUFFIX)
+        ? stripGZipSuffix(token, token.length() - GZIP_ETAG_SUFFIX.length())
+        : token;
+  }
+
+  private static String stripGZipSuffix(String etag, int suffixIndex) {
+    return etag.substring(0, suffixIndex) + '"';
   }
 
 }

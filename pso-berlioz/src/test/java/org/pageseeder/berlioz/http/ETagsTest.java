@@ -62,4 +62,10 @@ class ETagsTest {
     Assertions.assertEquals(original, ETags.getETagForUncompressed(ETags.getETagForGZip(original)));
   }
 
+  @Test
+  void testGetETagForUncompressed_PreservesHistoricalMalformedValueHandling() {
+    Assertions.assertEquals("\"abc\"", ETags.getETagForUncompressed("\"abc-gzip\"extra"));
+    Assertions.assertEquals("-gzip\"", ETags.getETagForUncompressed("-gzip\""));
+  }
+
 }
