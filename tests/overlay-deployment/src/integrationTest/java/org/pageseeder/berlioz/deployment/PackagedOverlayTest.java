@@ -11,7 +11,9 @@ import org.junit.jupiter.api.io.TempDir;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
@@ -19,6 +21,7 @@ import java.nio.file.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.zip.*;
+import org.xml.sax.SAXException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,8 +35,6 @@ class PackagedOverlayTest {
   private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
   private void start(boolean classpathOnly) throws Exception {
-    assertThrows(ClassNotFoundException.class, () -> Class.forName("org.pageseeder.berlioz.servlet.BerliozServlet"));
-    assertThrows(ClassNotFoundException.class, () -> Class.forName("org.pageseeder.berlioz.fixture.OverlayGenerator"));
     Path war = Path.of(System.getProperty("overlay.war"));
     if (classpathOnly) {
       Path variant = temporary.resolve("classpath-only.war");
@@ -71,6 +72,11 @@ class PackagedOverlayTest {
     if (server != null) {
       try { server.stop(); } finally { server.destroy(); }
     }
+  }
+
+  @Test void runnerClasspathExcludesBerliozAndFixtureClasses() {
+    assertThrows(ClassNotFoundException.class, () -> Class.forName("org.pageseeder.berlioz.servlet.BerliozServlet"));
+    assertThrows(ClassNotFoundException.class, () -> Class.forName("org.pageseeder.berlioz.fixture.OverlayGenerator"));
   }
 
   @Test void discoversJarGeneratorAndExecutesPackagedXsltDependencies() throws Exception {
@@ -160,7 +166,7 @@ class PackagedOverlayTest {
     assertEquals("ready", jsonData(get("/admin/runtime.json").body()).get("loadStatus").getAsString());
   }
 
-  private HttpResponse<String> get(String path) throws Exception {
+  private HttpResponse<String> get(String path) throws IOException, InterruptedException {
     HttpResponse<String> response = client.send(HttpRequest.newBuilder(base.resolve(path))
         .timeout(Duration.ofSeconds(10)).GET().build(), HttpResponse.BodyHandlers.ofString());
     assertEquals(200, response.statusCode(), path + ": " + response.body());
@@ -194,19 +200,24 @@ class PackagedOverlayTest {
     for (int i = 0; i < attributes.getLength(); i++) {
       Node attribute = attributes.item(i);
       String name = camelCase(attribute.getNodeName());
-      String value = attribute.getNodeValue();
-      if (name.equals("mappings") || name.equals("extensions")) {
-        JsonArray values = new JsonArray();
-        if (!value.isEmpty()) for (String part : value.split(" ")) values.add(part);
-        result.add(name, values);
-      } else if (name.equals("compression") || name.equals("problemXml")) {
-        result.addProperty(name, Boolean.parseBoolean(value));
-      } else result.addProperty(name, value);
+      result.add(name, attributeValue(name, attribute.getNodeValue()));
     }
     for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
       if (child instanceof Element) result.add(camelCase(child.getNodeName()), fromXml((Element) child));
     }
     return result;
+  }
+
+  private static JsonElement attributeValue(String name, String value) {
+    if (name.equals("mappings") || name.equals("extensions")) return splitValues(value);
+    if (name.equals("compression") || name.equals("problemXml")) return new JsonPrimitive(Boolean.parseBoolean(value));
+    return new JsonPrimitive(value);
+  }
+
+  private static JsonArray splitValues(String value) {
+    JsonArray values = new JsonArray();
+    if (!value.isEmpty()) for (String part : value.split(" ")) values.add(part);
+    return values;
   }
 
   private static String camelCase(String name) {
@@ -220,7 +231,7 @@ class PackagedOverlayTest {
     return JsonParser.parseString(body).getAsJsonObject().getAsJsonObject("data");
   }
 
-  private static Document xml(String body) throws Exception {
+  private static Document xml(String body) throws ParserConfigurationException, SAXException, IOException {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
     return factory.newDocumentBuilder().parse(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
