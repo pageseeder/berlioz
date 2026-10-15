@@ -23,7 +23,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
@@ -100,11 +102,11 @@ final class XsltImportResolutionTest {
   }
 
   @Test
-  void relativeInclude_withoutSystemId_isRejected() throws IOException {
+  void relativeInclude_withoutSystemId_isRejected() throws IOException, TransformerConfigurationException {
     write("included.xsl", stylesheet("<xsl:template name=\"included\"/>"));
     StreamSource source = new StreamSource(new StringReader(stylesheet("<xsl:include href='included.xsl'/>")));
-    Assertions.assertThrows(TransformerException.class,
-        () -> XsltTemplateCache.newTransformerFactory().newTemplates(source));
+    TransformerFactory factory = XsltTemplateCache.newTransformerFactory();
+    Assertions.assertThrows(TransformerException.class, () -> factory.newTemplates(source));
   }
 
   @Test
