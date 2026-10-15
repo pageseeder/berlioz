@@ -33,6 +33,6 @@ import org.pageseeder.berlioz.Beta;
  * @deprecated Use {@link ListRuntimeServices} instead; this alias is retained until 1.0.
  */
 @Beta
-@Deprecated
+@Deprecated(since = "0.14.3", forRemoval = true)
 public class GetLiveServices extends ListRuntimeServices {
 }
