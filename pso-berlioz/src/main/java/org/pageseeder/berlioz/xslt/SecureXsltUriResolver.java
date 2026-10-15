@@ -65,7 +65,7 @@ final class SecureXsltUriResolver implements URIResolver {
 
   @Override
   public @Nullable Source resolve(String href, @Nullable String base) throws TransformerException {
-    if (href == null || href.isEmpty()) return null;
+    if (href.isEmpty()) return null;
     String classpathPath = StylesheetLocation.extractClasspathReference(href);
     if (classpathPath != null) return resolveClasspath(href, classpathPath);
     denyUnlessApprovedScheme(href, base);
@@ -84,19 +84,26 @@ final class SecureXsltUriResolver implements URIResolver {
 
   private void denyUnlessApprovedScheme(String href, @Nullable String base) throws TransformerException {
     try {
-      URL resolved;
-      try {
-        // An absolute reference does not depend on the importing stylesheet's base.
-        resolved = new URL(href);
-      } catch (MalformedURLException ex) {
-        if (base == null) throw ex;
-        resolved = new URL(new URL(base), href);
-      }
+      URL resolved = resolveAbsoluteOrRelative(href, base);
       requireLocalUrl(resolved);
     } catch (MalformedURLException ex) {
       throw new TransformerException("Unable to resolve XSLT resource URL: href='" + href
           + "', base=" + (base == null ? "<absent>" : "'" + base + "'")
           + ". Expected an absolute resource URL or a relative reference with an absolute base URL.", ex);
+    }
+  }
+
+  /**
+   * Resolves an absolute reference directly; falls back to resolving against the base URL
+   * only when the href is relative and a base is available.
+   */
+  private static URL resolveAbsoluteOrRelative(String href, @Nullable String base) throws MalformedURLException {
+    try {
+      // An absolute reference does not depend on the importing stylesheet's base.
+      return new URL(href);
+    } catch (MalformedURLException ex) {
+      if (base == null) throw ex;
+      return new URL(new URL(base), href);
     }
   }
 
