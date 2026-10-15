@@ -75,7 +75,10 @@ public final class HttpRequests {
    * from {@code X-Forwarded-Host} and {@code X-Forwarded-Proto} headers when present,
    * matching the behaviour of {@link org.pageseeder.berlioz.servlet.HttpLocation}.
    *
-   * <p>Protocol-relative URLs ({@code //host/path}) are treated as absolute.
+   * <p>Protocol-relative URLs ({@code //host/path}) are treated as absolute. URLs with
+   * three or more leading slashes (e.g. {@code ///host/path}) are rejected outright:
+   * Java's {@link URI} parser reports no authority for them, but browsers resolve them
+   * as a network-path reference to an arbitrary host.
    *
    * @param url the redirect URL to validate (may be {@code null})
    * @param req the current request, used to determine the expected origin
@@ -87,8 +90,11 @@ public final class HttpRequests {
     if (url.indexOf('\r') >= 0 || url.indexOf('\n') >= 0) return false;
     try {
       URI uri = new URI(url);
-      // Relative URL with no authority is always safe
-      if (!uri.isAbsolute() && uri.getAuthority() == null) return true;
+      // Relative URL with no authority is safe, unless it starts with two or more
+      // slashes: browsers resolve such network-path references as absolute URLs
+      // (authority = everything up to the next slash), even though Java's URI
+      // parser reports no authority for them when the authority would be empty.
+      if (!uri.isAbsolute() && uri.getAuthority() == null) return !url.startsWith("//");
       String targetHost = uri.getHost();
       if (targetHost == null) return false;
       if (targetHost.equalsIgnoreCase(effectiveHost(req))) {

@@ -60,6 +60,21 @@ class HttpRequestsTest {
     Assertions.assertFalse(HttpRequests.isSafeRedirectURL("http://[invalid", request));
   }
 
+  @Test
+  void testIsSafeRedirectURL_TripleSlashBypass() {
+    // SEC-02: Java's URI parser reports no authority for "///host" and "////host"
+    // (the authority component would be empty), but browsers resolve these as
+    // network-path references to an absolute URL on the attacker's host.
+    HttpServletRequest request = HttpTestSupport.request().server("example.org", 8080).build();
+    Assertions.assertFalse(HttpRequests.isSafeRedirectURL("///attacker.example/path", request));
+    Assertions.assertFalse(HttpRequests.isSafeRedirectURL("////attacker.example/path", request));
+    Assertions.assertFalse(HttpRequests.isSafeRedirectURL("///attacker.example", request));
+    // Ordinary relative paths and the legitimate protocol-relative (two-slash) same-origin
+    // case must still be accepted.
+    Assertions.assertTrue(HttpRequests.isSafeRedirectURL("/docs/index.html", request));
+    Assertions.assertTrue(HttpRequests.isSafeRedirectURL("//example.org:8080/docs", request));
+  }
+
   // Proxy-aware tests ---------------------------------------------------------------------
 
   @Test
