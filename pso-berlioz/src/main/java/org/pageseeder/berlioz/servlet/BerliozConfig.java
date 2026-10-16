@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.5
+ * @version 0.14.3
  * @since 0.8.1
  */
 public final class BerliozConfig {
@@ -64,6 +64,8 @@ public final class BerliozConfig {
   private static final Logger LOGGER = LoggerFactory.getLogger(BerliozConfig.class);
 
   private static final String IDENTITY_TRANSFORM = "IDENTITY";
+
+  private static final String STYLESHEET_PARAM = "stylesheet";
 
   /**
    * Stores all the berlioz config here.
@@ -168,10 +170,10 @@ public final class BerliozConfig {
     ServletContext context = servletConfig.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
-    this.stylePath = this.getInitParameter("stylesheet", IDENTITY_TRANSFORM);
+    this.stylePath = this.getInitParameter(STYLESHEET_PARAM, IDENTITY_TRANSFORM);
     this.allocation = toAllocation(this.stylePath);
     this.fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", "");
-    warnIfDeprecatedResourcePrefix(servletConfig, "stylesheet", this.stylePath);
+    warnIfDeprecatedResourcePrefix(servletConfig, STYLESHEET_PARAM, this.stylePath);
     warnIfDeprecatedResourcePrefix(servletConfig, "fallback-stylesheet", this.fallbackStyleSheet);
     this.transformers = this.allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Map.of();
     String rawContentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
@@ -378,7 +380,7 @@ public final class BerliozConfig {
           config.allocation == TransformAllocation.NIL ? "identity"
               : config.allocation.name().toLowerCase(Locale.ROOT));
       if (config.allocation != TransformAllocation.NIL) style.putAll(DiagnosticConfiguration.stylesheet(config.stylePath));
-      entry.put("stylesheet", style);
+      entry.put(STYLESHEET_PARAM, style);
       if (!config.fallbackStyleSheet.isEmpty()) entry.put("fallback", DiagnosticConfiguration.stylesheet(config.fallbackStyleSheet));
       entries.add(entry);
     });
@@ -516,15 +518,6 @@ public final class BerliozConfig {
     }
   }
 
-  /**
-   * Returns the value for the specified init parameter name.
-   *
-   * <p>If <code>null</code> returns the default value.
-   *
-   * @param stylePath The path to the stylesheet to use.
-   *
-   * @return The values for the specified init parameter name.
-   */
   /**
    * Warns once, at configuration load time, when a stylesheet value uses the deprecated
    * {@code resource:} prefix instead of the canonical {@code classpath:} prefix. Called from the
