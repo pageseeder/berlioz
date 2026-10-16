@@ -108,10 +108,10 @@ below for the retry and diagnostic-visibility behavior shared with filesystem-on
 Primary and fallback stylesheets accept three kinds of value:
 
 - `IDENTITY` — no transformation.
-- A `classpath:` or `resource:` reference — resolved through the application classloader.
-  `resource:` is a compatibility alias for `classpath:` with identical behavior. Both accept an
-  optional leading slash: `classpath:xslt/main.xsl` and `classpath:/xslt/main.xsl` resolve to
-  the same resource.
+- A `classpath:` reference — resolved through the application classloader. Accepts an optional
+  leading slash: `classpath:xslt/main.xsl` and `classpath:/xslt/main.xsl` resolve to the same
+  resource. `resource:` is a **deprecated** compatibility alias for `classpath:` with identical
+  behavior, retained only until 1.0 — use `classpath:` in new configuration.
 - Any other value — resolved as a filesystem path contained beneath `WEB-INF`, as before.
 
 `{GROUP}` and `{SERVICE}` substitution is applied before resolution, for both primary and
@@ -134,7 +134,7 @@ transform's system ID, so relative resolution stays within that artifact:
 ```
 
 Reaching a template in a *different* JAR (or in the filesystem) requires an explicit
-`classpath:`/`resource:` reference as the `href`. Every import/include — relative or explicit —
+`classpath:` (or deprecated `resource:`) reference as the `href`. Every import/include — relative or explicit —
 is restricted to local `file:`/`jar:file:` resources; HTTP(S) and other network schemes are
 always rejected, independently of the underlying XSLT processor's own `accessExternalStylesheet`
 enforcement.
@@ -257,9 +257,10 @@ application:
 - An application with a `WEB-INF/config/services.xml` and no classpath overlay dependencies
   behaves exactly as before: there is nothing on the classpath to discover, so filesystem
   services remain the only source, and existing mapping precedence is unchanged.
-- Existing `resource:` stylesheet references continue to resolve exactly as before;
-  `classpath:` is the new canonical spelling of the same resolution, not a replacement
-  requiring edits.
+- Existing `resource:` stylesheet references continue to resolve exactly as before, but
+  `resource:` is now deprecated and will be removed in 1.0 — `classpath:` is the canonical
+  spelling and the only form that will remain. Migrate existing `resource:` references when
+  convenient; there is no behavior change to work around before 1.0.
 - `services!*.xml` filesystem modules now load in deterministic lexical order. Previously this
   followed directory-listing order, which was not guaranteed across platforms; an application
   relying on a specific non-alphabetical load order (uncommon, since override behavior did not

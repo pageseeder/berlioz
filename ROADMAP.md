@@ -8,7 +8,7 @@ The 0.13.x releases delivered the complete roadmap for that cycle: typed request
 
 **0.14.1 was released on 2026-07-25.** It delivered the runtime service-diagnostics model, first-class HTTP `QUERY` support, and hardened Content-Type/header handling across the servlet layer.
 
-**0.14.2 was released on 2026-09-04 as a hotfix.** It prevented unintended session creation and updated dependencies. The hotfix shifted the planned overlay release to 0.14.3 and configuration validation to 0.14.4. Development is now on **0.14.3-SNAPSHOT** and focuses on classpath overlay discovery before configuration validation and a 1.0 release.
+**0.14.2 was released on 2026-09-04 as a hotfix.** It prevented unintended session creation and updated dependencies. The hotfix shifted the planned overlay release to 0.14.3 and configuration validation to 0.14.4. **0.14.3's classpath overlay discovery work is implemented, documented, and verified on `dev`** (still tagged **0.14.3-SNAPSHOT** pending the release itself); 0.14.4 configuration validation and a 1.0 release follow.
 
 ## Guiding Principles
 
@@ -74,26 +74,26 @@ Completed release changes:
 - Used `getSession(false)` to prevent unintended session creation in request wrappers.
 - Updated Jackson to 2.22.2 and JSpecify to 1.0.1.
 
-### 0.14.3: Classpath Overlay Discovery
+### 0.14.3: Classpath Overlay Discovery — implementation complete, release pending
 
-0.14.3 should deliver reusable overlays as ordinary JAR dependencies. The implementation workstreams and progress checklist are tracked in [`PLAN-0.14.3.md`](PLAN-0.14.3.md).
+0.14.3 delivers reusable overlays as ordinary JAR dependencies. All workstreams in [`PLAN-0.14.3.md`](PLAN-0.14.3.md) are implemented, documented, and verified on `dev`: `./gradlew test`, the packaged `overlayIntegrationTest`, `./gradlew build`, and Javadoc generation all pass cleanly under the Java 11 toolchain across `pso-berlioz`, `pso-berlioz-mock`, `pso-berlioz-kickstart`, and `samples:minimal-gretty`. Only the version bump and publish step remain.
 
-Planned scope:
+Completed release changes:
 
-- Use one exactly addressable `META-INF/berlioz/services.xml` resource per contributing JAR; an explicit index can be added later if multiple documents per JAR prove necessary.
-- Load classpath contributions first and filesystem configuration second, so application-owned filesystem mappings take precedence.
-- Define mapping conflicts by HTTP method and URI pattern, and report the origin of both the replaced and replacing declarations.
-- Make service loading transactional so discovery failures or invalid contributions do not publish a partially populated registry; retain and serve the last valid registry after a failed reload, with controlled retries and visible diagnostic status.
-- Generalize service inputs from files to source descriptors carrying a URL and origin metadata.
-- Add format-agnostic `GetBerliozConfig` and `GetErrorHandlerConfig` diagnostic generators so admin overlays can inspect how the deployed Berlioz and error-handler servlets are actually configured and mapped.
-- Have the Berlioz diagnostic expose each servlet name, URL mappings, effective media type and charset, stylesheet/fallback allocation, cache policy, and compression setting; have the error-handler diagnostic expose its mappings, explicit versus discovered forward extensions, ignored extensions, default extension, and effective problem/detail/stylesheet options.
-- Give both diagnostics stable equivalent XML/JSON schemas, correlate entries by servlet name and mapping, omit sensitive values, and document them as opt-in/admin-only services.
-- Support `classpath:` primary XSLT templates while retaining `resource:` as a compatibility alias.
-- Treat classpath templates as immutable in `manual` and `auto` cache modes; `no` may recompile them on each use.
-- Verify discovery, conflict handling, XSLT imports/includes, static resources, and `web-fragment.xml` using a real packaged overlay JAR.
-- Rename `GetLiveServices` to `ListRuntimeServices`, retaining `GetLiveServices` as a deprecated forwarding alias until 1.0.
-
-Implemented on `dev`: service-source discovery and origin tracking, transactional registry publication and reload retention, classpath-backed XSLT resolution/caching, the `GetBerliozConfig`/`GetErrorHandlerConfig` diagnostics, the packaged overlay deployment fixture, and the `ListRuntimeServices` rename (with `GetLiveServices` retained as a deprecated forwarding alias until 1.0). Remaining release work: user/migration documentation and final release verification.
+- Discovered exactly one addressable `META-INF/berlioz/services.xml` resource per contributing JAR via `getResources(...)` on the web application's context classloader (falling back to the classloader that loaded Berlioz), including exploded development classpath directories; an explicit index is reserved for a future multiple-document-per-JAR need.
+- Enabled discovery by default: adding the overlay dependency is the only application action required.
+- Loaded classpath service sources before filesystem sources, so filesystem mappings deterministically take final precedence; same-pattern declarations with different HTTP methods never conflict.
+- Defined conflicts by HTTP method and normalized URI pattern, with override warnings naming both the replaced and replacing declaration and their safe origins (contributing JAR/resource path, or filesystem path relative to the configuration directory).
+- Made service loading transactional: each `ServiceSource` parses into an isolated candidate, candidates merge in source order, and the complete result publishes atomically through `ServiceRegistry`. A malformed or unreachable source rejects the whole candidate; a failed *reload* keeps serving the last successfully published registry, including its warnings, source metadata, version, and content ETags, with retries after a 30-second delay (or on demand).
+- Generalized `ServiceLoader` from `File` inputs to `ServiceSource`/`ServiceOrigin` descriptors carrying a URL and safe, loggable origin metadata; `load(File)` and `listServiceFiles()` remain source-compatible.
+- Loaded overlay generator classes through the resolved application classloader instead of `Class.forName(...)`, so overlay-owned generators resolve correctly even from a child web-application classloader.
+- Added format-agnostic `GetBerliozConfig` and `GetErrorHandlerConfig` diagnostic generators reporting deployed servlet configuration — mappings, media type/charset, stylesheet/fallback allocation (`identity`/`global`/`group`/`service`), cache policy, compression, and XSLT cache mode for Berlioz servlets; mappings, Problem Details mode, detail level, forward-extension source/list, ignored extensions, and custom/built-in/none stylesheet selection for the error handler — with stable, equivalent, allowlisted XML/JSON schemas and request-scoped, content-derived SHA-256 ETags.
+- Added `classpath:` as the canonical primary/fallback XSLT prefix, retaining `resource:` as a **deprecated** compatibility alias (both accept an optional leading slash, resolved identically); `resource:` is scheduled for removal at 1.0.
+- Added a `StylesheetLocation` abstraction shared by `BerliozConfig`, `XsltTransformer`, and `XsltTemplateCache`, and a constrained XSLT `URIResolver` allowing relative `xsl:import`/`xsl:include` within the same JAR plus explicit cross-artifact `classpath:`/`resource:` references, while continuing to deny every network protocol.
+- Treated classpath/JAR-backed templates as immutable under `manual` and `auto` cache modes (recompiled only under `no`); cache keys and ETags distinguish identically named resources contributed by different JARs or application classloaders.
+- Verified the complete deployment model — discovery, precedence/conflict warnings, classpath XSLT imports/includes, static resources under `META-INF/resources/`, `web-fragment.xml` servlet/filter registration, and both new diagnostics — with a real packaged overlay JAR deployed into a Jetty 10 container (`tests/overlay-fixture`, `tests/overlay-deployment`, `./gradlew overlayIntegrationTest`).
+- Renamed `GetLiveServices` to `ListRuntimeServices`, retaining `GetLiveServices` as a `@Deprecated` forwarding alias with identical behavior and output until removal at 1.0.
+- Documented overlay packaging and precedence, classpath/filesystem XSLT resolution and cache-mode behavior, and migration notes for existing filesystem-only applications in `README.md`.
 
 ### 0.14.4: Configuration Requirements And Validation
 
@@ -292,32 +292,18 @@ Already done:
 
 This makes services easier to inspect, document, test, and debug without adding metadata to every normal response or introducing heavy runtime machinery.
 
-### 4. Classpath Overlay Discovery
+### 4. Classpath Overlay Discovery ✓ Completed In 0.14.3
 
-The released 0.14.2 line requires service configuration and primary XSLT templates on the filesystem under `WEB-INF/`. This means reusable admin or utility overlays must be distributed as WAR overlays — ZIP archives that are merged into the host application at build time. A classpath-based discovery model would allow an overlay to be packaged as a plain JAR dependency, with no file-system merging step required.
+The 0.14.0–0.14.2 lines required service configuration and primary XSLT templates on the filesystem under `WEB-INF/`, so reusable admin or utility overlays had to be distributed as WAR overlays — ZIP archives merged into the host application at build time. 0.14.3 allows a self-contained overlay — XSLT templates, service configuration, static assets via `META-INF/resources/`, and servlet components via `web-fragment.xml` — to be distributed and consumed as a single ordinary JAR dependency, with no filesystem merge step.
 
-Existing foundations in the released line:
+Existing foundations this built on:
 
-- `BerliozConfig.toURL()` supports a `resource:` prefix for loading fallback and kickstart XSLT templates from the classpath.
-- The failsafe error stylesheet is already loaded from the classpath via `ClassLoader.getResource()`.
-- `web-fragment.xml` in `pso-berlioz-kickstart` already registers servlet mappings without requiring changes to the host application's `web.xml`.
-- `java.util.ServiceLoader` is already used for `RedirectPolicy` discovery via `META-INF/services/`, establishing a workable SPI pattern.
+- `BerliozConfig.toURL()` already supported a `resource:` prefix for loading fallback and kickstart XSLT templates from the classpath.
+- The failsafe error stylesheet was already loaded from the classpath via `ClassLoader.getResource()`.
+- `web-fragment.xml` in `pso-berlioz-kickstart` already registered servlet mappings without requiring changes to the host application's `web.xml`.
+- `java.util.ServiceLoader` was already used for `RedirectPolicy` discovery via `META-INF/services/`, establishing a workable SPI pattern.
 
-0.14.3 scope (implementation status is tracked in [`PLAN-0.14.3.md`](PLAN-0.14.3.md)):
-
-- Discover one exactly addressable `META-INF/berlioz/services.xml` resource per JAR. Class loaders cannot portably enumerate arbitrary children beneath a resource directory, so `META-INF/berlioz/services/` is not used as an implicit listing convention.
-- Enable discovery for this narrow convention by default: adding the overlay dependency is the explicit application action.
-- Load classpath configurations first and filesystem configurations second, giving application-owned filesystem mappings final precedence.
-- Define conflicts by HTTP method and URI pattern rather than group name alone, and include source origins in override diagnostics.
-- Generalize `ServiceLoader` from `File` inputs to source descriptors with a URL and origin, and publish a new registry only after all inputs parse successfully.
-- Add format-agnostic `GetBerliozConfig` and `GetErrorHandlerConfig` generators for reusable admin overlays. `GetBerliozConfig` should enumerate deployed Berlioz servlet registrations and effective runtime settings (name, mappings, media type/charset, stylesheet and fallback allocation, cache policy, and compression). `GetErrorHandlerConfig` should expose the error-handler registration and effective routing/rendering policy (mappings, explicit or deployment-discovered forward extensions, ignored/default extensions, Problem Details mode, detail level, and custom/failsafe stylesheet selection).
-- Use stable equivalent XML/JSON schemas, identify configured versus derived values where relevant, correlate the two views by servlet name and mapping, omit secrets and arbitrary raw global-property values, and keep the generators opt-in/admin-only.
-- Add schema and deployment tests using the packaged overlay JAR so admin tools see the same servlet registrations and effective configuration that the runtime error-selection path uses.
-- Extend XSLT template resolution with a `classpath:` prefix for primary templates while retaining `resource:` as a compatibility alias.
-- Refactor XSLT caching to support URL-backed templates. Classpath templates are immutable in `manual` and `auto` modes; `no` recompiles them when requested.
-- Verify the complete deployment model with a real JAR containing `META-INF/berlioz/services.xml`, `META-INF/resources/` static assets, `META-INF/web-fragment.xml`, and classpath XSLT, including imports/includes.
-
-The goal is to allow a self-contained Berlioz overlay — XSLT templates, service configuration, static assets via `META-INF/resources/`, and a servlet filter via `web-fragment.xml` — to be distributed and consumed as a single JAR dependency.
+Done: classpath `META-INF/berlioz/services.xml` discovery with filesystem precedence and origin-aware conflict reporting; transactional candidate parsing and atomic registry publication with reload-failure retention; `classpath:` XSLT resolution (with `resource:` kept as a deprecated alias until 1.0) with immutable classpath caching and a secure import/include resolver; the `GetBerliozConfig`/`GetErrorHandlerConfig` diagnostic generators; the `ListRuntimeServices` rename (`GetLiveServices` kept as a deprecated alias); and full verification against a real packaged overlay JAR in a Jetty container. See the **0.14.3: Classpath Overlay Discovery** entry under Release Plan above for the complete list of changes, and [`PLAN-0.14.3.md`](PLAN-0.14.3.md) for implementation detail and the resolved-question decision log.
 
 ### 5. Configuration Requirements And Validation
 
