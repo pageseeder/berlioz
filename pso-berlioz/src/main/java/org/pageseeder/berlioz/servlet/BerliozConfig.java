@@ -171,6 +171,8 @@ public final class BerliozConfig {
     this.stylePath = this.getInitParameter("stylesheet", IDENTITY_TRANSFORM);
     this.allocation = toAllocation(this.stylePath);
     this.fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", "");
+    warnIfDeprecatedResourcePrefix(servletConfig, "stylesheet", this.stylePath);
+    warnIfDeprecatedResourcePrefix(servletConfig, "fallback-stylesheet", this.fallbackStyleSheet);
     this.transformers = this.allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Map.of();
     String rawContentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     ContentType contentType = ContentType.parse(rawContentType);
@@ -523,6 +525,24 @@ public final class BerliozConfig {
    *
    * @return The values for the specified init parameter name.
    */
+  /**
+   * Warns once, at configuration load time, when a stylesheet value uses the deprecated
+   * {@code resource:} prefix instead of the canonical {@code classpath:} prefix. Called from the
+   * constructor so this fires once per config load/reload, never per request.
+   *
+   * @param servletConfig the servlet configuration the value came from, for the log message.
+   * @param paramName     the init-param name the value came from ({@code stylesheet} or
+   *                      {@code fallback-stylesheet}), for the log message.
+   * @param value         the configured stylesheet value.
+   */
+  private static void warnIfDeprecatedResourcePrefix(ServletConfig servletConfig, String paramName, String value) {
+    if (value.startsWith("resource:")) {
+      LOGGER.warn("Servlet {} {}='{}' uses the 'resource:' prefix, deprecated since 0.14.3 and"
+          + " scheduled for removal in 1.0. Use 'classpath:' instead; both resolve identically.",
+          servletConfig.getServletName(), paramName, value);
+    }
+  }
+
   private static TransformAllocation toAllocation(String stylePath) {
     if (IDENTITY_TRANSFORM.equals(stylePath)) return TransformAllocation.NIL;
     else if (stylePath.contains("{SERVICE}")) return TransformAllocation.SERVICE;
@@ -534,9 +554,9 @@ public final class BerliozConfig {
    * Resolves a configured stylesheet value (the primary {@code stylesheet} or the
    * {@code fallback-stylesheet} init parameter) to a {@link StylesheetLocation}.
    *
-   * <p>A {@code classpath:} or {@code resource:} prefix (the latter retained as a compatibility
-   * alias) resolves through the application classloader; any other value resolves as a filesystem
-   * path contained within {@code WEB-INF}.
+   * <p>A {@code classpath:} prefix (or the deprecated {@code resource:} compatibility alias,
+   * retained until 1.0) resolves through the application classloader; any other value resolves
+   * as a filesystem path contained within {@code WEB-INF}.
    *
    * @param value the configured stylesheet value.
    * @return the resolved location.
@@ -545,6 +565,8 @@ public final class BerliozConfig {
    *                                  resolves outside the private folder.
    */
   private StylesheetLocation resolveStylesheetLocation(String value) {
+    // A rejected classpath reference throws rather than returning null, so it is never
+    // reinterpreted below as a filesystem path.
     String classpathPath = StylesheetLocation.extractClasspathReference(value);
     if (classpathPath != null) {
       ClassLoader loader = StylesheetLocation.resolveApplicationClassLoader();
@@ -553,10 +575,6 @@ public final class BerliozConfig {
         LOGGER.warn("Unable to resolve classpath stylesheet '{}'", value);
       }
       return StylesheetLocation.forClasspath(url, "classpath:" + classpathPath);
-    }
-    // A rejected classpath reference must never be reinterpreted as a filesystem path.
-    if (value.startsWith("classpath:") || value.startsWith("resource:")) {
-      throw new IllegalArgumentException("Invalid classpath stylesheet reference: " + value);
     }
     return StylesheetLocation.forFile(this.env.getPrivateFile(value).toPath());
   }

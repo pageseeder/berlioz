@@ -50,7 +50,12 @@ final class DiagnosticConfiguration {
   }
 
   static @Nullable String safePath(String value) {
-    String reference = StylesheetLocation.extractClasspathReference(value);
+    String reference;
+    try {
+      reference = StylesheetLocation.extractClasspathReference(value);
+    } catch (IllegalArgumentException ex) {
+      return null; // rejected classpath reference (e.g. traversal) — nothing safe to report.
+    }
     boolean classpath = reference != null;
     String path = classpath ? reference.replaceFirst("^/+", "") : value;
     if (path.isEmpty() || path.startsWith("/") || path.contains("\\") || path.contains(":")
@@ -67,6 +72,10 @@ final class DiagnosticConfiguration {
   }
 
   private static boolean isClasspath(String value) {
-    return StylesheetLocation.extractClasspathReference(value) != null;
+    try {
+      return StylesheetLocation.extractClasspathReference(value) != null;
+    } catch (IllegalArgumentException ex) {
+      return true; // still a classpath-style reference, just rejected — reported with no path.
+    }
   }
 }

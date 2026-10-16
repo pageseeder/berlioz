@@ -24,7 +24,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Identifies where an XSLT stylesheet is resolved from: the identity transform, a filesystem
- * path beneath <code>WEB-INF</code>, or a <code>classpath:</code>/<code>resource:</code> resource.
+ * path beneath <code>WEB-INF</code>, or a <code>classpath:</code> resource (the deprecated
+ * <code>resource:</code> prefix is a compatibility alias for the same resolution, retained until
+ * 1.0 — see {@link #extractClasspathReference(String)}).
  *
  * <p>This is the common abstraction shared by {@link org.pageseeder.berlioz.servlet.BerliozConfig},
  * {@link org.pageseeder.berlioz.servlet.XsltTransformer}, and {@link XsltTemplateCache} so that
@@ -47,6 +49,7 @@ public final class StylesheetLocation {
 
   private static final String CLASSPATH_PREFIX = "classpath:";
 
+  /** Deprecated compatibility alias for {@link #CLASSPATH_PREFIX}, scheduled for removal in 1.0. */
   private static final String RESOURCE_PREFIX = "resource:";
 
   private final StylesheetSourceKind kind;
@@ -204,27 +207,41 @@ public final class StylesheetLocation {
    * normalizing away a single optional leading slash so that both <code>classpath:/a/b.xsl</code>
    * and <code>classpath:a/b.xsl</code> resolve identically.
    *
-   * <p>Rejects any reference containing a <code>..</code> path segment: {@code ClassLoader}
-   * resource lookups for an exploded/directory classpath entry resolve such a segment against the
-   * filesystem, which could otherwise escape the intended classpath root. A JAR-backed entry is not
-   * exploitable this way (lookup is a flat entry-name match), but the check is applied uniformly so
-   * callers get one consistent, safe notion of "resource path" regardless of how the classpath entry
-   * happens to be packaged.
+   * <p>A value with neither prefix is not a classpath reference at all — {@code null} is returned
+   * so the caller can fall back to resolving it some other way (e.g. as a filesystem path). A value
+   * that <em>does</em> carry the prefix but contains a <code>..</code> path segment is a different
+   * case — a rejected classpath reference, not the absence of one — so it is reported by throwing
+   * rather than by returning {@code null}: {@code ClassLoader} resource lookups for an
+   * exploded/directory classpath entry resolve such a segment against the filesystem, which could
+   * otherwise escape the intended classpath root. (A JAR-backed entry is not exploitable this way —
+   * lookup there is a flat entry-name match — but the check is applied uniformly so every caller
+   * gets one consistent, safe notion of "resource path" regardless of how the classpath entry
+   * happens to be packaged.) Distinguishing the two cases this way also means a rejected reference
+   * can never be silently reinterpreted as something else, such as a filesystem path: a caller that
+   * only reacts to the {@code null} case, not catches this exception, simply propagates it.
+   *
+   * <p>The <code>resource:</code> prefix is a deprecated compatibility alias for
+   * <code>classpath:</code>, scheduled for removal in 1.0.
    *
    * @param value the configured stylesheet value.
    *
-   * @return the normalized resource path, or {@code null} if {@code value} does not use either
-   *         prefix, or if the referenced path contains a <code>..</code> traversal segment.
+   * @return the normalized resource path, or {@code null} if {@code value} does not use either prefix.
+   *
+   * @throws IllegalArgumentException if {@code value} uses either prefix but the referenced path
+   *                                  contains a <code>..</code> traversal segment.
    */
   public static @Nullable String extractClasspathReference(String value) {
-    if (value.startsWith(CLASSPATH_PREFIX)) return normalize(value.substring(CLASSPATH_PREFIX.length()));
-    if (value.startsWith(RESOURCE_PREFIX)) return normalize(value.substring(RESOURCE_PREFIX.length()));
+    if (value.startsWith(CLASSPATH_PREFIX)) return normalize(value, value.substring(CLASSPATH_PREFIX.length()));
+    if (value.startsWith(RESOURCE_PREFIX)) return normalize(value, value.substring(RESOURCE_PREFIX.length()));
     return null;
   }
 
-  private static @Nullable String normalize(String path) {
+  private static String normalize(String original, String path) {
     String noLeadingSlash = path.startsWith("/") ? path.substring(1) : path;
-    return containsTraversalSegment(noLeadingSlash) ? null : noLeadingSlash;
+    if (containsTraversalSegment(noLeadingSlash)) {
+      throw new IllegalArgumentException("Invalid classpath stylesheet reference: " + original);
+    }
+    return noLeadingSlash;
   }
 
   private static boolean containsTraversalSegment(String path) {

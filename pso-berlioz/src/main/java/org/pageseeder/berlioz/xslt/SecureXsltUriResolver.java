@@ -66,7 +66,12 @@ final class SecureXsltUriResolver implements URIResolver {
   @Override
   public @Nullable Source resolve(String href, @Nullable String base) throws TransformerException {
     if (href.isEmpty()) return null;
-    String classpathPath = StylesheetLocation.extractClasspathReference(href);
+    String classpathPath;
+    try {
+      classpathPath = StylesheetLocation.extractClasspathReference(href);
+    } catch (IllegalArgumentException ex) {
+      throw new TransformerException("Invalid classpath XSLT import/include: " + href, ex);
+    }
     if (classpathPath != null) return resolveClasspath(href, classpathPath);
     denyUnlessApprovedScheme(href, base);
     // Approved relative/file/jar reference: let the processor's own default resolution proceed.

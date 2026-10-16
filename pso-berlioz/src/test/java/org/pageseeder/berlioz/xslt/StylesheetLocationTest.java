@@ -201,18 +201,28 @@ final class StylesheetLocationTest {
   }
 
   @Test
-  void extractClasspathReference_classpathPrefixTraversal_returnsNull() {
-    Assertions.assertNull(StylesheetLocation.extractClasspathReference("classpath:../../../../etc/passwd"));
+  void extractClasspathReference_classpathPrefixTraversal_throws() {
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> StylesheetLocation.extractClasspathReference("classpath:../../../../etc/passwd"));
   }
 
   @Test
-  void extractClasspathReference_resourcePrefixTraversal_returnsNull() {
-    Assertions.assertNull(StylesheetLocation.extractClasspathReference("resource:../../../../etc/passwd"));
+  void extractClasspathReference_resourcePrefixTraversal_throws() {
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> StylesheetLocation.extractClasspathReference("resource:../../../../etc/passwd"));
   }
 
   @Test
-  void extractClasspathReference_traversalSegmentInMiddle_returnsNull() {
-    Assertions.assertNull(StylesheetLocation.extractClasspathReference("classpath:a/../../b.xsl"));
+  void extractClasspathReference_traversalSegmentInMiddle_throws() {
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> StylesheetLocation.extractClasspathReference("classpath:a/../../b.xsl"));
+  }
+
+  @Test
+  void extractClasspathReference_traversalExceptionMessage_namesTheOriginalValue() {
+    IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
+        () -> StylesheetLocation.extractClasspathReference("classpath:a/../b.xsl"));
+    Assertions.assertTrue(ex.getMessage().contains("classpath:a/../b.xsl"), ex.getMessage());
   }
 
   @Test
