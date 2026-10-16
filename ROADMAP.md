@@ -8,7 +8,9 @@ The 0.13.x releases delivered the complete roadmap for that cycle: typed request
 
 **0.14.1 was released on 2026-07-25.** It delivered the runtime service-diagnostics model, first-class HTTP `QUERY` support, and hardened Content-Type/header handling across the servlet layer.
 
-**0.14.2 was released on 2026-09-04 as a hotfix.** It prevented unintended session creation and updated dependencies. The hotfix shifted the planned overlay release to 0.14.3 and configuration validation to 0.14.4. **0.14.3's classpath overlay discovery work is implemented, documented, and verified on `dev`** (still tagged **0.14.3-SNAPSHOT** pending the release itself); 0.14.4 configuration validation and a 1.0 release follow.
+**0.14.2 was released on 2026-09-04 as a hotfix.** It prevented unintended session creation and updated dependencies. The hotfix shifted the planned overlay release to 0.14.3 and configuration validation to 0.14.4.
+
+**0.14.3 was released on 2026-10-16.** It delivered classpath overlay discovery, classpath XSLT resolution, transactional service loading, and deployed servlet diagnostics. **0.14.4 is the next planned release**, focused on configuration requirements and validation; its implementation plan is in [`PLAN-0.14.4.md`](PLAN-0.14.4.md).
 
 ## Guiding Principles
 
@@ -74,9 +76,9 @@ Completed release changes:
 - Used `getSession(false)` to prevent unintended session creation in request wrappers.
 - Updated Jackson to 2.22.2 and JSpecify to 1.0.1.
 
-### 0.14.3: Classpath Overlay Discovery — implementation complete, release pending
+### 0.14.3: Classpath Overlay Discovery ✓ Released 2026-10-16
 
-0.14.3 delivers reusable overlays as ordinary JAR dependencies. All workstreams in [`PLAN-0.14.3.md`](PLAN-0.14.3.md) are implemented, documented, and verified on `dev`: `./gradlew test`, the packaged `overlayIntegrationTest`, `./gradlew build`, and Javadoc generation all pass cleanly under the Java 11 toolchain across `pso-berlioz`, `pso-berlioz-mock`, `pso-berlioz-kickstart`, and `samples:minimal-gretty`. Only the version bump and publish step remain.
+0.14.3 delivered reusable overlays as ordinary JAR dependencies. Release verification covered `./gradlew test`, the packaged `overlayIntegrationTest`, `./gradlew build`, and Javadoc generation under the Java 11 toolchain across `pso-berlioz`, `pso-berlioz-mock`, `pso-berlioz-kickstart`, and `samples:minimal-gretty`. The released version is recorded in `version.txt` and tagged `v0.14.3`.
 
 Completed release changes:
 
@@ -95,9 +97,11 @@ Completed release changes:
 - Renamed `GetLiveServices` to `ListRuntimeServices`, retaining `GetLiveServices` as a `@Deprecated` forwarding alias with identical behavior and output until removal at 1.0.
 - Documented overlay packaging and precedence, classpath/filesystem XSLT resolution and cache-mode behavior, and migration notes for existing filesystem-only applications in `README.md`.
 
-### 0.14.4: Configuration Requirements And Validation
+### 0.14.4: Configuration Requirements And Validation — Next Planned Release
 
-0.14.4 should add application-facing configuration validation with explicit property provenance and safe diagnostics:
+0.14.4 should add application-facing configuration validation with explicit property provenance and safe diagnostics. The implementation sequence, proposed XML contract, lifecycle rules, and acceptance criteria are in [`PLAN-0.14.4.md`](PLAN-0.14.4.md); implementation has not started.
+
+Planned release changes:
 
 - Read requirements from a separate `WEB-INF/config/config-requirements.xml` file after variable resolution.
 - Preserve whether each resolved property was explicitly specified or inherited from a framework default.
@@ -109,7 +113,7 @@ Completed release changes:
 - Validate reload candidates before publication so a failed reload retains the last valid configuration.
 - Add an opt-in XML/JSON diagnostic generator and tests for matching, presence, constraints, provenance, reload, fail-fast behavior, and redaction.
 
-After these releases are complete, Berlioz may be ready for a 1.0.0 release.
+After 0.14.4, assess readiness for a 1.0.0 release and confirm which remaining core capabilities below are required for 1.0.0 versus later 1.0.x releases.
 
 ### 1.0.x: Roadmap Themes 6-9
 
@@ -303,7 +307,7 @@ Existing foundations this built on:
 - `web-fragment.xml` in `pso-berlioz-kickstart` already registered servlet mappings without requiring changes to the host application's `web.xml`.
 - `java.util.ServiceLoader` was already used for `RedirectPolicy` discovery via `META-INF/services/`, establishing a workable SPI pattern.
 
-Done: classpath `META-INF/berlioz/services.xml` discovery with filesystem precedence and origin-aware conflict reporting; transactional candidate parsing and atomic registry publication with reload-failure retention; `classpath:` XSLT resolution (with `resource:` kept as a deprecated alias until 1.0) with immutable classpath caching and a secure import/include resolver; the `GetBerliozConfig`/`GetErrorHandlerConfig` diagnostic generators; the `ListRuntimeServices` rename (`GetLiveServices` kept as a deprecated alias); and full verification against a real packaged overlay JAR in a Jetty container. See the **0.14.3: Classpath Overlay Discovery** entry under Release Plan above for the complete list of changes, and [`PLAN-0.14.3.md`](PLAN-0.14.3.md) for implementation detail and the resolved-question decision log.
+Done: classpath `META-INF/berlioz/services.xml` discovery with filesystem precedence and origin-aware conflict reporting; transactional candidate parsing and atomic registry publication with reload-failure retention; `classpath:` XSLT resolution (with `resource:` kept as a deprecated alias until 1.0) with immutable classpath caching and a secure import/include resolver; the `GetBerliozConfig`/`GetErrorHandlerConfig` diagnostic generators; the `ListRuntimeServices` rename (`GetLiveServices` kept as a deprecated alias); and full verification against a real packaged overlay JAR in a Jetty container. See the **0.14.3: Classpath Overlay Discovery** entry under Release Plan above for the complete list of released changes and the Open Questions section for resolved decisions.
 
 ### 5. Configuration Requirements And Validation
 
