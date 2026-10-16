@@ -50,6 +50,27 @@ class AppInitializerTest {
   }
 
   @Test
+  void testCheckServices_filesystemServicesXmlAndClasspathSource_reportsBoth(@TempDir Path webInf,
+      @TempDir Path classpathDir) throws Exception {
+    Files.createDirectories(webInf.resolve("config"));
+    Files.writeString(webInf.resolve("config/services.xml"), "<service-config version=\"1.0\"/>");
+    Path metaInf = Files.createDirectories(classpathDir.resolve("META-INF/berlioz"));
+    Files.writeString(metaInf.resolve("services.xml"), "<service-config version=\"1.0\"/>");
+
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    try (URLClassLoader classpathLoader = new URLClassLoader(new URL[] {classpathDir.toUri().toURL()}, original)) {
+      Thread.currentThread().setContextClassLoader(classpathLoader);
+      String output = invokeCheckServices(InitEnvironment.create(webInf.toFile()));
+
+      Assertions.assertTrue(output.contains("Services: OK"), output);
+      Assertions.assertFalse(output.contains("FAIL"), output);
+      Assertions.assertTrue(output.contains("Overlays: found '1' classpath overlay(s)"), output);
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
+  @Test
   void testCheckServices_noFilesystemButClasspathSource_reportsOkAsClasspathProvided(@TempDir Path webInf,
       @TempDir Path classpathDir) throws Exception {
     Files.createDirectories(webInf.resolve("config"));

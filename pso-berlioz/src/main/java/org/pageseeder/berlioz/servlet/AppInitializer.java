@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -34,6 +35,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.LifecycleListener;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ServiceLoader;
+import org.pageseeder.berlioz.content.ServiceSource;
 import org.pageseeder.berlioz.content.ServiceSourceKind;
 import org.pageseeder.berlioz.servlet.Overlays.Overlay;
 import org.slf4j.ILoggerFactory;
@@ -94,7 +96,7 @@ public abstract class AppInitializer {
   public final void init() {
     // Init message
     console(Phase.INIT, CONSOLE_RULE);
-    console(Phase.INIT, "Initialing Berlioz "+GlobalSettings.getVersion()+"...");
+    console(Phase.INIT, "Starting Berlioz "+GlobalSettings.getVersion()+"...");
     console(Phase.INIT, "Application base: "+this.webInf.getAbsolutePath());
 
     // Set the WEB-INF
@@ -635,27 +637,41 @@ public abstract class AppInitializer {
    * Checking that service configuration is available, either as a filesystem
    * '[config]/services.xml' or as one or more classpath-discovered overlay sources.
    *
+   * <p>Classpath overlays (ordinary JAR dependencies contributing a
+   * <code>META-INF/berlioz/services.xml</code>) are discovered and reported regardless of whether
+   * a filesystem services.xml is also present, so overlays packaged as JARs are not silently
+   * merged without any trace in the startup console.
+   *
    * @param env The Web application init environment
    */
   private static void checkServices(InitEnvironment env) {
     String servicesFile = env.configFolder() + "/services.xml";
     Path services = env.webInf().toPath().resolve(servicesFile);
-    if (Files.exists(services)) {
-      console(Phase.INIT, "Services: found " + servicesFile);
-      console(Phase.INIT, "Services: OK --------------------------------------------------");
-      return;
-    }
-    boolean hasClasspathServices;
+    boolean hasFilesystemServices = Files.exists(services);
+
+    List<ServiceSource> classpathOverlays;
     try {
-      hasClasspathServices = ServiceLoader.getInstance().discoverSources().stream()
-          .anyMatch(source -> source.kind() == ServiceSourceKind.CLASSPATH);
+      classpathOverlays = ServiceLoader.getInstance().discoverSources().stream()
+          .filter(source -> source.kind() == ServiceSourceKind.CLASSPATH)
+          .collect(Collectors.toList());
     } catch (BerliozException ex) {
       console(Phase.INIT, "(!) Service configuration discovery failed; see server logs");
       consoleException(Phase.INIT, ex);
       console(Phase.INIT, "Services: FAIL ------------------------------------------------");
       return;
     }
-    if (hasClasspathServices) {
+
+    if (!classpathOverlays.isEmpty()) {
+      console(Phase.INIT, "Overlays: found '" + classpathOverlays.size() + "' classpath overlay(s)");
+      for (ServiceSource overlay : classpathOverlays) {
+        console(Phase.INIT, "Overlays: " + overlay);
+      }
+    }
+
+    if (hasFilesystemServices) {
+      console(Phase.INIT, "Services: found " + servicesFile);
+      console(Phase.INIT, "Services: OK --------------------------------------------------");
+    } else if (!classpathOverlays.isEmpty()) {
       console(Phase.INIT, "Services: no " + servicesFile + " - service configuration provided by classpath");
       console(Phase.INIT, "Services: OK --------------------------------------------------");
     } else {
