@@ -212,6 +212,24 @@ final class XsltLocalResourceTest {
     }
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "classpath:../../../../etc/passwd", "resource:../../../../etc/passwd",
+      "classpath:/../../../../etc/passwd", "classpath:a/../../../b.xsl"
+  })
+  void classpathTraversalIsRejectedWithoutClassLoaderLookup(String href) {
+    AtomicInteger lookups = new AtomicInteger();
+    ClassLoader loader = new ClassLoader(getClass().getClassLoader()) {
+      @Override public URL getResource(String name) {
+        lookups.incrementAndGet();
+        return super.getResource(name);
+      }
+    };
+    SecureXsltUriResolver resolver = new SecureXsltUriResolver(loader);
+    assertThrows(TransformerException.class, () -> resolver.resolve(href, null));
+    assertEquals(0, lookups.get());
+  }
+
   private static String stylesheet(String body) {
     return "<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
         + body + "</xsl:stylesheet>";

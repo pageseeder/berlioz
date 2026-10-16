@@ -200,6 +200,31 @@ final class StylesheetLocationTest {
     Assertions.assertNull(StylesheetLocation.extractClasspathReference("IDENTITY"));
   }
 
+  @Test
+  void extractClasspathReference_classpathPrefixTraversal_returnsNull() {
+    Assertions.assertNull(StylesheetLocation.extractClasspathReference("classpath:../../../../etc/passwd"));
+  }
+
+  @Test
+  void extractClasspathReference_resourcePrefixTraversal_returnsNull() {
+    Assertions.assertNull(StylesheetLocation.extractClasspathReference("resource:../../../../etc/passwd"));
+  }
+
+  @Test
+  void extractClasspathReference_traversalSegmentInMiddle_returnsNull() {
+    Assertions.assertNull(StylesheetLocation.extractClasspathReference("classpath:a/../../b.xsl"));
+  }
+
+  @Test
+  void extractClasspathReference_dotSegmentNotTraversal_resolvesNormally() {
+    Assertions.assertEquals("a/./b.xsl", StylesheetLocation.extractClasspathReference("classpath:a/./b.xsl"));
+  }
+
+  @Test
+  void extractClasspathReference_nameContainingDotDot_resolvesNormally() {
+    Assertions.assertEquals("a/..b.xsl", StylesheetLocation.extractClasspathReference("classpath:a/..b.xsl"));
+  }
+
   // ---------------------------------------------------------------------------
   // resolveApplicationClassLoader()
   // ---------------------------------------------------------------------------

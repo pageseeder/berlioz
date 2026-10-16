@@ -509,7 +509,7 @@ public final class BerliozConfig {
       StylesheetLocation location = resolveStylesheetLocation(path);
       return new XsltTransformer(location, resolveFallbackUrl());
     } catch (IllegalArgumentException ex) {
-      LOGGER.warn("Stylesheet '{}' for service '{}' resolves outside private folder — using fallback", path, service.id());
+      LOGGER.warn("Stylesheet '{}' for service '{}' has an invalid path — using fallback", path, service.id());
       return new XsltTransformer(StylesheetLocation.forFile(this.env.getPrivateFolder().toPath()), resolveFallbackUrl());
     }
   }
@@ -541,7 +541,8 @@ public final class BerliozConfig {
    * @param value the configured stylesheet value.
    * @return the resolved location.
    *
-   * @throws IllegalArgumentException if a filesystem value resolves outside the private folder.
+   * @throws IllegalArgumentException if a classpath reference is invalid or a filesystem value
+   *                                  resolves outside the private folder.
    */
   private StylesheetLocation resolveStylesheetLocation(String value) {
     String classpathPath = StylesheetLocation.extractClasspathReference(value);
@@ -552,6 +553,10 @@ public final class BerliozConfig {
         LOGGER.warn("Unable to resolve classpath stylesheet '{}'", value);
       }
       return StylesheetLocation.forClasspath(url, "classpath:" + classpathPath);
+    }
+    // A rejected classpath reference must never be reinterpreted as a filesystem path.
+    if (value.startsWith("classpath:") || value.startsWith("resource:")) {
+      throw new IllegalArgumentException("Invalid classpath stylesheet reference: " + value);
     }
     return StylesheetLocation.forFile(this.env.getPrivateFile(value).toPath());
   }
@@ -571,7 +576,7 @@ public final class BerliozConfig {
       }
       return url;
     } catch (IllegalArgumentException ex) {
-      LOGGER.warn("Fallback stylesheet '{}' resolves outside private folder", this.fallbackStyleSheet);
+      LOGGER.warn("Fallback stylesheet '{}' has an invalid path", this.fallbackStyleSheet);
       return null;
     }
   }

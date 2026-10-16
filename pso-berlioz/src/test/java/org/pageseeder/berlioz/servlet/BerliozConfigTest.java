@@ -3,13 +3,18 @@ package org.pageseeder.berlioz.servlet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.content.ServiceTestHelper;
 import org.pageseeder.berlioz.xslt.StylesheetSourceKind;
 import org.pageseeder.berlioz.xslt.XsltTemplateCache;
+import org.pageseeder.berlioz.xslt.XsltTransformException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,6 +22,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class BerliozConfigTest {
 
@@ -140,6 +146,47 @@ class BerliozConfigTest {
     String result = transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), service)
         .content().toString();
     assertTrue(result.contains("classpath-ok"), result);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"classpath:", "resource:"})
+  void getTransformer_invalidClasspathPrimary_doesNotSelectFilesystemStylesheet(
+      String prefix, @TempDir Path contextRoot) throws Exception {
+    createTraversalTarget(contextRoot, prefix);
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig(contextRoot,
+        Map.of("stylesheet", prefix + "a/../local.xsl")));
+    Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+
+    XsltTransformer transformer = config.getTransformer(service);
+
+    // Rejected paths use the existing invalid-primary error path, never the local stylesheet.
+    assertEquals(contextRoot.resolve("WEB-INF"), transformer.location().path());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"classpath:", "resource:"})
+  void getTransformer_invalidClasspathFallback_doesNotLoadFilesystemStylesheet(
+      String prefix, @TempDir Path contextRoot) throws Exception {
+    createTraversalTarget(contextRoot, prefix);
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig(contextRoot, Map.of(
+        "stylesheet", "xslt/does-not-exist.xsl",
+        "fallback-stylesheet", prefix + "a/../local.xsl")));
+    Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+
+    XsltTransformer transformer = config.getTransformer(service);
+
+    assertThrows(XsltTransformException.class, () -> transformer.transformOrThrow(
+        "<root/>", ServletTestSupport.request().build(), service));
+  }
+
+  private static void createTraversalTarget(Path contextRoot, String prefix) throws IOException {
+    // Windows forbids ':' in directory names, so this filesystem reinterpretation cannot occur there.
+    assumeTrue(File.separatorChar == '/');
+    Files.createDirectories(contextRoot.resolve("WEB-INF").resolve(prefix + "a"));
+    Files.writeString(contextRoot.resolve("WEB-INF/local.xsl"),
+        "<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
+            + "<xsl:template match='/'><unintended-local-stylesheet/></xsl:template>"
+            + "</xsl:stylesheet>");
   }
 
   private static ServletConfig servletConfig(Path contextRoot) {

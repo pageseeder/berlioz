@@ -204,18 +204,34 @@ public final class StylesheetLocation {
    * normalizing away a single optional leading slash so that both <code>classpath:/a/b.xsl</code>
    * and <code>classpath:a/b.xsl</code> resolve identically.
    *
+   * <p>Rejects any reference containing a <code>..</code> path segment: {@code ClassLoader}
+   * resource lookups for an exploded/directory classpath entry resolve such a segment against the
+   * filesystem, which could otherwise escape the intended classpath root. A JAR-backed entry is not
+   * exploitable this way (lookup is a flat entry-name match), but the check is applied uniformly so
+   * callers get one consistent, safe notion of "resource path" regardless of how the classpath entry
+   * happens to be packaged.
+   *
    * @param value the configured stylesheet value.
    *
-   * @return the normalized resource path, or {@code null} if {@code value} does not use either prefix.
+   * @return the normalized resource path, or {@code null} if {@code value} does not use either
+   *         prefix, or if the referenced path contains a <code>..</code> traversal segment.
    */
   public static @Nullable String extractClasspathReference(String value) {
-    if (value.startsWith(CLASSPATH_PREFIX)) return normalizeLeadingSlash(value.substring(CLASSPATH_PREFIX.length()));
-    if (value.startsWith(RESOURCE_PREFIX)) return normalizeLeadingSlash(value.substring(RESOURCE_PREFIX.length()));
+    if (value.startsWith(CLASSPATH_PREFIX)) return normalize(value.substring(CLASSPATH_PREFIX.length()));
+    if (value.startsWith(RESOURCE_PREFIX)) return normalize(value.substring(RESOURCE_PREFIX.length()));
     return null;
   }
 
-  private static String normalizeLeadingSlash(String path) {
-    return path.startsWith("/") ? path.substring(1) : path;
+  private static @Nullable String normalize(String path) {
+    String noLeadingSlash = path.startsWith("/") ? path.substring(1) : path;
+    return containsTraversalSegment(noLeadingSlash) ? null : noLeadingSlash;
+  }
+
+  private static boolean containsTraversalSegment(String path) {
+    for (String segment : path.split("/")) {
+      if ("..".equals(segment)) return true;
+    }
+    return false;
   }
 
   /**
