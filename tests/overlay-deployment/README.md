@@ -37,7 +37,7 @@ this test server, not as production security examples.
 
 ## Coverage
 
-The six scenarios verify all twelve packaged-deployment checks in `PLAN-0.14.3.md`:
+The seven scenarios verify the packaged overlay deployment model:
 
 1. JAR service discovery and generator classloading; primary XSLT with packaged imports/includes.
 2. Static resources from the JAR and execution of the web-fragment filter.
@@ -46,3 +46,4 @@ The six scenarios verify all twelve packaged-deployment checks in `PLAN-0.14.3.m
    typed XML/JSON values and conditional HTTP requests returning 304 for unchanged diagnostics.
 5. A malformed reload retaining the old route behavior and warnings, followed by recovery.
 6. Startup and request processing with no filesystem `services.xml`.
+7. Test-runner classpath isolation from Berlioz and overlay fixture classes.

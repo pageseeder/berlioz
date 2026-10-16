@@ -277,6 +277,12 @@ application:
   as a deprecated forwarding alias with identical behavior and output until removal at 1.0;
   existing `services.xml` generator references do not need to change, but new configuration
   should reference `ListRuntimeServices` directly.
+- Redirect validation now ignores `X-Forwarded-Host` and `X-Forwarded-Proto` by default.
+  Behind a reverse proxy, configure trusted forwarded-header handling in the servlet container
+  so its request host, scheme, and port reflect the public origin. If container handling is
+  unavailable, `berlioz.redirect.trust-forwarded-headers=true` restores header-based origin
+  detection only when every request passes through a trusted proxy that overwrites these
+  headers and direct backend access is prevented.
 
 ## Roadmap
 
