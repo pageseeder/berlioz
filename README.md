@@ -139,6 +139,39 @@ is restricted to local `file:`/`jar:file:` resources; HTTP(S) and other network 
 always rejected, independently of the underlying XSLT processor's own `accessExternalStylesheet`
 enforcement.
 
+### Stub-free group overlays (since 0.14.4)
+
+Filesystem group stylesheets now fall back automatically to classpath overlays. For example,
+with `stylesheet=xslt/html/{GROUP}.xsl`, an absent `WEB-INF/xslt/html/bzadmin.xsl`
+selects `META-INF/berlioz/xslt/html/bzadmin.xsl`. Hosting applications can remove their
+`bzadmin.xsl` import stub after upgrading to **Berlioz 0.14.4 or later**.
+
+This behavior is enabled by default and has no separate switch. It applies only to filesystem
+stylesheet patterns containing `{GROUP}` whose resolved path is under `WEB-INF/xslt/`.
+Explicit `classpath:` patterns, fixed filesystem stylesheets, and files outside that directory
+retain their existing behavior. A present filesystem entry always wins, including an unreadable,
+invalid, or uncompilable entry: those failures remain errors. A missing overlay retains the
+existing `fallback-stylesheet` behavior, or fails if no fallback is configured.
+
+Overlay lookup uses the existing application classloader (thread context classloader, with the
+framework loader as fallback). For duplicate resources, its first `getResource` match wins:
+parent delegation and then the loader's configured classpath order determine precedence.
+Berlioz does not sort or merge stylesheet resources. Keep deployment classpath order stable;
+this differs from service declaration merging. Relative imports/includes retain the selected
+resource URL as their base, including nested directories inside JARs.
+
+Selection is checked whenever the servlet obtains a group transformer, in every cache mode.
+Adding or removing a filesystem override replaces the transformer, invalidates compiled entries
+for both selections, and recomputes its ETag. While selection is unchanged, the cache rules below
+still apply. Classpath content changes require redeployment or an explicit cache clear; configuration
+reload creates new servlet configuration and re-resolves resources. Runtime diagnostic callers can
+inspect `config.getTransformer(service).location()`: `kind()` reports `FILESYSTEM` or `CLASSPATH`,
+and `logicalPath()` reports the safe selected `WEB-INF/...` or `classpath:META-INF/berlioz/...`
+reference. Selection is also logged at debug level. Configuration snapshots continue to describe
+the configured pattern, rather than a single group's runtime selection.
+
+Cobble's classpath documentation support is a separate task.
+
 ### Cache-mode behavior
 
 `BerliozOption.XSLT_CACHE` (`no`, `auto`, `manual`) applies differently to filesystem and

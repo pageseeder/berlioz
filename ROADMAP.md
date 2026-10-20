@@ -10,7 +10,7 @@ The 0.13.x releases delivered the complete roadmap for that cycle: typed request
 
 **0.14.2 was released on 2026-09-04 as a hotfix.** It prevented unintended session creation and updated dependencies. The hotfix shifted the planned overlay release to 0.14.3 and configuration validation to 0.14.4.
 
-**0.14.3 was released on 2026-10-16.** It delivered classpath overlay discovery, classpath XSLT resolution, transactional service loading, and deployed servlet diagnostics. **0.14.4 is the next planned release**, focused on configuration requirements and validation; its implementation plan is in [`PLAN-0.14.4.md`](PLAN-0.14.4.md).
+**0.14.3 was released on 2026-10-16.** It delivered classpath overlay discovery, classpath XSLT resolution, transactional service loading, and deployed servlet diagnostics. **0.14.4 covers small features and updates**, starting with stub-free group stylesheet overlays. Configuration requirements and validation move to **0.14.5**; its implementation plan is in [`PLAN-0.14.5.md`](PLAN-0.14.5.md).
 
 ## Guiding Principles
 
@@ -41,7 +41,7 @@ Completed release changes:
 
 ### 0.14.1: Runtime Introspection And HTTP QUERY ✓ Released 2026-07-25
 
-0.14.1 delivered the runtime diagnostics model, core HTTP `QUERY` dispatch, and the smaller output/error contracts. The overlay and configuration-lifecycle work stays deferred to 0.14.3/0.14.4.
+0.14.1 delivered the runtime diagnostics model, core HTTP `QUERY` dispatch, and the smaller output/error contracts. The overlay and configuration-lifecycle work stays deferred to 0.14.3/0.14.5.
 
 Completed:
 
@@ -97,9 +97,20 @@ Completed release changes:
 - Renamed `GetLiveServices` to `ListRuntimeServices`, retaining `GetLiveServices` as a `@Deprecated` forwarding alias with identical behavior and output until removal at 1.0.
 - Documented overlay packaging and precedence, classpath/filesystem XSLT resolution and cache-mode behavior, and migration notes for existing filesystem-only applications in `README.md`.
 
-### 0.14.4: Configuration Requirements And Validation — Next Planned Release
+### 0.14.4: Small Features And Updates
 
-0.14.4 should add application-facing configuration validation with explicit property provenance and safe diagnostics. The implementation sequence, proposed XML contract, lifecycle rules, and acceptance criteria are in [`PLAN-0.14.4.md`](PLAN-0.14.4.md); implementation has not started.
+Implemented: filesystem group stylesheet fallback to `META-INF/berlioz/xslt/` overlays,
+enabled by default only for absent files. Filesystem entries take precedence, including errors.
+Classpath lookup preserves JAR import bases and uses application classloader precedence.
+Source transitions invalidate cached selections and expose the selected origin through
+`XsltTransformer.location()`. Acceptance tests cover missing resources, valid/invalid/unreadable
+overrides, nested imports, duplicate resources, and all cache modes. `./gradlew test` and
+`./gradlew build publish` passed. Minimum version for stub-free overlays: **0.14.4**.
+Cobble's classpath documentation support remains separate.
+
+### 0.14.5: Configuration Requirements And Validation — Next Planned Release
+
+0.14.5 should add application-facing configuration validation with explicit property provenance and safe diagnostics. The implementation sequence, proposed XML contract, lifecycle rules, and acceptance criteria are in [`PLAN-0.14.5.md`](PLAN-0.14.5.md); implementation has not started.
 
 Planned release changes:
 
@@ -113,7 +124,7 @@ Planned release changes:
 - Validate reload candidates before publication so a failed reload retains the last valid configuration.
 - Add an opt-in XML/JSON diagnostic generator and tests for matching, presence, constraints, provenance, reload, fail-fast behavior, and redaction.
 
-After 0.14.4, assess readiness for a 1.0.0 release and confirm which remaining core capabilities below are required for 1.0.0 versus later 1.0.x releases.
+After 0.14.5, assess readiness for a 1.0.0 release and confirm which remaining core capabilities below are required for 1.0.0 versus later 1.0.x releases.
 
 ### 1.0.x: Roadmap Themes 6-9
 
@@ -319,7 +330,7 @@ Already done (groundwork):
 - `BerliozOption` is unchanged — deprecation metadata does not live on the enum.
 - `OptionDeprecations` is the internal precursor to Theme 5's `ConfigurationValidator`: the check-and-warn pattern it establishes will generalize into the declarative, application-facing validation layer.
 
-Planned shape for 0.14.4:
+Planned shape for 0.14.5:
 
 - Add a separate declarative `WEB-INF/config/config-requirements.xml` file, evaluated after global properties are fully resolved.
 - Retain property provenance so validation can distinguish an explicitly specified value from a framework default.
@@ -506,9 +517,9 @@ Likely outcome:
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
 - ~~How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?~~ Released outcome: controls are closed by default; `berlioz.control.key` (explicit key) and `berlioz.control.network` (default `off`) are independent channels, plus a fixed delegated-authorization request attribute for host applications.
 - ~~Should service-level metadata be part of normal output, diagnostic output, or both?~~ Decided for 0.14.1: runtime-derived metadata belongs in `GetLiveServices` and `GetMatchingService`; normal responses and the raw `GetServices` source view remain unchanged.
-- ~~Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?~~ Decided for 0.14.4: use a separate `WEB-INF/config/config-requirements.xml` file.
-- ~~For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?~~ Decided for 0.14.4: zero matches violate only a presence rule that requires at least one match.
-- ~~How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?~~ Decided for 0.14.4: preserve explicit/default provenance in the resolved configuration snapshot.
+- ~~Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?~~ Decided for 0.14.5: use a separate `WEB-INF/config/config-requirements.xml` file.
+- ~~For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?~~ Decided for 0.14.5: zero matches violate only a presence rule that requires at least one match.
+- ~~How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?~~ Decided for 0.14.5: preserve explicit/default provenance in the resolved configuration snapshot.
 - Should direct services support only one handler forever, or is there a future aggregation model?
 - How should raw output interact with cache headers, ETags, and content negotiation?
 - Should authorization requirements be declared primarily by generator interfaces, service configuration, or both?
