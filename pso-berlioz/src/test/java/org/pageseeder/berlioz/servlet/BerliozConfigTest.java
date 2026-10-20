@@ -179,6 +179,138 @@ class BerliozConfigTest {
         "<root/>", ServletTestSupport.request().build(), service));
   }
 
+  private static final String OVERLAY = "META-INF/berlioz/xslt/html/g.xsl";
+
+  private static String stylesheet(String body) {
+    return "<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
+        + body + "</xsl:stylesheet>";
+  }
+
+  private static String output(XsltTransformer transformer, Service service) throws Exception {
+    return transformer.transformOrThrow("<root/>", ServletTestSupport.request().build(), service)
+        .content().toString();
+  }
+
+  private static Path overlayJar(Path jar, String marker) throws IOException {
+    try (java.util.jar.JarOutputStream out = new java.util.jar.JarOutputStream(Files.newOutputStream(jar))) {
+      Map<String, String> entries = Map.of(
+          OVERLAY, stylesheet("<xsl:import href='nested/first.xsl'/>"),
+          "META-INF/berlioz/xslt/html/nested/first.xsl", stylesheet("<xsl:import href='second.xsl'/>"),
+          "META-INF/berlioz/xslt/html/nested/second.xsl",
+          stylesheet("<xsl:template match='/'><" + marker + "/></xsl:template>"));
+      for (Map.Entry<String, String> entry : entries.entrySet()) {
+        out.putNextEntry(new java.util.jar.JarEntry(entry.getKey()));
+        out.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
+        out.closeEntry();
+      }
+    }
+    return jar;
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"no", "auto", "manual"})
+  void groupOverlay_selectionAndCacheTransitions(String mode, @TempDir Path root) throws Exception {
+    java.lang.reflect.Field field = org.pageseeder.berlioz.GlobalSettings.class.getDeclaredField("SETTINGS");
+    field.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    java.util.concurrent.atomic.AtomicReference<Map<String, String>> settings =
+        (java.util.concurrent.atomic.AtomicReference<Map<String, String>>) field.get(null);
+    Map<String, String> original = settings.get();
+    Map<String, String> options = new java.util.HashMap<>(original == null ? Map.of() : original);
+    options.put(org.pageseeder.berlioz.BerliozOption.XSLT_CACHE.property(), mode);
+    settings.set(options);
+    ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
+    Path first = overlayJar(root.resolve("first.jar"), "first-overlay");
+    Path second = overlayJar(root.resolve("second.jar"), "second-overlay");
+    try (java.net.URLClassLoader loader = new java.net.URLClassLoader(
+        new java.net.URL[]{first.toUri().toURL(), second.toUri().toURL()}, originalLoader)) {
+      Thread.currentThread().setContextClassLoader(loader);
+      Path file = root.resolve("WEB-INF/xslt/html/g.xsl");
+      Files.createDirectories(file.getParent());
+      BerliozConfig config = BerliozConfig.newConfig(servletConfig(root,
+          Map.of("stylesheet", "xslt/html/{GROUP}.xsl")));
+      Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+      XsltTransformer overlay = config.getTransformer(service);
+      assertEquals(StylesheetSourceKind.CLASSPATH, overlay.location().kind());
+      assertEquals("classpath:" + OVERLAY, overlay.location().logicalPath());
+      assertTrue(output(overlay, service).contains("first-overlay"));
+      assertSame(overlay, config.getTransformer(service));
+      String overlayEtag = overlay.getEtag();
+
+      Files.writeString(file, stylesheet("<xsl:template match='/'><filesystem/></xsl:template>"));
+      XsltTransformer override = config.getTransformer(service);
+      assertEquals(StylesheetSourceKind.FILESYSTEM, override.location().kind());
+      assertTrue(output(override, service).contains("filesystem"));
+      assertNotEquals(overlayEtag, override.getEtag());
+
+      Files.delete(file);
+      assertTrue(output(config.getTransformer(service), service).contains("first-overlay"));
+      Files.writeString(file, "invalid XML");
+      assertThrows(XsltTransformException.class, () -> output(config.getTransformer(service), service));
+      Files.writeString(file, stylesheet("<xsl:template match='/'><replacement/></xsl:template>"));
+      config.getTransformer(service).clearCache();
+      assertTrue(output(config.getTransformer(service), service).contains("replacement"));
+      Files.writeString(file, stylesheet("<xsl:import href='missing-import.xsl'/>"));
+      config.getTransformer(service).clearCache();
+      assertThrows(XsltTransformException.class, () -> output(config.getTransformer(service), service));
+
+      // A directory is present but unreadable as stylesheet XML: it must never select the overlay.
+      Files.delete(file);
+      Files.createDirectory(file);
+      config.getTransformer(service).clearCache();
+      assertEquals(StylesheetSourceKind.FILESYSTEM, config.getTransformer(service).location().kind());
+      assertThrows(XsltTransformException.class, () -> output(config.getTransformer(service), service));
+      Files.delete(file);
+
+      // Reverse URL order: the application classloader's first match wins deterministically.
+      try (java.net.URLClassLoader reversed = new java.net.URLClassLoader(
+          new java.net.URL[]{second.toUri().toURL(), first.toUri().toURL()}, originalLoader)) {
+        Thread.currentThread().setContextClassLoader(reversed);
+        assertTrue(output(config.getTransformer(service), service).contains("second-overlay"));
+        BerliozConfig reloaded = BerliozConfig.newConfig(servletConfig(root,
+            Map.of("stylesheet", "xslt/html/{GROUP}.xsl")));
+        assertTrue(output(reloaded.getTransformer(service), service).contains("second-overlay"));
+      }
+    } finally {
+      Thread.currentThread().setContextClassLoader(originalLoader);
+      settings.set(original);
+    }
+  }
+
+  @Test
+  void groupOverlay_missingBothLocationsFails(@TempDir Path root) throws Exception {
+    Files.createDirectories(root.resolve("WEB-INF"));
+    BerliozConfig config = BerliozConfig.newConfig(servletConfig(root,
+        Map.of("stylesheet", "xslt/missing/{GROUP}.xsl")));
+    Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+    assertThrows(XsltTransformException.class, () -> output(config.getTransformer(service), service));
+  }
+
+  @Test
+  void groupOverlay_permissionFailureDoesNotFallBack(@TempDir Path root) throws Exception {
+    assumeTrue(Files.getFileStore(root).supportsFileAttributeView("posix"));
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    Path jar = overlayJar(root.resolve("overlay.jar"), "overlay");
+    Path file = root.resolve("WEB-INF/xslt/html/g.xsl");
+    Files.createDirectories(file.getParent());
+    Files.writeString(file, stylesheet("<xsl:template match='/'/>"));
+    java.util.Set<java.nio.file.attribute.PosixFilePermission> permissions = Files.getPosixFilePermissions(file);
+    try (java.net.URLClassLoader loader = new java.net.URLClassLoader(
+        new java.net.URL[]{jar.toUri().toURL()}, original)) {
+      Thread.currentThread().setContextClassLoader(loader);
+      Files.setPosixFilePermissions(file, java.util.Set.of());
+      assumeTrue(!Files.isReadable(file), "Process can bypass POSIX permissions");
+      BerliozConfig config = BerliozConfig.newConfig(servletConfig(root,
+          Map.of("stylesheet", "xslt/html/{GROUP}.xsl")));
+      Service service = ServiceTestHelper.build("home", ServiceTestHelper.highestRule());
+      assertEquals(StylesheetSourceKind.FILESYSTEM, config.getTransformer(service).location().kind());
+      assertThrows(XsltTransformException.class, () -> output(config.getTransformer(service), service));
+    } finally {
+      Files.setPosixFilePermissions(file, permissions);
+      Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
   private static void createTraversalTarget(Path contextRoot, String prefix) throws IOException {
     // Windows forbids ':' in directory names, so this filesystem reinterpretation cannot occur there.
     assumeTrue(File.separatorChar == '/');

@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
@@ -491,30 +493,57 @@ public final class BerliozConfig {
    * @return the corresponding XSLT transformer.
    */
   private XsltTransformer getTransformer(Service service, String key) {
-    return this.transformers.computeIfAbsent(key, k -> newTransformer(service));
+    if (!this.stylePath.contains("{GROUP}")) {
+      return this.transformers.computeIfAbsent(key,
+          k -> new XsltTransformer(resolveServiceStylesheet(service), resolveFallbackUrl()));
+    }
+    // Re-evaluate selection even with caching enabled: an override may appear or disappear.
+    // Compiled templates remain cached while the selected source stays the same.
+    return this.transformers.compute(key, (k, previous) -> {
+      StylesheetLocation selected = resolveServiceStylesheet(service);
+      if (previous != null && previous.location().cacheKey().equals(selected.cacheKey())) {
+        return previous;
+      }
+      if (previous != null) previous.clearCache();
+      LOGGER.debug("Selected XSLT stylesheet '{}' [{}]", selected.logicalPath(), selected.kind());
+      XsltTransformer replacement = new XsltTransformer(selected, resolveFallbackUrl());
+      if (previous != null) replacement.clearCache();
+      return replacement;
+    });
   }
 
   /**
-   * Returns a new XSLT transformer for the specified service.
+   * Resolves the selected stylesheet for the specified service.
    *
    * <p>This method creates a new transform from the style path configuration and replaces the
    * <code>{GROUP}</code> and <code>{SERVICE}</code> tokens by the corresponding service attributes.
    *
    * @param service The service
-   * @return a new XSLT transformer from the style path configuration for the service.
+   * @return the selected filesystem or classpath location.
    *
    * @throws NullPointerException if the service is <code>null</code>.
    */
-  private XsltTransformer newTransformer(Service service) {
+  private StylesheetLocation resolveServiceStylesheet(Service service) {
     String path = this.stylePath
         .replace("{GROUP}", service.group())
         .replace("{SERVICE}", service.id());
     try {
       StylesheetLocation location = resolveStylesheetLocation(path);
-      return new XsltTransformer(location, resolveFallbackUrl());
+      if (this.stylePath.contains("{GROUP}") && location.path() != null
+          && Files.notExists(location.path(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+        Path relative = this.env.getPrivateFolder().toPath().toAbsolutePath().normalize()
+            .relativize(location.path().toAbsolutePath().normalize());
+        if (relative.startsWith("xslt")) {
+          String resource = "META-INF/berlioz/" + relative.toString().replace(File.separatorChar, '/');
+          StylesheetLocation overlay = StylesheetLocation.forClasspath(
+              StylesheetLocation.resolveApplicationClassLoader().getResource(resource), "classpath:" + resource);
+          if (overlay.url() != null) location = overlay;
+        }
+      }
+      return location;
     } catch (IllegalArgumentException ex) {
       LOGGER.warn("Stylesheet '{}' for service '{}' has an invalid path — using fallback", path, service.id());
-      return new XsltTransformer(StylesheetLocation.forFile(this.env.getPrivateFolder().toPath()), resolveFallbackUrl());
+      return StylesheetLocation.forFile(this.env.getPrivateFolder().toPath());
     }
   }
 
