@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.generator;
 
 import java.io.File;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
@@ -66,8 +67,9 @@ import org.pageseeder.berlioz.util.SHA256;
  * are replaced with {@code [REDACTED]} to avoid exposing secrets via misconfiguration.
  *
  * <h3>Etag</h3>
- * <p>This generator uses an etag based on the name, length and last modified date of the
- * properties file being loaded or <code>null</code> if no config file could be found.
+ * <p>This generator uses an etag based on the effective properties (after merging the default
+ * and mode-specific config files and resolving variables) or <code>null</code> if no config
+ * file could be found.
  *
  * @author Christophe Lauret
  *
@@ -78,9 +80,13 @@ public final class GetGlobalConfig implements Generator, Cacheable {
 
   @Override
   public @Nullable String getETag(Request req) {
-    File global = GlobalSettings.getPropertiesFile();
-    if (global == null) return null;
-    return SHA256.hash(global.length()+"x"+global.lastModified());
+    if (GlobalSettings.getPropertiesFile() == null) return null;
+    // Sorted so that the hash does not depend on the iteration order of the settings map
+    StringBuilder effective = new StringBuilder();
+    for (Entry<String, String> e : new TreeMap<>(GlobalSettings.getAll()).entrySet()) {
+      effective.append(e.getKey()).append('=').append(e.getValue()).append('\n');
+    }
+    return SHA256.hash(effective.toString());
   }
 
   @Override

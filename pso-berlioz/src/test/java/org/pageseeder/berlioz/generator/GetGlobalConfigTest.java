@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.generator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -12,6 +13,10 @@ import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Golden-value tests for {@link GetGlobalConfig}.
@@ -142,8 +147,42 @@ class GetGlobalConfigTest {
     Assertions.assertNull(gen.getETag((Request) req), "ETag should be null when no properties file is configured");
   }
 
+  @Test
+  void testETagStableAcrossReloadWithoutChanges(@TempDir File webInf) throws IOException {
+    Path config = Files.createDirectory(webInf.toPath().resolve("config"));
+    write(config.resolve("config.properties"), "app.name=Test\n");
+    write(config.resolve("config-default.properties"), "app.mode=default\n");
+    GlobalSettings.setup(webInf);
+    GetGlobalConfig gen = new GetGlobalConfig();
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String before = gen.getETag((Request) req);
+    GlobalSettings.load();
+    Assertions.assertEquals(before, gen.getETag((Request) req));
+  }
+
+  @Test
+  void testETagChangesWhenDefaultConfigChangesWhileModeConfigExists(@TempDir File webInf) throws IOException {
+    Path config = Files.createDirectory(webInf.toPath().resolve("config"));
+    write(config.resolve("config.properties"), "app.name=Test\n");
+    write(config.resolve("config-default.properties"), "app.mode=default\n");
+    GlobalSettings.setup(webInf);
+    GetGlobalConfig gen = new GetGlobalConfig();
+    ContentRequest req = GeneratorTestSupport.request().build();
+    String before = gen.getETag((Request) req);
+    // Same length so that file metadata alone would not reveal the change
+    write(config.resolve("config.properties"), "app.name=Best\n");
+    GlobalSettings.load();
+    String after = gen.getETag((Request) req);
+    Assertions.assertNotNull(after);
+    Assertions.assertNotEquals(before, after, "ETag should change when config.xml/properties changes");
+  }
+
   // helpers
   // ---------------------------------------------------------------------------
+
+  private static void write(Path file, String content) throws IOException {
+    Files.write(file, content.getBytes(StandardCharsets.UTF_8));
+  }
 
   private static String process(ContentRequest req) {
     GetGlobalConfig gen = new GetGlobalConfig();
