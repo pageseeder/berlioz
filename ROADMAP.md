@@ -600,6 +600,33 @@ Berlioz Admin (bzadmin) displays Berlioz's own diagnostic generators directly. I
 
 Target release: items 1–7 in 0.14.x; item 8 in 1.0.
 
+### 17. Scoped `berlioz-reload` (Idea)
+
+An idea to consider, not a planned work item.
+
+Today `berlioz-reload=true` does everything at once: it reloads the global configuration and the services, clears the XSLT cache and resets the ETag seed. `RedirectFilter` and `RelocationFilter` also reload their rules. Three separate parameters do part of the work (`reload-services`, `clear-xsl-cache`, `reset-etags`), but nothing reloads only the configuration. Adding a parameter for each case would add more global parameters.
+
+Idea: `berlioz-reload` also accepts a comma-separated list of scopes, and `true` keeps meaning everything:
+
+- `berlioz-reload=true`: everything, unchanged.
+- `berlioz-reload=services`: the services only.
+- `berlioz-reload=config,services`: the global configuration, then the services.
+- Possible scopes: `config`, `services`, `xslt`, `etags`, and possibly `redirects` for the filter rules.
+
+The administrator chooses what to reload, and one parameter covers every case, including a configuration-only reload.
+
+Points to consider:
+
+- **Order**: apply scopes in a fixed order (`config` first, since other scopes may depend on it, then `services`, `xslt`, `etags`), whatever their order in the parameter.
+- **Unknown scopes**: ignore them with a warning, or reject the whole request without applying any scope.
+- **Existing parameters**: keep `reload-services`, `clear-xsl-cache` and `reset-etags` as aliases, or deprecate them in favour of scopes.
+- **Partial reloads can be inconsistent**: reloading the services without resetting the ETags can return `304 Not Modified` for a service whose definition changed, because the ETag combines the seed with generator ETags only. Document which scopes usually go together, or decide whether some scopes imply others (for example `services` implying `etags`).
+- **Configuration failures**: `GlobalSettings.load()` clears every property when the file cannot be parsed, which turns off control authorisation and reverts every option to its default. A `config` scope makes this easier to trigger on its own. Consider keeping the last valid configuration, as the services do (see theme 5).
+- **Filters**: `RedirectFilter` and `RelocationFilter` compare the parameter with `"true"`, so they would need to understand the scope list.
+- **Reporting**: control parameters are ignored silently when the request is not authorised. Reporting the scopes that were applied, for example in a response header, would let tools such as Berlioz Admin confirm the result without their own generator (bzadmin's `GetBerliozControl`).
+
+Target release: none.
+
 ## Open Questions
 
 - Should Jakarta support be a breaking major release, a parallel artifact, or a later 1.x line once the application migration window is clear?
