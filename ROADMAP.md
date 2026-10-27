@@ -573,7 +573,7 @@ Berlioz Admin (bzadmin) displays Berlioz's own diagnostic generators directly. I
    - The warnings of the last successful load (`getLastLoadWarnings()`): `<warning line="…" source="…">message</warning>`. Include `line` only when `berlioz.errors.detail` is not `minimal`, as `GetServices` does.
    - When a reload fails, its cause (`<load-failure source="…" line="…">message</load-failure>`), kept until the next successful load. Today the failure is only logged, and the previous warnings are kept unchanged.
    - Timestamps: `loaded` (last successful load), `failed` (last failed attempt) and `retry-after` (when Berlioz will try again), as ISO 8601 attributes on the root element.
-   - Acceptance: after an authorised `reload-services` with a malformed `services!x.xml`, `load-status="reload-failed"`, the last valid services are still listed, and `load-failure` names the file and the parse error.
+   - Acceptance: after an authorised service reload (`berlioz-reload=services`, theme 17) with a malformed `services!x.xml`, `load-status="reload-failed"`, the last valid services are still listed, and `load-failure` names the file and the parse error.
 3. **Which source declared each service, and overrides**
    - Record the declaring source when a service is registered and output it as `service/@source` (the source's display name).
    - When a later source replaces the same method and URL pattern, output the replaced declaration (`<overridden source="…" pattern="…"/>` inside the service that won). This is already detected today, but only reported as a warning naming both sources.
@@ -600,13 +600,13 @@ Berlioz Admin (bzadmin) displays Berlioz's own diagnostic generators directly. I
 
 Target release: items 1–7 in 0.14.x; item 8 in 1.0.
 
-### 17. Scoped `berlioz-reload` (Idea)
+### 17. Scoped `berlioz-reload`
 
-An idea to consider, not a planned work item.
+Planned (decided 2026-10-27): keep the control parameters to a minimum. `berlioz-reload` takes scopes, and `reload-services`, `clear-xsl-cache` and `reset-etags` are retired in its favour, leaving `berlioz-reload` and `berlioz-profile`.
 
 Today `berlioz-reload=true` does everything at once: it reloads the global configuration and the services, clears the XSLT cache and resets the ETag seed. `RedirectFilter` and `RelocationFilter` also reload their rules. Three separate parameters do part of the work (`reload-services`, `clear-xsl-cache`, `reset-etags`), but nothing reloads only the configuration. Adding a parameter for each case would add more global parameters.
 
-Idea: `berlioz-reload` also accepts a comma-separated list of scopes, and `true` keeps meaning everything:
+`berlioz-reload` also accepts a comma-separated list of scopes, and `true` keeps meaning everything:
 
 - `berlioz-reload=true`: everything, unchanged.
 - `berlioz-reload=services`: the services only.
@@ -615,17 +615,74 @@ Idea: `berlioz-reload` also accepts a comma-separated list of scopes, and `true`
 
 The administrator chooses what to reload, and one parameter covers every case, including a configuration-only reload.
 
-Points to consider:
+Retiring the other parameters:
+
+- 0.14.x: the scopes replace them: `reload-services=true` is `berlioz-reload=services`, `clear-xsl-cache=true` is `berlioz-reload=xslt`, `reset-etags=true` is `berlioz-reload=etags`. The three parameters keep working as deprecated aliases of their scope, and log a deprecation warning once when applied.
+- 1.0: the three parameters are removed. Only `berlioz-reload` and `berlioz-profile` remain.
+- Documentation, `BerliozServlet` Javadoc and `ControlAuthorization` list only the two parameters, with the aliases in the migration notes.
+
+Points still to decide:
 
 - **Order**: apply scopes in a fixed order (`config` first, since other scopes may depend on it, then `services`, `xslt`, `etags`), whatever their order in the parameter.
 - **Unknown scopes**: ignore them with a warning, or reject the whole request without applying any scope.
-- **Existing parameters**: keep `reload-services`, `clear-xsl-cache` and `reset-etags` as aliases, or deprecate them in favour of scopes.
 - **Partial reloads can be inconsistent**: reloading the services without resetting the ETags can return `304 Not Modified` for a service whose definition changed, because the ETag combines the seed with generator ETags only. Document which scopes usually go together, or decide whether some scopes imply others (for example `services` implying `etags`).
 - **Configuration failures**: `GlobalSettings.load()` clears every property when the file cannot be parsed, which turns off control authorisation and reverts every option to its default. A `config` scope makes this easier to trigger on its own. Consider keeping the last valid configuration, as the services do (see theme 5).
 - **Filters**: `RedirectFilter` and `RelocationFilter` compare the parameter with `"true"`, so they would need to understand the scope list.
 - **Reporting**: control parameters are ignored silently when the request is not authorised. Reporting the scopes that were applied, for example in a response header, would let tools such as Berlioz Admin confirm the result without their own generator (bzadmin's `GetBerliozControl`).
 
-Target release: none.
+Target release: scopes and deprecated aliases in 0.14.x; removal of `reload-services`, `clear-xsl-cache` and `reset-etags` in 1.0.
+
+### 18. Admin Overlay Upstreaming (Requested By Berlioz Admin)
+
+Berlioz Admin (bzadmin) replaces or works around several Berlioz generators and helpers. The items below move that work into Berlioz, so that any application gets the fixes and bzadmin can delete its copies. They complement theme 16, which covers the diagnostic output itself (option catalog, servlet completeness, public XSLT resolver), and theme 17, which covers the scoped `berlioz-reload` that replaces the other reload parameters and reporting what was applied. The bzadmin side is planned in `docs/implementation/11-berlioz-upstream.md` of the bzadmin repository.
+
+0.14.x (fixes and additive):
+
+1. **Redacted `GetSystemProperties`**
+   - Today it is an `XmlGenerator` that writes every system property unsorted and unredacted, unlike `GetGlobalConfig`.
+   - Redact values with `Redaction.redact(name, value)`, sort by name, and implement `Generator` (JSON: `properties` array of `{name, value}`), keeping the XML unchanged apart from the order and the redacted values.
+   - Security fix: suitable for a patch release.
+   - Acceptance: a system property `fixture.password` is `[REDACTED]` in XML and JSON; properties are sorted.
+   - Replaces bzadmin's `GetSystemProperties`.
+2. **Non-blocking CPU sample (`GetCpuSample`)**
+   - `GetCPUTime` sleeps on the request thread (100 ms by default, up to 5 s with `interval`), measures only that window, truncates to whole percents and sums the CPU time of live threads only, so it mostly reports 0.
+   - Add a generator that returns cumulative counters without sleeping: `<cpu-sample processors="…" uptime-ms="…" process-time-ns="…" gc-time-ms="…" system-load="…" load-average="…"/>`. Clients compute the usage between two samples. JDK-specific metrics (`ProcessCpuTime`, `CpuLoad`/`SystemCpuLoad`) are read by MBean attribute name, never through `com.sun.management`; an unavailable value is absent, never zero.
+   - Deprecate `GetCPUTime` for removal in 1.0.
+   - Acceptance: no sleep; values absent when the MBean does not provide them; XML and JSON.
+   - Replaces bzadmin's `GetCpuSample` and `OptionalMetrics`.
+3. **Richer, bounded `ListThreads` and `GetThreadInfo`**
+   - Add per thread: `blocked-count`, `waited-count`, `in-native`, `deadlocked`, `lock` with its owner, and allocated bytes (`getThreadAllocatedBytes`, invoked by operation name on the threading MBean).
+   - Bound the work: `ListThreads` reads stacks with `Integer.MAX_VALUE` depth; limit the number of threads (e.g. 2000) and the stack depth (e.g. 256 frames), and report the monitors and synchronizers each thread holds in `GetThreadInfo`.
+   - Keep how a thread is classified (component, role) out of core: it is a presentation heuristic and stays in bzadmin (`ThreadOrigin`).
+   - Acceptance: existing attributes keep their meaning; limits are stated in the output when reached.
+   - Replaces bzadmin's `ListThreads`, `GetThreadInfo` and `ThreadDetails`.
+4. **`GetGeneratorStatistics` as a `Generator`**
+   - Implement `Generator` so the statistics have JSON output; keep the XML unchanged.
+5. **Public list of control parameters and reload scopes**
+   - The control parameters are string literals in `BerliozServlet.applyBerliozControl`; bzadmin's `AdminFilter` copies the list to reject them outside its own control services.
+   - With theme 17, expose the parameters (`berlioz-reload`, `berlioz-profile`, plus the deprecated aliases until 1.0) and the reload scopes, e.g. `ControlParameter` and `ReloadScope` enums with `isControlParameter(String)` and a public parser of `berlioz-reload` values, and use them in `BerliozServlet`, `RedirectFilter` and `RelocationFilter`. No new parameter.
+   - Acceptance: a test fails if a control parameter or scope is applied that the public lists do not contain.
+6. **`BerliozOption` metadata accessors**
+   - `isDeprecated()`, `deprecatedSince()`/`removal()`, `type()` and `description()` on `BerliozOption`, as the data source of the option catalog generator (theme 16, item 5). bzadmin reads `@Deprecated` by reflection today.
+7. **Stricter loopback check, made public**
+   - `ControlNetwork.LOOPBACK` checks the remote address and every hop of `X-Forwarded-For` only. bzadmin's fallback login (`AdminFilter.isLoopback`) also refuses any `Forwarded`, `X-Forwarded-Host`, `X-Forwarded-Proto` or `X-Real-IP` header, and requires the local address and the server name (`localhost` or a loopback literal) to be loopback; literals are parsed, never resolved.
+   - Apply the same rules to `ControlNetwork.LOOPBACK` (it can only turn an authorisation into a denial) and expose them, e.g. `ControlNetwork.isLoopback(HttpServletRequest)`.
+   - Acceptance: a loopback request with `Forwarded: for=203.0.113.1` or `Host: example.org` is not authorised by the loopback channel.
+8. **Identity of the XSLT processor and the servlet container**
+   - Report the `TransformerFactory` class Berlioz actually uses (and, for Saxon, its product title and version) in `GetBerliozConfig`. bzadmin assumes `TransformerFactory.newInstance()` and detects Saxon by reflection.
+   - Give generators the container identity (`ServletContext.getServerInfo()`, Servlet API major.minor), e.g. through `Environment` or `GlobalSettings`, recorded by `InitServlet`. bzadmin records it from its filter's `init`.
+9. **Stylesheet listing and selected source**
+   - Expose the stylesheets Berlioz can select: the classpath stylesheets under `META-INF/berlioz/xslt/` (with the number of copies on the classpath) merged with the XSLT folder, mapped the same way as the 0.14.4 fallback, and a public way to locate one path (`StylesheetLocation` for a logical path).
+   - Report in `GetBerliozConfig` the source selected for each group stylesheet (`XsltTransformer.location()`: `file` or `classpath`).
+   - Replaces bzadmin's JAR scanning (`XsltFiles`) and its override detection.
+
+1.0:
+
+10. **Service-level authorisation hook**
+    - bzadmin wraps every Berlioz generator it uses in a one-line delegating class that checks the admin verdict first, because Berlioz cannot guard a service. A service or generator guard (theme 8) would let applications use Berlioz generators directly, and ensure a new service cannot forget the check.
+    - Acceptance for bzadmin: its `org.pageseeder.bzadmin.guard` package can be removed, with every admin service still denied without a verdict.
+
+Target release: items 1–2 in the next 0.14.x patch; items 3–9 in 0.14.x; item 10 with theme 8 in 1.0.
 
 ## Open Questions
 
