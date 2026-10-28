@@ -370,6 +370,15 @@ fingerprint; unrelated settings and secrets do not. Diagnostics perform no JAR e
 transformer creation, or stylesheet compilation. Error stylesheet selection performs only a
 small availability check. Deployment assumes Berlioz is in each application's `WEB-INF/lib`.
 
+`org.pageseeder.berlioz.generator.ListBerliozOptions` lists every `BerliozOption` in
+declaration order: `property`, `type` (`boolean` or `string`), `default`, a one-line
+`description`, and for deprecated options `deprecated` and `removal` versions. The XML root is
+`berlioz-options` with `option` elements; JSON uses an `options` array, with boolean defaults as
+JSON booleans. Values in use are not included; `GetGlobalConfig` returns them, redacted. The
+catalog is constant for a given Berlioz version and its ETag is a hash of its content. The same
+metadata is available programmatically through `BerliozOption.type()`, `description()`,
+`isDeprecated()`, `deprecatedSince()` and `removal()`.
+
 ## Packaged overlay verification
 
 Run `./gradlew overlayIntegrationTest` to deploy the test overlay JAR in a real Jetty WAR

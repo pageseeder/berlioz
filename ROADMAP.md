@@ -133,6 +133,8 @@ Berlioz Admin feedback:
 
 - ✓ Non-blocking CPU sample (Theme 18, item 2): implemented as `GetCpuSample` (cumulative counters, XML/JSON, unavailable values absent); `GetCPUTime` deprecated for removal in 1.0.
 - ✓ `GetGeneratorStatistics` as a `Generator` (Theme 18, item 4): implemented; JSON output added (`since`, `statistics` array, status counts in camel case), XML unchanged.
+- ✓ `BerliozOption` metadata (Theme 18, item 6): implemented as `type()` (`BerliozOption.Type`), `description()`, `isDeprecated()`, `deprecatedSince()` and `removal()`; a test keeps them consistent with `@Deprecated`.
+- ✓ Option catalog generator (Theme 16, item 5): implemented as `ListBerliozOptions` (XML/JSON, cacheable, declaration order); the optional value in use and its origin are left out, since `GetGlobalConfig` returns the values and provenance belongs with the configuration-validation work.
 - Admin diagnostics, items 1–7 (Theme 16): configuration sources, load diagnostics, service source and overrides, value provenance, option catalog, `GetBerliozConfig` completeness, and a public secure XSLT resolver.
 - Admin overlay upstreaming, items 2–6 and 8–9 (Theme 18): non-blocking CPU sample, bounded thread diagnostics, JSON generator statistics, public control parameters and reload scopes, `BerliozOption` metadata, XSLT processor and container identity, and stylesheet listing.
 
