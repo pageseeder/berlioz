@@ -13,7 +13,6 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.lang.reflect.Proxy;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -179,10 +178,7 @@ class GetThreadInfoTest {
     OutputWriter out = new XmlOutputAdapter();
     synchronized (monitor) {
       blocked.start();
-      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-      while (blocked.getState() != Thread.State.BLOCKED && System.nanoTime() < deadline) {
-        Thread.sleep(10);
-      }
+      assertTrue(ThreadsTest.awaitCondition(() -> blocked.getState() == Thread.State.BLOCKED));
       new GetThreadInfo().generate(request(blocked.getId()), out);
     }
     blocked.join(5000);

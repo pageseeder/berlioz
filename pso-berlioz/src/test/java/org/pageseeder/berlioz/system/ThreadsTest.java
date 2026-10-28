@@ -6,7 +6,9 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BooleanSupplier;
 
 import org.pageseeder.berlioz.output.XmlOutputAdapter;
 
@@ -131,6 +133,22 @@ class ThreadsTest {
   }
 
   /**
+   * Polls the condition until it holds or 5 seconds elapse.
+   *
+   * <p>Thread states and deadlocks are only observable through polling, there is no event to wait on.
+   *
+   * @return whether the condition was met before the timeout
+   */
+  static boolean awaitCondition(BooleanSupplier condition) {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (!condition.getAsBoolean()) {
+      if (System.nanoTime() >= deadline) return false;
+      LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
+    }
+    return true;
+  }
+
+  /**
    * Two daemon threads deadlocked on reentrant locks, interrupted on close.
    */
   static final class Deadlock implements AutoCloseable {
@@ -146,10 +164,7 @@ class ThreadsTest {
       this.second = start("deadlock-2", b, a, locked);
       assertTrue(locked.await(5, TimeUnit.SECONDS));
       ThreadMXBean bean = Threads.getThreadMXBean();
-      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-      while (Threads.getDeadlockedThreads(bean).size() < 2 && System.nanoTime() < deadline) {
-        Thread.sleep(10);
-      }
+      assertTrue(awaitCondition(() -> Threads.getDeadlockedThreads(bean).size() >= 2));
     }
 
     private static Thread start(String name, ReentrantLock held, ReentrantLock wanted, CountDownLatch locked) {
