@@ -506,6 +506,27 @@ final class ServiceTest {
   }
 
   @Test
+  void testWriteToXml_responseCodeOrigin() {
+    Service s = new Service.Builder().id("svc").group("test")
+        .rule(ServiceStatusRule.DEFAULT_RULE, ServiceStatusRule.Origin.GROUP).add(new NoContent()).build();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
+    Assertions.assertEquals(ServiceStatusRule.Origin.GROUP, s.ruleOrigin());
+    Assertions.assertTrue(out.contains("<response-code use=\"name\" rule=\"highest\" origin=\"group\"/>"), out);
+  }
+
+  @Test
+  void testWriteToXml_responseCodeOriginOmittedWhenUnknown() {
+    Service s = defaultBuilder("svc").add(new NoContent()).build();
+    XmlOutputAdapter writer = new XmlOutputAdapter();
+    s.writeTo(writer, HttpMethod.GET, List.of("/"));
+    String out = writer.toString();
+    Assertions.assertNull(s.ruleOrigin());
+    Assertions.assertFalse(out.contains("origin="), out);
+  }
+
+  @Test
   void testWriteToXml_cacheControlOverload() {
     NoContent g = new NoContent();
     Service s = defaultBuilder("svc").add(g).build();

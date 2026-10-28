@@ -28,7 +28,7 @@ import org.pageseeder.berlioz.Beta;
  *
  * @author Christophe Lauret
  *
- * @version 0.8.3
+ * @version 0.14.5
  * @since 0.8
  */
 @Beta public final class ServiceStatusRule {
@@ -70,6 +70,37 @@ import org.pageseeder.berlioz.Beta;
 
     /** By name. */
     NAME
+  }
+
+  /**
+   * Where the rule applied to a service was declared in the services configuration.
+   *
+   * @since 0.14.5
+   */
+  @Beta
+  public enum Origin {
+
+    /** Declared by the {@code <service>} element. */
+    SERVICE,
+
+    /** Declared by the enclosing {@code <services>} group. */
+    GROUP,
+
+    /** Declared by the {@code <service-config>} root element. */
+    SERVICE_CONFIG,
+
+    /** No rule was declared, the default rule applies. */
+    DEFAULT;
+
+    /**
+     * Returns the name used in diagnostics, e.g. {@code service-config}.
+     *
+     * @return the lower case name, with '-' instead of '_'.
+     */
+    @Override
+    public String toString() {
+      return name().toLowerCase().replace('_', '-');
+    }
   }
 
   /**

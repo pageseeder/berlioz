@@ -45,7 +45,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.2
+ * @version 0.14.5
  * @since 0.7
  */
 final class ServicesHandler10 extends DefaultHandler {
@@ -303,7 +303,9 @@ final class ServicesHandler10 extends DefaultHandler {
   }
 
   private void registerCurrentService() throws SAXException {
-    this.builder.rule(this.rules.get(this.rules.size() - 1));
+    int level = this.rules.size() - 1;
+    ServiceStatusRule rule = this.rules.get(level);
+    this.builder.rule(rule, ruleOrigin(level, rule));
     if ("".equals(this.builder.id())) {
       warning("Service cannot be created without an id");
     } else {
@@ -330,6 +332,19 @@ final class ServicesHandler10 extends DefaultHandler {
     }
     this.builder.reset();
     this.patterns.clear();
+  }
+
+  /**
+   * Returns where the rule at the specified level of the stack was declared.
+   *
+   * <p>The stack index is the level of the declaring element: 0 for 'service-config',
+   * 1 for 'services' and 2 for 'service'. Declared rules are always new instances, so
+   * only the shared default rule pushed for an undeclared level is the default.
+   */
+  private static ServiceStatusRule.Origin ruleOrigin(int level, ServiceStatusRule rule) {
+    if (rule == ServiceStatusRule.DEFAULT_RULE) return ServiceStatusRule.Origin.DEFAULT;
+    if (level == 0) return ServiceStatusRule.Origin.SERVICE_CONFIG;
+    return level == 1 ? ServiceStatusRule.Origin.GROUP : ServiceStatusRule.Origin.SERVICE;
   }
 
   private void popRuleIfAdded(int expectedSize) {

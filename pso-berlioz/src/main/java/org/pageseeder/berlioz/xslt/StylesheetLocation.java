@@ -15,12 +15,19 @@
  */
 package org.pageseeder.berlioz.xslt;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.Beta;
+import org.pageseeder.berlioz.util.FileUtils;
 
 /**
  * Identifies where an XSLT stylesheet is resolved from: the identity transform, a filesystem
@@ -39,7 +46,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.3
+ * @version 0.14.5
  * @since 0.14.3
  */
 public final class StylesheetLocation {
@@ -51,6 +58,12 @@ public final class StylesheetLocation {
 
   /** Deprecated compatibility alias for {@link #CLASSPATH_PREFIX}, scheduled for removal in 1.0. */
   private static final String RESOURCE_PREFIX = "resource:";
+
+  /** The classpath folder that overlay stylesheets are packaged under. */
+  private static final String OVERLAY_FOLDER = "META-INF/berlioz/";
+
+  /** The folder beneath <code>WEB-INF</code> whose stylesheets can be supplied by an overlay. */
+  private static final String XSLT_FOLDER = "xslt";
 
   private final StylesheetSourceKind kind;
 
@@ -111,6 +124,76 @@ public final class StylesheetLocation {
     String classLoaderId = Integer.toHexString(System.identityHashCode(resolveApplicationClassLoader()));
     String key = classLoaderId + ':' + (url != null ? url.toExternalForm() : logicalPath);
     return new StylesheetLocation(StylesheetSourceKind.CLASSPATH, null, url, logicalPath, false, key);
+  }
+
+  /**
+   * Selects the stylesheet for a path relative to <code>WEB-INF</code> as Berlioz selects a group
+   * stylesheet: the file when it exists, otherwise, for a path under <code>xslt/</code>, the first
+   * <code>META-INF/berlioz/</code> resource with the same path on the application classpath.
+   *
+   * <p>For example, <code>xslt/html/default.xsl</code> selects
+   * <code>WEB-INF/xslt/html/default.xsl</code> when present, and otherwise
+   * <code>classpath:META-INF/berlioz/xslt/html/default.xsl</code>. When neither exists, the
+   * (missing) file is returned. A file that exists takes precedence even when it is unreadable or
+   * invalid.
+   *
+   * @param webInf the application's <code>WEB-INF</code> directory.
+   * @param path   the stylesheet path relative to <code>WEB-INF</code>; leading slashes are ignored.
+   *
+   * @return the selected filesystem or classpath location.
+   *
+   * @throws IllegalArgumentException if the path resolves outside <code>WEB-INF</code>.
+   *
+   * @since 0.14.5
+   */
+  @Beta
+  public static StylesheetLocation select(Path webInf, String path) {
+    File root = webInf.toFile();
+    File file = new File(root, stripLeadingSlashes(path));
+    if (!FileUtils.contains(root, file)) {
+      throw new IllegalArgumentException("Stylesheet path resolves outside WEB-INF: " + path);
+    }
+    StylesheetLocation location = forFile(file.toPath());
+    if (!Files.notExists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) return location;
+    Path relative = webInf.toAbsolutePath().normalize().relativize(file.toPath().toAbsolutePath().normalize());
+    if (!relative.startsWith(XSLT_FOLDER)) return location;
+    String resource = OVERLAY_FOLDER + relative.toString().replace(File.separatorChar, '/');
+    URL url = resolveApplicationClassLoader().getResource(resource);
+    return url != null ? forClasspath(url, CLASSPATH_PREFIX + resource) : location;
+  }
+
+  /**
+   * Counts the overlay copies of a stylesheet on the application classpath, that is the
+   * <code>META-INF/berlioz/</code> resources with the specified path.
+   *
+   * <p>Only the first copy can be selected, see {@link #select(Path, String)}; more than one copy
+   * usually means that several JARs supply the same stylesheet.
+   *
+   * @param path the stylesheet path relative to <code>WEB-INF</code>, for example
+   *             <code>xslt/html/default.xsl</code>; leading slashes are ignored.
+   *
+   * @return the number of copies on the classpath.
+   *
+   * @throws IllegalArgumentException if the path contains a <code>..</code> segment.
+   * @throws IOException if the classpath resources cannot be listed.
+   *
+   * @since 0.14.5
+   */
+  @Beta
+  public static int countClasspathCopies(String path) throws IOException {
+    String relative = stripLeadingSlashes(path).replace('\\', '/');
+    if (containsTraversalSegment(relative)) {
+      throw new IllegalArgumentException("Invalid stylesheet path: " + path);
+    }
+    return Collections.list(resolveApplicationClassLoader().getResources(OVERLAY_FOLDER + relative)).size();
+  }
+
+  private static String stripLeadingSlashes(String path) {
+    int start = 0;
+    while (start < path.length() && (path.charAt(start) == '/' || path.charAt(start) == '\\')) {
+      start++;
+    }
+    return path.substring(start);
   }
 
   /**

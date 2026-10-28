@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.1
+ * @version 0.14.5
  * @since 0.7
  */
 public final class Service {
@@ -85,6 +85,11 @@ public final class Service {
   private final ServiceStatusRule rule;
 
   /**
+   * Where the status rule was declared, if known.
+   */
+  private final ServiceStatusRule.@Nullable Origin ruleOrigin;
+
+  /**
    * The list of generators associated with this service.
    */
   private final List<BerliozGenerator> generators;
@@ -118,6 +123,7 @@ public final class Service {
     this.id = Objects.requireNonNull(builder.id, "The service must have an id");
     this.group = Objects.requireNonNull(builder.group, "The service must belong to a collection (group)");
     this.rule = Objects.requireNonNull(builder.rule, "There must be a rule for this service");
+    this.ruleOrigin = builder.ruleOrigin;
     this.cache = Objects.requireNonNull(builder.cache, "The cache configuration cannot be null, use empty string for no cache");
     this.flags = Objects.requireNonNull(builder.flags, "The flags configuration cannot be null, use empty string for no flags");
     this.direct = builder.direct;
@@ -185,6 +191,19 @@ public final class Service {
    */
   public ServiceStatusRule rule() {
     return this.rule;
+  }
+
+  /**
+   * Returns where the status rule of this service was declared.
+   *
+   * @return where the status rule was declared, or <code>null</code> if unknown, for
+   *         example when the service was built without specifying it.
+   *
+   * @since 0.14.5
+   */
+  @Beta
+  public ServiceStatusRule.@Nullable Origin ruleOrigin() {
+    return this.ruleOrigin;
   }
 
   /**
@@ -353,6 +372,7 @@ public final class Service {
     out.startObject("response-code");
     out.field("use", this.rule.use().toString().toLowerCase());
     out.field("rule", this.rule.rule().toString().toLowerCase());
+    if (this.ruleOrigin != null) out.field("origin", this.ruleOrigin.toString());
     out.endObject();
 
     // URI patterns
@@ -609,6 +629,11 @@ public final class Service {
     private @Nullable ServiceStatusRule rule;
 
     /**
+     * Where the status rule was declared, if known.
+     */
+    private ServiceStatusRule.@Nullable Origin ruleOrigin;
+
+    /**
      * The list of generators associated with this service.
      */
     private final List<BerliozGenerator> generators = new ArrayList<>();
@@ -709,6 +734,23 @@ public final class Service {
      */
     public Builder rule(ServiceStatusRule rule) {
       this.rule = rule;
+      this.ruleOrigin = null;
+      return this;
+    }
+
+    /**
+     * Sets the status rule of the service to build and where it was declared.
+     *
+     * @param rule   the status rule of the service to build.
+     * @param origin where the rule was declared.
+     * @return this builder for easy chaining.
+     *
+     * @since 0.14.5
+     */
+    @Beta
+    public Builder rule(ServiceStatusRule rule, ServiceStatusRule.Origin origin) {
+      this.rule = rule;
+      this.ruleOrigin = origin;
       return this;
     }
 

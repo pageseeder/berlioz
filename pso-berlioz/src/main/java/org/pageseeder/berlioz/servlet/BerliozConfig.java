@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -601,16 +600,8 @@ public final class BerliozConfig {
         .replace("{SERVICE}", service.id());
     try {
       StylesheetLocation location = resolveStylesheetLocation(path);
-      if (this.stylePath.contains(GROUP_TOKEN) && location.path() != null
-          && Files.notExists(location.path(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
-        Path relative = this.env.getPrivateFolder().toPath().toAbsolutePath().normalize()
-            .relativize(location.path().toAbsolutePath().normalize());
-        if (relative.startsWith("xslt")) {
-          String resource = "META-INF/berlioz/" + relative.toString().replace(File.separatorChar, '/');
-          StylesheetLocation overlay = StylesheetLocation.forClasspath(
-              StylesheetLocation.resolveApplicationClassLoader().getResource(resource), "classpath:" + resource);
-          if (overlay.url() != null) location = overlay;
-        }
+      if (this.stylePath.contains(GROUP_TOKEN) && location.path() != null) {
+        location = StylesheetLocation.select(this.env.getPrivateFolder().toPath(), path);
       }
       return location;
     } catch (IllegalArgumentException ex) {

@@ -564,6 +564,51 @@ class ServiceLoaderTest {
     Assertions.assertEquals(List.of("services!aaa.xml", "services!bbb.xml", "services!ccc.xml"), names);
   }
 
+  // Response code origin --------------------------------------------------------------------------
+
+  @Test
+  void testLoad_recordsResponseCodeOrigin(@TempDir Path dir) throws BerliozException, IOException {
+    Path services = dir.resolve("services.xml");
+    Files.writeString(services, String.join("\n",
+        "<!DOCTYPE service-config PUBLIC \"-//Berlioz//DTD::Services 1.0//EN\"",
+        "    \"https://pageseeder.org/schema/berlioz/services-1.0.dtd\">",
+        "<service-config version=\"1.0\">",
+        "  <services group=\"declared\">",
+        "    <response-code use=\"name:*\" rule=\"lowest\"/>",
+        "    <service id=\"own\" method=\"get\">",
+        "      <url pattern=\"/own\"/>",
+        "      <response-code use=\"name:*\" rule=\"first\"/>",
+        "      <generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>",
+        "    </service>",
+        "    <service id=\"inherited\" method=\"get\">",
+        "      <url pattern=\"/inherited\"/>",
+        "      <generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>",
+        "    </service>",
+        "  </services>",
+        "  <services group=\"undeclared\">",
+        "    <service id=\"none\" method=\"get\">",
+        "      <url pattern=\"/none\"/>",
+        "      <generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>",
+        "    </service>",
+        "  </services>",
+        "</service-config>"));
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(services.toFile());
+    ServiceRegistry registry = loader.getDefaultRegistry();
+
+    Service own = registry.get("/own", HttpMethod.GET).service();
+    Assertions.assertEquals(ServiceStatusRule.CodeRule.FIRST, own.rule().rule());
+    Assertions.assertEquals(ServiceStatusRule.Origin.SERVICE, own.ruleOrigin());
+
+    Service inherited = registry.get("/inherited", HttpMethod.GET).service();
+    Assertions.assertEquals(ServiceStatusRule.CodeRule.LOWEST, inherited.rule().rule());
+    Assertions.assertEquals(ServiceStatusRule.Origin.GROUP, inherited.ruleOrigin());
+
+    Service none = registry.get("/none", HttpMethod.GET).service();
+    Assertions.assertSame(ServiceStatusRule.DEFAULT_RULE, none.rule());
+    Assertions.assertEquals(ServiceStatusRule.Origin.DEFAULT, none.ruleOrigin());
+  }
+
   // Generator classloader correction --------------------------------------------------------------
 
   @Test

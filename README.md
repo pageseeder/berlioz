@@ -273,6 +273,14 @@ and `logicalPath()` reports the safe selected `WEB-INF/...` or `classpath:META-I
 reference. Selection is also logged at debug level. Configuration snapshots continue to describe
 the configured pattern, rather than a single group's runtime selection.
 
+Tools can apply the same selection to any path without a servlet (since 0.14.5).
+`StylesheetLocation.select(webInf, "xslt/html/admin.xsl")` returns the file when it exists and
+otherwise the first `META-INF/berlioz/xslt/html/admin.xsl` on the application classpath (or the
+missing file when there is neither), and `StylesheetLocation.countClasspathCopies("xslt/html/admin.xsl")`
+counts the copies on the classpath, of which only the first can be selected. Berlioz does not list
+the available stylesheets: enumerating classpath folders depends on how each container packages
+JARs, so tools that need a listing find candidate paths themselves and ask Berlioz which one wins.
+
 Cobble's classpath documentation support is a separate task.
 
 ### Cache-mode behavior
@@ -340,6 +348,10 @@ service that wins lists every declaration it replaced, in load order, after its 
 In JSON, `overridden` is an array of `{service, source, pattern}`. A service that still serves
 other patterns stays listed in its own source. Services written by `Service.writeTo` without a
 registry, or registered directly rather than by `ServiceLoader`, have no source.
+
+Since 0.14.5, `response-code` also names where its rule was declared in `origin`: `service`,
+`group` (the enclosing `<services>` element) or `default` when no rule was declared. The origin
+is omitted for services built without it, such as those created directly with `Service.Builder`.
 Protect diagnostic mappings with application or container security.
 
 ## Runtime configuration diagnostics

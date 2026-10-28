@@ -142,8 +142,8 @@ Berlioz Admin feedback:
 - ✓ Selected stylesheet source (Theme 18, item 9, second part): implemented; `GetBerliozConfig` lists the stylesheets selected so far under `stylesheet/selection` (`name`, `source`, safe `path`).
 - ✓ `GetBerliozConfig` completeness (Theme 16, item 6): implemented; registered `BerliozServlet`s that are not initialised are listed from `ServletContext.getServletRegistrations()` with `name`, `mappings` and `initialised="false"`; filesystem stylesheet paths are reported relative to `WEB-INF` as Berlioz resolves them (`/xslt/html/{GROUP}.xsl` as `xslt/html/{GROUP}.xsl`), still withholding traversal and anything outside `WEB-INF`.
 - ✓ Service source and overrides (Theme 16, item 3): implemented; `ListRuntimeServices` writes `service/@source` (the declaring source's display name) and, after the generators, each replaced declaration for the same method and pattern as `<overridden service="…" source="…" pattern="…"/>` (JSON `overridden` array), in load order when several sources declare the same key. Recorded by the merge in `ServiceLoader`, published with the registry, and written through a new `Service.writeTo(…, ServiceRegistry)` overload.
-- Admin diagnostics, item 4 (Theme 16): value provenance.
-- Admin overlay upstreaming, item 9, first part (Theme 18): stylesheet listing.
+- ✓ Response code origin (Theme 16, item 4, first part): implemented; `response-code/@origin` (`service`, `group` or `default`) recorded by the services parser as `Service.ruleOrigin()`, and omitted for services built without it. The `cache-control` origin moves to 1.0 with item 8: the value reported today is the diagnostic servlet's, not necessarily that of the servlet serving the service.
+- ✓ Stylesheet lookup (Theme 18, item 9, first part): implemented as `StylesheetLocation.select(webInf, path)` (the group stylesheet selection, now also used by `BerliozConfig`) and `StylesheetLocation.countClasspathCopies(path)`. Listing the available stylesheets stays in bzadmin: enumerating classpath folders depends on how containers package JARs, and Berlioz itself never needs it.
 
 Items that turn out larger than expected can move to a later 0.14.x release without holding back the security fixes.
 
@@ -616,8 +616,8 @@ Berlioz Admin (bzadmin) displays Berlioz's own diagnostic generators directly. I
    - When a later source replaces the same method and URL pattern, output the replaced declaration (`<overridden source="…" pattern="…"/>` inside the service that won). This is already detected today, but only reported as a warning naming both sources.
    - Acceptance: a pattern declared in a JAR and replaced by `services.xml` shows the filesystem source on the service and the JAR declaration as overridden.
 4. **Provenance of effective values in `Service.writeTo`**
-   - `cache-control-origin="service|group|configuration|default"` alongside `cache-control`.
-   - `response-code/@origin` with the same values.
+   - ✓ (0.14.5) `response-code/@origin`: `service`, `group` or `default`.
+   - (1.0, with item 8) `cache-control-origin="service|servlet|configuration|default"` alongside `cache-control`; there is no group level for `cache-control`. Requires reporting `cache-control` per servlet mapping, since `ListRuntimeServices` currently reports the value of the servlet serving the diagnostic.
    - Only output an origin where Berlioz actually knows it; never infer it.
 5. **Option catalog generator (`ListBerliozOptions`)**
    - For each `BerliozOption`: `property`, `type` (`boolean|string`), `default`, `deprecated` (version) and `removal` (version), plus a one-line `description` maintained with the option.
@@ -635,7 +635,7 @@ Berlioz Admin (bzadmin) displays Berlioz's own diagnostic generators directly. I
 8. **Stable `ListRuntimeServices`**
    - Details to be confirmed.
 
-Target release: items 1–7 in 0.14.5; item 8 in 1.0.
+Target release: items 1–7 in 0.14.5 (item 4 without the `cache-control` origin); item 8 and the `cache-control` origin in 1.0.
 
 ### 17. Scoped `berlioz-reload`
 
@@ -712,9 +712,10 @@ Berlioz Admin (bzadmin) replaces or works around several Berlioz generators and 
    - Report the `TransformerFactory` class Berlioz actually uses (and, for Saxon, its product title and version) in `GetBerliozConfig`. bzadmin assumes `TransformerFactory.newInstance()` and detects Saxon by reflection.
    - Give generators the container identity (`ServletContext.getServerInfo()`, Servlet API major.minor), e.g. through `Environment` or `GlobalSettings`, recorded by `InitServlet`. bzadmin records it from its filter's `init`.
 9. **Stylesheet listing and selected source**
-   - Expose the stylesheets Berlioz can select: the classpath stylesheets under `META-INF/berlioz/xslt/` (with the number of copies on the classpath) merged with the XSLT folder, mapped the same way as the 0.14.4 fallback, and a public way to locate one path (`StylesheetLocation` for a logical path).
+   - ✓ (0.14.5) A public way to locate one path, `StylesheetLocation.select(webInf, path)`, and the number of copies on the classpath, `StylesheetLocation.countClasspathCopies(path)`.
+   - Not in Berlioz: listing the classpath stylesheets under `META-INF/berlioz/xslt/` merged with the XSLT folder. Enumerating classpath folders is container-specific and Berlioz never needs it; bzadmin keeps its listing and asks Berlioz which source wins.
    - Report in `GetBerliozConfig` the source selected for each group stylesheet (`XsltTransformer.location()`: `file` or `classpath`).
-   - Replaces bzadmin's JAR scanning (`XsltFiles`) and its override detection.
+   - Replaces bzadmin's override detection; its JAR scanning (`XsltFiles`) remains for the listing.
 
 1.0:
 

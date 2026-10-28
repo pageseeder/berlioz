@@ -19,8 +19,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -257,6 +260,101 @@ final class StylesheetLocationTest {
     Thread.currentThread().setContextClassLoader(null);
     try {
       Assertions.assertNotNull(StylesheetLocation.resolveApplicationClassLoader());
+    } finally {
+      Thread.currentThread().setContextClassLoader(previous);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // select(Path, String) and countClasspathCopies(String)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void select_prefersExistingFile() throws IOException {
+    Path webInf = Files.createDirectories(this.tempDir.resolve("WEB-INF"));
+    Path file = write(webInf.resolve("xslt/html/g.xsl"));
+    withClasspath(() -> {
+      StylesheetLocation location = StylesheetLocation.select(webInf, "/xslt/html/g.xsl");
+      Assertions.assertEquals(StylesheetSourceKind.FILESYSTEM, location.kind());
+      Assertions.assertEquals(file.toAbsolutePath().normalize(), location.path().toAbsolutePath().normalize());
+    }, overlayRoot("a"));
+  }
+
+  @Test
+  void select_fallsBackToFirstClasspathCopy() throws IOException {
+    Path webInf = Files.createDirectories(this.tempDir.resolve("WEB-INF"));
+    Path first = overlayRoot("a");
+    withClasspath(() -> {
+      StylesheetLocation location = StylesheetLocation.select(webInf, "xslt/html/g.xsl");
+      Assertions.assertEquals(StylesheetSourceKind.CLASSPATH, location.kind());
+      Assertions.assertEquals("classpath:META-INF/berlioz/xslt/html/g.xsl", location.logicalPath());
+      Assertions.assertTrue(location.url().toExternalForm().startsWith(first.toUri().toURL().toExternalForm()));
+    }, first, overlayRoot("b"));
+  }
+
+  @Test
+  void select_onlyFallsBackUnderXslt() throws IOException {
+    Path webInf = Files.createDirectories(this.tempDir.resolve("WEB-INF"));
+    Path root = this.tempDir.resolve("cp");
+    write(root.resolve("META-INF/berlioz/other/g.xsl"));
+    withClasspath(() -> Assertions.assertEquals(StylesheetSourceKind.FILESYSTEM,
+        StylesheetLocation.select(webInf, "other/g.xsl").kind()), root);
+  }
+
+  @Test
+  void select_returnsMissingFileWhenNoCopy() throws IOException {
+    Path webInf = Files.createDirectories(this.tempDir.resolve("WEB-INF"));
+    withClasspath(() -> {
+      StylesheetLocation location = StylesheetLocation.select(webInf, "xslt/html/g.xsl");
+      Assertions.assertEquals(StylesheetSourceKind.FILESYSTEM, location.kind());
+      Assertions.assertTrue(Files.notExists(location.path()));
+    });
+  }
+
+  @Test
+  void select_rejectsPathOutsideWebInf() throws IOException {
+    Path webInf = Files.createDirectories(this.tempDir.resolve("WEB-INF"));
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> StylesheetLocation.select(webInf, "xslt/../../secret.xsl"));
+  }
+
+  @Test
+  void countClasspathCopies_countsEveryCopy() throws IOException {
+    withClasspath(() -> {
+      Assertions.assertEquals(2, StylesheetLocation.countClasspathCopies("/xslt/html/g.xsl"));
+      Assertions.assertEquals(0, StylesheetLocation.countClasspathCopies("xslt/html/missing.xsl"));
+    }, overlayRoot("a"), overlayRoot("b"));
+  }
+
+  @Test
+  void countClasspathCopies_rejectsTraversal() {
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> StylesheetLocation.countClasspathCopies("xslt/../../g.xsl"));
+  }
+
+  private Path overlayRoot(String name) throws IOException {
+    Path root = this.tempDir.resolve(name);
+    write(root.resolve("META-INF/berlioz/xslt/html/g.xsl"));
+    return root;
+  }
+
+  private static Path write(Path file) throws IOException {
+    Files.createDirectories(file.getParent());
+    return Files.writeString(file, "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"2.0\"/>");
+  }
+
+  private interface ClasspathCheck {
+    void run() throws IOException;
+  }
+
+  /** Runs the check with a context classloader limited to the specified roots. */
+  private static void withClasspath(ClasspathCheck check, Path... roots) throws IOException {
+    URL[] urls = new URL[roots.length];
+    for (int i = 0; i < roots.length; i++) urls[i] = roots[i].toUri().toURL();
+    ClassLoader previous = Thread.currentThread().getContextClassLoader();
+    try (URLClassLoader loader = new URLClassLoader(urls, null)) {
+      Thread.currentThread().setContextClassLoader(loader);
+      check.run();
     } finally {
       Thread.currentThread().setContextClassLoader(previous);
     }
