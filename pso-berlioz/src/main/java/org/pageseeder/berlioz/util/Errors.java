@@ -276,7 +276,7 @@ public final class Errors {
   public static String toWebPath(String s) {
     String from = "WEB-INF";
     int x = s.indexOf(from);
-    return x != -1? s.substring(x+from.length()).replace('\\', '/') : s.replace('\\', '/');
+    return x == -1? s.replace('\\', '/') : s.substring(x+from.length()).replace('\\', '/');
   }
 
   /**
