@@ -13,11 +13,13 @@ import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.*;
 import org.pageseeder.berlioz.output.*;
 import org.pageseeder.berlioz.servlet.*;
+import org.pageseeder.berlioz.xslt.XsltProcessorInfo;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConfigurationDiagnosticsTest {
   @TempDir Path root;
   private final Map<Class<?>, Map<Object, Object>> saved = new HashMap<>();
+  private String serverInfo = null;
 
   @BeforeEach void setup() throws Exception {
     Files.createDirectories(root.resolve("WEB-INF/config"));
@@ -45,9 +47,9 @@ class ConfigurationDiagnosticsTest {
   }
 
   @Test void emptySchemas() {
-    assertEquals("{\"servlets\":[]}", json(new GetBerliozConfig(), request()));
+    assertEquals(emptyBerliozJson(), json(new GetBerliozConfig(), request()));
     assertEquals("{\"servlets\":[]}", json(new GetErrorHandlerConfig(), request()));
-    assertEquals("<berlioz-config/>", xml(new GetBerliozConfig(), request()));
+    assertEquals("<berlioz-config>" + processorXml() + "</berlioz-config>", xml(new GetBerliozConfig(), request()));
     assertEquals("<error-handler-config/>", xml(new GetErrorHandlerConfig(), request()));
   }
 
@@ -60,12 +62,13 @@ class ConfigurationDiagnosticsTest {
     assertEquals("{\"servlets\":[{\"name\":\"html\",\"mappings\":[\"*.html\",\"/pages/*\"],"
         + "\"mediaType\":\"text/html\",\"charset\":\"UTF-8\",\"cacheControl\":\"no-cache\",\"compression\":true,"
         + "\"requiresControl\":false,\"xsltCache\":\"manual\",\"stylesheet\":{\"allocation\":\"group\",\"source\":\"classpath\",\"path\":\"classpath:xslt/{GROUP}.xsl\"},"
-        + "\"fallback\":{\"source\":\"classpath\",\"path\":\"classpath:xslt/default.xsl\"}}]}", json(generator, request()));
+        + "\"fallback\":{\"source\":\"classpath\",\"path\":\"classpath:xslt/default.xsl\"}}],\"xsltProcessor\":" + processorJson() + "}", json(generator, request()));
     assertEquals("<berlioz-config><servlet name=\"html\" mappings=\"*.html /pages/*\" media-type=\"text/html\" charset=\"UTF-8\" "
         + "cache-control=\"no-cache\" compression=\"true\" requires-control=\"false\" xslt-cache=\"manual\"><stylesheet allocation=\"group\" source=\"classpath\" "
-        + "path=\"classpath:xslt/{GROUP}.xsl\"/><fallback source=\"classpath\" path=\"classpath:xslt/default.xsl\"/></servlet></berlioz-config>", xml(generator, request()));
+        + "path=\"classpath:xslt/{GROUP}.xsl\"/><fallback source=\"classpath\" path=\"classpath:xslt/default.xsl\"/></servlet>"
+        + processorXml() + "</berlioz-config>", xml(generator, request()));
     servlet.destroy();
-    assertEquals("{\"servlets\":[]}", json(generator, request()));
+    assertEquals(emptyBerliozJson(), json(generator, request()));
   }
 
   @Test void errorExactSchemasAndLifecycle() throws Exception {
@@ -154,7 +157,7 @@ class ConfigurationDiagnosticsTest {
     first.destroy();
     assertTrue(json(new GetBerliozConfig(), request()).contains("same"));
     second.destroy();
-    assertEquals("{\"servlets\":[]}", json(new GetBerliozConfig(), request()));
+    assertEquals(emptyBerliozJson(), json(new GetBerliozConfig(), request()));
   }
 
   @Test void berliozSnapshotSurvivesDestructionAndSettingsReload() throws Exception {
@@ -184,7 +187,25 @@ class ConfigurationDiagnosticsTest {
             method.getName().equals("getServletContext") ? failingContext : method.invoke(ordinary, args));
     BerliozServlet servlet = new BerliozServlet();
     assertThrows(IllegalStateException.class, () -> servlet.init(failingConfig));
-    assertEquals("{\"servlets\":[]}", json(new GetBerliozConfig(), request()));
+    assertEquals(emptyBerliozJson(), json(new GetBerliozConfig(), request()));
+  }
+
+  @Test void selectedStylesheetsAndContainer() throws Exception {
+    serverInfo = "Fixture/1.0";
+    Files.createDirectories(root.resolve("WEB-INF/xslt/html"));
+    Files.writeString(root.resolve("WEB-INF/xslt/html/g.xsl"), "not compiled by diagnostics");
+    BerliozConfig config = BerliozConfig.newConfig(config("html", Map.of("stylesheet", "xslt/html/{GROUP}.xsl"), List.of(), false));
+    GetBerliozConfig generator = new GetBerliozConfig();
+    String before = generator.getETag(request());
+    String json = json(generator, request());
+    assertTrue(json.contains("\"stylesheet\":{\"allocation\":\"group\",\"source\":\"filesystem\",\"path\":\"xslt/html/{GROUP}.xsl\"}"));
+    assertTrue(json.endsWith(",\"container\":{\"serverInfo\":\"Fixture/1.0\",\"servletApi\":\"4.0\"}}"));
+
+    config.getTransformer(ServiceTestHelper.build("home", ServiceTestHelper.highestRule()));
+    assertTrue(json(generator, request()).contains("\"selections\":[{\"name\":\"g\",\"source\":\"filesystem\",\"path\":\"xslt/html/g.xsl\"}]"));
+    assertTrue(xml(generator, request()).contains("<selection name=\"g\" source=\"filesystem\" path=\"xslt/html/g.xsl\"/></stylesheet>"));
+    assertTrue(xml(generator, request()).endsWith("<container server-info=\"Fixture/1.0\" servlet-api=\"4.0\"/></berlioz-config>"));
+    assertNotEquals(before, generator.getETag(request()));
   }
 
   @Test void identicalErrorRegistrationSurvivesOldInstanceDestruction() throws Exception {
@@ -202,6 +223,33 @@ class ConfigurationDiagnosticsTest {
   private void options(String properties) throws Exception {
     Files.writeString(root.resolve("WEB-INF/config/config.properties"), properties);
     GlobalSettings.setup(root.resolve("WEB-INF").toFile());
+  }
+
+  private static String emptyBerliozJson() {
+    return "{\"servlets\":[],\"xsltProcessor\":" + processorJson() + "}";
+  }
+
+  private static String processorJson() {
+    OutputWriter out = new JsonOutputAdapter();
+    writeProcessor(out);
+    return out.toString();
+  }
+
+  private static String processorXml() {
+    OutputWriter out = new XmlOutputAdapter();
+    writeProcessor(out);
+    return out.toString();
+  }
+
+  private static void writeProcessor(OutputWriter out) {
+    XsltProcessorInfo info = XsltProcessorInfo.current();
+    out.startObject("xslt-processor");
+    out.optionalField("factory", info.factory());
+    out.optionalField("vendor", info.vendor());
+    out.optionalField("xslt-version", info.xsltVersion());
+    out.optionalField("product-name", info.productName());
+    out.optionalField("product-version", info.productVersion());
+    out.endObject();
   }
 
   private Request request() { return GeneratorTestSupport.request().build(); }
@@ -227,6 +275,9 @@ class ConfigurationDiagnosticsTest {
             case "getRealPath": return root.toString();
             case "getServletRegistration": return registration;
             case "getServletRegistrations": return discover ? Map.of("html", registration) : Map.of();
+            case "getServerInfo": return serverInfo;
+            case "getMajorVersion": return 4;
+            case "getMinorVersion": return 0;
             default: return null;
           }
         });

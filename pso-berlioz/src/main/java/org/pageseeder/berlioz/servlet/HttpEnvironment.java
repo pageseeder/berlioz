@@ -17,6 +17,8 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 
+import javax.servlet.ServletContext;
+
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.Environment;
@@ -27,7 +29,7 @@ import org.pageseeder.berlioz.util.FileUtils;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.5
  * @since 0.9
  */
 public final class HttpEnvironment implements Environment {
@@ -48,6 +50,16 @@ public final class HttpEnvironment implements Environment {
   private final String cacheControl;
 
   /**
+   * The name and version of the servlet container.
+   */
+  private final @Nullable String serverInfo;
+
+  /**
+   * The Servlet API version supported by the container (major.minor).
+   */
+  private final @Nullable String servletApiVersion;
+
+  /**
    * Creates a new HTTP environment.
    *
    * @param publicFolder The public directory.
@@ -58,6 +70,28 @@ public final class HttpEnvironment implements Environment {
     this.publicFolder = publicFolder;
     this.privateFolder = privateFolder;
     this.cacheControl = cacheControl;
+    this.serverInfo = null;
+    this.servletApiVersion = null;
+  }
+
+  /**
+   * Creates a new HTTP environment that also reports the identity of the servlet container.
+   *
+   * <p>The Servlet API version is only recorded when the container identifies itself.
+   *
+   * @param publicFolder The public directory.
+   * @param privateFolder The private directory.
+   * @param cacheControl The default cache control directive.
+   * @param context The servlet context, to identify the container.
+   *
+   * @since 0.14.5
+   */
+  public HttpEnvironment(File publicFolder, File privateFolder, String cacheControl, ServletContext context) {
+    this.publicFolder = publicFolder;
+    this.privateFolder = privateFolder;
+    this.cacheControl = cacheControl;
+    this.serverInfo = context.getServerInfo();
+    this.servletApiVersion = this.serverInfo != null ? context.getMajorVersion() + "." + context.getMinorVersion() : null;
   }
 
   @Override
@@ -98,6 +132,16 @@ public final class HttpEnvironment implements Environment {
   @Override
   public String getProperty(String name, String def) {
     return GlobalSettings.get(name, def);
+  }
+
+  @Override
+  public @Nullable String getServerInfo() {
+    return this.serverInfo;
+  }
+
+  @Override
+  public @Nullable String getServletApiVersion() {
+    return this.servletApiVersion;
   }
 
   /**

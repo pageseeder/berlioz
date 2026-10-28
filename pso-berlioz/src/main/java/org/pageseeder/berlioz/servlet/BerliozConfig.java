@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -49,6 +50,7 @@ import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
 import org.pageseeder.berlioz.http.ContentType;
 import org.pageseeder.berlioz.xslt.StylesheetLocation;
+import org.pageseeder.berlioz.xslt.XsltProcessorInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -201,7 +203,7 @@ public final class BerliozConfig {
     this.cacheControl = this.getInitParameter("cache-control", defaultCacheControl);
     this.compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
     this.requiresControl = this.getInitParameter(REQUIRES_CONTROL_PARAM, false);
-    this.env = new HttpEnvironment(contextPath, webinfPath, this.cacheControl);
+    this.env = new HttpEnvironment(contextPath, webinfPath, this.cacheControl, context);
     this.etagSeed = loadEtagSeed();
     this.diagnosticDefaults = DiagnosticConfiguration.fields(
         "name", servletConfig.getServletName(), "mappings", DiagnosticConfiguration.mappings(servletConfig),
@@ -408,12 +410,37 @@ public final class BerliozConfig {
       Map<String, Object> style = DiagnosticConfiguration.fields("allocation",
           config.allocation == TransformAllocation.NIL ? "identity"
               : config.allocation.name().toLowerCase(Locale.ROOT));
-      if (config.allocation != TransformAllocation.NIL) style.putAll(DiagnosticConfiguration.stylesheet(config.stylePath));
+      if (config.allocation != TransformAllocation.NIL) {
+        style.putAll(DiagnosticConfiguration.stylesheet(config.stylePath));
+        List<Map<String, Object>> selections = config.selections();
+        if (!selections.isEmpty()) style.put("selections", selections);
+      }
       entry.put(STYLESHEET_PARAM, style);
       if (!config.fallbackStyleSheet.isEmpty()) entry.put("fallback", DiagnosticConfiguration.stylesheet(config.fallbackStyleSheet));
       entries.add(entry);
     });
-    return new ConfigurationSnapshot("berlioz-config", entries);
+    Map<String, Object> fields = new LinkedHashMap<>();
+    fields.put("xslt-processor", DiagnosticConfiguration.processor(XsltProcessorInfo.current()));
+    CONFIGS.values().stream().sorted(Comparator.comparing(BerliozConfig::getName)).findFirst()
+        .map(config -> DiagnosticConfiguration.container(config.env))
+        .filter(container -> !container.isEmpty())
+        .ifPresent(container -> fields.put("container", container));
+    return new ConfigurationSnapshot("berlioz-config", entries, fields);
+  }
+
+  /**
+   * Returns the stylesheets selected so far, sorted by transformer key.
+   *
+   * <p>Stylesheets are selected on first use, so a group or service only appears once it has
+   * been requested. Each entry contains the key (<code>global</code>, the group or the service
+   * ID), the source, and the path when it is safe to report.
+   */
+  private List<Map<String, Object>> selections() {
+    Path privateFolder = this.env.getPrivateFolder().toPath();
+    return this.transformers.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())
+        .map(e -> DiagnosticConfiguration.selection(e.getKey(), e.getValue().location(), privateFolder))
+        .collect(Collectors.toList());
   }
 
   // private helpers

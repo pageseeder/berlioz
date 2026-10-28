@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.servlet;
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,7 +24,10 @@ import java.util.stream.Collectors;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletRegistration;
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.content.Environment;
 import org.pageseeder.berlioz.xslt.StylesheetLocation;
+import org.pageseeder.berlioz.xslt.StylesheetSourceKind;
+import org.pageseeder.berlioz.xslt.XsltProcessorInfo;
 
 /** Internal helpers for allowlisted configuration diagnostics. */
 final class DiagnosticConfiguration {
@@ -69,6 +73,56 @@ final class DiagnosticConfiguration {
     String safe = safePath(value);
     if (safe != null) result.put("path", safe);
     return result;
+  }
+
+  /**
+   * Describes a selected stylesheet: its key, source and, when safe, its path.
+   *
+   * <p>A file is reported relative to the private folder, a classpath resource by its
+   * <code>classpath:</code> reference. Anything else is reported without a path.
+   */
+  static Map<String, Object> selection(String name, StylesheetLocation location, Path privateFolder) {
+    Map<String, Object> result = fields("name", name, "source", source(location.kind()));
+    String path = null;
+    Path file = location.path();
+    if (location.kind() == StylesheetSourceKind.CLASSPATH) {
+      path = safePath(location.logicalPath());
+    } else if (file != null) {
+      Path base = privateFolder.toAbsolutePath().normalize();
+      Path normalized = file.toAbsolutePath().normalize();
+      if (normalized.startsWith(base)) path = safePath(base.relativize(normalized).toString().replace('\\', '/'));
+    }
+    if (path != null) result.put("path", path);
+    return result;
+  }
+
+  static Map<String, Object> processor(XsltProcessorInfo info) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    putIfPresent(result, "factory", info.factory());
+    putIfPresent(result, "vendor", info.vendor());
+    putIfPresent(result, "xslt-version", info.xsltVersion());
+    putIfPresent(result, "product-name", info.productName());
+    putIfPresent(result, "product-version", info.productVersion());
+    return result;
+  }
+
+  static Map<String, Object> container(Environment env) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    putIfPresent(result, "server-info", env.getServerInfo());
+    putIfPresent(result, "servlet-api", env.getServletApiVersion());
+    return result;
+  }
+
+  private static void putIfPresent(Map<String, Object> fields, String name, @Nullable String value) {
+    if (value != null) fields.put(name, value);
+  }
+
+  private static String source(StylesheetSourceKind kind) {
+    switch (kind) {
+      case CLASSPATH:  return "classpath";
+      case FILESYSTEM: return "filesystem";
+      default:         return "identity";
+    }
   }
 
   private static boolean isClasspath(String value) {

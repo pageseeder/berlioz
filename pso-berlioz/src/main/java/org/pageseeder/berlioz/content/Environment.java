@@ -113,4 +113,28 @@ public interface Environment {
    */
   boolean getProperty(String name, boolean def);
 
+  /**
+   * Returns the name and version of the servlet container, as reported by
+   * <code>ServletContext.getServerInfo()</code>, for example "Apache Tomcat/9.0.80".
+   *
+   * @return the container identity or <code>null</code> if unknown.
+   *
+   * @since 0.14.5
+   */
+  default @Nullable String getServerInfo() {
+    return null;
+  }
+
+  /**
+   * Returns the Servlet API version supported by the container, as <code>major.minor</code>,
+   * for example "4.0".
+   *
+   * @return the Servlet API version or <code>null</code> if unknown.
+   *
+   * @since 0.14.5
+   */
+  default @Nullable String getServletApiVersion() {
+    return null;
+  }
+
 }

@@ -341,7 +341,8 @@ uses a top-level `servlets` array, without a named root wrapper. Scalar fields b
 attributes and JSON properties (hyphenated XML names become camelCase in JSON). Booleans
 remain JSON booleans. Mappings and extensions are sorted string arrays in JSON and
 space-separated XML attributes; optional fields are omitted. An empty registry produces
-`<berlioz-config/>` or `<error-handler-config/>` and `{"servlets":[]}`.
+`<error-handler-config/>` and `{"servlets":[]}`; `GetBerliozConfig` still reports the XSLT
+processor.
 
 `GetBerliozConfig` reports servlet defaults, which individual services or responses can
 override: `name`, `mappings`, `media-type`, `charset`, `cache-control`, `compression`,
@@ -353,6 +354,21 @@ runtime template cache mode, separately from HTTP caching. `stylesheet` contains
 An optional `fallback` contains its source and safe path. Group/service placeholders are
 reported as configured, without creating a transformer or resolving a specific service.
 
+Since 0.14.5, `stylesheet` also lists the stylesheets selected so far as `selection` elements
+(JSON: a `selections` array): `name` (`global`, the group, or the service ID), `source`
+(`filesystem` or `classpath`), and `path` (relative to `WEB-INF` for a file, the `classpath:`
+reference for a resource) when it is safe to report. A stylesheet is selected the first time a
+service uses it, so a group appears only once it has been requested; with `{GROUP}`, the entry
+shows whether the last request used the file or a classpath overlay.
+
+After the servlets, `xslt-processor` identifies the XSLT processor Berlioz uses: the `factory`
+class, and the `vendor`, `xslt-version`, `product-name` and `product-version` read from the
+standard XSLT system properties (the product is absent for XSLT 1.0 processors). `container`
+reports `server-info` (`ServletContext.getServerInfo()`) and the supported `servlet-api`
+version; it is omitted when no servlet is registered or the container does not identify
+itself. Generators can read the same values from `Environment.getServerInfo()` and
+`Environment.getServletApiVersion()`, and the processor from `XsltProcessorInfo.current()`.
+
 For example:
 
 ```xml
@@ -360,8 +376,14 @@ For example:
   <servlet name="html" mappings="*.html" media-type="text/html" charset="UTF-8"
            cache-control="no-cache" compression="true" requires-control="false"
            xslt-cache="manual">
-    <stylesheet allocation="group" source="classpath" path="classpath:xslt/{GROUP}.xsl"/>
+    <stylesheet allocation="group" source="filesystem" path="xslt/html/{GROUP}.xsl">
+      <selection name="default" source="filesystem" path="xslt/html/default.xsl"/>
+      <selection name="admin" source="classpath" path="classpath:META-INF/berlioz/xslt/html/admin.xsl"/>
+    </stylesheet>
   </servlet>
+  <xslt-processor factory="net.sf.saxon.TransformerFactoryImpl" vendor="Saxonica"
+                  xslt-version="3.0" product-name="SAXON" product-version="HE 12.10"/>
+  <container server-info="Apache Tomcat/9.0.80" servlet-api="4.0"/>
 </berlioz-config>
 ```
 
@@ -418,7 +440,10 @@ See [the deployment test documentation](tests/overlay-deployment/README.md) for 
   code should rely on `.src`; developers who use it locally should set
   `berlioz.control.network=loopback` (as most already do for the control parameters), or
   `berlioz.control.key`.
-- `GetBerliozConfig` reports a new `requires-control` servlet field.
+- `GetBerliozConfig` reports a new `requires-control` servlet field, the stylesheets selected
+  so far (`stylesheet/selection`), the XSLT processor (`xslt-processor`) and the servlet
+  container (`container`). Clients that treated every child of `berlioz-config` as a servlet
+  should select `servlet` elements.
 - `reload-services`, `clear-xsl-cache` and `reset-etags` are deprecated: use
   `berlioz-reload=services`, `berlioz-reload=xslt` and `berlioz-reload=etags`. They keep working
   until 1.0. `berlioz-reload=true` is unchanged.

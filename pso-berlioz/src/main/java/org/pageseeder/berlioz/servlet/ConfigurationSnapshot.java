@@ -37,12 +37,23 @@ import java.util.stream.Collectors;
 public final class ConfigurationSnapshot {
   private final String root;
   private final List<Map<String, Object>> servlets;
+  private final Map<String, Object> fields;
 
   ConfigurationSnapshot(String root, List<Map<String, Object>> servlets) {
+    this(root, servlets, Map.of());
+  }
+
+  /**
+   * @param root     the name of the root element
+   * @param servlets the servlet entries
+   * @param fields   objects written after the servlets, keyed by name
+   */
+  ConfigurationSnapshot(String root, List<Map<String, Object>> servlets, Map<String, Object> fields) {
     this.root = root;
     this.servlets = servlets.stream()
         .map(ConfigurationSnapshot::freeze)
         .collect(Collectors.toUnmodifiableList());
+    this.fields = freeze(fields);
   }
 
   /**
@@ -58,6 +69,7 @@ public final class ConfigurationSnapshot {
       out.endObject();
     }
     out.endArray();
+    writeFields(out, this.fields);
     out.endObject();
   }
 
@@ -69,6 +81,7 @@ public final class ConfigurationSnapshot {
       canonical(data, "configuration-v1");
       canonical(data, this.root);
       canonical(data, this.servlets);
+      canonical(data, this.fields);
       return SHA256.hash(bytes.toByteArray());
     } catch (IOException ex) {
       throw new IllegalStateException("Cannot fingerprint configuration", ex);
@@ -107,13 +120,22 @@ public final class ConfigurationSnapshot {
       if (value instanceof Map) {
         frozen = freeze((Map<String, Object>) value);
       } else if (value instanceof List) {
-        frozen = List.copyOf((List<?>) value);
+        frozen = ((List<?>) value).stream()
+            .map(item -> item instanceof Map ? freeze((Map<String, Object>) item) : item)
+            .collect(Collectors.toUnmodifiableList());
       }
       copy.put(key, frozen);
     });
     return Collections.unmodifiableMap(copy);
   }
 
+  /**
+   * Writes the fields in order.
+   *
+   * <p>A list of objects is a JSON array named after the key; in XML, each object is an element
+   * named after the key without its trailing "s" (for example <code>selections</code> and
+   * <code>selection</code>). Other lists are string arrays.
+   */
   @SuppressWarnings("unchecked")
   private static void writeFields(OutputWriter out, Map<String, Object> fields) {
     fields.forEach((name, value) -> {
@@ -122,9 +144,25 @@ public final class ConfigurationSnapshot {
         writeFields(out, (Map<String, Object>) value);
         out.endObject();
       } else if (value instanceof Boolean) out.field(name, (Boolean) value);
+      else if (isObjectList(value)) writeObjects(out, name, (List<Map<String, Object>>) value);
       else if (value instanceof List) out.field(name, (List<String>) value);
       else out.field(name, (String) value);
     });
+  }
+
+  private static boolean isObjectList(Object value) {
+    return value instanceof List && !((List<?>) value).isEmpty() && ((List<?>) value).get(0) instanceof Map;
+  }
+
+  private static void writeObjects(OutputWriter out, String name, List<Map<String, Object>> objects) {
+    String item = name.endsWith("s") ? name.substring(0, name.length() - 1) : name;
+    out.startArray(name, OutputWriter.ContextOption.JSON_ONLY);
+    for (Map<String, Object> object : objects) {
+      out.startObject(item);
+      writeFields(out, object);
+      out.endObject();
+    }
+    out.endArray();
   }
 
 }

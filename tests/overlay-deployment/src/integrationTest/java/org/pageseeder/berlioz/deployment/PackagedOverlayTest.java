@@ -105,8 +105,10 @@ class PackagedOverlayTest {
     String body = get("/conflict.xml").body();
     assertFalse(body.contains("overlay-from-jar"), body);
     String runtime = get("/admin/runtime.json").body();
-    assertTrue(runtime.contains("host-conflict"), runtime);
-    assertFalse(runtime.contains("overlay-conflict"), runtime);
+    List<String> ids = new ArrayList<>();
+    jsonData(runtime).getAsJsonArray("liveServices").forEach(s -> ids.add(s.getAsJsonObject().get("id").getAsString()));
+    assertTrue(ids.contains("host-conflict"), runtime);
+    assertFalse(ids.contains("overlay-conflict"), runtime);
     Document sources = xml(get("/admin/sources.xml").body());
     NodeList warnings = sources.getElementsByTagName("warning");
     assertTrue(warnings.getLength() > 0);
@@ -128,6 +130,16 @@ class PackagedOverlayTest {
     assertEquals("text/html", html.get("mediaType").getAsString());
     assertEquals("manual", html.get("xsltCache").getAsString());
     assertEquals("classpath:overlay/xslt/main.xsl", html.getAsJsonObject("stylesheet").get("path").getAsString());
+    get("/overlay.html");
+    JsonObject selected = diagnostic("config", "berlioz-config").get(0).getAsJsonObject()
+        .getAsJsonObject("stylesheet").getAsJsonArray("selections").get(0).getAsJsonObject();
+    assertEquals("global", selected.get("name").getAsString());
+    assertEquals("classpath", selected.get("source").getAsString());
+    assertEquals("classpath:overlay/xslt/main.xsl", selected.get("path").getAsString());
+    JsonObject config = jsonData(get("/admin/config.json").body());
+    assertTrue(config.getAsJsonObject("container").get("serverInfo").getAsString().startsWith("jetty/"));
+    assertEquals("4.0", config.getAsJsonObject("container").get("servletApi").getAsString());
+    assertNotNull(config.getAsJsonObject("xsltProcessor").get("factory"));
     JsonArray errors = diagnostic("errors", "error-handler-config");
     assertEquals(1, errors.size());
     JsonObject error = errors.get(0).getAsJsonObject();
@@ -185,8 +197,11 @@ class PackagedOverlayTest {
     Element config = (Element) xml.getElementsByTagName(root).item(0);
     assertNotNull(config);
     JsonArray converted = new JsonArray();
+    JsonObject data = jsonData(response.body());
     for (Node child = config.getFirstChild(); child != null; child = child.getNextSibling()) {
-      if (child instanceof Element) converted.add(fromXml((Element) child));
+      if (!(child instanceof Element)) continue;
+      if (child.getNodeName().equals("servlet")) converted.add(fromXml((Element) child));
+      else assertEquals(data.get(camelCase(child.getNodeName())), fromXml((Element) child), child.getNodeName());
     }
     assertEquals(json, converted, "XML and JSON must contain equivalent typed values");
     assertFalse(response.body().contains(temporary.toString()));
@@ -203,7 +218,13 @@ class PackagedOverlayTest {
       result.add(name, attributeValue(name, attribute.getNodeValue()));
     }
     for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
-      if (child instanceof Element) result.add(camelCase(child.getNodeName()), fromXml((Element) child));
+      if (!(child instanceof Element)) continue;
+      if (child.getNodeName().equals("selection")) {
+        if (!result.has("selections")) result.add("selections", new JsonArray());
+        result.getAsJsonArray("selections").add(fromXml((Element) child));
+      } else {
+        result.add(camelCase(child.getNodeName()), fromXml((Element) child));
+      }
     }
     return result;
   }

@@ -5,6 +5,8 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
+import org.pageseeder.berlioz.xslt.StylesheetLocation;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConfigurationSnapshotTest {
@@ -54,6 +56,46 @@ class ConfigurationSnapshotTest {
       changed.remove(key);
       assertNotEquals(before, snapshot(changed).etag(), "omitted " + key);
     }
+  }
+
+  @Test void objectListsAreWrittenAndCopied() {
+    Map<String, Object> selection = DiagnosticConfiguration.fields("name", "g", "source", "classpath");
+    List<Map<String, Object>> selections = new ArrayList<>(List.of(selection));
+    Map<String, Object> style = DiagnosticConfiguration.fields("allocation", "group", "selections", selections);
+    Map<String, Object> processor = DiagnosticConfiguration.fields("factory", "x.Factory");
+    ConfigurationSnapshot snapshot = new ConfigurationSnapshot("berlioz-config",
+        List.of(DiagnosticConfiguration.fields("name", "html", "stylesheet", style)),
+        DiagnosticConfiguration.fields("xslt-processor", processor));
+    String etag = snapshot.etag();
+    selection.put("name", "changed");
+    selections.add(DiagnosticConfiguration.fields("name", "other"));
+    processor.put("factory", "changed");
+    assertEquals(etag, snapshot.etag());
+    JsonOutputAdapter json = new JsonOutputAdapter(); snapshot.writeTo(json);
+    assertEquals("{\"servlets\":[{\"name\":\"html\",\"stylesheet\":{\"allocation\":\"group\","
+        + "\"selections\":[{\"name\":\"g\",\"source\":\"classpath\"}]}}],\"xsltProcessor\":{\"factory\":\"x.Factory\"}}", json.toString());
+    XmlOutputAdapter xml = new XmlOutputAdapter(); snapshot.writeTo(xml);
+    assertEquals("<berlioz-config><servlet name=\"html\"><stylesheet allocation=\"group\">"
+        + "<selection name=\"g\" source=\"classpath\"/></stylesheet></servlet>"
+        + "<xslt-processor factory=\"x.Factory\"/></berlioz-config>", xml.toString());
+    assertNotEquals(etag, new ConfigurationSnapshot("berlioz-config",
+        List.of(DiagnosticConfiguration.fields("name", "html", "stylesheet", style))).etag());
+  }
+
+  @Test void selectionsReportOnlySafePaths(@TempDir Path root) throws Exception {
+    Path webinf = root.resolve("WEB-INF");
+    assertEquals(DiagnosticConfiguration.fields("name", "g", "source", "filesystem", "path", "xslt/html/g.xsl"),
+        DiagnosticConfiguration.selection("g", StylesheetLocation.forFile(webinf.resolve("xslt/html/g.xsl")), webinf));
+    assertEquals(DiagnosticConfiguration.fields("name", "g", "source", "filesystem"),
+        DiagnosticConfiguration.selection("g", StylesheetLocation.forFile(root.resolve("outside/g.xsl")), webinf));
+    assertEquals(DiagnosticConfiguration.fields("name", "g", "source", "filesystem"),
+        DiagnosticConfiguration.selection("g", StylesheetLocation.forFile(webinf.resolve("../SECRET/g.xsl")), webinf));
+    assertEquals(DiagnosticConfiguration.fields("name", "g", "source", "classpath", "path", "classpath:META-INF/berlioz/xslt/html/g.xsl"),
+        DiagnosticConfiguration.selection("g", StylesheetLocation.forClasspath(null, "classpath:META-INF/berlioz/xslt/html/g.xsl"), webinf));
+  }
+
+  @Test void containerIsOmittedWhenUnknown(@TempDir Path root) {
+    assertEquals(Map.of(), DiagnosticConfiguration.container(new HttpEnvironment(root.toFile(), root.toFile(), "")));
   }
 
   @Test void listBoundariesAreUnambiguous() {
