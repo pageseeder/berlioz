@@ -17,7 +17,6 @@ package org.pageseeder.berlioz.generator;
 
 import java.util.Locale;
 
-import org.jspecify.annotations.NonNull;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.content.Cacheable;
 import org.pageseeder.berlioz.content.Generator;
@@ -109,7 +108,7 @@ public final class ListBerliozOptions implements Generator, Cacheable {
    * @param out The output writer
    * @return The same output writer
    */
-  private static @NonNull OutputWriter write(@NonNull OutputWriter out) {
+  private static OutputWriter write(OutputWriter out) {
     out.startObject("berlioz-options");
     out.startArray("options", OutputWriter.ContextOption.JSON_ONLY);
     for (BerliozOption option : BerliozOption.values()) {

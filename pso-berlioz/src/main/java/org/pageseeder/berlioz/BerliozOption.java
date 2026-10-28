@@ -15,7 +15,6 @@
  */
 package org.pageseeder.berlioz;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.xslt.XsltCacheMode;
 import org.pageseeder.berlioz.xslt.XsltErrorSensitivity;
@@ -34,6 +33,7 @@ import org.pageseeder.berlioz.xslt.XsltErrorSensitivity;
  * @version 0.14.5
  * @since 0.8.4
  */
+@SuppressWarnings("java:S1192") // Deprecation versions are per-option metadata, equal by coincidence
 public enum BerliozOption {
 
   /**
@@ -864,7 +864,7 @@ public enum BerliozOption {
    *
    * @return The property in the global settings.
    */
-  public @NonNull String property() {
+  public String property() {
     return this.property;
   }
 
@@ -873,7 +873,7 @@ public enum BerliozOption {
    *
    * @return The property in the global settings.
    */
-  public @NonNull Object defaultTo() {
+  public Object defaultTo() {
     return this.defaultValue;
   }
 
@@ -896,7 +896,7 @@ public enum BerliozOption {
    *
    * @since 0.14.5
    */
-  public @NonNull Type type() {
+  public Type type() {
     return isBoolean() ? Type.BOOLEAN : Type.STRING;
   }
 
@@ -907,7 +907,7 @@ public enum BerliozOption {
    *
    * @since 0.14.5
    */
-  public @NonNull String description() {
+  public String description() {
     return this.description;
   }
 

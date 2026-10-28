@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.config;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.xml.BerliozErrorHandler;
 import org.pageseeder.berlioz.xml.Xml;
 import org.slf4j.LoggerFactory;
@@ -131,8 +132,9 @@ abstract class ConfigLoader<T> extends DefaultHandler {
       }
 
       // Validate
-      if (handler.getSchema() != null) {
-        validate(bytes, handler.getSchema());
+      String schema = handler.getSchema();
+      if (schema != null) {
+        validate(bytes, schema);
       }
 
       XMLReader reader = parser.getXMLReader();
@@ -200,7 +202,7 @@ abstract class ConfigLoader<T> extends DefaultHandler {
 
   abstract static class ConfigHandler<T> extends DefaultHandler {
 
-    abstract String getSchema();
+    abstract @Nullable String getSchema();
 
     /**
      * Returns the config item generated.

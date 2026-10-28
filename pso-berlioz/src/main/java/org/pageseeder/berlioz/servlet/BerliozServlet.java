@@ -128,6 +128,11 @@ public final class BerliozServlet extends HttpServlet {
    */
   private static final int COMPRESSION_THRESHOLD = 1024;
 
+  /**
+   * Default message for 404 errors.
+   */
+  private static final String RESOURCE_NOT_FOUND = "Resource not found";
+
   // Class attributes
   // ----------------------------------------------------------------------------------------------
 
@@ -282,7 +287,7 @@ public final class BerliozServlet extends HttpServlet {
    */
   private boolean denyWithoutControl(HttpServletRequest req, HttpServletResponse res, BerliozConfig config) {
     if (!config.requiresControl() || ControlAuthorization.hasControl(req)) return false;
-    routeError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+    routeError(req, res, HttpServletResponse.SC_NOT_FOUND, RESOURCE_NOT_FOUND, null);
     return true;
   }
 
@@ -370,7 +375,7 @@ public final class BerliozServlet extends HttpServlet {
     // JSON requests fall back to XML+XSLT when the service doesn't support JSON directly,
     // but if the service doesn't support XML either, nothing can be produced.
     if (!serviceSupportsJson && !service.supported().contains(OutputType.XML)) {
-      routeError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+      routeError(req, res, HttpServletResponse.SC_NOT_FOUND, RESOURCE_NOT_FOUND, null);
       LOGGER.debug("Service {} does not support the requested output format for: {}", service.id(), req.getRequestURI());
       return;
     }
@@ -594,7 +599,7 @@ public final class BerliozServlet extends HttpServlet {
         return;
       }
     }
-    routeError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+    routeError(req, res, HttpServletResponse.SC_NOT_FOUND, RESOURCE_NOT_FOUND, null);
     LOGGER.debug("No matching service for: {}", req.getRequestURI());
   }
 

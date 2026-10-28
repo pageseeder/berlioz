@@ -20,7 +20,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.List;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Generator;
@@ -99,8 +98,8 @@ public final class GetCpuSample implements Generator {
    * @param loadAverage The system load average, negative when not available
    * @param out         The output writer
    */
-  static void sample(int processors, long uptime, @NonNull OptionalMetrics metrics,
-      @NonNull List<GarbageCollectorMXBean> collectors, double loadAverage, @NonNull OutputWriter out) {
+  static void sample(int processors, long uptime, OptionalMetrics metrics,
+      List<GarbageCollectorMXBean> collectors, double loadAverage, OutputWriter out) {
     Long processTime = metrics.count("ProcessCpuTime");
     Long gcTime = collectionTime(collectors);
     // CpuLoad from Java 14, SystemCpuLoad before (deprecated since)
@@ -120,7 +119,7 @@ public final class GetCpuSample implements Generator {
    * @param collectors The garbage collectors
    * @return the collection time of the collectors that report one, or {@code null} if none does.
    */
-  static @Nullable Long collectionTime(@NonNull List<GarbageCollectorMXBean> collectors) {
+  static @Nullable Long collectionTime(List<GarbageCollectorMXBean> collectors) {
     Long total = null;
     for (GarbageCollectorMXBean collector : collectors) {
       if (!collector.isValid()) continue;

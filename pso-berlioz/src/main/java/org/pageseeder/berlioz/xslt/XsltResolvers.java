@@ -21,7 +21,6 @@ import java.util.Objects;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -64,7 +63,7 @@ public final class XsltResolvers {
    * @see #secure(ClassLoader)
    * @see StylesheetLocation#resolveApplicationClassLoader()
    */
-  public static @NonNull URIResolver secure() {
+  public static URIResolver secure() {
     return secure(StylesheetLocation.resolveApplicationClassLoader());
   }
 
@@ -81,7 +80,7 @@ public final class XsltResolvers {
    *
    * @return A new resolver.
    */
-  public static @NonNull URIResolver secure(@NonNull ClassLoader loader) {
+  public static URIResolver secure(ClassLoader loader) {
     return new SecureXsltUriResolver(Objects.requireNonNull(loader, "loader is required"));
   }
 
@@ -103,7 +102,7 @@ public final class XsltResolvers {
    * @throws TransformerException If the reference is denied, malformed, relative without an
    *         absolute base, or a {@code classpath:} reference that cannot be found.
    */
-  public static @NonNull URL locate(@NonNull String href, @Nullable String base, @NonNull ClassLoader loader)
+  public static URL locate(String href, @Nullable String base, ClassLoader loader)
       throws TransformerException {
     Objects.requireNonNull(href, "href is required");
     return new SecureXsltUriResolver(Objects.requireNonNull(loader, "loader is required")).locate(href, base);

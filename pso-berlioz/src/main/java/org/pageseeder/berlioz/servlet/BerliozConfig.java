@@ -69,6 +69,8 @@ public final class BerliozConfig {
 
   private static final String STYLESHEET_PARAM = "stylesheet";
 
+  private static final String GROUP_TOKEN = "{GROUP}";
+
   private static final String REQUIRES_CONTROL_PARAM = "requires-control";
 
   /**
@@ -184,7 +186,7 @@ public final class BerliozConfig {
     this.fallbackStyleSheet = this.getInitParameter("fallback-stylesheet", "");
     warnIfDeprecatedResourcePrefix(servletConfig, STYLESHEET_PARAM, this.stylePath);
     warnIfDeprecatedResourcePrefix(servletConfig, "fallback-stylesheet", this.fallbackStyleSheet);
-    this.transformers = this.allocation != TransformAllocation.NIL? new ConcurrentHashMap<>() : Map.of();
+    this.transformers = this.allocation == TransformAllocation.NIL ? Map.of() : new ConcurrentHashMap<>();
     String rawContentType = this.getInitParameter("content-type", "text/html;charset=utf-8");
     ContentType contentType = ContentType.parse(rawContentType);
     this.mediaType = contentType.mediaType();
@@ -518,7 +520,7 @@ public final class BerliozConfig {
    * @return the corresponding XSLT transformer.
    */
   private XsltTransformer getTransformer(Service service, String key) {
-    if (!this.stylePath.contains("{GROUP}")) {
+    if (!this.stylePath.contains(GROUP_TOKEN)) {
       return this.transformers.computeIfAbsent(key,
           k -> new XsltTransformer(resolveServiceStylesheet(service), resolveFallbackUrl()));
     }
@@ -550,11 +552,11 @@ public final class BerliozConfig {
    */
   private StylesheetLocation resolveServiceStylesheet(Service service) {
     String path = this.stylePath
-        .replace("{GROUP}", service.group())
+        .replace(GROUP_TOKEN, service.group())
         .replace("{SERVICE}", service.id());
     try {
       StylesheetLocation location = resolveStylesheetLocation(path);
-      if (this.stylePath.contains("{GROUP}") && location.path() != null
+      if (this.stylePath.contains(GROUP_TOKEN) && location.path() != null
           && Files.notExists(location.path(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
         Path relative = this.env.getPrivateFolder().toPath().toAbsolutePath().normalize()
             .relativize(location.path().toAbsolutePath().normalize());
@@ -593,7 +595,7 @@ public final class BerliozConfig {
   private static TransformAllocation toAllocation(String stylePath) {
     if (IDENTITY_TRANSFORM.equals(stylePath)) return TransformAllocation.NIL;
     else if (stylePath.contains("{SERVICE}")) return TransformAllocation.SERVICE;
-    else if (stylePath.contains("{GROUP}")) return TransformAllocation.GROUP;
+    else if (stylePath.contains(GROUP_TOKEN)) return TransformAllocation.GROUP;
     else return TransformAllocation.GLOBAL;
   }
 

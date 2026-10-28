@@ -130,7 +130,7 @@ public final class RelocationConfig {
    */
   private static class Handler extends ConfigLoader.ConfigHandler<RelocationConfig> {
 
-    private List<MovedLocationPattern> patterns;
+    private List<MovedLocationPattern> patterns = new ArrayList<>();
 
     /** Used to detect duplicates */
     private final Set<String> matchingPatterns = new HashSet<>();

@@ -22,7 +22,6 @@ import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -47,14 +46,14 @@ final class OptionalMetrics {
   /**
    * @param attributes The value of an attribute by name, or {@code null}.
    */
-  OptionalMetrics(@NonNull Function<String, @Nullable Object> attributes) {
+  OptionalMetrics(Function<String, @Nullable Object> attributes) {
     this.attributes = attributes;
   }
 
   /**
    * @return the metrics of the platform MBean server.
    */
-  static @NonNull OptionalMetrics platform() {
+  static OptionalMetrics platform() {
     MBeanServer server = ManagementFactory.getPlatformMBeanServer();
     ObjectName name;
     try {
@@ -75,7 +74,7 @@ final class OptionalMetrics {
    * @param names The attributes to try, in order.
    * @return the first value from 0 to 1, or {@code null}.
    */
-  @Nullable Double fraction(@NonNull String... names) {
+  @Nullable Double fraction(String... names) {
     for (String name : names) {
       Object value = this.attributes.apply(name);
       if (value instanceof Number) {
@@ -90,7 +89,7 @@ final class OptionalMetrics {
    * @param name The attribute.
    * @return its value when it is not negative, or {@code null}.
    */
-  @Nullable Long count(@NonNull String name) {
+  @Nullable Long count(String name) {
     Object value = this.attributes.apply(name);
     if (value instanceof Number) {
       long count = ((Number) value).longValue();
