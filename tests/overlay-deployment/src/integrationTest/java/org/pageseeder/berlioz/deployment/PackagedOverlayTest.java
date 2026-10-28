@@ -210,7 +210,7 @@ class PackagedOverlayTest {
 
   private static JsonElement attributeValue(String name, String value) {
     if (name.equals("mappings") || name.equals("extensions")) return splitValues(value);
-    if (name.equals("compression") || name.equals("problemXml")) return new JsonPrimitive(Boolean.parseBoolean(value));
+    if (name.equals("compression") || name.equals("requiresControl") || name.equals("problemXml")) return new JsonPrimitive(Boolean.parseBoolean(value));
     return new JsonPrimitive(value);
   }
 

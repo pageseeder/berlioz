@@ -31,6 +31,7 @@ import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.content.ServiceLoader;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpMethod;
+import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.pageseeder.berlioz.xslt.XsltTransformException;
 import org.pageseeder.berlioz.servlet.fixtures.CacheableXmlGenerator;
 import org.pageseeder.berlioz.servlet.fixtures.DirectJsonGenerator;
@@ -177,6 +178,69 @@ class BerliozServletTest {
     assertTrue(allow.contains("GET"), allow);
     assertTrue(allow.contains("HEAD"), allow);
     assertTrue(allow.contains("POST"), allow);
+  }
+
+  @Test
+  void requiresControl_unauthorizedGetSendsNotFoundWithoutGenerating() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("requires-control", "true", "content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request("GET", "/hello.src"), recorder.build());
+
+    assertEquals(404, recorder.status);
+    assertEquals("Resource not found", recorder.errorMessage);
+    assertFalse(recorder.content().contains("hello"), recorder.content());
+  }
+
+  @Test
+  void requiresControl_unauthorizedOptionsSendsNotFoundWithoutAllowHeader() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("requires-control", "true"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doOptions(request("OPTIONS", "/hello.src"), recorder.build());
+
+    assertEquals(404, recorder.status);
+    assertNull(recorder.header(HttpHeaders.ALLOW));
+  }
+
+  @Test
+  void requiresControl_delegatedAuthorizationServesContent() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("requires-control", "true", "content-type", "application/xml;charset=utf-8"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    HttpServletRequest req = request("GET", "/hello.src");
+    req.setAttribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE);
+
+    this.servlet.doGet(req, recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertTrue(recorder.content().contains("hello"), recorder.content());
+  }
+
+  @Test
+  void requiresControl_controlKeyServesContent() throws Exception {
+    Files.write(this.webInf.resolve("config").resolve("config.xml"), String.join("\n",
+        "<?xml version=\"1.0\"?>",
+        "<global>",
+        "  <berlioz>",
+        "    <control key=\"s3cr3t\"/>",
+        "    <http compression=\"false\"/>",
+        "  </berlioz>",
+        "</global>").getBytes(StandardCharsets.UTF_8));
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("requires-control", "true", "content-type", "application/xml;charset=utf-8"));
+
+    ServletTestSupport.ResponseRecorder denied = ServletTestSupport.response();
+    this.servlet.doGet(request("GET", "/hello.src", Map.of("Authorization", "Berlioz wrong")), denied.build());
+    assertEquals(404, denied.status);
+
+    ServletTestSupport.ResponseRecorder allowed = ServletTestSupport.response();
+    this.servlet.doGet(request("GET", "/hello.src", Map.of("Authorization", "Berlioz s3cr3t")), allowed.build());
+    assertEquals(200, allowed.status);
+    assertTrue(allowed.content().contains("hello"), allowed.content());
   }
 
   @Test

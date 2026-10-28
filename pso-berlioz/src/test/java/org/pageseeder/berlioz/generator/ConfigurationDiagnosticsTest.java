@@ -59,10 +59,10 @@ class ConfigurationDiagnosticsTest {
     GetBerliozConfig generator = new GetBerliozConfig();
     assertEquals("{\"servlets\":[{\"name\":\"html\",\"mappings\":[\"*.html\",\"/pages/*\"],"
         + "\"mediaType\":\"text/html\",\"charset\":\"UTF-8\",\"cacheControl\":\"no-cache\",\"compression\":true,"
-        + "\"xsltCache\":\"manual\",\"stylesheet\":{\"allocation\":\"group\",\"source\":\"classpath\",\"path\":\"classpath:xslt/{GROUP}.xsl\"},"
+        + "\"requiresControl\":false,\"xsltCache\":\"manual\",\"stylesheet\":{\"allocation\":\"group\",\"source\":\"classpath\",\"path\":\"classpath:xslt/{GROUP}.xsl\"},"
         + "\"fallback\":{\"source\":\"classpath\",\"path\":\"classpath:xslt/default.xsl\"}}]}", json(generator, request()));
     assertEquals("<berlioz-config><servlet name=\"html\" mappings=\"*.html /pages/*\" media-type=\"text/html\" charset=\"UTF-8\" "
-        + "cache-control=\"no-cache\" compression=\"true\" xslt-cache=\"manual\"><stylesheet allocation=\"group\" source=\"classpath\" "
+        + "cache-control=\"no-cache\" compression=\"true\" requires-control=\"false\" xslt-cache=\"manual\"><stylesheet allocation=\"group\" source=\"classpath\" "
         + "path=\"classpath:xslt/{GROUP}.xsl\"/><fallback source=\"classpath\" path=\"classpath:xslt/default.xsl\"/></servlet></berlioz-config>", xml(generator, request()));
     servlet.destroy();
     assertEquals("{\"servlets\":[]}", json(generator, request()));

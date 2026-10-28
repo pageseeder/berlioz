@@ -30,6 +30,9 @@ Then open http://localhost:8999/ for a welcome page linking to every route below
 Gretty runs with `-Dberlioz.mode=local` and `-Dberlioz.appdata=local/appdata`, so `config-local.xml`
 overrides the base configuration during local development.
 
+`hello.src` shows the raw Berlioz XML before XSLT. It requires Berlioz control authorization, which
+`config-local.xml` grants to loopback requests with `berlioz.control.network=loopback`.
+
 The API sample uses direct JSON generators:
 
 ```bash

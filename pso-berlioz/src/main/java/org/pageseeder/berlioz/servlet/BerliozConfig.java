@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.3
+ * @version 0.14.5
  * @since 0.8.1
  */
 public final class BerliozConfig {
@@ -68,6 +68,8 @@ public final class BerliozConfig {
   private static final String IDENTITY_TRANSFORM = "IDENTITY";
 
   private static final String STYLESHEET_PARAM = "stylesheet";
+
+  private static final String REQUIRES_CONTROL_PARAM = "requires-control";
 
   /**
    * Stores all the berlioz config here.
@@ -141,6 +143,11 @@ public final class BerliozConfig {
   private final boolean compression;
 
   /**
+   * Indicates whether requests must be authorized for Berlioz control to be served.
+   */
+  private final boolean requiresControl;
+
+  /**
    * The environment.
    */
   private final Environment env;
@@ -191,12 +198,14 @@ public final class BerliozConfig {
     }
     this.cacheControl = this.getInitParameter("cache-control", defaultCacheControl);
     this.compression = this.getInitParameter("http-compression", GlobalSettings.has(BerliozOption.HTTP_COMPRESSION));
+    this.requiresControl = this.getInitParameter(REQUIRES_CONTROL_PARAM, false);
     this.env = new HttpEnvironment(contextPath, webinfPath, this.cacheControl);
     this.etagSeed = loadEtagSeed();
     this.diagnosticDefaults = DiagnosticConfiguration.fields(
         "name", servletConfig.getServletName(), "mappings", DiagnosticConfiguration.mappings(servletConfig),
         "media-type", this.mediaType, "charset", this.charset.name(),
-        "cache-control", this.cacheControl, "compression", this.compression);
+        "cache-control", this.cacheControl, "compression", this.compression,
+        REQUIRES_CONTROL_PARAM, this.requiresControl);
   }
 
   /**
@@ -283,6 +292,22 @@ public final class BerliozConfig {
    */
   public boolean enableCompression() {
     return this.compression;
+  }
+
+  /**
+   * Indicates whether requests to this Berlioz instance must be authorized for Berlioz control.
+   *
+   * <p>Set with the {@code requires-control} init parameter. When enabled, requests that are not
+   * authorized by {@link org.pageseeder.berlioz.security.ControlAuthorization#hasControl} receive
+   * a {@code 404}; the kickstart source servlet ({@code *.src}) enables it by default.
+   *
+   * @return <code>true</code> if requests must be authorized for Berlioz control;
+   *         <code>false</code> otherwise.
+   *
+   * @since 0.14.5
+   */
+  public boolean requiresControl() {
+    return this.requiresControl;
   }
 
   /**

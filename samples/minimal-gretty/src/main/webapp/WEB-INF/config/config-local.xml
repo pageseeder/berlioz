@@ -3,5 +3,7 @@
   <berlioz>
     <errors handle="true" problem="true" detail="full"/>
     <xslt cache="auto"/>
+    <!-- Allow control parameters and *.src from this machine only -->
+    <control network="loopback"/>
   </berlioz>
 </global>

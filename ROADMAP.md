@@ -121,7 +121,7 @@ Small security improvements:
 - ✓ Redact and sort `GetSystemProperties` output (Theme 18, item 1): implemented; now a `Generator` with XML/JSON output, values redacted via `Redaction.redact`, sorted by name.
 - ✓ Check `Forwarded` and `X-Real-IP` like `X-Forwarded-For` in the control network channel, and expose the check publicly (Theme 18, item 7): implemented as `ControlNetwork.matches(HttpServletRequest)`, used by `ControlAuthorization.hasControl`.
 - ✓ Minimal default XML exposure, `.xml` fallback (Theme 15): kickstart `fallback-xml.xsl` rewritten as an allowlist; covered by `FallbackXmlTest`.
-- Minimal default XML exposure, `.src` mapping (Theme 15): restrict the kickstart `*.src` mapping; guard approach still to be decided.
+- ✓ Minimal default XML exposure, `.src` mapping (Theme 15): new `requires-control` servlet init parameter, enabled on the kickstart `BerliozSource`; unauthorized requests (including `OPTIONS`) receive `404`.
 
 Scoped `berlioz-reload` (Theme 17):
 
@@ -578,12 +578,12 @@ The kickstart `fallback-xml.xsl` copies the source document verbatim (`<xsl:sequ
 Planned changes:
 
 - ✓ (Implemented for 0.14.5) Rewrite `fallback-xml.xsl` as an allowlist rather than a denylist, so future envelope additions stay private unless explicitly exposed: replace `<header>` with a comment noting its removal, keep `root/@service`, `@group`, and `@flags`, keep `content/@name`, `@target`, and `@status`, and copy the generator payload unchanged. Error content is already governed by `berlioz.errors.detail`.
-- Restrict the kickstart `*.src` mapping (`BerliozSource`, `stylesheet=IDENTITY`), which returns the raw envelope for every service with no mode, network, or key guard and is hard for applications to remove from a web fragment. Options: serve it only in `dev` mode, guard it with the existing `berlioz.control.network`/`berlioz.control.key` authorization, or remove it from kickstart and require an explicit opt-in mapping. Changing the `.xml` fallback alone leaves the same data reachable through `.src`.
-- Document in `README.md` and the kickstart README that application `xml/{GROUP}.xsl` templates copying the whole source document expose the same data, and show a safe pattern.
-- Add tests asserting the fallback output contains no `header`, `@generator`, `@etag`, `@profile*`, or `@flags`, and that `.src` is denied outside the permitted mode or authorization.
-- Release-note the behavior change: clients reading `header/…` (for example URI parameters or the Berlioz version) from the default `.xml` output must use an application template instead.
+- ✓ (Implemented for 0.14.5 as a `requires-control` init parameter using the control authorization) Restrict the kickstart `*.src` mapping (`BerliozSource`, `stylesheet=IDENTITY`), which returns the raw envelope for every service with no mode, network, or key guard and is hard for applications to remove from a web fragment. Options: serve it only in `dev` mode, guard it with the existing `berlioz.control.network`/`berlioz.control.key` authorization, or remove it from kickstart and require an explicit opt-in mapping. Changing the `.xml` fallback alone leaves the same data reachable through `.src`.
+- ✓ Document in `README.md` and the kickstart README that application `xml/{GROUP}.xsl` templates copying the whole source document expose the same data, and show a safe pattern.
+- ✓ Add tests asserting the fallback output contains no `header`, `@generator`, `@etag`, or `@profile*`, and that `.src` is denied without control authorization.
+- ✓ Release-note the behavior change (README "Migrating to 0.14.5"), including the `.src` guard: clients reading `header/…` (for example URI parameters or the Berlioz version) from the default `.xml` output must use an application template instead.
 
-Target release: 0.14.5.
+Target release: 0.14.5. Implemented.
 
 ### 16. Admin Diagnostics (Requested By Berlioz Admin)
 

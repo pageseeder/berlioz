@@ -98,10 +98,12 @@ import org.slf4j.LoggerFactory;
  * See {@link org.pageseeder.berlioz.BerliozOption#CONTROL_KEY},
  * {@link org.pageseeder.berlioz.BerliozOption#CONTROL_NETWORK}, and
  * {@link org.pageseeder.berlioz.security.ControlAuthorization#CONTROL_AUTHORIZED_ATTRIBUTE} to enable them.
+ * The same authorization applies to every request when the {@code requires-control} init parameter
+ * is enabled, as for the kickstart source servlet ({@code *.src}).
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.5
  * @since 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -150,6 +152,8 @@ public final class BerliozServlet extends HttpServlet {
    * <ul>
    *   <li><code>content-type</code> to specify the content type used by this Berlioz instance.
    *   <li><code>stylesheet</code> to specify the XSLT stylesheet to use for this Berlioz instance.
+   *   <li><code>requires-control</code> to only serve requests authorized for Berlioz control
+   *       (since 0.14.5); other requests receive a <code>404</code>.
    * </ul>
    *
    * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
@@ -249,6 +253,7 @@ public final class BerliozServlet extends HttpServlet {
 
   @Override
   public void doOptions(HttpServletRequest req, HttpServletResponse res) {
+    if (denyWithoutControl(req, res, getBerliozConfig())) return;
     ServiceLoader loader = ServiceLoader.getInstance();
     try {
       loader.loadIfRequired();
@@ -260,6 +265,22 @@ public final class BerliozServlet extends HttpServlet {
     String path = HttpRequestWrapper.getBerliozPath(req);
     List<String> methods = services.allows(path);
     res.setHeader(HttpHeaders.ALLOW, HttpResponses.allow(methods));
+  }
+
+  /**
+   * Sends a {@code 404} when this instance requires Berlioz control and the request is not
+   * authorized, so that a restricted instance (e.g. source XML) is not revealed.
+   *
+   * @param req    The HTTP servlet request.
+   * @param res    The HTTP servlet response.
+   * @param config The Berlioz configuration for this servlet.
+   *
+   * @return <code>true</code> if the request was denied; <code>false</code> otherwise.
+   */
+  private boolean denyWithoutControl(HttpServletRequest req, HttpServletResponse res, BerliozConfig config) {
+    if (!config.requiresControl() || ControlAuthorization.hasControl(req)) return false;
+    routeError(req, res, HttpServletResponse.SC_NOT_FOUND, "Resource not found", null);
+    return true;
   }
 
   // Standard HTTP Methods
@@ -280,6 +301,7 @@ public final class BerliozServlet extends HttpServlet {
     // Use Berlioz config locally
     BerliozConfig config = getBerliozConfig();
     ServiceRegistry services = getServiceRegistry();
+    if (denyWithoutControl(req, res, config)) return;
 
     // Setup and ensure that we use UTF-8 to read data
     req.setCharacterEncoding(StandardCharsets.UTF_8.name());

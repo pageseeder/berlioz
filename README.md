@@ -38,7 +38,7 @@ The Java API documentation can be found [here](https://javadoc.io/doc/org.pagese
 
 Berlioz uses RFC 9457 Problem Details support for generator and framework errors.
 
-## Default XML output (since 0.14.5)
+## Default XML and source output (since 0.14.5)
 
 When a group has no `/xslt/xml/{GROUP}.xsl`, the kickstart `*.xml` mapping applies its
 fallback stylesheet. Following the secure-by-default principle, the fallback no longer copies the
@@ -65,6 +65,36 @@ only what clients need:
     <xsl:copy-of select="content/node()"/>
   </root>
 </xsl:template>
+```
+
+The kickstart `*.src` mapping (`BerliozSource`) returns the full envelope before XSLT so that
+developers can see the source. It now sets the `requires-control` init parameter, so it only
+serves requests authorized for Berlioz control, like the control parameters: the delegated
+request attribute, `berlioz.control.key`, or `berlioz.control.network`. Other requests, including
+`OPTIONS`, receive a `404`. For local development, `berlioz.control.network=loopback` is usually
+enough:
+
+```xml
+<global>
+  <berlioz>
+    <control network="loopback"/>
+  </berlioz>
+</global>
+```
+
+`requires-control` can be set on any `BerliozServlet`. To open the source mapping again, redeclare
+the servlet in `web.xml` with the same name; `web.xml` init parameters override those of the
+fragment:
+
+```xml
+<servlet>
+  <servlet-name>BerliozSource</servlet-name>
+  <servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class>
+  <init-param>
+    <param-name>requires-control</param-name>
+    <param-value>false</param-value>
+  </init-param>
+</servlet>
 ```
 
 ## Classpath overlays
@@ -260,8 +290,9 @@ space-separated XML attributes; optional fields are omitted. An empty registry p
 `<berlioz-config/>` or `<error-handler-config/>` and `{"servlets":[]}`.
 
 `GetBerliozConfig` reports servlet defaults, which individual services or responses can
-override: `name`, `mappings`, `media-type`, `charset`, `cache-control`, `compression`, and
-`xslt-cache`. Compression means compression is permitted; `xslt-cache` describes the current
+override: `name`, `mappings`, `media-type`, `charset`, `cache-control`, `compression`,
+`requires-control`, and `xslt-cache`. Compression means compression is permitted;
+`requires-control` means only requests authorized for Berlioz control are served; `xslt-cache` describes the current
 runtime template cache mode, separately from HTTP caching. `stylesheet` contains
 `allocation` (`identity`, `global`, `group`, or `service`), with `source` (`filesystem` or
 `classpath`) and a safe logical `path` when applicable. Identity contains only `allocation`.
@@ -273,7 +304,8 @@ For example:
 ```xml
 <berlioz-config>
   <servlet name="html" mappings="*.html" media-type="text/html" charset="UTF-8"
-           cache-control="no-cache" compression="true" xslt-cache="manual">
+           cache-control="no-cache" compression="true" requires-control="false"
+           xslt-cache="manual">
     <stylesheet allocation="group" source="classpath" path="classpath:xslt/{GROUP}.xsl"/>
   </servlet>
 </berlioz-config>
@@ -309,6 +341,21 @@ Run `./gradlew overlayIntegrationTest` to deploy the test overlay JAR in a real 
 and verify discovery, precedence, XSLT, static resources, web fragments, diagnostics, and
 reload retention over HTTP. It also runs as part of `check` and `build`.
 See [the deployment test documentation](tests/overlay-deployment/README.md) for setup and coverage.
+
+## Migrating to 0.14.5
+
+0.14.5 reduces what the kickstart web fragment exposes by default. Applications that do not use
+`pso-berlioz-kickstart` are unaffected.
+
+- The default `*.xml` output (no `xml/{GROUP}.xsl` for the group) no longer includes the
+  `<header>` or internal `<content>` attributes such as `@generator`, `@etag` and `@profile*`.
+  Clients reading `header/…` from the default `.xml` output need an application template. See
+  [Default XML and source output](#default-xml-and-source-output-since-0145).
+- The `*.src` mapping now returns `404` unless the request is authorized for Berlioz control. No
+  code should rely on `.src`; developers who use it locally should set
+  `berlioz.control.network=loopback` (as most already do for the control parameters), or
+  `berlioz.control.key`.
+- `GetBerliozConfig` reports a new `requires-control` servlet field.
 
 ## Migrating to 0.14.3
 

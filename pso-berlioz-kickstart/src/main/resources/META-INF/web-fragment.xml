@@ -209,11 +209,15 @@
   <!--  disabled by default. Enable via the global settings                -->
   <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
-  <!-- Berlioz XML Setup                                                    -->
-  <!--      This Berlioz instance is configured to serve the response       -->
-  <!--      directly as XML.It is useful for debugging XSLT and for AJAX),  -->
-  <!--      but is neither is needed it is preferable to remove this for    -->
-  <!--      production.                                                     -->
+  <!-- Berlioz Source Setup                                                 -->
+  <!--      This Berlioz instance serves the raw Berlioz XML before any     -->
+  <!--      XSLT is applied, so that developers can see the source.         -->
+  <!--                                                                      -->
+  <!--      It requires the same authorization as the control parameters    -->
+  <!--      (berlioz.control.network / berlioz.control.key, or the          -->
+  <!--      delegated request attribute); other requests receive a 404.     -->
+  <!--      For local development, berlioz.control.network=loopback is      -->
+  <!--      usually enough.                                                 -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
   <servlet>
     <servlet-name>BerliozSource</servlet-name>
@@ -228,7 +232,11 @@
     </init-param>
     <init-param>
       <param-name>cache-control</param-name>
-      <param-value>max-age=0, must-revalidate</param-value>
+      <param-value>private, max-age=0, must-revalidate</param-value>
+    </init-param>
+    <init-param>
+      <param-name>requires-control</param-name>
+      <param-value>true</param-value>
     </init-param>
   </servlet>
 
