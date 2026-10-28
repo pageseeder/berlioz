@@ -54,6 +54,11 @@ import org.xml.sax.SAXParseException;
  * <h3>Parameters</h3>
  * <p>This generator does not use any parameter.</p>
  *
+ * <h3>Service sources</h3>
+ * <p>Each service names the {@code source} that declared it. When a later source declared the
+ * same HTTP method and URI pattern, the winning service lists each replaced declaration as
+ * {@code overridden}, in load order, with the replaced service ID, its source and the pattern.
+ *
  * <h3>Load diagnostics</h3>
  * <p>After the services, the output lists the configuration sources of the last successful load
  * in load order (classpath sources first), then the warnings of that load. If the last attempt
@@ -72,11 +77,12 @@ import org.xml.sax.SAXParseException;
  * <h3>Returned XML</h3>
  * <pre>{@code
  * <live-services load-status="ready" loaded="[iso8601]" failed="[iso8601]" retry-after="[iso8601]">
- *   <service id="[id]" group="[group]" method="[method]" cacheable="[true|false]" ...>
+ *   <service id="[id]" group="[group]" method="[method]" cacheable="[true|false]" ... source="[name]">
  *     <response-code use="[use]" rule="[rule]"/>
  *     <url pattern="[uri-pattern]"/>
  *     <generator class="[class]" name="[name]" type="[type]" cacheable="[true|false]" .../>
  *     ...
+ *     <overridden service="[id]" source="[name]" pattern="[uri-pattern]"/>
  *   </service>
  *   ...
  *   <source kind="[classpath|filesystem]" name="[name]"/>
@@ -94,12 +100,14 @@ import org.xml.sax.SAXParseException;
  *   "liveServices": [
  *     {
  *       "id": "[id]", "group": "[group]", "method": "[method]", "cacheable": [true|false], ...,
+ *       "source": "[name]",
  *       "responseCode": {"use": "[use]", "rule": "[rule]"},
  *       "urls": [{"pattern": "[uri-pattern]"}, ...],
  *       "generators": [
  *         {"class": "[class]", "name": "[name]", "type": "[type]", "cacheable": [true|false], ...},
  *         ...
- *       ]
+ *       ],
+ *       "overridden": [{"service": "[id]", "source": "[name]", "pattern": "[uri-pattern]"}, ...]
  *     },
  *     ...
  *   ],
@@ -158,7 +166,7 @@ public class ListRuntimeServices implements Generator, Cacheable {
       List<Service> services = registry.getServices(method);
       for (Service service : services) {
         List<String> urls = registry.matches(service);
-        service.writeTo(out, method, urls, httpEnv.getCacheControl());
+        service.writeTo(out, method, urls, httpEnv.getCacheControl(), registry);
       }
     }
     out.endArray();

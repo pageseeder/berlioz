@@ -109,6 +109,18 @@ class PackagedOverlayTest {
     jsonData(runtime).getAsJsonArray("liveServices").forEach(s -> ids.add(s.getAsJsonObject().get("id").getAsString()));
     assertTrue(ids.contains("host-conflict"), runtime);
     assertFalse(ids.contains("overlay-conflict"), runtime);
+    JsonObject winner = null;
+    for (JsonElement service : jsonData(runtime).getAsJsonArray("liveServices")) {
+      if (service.getAsJsonObject().get("id").getAsString().equals("host-conflict")) winner = service.getAsJsonObject();
+    }
+    assertNotNull(winner);
+    assertEquals("services.xml", winner.get("source").getAsString());
+    JsonArray overridden = winner.getAsJsonArray("overridden");
+    assertEquals(1, overridden.size(), runtime);
+    JsonObject replaced = overridden.get(0).getAsJsonObject();
+    assertEquals("overlay-conflict", replaced.get("service").getAsString());
+    assertTrue(replaced.get("source").getAsString().matches("overlay-fixture-.+\\.jar!META-INF/berlioz/services\\.xml"), runtime);
+    assertEquals("/conflict", replaced.get("pattern").getAsString());
     Document sources = xml(get("/admin/sources.xml").body());
     NodeList warnings = sources.getElementsByTagName("warning");
     assertTrue(warnings.getLength() > 0);

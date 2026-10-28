@@ -315,6 +315,20 @@ public final class ServiceRegistry {
   }
 
   /**
+   * Returns the registrations of the specified service for the specified method.
+   *
+   * @param service the service, compared by identity.
+   * @param method  the HTTP method.
+   *
+   * @return the matching registrations of the current publication, one per URI pattern.
+   */
+  List<ServiceRegistration> registrations(Service service, HttpMethod method) {
+    return this.state.get().registrations.stream()
+        .filter(r -> r.service() == service && r.method() == method)
+        .collect(Collectors.toList());
+  }
+
+  /**
    * Atomically replaces the complete state of this registry (mapping and version together) with
    * the state currently held by {@code candidate}, in a single volatile assignment.
    *

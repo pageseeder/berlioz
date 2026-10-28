@@ -325,6 +325,21 @@ while the last attempt has failed, its cause (`<load-failure source="…" line="
 URLs. `line` and the parser's description of the failure are only included when
 `berlioz.errors.detail` is `standard` or `full`; at `minimal` the failure has a generic message.
 The same snapshot is available programmatically from `ServiceLoader.getLoadDiagnostics()`.
+
+Each service also names the configuration that declared it (`service/@source`, the same display
+name as the sources). When a later source declares the same HTTP method and URI pattern, the
+service that wins lists every declaration it replaced, in load order, after its generators:
+
+```xml
+<service id="home" group="default" method="get" ... source="services.xml">
+  ...
+  <overridden service="home" source="bzadmin-0.14.0.jar!META-INF/berlioz/services.xml" pattern="/home"/>
+</service>
+```
+
+In JSON, `overridden` is an array of `{service, source, pattern}`. A service that still serves
+other patterns stays listed in its own source. Services written by `Service.writeTo` without a
+registry, or registered directly rather than by `ServiceLoader`, have no source.
 Protect diagnostic mappings with application or container security.
 
 ## Runtime configuration diagnostics
@@ -453,6 +468,8 @@ See [the deployment test documentation](tests/overlay-deployment/README.md) for 
   so far (`stylesheet/selection`), the XSLT processor (`xslt-processor`) and the servlet
   container (`container`). Clients that treated every child of `berlioz-config` as a servlet
   should select `servlet` elements.
+- `ListRuntimeServices` reports the `source` of each service and the declarations it overrides
+  (`overridden`), which were previously only logged as warnings.
 - `GetBerliozConfig` lists Berlioz servlets that are not initialized yet, with only `name`,
   `mappings` and `initialised="false"`, and now reports application-relative stylesheet paths
   such as `/xslt/html/{GROUP}.xsl` (as `xslt/html/{GROUP}.xsl`) that were previously withheld.

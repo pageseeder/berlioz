@@ -465,7 +465,8 @@ public enum ServiceLoader {
     for (List<ServiceRegistration> sourceRegistrations : perSourceRegistrations) {
       for (ServiceRegistration registration : sourceRegistrations) {
         Pair<HttpMethod, String> key = new Pair<>(registration.method(), registration.pattern().toString());
-        ServiceRegistration previous = byKey.put(key, registration);
+        ServiceRegistration previous = byKey.get(key);
+        byKey.put(key, previous != null ? registration.replacing(previous) : registration);
         if (previous != null) {
           String message = conflictWarning(previous, registration);
           LOGGER.warn(message);

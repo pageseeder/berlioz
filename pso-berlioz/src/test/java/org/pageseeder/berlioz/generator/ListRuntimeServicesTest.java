@@ -37,6 +37,12 @@ class ListRuntimeServicesTest {
 
   private static final String EMPTY_SERVICES = PROLOG + "<service-config version=\"1.0\"/>";
 
+  private static final String NO_CONTENT = "<generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>";
+
+  private static String services(String services) {
+    return PROLOG + "<service-config version=\"1.0\"><services group=\"default\">" + services + "</services></service-config>";
+  }
+
   @TempDir
   Path tmp;
 
@@ -158,6 +164,57 @@ class ListRuntimeServicesTest {
     String json = processJson(req);
     Assertions.assertTrue(json.contains("\"sources\":[{\"kind\":\"classpath\",\"name\":\"overlay-1.0.jar!META-INF/berlioz/services.xml\"},"
         + "{\"kind\":\"filesystem\",\"name\":\"services.xml\"},{\"kind\":\"filesystem\",\"name\":\"services!x.xml\"}]"), json);
+  }
+
+  @Test
+  void servicesNameTheirSourceAndTheDeclarationsTheyOverride() throws Exception {
+    Path config = Files.createDirectories(tmp.resolve("config"));
+    Files.writeString(config.resolve("services.xml"), services("<service id=\"app-home\" method=\"get\">"
+        + "<url pattern=\"/home\"/><url pattern=\"/app\"/>" + NO_CONTENT + "</service>"));
+    Files.writeString(config.resolve("services!x.xml"), services("<service id=\"module-home\" method=\"get\">"
+        + "<url pattern=\"/home\"/>" + NO_CONTENT + "</service>"));
+    Path jar = tmp.resolve("overlay-1.0.jar");
+    try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar))) {
+      out.putNextEntry(new JarEntry("META-INF/berlioz/services.xml"));
+      out.write(services("<service id=\"jar-home\" method=\"get\"><url pattern=\"/home\"/>" + NO_CONTENT + "</service>"
+          + "<service id=\"jar-only\" method=\"get\"><url pattern=\"/only\"/>" + NO_CONTENT + "</service>")
+          .getBytes(StandardCharsets.UTF_8));
+      out.closeEntry();
+    }
+    GlobalSettings.setup(tmp.toFile());
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    try (URLClassLoader overlay = new URLClassLoader(new URL[] {jar.toUri().toURL()}, original)) {
+      Thread.currentThread().setContextClassLoader(overlay);
+      ServiceLoader.getInstance().loadIfRequired();
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+    ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
+
+    String xml = process(req);
+    Assertions.assertTrue(xml.matches("(?s).*<service id=\"module-home\"[^>]* source=\"services!x.xml\">.*"
+        + "<overridden service=\"jar-home\" source=\"overlay-1.0.jar!META-INF/berlioz/services.xml\" pattern=\"/home\"/>"
+        + "<overridden service=\"app-home\" source=\"services.xml\" pattern=\"/home\"/></service>.*"), xml);
+    Assertions.assertTrue(xml.matches("(?s).*<service id=\"app-home\"[^>]* source=\"services.xml\">((?!</service>).)*<url pattern=\"/app\"/>((?!</service>).)*</service>.*"), xml);
+    Assertions.assertFalse(xml.matches("(?s).*<service id=\"app-home\"((?!</service>).)*<overridden.*"), xml);
+    Assertions.assertTrue(xml.matches("(?s).*<service id=\"jar-only\"[^>]* source=\"overlay-1.0.jar!META-INF/berlioz/services.xml\">.*"), xml);
+    Assertions.assertFalse(xml.contains("<service id=\"jar-home\""), xml);
+    Assertions.assertFalse(xml.contains(tmp.toString()), xml);
+
+    String json = processJson(req);
+    Assertions.assertTrue(json.contains("\"source\":\"services!x.xml\""), json);
+    Assertions.assertTrue(json.contains("\"overridden\":[{\"service\":\"jar-home\",\"source\":\"overlay-1.0.jar!META-INF/berlioz/services.xml\",\"pattern\":\"/home\"},"
+        + "{\"service\":\"app-home\",\"source\":\"services.xml\",\"pattern\":\"/home\"}]}"), json);
+  }
+
+  @Test
+  void singleFileLoadReportsItsSource() throws Exception {
+    GlobalSettings.setup(WEB_INF);
+    ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
+    ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
+    String xml = process(req);
+    Assertions.assertTrue(xml.matches("(?s).*<service id=\"home\"[^>]* source=\"[^\"]*services.xml\">.*"), xml);
+    Assertions.assertFalse(xml.contains("<overridden"), xml);
   }
 
   @ParameterizedTest

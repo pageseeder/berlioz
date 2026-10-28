@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz.content;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import org.pageseeder.berlioz.furi.URIPattern;
@@ -25,7 +27,8 @@ import org.pageseeder.berlioz.http.HttpMethod;
  *
  * <p>This carries enough information for origin-aware conflict reporting: when two registrations
  * are keyed by the same {@link HttpMethod} and URI pattern, the replacing registration's warning
- * can name both the replaced and replacing service and origin.
+ * can name both the replaced and replacing service and origin. The registration that wins also
+ * keeps the declarations it replaced, in load order, so that diagnostics can list them.
  *
  * @author Christophe Lauret
  *
@@ -42,11 +45,33 @@ final class ServiceRegistration {
 
   private final ServiceOrigin origin;
 
+  private final List<ServiceRegistration> overridden;
+
   ServiceRegistration(Service service, HttpMethod method, URIPattern pattern, ServiceOrigin origin) {
+    this(service, method, pattern, origin, List.of());
+  }
+
+  private ServiceRegistration(Service service, HttpMethod method, URIPattern pattern, ServiceOrigin origin,
+      List<ServiceRegistration> overridden) {
     this.service = Objects.requireNonNull(service, "service is required");
     this.method = Objects.requireNonNull(method, "method is required");
     this.pattern = Objects.requireNonNull(pattern, "pattern is required");
     this.origin = Objects.requireNonNull(origin, "origin is required");
+    this.overridden = overridden;
+  }
+
+  /**
+   * Returns a copy of this registration that records the specified registration, and the
+   * declarations it had itself replaced, as overridden by this one.
+   *
+   * @param previous the registration replaced by this one for the same method and pattern.
+   *
+   * @return a new registration.
+   */
+  ServiceRegistration replacing(ServiceRegistration previous) {
+    List<ServiceRegistration> replaced = new ArrayList<>(previous.overridden);
+    replaced.add(new ServiceRegistration(previous.service, previous.method, previous.pattern, previous.origin));
+    return new ServiceRegistration(this.service, this.method, this.pattern, this.origin, List.copyOf(replaced));
   }
 
   Service service() {
@@ -63,6 +88,13 @@ final class ServiceRegistration {
 
   ServiceOrigin origin() {
     return this.origin;
+  }
+
+  /**
+   * @return the declarations this registration replaced, in load order.
+   */
+  List<ServiceRegistration> overridden() {
+    return this.overridden;
   }
 
   @Override

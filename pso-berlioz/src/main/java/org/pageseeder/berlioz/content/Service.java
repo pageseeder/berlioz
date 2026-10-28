@@ -298,6 +298,33 @@ public final class Service {
    */
   @Beta
   public void writeTo(OutputWriter out, HttpMethod method, List<String> urls, @Nullable String cacheControl) {
+    writeTo(out, method, urls, cacheControl, List.of());
+  }
+
+  /**
+   * Serializes the specified service, including where it was declared.
+   *
+   * <p>When the registry knows how this service was loaded, the output also includes the
+   * <code>source</code> that declared it (the display name of its service configuration) and,
+   * after the generators, each declaration it replaced for the same method and URI pattern
+   * (<code>overridden</code>, in load order, with the replaced service ID, its source and the
+   * pattern).
+   *
+   * @param out          the output writer
+   * @param method       the HTTP method the service is mapped to.
+   * @param urls         the URI patterns this service matches
+   * @param cacheControl the cache control directives.
+   * @param registry     the registry this service was loaded into.
+   * @since 0.14.5
+   */
+  @Beta
+  public void writeTo(OutputWriter out, HttpMethod method, List<String> urls, @Nullable String cacheControl,
+      ServiceRegistry registry) {
+    writeTo(out, method, urls, cacheControl, registry.registrations(this, method));
+  }
+
+  private void writeTo(OutputWriter out, HttpMethod method, List<String> urls, @Nullable String cacheControl,
+      List<ServiceRegistration> registrations) {
     out.startObject("service");
     out.field("id", this.id);
     out.field("group", this.group);
@@ -320,6 +347,7 @@ public final class Service {
     }
 
     out.field("supported", supportedAttribute(this.supported));
+    if (!registrations.isEmpty()) out.field("source", registrations.get(0).origin().displayName());
 
     // How the response code is calculated
     out.startObject("response-code");
@@ -366,7 +394,23 @@ public final class Service {
     }
     out.endArray();
 
+    writeOverridden(out, registrations);
     out.endObject();
+  }
+
+  private static void writeOverridden(OutputWriter out, List<ServiceRegistration> registrations) {
+    if (registrations.stream().allMatch(r -> r.overridden().isEmpty())) return;
+    out.startArray("overridden", ContextOption.JSON_ONLY);
+    for (ServiceRegistration registration : registrations) {
+      for (ServiceRegistration replaced : registration.overridden()) {
+        out.startObject("overridden");
+        out.field("service", replaced.service().id());
+        out.field("source", replaced.origin().displayName());
+        out.field("pattern", replaced.pattern().toString());
+        out.endObject();
+      }
+    }
+    out.endArray();
   }
 
   private static String supportedAttribute(Set<OutputType> types) {
