@@ -331,7 +331,8 @@ Protect diagnostic mappings with application or container security.
 
 `org.pageseeder.berlioz.generator.GetBerliozConfig` and
 `org.pageseeder.berlioz.generator.GetErrorHandlerConfig` report the configuration of
-initialized servlets. Add them explicitly to administrative services and protect those
+initialized servlets; `GetBerliozConfig` also lists Berlioz servlets that are registered but not
+initialized yet. Add them explicitly to administrative services and protect those
 services through your application's filters or container security. The generators do not
 perform authorization themselves.
 
@@ -350,9 +351,16 @@ override: `name`, `mappings`, `media-type`, `charset`, `cache-control`, `compres
 `requires-control` means only requests authorized for Berlioz control are served; `xslt-cache` describes the current
 runtime template cache mode, separately from HTTP caching. `stylesheet` contains
 `allocation` (`identity`, `global`, `group`, or `service`), with `source` (`filesystem` or
-`classpath`) and a safe logical `path` when applicable. Identity contains only `allocation`.
+`classpath`) and a safe logical `path` when applicable. A filesystem path is reported relative to
+`WEB-INF`, as Berlioz resolves it: `/xslt/html/{GROUP}.xsl` is reported as
+`xslt/html/{GROUP}.xsl`; a path with `..` segments is never reported. Identity contains only `allocation`.
 An optional `fallback` contains its source and safe path. Group/service placeholders are
 reported as configured, without creating a transformer or resolving a specific service.
+
+A `BerliozServlet` registered with the container but not initialized yet (it has no
+`load-on-startup` and has not been requested) only reports `name`, `mappings` and
+`initialised="false"`; its other fields are only known once it starts. Initialized servlets
+have no `initialised` field.
 
 Since 0.14.5, `stylesheet` also lists the stylesheets selected so far as `selection` elements
 (JSON: a `selections` array): `name` (`global`, the group, or the service ID), `source`
@@ -381,6 +389,7 @@ For example:
       <selection name="admin" source="classpath" path="classpath:META-INF/berlioz/xslt/html/admin.xsl"/>
     </stylesheet>
   </servlet>
+  <servlet name="json" mappings="*.json" initialised="false"/>
   <xslt-processor factory="net.sf.saxon.TransformerFactoryImpl" vendor="Saxonica"
                   xslt-version="3.0" product-name="SAXON" product-version="HE 12.10"/>
   <container server-info="Apache Tomcat/9.0.80" servlet-api="4.0"/>
@@ -444,6 +453,9 @@ See [the deployment test documentation](tests/overlay-deployment/README.md) for 
   so far (`stylesheet/selection`), the XSLT processor (`xslt-processor`) and the servlet
   container (`container`). Clients that treated every child of `berlioz-config` as a servlet
   should select `servlet` elements.
+- `GetBerliozConfig` lists Berlioz servlets that are not initialized yet, with only `name`,
+  `mappings` and `initialised="false"`, and now reports application-relative stylesheet paths
+  such as `/xslt/html/{GROUP}.xsl` (as `xslt/html/{GROUP}.xsl`) that were previously withheld.
 - `reload-services`, `clear-xsl-cache` and `reset-etags` are deprecated: use
   `berlioz-reload=services`, `berlioz-reload=xslt` and `berlioz-reload=etags`. They keep working
   until 1.0. `berlioz-reload=true` is unchanged.

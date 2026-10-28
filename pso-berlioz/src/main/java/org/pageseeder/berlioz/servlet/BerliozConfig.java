@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -399,33 +400,50 @@ public final class BerliozConfig {
     return XmlResponse.getListener();
   }
 
-  /** @return a safe immutable view of initialized servlet defaults */
+  /**
+   * Returns a safe immutable view of the Berlioz servlets.
+   *
+   * <p>Initialized servlets report their defaults. Berlioz servlets that are registered with the
+   * container but not initialized yet (typically, not requested yet) only report what the
+   * registration provides, with <code>initialised="false"</code>.
+   *
+   * @return the diagnostic snapshot
+   */
   public static ConfigurationSnapshot diagnosticSnapshot() {
-    List<Map<String, Object>> entries = new ArrayList<>();
+    List<BerliozConfig> configs = CONFIGS.values().stream()
+        .sorted(Comparator.comparing(BerliozConfig::getName))
+        .collect(Collectors.toList());
     String mode = org.pageseeder.berlioz.xslt.XsltCacheMode.from(
         GlobalSettings.get(BerliozOption.XSLT_CACHE)).toString();
-    CONFIGS.values().stream().sorted(Comparator.comparing(BerliozConfig::getName)).forEach(config -> {
-      Map<String, Object> entry = new LinkedHashMap<>(config.diagnosticDefaults);
-      entry.put("xslt-cache", mode);
-      Map<String, Object> style = DiagnosticConfiguration.fields("allocation",
-          config.allocation == TransformAllocation.NIL ? "identity"
-              : config.allocation.name().toLowerCase(Locale.ROOT));
-      if (config.allocation != TransformAllocation.NIL) {
-        style.putAll(DiagnosticConfiguration.stylesheet(config.stylePath));
-        List<Map<String, Object>> selections = config.selections();
-        if (!selections.isEmpty()) style.put("selections", selections);
-      }
-      entry.put(STYLESHEET_PARAM, style);
-      if (!config.fallbackStyleSheet.isEmpty()) entry.put("fallback", DiagnosticConfiguration.stylesheet(config.fallbackStyleSheet));
-      entries.add(entry);
-    });
+    List<Map<String, Object>> entries = new ArrayList<>();
+    configs.forEach(config -> entries.add(config.diagnosticEntry(mode)));
     Map<String, Object> fields = new LinkedHashMap<>();
     fields.put("xslt-processor", DiagnosticConfiguration.processor(XsltProcessorInfo.current()));
-    CONFIGS.values().stream().sorted(Comparator.comparing(BerliozConfig::getName)).findFirst()
-        .map(config -> DiagnosticConfiguration.container(config.env))
-        .filter(container -> !container.isEmpty())
-        .ifPresent(container -> fields.put("container", container));
+    if (!configs.isEmpty()) {
+      BerliozConfig first = configs.get(0);
+      Set<String> initialized = configs.stream().map(BerliozConfig::getName).collect(Collectors.toSet());
+      entries.addAll(DiagnosticConfiguration.uninitialized(first.servletConfig.getServletContext(),
+          BerliozServlet.class.getName(), initialized));
+      entries.sort(Comparator.comparing(entry -> (String) entry.get("name")));
+      Map<String, Object> container = DiagnosticConfiguration.container(first.env);
+      if (!container.isEmpty()) fields.put("container", container);
+    }
     return new ConfigurationSnapshot("berlioz-config", entries, fields);
+  }
+
+  private Map<String, Object> diagnosticEntry(String xsltCacheMode) {
+    Map<String, Object> entry = new LinkedHashMap<>(this.diagnosticDefaults);
+    entry.put("xslt-cache", xsltCacheMode);
+    Map<String, Object> style = DiagnosticConfiguration.fields("allocation",
+        this.allocation == TransformAllocation.NIL ? "identity" : this.allocation.name().toLowerCase(Locale.ROOT));
+    if (this.allocation != TransformAllocation.NIL) {
+      style.putAll(DiagnosticConfiguration.stylesheet(this.stylePath));
+      List<Map<String, Object>> selections = selections();
+      if (!selections.isEmpty()) style.put("selections", selections);
+    }
+    entry.put(STYLESHEET_PARAM, style);
+    if (!this.fallbackStyleSheet.isEmpty()) entry.put("fallback", DiagnosticConfiguration.stylesheet(this.fallbackStyleSheet));
+    return entry;
   }
 
   /**

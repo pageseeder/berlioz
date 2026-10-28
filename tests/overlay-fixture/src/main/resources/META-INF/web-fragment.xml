@@ -24,6 +24,8 @@
     <load-on-startup>2</load-on-startup>
   </servlet>
   <servlet-mapping><servlet-name>BerliozJSON</servlet-name><url-pattern>*.json</url-pattern></servlet-mapping>
+  <servlet><servlet-name>BerliozLazy</servlet-name><servlet-class>org.pageseeder.berlioz.servlet.BerliozServlet</servlet-class></servlet>
+  <servlet-mapping><servlet-name>BerliozLazy</servlet-name><url-pattern>*.lazy</url-pattern></servlet-mapping>
   <servlet><servlet-name>ErrorHandlerServlet</servlet-name><servlet-class>org.pageseeder.berlioz.servlet.ErrorHandlerServlet</servlet-class><load-on-startup>3</load-on-startup></servlet>
   <servlet-mapping><servlet-name>ErrorHandlerServlet</servlet-name><url-pattern>*.error</url-pattern></servlet-mapping>
 </web-fragment>

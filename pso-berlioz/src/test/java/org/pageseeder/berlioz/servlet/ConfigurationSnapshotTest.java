@@ -94,6 +94,44 @@ class ConfigurationSnapshotTest {
         DiagnosticConfiguration.selection("g", StylesheetLocation.forClasspath(null, "classpath:META-INF/berlioz/xslt/html/g.xsl"), webinf));
   }
 
+  @Test void uninitializedListsOnlyRegisteredBerliozServlets() {
+    Map<String, javax.servlet.ServletRegistration> registrations = new LinkedHashMap<>();
+    registrations.put("html", registration(BerliozServlet.class.getName(), List.of("*.html", "/a/*")));
+    registrations.put("json", registration(BerliozServlet.class.getName(), List.of("*.json")));
+    registrations.put("init", registration(InitServlet.class.getName(), List.of()));
+    javax.servlet.ServletContext context = (javax.servlet.ServletContext) java.lang.reflect.Proxy.newProxyInstance(
+        getClass().getClassLoader(), new Class<?>[]{javax.servlet.ServletContext.class},
+        (proxy, method, args) -> method.getName().equals("getServletRegistrations") ? registrations : null);
+    assertEquals(List.of(DiagnosticConfiguration.fields("name", "html", "mappings", List.of("*.html", "/a/*"), "initialised", false)),
+        DiagnosticConfiguration.uninitialized(context, BerliozServlet.class.getName(), Set.of("json")));
+    javax.servlet.ServletContext unsupported = (javax.servlet.ServletContext) java.lang.reflect.Proxy.newProxyInstance(
+        getClass().getClassLoader(), new Class<?>[]{javax.servlet.ServletContext.class},
+        (proxy, method, args) -> { throw new UnsupportedOperationException(); });
+    assertEquals(List.of(), DiagnosticConfiguration.uninitialized(unsupported, BerliozServlet.class.getName(), Set.of()));
+    assertEquals(List.of(), DiagnosticConfiguration.uninitialized(null, BerliozServlet.class.getName(), Set.of()));
+  }
+
+  @Test void configuredFilesystemPathsAreReportedRelativeToWebInf() {
+    assertEquals(Map.of("source", "filesystem", "path", "xslt/html/{GROUP}.xsl"), DiagnosticConfiguration.stylesheet("/xslt/html/{GROUP}.xsl"));
+    assertEquals(Map.of("source", "filesystem", "path", "xslt/a.xsl"), DiagnosticConfiguration.stylesheet("xslt/a.xsl"));
+    for (String unsafe : List.of("/../a.xsl", "/x/../../a.xsl", "\\a.xsl", "/C:/a.xsl", "/x\n.xsl")) {
+      assertEquals(Map.of("source", "filesystem"), DiagnosticConfiguration.stylesheet(unsafe), unsafe);
+    }
+    assertEquals(Map.of("source", "classpath"), DiagnosticConfiguration.stylesheet("classpath:/../a.xsl"));
+  }
+
+  private static javax.servlet.ServletRegistration registration(String className, List<String> mappings) {
+    return (javax.servlet.ServletRegistration) java.lang.reflect.Proxy.newProxyInstance(
+        ConfigurationSnapshotTest.class.getClassLoader(), new Class<?>[]{javax.servlet.ServletRegistration.class},
+        (proxy, method, args) -> {
+          switch (method.getName()) {
+            case "getClassName": return className;
+            case "getMappings": return mappings;
+            default: return null;
+          }
+        });
+  }
+
   @Test void containerIsOmittedWhenUnknown(@TempDir Path root) {
     assertEquals(Map.of(), DiagnosticConfiguration.container(new HttpEnvironment(root.toFile(), root.toFile(), "")));
   }

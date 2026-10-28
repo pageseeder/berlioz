@@ -16,12 +16,15 @@
 package org.pageseeder.berlioz.servlet;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.content.Environment;
@@ -53,6 +56,30 @@ final class DiagnosticConfiguration {
     }
   }
 
+  /**
+   * Lists the servlets of the specified class that are registered but not initialized.
+   *
+   * <p>Each entry contains the name, the sorted mappings and <code>initialised=false</code>.
+   * Nothing is listed if the container does not expose its registrations.
+   */
+  static List<Map<String, Object>> uninitialized(@Nullable ServletContext context, String className, Set<String> initialized) {
+    if (context == null) return List.of();
+    Map<String, ? extends ServletRegistration> registrations;
+    try {
+      registrations = context.getServletRegistrations();
+    } catch (UnsupportedOperationException | IllegalStateException ex) {
+      return List.of();
+    }
+    if (registrations == null) return List.of();
+    List<Map<String, Object>> entries = new ArrayList<>();
+    registrations.forEach((name, registration) -> {
+      if (registration != null && className.equals(registration.getClassName()) && !initialized.contains(name)) {
+        entries.add(fields("name", name, "mappings", sorted(registration.getMappings()), "initialised", false));
+      }
+    });
+    return entries;
+  }
+
   static @Nullable String safePath(String value) {
     String reference;
     try {
@@ -68,9 +95,17 @@ final class DiagnosticConfiguration {
     return classpath ? "classpath:" + path : path;
   }
 
+  /**
+   * Describes a configured stylesheet: its source and, when safe, its path.
+   *
+   * <p>A filesystem value is resolved within <code>WEB-INF</code>, ignoring leading separators,
+   * so it is reported relative to <code>WEB-INF</code>: <code>/xslt/html/{GROUP}.xsl</code> is
+   * reported as <code>xslt/html/{GROUP}.xsl</code>. Values with traversal are never reported.
+   */
   static Map<String, Object> stylesheet(String value) {
-    Map<String, Object> result = fields("source", isClasspath(value) ? "classpath" : "filesystem");
-    String safe = safePath(value);
+    boolean classpath = isClasspath(value);
+    Map<String, Object> result = fields("source", classpath ? "classpath" : "filesystem");
+    String safe = safePath(classpath ? value : value.replaceFirst("^/+", ""));
     if (safe != null) result.put("path", safe);
     return result;
   }

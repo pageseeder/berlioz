@@ -123,13 +123,22 @@ class PackagedOverlayTest {
   @Test void diagnosticsDescribeDeployedServletsAndAgreeAcrossFormats() throws Exception {
     start(false);
     JsonArray servlets = diagnostic("config", "berlioz-config");
-    assertEquals(3, servlets.size());
+    assertEquals(4, servlets.size());
+    JsonObject lazy = servlets.get(2).getAsJsonObject();
+    assertEquals("BerliozLazy", lazy.get("name").getAsString());
+    assertEquals(JsonParser.parseString("[\"*.lazy\"]"), lazy.get("mappings"));
+    assertFalse(lazy.get("initialised").getAsBoolean());
+    assertNull(lazy.get("mediaType"));
     assertEquals("BerliozHTML", servlets.get(0).getAsJsonObject().get("name").getAsString());
     JsonObject html = servlets.get(0).getAsJsonObject();
     assertEquals(JsonParser.parseString("[\"*.html\"]"), html.get("mappings"));
     assertEquals("text/html", html.get("mediaType").getAsString());
     assertEquals("manual", html.get("xsltCache").getAsString());
     assertEquals("classpath:overlay/xslt/main.xsl", html.getAsJsonObject("stylesheet").get("path").getAsString());
+    get("/overlay.lazy");
+    JsonObject initialised = diagnostic("config", "berlioz-config").get(2).getAsJsonObject();
+    assertNull(initialised.get("initialised"));
+    assertNotNull(initialised.get("mediaType"));
     get("/overlay.html");
     JsonObject selected = diagnostic("config", "berlioz-config").get(0).getAsJsonObject()
         .getAsJsonObject("stylesheet").getAsJsonArray("selections").get(0).getAsJsonObject();
@@ -146,7 +155,7 @@ class PackagedOverlayTest {
     assertEquals("ErrorHandlerServlet", error.get("name").getAsString());
     assertEquals(JsonParser.parseString("[\"*.error\"]"), error.get("mappings"));
     assertEquals("discovered", error.getAsJsonObject("forward").get("source").getAsString());
-    assertEquals(JsonParser.parseString("[\"html\",\"json\",\"xml\"]"), error.getAsJsonObject("forward").get("extensions"));
+    assertEquals(JsonParser.parseString("[\"html\",\"json\",\"lazy\",\"xml\"]"), error.getAsJsonObject("forward").get("extensions"));
   }
 
   @Test void malformedReloadRetainsCompleteRegistryAndRecovers() throws Exception {
@@ -231,7 +240,7 @@ class PackagedOverlayTest {
 
   private static JsonElement attributeValue(String name, String value) {
     if (name.equals("mappings") || name.equals("extensions")) return splitValues(value);
-    if (name.equals("compression") || name.equals("requiresControl") || name.equals("problemXml")) return new JsonPrimitive(Boolean.parseBoolean(value));
+    if (name.equals("compression") || name.equals("requiresControl") || name.equals("problemXml") || name.equals("initialised")) return new JsonPrimitive(Boolean.parseBoolean(value));
     return new JsonPrimitive(value);
   }
 

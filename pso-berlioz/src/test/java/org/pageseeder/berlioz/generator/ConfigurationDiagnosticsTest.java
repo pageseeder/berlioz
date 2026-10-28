@@ -113,7 +113,7 @@ class ConfigurationDiagnosticsTest {
 
   @Test void safePathsSecretsAndIdentity() throws Exception {
     BerliozConfig.newConfig(config("z", Map.of("stylesheet", "IDENTITY", "control-key", "SECRET"), List.of(), false));
-    BerliozConfig.newConfig(config("a", Map.of("stylesheet", "/private/SECRET.xsl",
+    BerliozConfig.newConfig(config("a", Map.of("stylesheet", "/../SECRET.xsl",
         "fallback-stylesheet", "jar:file:/SECRET.jar!/x.xsl"), List.of(), false));
     GetBerliozConfig generator = new GetBerliozConfig();
     String json = json(generator, request());
@@ -188,6 +188,32 @@ class ConfigurationDiagnosticsTest {
     BerliozServlet servlet = new BerliozServlet();
     assertThrows(IllegalStateException.class, () -> servlet.init(failingConfig));
     assertEquals(emptyBerliozJson(), json(new GetBerliozConfig(), request()));
+  }
+
+  @Test void applicationRelativeStylesheetPaths() {
+    BerliozConfig.newConfig(config("a", Map.of("stylesheet", "/xslt/html/{GROUP}.xsl",
+        "fallback-stylesheet", "//xslt/fallback.xsl"), List.of(), false));
+    BerliozConfig.newConfig(config("b", Map.of("stylesheet", "/xslt/../../SECRET.xsl"), List.of(), false));
+    String json = json(new GetBerliozConfig(), request());
+    assertTrue(json.contains("\"stylesheet\":{\"allocation\":\"group\",\"source\":\"filesystem\",\"path\":\"xslt/html/{GROUP}.xsl\"}"), json);
+    assertTrue(json.contains("\"fallback\":{\"source\":\"filesystem\",\"path\":\"xslt/fallback.xsl\"}"), json);
+    assertTrue(json.contains("\"stylesheet\":{\"allocation\":\"global\",\"source\":\"filesystem\"}"), json);
+    assertFalse(json.contains("SECRET"));
+  }
+
+  @Test void registeredButUninitialisedServletsAreListed() throws Exception {
+    BerliozConfig.newConfig(config("a", Map.of(), List.of("*.a"), true));
+    String json = json(new GetBerliozConfig(), request());
+    assertTrue(json.contains("{\"name\":\"html\",\"mappings\":[\"*.a\"],\"initialised\":false}]"), json);
+    assertTrue(json.indexOf("\"name\":\"a\"") < json.indexOf("\"name\":\"html\""));
+    assertTrue(xml(new GetBerliozConfig(), request()).contains("<servlet name=\"html\" mappings=\"*.a\" initialised=\"false\"/>"));
+    String etag = new GetBerliozConfig().getETag(request());
+
+    BerliozConfig.newConfig(config("html", Map.of(), List.of("*.a"), true));
+    json = json(new GetBerliozConfig(), request());
+    assertFalse(json.contains("initialised"), json);
+    assertEquals(1, json.split("\"name\":\"html\"", -1).length - 1);
+    assertNotEquals(etag, new GetBerliozConfig().getETag(request()));
   }
 
   @Test void selectedStylesheetsAndContainer() throws Exception {
