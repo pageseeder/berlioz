@@ -370,31 +370,34 @@ public final class Service {
     // Generators
     out.startArray("generators", ContextOption.JSON_ONLY);
     for (BerliozGenerator generator : this.generators) {
-      String target = target(generator);
-      List<Parameter> parameters = parameters(generator);
-      out.startObject(GENERATOR);
-      out.field("class", generator.getClass().getName());
-      out.field("name", name(generator));
-      out.optionalField("target", target);
-      out.field("type", generatorType(generator));
-      out.field("cacheable", generator instanceof Cacheable);
-      out.field("affect-status", affectStatus(generator));
-      out.field("supported", supportedAttribute(generator.supported()));
-      if (!parameters.isEmpty()) {
-        out.startArray("parameters", ContextOption.JSON_ONLY);
-        for (Parameter p : parameters) {
-          out.startObject("parameter");
-          out.field("name", p.name());
-          out.field("value", p.value());
-          out.endObject();
-        }
-        out.endArray();
-      }
-      out.endObject();
+      writeGenerator(out, generator);
     }
     out.endArray();
 
     writeOverridden(out, registrations);
+    out.endObject();
+  }
+
+  private void writeGenerator(OutputWriter out, BerliozGenerator generator) {
+    List<Parameter> parameters = parameters(generator);
+    out.startObject(GENERATOR);
+    out.field("class", generator.getClass().getName());
+    out.field("name", name(generator));
+    out.optionalField("target", target(generator));
+    out.field("type", generatorType(generator));
+    out.field("cacheable", generator instanceof Cacheable);
+    out.field("affect-status", affectStatus(generator));
+    out.field("supported", supportedAttribute(generator.supported()));
+    if (!parameters.isEmpty()) {
+      out.startArray("parameters", ContextOption.JSON_ONLY);
+      for (Parameter p : parameters) {
+        out.startObject("parameter");
+        out.field("name", p.name());
+        out.field("value", p.value());
+        out.endObject();
+      }
+      out.endArray();
+    }
     out.endObject();
   }
 
