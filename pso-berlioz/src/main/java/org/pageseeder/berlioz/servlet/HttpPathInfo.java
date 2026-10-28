@@ -27,7 +27,7 @@ import org.pageseeder.berlioz.xml.XmlWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.5
+ * @version 0.14.5
  * @since 0.9.13
  */
 public final class HttpPathInfo implements PathInfo, Serializable {
@@ -64,7 +64,7 @@ public final class HttpPathInfo implements PathInfo, Serializable {
    *
    * @throws NullPointerException if the request is <code>null</code>
    */
-  protected HttpPathInfo(HttpServletRequest req) {
+  HttpPathInfo(HttpServletRequest req) {
     this.context = req.getContextPath();
     if (req.getPathInfo() != null) {
       // Try to get the path info (when mapped to '/prefix/*')
@@ -76,9 +76,9 @@ public final class HttpPathInfo implements PathInfo, Serializable {
       // Otherwise assume that it is mapped to '*.suffix'
       String servletPath = req.getServletPath();
       int dot = servletPath.lastIndexOf('.');
-      this.path = (dot != -1)? servletPath.substring(0, dot) : servletPath;
+      this.path = (dot == -1)? servletPath : servletPath.substring(0, dot);
       this.prefix = "";
-      this.extension = (dot != -1)? servletPath.substring(dot) : "";
+      this.extension = (dot == -1)? "" : servletPath.substring(dot);
     }
   }
 
