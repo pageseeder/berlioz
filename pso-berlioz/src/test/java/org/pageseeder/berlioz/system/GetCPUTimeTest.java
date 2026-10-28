@@ -16,6 +16,7 @@ import java.lang.reflect.Proxy;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("removal")
 class GetCPUTimeTest {
 
   // Out-of-range `interval` is a flow-control signal: TypedParameter#optional() throws

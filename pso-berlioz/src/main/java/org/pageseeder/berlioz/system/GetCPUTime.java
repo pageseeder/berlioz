@@ -58,11 +58,16 @@ import org.pageseeder.berlioz.output.OutputWriter;
  * <p>On error, an RFC 9457 problem response is returned: {@code 400 Bad Request} (invalid
  * {@code interval}) or {@code 503 Service Unavailable} (sampling interrupted).</p>
  *
+ * @deprecated This generator sleeps on the request thread and only measures the threads alive
+ *   during that window, so it mostly reports 0. Use {@link GetCpuSample} and compute the usage
+ *   between two samples instead; will be removed in 1.0.
+ *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.5
  * @since 0.9.32
  */
+@Deprecated(since = "0.14.5", forRemoval = true)
 public final class GetCPUTime implements Generator {
 
   @Override
