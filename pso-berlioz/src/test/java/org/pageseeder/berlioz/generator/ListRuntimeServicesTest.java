@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.content.ContentRequest;
@@ -16,13 +19,23 @@ import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.servlet.HttpEnvironment;
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Files;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 class ListRuntimeServicesTest {
 
   private static final File WEB_INF =
       new File("./src/test/resources/org/pageseeder/berlioz");
+
+  private static final String PROLOG = "<!DOCTYPE service-config PUBLIC \"-//Berlioz//DTD::Services 1.0//EN\" "
+      + "\"https://pageseeder.org/schema/berlioz/services-1.0.dtd\">";
+
+  private static final String EMPTY_SERVICES = PROLOG + "<service-config version=\"1.0\"/>";
 
   @TempDir
   Path tmp;
@@ -112,8 +125,112 @@ class ListRuntimeServicesTest {
     Assertions.assertTrue(processJson(req).contains("\"loadStatus\":\"ready\""));
   }
 
+  @Test
+  void listsSourcesInLoadOrderWithClasspathFirst() throws Exception {
+    Path config = Files.createDirectories(tmp.resolve("config"));
+    Files.writeString(config.resolve("services.xml"), EMPTY_SERVICES);
+    Files.writeString(config.resolve("services!x.xml"), EMPTY_SERVICES);
+    Path jar = tmp.resolve("overlay-1.0.jar");
+    try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar))) {
+      out.putNextEntry(new JarEntry("META-INF/berlioz/services.xml"));
+      out.write(EMPTY_SERVICES.getBytes(StandardCharsets.UTF_8));
+      out.closeEntry();
+    }
+    GlobalSettings.setup(tmp.toFile());
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    try (URLClassLoader overlay = new URLClassLoader(new URL[] {jar.toUri().toURL()}, original)) {
+      Thread.currentThread().setContextClassLoader(overlay);
+      ServiceLoader.getInstance().loadIfRequired();
+    } finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
+    ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
+
+    String xml = process(req);
+    int jarSource = xml.indexOf("<source kind=\"classpath\" name=\"overlay-1.0.jar!META-INF/berlioz/services.xml\"/>");
+    int main = xml.indexOf("<source kind=\"filesystem\" name=\"services.xml\"/>");
+    int module = xml.indexOf("<source kind=\"filesystem\" name=\"services!x.xml\"/>");
+    Assertions.assertTrue(jarSource >= 0 && jarSource < main && main < module, xml);
+    Assertions.assertTrue(xml.matches("(?s)<live-services load-status=\"ready\" loaded=\"[^\"]+Z\">.*"), xml);
+    Assertions.assertFalse(xml.contains("failed="), xml);
+    Assertions.assertFalse(xml.contains(tmp.toString()), xml);
+
+    String json = processJson(req);
+    Assertions.assertTrue(json.contains("\"sources\":[{\"kind\":\"classpath\",\"name\":\"overlay-1.0.jar!META-INF/berlioz/services.xml\"},"
+        + "{\"kind\":\"filesystem\",\"name\":\"services.xml\"},{\"kind\":\"filesystem\",\"name\":\"services!x.xml\"}]"), json);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"minimal", "standard"})
+  void listsWarningsOfLastLoadWithSourceAndLineOnlyWithDetails(String detail) throws Exception {
+    Path config = Files.createDirectories(tmp.resolve("config"));
+    Files.writeString(config.resolve("config.properties"), BerliozOption.ERROR_DETAIL.property() + "=" + detail);
+    Files.copy(new File(WEB_INF, "config/services-invalid-direct.xml").toPath(), config.resolve("services.xml"));
+    GlobalSettings.setup(tmp.toFile());
+    Assertions.assertTrue(GlobalSettings.load());
+    ServiceLoader.getInstance().loadIfRequired();
+    ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
+
+    String xml = process(req);
+    Assertions.assertTrue(xml.contains("<warning source=\"services.xml\""), xml);
+    Assertions.assertTrue(xml.contains("no output format; service will not be registered</warning>"), xml);
+    Assertions.assertEquals(!"minimal".equals(detail), xml.matches("(?s).*<warning source=\"services.xml\" line=\"\\d+\">.*"), xml);
+    String json = processJson(req);
+    Assertions.assertTrue(json.contains("\"warnings\":[{\"source\":\"services.xml\","), json);
+    Assertions.assertEquals(!"minimal".equals(detail), json.contains("\"line\":"), json);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"minimal", "standard"})
+  void failedModuleReloadReportsLoadFailureUntilRecovery(String detail) throws Exception {
+    Path config = Files.createDirectories(tmp.resolve("config"));
+    Files.writeString(config.resolve("config.properties"), BerliozOption.ERROR_DETAIL.property() + "=" + detail);
+    Files.copy(new File(WEB_INF, "config/services.xml").toPath(), config.resolve("services.xml"));
+    Path module = config.resolve("services!x.xml");
+    Files.writeString(module, EMPTY_SERVICES);
+    GlobalSettings.setup(tmp.toFile());
+    Assertions.assertTrue(GlobalSettings.load());
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.loadIfRequired();
+    ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
+    Assertions.assertFalse(process(req).contains("load-failure"));
+
+    Files.writeString(module, PROLOG + "<service-config version=\"1.0\"><secret-element>");
+    loader.requestReload();
+    Assertions.assertFalse(loader.loadIfRequired());
+
+    String xml = process(req);
+    Assertions.assertTrue(xml.matches("(?s)<live-services load-status=\"reload-failed\" loaded=\"[^\"]+\" failed=\"[^\"]+\" retry-after=\"[^\"]+\">.*"), xml);
+    Assertions.assertTrue(xml.contains("<service "), "The last valid services must still be listed");
+    Assertions.assertTrue(xml.contains("<source kind=\"filesystem\" name=\"services!x.xml\"/>"), xml);
+    Assertions.assertTrue(xml.contains("<load-failure source=\"services!x.xml\""), xml);
+    Assertions.assertFalse(xml.contains(tmp.toString()), xml);
+    String json = processJson(req);
+    Assertions.assertTrue(json.contains("\"loadFailure\":{\"source\":\"services!x.xml\","), json);
+    if ("minimal".equals(detail)) {
+      Assertions.assertTrue(xml.contains("<load-failure source=\"services!x.xml\">Unable to parse services configuration file.</load-failure>"), xml);
+      Assertions.assertFalse(xml.contains("secret-element"), xml);
+      Assertions.assertFalse(json.contains("\"line\":"), json);
+    } else {
+      Assertions.assertTrue(xml.matches("(?s).*<load-failure source=\"services!x.xml\" line=\"\\d+\">.+</load-failure>.*"), xml);
+      Assertions.assertFalse(xml.contains("Unable to parse services configuration file."), xml);
+    }
+
+    Files.writeString(module, EMPTY_SERVICES);
+    loader.requestReload();
+    Assertions.assertTrue(loader.loadIfRequired());
+    String recovered = process(req);
+    Assertions.assertFalse(recovered.contains("load-failure"), recovered);
+    Assertions.assertFalse(recovered.contains("failed="), recovered);
+  }
+
   // helpers
   // ---------------------------------------------------------------------------
+
+  private HttpEnvironment environment() throws java.io.IOException {
+    return new HttpEnvironment(Files.createDirectory(tmp.resolve("public")).toFile(),
+        Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=0");
+  }
 
   private static String process(ContentRequest req) {
     ListRuntimeServices gen = new ListRuntimeServices();

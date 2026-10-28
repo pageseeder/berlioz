@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -64,7 +65,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.3
+ * @version 0.14.5
  * @since 0.6
  */
 @SuppressWarnings("java:S6548")
@@ -98,6 +99,24 @@ public enum ServiceLoader {
 
   private long retryAfterNanos;
 
+  /**
+   * The sources of the last successful load.
+   */
+  private List<ServiceSource> loadedSources = List.of();
+
+  /**
+   * The source being parsed, so that a failure can be attributed to it.
+   */
+  private @Nullable ServiceSource currentSource;
+
+  private @Nullable Instant loadedAt;
+
+  private @Nullable Instant failedAt;
+
+  private @Nullable Instant retryAt;
+
+  private ServiceLoadDiagnostics.@Nullable Failure failureDetails;
+
   static final long RETRY_DELAY_NANOS = TimeUnit.SECONDS.toNanos(30);
 
   /**
@@ -108,6 +127,20 @@ public enum ServiceLoader {
   public synchronized String getLoadStatus() {
     if (this.lastFailure != null) return this.published ? "reload-failed" : "startup-failed";
     return this.loaded ? "ready" : "pending";
+  }
+
+  /**
+   * Returns a consistent snapshot of the load state: status, timestamps, the sources and warnings
+   * of the last successful load, and the cause of the last failed attempt.
+   *
+   * @return the current load diagnostics.
+   *
+   * @since 0.14.5
+   */
+  public synchronized ServiceLoadDiagnostics getLoadDiagnostics() {
+    return new ServiceLoadDiagnostics(getLoadStatus(), this.loadedAt, this.failedAt,
+        this.lastFailure != null ? this.retryAt : null, this.loadedSources,
+        this.services.warnings(), this.failureDetails);
   }
 
   /**
@@ -176,6 +209,7 @@ public enum ServiceLoader {
           : new BerliozException("Unexpected failure loading service configuration", ex);
       this.lastFailure = failure;
       this.retryAfterNanos = now + RETRY_DELAY_NANOS;
+      recordFailure(failure);
       LOGGER.error(this.published
           ? "Service reload rejected; continuing with the last valid registry. Retry in 30 seconds."
           : "Service startup failed; no registry published. Retry in 30 seconds.", ex);
@@ -208,10 +242,12 @@ public enum ServiceLoader {
     List<CollectedError<SAXParseException>> warnings = new ArrayList<>();
     List<List<ServiceRegistration>> perSourceRegistrations = new ArrayList<>(sources.size());
     for (ServiceSource source : sources) {
+      this.currentSource = source;
       ParsedSource parsed = parseSource(source);
       warnings.addAll(parsed.warnings);
       perSourceRegistrations.add(parsed.registrations);
     }
+    this.currentSource = null;
     MergeResult merged = mergeRegistrations(perSourceRegistrations);
     warnings.addAll(merged.warnings);
     ServiceRegistry candidate = new ServiceRegistry();
@@ -219,7 +255,7 @@ public enum ServiceLoader {
       candidate.register(registration.service(), registration.pattern(), registration.method());
     }
     this.services.replaceWith(candidate, merged.registrations, warnings);
-    loadedSuccessfully();
+    loadedSuccessfully(sources);
   }
 
   /**
@@ -349,13 +385,14 @@ public enum ServiceLoader {
    */
   public synchronized void load(File xml) throws BerliozException {
     Objects.requireNonNull(xml, "The service configuration file is null! That's it I give up.");
-    ParsedSource parsed = parseSource(ServiceSource.filesystem(xml, GlobalSettings.getConfig()));
+    ServiceSource source = ServiceSource.filesystem(xml, GlobalSettings.getConfig());
+    ParsedSource parsed = parseSource(source);
     ServiceRegistry candidate = new ServiceRegistry();
     for (ServiceRegistration registration : parsed.registrations) {
       candidate.register(registration.service(), registration.pattern(), registration.method());
     }
     this.services.replaceWith(candidate, parsed.registrations, parsed.warnings);
-    loadedSuccessfully();
+    loadedSuccessfully(List.of(source));
   }
 
   /**
@@ -467,6 +504,7 @@ public enum ServiceLoader {
     LOGGER.info("Marking content manager for reload");
     this.loaded = false;
     this.retryAfterNanos = System.nanoTime();
+    this.retryAt = Instant.now();
   }
 
   /**
@@ -482,14 +520,62 @@ public enum ServiceLoader {
     this.published = false;
     this.lastFailure = null;
     this.retryAfterNanos = 0;
+    this.loadedSources = List.of();
+    this.currentSource = null;
+    this.loadedAt = null;
+    this.failedAt = null;
+    this.retryAt = null;
+    this.failureDetails = null;
   }
 
-  private void loadedSuccessfully() {
+  private void loadedSuccessfully(List<ServiceSource> sources) {
     if (this.lastFailure != null) LOGGER.info("Service configuration recovered; new registry published.");
     this.published = true;
     this.loaded = true;
     this.lastFailure = null;
     this.retryAfterNanos = 0;
+    this.loadedSources = List.copyOf(sources);
+    this.loadedAt = Instant.now();
+    this.failedAt = null;
+    this.retryAt = null;
+    this.failureDetails = null;
+  }
+
+  /**
+   * Records the cause of a failed attempt, attributed to the source being parsed if any.
+   *
+   * <p>The message of a {@code BerliozException} thrown by this class is always generic; the
+   * detail is only taken from a parse error, never from an I/O error, which may name a path.
+   */
+  private void recordFailure(BerliozException ex) {
+    ServiceSource source = this.currentSource;
+    this.currentSource = null;
+    Instant now = Instant.now();
+    this.failedAt = now;
+    this.retryAt = now.plusNanos(RETRY_DELAY_NANOS);
+    SAXParseException parseError = findParseError(ex);
+    String message = ex.getMessage();
+    this.failureDetails = new ServiceLoadDiagnostics.Failure(source != null ? source.origin().displayName() : null,
+        parseError != null ? parseError.getLineNumber() : -1,
+        message != null ? message : "Unable to load services configuration.",
+        parseError != null ? parseError.getMessage() : null);
+  }
+
+  /**
+   * Returns the first parse error reported by the parser, falling back to the cause chain.
+   */
+  private static @Nullable SAXParseException findParseError(BerliozException ex) {
+    if (ex instanceof CompoundBerliozException) {
+      for (CollectedError<Throwable> error : ((CompoundBerliozException) ex).getCollector().getErrors()) {
+        if (error.level() != Level.WARNING && error.error() instanceof SAXParseException) {
+          return (SAXParseException) error.error();
+        }
+      }
+    }
+    for (Throwable cause = ex.getCause(); cause != null; cause = cause.getCause()) {
+      if (cause instanceof SAXParseException) return (SAXParseException) cause;
+    }
+    return null;
   }
 
   /**

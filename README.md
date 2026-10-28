@@ -314,8 +314,18 @@ succeeds. The opt-in administrative `ListRuntimeServices` diagnostic (`GetLiveSe
 available as a deprecated forwarding alias until 1.0) reports `load-status` in XML and
 `loadStatus` in JSON: `pending`, `ready`, `startup-failed`, or `reload-failed`. Its ETag
 includes that status so a rejected reload becomes visible even though the registry is unchanged.
-Exception details and source paths are not included in this status field. Protect diagnostic
-mappings with application or container security.
+Exception details and source paths are not included in this status field.
+
+Since 0.14.5, `ListRuntimeServices` also lists, after the services, the configuration sources of
+the last successful load in load order (`<source kind="classpath|filesystem" name="…"/>`, JSON
+`sources`), the warnings of that load (`<warning source="…" line="…">`, JSON `warnings`) and,
+while the last attempt has failed, its cause (`<load-failure source="…" line="…">`, JSON
+`loadFailure`), kept until the next successful load. The root carries ISO 8601 `loaded`,
+`failed` and `retry-after` timestamps when known. Sources are display names, never full paths or
+URLs. `line` and the parser's description of the failure are only included when
+`berlioz.errors.detail` is `standard` or `full`; at `minimal` the failure has a generic message.
+The same snapshot is available programmatically from `ServiceLoader.getLoadDiagnostics()`.
+Protect diagnostic mappings with application or container security.
 
 ## Runtime configuration diagnostics
 
