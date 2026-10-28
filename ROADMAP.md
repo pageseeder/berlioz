@@ -10,7 +10,11 @@ The 0.13.x releases delivered the complete roadmap for that cycle: typed request
 
 **0.14.2 was released on 2026-09-04 as a hotfix.** It prevented unintended session creation and updated dependencies. The hotfix shifted the planned overlay release to 0.14.3 and configuration validation to 0.14.4.
 
-**0.14.3 was released on 2026-10-16.** It delivered classpath overlay discovery, classpath XSLT resolution, transactional service loading, and deployed servlet diagnostics. **0.14.4 covers small features and updates**, starting with stub-free group stylesheet overlays. Configuration requirements and validation move to **0.14.5**; its implementation plan is in [`PLAN-0.14.5.md`](PLAN-0.14.5.md).
+**0.14.3 was released on 2026-10-16.** It delivered classpath overlay discovery, classpath XSLT resolution, transactional service loading, and deployed servlet diagnostics.
+
+**0.14.4 covers small features and updates**, starting with stub-free group stylesheet overlays. 
+
+**0.14.5 focuses on small security improvements, the scoped `berlioz-reload`, and feedback from Berlioz Admin.** Configuration requirements and validation, previously planned for 0.14.5, are deferred to a later 0.14.x release; its implementation plan is in [`PLAN-0.14.5.md`](PLAN-0.14.5.md).
 
 ## Guiding Principles
 
@@ -108,9 +112,32 @@ overrides, nested imports, duplicate resources, and all cache modes. `./gradlew 
 `./gradlew build publish` passed. Minimum version for stub-free overlays: **0.14.4**.
 Cobble's classpath documentation support remains separate.
 
-### 0.14.5: Configuration Requirements And Validation — Next Planned Release
+### 0.14.5: Security Improvements, Scoped Reload And Admin Feedback — Next Planned Release
 
-0.14.5 should add application-facing configuration validation with explicit property provenance and safe diagnostics. The implementation sequence, proposed XML contract, lifecycle rules, and acceptance criteria are in [`PLAN-0.14.5.md`](PLAN-0.14.5.md); implementation has not started.
+0.14.5 should stay small and additive: close the remaining low-risk security gaps, replace the separate reload parameters with a scoped `berlioz-reload`, and deliver what Berlioz Admin (bzadmin) needs to drop its workarounds. Configuration requirements and validation move to a later 0.14.x release (see below).
+
+Small security improvements:
+
+- Redact and sort `GetSystemProperties` output (Theme 18, item 1).
+- Apply the stricter loopback rules to `ControlNetwork.LOOPBACK` and expose them publicly (Theme 18, item 7).
+- Minimal default XML exposure: rewrite the kickstart `fallback-xml.xsl` as an allowlist and restrict the `*.src` mapping (Theme 15).
+
+Scoped `berlioz-reload` (Theme 17):
+
+- Accept a comma-separated list of scopes (`config`, `services`, `xslt`, `etags`, possibly `redirects`); `true` keeps meaning everything.
+- Keep `reload-services`, `clear-xsl-cache` and `reset-etags` as deprecated aliases of their scope until 1.0.
+- Settle the open points listed in Theme 17 (scope order, unknown scopes, implied scopes, configuration failures, filters, reporting) before implementation.
+
+Berlioz Admin feedback:
+
+- Admin diagnostics, items 1–7 (Theme 16): configuration sources, load diagnostics, service source and overrides, value provenance, option catalog, `GetBerliozConfig` completeness, and a public secure XSLT resolver.
+- Admin overlay upstreaming, items 2–6 and 8–9 (Theme 18): non-blocking CPU sample, bounded thread diagnostics, JSON generator statistics, public control parameters and reload scopes, `BerliozOption` metadata, XSLT processor and container identity, and stylesheet listing.
+
+Items that turn out larger than expected can move to a later 0.14.x release without holding back the security fixes.
+
+### Later 0.14.x: Configuration Requirements And Validation — Deferred From 0.14.5
+
+This release should add application-facing configuration validation with explicit property provenance and safe diagnostics. The implementation sequence, proposed XML contract, lifecycle rules, and acceptance criteria are in [`PLAN-0.14.5.md`](PLAN-0.14.5.md), written when this work targeted 0.14.5; implementation has not started.
 
 Planned release changes:
 
@@ -124,13 +151,11 @@ Planned release changes:
 - Validate reload candidates before publication so a failed reload retains the last valid configuration.
 - Add an opt-in XML/JSON diagnostic generator and tests for matching, presence, constraints, provenance, reload, fail-fast behavior, and redaction.
 
-After 0.14.5, assess readiness for a 1.0.0 release and confirm which remaining core capabilities below are required for 1.0.0 versus later 1.0.x releases.
+After configuration validation ships, assess readiness for a 1.0.0 release and confirm which remaining core capabilities below are required for 1.0.0 versus later 1.0.x releases.
 
 Reusable format-neutral output snapshots (Theme 14) are also planned; the target release remains to be decided.
 
-Minimal default XML exposure (Theme 15) is planned for a 0.14.x release: the kickstart XML fallback and `*.src` mapping currently publish the full internal envelope.
-
-Admin diagnostics requested by Berlioz Admin (Theme 16) are planned as additive 0.14.x changes, with a stable `ListRuntimeServices` for 1.0.
+A stable `ListRuntimeServices` (Theme 16, item 8) and the service-level authorisation hook (Theme 18, item 10) remain planned for 1.0.
 
 ### 1.0.x: Roadmap Themes 6-9
 
@@ -336,7 +361,7 @@ Already done (groundwork):
 - `BerliozOption` is unchanged — deprecation metadata does not live on the enum.
 - `OptionDeprecations` is the internal precursor to Theme 5's `ConfigurationValidator`: the check-and-warn pattern it establishes will generalize into the declarative, application-facing validation layer.
 
-Planned shape for 0.14.5:
+Planned shape for a later 0.14.x release (deferred from 0.14.5):
 
 - Add a separate declarative `WEB-INF/config/config-requirements.xml` file, evaluated after global properties are fully resolved.
 - Retain property provenance so validation can distinguish an explicitly specified value from a framework default.
@@ -557,7 +582,7 @@ Planned changes:
 - Add tests asserting the fallback output contains no `header`, `@generator`, `@etag`, `@profile*`, or `@flags`, and that `.src` is denied outside the permitted mode or authorization.
 - Release-note the behavior change: clients reading `header/…` (for example URI parameters or the Berlioz version) from the default `.xml` output must use an application template instead.
 
-Target release: 0.14.x.
+Target release: 0.14.5.
 
 ### 16. Admin Diagnostics (Requested By Berlioz Admin)
 
@@ -598,7 +623,7 @@ Berlioz Admin (bzadmin) displays Berlioz's own diagnostic generators directly. I
 8. **Stable `ListRuntimeServices`**
    - Details to be confirmed.
 
-Target release: items 1–7 in 0.14.x; item 8 in 1.0.
+Target release: items 1–7 in 0.14.5; item 8 in 1.0.
 
 ### 17. Scoped `berlioz-reload`
 
@@ -630,7 +655,7 @@ Points still to decide:
 - **Filters**: `RedirectFilter` and `RelocationFilter` compare the parameter with `"true"`, so they would need to understand the scope list.
 - **Reporting**: control parameters are ignored silently when the request is not authorised. Reporting the scopes that were applied, for example in a response header, would let tools such as Berlioz Admin confirm the result without their own generator (bzadmin's `GetBerliozControl`).
 
-Target release: scopes and deprecated aliases in 0.14.x; removal of `reload-services`, `clear-xsl-cache` and `reset-etags` in 1.0.
+Target release: scopes and deprecated aliases in 0.14.5; removal of `reload-services`, `clear-xsl-cache` and `reset-etags` in 1.0.
 
 ### 18. Admin Overlay Upstreaming (Requested By Berlioz Admin)
 
@@ -682,7 +707,7 @@ Berlioz Admin (bzadmin) replaces or works around several Berlioz generators and 
     - bzadmin wraps every Berlioz generator it uses in a one-line delegating class that checks the admin verdict first, because Berlioz cannot guard a service. A service or generator guard (theme 8) would let applications use Berlioz generators directly, and ensure a new service cannot forget the check.
     - Acceptance for bzadmin: its `org.pageseeder.bzadmin.guard` package can be removed, with every admin service still denied without a verdict.
 
-Target release: items 1–2 in the next 0.14.x patch; items 3–9 in 0.14.x; item 10 with theme 8 in 1.0.
+Target release: items 1–9 in 0.14.5 (items 1 and 7 as security improvements); item 10 with theme 8 in 1.0.
 
 ## Open Questions
 
@@ -690,9 +715,9 @@ Target release: items 1–2 in the next 0.14.x patch; items 3–9 in 0.14.x; ite
 - Should the `javax.servlet` line become maintenance-only immediately, or remain active until a specific application migration threshold is reached?
 - ~~How should 0.14.0 secure request-level administration/control parameters by default: require an explicit control key, disable controls unless configured, or use a separate enable flag?~~ Released outcome: controls are closed by default; `berlioz.control.key` (explicit key) and `berlioz.control.network` (default `off`) are independent channels, plus a fixed delegated-authorization request attribute for host applications.
 - ~~Should service-level metadata be part of normal output, diagnostic output, or both?~~ Decided for 0.14.1: runtime-derived metadata belongs in `GetLiveServices` and `GetMatchingService`; normal responses and the raw `GetServices` source view remain unchanged.
-- ~~Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?~~ Decided for 0.14.5: use a separate `WEB-INF/config/config-requirements.xml` file.
-- ~~For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?~~ Decided for 0.14.5: zero matches violate only a presence rule that requires at least one match.
-- ~~How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?~~ Decided for 0.14.5: preserve explicit/default provenance in the resolved configuration snapshot.
+- ~~Should configuration requirements live in a separate `config-requirements.xml` file, inside `config.xml`, or be supported in both forms?~~ Decided for configuration validation: use a separate `WEB-INF/config/config-requirements.xml` file.
+- ~~For wildcard requirements, should zero matches be a violation by default, or should that depend on the presence rule?~~ Decided for configuration validation: zero matches violate only a presence rule that requires at least one match.
+- ~~How should Berlioz distinguish an application-specified property from a framework default when evaluating `specified` requirements?~~ Decided for configuration validation: preserve explicit/default provenance in the resolved configuration snapshot.
 - Should direct services support only one handler forever, or is there a future aggregation model?
 - How should raw output interact with cache headers, ETags, and content negotiation?
 - Should authorization requirements be declared primarily by generator interfaces, service configuration, or both?
