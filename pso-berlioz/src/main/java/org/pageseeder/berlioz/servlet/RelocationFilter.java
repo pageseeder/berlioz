@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Set;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -62,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * @author Christophe Lauret
  * @author Jean-Baptiste Reure
  *
- * @version 0.12.4
+ * @version 0.14.5
  * @since 0.7
  */
 public final class RelocationFilter implements Filter {
@@ -150,8 +151,12 @@ public final class RelocationFilter implements Filter {
      throws ServletException, IOException {
 
     // Reset mapping on reload
-    if ("true".equals(req.getParameter("berlioz-reload")) && ControlAuthorization.hasControl(req)) {
-      this.config = null;
+    if (req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()) != null && ControlAuthorization.hasControl(req)) {
+      Set<ReloadScope> scopes = ReloadScope.fromRequest(req);
+      if (scopes.contains(ReloadScope.REDIRECTS)) {
+        this.config = null;
+        res.setHeader(ReloadScope.HEADER, ReloadScope.format(scopes));
+      }
     }
 
     // Load the config if needed

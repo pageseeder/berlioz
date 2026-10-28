@@ -244,6 +244,74 @@ class BerliozServletTest {
   }
 
   @Test
+  void reload_servicesScopeReloadsServicesAndReportsScopes() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    this.servlet.doGet(request("GET", "/hello.xml"), ServletTestSupport.response().build());
+    writeServices(service("recovered", "get", "/recovered", "generator", ECHO_XML));
+
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    this.servlet.doGet(controlRequest("/recovered.xml", true, Map.of("berlioz-reload", "services")), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertEquals("services", recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void reload_unknownScopeAppliesNothing() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    this.servlet.doGet(request("GET", "/hello.xml"), ServletTestSupport.response().build());
+    writeServices(service("recovered", "get", "/recovered", "generator", ECHO_XML));
+
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    this.servlet.doGet(controlRequest("/recovered.xml", true, Map.of("berlioz-reload", "services,bogus")), recorder.build());
+
+    assertEquals(404, recorder.status);
+    assertNull(recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void reload_unauthorizedRequestIsIgnored() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    this.servlet.doGet(request("GET", "/hello.xml"), ServletTestSupport.response().build());
+    writeServices(service("recovered", "get", "/recovered", "generator", ECHO_XML));
+
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    this.servlet.doGet(controlRequest("/recovered.xml", false, Map.of("berlioz-reload", "true")), recorder.build());
+
+    assertEquals(404, recorder.status);
+    assertNull(recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void reload_deprecatedAliasReloadsItsScope() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    this.servlet.doGet(request("GET", "/hello.xml"), ServletTestSupport.response().build());
+    writeServices(service("recovered", "get", "/recovered", "generator", ECHO_XML));
+
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    this.servlet.doGet(controlRequest("/recovered.xml", true, Map.of("reload-services", "true")), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertEquals("services", recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void reload_trueReportsEveryScope() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    this.servlet.doGet(controlRequest("/hello.xml", true, Map.of("berlioz-reload", "true")), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertEquals("config, services, xslt, etags, redirects", recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
   void doGet_unknownPathSendsNotFound() throws Exception {
     writeServices(service("known", "get", "/known", "generator", ECHO_XML));
     initServlet(Collections.emptyMap());
@@ -753,6 +821,21 @@ class BerliozServletTest {
         .pathInfo(null)
         .uri(servletPath);
     headers.forEach(builder::header);
+    return builder.build();
+  }
+
+  private HttpServletRequest controlRequest(String servletPath, boolean authorized, Map<String, String> parameters) {
+    ServletTestSupport.RequestBuilder builder = ServletTestSupport.request()
+        .method("GET")
+        .scheme("http")
+        .host("localhost")
+        .port(80)
+        .contextPath("")
+        .servletPath(servletPath)
+        .pathInfo(null)
+        .uri(servletPath);
+    if (authorized) builder.attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE);
+    parameters.forEach(builder::parameter);
     return builder.build();
   }
 

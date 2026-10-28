@@ -396,7 +396,7 @@ public enum BerliozOption {
    *   <li><code>auto</code> — monitor XSLT source files for changes and automatically invalidate
    *       the cache when a change is detected. Recommended for development.</li>
    *   <li><code>manual</code> — only update the cache when explicitly cleared via the
-   *       {@code clear-xsl-cache} control parameter. Recommended for production.</li>
+   *       {@code berlioz-reload=xslt} control parameter. Recommended for production.</li>
    * </ul>
    *
    * <p>For backward compatibility, {@code true} is treated as {@code manual} and
@@ -556,8 +556,8 @@ public enum BerliozOption {
 
   /**
    * A string global option describing what network position a direct HTTP caller must originate
-   * from to be allowed to invoke Berlioz control parameters (e.g. {@code berlioz-reload},
-   * {@code clear-xsl-cache}, {@code reset-etags}, {@code reload-services}, {@code berlioz-profile}).
+   * from to be allowed to invoke Berlioz control parameters ({@code berlioz-reload},
+   * {@code berlioz-profile}).
    *
    * <p>This is re-evaluated independently on every request — there is no session or persisted
    * state, so being granted access on one request confers no standing for the next.

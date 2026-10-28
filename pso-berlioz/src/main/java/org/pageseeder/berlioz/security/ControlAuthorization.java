@@ -24,8 +24,8 @@ import org.pageseeder.berlioz.GlobalSettings;
 
 /**
  * Determines whether a request is authorized to invoke Berlioz control parameters (e.g.
- * {@code berlioz-reload}, {@code clear-xsl-cache}, {@code reset-etags}, {@code reload-services},
- * {@code berlioz-profile}).
+ * {@code berlioz-reload}, {@code berlioz-profile}), see
+ * {@link org.pageseeder.berlioz.servlet.ControlParameter}.
  *
  * @author Christophe Lauret
  *
@@ -63,8 +63,7 @@ public final class ControlAuthorization {
 
   /**
    * Indicates whether the request is authorized to invoke Berlioz control parameters (e.g.
-   * {@code berlioz-reload}, {@code clear-xsl-cache}, {@code reset-etags}, {@code reload-services},
-   * {@code berlioz-profile}).
+   * {@code berlioz-reload}, {@code berlioz-profile}).
    *
    * <p>Authorization is granted by any one of three independent channels:
    * <ol>

@@ -97,6 +97,41 @@ fragment:
 </servlet>
 ```
 
+## Control parameters and scoped reload (since 0.14.5)
+
+Berlioz has two control parameters, applied only to requests authorized for Berlioz control
+(`berlioz.control.key`, `berlioz.control.network`, or the delegated request attribute) and
+silently ignored otherwise:
+
+- `berlioz-profile=true` enables profiling for the request.
+- `berlioz-reload` takes `true` for everything, or a comma-separated list of scopes:
+
+| Scope       | Effect                                                                  |
+|-------------|-------------------------------------------------------------------------|
+| `config`    | Reloads the global configuration; a failed reload keeps the last valid configuration. |
+| `services`  | Reloads the services; a failed reload keeps the last valid registry.    |
+| `xslt`      | Clears the XSLT cache.                                                  |
+| `etags`     | Resets the ETag seed so that clients must revalidate.                   |
+| `redirects` | Reloads the `RedirectFilter` and `RelocationFilter` rules.              |
+
+For example, `?berlioz-reload=config,services`. Scopes are applied in the order of the table,
+whatever their order in the parameter. If the list contains an unknown scope, nothing is
+reloaded and a warning is logged.
+
+No scope implies another. In particular, the response ETag combines the ETag seed, the generator
+ETags and the XSLT ETag, but not the service definitions: after changing services, use
+`berlioz-reload=services,etags` so that clients do not receive `304 Not Modified` for a service
+whose definition changed.
+
+Authorized requests that reload at least one scope receive an `X-Berlioz-Reload` response header
+listing the accepted scopes, e.g. `X-Berlioz-Reload: config, services`. `redirects` is only
+applied where the filters are installed. `ReloadScope` and `ControlParameter` expose the scopes,
+the parser and the parameter names to tools such as Berlioz Admin.
+
+`reload-services=true`, `clear-xsl-cache=true` and `reset-etags=true` are deprecated aliases of
+the `services`, `xslt` and `etags` scopes. They log a warning the first time they are used and
+will be removed in 1.0.
+
 ## Classpath overlays
 
 A Berlioz overlay is an ordinary JAR dependency that contributes services, generators, XSLT,
@@ -261,8 +296,8 @@ starting; deployment readiness checks should exercise a known Berlioz route.
 After a successful load, a failed reload keeps serving the complete last valid registry,
 including its original warnings and source metadata. No partial contributions are published.
 Failed loads are retried on the next request after a 30-second delay. An authorized
-`reload-services` control request (or `ServiceLoader.requestReload()`) allows an immediate
-retry. Explicit `ServiceLoader.load()` calls still throw on failure; `clear()` deliberately
+`berlioz-reload=services` control request (or `ServiceLoader.requestReload()`) allows an
+immediate retry. Explicit `ServiceLoader.load()` calls still throw on failure; `clear()` deliberately
 removes the retained registry.
 
 Each attempted failure is logged with its cause, and recovery is logged when publication
@@ -344,8 +379,8 @@ See [the deployment test documentation](tests/overlay-deployment/README.md) for 
 
 ## Migrating to 0.14.5
 
-0.14.5 reduces what the kickstart web fragment exposes by default. Applications that do not use
-`pso-berlioz-kickstart` are unaffected.
+0.14.5 reduces what the kickstart web fragment exposes by default and scopes the
+`berlioz-reload` control parameter.
 
 - The default `*.xml` output (no `xml/{GROUP}.xsl` for the group) no longer includes the
   `<header>` or internal `<content>` attributes such as `@generator`, `@etag` and `@profile*`.
@@ -356,6 +391,11 @@ See [the deployment test documentation](tests/overlay-deployment/README.md) for 
   `berlioz.control.network=loopback` (as most already do for the control parameters), or
   `berlioz.control.key`.
 - `GetBerliozConfig` reports a new `requires-control` servlet field.
+- `reload-services`, `clear-xsl-cache` and `reset-etags` are deprecated: use
+  `berlioz-reload=services`, `berlioz-reload=xslt` and `berlioz-reload=etags`. They keep working
+  until 1.0. `berlioz-reload=true` is unchanged.
+- A configuration reload that fails to parse now keeps the last valid configuration instead of
+  reverting every option to its default (which also turned off control authorization).
 
 ## Migrating to 0.14.3
 

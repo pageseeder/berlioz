@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.servlet;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pageseeder.berlioz.security.ControlAuthorization;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -31,6 +32,43 @@ class RedirectFilterTest {
     RedirectFilter filter = new RedirectFilter();
     filter.init(cfg);
     return filter;
+  }
+
+  // Scoped reload
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testReloadRedirectsScopeReloadsRules() throws Exception {
+    RedirectFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><redirect-mapping><redirect from=\"/old\" to=\"/new\"/></redirect-mapping>");
+    ServletTestSupport.ResponseRecorder first = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest(null), first.build(), (r, s) -> {});
+    Assertions.assertTrue(first.header("Location").endsWith("/new"));
+
+    // Rewrite the rules in the directory created by initFilter
+    File webRoot = Files.list(tmp).findFirst().orElseThrow().toFile();
+    Files.write(new File(webRoot, "WEB-INF/redirect.xml").toPath(),
+        "<?xml version=\"1.0\"?><redirect-mapping><redirect from=\"/old\" to=\"/newer\"/></redirect-mapping>"
+            .getBytes(StandardCharsets.UTF_8));
+
+    // Other scopes do not reload the rules
+    ServletTestSupport.ResponseRecorder services = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest("services"), services.build(), (r, s) -> {});
+    Assertions.assertTrue(services.header("Location").endsWith("/new"));
+    Assertions.assertNull(services.header(ReloadScope.HEADER));
+
+    ServletTestSupport.ResponseRecorder reloaded = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest("services,redirects"), reloaded.build(), (r, s) -> {});
+    Assertions.assertTrue(reloaded.header("Location").endsWith("/newer"));
+    Assertions.assertEquals("services, redirects", reloaded.header(ReloadScope.HEADER));
+  }
+
+  private static HttpServletRequest oldRequest(String reload) {
+    ServletTestSupport.RequestBuilder builder = ServletTestSupport.request()
+        .uri("/old").scheme("http").host("example.org").port(80)
+        .attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE);
+    if (reload != null) builder.parameter("berlioz-reload", reload);
+    return builder.build();
   }
 
   // Pass-through

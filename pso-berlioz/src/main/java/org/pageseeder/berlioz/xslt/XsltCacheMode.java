@@ -43,7 +43,7 @@ public enum XsltCacheMode {
   AUTO,
 
   /**
-   * Only update the cache when explicitly cleared via the {@code clear-xsl-cache} control
+   * Only update the cache when explicitly cleared via the {@code berlioz-reload=xslt} control
    * parameter. Recommended for production.
    */
   MANUAL;

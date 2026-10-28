@@ -290,9 +290,6 @@ final class GlobalSettingsTest {
 
   @Test
   void testLoad_Errors() {
-    Assertions.assertTrue(GlobalSettings.load());
-    Assertions.assertNotEquals(0, GlobalSettings.countProperties());
-
     GlobalSettings.setMode("empty");
     Assertions.assertFalse(GlobalSettings.load());
     Assertions.assertEquals(0, GlobalSettings.countProperties());
@@ -300,6 +297,21 @@ final class GlobalSettingsTest {
     GlobalSettings.setMode("invalid");
     Assertions.assertFalse(GlobalSettings.load());
     Assertions.assertEquals(0, GlobalSettings.countProperties());
+  }
+
+  @Test
+  void testReload_ErrorsKeepLastValidConfiguration() {
+    Assertions.assertTrue(GlobalSettings.load());
+    int count = GlobalSettings.countProperties();
+    Assertions.assertNotEquals(0, count);
+
+    GlobalSettings.setMode("empty");
+    Assertions.assertFalse(GlobalSettings.load());
+    Assertions.assertEquals(count, GlobalSettings.countProperties());
+
+    GlobalSettings.setMode("invalid");
+    Assertions.assertFalse(GlobalSettings.load());
+    Assertions.assertEquals(count, GlobalSettings.countProperties());
   }
 
   @Test

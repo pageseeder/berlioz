@@ -24,6 +24,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -68,7 +69,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The XSLT templates are cached by default unless the XSLT Cache global option property was set to
  * <code>false</code>; in other words XSLT templates are parsed once and reused for each call. The special parameter
- * <code>clear-xsl-cache</code> can be used to clear the XSLT cache.
+ * <code>berlioz-reload=xslt</code> can be used to clear the XSLT cache.
  *
  * <h3>HTTP Caching</h3>
  *
@@ -98,6 +99,8 @@ import org.slf4j.LoggerFactory;
  * See {@link org.pageseeder.berlioz.BerliozOption#CONTROL_KEY},
  * {@link org.pageseeder.berlioz.BerliozOption#CONTROL_NETWORK}, and
  * {@link org.pageseeder.berlioz.security.ControlAuthorization#CONTROL_AUTHORIZED_ATTRIBUTE} to enable them.
+ * The control parameters are {@code berlioz-reload}, which takes a list of {@link ReloadScope}, and
+ * {@code berlioz-profile}; see {@link ControlParameter}.
  * The same authorization applies to every request when the {@code requires-control} init parameter
  * is enabled, as for the kickstart source servlet ({@code *.src}).
  *
@@ -319,7 +322,7 @@ public final class BerliozServlet extends HttpServlet {
     boolean serviceHeader = GlobalSettings.has(BerliozOption.HTTP_SERVICE_HEADER);
 
     // Apply Berlioz control parameters (cache clearing, reloading, etc.)
-    profile = applyBerliozControl(req, config, loader, profile);
+    profile = applyBerliozControl(req, res, config, loader, profile);
 
     // Load the services if required
     try {
@@ -672,35 +675,39 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   /**
-   * Processes Berlioz control parameters from the request, applying any requested cache clearing,
-   * reloading, or configuration reset, and returns the (possibly updated) profile flag.
+   * Processes Berlioz control parameters from the request, applying the requested reload scopes
+   * in order, and returns the (possibly updated) profile flag.
    *
    * @param req     The HTTP servlet request.
+   * @param res     The HTTP servlet response (reports the applied scopes).
    * @param config  The Berlioz configuration.
    * @param loader  The service loader (might be marked for reload).
    * @param profile Whether profiling was already enabled via global settings.
    * @return {@code true} if profiling should be active for this request.
    */
-  private boolean applyBerliozControl(HttpServletRequest req, BerliozConfig config, ServiceLoader loader, boolean profile) {
+  private boolean applyBerliozControl(HttpServletRequest req, HttpServletResponse res, BerliozConfig config,
+      ServiceLoader loader, boolean profile) {
     if (!ControlAuthorization.hasControl(req)) return profile;
 
-    // A "reload" triggers all the sub-operations below
-    boolean reload = isTrue(req.getParameter("berlioz-reload"));
-
-    // Clear the XSLT cache if requested
-    if (reload || isTrue(req.getParameter("clear-xsl-cache"))) { XsltTransformer.clearAllCache(); }
-
-    // Allow ETags to be reset so clients must revalidate
-    if (reload || isTrue(req.getParameter("reset-etags"))) { config.resetETagSeed(); }
+    Set<ReloadScope> scopes = ReloadScope.fromRequest(req);
 
     // Reload the global configuration from disk
-    if (reload) { GlobalSettings.load(); }
+    if (scopes.contains(ReloadScope.CONFIG)) { GlobalSettings.load(); }
 
     // Mark the service configuration for replacement after a complete candidate has been built
-    if (reload || isTrue(req.getParameter("reload-services"))) { loader.requestReload(); }
+    if (scopes.contains(ReloadScope.SERVICES)) { loader.requestReload(); }
+
+    // Clear the XSLT cache if requested
+    if (scopes.contains(ReloadScope.XSLT)) { XsltTransformer.clearAllCache(); }
+
+    // Allow ETags to be reset so clients must revalidate
+    if (scopes.contains(ReloadScope.ETAGS)) { config.resetETagSeed(); }
+
+    // Report the applied scopes (redirects are applied by the filters)
+    if (!scopes.isEmpty()) { res.setHeader(ReloadScope.HEADER, ReloadScope.format(scopes)); }
 
     // Profile flag can also be enabled per-request via URL parameter
-    return profile || isTrue(req.getParameter("berlioz-profile"));
+    return profile || isTrue(req.getParameter(ControlParameter.BERLIOZ_PROFILE.parameter()));
   }
 
   /**

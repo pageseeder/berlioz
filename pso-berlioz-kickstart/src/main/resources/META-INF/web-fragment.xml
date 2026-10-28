@@ -70,7 +70,7 @@
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
   <!--                                                                      -->
-  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  Control parameters (berlioz-reload, berlioz-profile) are            -->
   <!--  disabled by default. Enable via the global settings                -->
   <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
@@ -113,7 +113,7 @@
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
   <!--                                                                      -->
-  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  Control parameters (berlioz-reload, berlioz-profile) are            -->
   <!--  disabled by default. Enable via the global settings                -->
   <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
@@ -159,7 +159,7 @@
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
   <!--                                                                      -->
-  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  Control parameters (berlioz-reload, berlioz-profile) are            -->
   <!--  disabled by default. Enable via the global settings                -->
   <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
@@ -205,7 +205,7 @@
   <!--                     [max-age=3600, must-revalidate]                  -->
   <!--                                                                      -->
   <!--                                                                      -->
-  <!--  Control parameters (berlioz-reload, clear-xsl-cache, etc.) are      -->
+  <!--  Control parameters (berlioz-reload, berlioz-profile) are            -->
   <!--  disabled by default. Enable via the global settings                -->
   <!--  berlioz.control.network / berlioz.control.key, not an init-param.    -->
   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->

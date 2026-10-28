@@ -72,7 +72,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.5
  * @since 0.6
  */
 public final class GlobalSettings {
@@ -611,6 +611,9 @@ public final class GlobalSettings {
    * <p>If all of the above fail, the properties will remain empty, this method will return
    * <code>false</code> to indicate that the properties could not be loaded.
    *
+   * <p>If a configuration file cannot be read when properties were already loaded, the last
+   * valid properties are kept and this method returns <code>false</code> (since 0.14.5).
+   *
    * <p>Errors will only be reported to the <code>System</code> error output, the complete stack
    * trace will be available.
    *
@@ -626,6 +629,7 @@ public final class GlobalSettings {
    */
   public static synchronized boolean load() throws IllegalStateException {
     boolean loaded = false;
+    boolean failed = false;
 
     // make sure we have a repository
     Map<String, String> properties = new HashMap<>();
@@ -651,13 +655,20 @@ public final class GlobalSettings {
       console("(!) An error occurred whilst trying to read the properties file.");
       LOGGER.warn("Unable to load the configuration file", ex);
       properties.clear(); // Let's not load dirty properties
-    } finally {
-      // Resolve ${variable} and ${variable:default} tokens against system properties and env vars
-      resolveVariables(properties);
-      // Reset after loading
-      SETTINGS.set(properties);
-      NODES.set(new ConcurrentHashMap<>());
+      failed = true;
     }
+
+    // Keep the last valid configuration rather than reverting every option to its default
+    if (failed && SETTINGS.get() != null) {
+      LOGGER.warn("Keeping the last valid configuration");
+      return false;
+    }
+
+    // Resolve ${variable} and ${variable:default} tokens against system properties and env vars
+    resolveVariables(properties);
+    // Reset after loading
+    SETTINGS.set(properties);
+    NODES.set(new ConcurrentHashMap<>());
 
     // Warn once per load for deprecated options explicitly set to a deprecated value
     if (loaded) {

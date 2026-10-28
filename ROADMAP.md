@@ -125,9 +125,9 @@ Small security improvements:
 
 Scoped `berlioz-reload` (Theme 17):
 
-- Accept a comma-separated list of scopes (`config`, `services`, `xslt`, `etags`, possibly `redirects`); `true` keeps meaning everything.
-- Keep `reload-services`, `clear-xsl-cache` and `reset-etags` as deprecated aliases of their scope until 1.0.
-- Settle the open points listed in Theme 17 (scope order, unknown scopes, implied scopes, configuration failures, filters, reporting) before implementation.
+- ✓ `berlioz-reload` accepts `true` or a comma-separated list of scopes (`config`, `services`, `xslt`, `etags`, `redirects`), exposed as `ReloadScope`, with `ControlParameter` listing the parameter names (Theme 18, item 5).
+- ✓ `reload-services`, `clear-xsl-cache` and `reset-etags` are deprecated aliases of their scope until 1.0, with a one-time warning.
+- ✓ Open points settled (2026-10-28): fixed order; an unknown scope rejects the whole request; no implied scopes (documented `services,etags`); a failed configuration reload keeps the last valid configuration; the filters use the same parser; applied scopes are reported in `X-Berlioz-Reload`.
 
 Berlioz Admin feedback:
 
@@ -647,16 +647,17 @@ Retiring the other parameters:
 - 1.0: the three parameters are removed. Only `berlioz-reload` and `berlioz-profile` remain.
 - Documentation, `BerliozServlet` Javadoc and `ControlAuthorization` list only the two parameters, with the aliases in the migration notes.
 
-Points still to decide:
+Decisions (2026-10-28), implemented in 0.14.5:
 
-- **Order**: apply scopes in a fixed order (`config` first, since other scopes may depend on it, then `services`, `xslt`, `etags`), whatever their order in the parameter.
-- **Unknown scopes**: ignore them with a warning, or reject the whole request without applying any scope.
-- **Partial reloads can be inconsistent**: reloading the services without resetting the ETags can return `304 Not Modified` for a service whose definition changed, because the ETag combines the seed with generator ETags only. Document which scopes usually go together, or decide whether some scopes imply others (for example `services` implying `etags`).
-- **Configuration failures**: `GlobalSettings.load()` clears every property when the file cannot be parsed, which turns off control authorisation and reverts every option to its default. A `config` scope makes this easier to trigger on its own. Consider keeping the last valid configuration, as the services do (see theme 5).
-- **Filters**: `RedirectFilter` and `RelocationFilter` compare the parameter with `"true"`, so they would need to understand the scope list.
-- **Reporting**: control parameters are ignored silently when the request is not authorised. Reporting the scopes that were applied, for example in a response header, would let tools such as Berlioz Admin confirm the result without their own generator (bzadmin's `GetBerliozControl`).
+- **Order**: scopes are applied in a fixed order (`config`, `services`, `xslt`, `etags`, `redirects`), whatever their order in the parameter.
+- **Unknown scopes**: the whole request is rejected; no scope is applied and a warning is logged.
+- **Partial reloads**: no scope implies another. The documentation recommends `services,etags` after changing services.
+- **Configuration failures**: `GlobalSettings.load()` keeps the last valid configuration when a reload fails; startup is unchanged.
+- **Filters**: `RedirectFilter` and `RelocationFilter` use the same parser and apply the `redirects` scope.
+- **Reporting**: authorized requests that apply at least one scope receive `X-Berlioz-Reload` listing the accepted scopes.
+- **Public API**: `ReloadScope` (scopes, parser, header) and `ControlParameter` (parameter names, `isControlParameter`), also covering Theme 18, item 5.
 
-Target release: scopes and deprecated aliases in 0.14.5; removal of `reload-services`, `clear-xsl-cache` and `reset-etags` in 1.0.
+Target release: scopes and deprecated aliases in 0.14.5 (implemented); removal of `reload-services`, `clear-xsl-cache` and `reset-etags` in 1.0.
 
 ### 18. Admin Overlay Upstreaming (Requested By Berlioz Admin)
 
