@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.servlet;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pageseeder.berlioz.security.ControlAuthorization;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
@@ -58,6 +59,47 @@ class RelocationFilterTest {
     Assertions.assertFalse(forwardCalled[0], "Dispatcher.forward should not expose protected paths");
     Assertions.assertTrue(chainInvoked[0], "Chain should continue when relocation target is unsafe");
     Assertions.assertNull(recorder.header("Content-Location"), "Unsafe target must not be exposed");
+  }
+
+  // Scoped reload
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testReloadRedirectsScopeReloadsRules() throws Exception {
+    RelocationFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><relocation-mapping><relocation from=\"/old\" to=\"/new\"/></relocation-mapping>");
+    ServletTestSupport.ResponseRecorder first = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest(null), first.build(), (r, s) -> {});
+    Assertions.assertEquals("/new", first.header("Content-Location"));
+
+    // Rewrite the rules in the directory created by initFilter
+    File webRoot = Files.list(tmp).findFirst().orElseThrow().toFile();
+    Files.write(new File(webRoot, "WEB-INF/relocation.xml").toPath(),
+        "<?xml version=\"1.0\"?><relocation-mapping><relocation from=\"/old\" to=\"/newer\"/></relocation-mapping>"
+            .getBytes(StandardCharsets.UTF_8));
+
+    // Other scopes do not reload the rules
+    ServletTestSupport.ResponseRecorder services = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest("services"), services.build(), (r, s) -> {});
+    Assertions.assertEquals("/new", services.header("Content-Location"));
+    Assertions.assertNull(services.header(ReloadScope.HEADER));
+
+    ServletTestSupport.ResponseRecorder reloaded = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest("services,redirects"), reloaded.build(), (r, s) -> {});
+    Assertions.assertEquals("/newer", reloaded.header("Content-Location"));
+    Assertions.assertEquals("services, redirects", reloaded.header(ReloadScope.HEADER));
+  }
+
+  private static HttpServletRequest oldRequest(String reload) {
+    RequestDispatcher dispatcher = (RequestDispatcher) Proxy.newProxyInstance(
+        RequestDispatcher.class.getClassLoader(),
+        new Class<?>[]{RequestDispatcher.class},
+        (proxy, m, args) -> null);
+    ServletTestSupport.RequestBuilder builder = ServletTestSupport.request()
+        .uri("/old").dispatcher(dispatcher)
+        .attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE);
+    if (reload != null) builder.parameter("berlioz-reload", reload);
+    return builder.build();
   }
 
   // Pass-through
