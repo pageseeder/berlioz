@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.system;
 
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
+import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.Beta;
@@ -47,12 +48,24 @@ import org.pageseeder.berlioz.output.OutputWriter;
  *       JVM). Defaults to {@code "false"}.</dd>
  * </dl>
  *
+ * <h3>Limits</h3>
+ * <p>At most {@value Threads#MAX_THREADS} threads are listed; when there are more, the root
+ * states the {@code limit} and the {@code total} number of live threads. At most
+ * {@value Threads#MAX_STACK_DEPTH} frames are written per stack trace; a thread whose stack is
+ * deeper states the {@code stack-limit}.
+ *
+ * <p>{@code allocated-bytes} is absent when the JVM does not provide it. {@code lock} is the
+ * lock the thread is waiting for, with its owner when another thread holds it.
+ *
  * <h3>Returned XML</h3>
  * <pre>{@code
- * <threads>
- *   <thread id="[id]" name="[name]" priority="[n]" state="[state]" alive="true" daemon="[true|false]" group="[group]" current="true">
+ * <threads total="[n]" limit="[n]">                       <!-- total and limit only if the limit is reached -->
+ *   <thread id="[id]" name="[name]" priority="[n]" state="[state]" alive="true" daemon="[true|false]" group="[group]" current="true"
+ *           blocked-count="[n]" waited-count="[n]" in-native="[true|false]" deadlocked="[true|false]"
+ *           allocated-bytes="[n]" stack-limit="[n]">
  *     <times cpu="[n]" user="[n]" system="[n]"/>            <!-- only if threadtime=true and stacktraces=false -->
  *     <time cpu="[n]" user="[n]" system="[n]"/>             <!-- only if threadtime=true and stacktraces=true -->
+ *     <lock class="[class]" identity-hash="[hex]" owner-id="[id]" owner-name="[name]"/>
  *     <stacktrace>                                          <!-- only if stacktraces=true -->
  *       <element class="[class]" filename="[file]" method="[method]" line="[n]"/>
  *       ...
@@ -65,12 +78,16 @@ import org.pageseeder.berlioz.output.OutputWriter;
  * <h3>Returned JSON</h3>
  * <pre>{@code
  * {
+ *   "total": [n], "limit": [n],
  *   "threads": [
  *     {
  *       "id": [id], "name": "[name]", "priority": [n], "state": "[state]", "alive": true,
  *       "daemon": [true|false], "group": "[group]", "current": "true",
+ *       "blockedCount": [n], "waitedCount": [n], "inNative": [true|false], "deadlocked": [true|false],
+ *       "allocatedBytes": [n], "stackLimit": [n],
  *       "times": {"cpu": [n], "user": [n], "system": [n]},   <!-- only if threadtime=true and stacktraces=false -->
  *       "time": {"cpu": [n], "user": [n], "system": [n]},    <!-- only if threadtime=true and stacktraces=true -->
+ *       "lock": {"class": "[class]", "identityHash": "[hex]", "ownerId": [id], "ownerName": "[name]"},
  *       "stacktrace": [                                      <!-- only if stacktraces=true -->
  *         {"class": "[class]", "filename": "[file]", "method": "[method]", "line": [n]},
  *         ...
@@ -83,7 +100,7 @@ import org.pageseeder.berlioz.output.OutputWriter;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.5
  * @since 0.9.32
  */
 @Beta
@@ -100,16 +117,23 @@ public final class ListThreads implements Generator {
       bean = null;
     }
 
+    long[] all = threadBean.getAllThreadIds();
+    long[] ids = Threads.limit(all);
+    ThreadInfo[] threads = Threads.getThreadInfo(threadBean, ids, stackTraces);
+    long[] allocated = Threads.getAllocatedBytes(ids);
+    Set<Long> deadlocked = Threads.getDeadlockedThreads(threadBean);
+
     out.startObject("threads");
+    if (ids.length < all.length) {
+      out.field("total", all.length);
+      out.field("limit", Threads.MAX_THREADS);
+    }
     out.startArray("threads", OutputWriter.ContextOption.JSON_ONLY);
-    ThreadInfo[] threads = Threads.getThreadInfo(threadBean, stackTraces ? Integer.MAX_VALUE : 0);
-    for (ThreadInfo thread : threads) {
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo thread = threads[i];
       if (thread != null) {
-        if (stackTraces) {
-          toOutput(thread, thread.getStackTrace(), bean, out);
-        } else {
-          toOutput(thread, bean, out);
-        }
+        long bytes = allocated != null ? allocated[i] : -1;
+        toOutput(thread, stackTraces, deadlocked.contains(thread.getThreadId()), bytes, bean, out);
       }
     }
     out.endArray();
@@ -117,38 +141,27 @@ public final class ListThreads implements Generator {
     return Response.ok();
   }
 
-  private static void toOutput(ThreadInfo thread, @Nullable ThreadMXBean bean, OutputWriter out) {
+  private static void toOutput(ThreadInfo thread, boolean stackTraces, boolean deadlocked, long allocatedBytes,
+      @Nullable ThreadMXBean bean, OutputWriter out) {
     out.startObject("thread");
     Threads.writeThreadAttributes(out, thread, true);
+    Threads.writeThreadDetails(out, thread, deadlocked, allocatedBytes);
 
     if (bean != null) {
       final long cpu = bean.getThreadCpuTime(thread.getThreadId());
       final long user = bean.getThreadUserTime(thread.getThreadId());
-      out.startObject("times");
+      // Historical names: "time" with stack traces, "times" without
+      out.startObject(stackTraces ? "time" : "times");
       out.field("cpu", cpu);
       out.field("user", user);
       out.field("system", cpu - user);
       out.endObject();
     }
 
-    out.endObject();
-  }
-
-  private static void toOutput(ThreadInfo thread, StackTraceElement[] stacktrace, @Nullable ThreadMXBean bean, OutputWriter out) {
-    out.startObject("thread");
-    Threads.writeThreadAttributes(out, thread, true);
-
-    if (bean != null) {
-      final long cpu = bean.getThreadCpuTime(thread.getThreadId());
-      final long user = bean.getThreadUserTime(thread.getThreadId());
-      out.startObject("time");
-      out.field("cpu", cpu);
-      out.field("user", user);
-      out.field("system", cpu - user);
-      out.endObject();
+    Threads.writeLock(out, thread);
+    if (stackTraces) {
+      Threads.writeStackTrace(out, thread.getStackTrace());
     }
-
-    Threads.writeStackTrace(out, stacktrace);
 
     out.endObject();
   }

@@ -13,6 +13,8 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.lang.reflect.Proxy;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -97,6 +99,127 @@ class GetThreadInfoTest {
     assertTrue(json.contains("\"name\":"), json);
     assertTrue(json.contains("\"state\":"), json);
     assertTrue(json.contains("\"stacktrace\":["), json);
+  }
+
+  @Test
+  void testProcess_writesContentionAndNativeDetails() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    new GetThreadInfo().generate(request(null), out);
+
+    Element root = parse(out.toString()).getDocumentElement();
+    assertFalse(root.getAttribute("blocked-count").isEmpty());
+    assertFalse(root.getAttribute("waited-count").isEmpty());
+    assertEquals("false", root.getAttribute("in-native"));
+    assertEquals("false", root.getAttribute("deadlocked"));
+    assertFalse(root.hasAttribute("stack-limit"), "A shallow stack should not state a limit");
+  }
+
+  @Test
+  void testProcess_shallowStack_writesEmptyLockArrays() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    new GetThreadInfo().generate(request(null), out);
+
+    Document doc = parse(out.toString());
+    assertEquals(1, doc.getElementsByTagName("locked-monitors").getLength());
+    assertEquals(1, doc.getElementsByTagName("locked-synchronizers").getLength());
+    assertEquals(0, doc.getElementsByTagName("monitor").getLength());
+    assertEquals(0, doc.getElementsByTagName("lock").getLength(), "A running thread waits for no lock");
+  }
+
+  @Test
+  void testProcess_deepStack_statesLimit() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    ThreadsTest.recurse(Threads.MAX_STACK_DEPTH + 10, () -> new GetThreadInfo().generate(request(null), out));
+
+    Document doc = parse(out.toString());
+    assertEquals(String.valueOf(Threads.MAX_STACK_DEPTH), doc.getDocumentElement().getAttribute("stack-limit"));
+    assertEquals(Threads.MAX_STACK_DEPTH, doc.getElementsByTagName("element").getLength());
+  }
+
+  @Test
+  void testProcess_heldMonitor_listedWithDepth() throws Exception {
+    Object monitor = new Object();
+    OutputWriter out = new XmlOutputAdapter();
+    synchronized (monitor) {
+      new GetThreadInfo().generate(request(null), out);
+    }
+
+    Element held = (Element) parse(out.toString()).getElementsByTagName("monitor").item(0);
+    assertNotNull(held, out.toString());
+    assertEquals("java.lang.Object", held.getAttribute("class"));
+    assertEquals(Integer.toHexString(System.identityHashCode(monitor)), held.getAttribute("identity-hash"));
+    assertFalse(held.getAttribute("depth").isEmpty());
+  }
+
+  @Test
+  void testProcess_heldSynchronizer_listed() throws Exception {
+    ReentrantLock lock = new ReentrantLock();
+    OutputWriter out = new XmlOutputAdapter();
+    lock.lock();
+    try {
+      new GetThreadInfo().generate(request(null), out);
+    } finally {
+      lock.unlock();
+    }
+
+    Element held = (Element) parse(out.toString()).getElementsByTagName("synchronizer").item(0);
+    assertNotNull(held, out.toString());
+    assertTrue(held.getAttribute("class").startsWith("java.util.concurrent.locks.ReentrantLock"));
+  }
+
+  @Test
+  void testProcess_blockedThread_writesLockWithOwner() throws Exception {
+    Object monitor = new Object();
+    Thread blocked = new Thread(() -> {
+      synchronized (monitor) {
+        monitor.hashCode();
+      }
+    }, "blocked-on-monitor");
+    blocked.setDaemon(true);
+    OutputWriter out = new XmlOutputAdapter();
+    synchronized (monitor) {
+      blocked.start();
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+      while (blocked.getState() != Thread.State.BLOCKED && System.nanoTime() < deadline) {
+        Thread.sleep(10);
+      }
+      new GetThreadInfo().generate(request(blocked.getId()), out);
+    }
+    blocked.join(5000);
+
+    Element lock = (Element) parse(out.toString()).getElementsByTagName("lock").item(0);
+    assertNotNull(lock, out.toString());
+    assertEquals("java.lang.Object", lock.getAttribute("class"));
+    assertEquals(String.valueOf(Thread.currentThread().getId()), lock.getAttribute("owner-id"));
+    assertEquals(Thread.currentThread().getName(), lock.getAttribute("owner-name"));
+  }
+
+  @Test
+  void testProcess_deadlockedThread_flagged() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    try (ThreadsTest.Deadlock deadlock = new ThreadsTest.Deadlock()) {
+      new GetThreadInfo().generate(request(deadlock.first.getId()), out);
+    }
+
+    Element root = parse(out.toString()).getDocumentElement();
+    assertEquals("true", root.getAttribute("deadlocked"), out.toString());
+    Element lock = (Element) root.getElementsByTagName("lock").item(0);
+    assertNotNull(lock);
+    assertEquals("deadlock-2", lock.getAttribute("owner-name"));
+  }
+
+  @Test
+  void testProcess_json_writesDetailsAndLockArrays() {
+    OutputWriter out = new JsonOutputAdapter();
+    new GetThreadInfo().generate(request(null), out);
+
+    String json = out.toString();
+    assertTrue(json.contains("\"blockedCount\":"), json);
+    assertTrue(json.contains("\"waitedCount\":"), json);
+    assertTrue(json.contains("\"inNative\":false"), json);
+    assertTrue(json.contains("\"deadlocked\":false"), json);
+    assertTrue(json.contains("\"lockedMonitors\":["), json);
+    assertTrue(json.contains("\"lockedSynchronizers\":["), json);
   }
 
   private static Request request(Long threadId) {

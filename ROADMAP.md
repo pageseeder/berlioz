@@ -132,6 +132,7 @@ Scoped `berlioz-reload` (Theme 17):
 Berlioz Admin feedback:
 
 - ✓ Non-blocking CPU sample (Theme 18, item 2): implemented as `GetCpuSample` (cumulative counters, XML/JSON, unavailable values absent); `GetCPUTime` deprecated for removal in 1.0.
+- ✓ Richer, bounded `ListThreads` and `GetThreadInfo` (Theme 18, item 3): implemented; per thread `blocked-count`, `waited-count`, `in-native`, `deadlocked`, `allocated-bytes` (invoked by operation name, absent when unavailable) and a `lock` element with its owner; at most 2000 threads (`total` and `limit` on the root when reached) and 256 frames (`stack-limit` on the thread when reached); `GetThreadInfo` also lists `locked-monitors` and `locked-synchronizers`. Existing attributes unchanged; thread classification stays in bzadmin.
 - ✓ `GetGeneratorStatistics` as a `Generator` (Theme 18, item 4): implemented; JSON output added (`since`, `statistics` array, status counts in camel case), XML unchanged.
 - ✓ `BerliozOption` metadata (Theme 18, item 6): implemented as `type()` (`BerliozOption.Type`), `description()`, `isDeprecated()`, `deprecatedSince()` and `removal()`; a test keeps them consistent with `@Deprecated`.
 - ✓ Option catalog generator (Theme 16, item 5): implemented as `ListBerliozOptions` (XML/JSON, cacheable, declaration order); the optional value in use and its origin are left out, since `GetGlobalConfig` returns the values and provenance belongs with the configuration-validation work.

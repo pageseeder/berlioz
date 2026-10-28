@@ -103,6 +103,77 @@ class ListThreadsTest {
     assertTrue(out.toString().contains("\"stacktrace\":["));
   }
 
+  @Test
+  void testProcess_threadHasDetails() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    Element thread = current(parse(out.toString()));
+    assertFalse(thread.getAttribute("blocked-count").isEmpty());
+    assertFalse(thread.getAttribute("waited-count").isEmpty());
+    assertEquals("false", thread.getAttribute("in-native"));
+    assertEquals("false", thread.getAttribute("deadlocked"));
+  }
+
+  @Test
+  void testProcess_belowThreadLimit_noLimitStated() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    Element root = parse(out.toString()).getDocumentElement();
+    assertFalse(root.hasAttribute("limit"));
+    assertFalse(root.hasAttribute("total"));
+  }
+
+  @Test
+  void testProcess_deepStack_statesLimit() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    ThreadsTest.recurse(Threads.MAX_STACK_DEPTH + 10, () -> new ListThreads().generate(request(true, false), out));
+    Element thread = current(parse(out.toString()));
+    assertEquals(String.valueOf(Threads.MAX_STACK_DEPTH), thread.getAttribute("stack-limit"));
+    assertEquals(Threads.MAX_STACK_DEPTH, thread.getElementsByTagName("element").getLength());
+  }
+
+  @Test
+  void testProcess_deadlockedThreads_flaggedWithLock() throws Exception {
+    OutputWriter out = new XmlOutputAdapter();
+    try (ThreadsTest.Deadlock deadlock = new ThreadsTest.Deadlock()) {
+      new ListThreads().generate(request(false, false), out);
+    }
+    Document doc = parse(out.toString());
+    NodeList threads = doc.getElementsByTagName("thread");
+    int deadlocked = 0;
+    for (int i = 0; i < threads.getLength(); i++) {
+      Element t = (Element) threads.item(i);
+      if (t.getAttribute("name").startsWith("deadlock-")) {
+        assertEquals("true", t.getAttribute("deadlocked"));
+        Element lock = (Element) t.getElementsByTagName("lock").item(0);
+        assertNotNull(lock, "Deadlocked thread should wait for a lock");
+        assertFalse(lock.getAttribute("owner-id").isEmpty());
+        deadlocked++;
+      }
+    }
+    assertEquals(2, deadlocked);
+  }
+
+  @Test
+  void testProcess_json_includesDetails() {
+    OutputWriter out = new JsonOutputAdapter();
+    new ListThreads().generate(request(false, false), out);
+    String json = out.toString();
+    assertTrue(json.contains("\"blockedCount\":"), json);
+    assertTrue(json.contains("\"inNative\":"), json);
+    assertTrue(json.contains("\"deadlocked\":"), json);
+    assertFalse(json.contains("\"limit\":"), json);
+  }
+
+  private static Element current(Document doc) {
+    NodeList threads = doc.getElementsByTagName("thread");
+    for (int i = 0; i < threads.getLength(); i++) {
+      Element t = (Element) threads.item(i);
+      if ("true".equals(t.getAttribute("current"))) return t;
+    }
+    throw new AssertionError("No current thread");
+  }
+
   private static Request request(boolean stacktraces, boolean threadtime) {
     return (Request) Proxy.newProxyInstance(
         Request.class.getClassLoader(),
