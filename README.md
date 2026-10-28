@@ -233,6 +233,15 @@ is restricted to local `file:`/`jar:file:` resources; HTTP(S) and other network 
 always rejected, independently of the underlying XSLT processor's own `accessExternalStylesheet`
 enforcement.
 
+Tools that read or compile stylesheets outside the renderer can apply the same rules through
+`org.pageseeder.berlioz.xslt.XsltResolvers` (since 0.14.5). `XsltResolvers.secure()` (or
+`secure(ClassLoader)`) returns the renderer's `URIResolver`; like any `URIResolver`, it returns
+`null` for approved relative and `file:`/`jar:file:` references so the processor loads them.
+`XsltResolvers.locate(href, base, loader)` applies the same checks and returns the URL the
+renderer would load for every approved reference, so a tool can read the stylesheet as plain XML;
+denied, malformed or missing references throw a `TransformerException`. Nothing is read or
+fetched while checking a reference.
+
 ### Stub-free group overlays (since 0.14.4)
 
 Filesystem group stylesheets now fall back automatically to classpath overlays. For example,

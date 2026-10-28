@@ -50,9 +50,11 @@ import org.jspecify.annotations.Nullable;
  * of the base. Unrecognized or malformed URLs are also rejected; parsing failure never bypasses
  * the local-resource checks.
  *
+ * <p>Exposed publicly through {@link XsltResolvers}.
+ *
  * @author Christophe Lauret
  *
- * @version 0.14.3
+ * @version 0.14.5
  * @since 0.14.3
  */
 final class SecureXsltUriResolver implements URIResolver {
@@ -66,31 +68,54 @@ final class SecureXsltUriResolver implements URIResolver {
   @Override
   public @Nullable Source resolve(String href, @Nullable String base) throws TransformerException {
     if (href.isEmpty()) return null;
-    String classpathPath;
-    try {
-      classpathPath = StylesheetLocation.extractClasspathReference(href);
-    } catch (IllegalArgumentException ex) {
-      throw new TransformerException("Invalid classpath XSLT import/include: " + href, ex);
-    }
-    if (classpathPath != null) return resolveClasspath(href, classpathPath);
-    denyUnlessApprovedScheme(href, base);
+    String classpathPath = classpathReference(href);
+    if (classpathPath != null) return new StreamSource(locateClasspath(href, classpathPath).toString());
+    locateUrl(href, base);
     // Approved relative/file/jar reference: let the processor's own default resolution proceed.
     return null;
   }
 
-  private Source resolveClasspath(String href, String classpathPath) throws TransformerException {
+  /**
+   * Returns the URL of the resource the renderer loads for the specified reference.
+   *
+   * <p>Applies the same checks as {@link #resolve(String, String)}, but returns the URL of approved
+   * relative, {@code file:} and {@code jar:file:} references instead of leaving them to the
+   * processor.
+   *
+   * @param href The reference, as found in {@code xsl:import} or {@code xsl:include}
+   * @param base The absolute URL of the referencing stylesheet, if any
+   *
+   * @return the URL of a local resource
+   * @throws TransformerException If the reference is denied, malformed or cannot be found.
+   */
+  URL locate(String href, @Nullable String base) throws TransformerException {
+    String classpathPath = classpathReference(href);
+    if (classpathPath != null) return locateClasspath(href, classpathPath);
+    return locateUrl(href, base);
+  }
+
+  private static @Nullable String classpathReference(String href) throws TransformerException {
+    try {
+      return StylesheetLocation.extractClasspathReference(href);
+    } catch (IllegalArgumentException ex) {
+      throw new TransformerException("Invalid classpath XSLT import/include: " + href, ex);
+    }
+  }
+
+  private URL locateClasspath(String href, String classpathPath) throws TransformerException {
     URL url = this.classLoader.getResource(classpathPath);
     if (url == null) {
       throw new TransformerException("Unable to resolve classpath XSLT import/include: " + href);
     }
     requireLocalUrl(url);
-    return new StreamSource(url.toString());
+    return url;
   }
 
-  private void denyUnlessApprovedScheme(String href, @Nullable String base) throws TransformerException {
+  private static URL locateUrl(String href, @Nullable String base) throws TransformerException {
     try {
       URL resolved = resolveAbsoluteOrRelative(href, base);
       requireLocalUrl(resolved);
+      return resolved;
     } catch (MalformedURLException ex) {
       throw new TransformerException("Unable to resolve XSLT resource URL: href='" + href
           + "', base=" + (base == null ? "<absent>" : "'" + base + "'")

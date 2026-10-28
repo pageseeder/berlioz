@@ -483,7 +483,7 @@ public final class XsltTemplateCache {
     factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "file,jar:file");
-    factory.setURIResolver(new SecureXsltUriResolver(StylesheetLocation.resolveApplicationClassLoader()));
+    factory.setURIResolver(XsltResolvers.secure());
     return factory;
   }
 
