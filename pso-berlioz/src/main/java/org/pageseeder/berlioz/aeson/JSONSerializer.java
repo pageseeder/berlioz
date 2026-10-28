@@ -183,7 +183,7 @@ public final class JSONSerializer extends DefaultHandler implements ContentHandl
     String systemId = ex.getSystemId();
     if (systemId != null) {
       int sol = systemId.lastIndexOf('/');
-      message.append('[').append(sol != -1? systemId.substring(sol+1) : systemId).append("] ");
+      message.append('[').append(sol == -1 ? systemId : systemId.substring(sol+1)).append("] ");
     }
     message.append(ex.getMessage());
     if (ex.getLineNumber() != -1) {

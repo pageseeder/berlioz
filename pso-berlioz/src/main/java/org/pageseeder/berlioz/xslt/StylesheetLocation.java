@@ -272,7 +272,7 @@ public final class StylesheetLocation {
     if (bang != -1) return CLASSPATH_PREFIX + external.substring(bang + 2);
     String path = url.getPath();
     int slash = path.lastIndexOf('/');
-    return CLASSPATH_PREFIX + (slash != -1 ? path.substring(slash + 1) : path);
+    return CLASSPATH_PREFIX + (slash == -1 ? path : path.substring(slash + 1));
   }
 
   @Override
@@ -287,7 +287,7 @@ public final class StylesheetLocation {
   private static String toWebPath(String s) {
     String from = "WEB-INF";
     int x = s.indexOf(from);
-    return x != -1 ? s.substring(x + from.length()).replace('\\', '/') : s.replace('\\', '/');
+    return x == -1 ? s.replace('\\', '/') : s.substring(x + from.length()).replace('\\', '/');
   }
 
 }

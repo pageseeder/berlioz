@@ -106,7 +106,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    *
    * @throws NullPointerException If {@code xml} is {@code null}.
    */
-  protected XmlAppendable(T xml, @Nullable String indentChars) throws NullPointerException {
+  protected XmlAppendable(T xml, @Nullable String indentChars) {
     this.xml = Objects.requireNonNull(xml, "XmlWriter cannot use a null writer.");
     this.indent = indentChars != null;
     this.indentChars = indentChars;
@@ -120,7 +120,7 @@ public class XmlAppendable<T extends Appendable> implements XmlWriter {
    *
    * @throws NullPointerException If {@code xml} is {@code null}.
    */
-  public XmlAppendable(T xml) throws NullPointerException {
+  public XmlAppendable(T xml) {
     this(xml, null);
   }
 

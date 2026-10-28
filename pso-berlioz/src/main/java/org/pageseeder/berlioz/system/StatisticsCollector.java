@@ -268,9 +268,9 @@ final class StatisticsCollector implements GeneratorListener, OutputWritable {
       synchronized (this.statusCount) {
         for (Entry<ContentStatus, AtomicLong> status : this.statusCount.entrySet()) {
           String name = status.getKey().name().toLowerCase(Locale.ROOT);
-          long count = status.getValue().get();
-          out.field(name, count, FieldOption.XML_ONLY);
-          out.field(name.replace('_', '-'), count, FieldOption.JSON_ONLY);
+          long statusTotal = status.getValue().get();
+          out.field(name, statusTotal, FieldOption.XML_ONLY);
+          out.field(name.replace('_', '-'), statusTotal, FieldOption.JSON_ONLY);
         }
       }
       out.endObject();

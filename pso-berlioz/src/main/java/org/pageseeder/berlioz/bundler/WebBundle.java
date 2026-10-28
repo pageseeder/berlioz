@@ -28,7 +28,7 @@ import org.pageseeder.berlioz.util.SHA256;
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.5
  * @since 0.9.32
  */
 public final class WebBundle {
@@ -49,14 +49,14 @@ public final class WebBundle {
   private final List<File> files;
 
   /**
-   * The name of the bundle.
+   * The list of files imported by the files in the bundle.
    */
   private final List<File> imported;
 
   /**
    * Whether the bundle is minimized.
    */
-  private boolean minimized;
+  private final boolean minimized;
 
   /**
    * The hash values for this bundle.

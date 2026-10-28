@@ -326,7 +326,7 @@ public abstract class HttpRequestWrapper implements ContentRequest {
     // Otherwise assume that it is mapped to '*.suffix'
     String path = req.getServletPath();
     int dot = path.lastIndexOf('.');
-    return (dot != -1)? path.substring(0, dot) : path;
+    return dot == -1 ? path : path.substring(0, dot);
   }
 
   // protected and private methods
