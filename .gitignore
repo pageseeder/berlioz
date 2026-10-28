@@ -1,4 +1,5 @@
 /.sonarlint/
+.sonar/
 /.checkstyle
 /.classpath
 /.factorypath
