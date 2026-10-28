@@ -13,6 +13,14 @@ The Web fragment maps the extensions below to some Berlioz XSLT
     *.json -> /xslt/json/[group].xsl  (fallback XSLT if undefined)
     *.src  -> Raw Berlioz XML
 
+The XML fallback reduces information disclosure by default (since 0.14.5): it only
+keeps `root/@service`, `root/@group`, `root/@flags`, `content/@name`, `content/@target`,
+`content/@status` and the generator payload. The `<header>` is replaced by a comment
+noting its removal. Applications should generally provide their own
+`/xslt/xml/[group].xsl` template; use `*.src` to inspect the full envelope.
+
+The JSON fallback returns an empty object.
+
 ## Usage
 
 Simply include the berlioz kickstart jar in your classpath and your webapp will be Berlioz-enabled with the extensions defined above.

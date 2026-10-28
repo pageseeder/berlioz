@@ -120,7 +120,8 @@ Small security improvements:
 
 - ✓ Redact and sort `GetSystemProperties` output (Theme 18, item 1): implemented; now a `Generator` with XML/JSON output, values redacted via `Redaction.redact`, sorted by name.
 - ✓ Check `Forwarded` and `X-Real-IP` like `X-Forwarded-For` in the control network channel, and expose the check publicly (Theme 18, item 7): implemented as `ControlNetwork.matches(HttpServletRequest)`, used by `ControlAuthorization.hasControl`.
-- Minimal default XML exposure: rewrite the kickstart `fallback-xml.xsl` as an allowlist and restrict the `*.src` mapping (Theme 15).
+- ✓ Minimal default XML exposure, `.xml` fallback (Theme 15): kickstart `fallback-xml.xsl` rewritten as an allowlist; covered by `FallbackXmlTest`.
+- Minimal default XML exposure, `.src` mapping (Theme 15): restrict the kickstart `*.src` mapping; guard approach still to be decided.
 
 Scoped `berlioz-reload` (Theme 17):
 
@@ -572,11 +573,11 @@ The kickstart `fallback-xml.xsl` copies the source document verbatim (`<xsl:sequ
 - The CSP nonce, which is meaningful only in HTML: `header/security/@nonce`.
 - Internal topology behind a reverse proxy, and reflected `Host` values: `header/location`, `header/path`, and the deprecated `host`, `port`, `scheme`, `url`, and `context-path` elements.
 - Reflected request input: `header/http-parameters` and `header/uri-parameters`.
-- Implementation details: `content/@generator` (fully qualified class names), `content/@etag` (internal cache keys), `content/@profile*` (timings, when `berlioz.profile` is enabled), `content/@deprecated`, and `root/@flags`.
+- Implementation details: `content/@generator` (fully qualified class names), `content/@etag` (internal cache keys), `content/@profile*` (timings, when `berlioz.profile` is enabled), and `content/@deprecated`.
 
 Planned changes:
 
-- Rewrite `fallback-xml.xsl` as an allowlist rather than a denylist, so future envelope additions stay private unless explicitly exposed: drop `<header>` entirely, keep `root/@service` and `@group`, keep `content/@name`, `@target`, and `@status`, and copy the generator payload unchanged. Error content is already governed by `berlioz.errors.detail`.
+- ✓ (Implemented for 0.14.5) Rewrite `fallback-xml.xsl` as an allowlist rather than a denylist, so future envelope additions stay private unless explicitly exposed: replace `<header>` with a comment noting its removal, keep `root/@service`, `@group`, and `@flags`, keep `content/@name`, `@target`, and `@status`, and copy the generator payload unchanged. Error content is already governed by `berlioz.errors.detail`.
 - Restrict the kickstart `*.src` mapping (`BerliozSource`, `stylesheet=IDENTITY`), which returns the raw envelope for every service with no mode, network, or key guard and is hard for applications to remove from a web fragment. Options: serve it only in `dev` mode, guard it with the existing `berlioz.control.network`/`berlioz.control.key` authorization, or remove it from kickstart and require an explicit opt-in mapping. Changing the `.xml` fallback alone leaves the same data reachable through `.src`.
 - Document in `README.md` and the kickstart README that application `xml/{GROUP}.xsl` templates copying the whole source document expose the same data, and show a safe pattern.
 - Add tests asserting the fallback output contains no `header`, `@generator`, `@etag`, `@profile*`, or `@flags`, and that `.src` is denied outside the permitted mode or authorization.

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root service="get-item" group="items" flags="admin">
+  <header>
+    <berlioz version="0.14.5" mode="production"/>
+    <app secret="s3cr3t"/>
+    <security nonce="abc123"/>
+    <location scheme="http" host="internal.example" port="8080" base="http://internal.example:8080"/>
+    <path context="" info="/items/42.xml"/>
+    <host>internal.example</host>
+    <http-parameters><parameter name="q">reflected</parameter></http-parameters>
+    <uri-parameters><parameter name="id">42</parameter></uri-parameters>
+  </header>
+  <content generator="com.example.internal.GetItem" name="item" target="main" etag="internal-key" deprecated="true" status="ok" profile-etag="1" profile-process="2" profile="3">
+    <item id="42" generator="payload-attribute" xmlns:x="urn:example"><x:title>Item <b>42</b></x:title><!-- kept --></item>
+  </content>
+  <content generator="com.example.internal.GetFailure" name="failure" status="not-found">
+    <problem><status>404</status><title>Not Found</title></problem>
+  </content>
+</root>

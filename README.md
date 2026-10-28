@@ -38,6 +38,35 @@ The Java API documentation can be found [here](https://javadoc.io/doc/org.pagese
 
 Berlioz uses RFC 9457 Problem Details support for generator and framework errors.
 
+## Default XML output (since 0.14.5)
+
+When a group has no `/xslt/xml/{GROUP}.xsl`, the kickstart `*.xml` mapping applies its
+fallback stylesheet. Following the secure-by-default principle, the fallback no longer copies the
+whole envelope; it filters it through an allowlist to reduce potential information disclosure:
+
+- `<header>` (Berlioz version and mode, `berlioz.app.*` settings, CSP nonce, location/host
+  details, HTTP and URI parameters) is replaced by an XML comment noting its removal.
+- `<root>` keeps only `@service`, `@group` and `@flags`.
+- Each `<content>` keeps only `@name`, `@target` and `@status`; the generator payload is copied
+  unchanged.
+
+This is not a foolproof safeguard: the generator payload itself is still published as is.
+Applications should generally provide their own `xml/{GROUP}.xsl` to control what is exposed.
+To inspect the full envelope before XSLT during development, use the `*.src` mapping.
+
+Clients that read `header/…` (for example URI parameters or the Berlioz version) from the default
+`.xml` output need an application template instead. An application template that copies the
+whole source document (`<xsl:sequence select="."/>`) exposes everything the fallback hides; copy
+only what clients need:
+
+```xml
+<xsl:template match="/root">
+  <root service="{@service}">
+    <xsl:copy-of select="content/node()"/>
+  </root>
+</xsl:template>
+```
+
 ## Classpath overlays
 
 A Berlioz overlay is an ordinary JAR dependency that contributes services, generators, XSLT,
