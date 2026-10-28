@@ -409,6 +409,24 @@ public final class HttpHeaders { // NO_UCD
   public static final String EXPIRES = "Expires";
 
   /**
+   * 'Forwarded' request header (HTTP reverse proxy).
+   *
+   * <p>Augmented BNF:</p>
+   * <pre>{@code
+   *   Forwarded = 1#forwarded-element
+   *   forwarded-element = [ forwarded-pair ] *( ";" [ forwarded-pair ] )
+   * }</pre>
+   * <p>Example:</p>
+   * <pre>{@code
+   *   Forwarded: for=192.0.2.60;proto=http;by=203.0.113.43, for="[2001:db8:cafe::17]:4711"
+   * }</pre>
+   *
+   * @see <a href="https://datatracker.ietf.org/doc/html/rfc7239#section-4">Forwarded HTTP Extension - 4 Forwarded HTTP Header Field</a>
+   * @since 0.14.5
+   */
+  public static final String FORWARDED = "Forwarded";
+
+  /**
    * 'From' request header.
    *
    * <p>Augmented BNF:</p>
@@ -929,4 +947,18 @@ public final class HttpHeaders { // NO_UCD
    * @see <a href="https://datatracker.ietf.org/doc/html/rfc7239#section-5.4">Forwarded HTTP Extension - 5.4 Forwarded Proto</a>
    */
   public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
+
+  /**
+   * 'x-real-ip' request header (HTTP reverse proxy, non-standard).
+   *
+   * <p>The address of the client as seen by the proxy, commonly set by nginx.</p>
+   *
+   * <p>Example:</p>
+   * <pre>
+   *   X-Real-IP: 203.0.113.10
+   * </pre>
+   *
+   * @since 0.14.5
+   */
+  public static final String X_REAL_IP = "X-Real-IP";
 }

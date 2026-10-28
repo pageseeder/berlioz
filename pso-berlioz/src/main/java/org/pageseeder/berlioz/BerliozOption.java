@@ -595,17 +595,18 @@ public enum BerliozOption {
    * deployment where a same-host or otherwise untrusted-boundary reverse proxy is in front.
    * Selecting {@code loopback} or {@code lan} logs a warning once at configuration load time.
    *
-   * <p><b>{@code X-Forwarded-For} safety net:</b> as a mistake-catcher for exactly the case above
+   * <p><b>Forwarding headers safety net:</b> as a mistake-catcher for exactly the case above
    * (a {@code loopback}/{@code lan} config left on by accident in staging/production), {@code
-   * req.getRemoteAddr()} alone is not enough: when an {@code X-Forwarded-For} header is present,
-   * every hop it lists must <i>also</i> match {@code network} for the request to be authorized —
-   * this only ever tightens the check (it can turn an authorization into a denial, never the
-   * reverse), so it is safe to leave on unconditionally. It catches proxies that forward the
-   * header, which many managed load balancers (e.g. cloud ALBs/CDNs) do unconditionally. It does
-   * <b>not</b> catch a proxy that does not forward {@code X-Forwarded-For} at all — a common
-   * default (e.g. a bare {@code proxy_pass} with no explicit header configuration) that is
-   * indistinguishable from no proxy being present. The reverse-proxy caveat above still stands
-   * regardless of this safety net.
+   * req.getRemoteAddr()} alone is not enough: every address listed in the {@code X-Forwarded-For},
+   * {@code Forwarded} ({@code for=}) and {@code X-Real-IP} headers must <i>also</i> match
+   * {@code network} for the request to be authorized — this only ever tightens the check (it can
+   * turn an authorization into a denial, never the reverse), so it is safe to leave on
+   * unconditionally. A local development proxy still works, since its loopback hops match. It
+   * catches proxies that forward the caller's address, which many managed load balancers (e.g.
+   * cloud ALBs/CDNs) do unconditionally. It does <b>not</b> catch a proxy that forwards none of
+   * these headers — a common default (e.g. a bare {@code proxy_pass} with no explicit header
+   * configuration) that is indistinguishable from no proxy being present. The reverse-proxy caveat
+   * above still stands regardless of this safety net.
    *
    * <h3>Property</h3>
    * <table>

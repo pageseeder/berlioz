@@ -118,8 +118,8 @@ Cobble's classpath documentation support remains separate.
 
 Small security improvements:
 
-- Redact and sort `GetSystemProperties` output (Theme 18, item 1).
-- Apply the stricter loopback rules to `ControlNetwork.LOOPBACK` and expose them publicly (Theme 18, item 7).
+- ✓ Redact and sort `GetSystemProperties` output (Theme 18, item 1): implemented; now a `Generator` with XML/JSON output, values redacted via `Redaction.redact`, sorted by name.
+- ✓ Check `Forwarded` and `X-Real-IP` like `X-Forwarded-For` in the control network channel, and expose the check publicly (Theme 18, item 7): implemented as `ControlNetwork.matches(HttpServletRequest)`, used by `ControlAuthorization.hasControl`.
 - Minimal default XML exposure: rewrite the kickstart `fallback-xml.xsl` as an allowlist and restrict the `*.src` mapping (Theme 15).
 
 Scoped `berlioz-reload` (Theme 17):
@@ -689,10 +689,12 @@ Berlioz Admin (bzadmin) replaces or works around several Berlioz generators and 
    - Acceptance: a test fails if a control parameter or scope is applied that the public lists do not contain.
 6. **`BerliozOption` metadata accessors**
    - `isDeprecated()`, `deprecatedSince()`/`removal()`, `type()` and `description()` on `BerliozOption`, as the data source of the option catalog generator (theme 16, item 5). bzadmin reads `@Deprecated` by reflection today.
-7. **Stricter loopback check, made public**
-   - `ControlNetwork.LOOPBACK` checks the remote address and every hop of `X-Forwarded-For` only. bzadmin's fallback login (`AdminFilter.isLoopback`) also refuses any `Forwarded`, `X-Forwarded-Host`, `X-Forwarded-Proto` or `X-Real-IP` header, and requires the local address and the server name (`localhost` or a loopback literal) to be loopback; literals are parsed, never resolved.
-   - Apply the same rules to `ControlNetwork.LOOPBACK` (it can only turn an authorisation into a denial) and expose them, e.g. `ControlNetwork.isLoopback(HttpServletRequest)`.
-   - Acceptance: a loopback request with `Forwarded: for=203.0.113.1` or `Host: example.org` is not authorised by the loopback channel.
+7. **Network check covering all forwarding headers, made public**
+   - `ControlNetwork.LOOPBACK` and `LAN` check the remote address and every hop of `X-Forwarded-For` only. bzadmin's fallback login (`AdminFilter.isLoopback`) is stricter: it refuses any `Forwarded`, `X-Forwarded-Host`, `X-Forwarded-Proto` or `X-Real-IP` header, and requires the local address and the server name (`localhost` or a loopback literal) to be loopback.
+   - Treat `Forwarded` (every `for=` parameter, RFC 7239) and `X-Real-IP` like `X-Forwarded-For`, for both `LOOPBACK` and `LAN`: each address must match the network, and an unparseable or obfuscated value (`unknown`, `_hidden`) fails. Literals are parsed, never resolved. This closes the gap for proxies that set these headers instead of `X-Forwarded-For`, and keeps local dev proxies working, since loopback hops still pass.
+   - Do not adopt bzadmin's other rules. Refusing on header presence breaks local dev proxies. The `Host` check breaks custom dev hostnames (`myapp.local`, `*.localhost`) and does not catch a bare `proxy_pass`, which sends the upstream's `Host`. The local-address check adds nothing for a loopback caller. The channel remains a development convenience (`off` in production); the reverse-proxy caveat on `CONTROL_NETWORK` still stands.
+   - Expose the check publicly, e.g. `ControlNetwork.matches(HttpServletRequest)`, so bzadmin can build on it and keep its stricter login rules on top.
+   - Acceptance: a loopback request with `Forwarded: for=203.0.113.1` or `X-Real-IP: 203.0.113.1` is not authorised by the loopback channel; one with `Forwarded: for=127.0.0.1`, `X-Real-IP: ::1` or `Host: myapp.local` still is.
 8. **Identity of the XSLT processor and the servlet container**
    - Report the `TransformerFactory` class Berlioz actually uses (and, for Saxon, its product title and version) in `GetBerliozConfig`. bzadmin assumes `TransformerFactory.newInstance()` and detects Saxon by reflection.
    - Give generators the container identity (`ServletContext.getServerInfo()`, Servlet API major.minor), e.g. through `Environment` or `GlobalSettings`, recorded by `InitServlet`. bzadmin records it from its filter's `init`.

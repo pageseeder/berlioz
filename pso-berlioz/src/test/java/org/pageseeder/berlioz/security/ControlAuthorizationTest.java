@@ -154,6 +154,25 @@ class ControlAuthorizationTest {
     assertEquals(expected, ControlAuthorization.hasControl(req));
   }
 
+  // hasControl(req) — Forwarded and X-Real-IP are checked like X-Forwarded-For (see ControlNetworkTest)
+
+  @ParameterizedTest(name = "{0}: {1} => {2}")
+  @CsvSource({
+      "Forwarded, for=203.0.113.1, false",
+      "Forwarded, for=127.0.0.1,   true",
+      "X-Real-IP, 203.0.113.1,     false",
+      "X-Real-IP, ::1,             true",
+  })
+  void testHasControl_network_otherForwardingHeaders(String header, String value, boolean expected)
+      throws ReflectiveOperationException {
+    setOption(BerliozOption.CONTROL_NETWORK, "loopback");
+    HttpServletRequest req = ServletTestSupport.request()
+        .remoteAddr("127.0.0.1")
+        .header(header, value)
+        .build();
+    assertEquals(expected, ControlAuthorization.hasControl(req));
+  }
+
   // hasControl(req) — delegated (fixed attribute) channel
   //
   // network left at the default (off), no key configured, to prove the delegated channel is
