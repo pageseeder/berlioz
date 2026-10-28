@@ -18,6 +18,7 @@ package org.pageseeder.berlioz.system;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,20 +29,22 @@ import org.pageseeder.berlioz.content.BerliozGenerator;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Service;
+import org.pageseeder.berlioz.output.OutputWritable;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.OutputWriter.ContextOption;
+import org.pageseeder.berlioz.output.OutputWriter.FieldOption;
 import org.pageseeder.berlioz.util.ISO8601;
-import org.pageseeder.berlioz.xml.XmlWritable;
-import org.pageseeder.berlioz.xml.XmlWriter;
 
 /**
  * Collects basic statistics about generators.
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.5
  * @since 0.9.32
  */
 @SuppressWarnings("java:S6548") // intentional framework-level singleton; package-private and eagerly initialized
-final class StatisticsCollector implements GeneratorListener, XmlWritable {
+final class StatisticsCollector implements GeneratorListener, OutputWritable {
 
   /**
    * Singleton instance.
@@ -96,20 +99,22 @@ final class StatisticsCollector implements GeneratorListener, XmlWritable {
   }
 
   @Override
-  public XmlWriter toXml(XmlWriter xml) {
-    xml.openElement("statistics");
-    xml.attribute("since", ISO8601.format(this.since, ISO8601.DATETIME));
+  public OutputWriter writeTo(OutputWriter out) {
+    out.startObject("statistics");
+    out.field("since", ISO8601.format(this.since, ISO8601.DATETIME));
+    out.startArray("statistics", ContextOption.JSON_ONLY);
     for (BasicStats s : this.stats.values()) {
-      s.toXml(xml);
+      s.writeTo(out);
     }
-    xml.closeElement();
-    return xml;
+    out.endArray();
+    out.endObject();
+    return out;
   }
 
   /**
    * Holds basic statistics about a generator.
    */
-  public static final class BasicStats implements XmlWritable {
+  public static final class BasicStats implements OutputWritable {
 
     /**
      * The class name of the generator.
@@ -236,36 +241,41 @@ final class StatisticsCollector implements GeneratorListener, XmlWritable {
     }
 
     @Override
-    public synchronized XmlWriter toXml(XmlWriter xml) {
-      xml.openElement("statistic");
-      xml.attribute("generator", this.generator);
-      xml.attribute("count", this.count.toString());
+    public synchronized OutputWriter writeTo(OutputWriter out) {
+      out.startObject("statistic");
+      out.field("generator", this.generator);
+      out.field("count", this.count.get());
       // times
-      xml.attribute("min-etag",      this.minEtagTime.toString());
-      xml.attribute("min-process",   this.minProcessTime.toString());
-      xml.attribute("max-etag",      this.maxEtagTime.toString());
-      xml.attribute("max-process",   this.maxProcessTime.toString());
-      xml.attribute("total-etag",    this.totalEtagTime.toString());
-      xml.attribute("total-process", this.totalProcessTime.toString());
+      out.field("min-etag",      this.minEtagTime.get());
+      out.field("min-process",   this.minProcessTime.get());
+      out.field("max-etag",      this.maxEtagTime.get());
+      out.field("max-process",   this.maxProcessTime.get());
+      out.field("total-etag",    this.totalEtagTime.get());
+      out.field("total-process", this.totalProcessTime.get());
       // compute the average
       long avgEtag = this.totalEtagTime.longValue() / this.count.longValue();
       long avgProcess = this.totalProcessTime.longValue() / this.count.longValue();
-      xml.attribute("avg-etag",    Long.toString(avgEtag));
-      xml.attribute("avg-process", Long.toString(avgProcess));
+      out.field("avg-etag",    avgEtag);
+      out.field("avg-process", avgProcess);
 
       long avgLastEtag = average(this.lastEtag);
       long avgLastProcess = average(this.lastProcess);
-      xml.attribute("avg-last-etag",    Long.toString(avgLastEtag));
-      xml.attribute("avg-last-process", Long.toString(avgLastProcess));
+      out.field("avg-last-etag",    avgLastEtag);
+      out.field("avg-last-process", avgLastProcess);
 
-      // status
-      xml.openElement("status");
-      for (Entry<ContentStatus, AtomicLong> status : this.statusCount.entrySet()) {
-        xml.attribute(status.getKey().name().toLowerCase(), Long.toString(status.getValue().get()));
+      // status: XML keeps the enum name in lower case (e.g. 'no_content'), JSON uses camel case
+      out.startObject("status");
+      synchronized (this.statusCount) {
+        for (Entry<ContentStatus, AtomicLong> status : this.statusCount.entrySet()) {
+          String name = status.getKey().name().toLowerCase(Locale.ROOT);
+          long count = status.getValue().get();
+          out.field(name, count, FieldOption.XML_ONLY);
+          out.field(name.replace('_', '-'), count, FieldOption.JSON_ONLY);
+        }
       }
-      xml.closeElement();
-      xml.closeElement();
-      return xml;
+      out.endObject();
+      out.endObject();
+      return out;
     }
 
     /**

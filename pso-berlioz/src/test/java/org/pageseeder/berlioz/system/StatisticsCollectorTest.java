@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.generator.NoContent;
-import org.pageseeder.berlioz.xml.XmlStringBuilder;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,8 +25,8 @@ class StatisticsCollectorTest {
 
   @Test
   void testInitialToXML_emptyStatistics() {
-    XmlStringBuilder xml = new XmlStringBuilder();
-    collector.toXml(xml);
+    XmlOutputAdapter xml = new XmlOutputAdapter();
+    collector.writeTo(xml);
     String out = xml.toString();
     assertTrue(out.contains("<statistics"), "Should write <statistics> element");
     assertTrue(out.contains("since="), "Should include 'since' attribute");
@@ -38,8 +38,8 @@ class StatisticsCollectorTest {
     NoContent gen = new NoContent();
     collector.generate(null, gen, ContentStatus.OK, 1000L, 5000L);
 
-    XmlStringBuilder xml = new XmlStringBuilder();
-    collector.toXml(xml);
+    XmlOutputAdapter xml = new XmlOutputAdapter();
+    collector.writeTo(xml);
     String out = xml.toString();
     assertTrue(out.contains("<statistic"), "Should contain at least one statistic");
     assertTrue(out.contains("generator=\"org.pageseeder.berlioz.generator.NoContent\""));
@@ -53,8 +53,8 @@ class StatisticsCollectorTest {
     collector.generate(null, gen, ContentStatus.OK, 2000L, 6000L);
     collector.generate(null, gen, ContentStatus.NOT_FOUND, 500L, 3000L);
 
-    XmlStringBuilder xml = new XmlStringBuilder();
-    collector.toXml(xml);
+    XmlOutputAdapter xml = new XmlOutputAdapter();
+    collector.writeTo(xml);
     assertTrue(xml.toString().contains("count=\"3\""));
   }
 
@@ -64,8 +64,8 @@ class StatisticsCollectorTest {
     collector.generate(null, gen, ContentStatus.OK, 1_000_000L, 10_000_000L);
     collector.generate(null, gen, ContentStatus.OK, 5_000_000L, 2_000_000L);
 
-    XmlStringBuilder xml = new XmlStringBuilder();
-    collector.toXml(xml);
+    XmlOutputAdapter xml = new XmlOutputAdapter();
+    collector.writeTo(xml);
     String out = xml.toString();
     // Times are stored in microseconds (nanoseconds / 1000)
     assertTrue(out.contains("min-process=\"2000\""), "Min process time should be 2000 µs, got: " + out);
@@ -78,8 +78,8 @@ class StatisticsCollectorTest {
     collector.generate(null, gen, ContentStatus.OK, 1000L, 5000L);
     collector.clear();
 
-    XmlStringBuilder xml = new XmlStringBuilder();
-    collector.toXml(xml);
+    XmlOutputAdapter xml = new XmlOutputAdapter();
+    collector.writeTo(xml);
     assertFalse(xml.toString().contains("<statistic "), "After clear, should have no statistics");
   }
 
@@ -90,8 +90,8 @@ class StatisticsCollectorTest {
     collector.generate(null, gen1, ContentStatus.OK, 1000L, 5000L);
     collector.generate(null, gen2, ContentStatus.OK, 1000L, 5000L);
 
-    XmlStringBuilder xml = new XmlStringBuilder();
-    collector.toXml(xml);
+    XmlOutputAdapter xml = new XmlOutputAdapter();
+    collector.writeTo(xml);
     // Same class → same bucket → count=2
     assertTrue(xml.toString().contains("count=\"2\""));
   }

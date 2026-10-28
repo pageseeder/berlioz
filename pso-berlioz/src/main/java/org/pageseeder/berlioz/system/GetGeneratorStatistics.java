@@ -15,17 +15,17 @@
  */
 package org.pageseeder.berlioz.system;
 
+import org.pageseeder.berlioz.content.Generator;
 import org.pageseeder.berlioz.content.GeneratorListener;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.content.Response;
-import org.pageseeder.berlioz.content.XmlGenerator;
+import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.servlet.BerliozConfig;
-import org.pageseeder.berlioz.xml.XmlWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Returns generator execution statistics as XML.
+ * Returns generator execution statistics as XML or JSON.
  *
  * <p>On first instantiation, this generator registers a {@link StatisticsCollector} as the
  * global {@link org.pageseeder.berlioz.content.GeneratorListener} so that per-generator timing
@@ -45,13 +45,30 @@ import org.slf4j.LoggerFactory;
  *   <statistic generator="[class]" count="[n]"
  *              min-etag="[µs]"  max-etag="[µs]"  total-etag="[µs]"  avg-etag="[µs]"  avg-last-etag="[µs]"
  *              min-process="[µs]" max-process="[µs]" total-process="[µs]" avg-process="[µs]" avg-last-process="[µs]">
- *     <status ok="[n]" not-modified="[n]" .../>
+ *     <status ok="[n]" no_content="[n]" .../>
  *   </statistic>
  *   ...
  * </statistics>
  * }</pre>
+ *
+ * <h3>Returned JSON</h3>
+ * <pre>{@code
+ * {
+ *   "since": "[iso8601-datetime]",
+ *   "statistics": [
+ *     {"generator": "[class]", "count": [n],
+ *      "minEtag": [µs], "minProcess": [µs], "maxEtag": [µs], "maxProcess": [µs],
+ *      "totalEtag": [µs], "totalProcess": [µs], "avgEtag": [µs], "avgProcess": [µs],
+ *      "avgLastEtag": [µs], "avgLastProcess": [µs],
+ *      "status": {"ok": [n], "noContent": [n], ...}}
+ *   ]
+ * }
+ * }</pre>
+ *
  * <p>All time values are in microseconds. {@code avg-last-*} values are the average of the
- * most recent 10 invocations.
+ * most recent 10 invocations. The status counts are keyed by {@link
+ * org.pageseeder.berlioz.content.ContentStatus} name in lower case ({@code no_content}) in XML,
+ * and in camel case ({@code noContent}) in JSON.
  *
  * <h3>Usage</h3>
  * <p>To use this generator in Berlioz (in <code>/WEB-INF/config/services.xml</code>):
@@ -60,10 +77,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.5
  * @since 0.9.32
  */
-public class GetGeneratorStatistics implements XmlGenerator {
+public class GetGeneratorStatistics implements Generator {
 
   /**
    * A logger.
@@ -84,14 +101,14 @@ public class GetGeneratorStatistics implements XmlGenerator {
   }
 
   @Override
-  public Response generate(Request req, XmlWriter xml) {
+  public Response generate(Request req, OutputWriter out) {
     StatisticsCollector collector = StatisticsCollector.getInstance();
 
     if ("true".equals(req.getParameter("reset", "false"))) {
       collector.clear();
     }
 
-    collector.toXml(xml);
+    collector.writeTo(out);
     return Response.ok();
   }
 
