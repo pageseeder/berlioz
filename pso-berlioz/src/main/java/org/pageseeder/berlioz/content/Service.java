@@ -356,16 +356,13 @@ public final class Service {
     out.endObject();
 
     // URI patterns
-    //noinspection ConstantValue
-    if (urls != null) {
-      out.startArray("urls", ContextOption.JSON_ONLY);
-      for (String url : urls) {
-        out.startObject("url");
-        out.field("pattern", url);
-        out.endObject();
-      }
-      out.endArray();
+    out.startArray("urls", ContextOption.JSON_ONLY);
+    for (String url : urls) {
+      out.startObject("url");
+      out.field("pattern", url);
+      out.endObject();
     }
+    out.endArray();
 
     // Generators
     out.startArray("generators", ContextOption.JSON_ONLY);
