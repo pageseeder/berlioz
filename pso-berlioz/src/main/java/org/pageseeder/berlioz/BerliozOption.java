@@ -15,6 +15,8 @@
  */
 package org.pageseeder.berlioz;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.xslt.XsltCacheMode;
 import org.pageseeder.berlioz.xslt.XsltErrorSensitivity;
 
@@ -23,9 +25,13 @@ import org.pageseeder.berlioz.xslt.XsltErrorSensitivity;
  *
  * <p>Use this class to know which global setting can be used with Berlioz.
  *
+ * <p>Each option also carries its metadata: its {@link #type()}, a one-line
+ * {@link #description()}, and for deprecated options the version since when it is deprecated
+ * and the version in which it will be removed.
+ *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.5
  * @since 0.8.4
  */
 public enum BerliozOption {
@@ -74,7 +80,8 @@ public enum BerliozOption {
    *
    * @since 0.7.0
    */
-  HTTP_COMPRESSION("berlioz.http.compression", Boolean.TRUE),
+  HTTP_COMPRESSION("berlioz.http.compression", Boolean.TRUE,
+      "Whether Berlioz compresses responses with gzip when the content and the client allow it"),
 
   /**
    * A boolean global option to indicate whether HTTP POST requests for which there is no specific
@@ -110,7 +117,9 @@ public enum BerliozOption {
    *             fall back to GET. Applications must declare explicit POST-mapped services.
    */
   @Deprecated(since = "0.14.0", forRemoval = true)
-  HTTP_GET_VIA_POST("berlioz.http.get-via-post", Boolean.FALSE),
+  HTTP_GET_VIA_POST("berlioz.http.get-via-post", Boolean.FALSE,
+      "Whether a POST request with no matching POST service is handled by the GET service",
+      "0.14.0", "1.0"),
 
   /**
    * A global option to specify the default cache control to use for cacheable content.
@@ -153,7 +162,8 @@ public enum BerliozOption {
    *
    * @since 0.9.3
    */
-  HTTP_CACHE_CONTROL("berlioz.http.cache-control", ""),
+  HTTP_CACHE_CONTROL("berlioz.http.cache-control", "",
+      "Default Cache-Control header of cacheable responses when the service does not define one"),
 
   /**
    * A global option to allow server timing information to be returned using the <code>Server-Timing</code>
@@ -164,7 +174,8 @@ public enum BerliozOption {
    *
    * @since 0.11.5
    */
-  HTTP_SERVER_TIMING("berlioz.http.server-timing", Boolean.FALSE),
+  HTTP_SERVER_TIMING("berlioz.http.server-timing", Boolean.FALSE,
+      "Whether timing information is returned in the Server-Timing header"),
 
   /**
    * A global option to show the Berlioz service in the <code>X-Berlioz-Service</code>
@@ -175,7 +186,8 @@ public enum BerliozOption {
    *
    * @since 0.12.6
    */
-  HTTP_SERVICE_HEADER("berlioz.http.service-header", Boolean.FALSE),
+  HTTP_SERVICE_HEADER("berlioz.http.service-header", Boolean.FALSE,
+      "Whether the matched Berlioz service is returned in the X-Berlioz-Service header"),
 
   /**
    * A boolean global option to indicate whether Berlioz should use its own error handler when
@@ -211,7 +223,8 @@ public enum BerliozOption {
    * @since 0.8.3
    */
   @Beta
-  ERROR_HANDLER("berlioz.errors.handle", Boolean.TRUE),
+  ERROR_HANDLER("berlioz.errors.handle", Boolean.TRUE,
+      "Whether Berlioz renders errors itself, rather than calling sendError for the web application's error pages"),
 
   /**
    * A boolean global option to indicate whether errors thrown by generators should be caught
@@ -241,7 +254,8 @@ public enum BerliozOption {
    * @since 0.8.3
    */
   @Beta
-  ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", Boolean.TRUE),
+  ERROR_GENERATOR_CATCH("berlioz.errors.generator-catch", Boolean.TRUE,
+      "Whether errors thrown by generators are caught, rather than thrown to the service"),
 
   /**
    * A string global option to specify a custom XSLT stylesheet for rendering framework-generated
@@ -292,7 +306,8 @@ public enum BerliozOption {
    * @since 0.13.5
    */
   @Beta
-  ERROR_STYLESHEET("berlioz.errors.stylesheet", ""),
+  ERROR_STYLESHEET("berlioz.errors.stylesheet", "",
+      "Stylesheet under WEB-INF for framework error responses, tried before the built-in fail-safe template"),
 
   /**
    * A boolean global option to opt in to RFC 9457 Problem Details format for framework-generated
@@ -336,7 +351,9 @@ public enum BerliozOption {
    *             during the 0.14.x migration window.
    */
   @Deprecated(since = "0.14.0", forRemoval = true)
-  ERROR_PROBLEM_FORMAT("berlioz.errors.problem", Boolean.TRUE),
+  ERROR_PROBLEM_FORMAT("berlioz.errors.problem", Boolean.TRUE,
+      "Whether framework error responses use RFC 9457 Problem Details instead of the legacy error format",
+      "0.14.0", "1.0"),
 
   /**
    * A string global option to control how much diagnostic detail is included in legacy
@@ -377,7 +394,8 @@ public enum BerliozOption {
    *
    * @since 0.13.5
    */
-  ERROR_DETAIL("berlioz.errors.detail", "minimal"),
+  ERROR_DETAIL("berlioz.errors.detail", "minimal",
+      "Diagnostic detail in framework error responses: minimal, standard or full"),
 
   /**
    * A boolean global property to indicate whether Berlioz should record the time taken by each content generator
@@ -385,7 +403,8 @@ public enum BerliozOption {
    *
    * @since 0.9.14
    */
-  PROFILE("berlioz.profile", Boolean.FALSE),
+  PROFILE("berlioz.profile", Boolean.FALSE,
+      "Whether the time taken by each generator and by the transformer is recorded"),
 
   /**
    * A string global option to control the caching behavior of XSLT templates.
@@ -422,7 +441,8 @@ public enum BerliozOption {
    * @see XsltCacheMode
    * @since 0.8.3
    */
-  XSLT_CACHE("berlioz.xslt.cache", "manual"),
+  XSLT_CACHE("berlioz.xslt.cache", "manual",
+      "XSLT template caching: no, auto (reload changed files) or manual (until an XSLT reload)"),
 
   /**
    * A string global option controlling which diagnostics reported by the JAXP XSLT
@@ -451,7 +471,8 @@ public enum BerliozOption {
    * @see XsltErrorSensitivity
    * @since 0.14.0
    */
-  XSLT_SENSITIVITY("berlioz.xslt.sensitivity", "error"),
+  XSLT_SENSITIVITY("berlioz.xslt.sensitivity", "error",
+      "XSLT diagnostics that make compilation or execution fail: fatal, error or warning"),
 
   /**
    * Indicates the version of the XML header format berlioz should use.
@@ -484,7 +505,9 @@ public enum BerliozOption {
    *             supported during the 0.14.x migration window.
    */
   @Deprecated(since = "0.14.0", forRemoval = true)
-  XML_HEADER_VERSION("berlioz.xml.header.version", "1.0"),
+  XML_HEADER_VERSION("berlioz.xml.header.version", "1.0",
+      "Version of the XML header format",
+      "0.14.0", "1.0"),
 
   /**
    * A boolean global option to indicate whether to tolerate warnings or throw an error when they
@@ -513,7 +536,8 @@ public enum BerliozOption {
    * @since 0.8.3
    */
   @Beta
-  XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE),
+  XML_PARSE_STRICT("berlioz.xml.parse-strict", Boolean.FALSE,
+      "Whether a warning when parsing Berlioz XML files is reported as an error"),
 
   /**
    * A string global option specifying the shared secret used by the key channel to authorize
@@ -552,7 +576,8 @@ public enum BerliozOption {
    * @since 0.8.3
    */
   @Beta
-  CONTROL_KEY("berlioz.control.key", ""),
+  CONTROL_KEY("berlioz.control.key", "",
+      "Shared secret authorizing control parameters with an 'Authorization: Berlioz <key>' header"),
 
   /**
    * A string global option describing what network position a direct HTTP caller must originate
@@ -630,7 +655,8 @@ public enum BerliozOption {
    * @since 0.14.0
    */
   @Beta
-  CONTROL_NETWORK("berlioz.control.network", "off"),
+  CONTROL_NETWORK("berlioz.control.network", "off",
+      "Network position from which control parameters are authorized without a key: off, loopback or lan"),
 
   /**
    * A string global option to specify the name of the HTTP request attribute for the nonce.
@@ -656,7 +682,8 @@ public enum BerliozOption {
    *
    * @since 0.12.5
    */
-  NONCE_ATTRIBUTE("berlioz.nonce.attribute", "berlioz-nonce"),
+  NONCE_ATTRIBUTE("berlioz.nonce.attribute", "berlioz-nonce",
+      "Request attribute holding the nonce; Berlioz generates one if it is not set"),
 
   /**
    * A boolean global option to specify whether Berlioz should include a nonce in
@@ -678,7 +705,8 @@ public enum BerliozOption {
    *
    * @since 0.12.5
    */
-  NONCE_ENABLE("berlioz.nonce.enable", Boolean.FALSE),
+  NONCE_ENABLE("berlioz.nonce.enable", Boolean.FALSE,
+      "Whether a nonce is included in the XML header"),
 
   /**
    * A string global option specifying a comma-separated list of external host names that are
@@ -705,7 +733,8 @@ public enum BerliozOption {
    *
    * @since 0.13.2
    */
-  REDIRECT_ALLOWED_HOSTS("berlioz.redirect.allowed-hosts", ""),
+  REDIRECT_ALLOWED_HOSTS("berlioz.redirect.allowed-hosts", "",
+      "Comma-separated external hosts allowed as redirect targets"),
 
   /**
    * A boolean global option controlling whether {@code X-Forwarded-Host} and
@@ -758,7 +787,23 @@ public enum BerliozOption {
    * @since 0.14.3
    */
   @Beta
-  REDIRECT_TRUST_FORWARDED_HEADERS("berlioz.redirect.trust-forwarded-headers", Boolean.FALSE);
+  REDIRECT_TRUST_FORWARDED_HEADERS("berlioz.redirect.trust-forwarded-headers", Boolean.FALSE,
+      "Whether X-Forwarded-Host and X-Forwarded-Proto are trusted for the same-host redirect check");
+
+  /**
+   * The type of value an option takes.
+   *
+   * @since 0.14.5
+   */
+  public enum Type {
+
+    /** The value is {@code true} or {@code false}. */
+    BOOLEAN,
+
+    /** The value is a string, possibly restricted to a set of values. */
+    STRING
+
+  }
 
   /**
    * The name of the property in the global settings.
@@ -771,14 +816,47 @@ public enum BerliozOption {
   private final Object defaultValue;
 
   /**
+   * A one-line description of the option.
+   */
+  private final String description;
+
+  /**
+   * The version since when the option is deprecated, if any.
+   */
+  private final @Nullable String deprecatedSince;
+
+  /**
+   * The version in which the option will be removed, if any.
+   */
+  private final @Nullable String removal;
+
+  /**
    * Creates a new berlioz option.
    *
-   * @param property  The name of the property in the global settings.
-   * @param defaultTo The default value for this option.
+   * @param property    The name of the property in the global settings.
+   * @param defaultTo   The default value for this option.
+   * @param description A one-line description of the option.
    */
-  BerliozOption(String property, Object defaultTo) {
+  BerliozOption(String property, Object defaultTo, String description) {
+    this(property, defaultTo, description, null, null);
+  }
+
+  /**
+   * Creates a new berlioz option.
+   *
+   * @param property        The name of the property in the global settings.
+   * @param defaultTo       The default value for this option.
+   * @param description     A one-line description of the option.
+   * @param deprecatedSince The version since when the option is deprecated, if any.
+   * @param removal         The version in which the option will be removed, if any.
+   */
+  BerliozOption(String property, Object defaultTo, String description,
+      @Nullable String deprecatedSince, @Nullable String removal) {
     this.property = property;
     this.defaultValue = defaultTo;
+    this.description = description;
+    this.deprecatedSince = deprecatedSince;
+    this.removal = removal;
   }
 
   /**
@@ -786,7 +864,7 @@ public enum BerliozOption {
    *
    * @return The property in the global settings.
    */
-  public String property() {
+  public @NonNull String property() {
     return this.property;
   }
 
@@ -795,7 +873,7 @@ public enum BerliozOption {
    *
    * @return The property in the global settings.
    */
-  public Object defaultTo() {
+  public @NonNull Object defaultTo() {
     return this.defaultValue;
   }
 
@@ -809,6 +887,61 @@ public enum BerliozOption {
    */
   public boolean isBoolean() {
     return this.defaultValue.getClass() == Boolean.class;
+  }
+
+  /**
+   * Returns the type of value this option takes.
+   *
+   * @return {@link Type#BOOLEAN} for boolean options; {@link Type#STRING} otherwise.
+   *
+   * @since 0.14.5
+   */
+  public @NonNull Type type() {
+    return isBoolean() ? Type.BOOLEAN : Type.STRING;
+  }
+
+  /**
+   * Returns a one-line plain-text description of this option, suitable for display.
+   *
+   * @return The description of this option.
+   *
+   * @since 0.14.5
+   */
+  public @NonNull String description() {
+    return this.description;
+  }
+
+  /**
+   * Indicates whether this option is deprecated.
+   *
+   * @return <code>true</code> if this option is deprecated; <code>false</code> otherwise.
+   *
+   * @since 0.14.5
+   */
+  public boolean isDeprecated() {
+    return this.deprecatedSince != null;
+  }
+
+  /**
+   * Returns the Berlioz version since when this option is deprecated.
+   *
+   * @return The version (for example {@code "0.14.0"}), or {@code null} if it is not deprecated.
+   *
+   * @since 0.14.5
+   */
+  public @Nullable String deprecatedSince() {
+    return this.deprecatedSince;
+  }
+
+  /**
+   * Returns the Berlioz version in which this option will be removed.
+   *
+   * @return The version (for example {@code "1.0"}), or {@code null} if no removal is planned.
+   *
+   * @since 0.14.5
+   */
+  public @Nullable String removal() {
+    return this.removal;
   }
 
   /**
