@@ -30,6 +30,167 @@ If you want a sense of what Berlioz is all about, think modest features, highly 
 
 Let us know if there is anything that we can do to help you use Berlioz. We want to create something that developers find useful, so feedback is welcome.
 
+## Getting started
+
+This section builds a one-page Berlioz application. The complete, runnable version is in
+[`samples/minimal-gretty`](samples/minimal-gretty): run `./gradlew :samples:minimal-gretty:appRun`
+and open http://localhost:8999/.
+
+### Requirements
+
+- Java 11 or later.
+- A `javax.servlet` container (Servlet 4.0 API), such as Tomcat 9 or Jetty 10. Jakarta Servlet
+  containers are not supported yet (see the [roadmap](ROADMAP.md)).
+- An XSLT 2.0 processor, such as Saxon-HE.
+- An SLF4J binding for logging.
+
+JSON output works without extra dependencies; Berlioz uses Jackson, Gson or JSON-P instead when
+one is on the classpath.
+
+### 1. Add the dependencies
+
+`pso-berlioz-kickstart` brings in the core library and a web fragment that maps `*.html`,
+`*.xml`, `*.json` and `*.src` to Berlioz, so no `web.xml` configuration is needed.
+
+```kotlin
+// build.gradle.kts
+dependencies {
+  implementation("org.pageseeder.berlioz:pso-berlioz-kickstart:0.14.4")
+  runtimeOnly("net.sf.saxon:Saxon-HE:12.10")
+  runtimeOnly("org.slf4j:slf4j-simple:2.0.20")
+}
+```
+
+```xml
+<!-- pom.xml -->
+<dependency>
+  <groupId>org.pageseeder.berlioz</groupId>
+  <artifactId>pso-berlioz-kickstart</artifactId>
+  <version>0.14.4</version>
+</dependency>
+```
+
+### 2. Map a URL to a generator
+
+Services are declared in `WEB-INF/config/services.xml`. Each service matches a URI template and
+lists the generators that produce its content:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE service-config PUBLIC "-//Berlioz//DTD::Services 1.0//EN"
+    "https://pageseeder.org/schema/berlioz/services-1.0.dtd">
+<service-config version="1.0">
+  <services group="default">
+    <namespace package="com.example"/>
+    <service id="hello" method="get">
+      <url pattern="/hello"/>
+      <generator class="HelloGenerator"/>
+    </service>
+  </services>
+</service-config>
+```
+
+The pattern can contain variables, such as `/users/{user}/messages/{id}`, which generators read
+like request parameters.
+
+### 3. Write the generator
+
+A generator reads the request and writes data. Writing through `OutputWriter` lets the same
+generator produce XML or JSON:
+
+```java
+package com.example;
+
+import org.pageseeder.berlioz.content.Generator;
+import org.pageseeder.berlioz.content.Request;
+import org.pageseeder.berlioz.content.Response;
+import org.pageseeder.berlioz.output.OutputWriter;
+
+public final class HelloGenerator implements Generator {
+
+  @Override
+  public Response generate(Request req, OutputWriter out) {
+    String name = req.getParameter("name", "world");
+    out.startObject("hello")
+      .field("name", name)
+      .field("message", "Hello " + name, OutputWriter.FieldOption.XML_ELEMENT)
+      .endObject();
+    return Response.ok();
+  }
+}
+```
+
+To report an error, throw an `HttpException` such as `InvalidParameterException`, or return
+`Response.problem(…)`: Berlioz turns it into an RFC 9457 Problem Details response.
+
+### 4. Write the stylesheet
+
+Berlioz wraps the output of the service's generators in a `<root>` document and transforms it
+with the stylesheet of the service's group: `WEB-INF/xslt/html/default.xsl` for `*.html` requests
+to the `default` group.
+
+```xml
+<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output method="html" encoding="UTF-8"/>
+
+  <xsl:template match="/root[@service = 'hello']">
+    <html>
+      <body>
+        <h1><xsl:value-of select="content/hello/message"/></h1>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>
+```
+
+### 5. Configure local development
+
+Global settings live in `WEB-INF/config/config.xml`. Starting the container with
+`-Dberlioz.mode=local` also loads `config-local.xml`, whose values override `config.xml`. It is
+the usual place for development settings:
+
+```xml
+<!-- WEB-INF/config/config-local.xml -->
+<global>
+  <berlioz>
+    <!-- Show full error details instead of the production default ('minimal') -->
+    <errors detail="full"/>
+    <!-- Recompile stylesheets when they change -->
+    <xslt cache="auto"/>
+    <!-- Allow control parameters and *.src from this machine only -->
+    <control network="loopback"/>
+  </berlioz>
+</global>
+```
+
+The defaults are meant for production; see the
+[`BerliozOption` Javadoc](https://javadoc.io/doc/org.pageseeder.berlioz/pso-berlioz) for every
+option.
+
+### 6. Run it
+
+The application now has this layout:
+
+```
+src/main/java/com/example/HelloGenerator.java
+src/main/webapp/WEB-INF/config/services.xml
+src/main/webapp/WEB-INF/config/config.xml
+src/main/webapp/WEB-INF/config/config-local.xml
+src/main/webapp/WEB-INF/xslt/html/default.xsl
+```
+
+Deploy it and open `/hello.html?name=Berlioz`. Open `/hello.src` to see the XML that Berlioz
+passes to the stylesheet, before any transformation.
+
+### Next steps
+
+- [`samples/minimal-gretty`](samples/minimal-gretty) also shows JSON API services, which use
+  `<handler>` to return a generator's output directly without XSLT, and error handling.
+- The sections below cover overlays, XSLT resolution, reloading and diagnostics.
+- The [wiki](https://github.com/pageseeder/berlioz/wiki) documents the services and output
+  schemas, configuration, caching and logging.
+- The [Javadoc](https://javadoc.io/doc/org.pageseeder.berlioz/pso-berlioz) is the API reference.
+
 ## API Documentation
 
 The Java API documentation can be found [here](https://javadoc.io/doc/org.pageseeder.berlioz/pso-berlioz)
