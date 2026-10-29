@@ -201,7 +201,7 @@ class ConfigurationDiagnosticsTest {
     assertFalse(json.contains("SECRET"));
   }
 
-  @Test void registeredButUninitialisedServletsAreListed() throws Exception {
+  @Test void registeredButUninitialisedServletsAreListed() {
     BerliozConfig.newConfig(config("a", Map.of(), List.of("*.a"), true));
     String json = json(new GetBerliozConfig(), request());
     assertTrue(json.contains("{\"name\":\"html\",\"mappings\":[\"*.a\"],\"initialised\":false}]"), json);

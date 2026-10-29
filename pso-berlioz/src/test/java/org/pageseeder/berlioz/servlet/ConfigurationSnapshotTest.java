@@ -82,7 +82,7 @@ class ConfigurationSnapshotTest {
         List.of(DiagnosticConfiguration.fields("name", "html", "stylesheet", style))).etag());
   }
 
-  @Test void selectionsReportOnlySafePaths(@TempDir Path root) throws Exception {
+  @Test void selectionsReportOnlySafePaths(@TempDir Path root) {
     Path webinf = root.resolve("WEB-INF");
     assertEquals(DiagnosticConfiguration.fields("name", "g", "source", "filesystem", "path", "xslt/html/g.xsl"),
         DiagnosticConfiguration.selection("g", StylesheetLocation.forFile(webinf.resolve("xslt/html/g.xsl")), webinf));
