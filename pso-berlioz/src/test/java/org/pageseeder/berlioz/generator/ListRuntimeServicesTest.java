@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.jar.JarEntry;
+import java.util.regex.Pattern;
 import java.util.jar.JarOutputStream;
 
 class ListRuntimeServicesTest {
@@ -192,12 +193,17 @@ class ListRuntimeServicesTest {
     ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
 
     String xml = process(req);
-    Assertions.assertTrue(xml.matches("(?s).*<service id=\"module-home\"[^>]* source=\"services!x.xml\">.*"
-        + "<overridden service=\"jar-home\" source=\"overlay-1.0.jar!META-INF/berlioz/services.xml\" pattern=\"/home\"/>"
-        + "<overridden service=\"app-home\" source=\"services.xml\" pattern=\"/home\"/></service>.*"), xml);
-    Assertions.assertTrue(xml.matches("(?s).*<service id=\"app-home\"[^>]* source=\"services.xml\">((?!</service>).)*<url pattern=\"/app\"/>((?!</service>).)*</service>.*"), xml);
-    Assertions.assertFalse(xml.matches("(?s).*<service id=\"app-home\"((?!</service>).)*<overridden.*"), xml);
-    Assertions.assertTrue(xml.matches("(?s).*<service id=\"jar-only\"[^>]* source=\"overlay-1.0.jar!META-INF/berlioz/services.xml\">.*"), xml);
+    String moduleHome = serviceElement(xml, "module-home");
+    Assertions.assertTrue(startTag(moduleHome).endsWith(" source=\"services!x.xml\">"), xml);
+    Assertions.assertTrue(moduleHome.endsWith(
+        "<overridden service=\"jar-home\" source=\"overlay-1.0.jar!META-INF/berlioz/services.xml\" pattern=\"/home\"/>"
+        + "<overridden service=\"app-home\" source=\"services.xml\" pattern=\"/home\"/></service>"), xml);
+    String appHome = serviceElement(xml, "app-home");
+    Assertions.assertTrue(startTag(appHome).endsWith(" source=\"services.xml\">"), xml);
+    Assertions.assertTrue(appHome.contains("<url pattern=\"/app\"/>"), xml);
+    Assertions.assertFalse(appHome.contains("<overridden"), xml);
+    Assertions.assertTrue(startTag(serviceElement(xml, "jar-only"))
+        .endsWith(" source=\"overlay-1.0.jar!META-INF/berlioz/services.xml\">"), xml);
     Assertions.assertFalse(xml.contains("<service id=\"jar-home\""), xml);
     Assertions.assertFalse(xml.contains(tmp.toString()), xml);
 
@@ -213,7 +219,8 @@ class ListRuntimeServicesTest {
     ServiceLoader.getInstance().load(new File(WEB_INF, "config/services.xml"));
     ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
     String xml = process(req);
-    Assertions.assertTrue(xml.matches("(?s).*<service id=\"home\"[^>]* source=\"[^\"]*services.xml\">.*"), xml);
+    String home = startTag(serviceElement(xml, "home"));
+    Assertions.assertTrue(home.contains(" source=\"") && home.endsWith("services.xml\">"), xml);
     Assertions.assertFalse(xml.contains("<overridden"), xml);
   }
 
@@ -269,7 +276,8 @@ class ListRuntimeServicesTest {
       Assertions.assertFalse(xml.contains("secret-element"), xml);
       Assertions.assertFalse(json.contains("\"line\":"), json);
     } else {
-      Assertions.assertTrue(xml.matches("(?s).*<load-failure source=\"services!x.xml\" line=\"\\d+\">.+</load-failure>.*"), xml);
+      Assertions.assertTrue(Pattern.compile("<load-failure source=\"services!x\\.xml\" line=\"\\d+\">[^<]+</load-failure>")
+          .matcher(xml).find(), xml);
       Assertions.assertFalse(xml.contains("Unable to parse services configuration file."), xml);
     }
 
@@ -287,6 +295,21 @@ class ListRuntimeServicesTest {
   private HttpEnvironment environment() throws java.io.IOException {
     return new HttpEnvironment(Files.createDirectory(tmp.resolve("public")).toFile(),
         Files.createDirectory(tmp.resolve("private")).toFile(), "max-age=0");
+  }
+
+  /**
+   * Returns the service element with the specified ID, from its start tag to its end tag.
+   */
+  private static String serviceElement(String xml, String id) {
+    int start = xml.indexOf("<service id=\"" + id + "\"");
+    Assertions.assertTrue(start >= 0, xml);
+    int end = xml.indexOf("</service>", start);
+    Assertions.assertTrue(end >= 0, xml);
+    return xml.substring(start, end + "</service>".length());
+  }
+
+  private static String startTag(String element) {
+    return element.substring(0, element.indexOf('>') + 1);
   }
 
   private static String process(ContentRequest req) {
