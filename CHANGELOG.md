@@ -6,21 +6,14 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 
 ## [Unreleased]
 
-### Added
-
-- Jar manifests declare `Automatic-Module-Name` (`org.pageseeder.berlioz`, `org.pageseeder.berlioz.kickstart`, `org.pageseeder.berlioz.mock`), `Bundle-License: Apache-2.0`, `Implementation-Vendor-Id`, `Implementation-URL` and `Build-Jdk-Spec`.
-- The licence is included as `META-INF/LICENCE.md` in the main, sources and Javadoc jars.
-
-### Fixed
-
-- The published POMs of `pso-berlioz-kickstart` and `pso-berlioz-mock` used the name and description of `pso-berlioz`.
-
 ## [0.14.5] — 2026-10-29
 
 Small security improvements, a scoped `berlioz-reload`, and diagnostics requested by Berlioz Admin.
 
 ### Added
 
+- Main JAR manifests declare stable `Automatic-Module-Name` values (`org.pageseeder.berlioz`, `org.pageseeder.berlioz.kickstart`, `org.pageseeder.berlioz.mock`), `Bundle-License: Apache-2.0`, `Implementation-Vendor-Id`, `Implementation-URL` and `Build-Jdk-Spec: 11`.
+- The licence is included as `META-INF/LICENCE.md` in the main, sources and Javadoc JARs.
 - `berlioz-reload` accepts a comma-separated list of scopes (`config`, `services`, `xslt`, `etags`, `redirects`) as well as `true`. Scopes are applied in a fixed order, an unknown scope rejects the whole request, and the applied scopes are reported in the `X-Berlioz-Reload` response header. `ReloadScope` and `ControlParameter` expose the scopes and control parameter names.
 - `requires-control` servlet init parameter, restricting a Berlioz servlet to requests authorized for Berlioz control.
 - `ListBerliozOptions` generator: the catalog of Berlioz options with type, default, description and deprecation (XML and JSON). Backed by new `BerliozOption` accessors `type()`, `description()`, `isDeprecated()`, `deprecatedSince()` and `removal()`.
@@ -33,6 +26,7 @@ Small security improvements, a scoped `berlioz-reload`, and diagnostics requeste
 
 ### Changed
 
+- Updated the optional Gson integration dependency to 2.15.0 and Jackson to 2.22.4.
 - `GetSystemProperties` is a `Generator` with JSON output; properties are sorted by name.
 - `ListThreads` is bounded to 2000 threads and 256 stack frames, stating the limits in the output when reached.
 - A configuration reload that fails to parse keeps the last valid configuration instead of reverting every option to its default.
@@ -44,6 +38,7 @@ Small security improvements, a scoped `berlioz-reload`, and diagnostics requeste
 
 ### Fixed
 
+- The published POMs of `pso-berlioz-kickstart` and `pso-berlioz-mock` now use their own names and descriptions instead of those of `pso-berlioz`.
 - Group stylesheet selection no longer repeats filesystem path validation on each request.
 - `X-Berlioz-Reload` reports only scopes applied by the filters and servlet reached by the request, including when a redirect ends processing early.
 - `ListRuntimeServices` ETags now change when a configuration-only reload changes whether diagnostic details are included.
