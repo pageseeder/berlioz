@@ -4,7 +4,7 @@ All notable changes to Berlioz are documented in this file. The format is based 
 
 Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, which are listed with upgrade instructions in the [upgrade guide](docs/upgrading.md). Planned work is in the [roadmap](ROADMAP.md).
 
-## [Unreleased] — 0.14.5
+## [0.14.5] — 2026-10-29
 
 Small security improvements, a scoped `berlioz-reload`, and diagnostics requested by Berlioz Admin.
 
@@ -235,7 +235,8 @@ Output-aware generators and the response model.
 
 For 0.13.0 and earlier, see the [release tags](https://github.com/pageseeder/berlioz/tags).
 
-[Unreleased]: https://github.com/pageseeder/berlioz/compare/v0.14.4...HEAD
+[Unreleased]: https://github.com/pageseeder/berlioz/compare/v0.14.5...HEAD
+[0.14.5]: https://github.com/pageseeder/berlioz/compare/v0.14.4...v0.14.5
 [0.14.4]: https://github.com/pageseeder/berlioz/compare/v0.14.3...v0.14.4
 [0.14.3]: https://github.com/pageseeder/berlioz/compare/v0.14.2...v0.14.3
 [0.14.2]: https://github.com/pageseeder/berlioz/compare/v0.14.1...v0.14.2

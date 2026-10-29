@@ -55,7 +55,7 @@ one is on the classpath.
 ```kotlin
 // build.gradle.kts
 dependencies {
-  implementation("org.pageseeder.berlioz:pso-berlioz-kickstart:0.14.4")
+  implementation("org.pageseeder.berlioz:pso-berlioz-kickstart:0.14.5")
   runtimeOnly("net.sf.saxon:Saxon-HE:12.10")
   runtimeOnly("org.slf4j:slf4j-simple:2.0.20")
 }
@@ -66,7 +66,7 @@ dependencies {
 <dependency>
   <groupId>org.pageseeder.berlioz</groupId>
   <artifactId>pso-berlioz-kickstart</artifactId>
-  <version>0.14.4</version>
+  <version>0.14.5</version>
 </dependency>
 ```
 

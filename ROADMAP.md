@@ -32,21 +32,10 @@ The remaining 0.14.x work is configuration validation. After that, we will asses
 | 0.14.2 | Session creation hotfix | Released 2026-09-04 |
 | 0.14.3 | Classpath overlay discovery | Released 2026-10-16 |
 | 0.14.4 | Stub-free group stylesheet overlays | Released 2026-10-20 |
-| **0.14.5** | **Security improvements, scoped reload, admin diagnostics** | **In progress — feature complete** |
-| 0.14.6 | Configuration requirements and validation | Planned |
+| 0.14.5 | Security improvements, scoped reload, admin diagnostics | Released 2026-10-29 |
+| **0.14.6** | **Configuration requirements and validation** | **Next** |
 | 1.0 | Core runtime completion; removal of 0.14 deprecations | Planned |
 | 1.1+ | Optional integrations, additional formats, Jakarta | Exploratory |
-
-### 0.14.5: Security Improvements, Scoped Reload And Admin Diagnostics
-
-Small and additive: close the remaining low-risk security gaps, replace the separate reload parameters with a scoped `berlioz-reload`, and deliver what Berlioz Admin needs to drop its workarounds.
-
-- ✓ Minimal default XML exposure: the `.xml` fallback no longer publishes the request envelope, and `.src` requires control authorization ([theme 15](docs/design/15-minimal-xml-exposure.md)).
-- ✓ Redacted `GetSystemProperties`, and a control-network check covering `Forwarded` and `X-Real-IP` ([theme 18](docs/design/18-admin-overlay-upstreaming.md)).
-- ✓ Scoped `berlioz-reload` (`config`, `services`, `xslt`, `etags`, `redirects`); the old reload parameters become deprecated aliases ([theme 17](docs/design/17-scoped-reload.md)).
-- ✓ Admin diagnostics: configuration sources, load failures and overrides in `ListRuntimeServices`; `ListBerliozOptions`; `GetCpuSample`; richer thread diagnostics; XSLT processor, container and stylesheet selection in `GetBerliozConfig` ([themes 16](docs/design/16-admin-diagnostics.md) and [18](docs/design/18-admin-overlay-upstreaming.md)).
-
-Remaining: release verification and documentation.
 
 ### 0.14.6: Configuration Requirements And Validation
 
