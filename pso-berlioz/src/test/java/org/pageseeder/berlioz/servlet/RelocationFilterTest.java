@@ -87,7 +87,7 @@ class RelocationFilterTest {
     ServletTestSupport.ResponseRecorder reloaded = ServletTestSupport.response();
     filter.doHTTPFilter(oldRequest("services,redirects"), reloaded.build(), (r, s) -> {});
     Assertions.assertEquals("/newer", reloaded.header("Content-Location"));
-    Assertions.assertEquals("services, redirects", reloaded.header(ReloadScope.HEADER));
+    Assertions.assertEquals("redirects", reloaded.header(ReloadScope.HEADER));
   }
 
   private static HttpServletRequest oldRequest(String reload) {

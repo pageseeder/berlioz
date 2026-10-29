@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -61,6 +62,8 @@ public enum ReloadScope {
    * The response header listing the scopes applied for the request.
    */
   public static final String HEADER = "X-Berlioz-Reload";
+
+  private static final String APPLIED_ATTRIBUTE = ReloadScope.class.getName() + ".applied";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ReloadScope.class);
 
@@ -113,6 +116,25 @@ public enum ReloadScope {
       if (scopes.contains(scope)) joiner.add(scope.token);
     }
     return joiner.toString();
+  }
+
+  /**
+   * Records scopes applied by this component and reports all scopes applied in this request.
+   * Request state survives response resets and internal forwards.
+   */
+  static void reportApplied(HttpServletRequest req, HttpServletResponse res, Set<ReloadScope> scopes) {
+    Set<ReloadScope> applied = EnumSet.noneOf(ReloadScope.class);
+    Object previous = req.getAttribute(APPLIED_ATTRIBUTE);
+    if (previous instanceof Set) {
+      for (ReloadScope scope : values()) {
+        if (((Set<?>) previous).contains(scope)) applied.add(scope);
+      }
+    }
+    applied.addAll(scopes);
+    if (!applied.isEmpty()) {
+      req.setAttribute(APPLIED_ATTRIBUTE, Set.copyOf(applied));
+      res.setHeader(HEADER, format(applied));
+    }
   }
 
   /**

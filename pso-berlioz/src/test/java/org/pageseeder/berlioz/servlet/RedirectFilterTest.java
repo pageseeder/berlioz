@@ -60,7 +60,17 @@ class RedirectFilterTest {
     ServletTestSupport.ResponseRecorder reloaded = ServletTestSupport.response();
     filter.doHTTPFilter(oldRequest("services,redirects"), reloaded.build(), (r, s) -> {});
     Assertions.assertTrue(reloaded.header("Location").endsWith("/newer"));
-    Assertions.assertEquals("services, redirects", reloaded.header(ReloadScope.HEADER));
+    Assertions.assertEquals("redirects", reloaded.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void testFullReloadOnRedirectReportsOnlyRedirects() throws Exception {
+    RedirectFilter filter = initFilter("<redirect-mapping><redirect from=\"/old\" to=\"/new\"/></redirect-mapping>");
+    ServletTestSupport.ResponseRecorder response = ServletTestSupport.response();
+    boolean[] chained = {false};
+    filter.doHTTPFilter(oldRequest("true"), response.build(), ServletTestSupport.recordingChain(chained));
+    Assertions.assertFalse(chained[0]);
+    Assertions.assertEquals("redirects", response.header(ReloadScope.HEADER));
   }
 
   private static HttpServletRequest oldRequest(String reload) {

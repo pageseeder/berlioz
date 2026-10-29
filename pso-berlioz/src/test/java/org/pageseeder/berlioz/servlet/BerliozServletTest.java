@@ -22,6 +22,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -300,12 +301,33 @@ class BerliozServletTest {
   }
 
   @Test
-  void reload_trueReportsEveryScope() throws Exception {
+  void reload_trueWithoutFiltersReportsOnlyServletScopes() throws Exception {
     writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
     initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
 
     ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
     this.servlet.doGet(controlRequest("/hello.xml", true, Map.of("berlioz-reload", "true")), recorder.build());
+
+    assertEquals(200, recorder.status);
+    assertEquals("config, services, xslt, etags", recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void reload_trueAccumulatesFilterAndServletScopes() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    Files.writeString(this.webInf.resolve("redirect.xml"), "<redirect-mapping/>");
+    Files.writeString(this.webInf.resolve("relocation.xml"), "<relocation-mapping/>");
+    RedirectFilter redirects = new RedirectFilter();
+    redirects.init(ServletTestSupport.filterConfig(this.webRoot.toString(), Map.of("config", "redirect.xml")));
+    RelocationFilter relocations = new RelocationFilter();
+    relocations.init(ServletTestSupport.filterConfig(this.webRoot.toString(), Map.of("config", "relocation.xml")));
+    HttpServletRequest req = controlRequest("/hello.xml", true, Map.of("berlioz-reload", "true"));
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    HttpServletResponse res = recorder.build();
+
+    redirects.doHTTPFilter(req, res, (r, s) ->
+        relocations.doHTTPFilter(req, res, (forwardedRequest, forwardedResponse) -> this.servlet.doGet(req, res)));
 
     assertEquals(200, recorder.status);
     assertEquals("config, services, xslt, etags, redirects", recorder.header(ReloadScope.HEADER));

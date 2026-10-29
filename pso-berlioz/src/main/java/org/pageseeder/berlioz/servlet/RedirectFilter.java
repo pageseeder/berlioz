@@ -163,18 +163,18 @@ public final class RedirectFilter implements Filter, Serializable {
       throws ServletException, IOException {
 
     // Reset mapping on reload
-    String reloaded = null;
+    boolean reloaded = false;
     if (req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()) != null && ControlAuthorization.hasControl(req)) {
       Set<ReloadScope> scopes = ReloadScope.fromRequest(req);
       if (scopes.contains(ReloadScope.REDIRECTS)) {
         this.config = null;
-        reloaded = ReloadScope.format(scopes);
-        res.setHeader(ReloadScope.HEADER, reloaded);
+        reloaded = true;
       }
     }
 
     // Load the config if needed
     RedirectConfig redirectConfig = config();
+    if (reloaded) ReloadScope.reportApplied(req, res, Set.of(ReloadScope.REDIRECTS));
 
     // Evaluate URI patterns
     RedirectLocation location = redirectConfig.redirect(req.getRequestURI());
@@ -184,7 +184,7 @@ public final class RedirectFilter implements Filter, Serializable {
 
       // And redirect (resets the response, so report the reloaded scopes again)
       sendRedirect(req, res, location.to(), location.isPermanent());
-      if (reloaded != null) res.setHeader(ReloadScope.HEADER, reloaded);
+      ReloadScope.reportApplied(req, res, Set.of());
       return;
     }
 

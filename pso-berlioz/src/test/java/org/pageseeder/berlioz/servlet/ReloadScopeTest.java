@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.EnumSet;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.junit.jupiter.api.Test;
 
 class ReloadScopeTest {
@@ -52,6 +55,17 @@ class ReloadScopeTest {
     assertEquals("config, services, xslt, etags, redirects", ReloadScope.format(EnumSet.allOf(ReloadScope.class)));
     assertEquals("services, etags", ReloadScope.format(ReloadScope.parse("etags,services")));
     assertEquals("", ReloadScope.format(EnumSet.noneOf(ReloadScope.class)));
+  }
+
+  @Test
+  void reportAppliedPreservesScopesAcrossResponseReset() {
+    HttpServletRequest req = ServletTestSupport.request().build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    HttpServletResponse res = recorder.build();
+    ReloadScope.reportApplied(req, res, Set.of(ReloadScope.CONFIG));
+    res.reset();
+    ReloadScope.reportApplied(req, res, Set.of(ReloadScope.REDIRECTS));
+    assertEquals("config, redirects", recorder.header(ReloadScope.HEADER));
   }
 
   @Test

@@ -709,7 +709,8 @@ public final class BerliozServlet extends HttpServlet {
     if (scopes.contains(ReloadScope.ETAGS)) { config.resetETagSeed(); }
 
     // Report the applied scopes (redirects are applied by the filters)
-    if (!scopes.isEmpty()) { res.setHeader(ReloadScope.HEADER, ReloadScope.format(scopes)); }
+    scopes.remove(ReloadScope.REDIRECTS);
+    ReloadScope.reportApplied(req, res, scopes);
 
     // Profile flag can also be enabled per-request via URL parameter
     return profile || isTrue(req.getParameter(ControlParameter.BERLIOZ_PROFILE.parameter()));

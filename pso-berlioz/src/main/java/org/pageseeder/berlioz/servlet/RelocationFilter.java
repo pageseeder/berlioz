@@ -151,16 +151,18 @@ public final class RelocationFilter implements Filter {
      throws ServletException, IOException {
 
     // Reset mapping on reload
+    boolean reloaded = false;
     if (req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()) != null && ControlAuthorization.hasControl(req)) {
       Set<ReloadScope> scopes = ReloadScope.fromRequest(req);
       if (scopes.contains(ReloadScope.REDIRECTS)) {
         this.config = null;
-        res.setHeader(ReloadScope.HEADER, ReloadScope.format(scopes));
+        reloaded = true;
       }
     }
 
     // Load the config if needed
     RelocationConfig mapping = config();
+    if (reloaded) ReloadScope.reportApplied(req, res, Set.of(ReloadScope.REDIRECTS));
 
     // Evaluate URI patterns
     String from = req.getRequestURI();
