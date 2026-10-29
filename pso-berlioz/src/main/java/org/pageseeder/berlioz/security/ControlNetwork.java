@@ -67,10 +67,15 @@ public enum ControlNetwork {
   LAN;
 
   /**
-   * A conservative character set for IP literals (IPv4 dotted-quad or IPv6 hex-and-colon), used to
-   * reject non-literal input <em>before</em> it reaches {@link InetAddress#getByName(String)}.
+   * An IPv4 octet in decimal, including optional leading zeroes.
    */
-  private static final Pattern IP_LITERAL = Pattern.compile("[0-9a-fA-F.:]+");
+  private static final String IPV4_OCTET = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])";
+
+  /** Dotted-quad IPv4 only: hostnames and abbreviated numeric forms are rejected. */
+  private static final Pattern IPV4_LITERAL = Pattern.compile(IPV4_OCTET + "(?:\\." + IPV4_OCTET + "){3}");
+
+  /** IPv6 characters; only used when a colon is present, so DNS resolution is impossible. */
+  private static final Pattern IPV6_LITERAL = Pattern.compile("[0-9a-fA-F.:]+");
 
   /**
    * Parses the config string value, returning {@link #OFF} for any unrecognised value so that
@@ -194,13 +199,14 @@ public enum ControlNetwork {
   }
 
   /**
-   * Parses an IP literal, checking it against {@link #IP_LITERAL} first:
-   * {@link InetAddress#getByName(String)} only skips DNS resolution for literal addresses.
+   * Parses an IP literal. IPv4 must be a valid dotted quad; IPv6 must contain a colon and
+   * only literal address characters. The JDK validates the remaining IPv6 syntax without DNS.
    *
    * @return the parsed address, or <code>null</code> if it is not an IP literal.
    */
   private static @Nullable InetAddress parseIpLiteral(String value) {
-    if (!IP_LITERAL.matcher(value).matches()) return null;
+    Pattern literal = value.indexOf(':') >= 0 ? IPV6_LITERAL : IPV4_LITERAL;
+    if (!literal.matcher(value).matches()) return null;
     try {
       return InetAddress.getByName(value);
     } catch (UnknownHostException ex) {

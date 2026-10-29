@@ -3,6 +3,7 @@ package org.pageseeder.berlioz.security;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.pageseeder.berlioz.servlet.ServletTestSupport;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +24,35 @@ class ControlNetworkTest {
     HttpServletRequest req = ServletTestSupport.request().remoteAddr(null).build();
     assertFalse(ControlNetwork.LOOPBACK.matches(req));
     assertFalse(ControlNetwork.LAN.matches(req));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "dead.beef", "face", "abc.def", "127.0.0.face", "127.0.0.999",
+      "127.1", "2130706433", "0x7f000001", "127.0.0.1.", "1:2:3", "::gg"
+  })
+  void testMatches_nonLiteralForwardedAddresses_failClosed(String address) {
+    for (String header : new String[]{"X-Forwarded-For", "Forwarded", "X-Real-IP"}) {
+      String value = "Forwarded".equals(header) ? "for=" + address : address;
+      HttpServletRequest req = ServletTestSupport.request()
+          .remoteAddr("127.0.0.1").header(header, value).build();
+      assertFalse(ControlNetwork.LOOPBACK.matches(req), header + ": " + value);
+      assertFalse(ControlNetwork.LAN.matches(req), header + ": " + value);
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "LOOPBACK, 127.0.0.1", "LOOPBACK, ::1", "LOOPBACK, 0:0:0:0:0:0:0:1",
+      "LOOPBACK, ::ffff:127.0.0.1", "LAN, 192.168.0.255", "LAN, fec0::1"
+  })
+  void testMatches_literalForwardedAddresses_stillMatch(ControlNetwork network, String address) {
+    for (String header : new String[]{"X-Forwarded-For", "Forwarded", "X-Real-IP"}) {
+      String value = "Forwarded".equals(header) ? "for=" + address : address;
+      HttpServletRequest req = ServletTestSupport.request()
+          .remoteAddr("127.0.0.1").header(header, value).build();
+      assertTrue(network.matches(req), header + ": " + value);
+    }
   }
 
   // Forwarded (RFC 7239): every for= parameter must match, like X-Forwarded-For hops

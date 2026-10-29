@@ -44,6 +44,7 @@ Small security improvements, a scoped `berlioz-reload`, and diagnostics requeste
 - The kickstart `*.src` mapping returns `404` unless the request is authorized for Berlioz control.
 - `GetSystemProperties` redacts sensitive values.
 - The control network check treats `Forwarded` and `X-Real-IP` like `X-Forwarded-For`.
+- Forwarding addresses must be dotted-quad IPv4 or IPv6 literals; hostname-shaped values can no longer trigger DNS resolution during control authorization.
 
 ## [0.14.4] — 2026-10-20
 
