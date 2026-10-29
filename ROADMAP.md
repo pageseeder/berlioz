@@ -635,6 +635,12 @@ Berlioz Admin (bzadmin) displays Berlioz's own diagnostic generators directly. I
 8. **Stable `ListRuntimeServices`**
    - Details to be confirmed.
 
+Decisions (2026-10-29), implemented in 0.14.5:
+
+- **Response code origin**: Berlioz reports it because only the services parser knows which level declared the rule once overlays are merged. Values are `service`, `group`, `service-config` (the root element, named after it to avoid confusion with `config.xml`) and `default`; services built without an origin report none.
+- **Root-level rule fix**: a `<response-code>` under `<service-config>`, allowed by the DTD and schema, was ignored in favour of the default rule. It now applies to groups and services that declare none. This can change status codes, so it is in the 0.14.5 migration notes.
+- **`cache-control` origin deferred to 1.0**: there is no group level, so the values would be `service`, `servlet`, `configuration` and `default`. `ListRuntimeServices` reports the `cache-control` of the servlet serving the diagnostic, not necessarily the one serving the service, so an origin would label a value that can be wrong. It waits for per-mapping reporting in a stable `ListRuntimeServices` (item 8).
+
 Target release: items 1–7 in 0.14.5 (item 4 without the `cache-control` origin); item 8 and the `cache-control` origin in 1.0.
 
 ### 17. Scoped `berlioz-reload`
@@ -723,7 +729,12 @@ Berlioz Admin (bzadmin) replaces or works around several Berlioz generators and 
     - bzadmin wraps every Berlioz generator it uses in a one-line delegating class that checks the admin verdict first, because Berlioz cannot guard a service. A service or generator guard (theme 8) would let applications use Berlioz generators directly, and ensure a new service cannot forget the check.
     - Acceptance for bzadmin: its `org.pageseeder.bzadmin.guard` package can be removed, with every admin service still denied without a verdict.
 
-Target release: items 1–9 in 0.14.5 (items 1 and 7 as security improvements); item 10 with theme 8 in 1.0.
+Decisions (2026-10-29), implemented in 0.14.5:
+
+- **Stylesheet lookup in Berlioz**: Berlioz owns the selection rule (an existing file wins, then the first `META-INF/berlioz/` copy for paths under `xslt/`), so it exposes it as `StylesheetLocation.select(webInf, path)`, which `BerliozConfig` also uses, and `StylesheetLocation.countClasspathCopies(path)`. Tools no longer re-implement override detection.
+- **No stylesheet listing in Berlioz**: Berlioz only ever resolves one name at a time. Listing a classpath folder means scanning JARs and directories, which depends on how each container packages them (`vfs:`, `wsjar:`, nested JARs). The listing stays in bzadmin, which asks Berlioz which source wins for each path.
+
+Target release: items 1–8 and the stylesheet lookup and selected source of item 9 in 0.14.5 (items 1 and 7 as security improvements); the stylesheet listing of item 9 stays in bzadmin; item 10 with theme 8 in 1.0.
 
 ## Open Questions
 
@@ -747,6 +758,8 @@ Target release: items 1–9 in 0.14.5 (items 1 and 7 as security improvements); 
 - ~~Should a JAR be allowed to declare a service group that conflicts with a filesystem-declared group, and if so which takes precedence?~~ Decided for 0.14.3: conflicts are determined by HTTP method and URI pattern; filesystem declarations load last and take precedence.
 - ~~Should classpath XSLT templates be reloaded on request (development mode) or treated as immutable (production mode), and should this follow the existing `berlioz.xslt.cache` setting?~~ Decided for 0.14.3: classpath templates are immutable in `manual` and `auto`; `no` recompiles them.
 - ~~Should `META-INF/berlioz/services/` be the canonical convention, or should Berlioz read a manifest entry or properties file that declares which resources to load?~~ Decided for 0.14.3: use one exact `META-INF/berlioz/services.xml` resource per JAR, with an explicit index reserved for a future multiple-file use case.
+- ~~Should `Service.writeTo` report where the effective `cache-control` and response code rule come from?~~ Decided for 0.14.5: report the response code origin; defer the `cache-control` origin to 1.0 with per-mapping reporting in a stable `ListRuntimeServices` (theme 16).
+- ~~Should Berlioz list the stylesheets it can select?~~ Decided for 0.14.5: no; Berlioz exposes the selection for one path and the number of classpath copies, and the listing stays in bzadmin (theme 18).
 - Should non-fatal XSLT warnings be surfaced to the client (e.g. via a response header or in the output XML), or only logged server-side?
 - ~~Should `berlioz.errors.detail=minimal` suppress the `detail` member from `ProblemDetails` responses?~~ Decided: `minimal` suppresses only framework-internal diagnostics (stack traces, exception class, HTTP headers and parameters). The `detail` member in RFC 9457 responses always reflects the error message passed to `Problems.forHttpError()`, which is the HTTP status phrase — safe for production.
 - Should `QUERY` responses be cacheable, and if so should the ETag seed incorporate a hash of the request body?
