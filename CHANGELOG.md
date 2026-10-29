@@ -4,6 +4,17 @@ All notable changes to Berlioz are documented in this file. The format is based 
 
 Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, which are listed with upgrade instructions in the [upgrade guide](docs/upgrading.md). Planned work is in the [roadmap](ROADMAP.md).
 
+## [Unreleased]
+
+### Added
+
+- Jar manifests declare `Automatic-Module-Name` (`org.pageseeder.berlioz`, `org.pageseeder.berlioz.kickstart`, `org.pageseeder.berlioz.mock`), `Bundle-License: Apache-2.0`, `Implementation-Vendor-Id`, `Implementation-URL` and `Build-Jdk-Spec`.
+- The licence is included as `META-INF/LICENCE.md` in the main, sources and Javadoc jars.
+
+### Fixed
+
+- The published POMs of `pso-berlioz-kickstart` and `pso-berlioz-mock` used the name and description of `pso-berlioz`.
+
 ## [0.14.5] — 2026-10-29
 
 Small security improvements, a scoped `berlioz-reload`, and diagnostics requested by Berlioz Admin.

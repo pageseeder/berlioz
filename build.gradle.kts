@@ -11,6 +11,11 @@ val gitName: String by project
 val website: String by project
 val globalVersion = file("version.txt").readText().trim()
 val publishedProjectNames = setOf("pso-berlioz", "pso-berlioz-kickstart", "pso-berlioz-mock")
+val moduleNames = mapOf(
+  "pso-berlioz"           to "org.pageseeder.berlioz",
+  "pso-berlioz-kickstart" to "org.pageseeder.berlioz.kickstart",
+  "pso-berlioz-mock"      to "org.pageseeder.berlioz.mock"
+)
 
 allprojects {
   group   = "org.pageseeder.berlioz"
@@ -37,12 +42,23 @@ configure(subprojects.filter { it.name in publishedProjectNames }) {
     mavenCentral()
   }
 
+  tasks.withType<Jar>().configureEach {
+    from(rootProject.file("LICENCE.md")) {
+      into("META-INF")
+    }
+  }
+
   tasks.named<Jar>("jar") {
     manifest {
       attributes(
-        "Implementation-Vendor"  to "Allette Systems",
-        "Implementation-Title"   to (project.findProperty("title") as? String ?: project.name),
-        "Implementation-Version" to globalVersion
+        "Automatic-Module-Name"    to moduleNames.getValue(project.name),
+        "Implementation-Vendor"    to "Allette Systems",
+        "Implementation-Vendor-Id" to "org.pageseeder.berlioz",
+        "Implementation-Title"     to (project.findProperty("title") as? String ?: project.name),
+        "Implementation-Version"   to globalVersion,
+        "Implementation-URL"       to website,
+        "Bundle-License"           to "Apache-2.0",
+        "Build-Jdk-Spec"           to "11"
       )
     }
   }
@@ -85,8 +101,9 @@ configure(subprojects.filter { it.name in publishedProjectNames }) {
           extension = "json"
         }
         pom {
-          name.set(project.findProperty("title") as? String ?: project.name)
-          description.set(project.description)
+          // Read lazily: subproject scripts set the title and description after this block runs
+          name.set(provider { project.findProperty("title") as? String ?: project.name })
+          description.set(provider { project.description })
           url.set(website)
           licenses {
             license {
