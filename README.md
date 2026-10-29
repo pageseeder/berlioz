@@ -350,8 +350,9 @@ other patterns stays listed in its own source. Services written by `Service.writ
 registry, or registered directly rather than by `ServiceLoader`, have no source.
 
 Since 0.14.5, `response-code` also names where its rule was declared in `origin`: `service`,
-`group` (the enclosing `<services>` element) or `default` when no rule was declared. The origin
-is omitted for services built without it, such as those created directly with `Service.Builder`.
+`group` (the enclosing `<services>` element), `service-config` (the root element) or `default`
+when no rule was declared. The origin is omitted for services built without it, such as those
+created directly with `Service.Builder`.
 Protect diagnostic mappings with application or container security.
 
 ## Runtime configuration diagnostics
@@ -490,6 +491,11 @@ See [the deployment test documentation](tests/overlay-deployment/README.md) for 
   until 1.0. `berlioz-reload=true` is unchanged.
 - A configuration reload that fails to parse now keeps the last valid configuration instead of
   reverting every option to its default (which also turned off control authorization).
+- A `<response-code>` declared directly under `<service-config>` now applies to every service
+  whose group and service declare none. It was previously ignored, so those services used the
+  default rule (`use="name:*" rule="highest"`) and may now compute a different status code.
+  Remove the root-level element to keep the previous behaviour. `ListRuntimeServices` reports
+  which rule applies in `response-code/@origin`.
 
 ## Migrating to 0.14.3
 

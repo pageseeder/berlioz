@@ -161,6 +161,11 @@ final class ServicesHandler10 extends DefaultHandler {
   private final List<ServiceStatusRule> rules = new ArrayList<>();
 
   /**
+   * Where each rule in {@link #rules} was declared, kept in step with that stack.
+   */
+  private final List<ServiceStatusRule.Origin> ruleOrigins = new ArrayList<>();
+
+  /**
    * Used to detect duplicate URI Patterns.
    */
   private final Set<Pair<HttpMethod, URIPattern>> patternsToMethod = new HashSet<>();
@@ -236,7 +241,7 @@ final class ServicesHandler10 extends DefaultHandler {
         }
         // If no rule where defined at the 'service-config' level, we assume the default rule
         if (this.rules.isEmpty()) {
-          this.rules.add(ServiceStatusRule.DEFAULT_RULE);
+          pushRule(ServiceStatusRule.DEFAULT_RULE, ServiceStatusRule.Origin.DEFAULT);
         }
         break;
 
@@ -245,9 +250,10 @@ final class ServicesHandler10 extends DefaultHandler {
         break;
 
       case SERVICE:
-        // If no rule where defined at the 'services' level, we assume the default rule
+        // If no rule was defined at the 'services' level, the service inherits the rule of the
+        // 'service-config' level, which is the default rule if none was declared there either
         if (this.rules.size() == 1) {
-          this.rules.add(ServiceStatusRule.DEFAULT_RULE);
+          pushRule(this.rules.get(0), this.ruleOrigins.get(0));
         }
         String id = atts.getValue("id");
         this.builder.id(id != null? id : "");
@@ -303,9 +309,8 @@ final class ServicesHandler10 extends DefaultHandler {
   }
 
   private void registerCurrentService() throws SAXException {
-    int level = this.rules.size() - 1;
-    ServiceStatusRule rule = this.rules.get(level);
-    this.builder.rule(rule, ruleOrigin(level, rule));
+    int top = this.rules.size() - 1;
+    this.builder.rule(this.rules.get(top), this.ruleOrigins.get(top));
     if ("".equals(this.builder.id())) {
       warning("Service cannot be created without an id");
     } else {
@@ -335,21 +340,28 @@ final class ServicesHandler10 extends DefaultHandler {
   }
 
   /**
-   * Returns where the rule at the specified level of the stack was declared.
-   *
-   * <p>The stack index is the level of the declaring element: 0 for 'service-config',
-   * 1 for 'services' and 2 for 'service'. Declared rules are always new instances, so
-   * only the shared default rule pushed for an undeclared level is the default.
+   * Pushes a rule and where it was declared onto the stack.
    */
-  private static ServiceStatusRule.Origin ruleOrigin(int level, ServiceStatusRule rule) {
-    if (rule == ServiceStatusRule.DEFAULT_RULE) return ServiceStatusRule.Origin.DEFAULT;
+  private void pushRule(ServiceStatusRule rule, ServiceStatusRule.Origin origin) {
+    this.rules.add(rule);
+    this.ruleOrigins.add(origin);
+  }
+
+  /**
+   * Returns the origin of a rule declared at the current level: the stack size is 0 within
+   * 'service-config', 1 within 'services' and 2 within 'service'.
+   */
+  private ServiceStatusRule.Origin declaringOrigin() {
+    int level = this.rules.size();
     if (level == 0) return ServiceStatusRule.Origin.SERVICE_CONFIG;
-    return level == 1 ? ServiceStatusRule.Origin.GROUP : ServiceStatusRule.Origin.SERVICE;
+    if (level == 1) return ServiceStatusRule.Origin.GROUP;
+    return ServiceStatusRule.Origin.SERVICE;
   }
 
   private void popRuleIfAdded(int expectedSize) {
     if (this.rules.size() == expectedSize) {
       this.rules.remove(expectedSize - 1);
+      this.ruleOrigins.remove(expectedSize - 1);
     }
   }
 
@@ -440,7 +452,7 @@ final class ServicesHandler10 extends DefaultHandler {
       return;
     }
     try {
-      this.rules.add(ServiceStatusRule.newInstance(use, rule));
+      pushRule(ServiceStatusRule.newInstance(use, rule), declaringOrigin());
     } catch (IllegalArgumentException ex) {
       warning("Ignoring bad response code definition: "+ex.getMessage(), ex);
     }

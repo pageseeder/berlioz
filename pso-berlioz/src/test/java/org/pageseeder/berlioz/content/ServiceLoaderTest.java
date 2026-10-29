@@ -609,6 +609,48 @@ class ServiceLoaderTest {
     Assertions.assertEquals(ServiceStatusRule.Origin.DEFAULT, none.ruleOrigin());
   }
 
+  @Test
+  void testLoad_inheritsServiceConfigResponseCode(@TempDir Path dir) throws BerliozException, IOException {
+    Path services = dir.resolve("services.xml");
+    Files.writeString(services, String.join("\n",
+        "<!DOCTYPE service-config PUBLIC \"-//Berlioz//DTD::Services 1.0//EN\"",
+        "    \"https://pageseeder.org/schema/berlioz/services-1.0.dtd\">",
+        "<service-config version=\"1.0\">",
+        "  <response-code use=\"name:*\" rule=\"first\"/>",
+        "  <services group=\"inheriting\">",
+        "    <service id=\"root\" method=\"get\">",
+        "      <url pattern=\"/root\"/>",
+        "      <generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>",
+        "    </service>",
+        "  </services>",
+        "  <services group=\"overriding\">",
+        "    <response-code use=\"name:*\" rule=\"lowest\"/>",
+        "    <service id=\"group\" method=\"get\">",
+        "      <url pattern=\"/group\"/>",
+        "      <generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>",
+        "    </service>",
+        "  </services>",
+        "  <services group=\"after\">",
+        "    <service id=\"after\" method=\"get\">",
+        "      <url pattern=\"/after\"/>",
+        "      <generator class=\"org.pageseeder.berlioz.generator.NoContent\"/>",
+        "    </service>",
+        "  </services>",
+        "</service-config>"));
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.load(services.toFile());
+    ServiceRegistry registry = loader.getDefaultRegistry();
+
+    for (String path : List.of("/root", "/after")) {
+      Service service = registry.get(path, HttpMethod.GET).service();
+      Assertions.assertEquals(ServiceStatusRule.CodeRule.FIRST, service.rule().rule(), path);
+      Assertions.assertEquals(ServiceStatusRule.Origin.SERVICE_CONFIG, service.ruleOrigin(), path);
+    }
+    Service group = registry.get("/group", HttpMethod.GET).service();
+    Assertions.assertEquals(ServiceStatusRule.CodeRule.LOWEST, group.rule().rule());
+    Assertions.assertEquals(ServiceStatusRule.Origin.GROUP, group.ruleOrigin());
+  }
+
   // Generator classloader correction --------------------------------------------------------------
 
   @Test
