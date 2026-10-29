@@ -599,11 +599,10 @@ public final class BerliozConfig {
         .replace(GROUP_TOKEN, service.group())
         .replace("{SERVICE}", service.id());
     try {
-      StylesheetLocation location = resolveStylesheetLocation(path);
-      if (this.stylePath.contains(GROUP_TOKEN) && location.path() != null) {
-        location = StylesheetLocation.select(this.env.getPrivateFolder().toPath(), path);
+      if (this.stylePath.contains(GROUP_TOKEN) && StylesheetLocation.extractClasspathReference(path) == null) {
+        return StylesheetLocation.select(this.env.getPrivateFolder().toPath(), path);
       }
-      return location;
+      return resolveStylesheetLocation(path);
     } catch (IllegalArgumentException ex) {
       LOGGER.warn("Stylesheet '{}' for service '{}' has an invalid path — using fallback", path, service.id());
       return StylesheetLocation.forFile(this.env.getPrivateFolder().toPath());
