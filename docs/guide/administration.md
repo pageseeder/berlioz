@@ -30,7 +30,7 @@ Authorized requests that reload at least one scope receive an `X-Berlioz-Reload`
 Control parameters are closed by default ([ADR-0006](../decisions/0006-close-control-parameters-by-default.md)). A request is authorized by any one of:
 
 - `berlioz.control.key`: a shared secret, sent as `Authorization: Berlioz <key>`. Use a strong secret in production.
-- `berlioz.control.network`: `loopback` or `lan`, for development only. Behind a reverse proxy, every request appears to come from the proxy, so never enable it there.
+- `berlioz.control.network`: `loopback` or `lan`, for development only. Behind a reverse proxy, every request appears to come from the proxy, so never enable it there. Every address in `X-Forwarded-For`, `Forwarded` (`for=`) and `X-Real-IP` must also match the network, so a request relayed on behalf of an outside client is rejected.
 - The request attribute `ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE`, set by the host application after its own authentication.
 
 The same authorization guards the kickstart `*.src` mapping ([XSLT](xslt.md#default-xml-and-source-output)).
