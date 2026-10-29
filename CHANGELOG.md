@@ -33,6 +33,7 @@ Small security improvements, a scoped `berlioz-reload`, and diagnostics requeste
 
 ### Fixed
 
+- `ListRuntimeServices` ETags now change when a configuration-only reload changes whether diagnostic details are included.
 - A `<response-code>` declared directly under `<service-config>` was ignored; it now applies to groups and services that declare none.
 
 ### Security

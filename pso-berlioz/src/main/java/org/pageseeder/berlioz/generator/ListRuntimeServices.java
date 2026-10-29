@@ -128,8 +128,9 @@ import org.xml.sax.SAXParseException;
  *
  * <h3>Etag</h3>
  * <p>The ETag is the registry version counter, which increments each time the services are
- * reloaded, together with the load status and the time of the last failed attempt. This
- * invalidates the response when the configuration, load status or failure changes.
+ * reloaded, together with the load status, the time of the last failed attempt and whether
+ * diagnostic details are included. This invalidates the response when the configuration,
+ * load status, failure or effective diagnostic detail setting changes.
  *
  * @author Christophe Lauret
  *
@@ -146,7 +147,8 @@ public class ListRuntimeServices implements Generator, Cacheable {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     ServiceLoadDiagnostics diagnostics = ServiceLoader.getInstance().getLoadDiagnostics();
     Instant failed = diagnostics.failed();
-    return registry.version() + "-" + diagnostics.status() + (failed != null ? "-" + failed.toEpochMilli() : "");
+    return registry.version() + "-" + diagnostics.status() + (failed != null ? "-" + failed.toEpochMilli() : "")
+        + "-" + includeDetails();
   }
 
   @Override
@@ -154,7 +156,7 @@ public class ListRuntimeServices implements Generator, Cacheable {
     ServiceRegistry registry = ServiceLoader.getInstance().getDefaultRegistry();
     HttpEnvironment httpEnv = (HttpEnvironment) req.getEnvironment();
     ServiceLoadDiagnostics diagnostics = ServiceLoader.getInstance().getLoadDiagnostics();
-    boolean includeDetails = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
+    boolean includeDetails = includeDetails();
 
     out.startObject("live-services");
     out.field("load-status", diagnostics.status());
@@ -176,6 +178,10 @@ public class ListRuntimeServices implements Generator, Cacheable {
     out.endObject();
 
     return Response.ok();
+  }
+
+  private static boolean includeDetails() {
+    return DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
   }
 
   private static void writeSources(List<ServiceSource> sources, OutputWriter out) {

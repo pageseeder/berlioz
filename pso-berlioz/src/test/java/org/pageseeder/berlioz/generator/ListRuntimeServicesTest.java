@@ -132,6 +132,45 @@ class ListRuntimeServicesTest {
     Assertions.assertTrue(processJson(req).contains("\"loadStatus\":\"ready\""));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"standard", "full"})
+  void configOnlyReloadOfDetailSettingInvalidatesETag(String detail) throws Exception {
+    Path config = Files.createDirectories(tmp.resolve("config"));
+    Path settings = config.resolve("config.properties");
+    Files.writeString(settings, "berlioz.errors.detail=" + detail + "\n");
+    Path services = config.resolve("services.xml");
+    Files.writeString(services, EMPTY_SERVICES);
+    GlobalSettings.setup(tmp.toFile());
+    Assertions.assertTrue(GlobalSettings.load());
+    ServiceLoader loader = ServiceLoader.getInstance();
+    loader.loadIfRequired();
+    Files.writeString(services, "<sensitive-invalid-root/>");
+    loader.requestReload();
+    Assertions.assertFalse(loader.loadIfRequired());
+
+    ContentRequest req = GeneratorTestSupport.request().environment(environment()).build();
+    ListRuntimeServices generator = new ListRuntimeServices();
+    long version = loader.getDefaultRegistry().version();
+    String detailedETag = generator.getETag((Request) req);
+    String detailedXml = process(req);
+    String detailedJson = processJson(req);
+    Assertions.assertTrue(detailedXml.contains("line="), detailedXml);
+    Assertions.assertTrue(detailedJson.contains("\"line\":"), detailedJson);
+
+    Files.writeString(settings, "berlioz.errors.detail=minimal\n");
+    Assertions.assertTrue(GlobalSettings.load());
+    Assertions.assertEquals(version, loader.getDefaultRegistry().version());
+    Assertions.assertNotEquals(detailedETag, generator.getETag((Request) req));
+    Assertions.assertFalse(process(req).contains("line="));
+    Assertions.assertFalse(processJson(req).contains("\"line\":"));
+
+    Files.writeString(settings, "berlioz.errors.detail=" + detail + "\n");
+    Assertions.assertTrue(GlobalSettings.load());
+    Assertions.assertEquals(detailedETag, generator.getETag((Request) req));
+    Assertions.assertEquals(detailedXml, process(req));
+    Assertions.assertEquals(detailedJson, processJson(req));
+  }
+
   @Test
   void listsSourcesInLoadOrderWithClasspathFirst() throws Exception {
     Path config = Files.createDirectories(tmp.resolve("config"));
