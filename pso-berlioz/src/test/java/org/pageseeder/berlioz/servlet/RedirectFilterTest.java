@@ -104,6 +104,44 @@ class RedirectFilterTest {
   }
 
   @Test
+  void testPassThroughWithoutConfigParameter() throws Exception {
+    File webRoot = Files.createTempDirectory(tmp, "d").toFile();
+    RedirectFilter filter = new RedirectFilter();
+    filter.init(ServletTestSupport.filterConfig(webRoot.getAbsolutePath(), Collections.emptyMap()));
+
+    boolean[] chainInvoked = {false};
+    HttpServletRequest req = ServletTestSupport.request()
+        .uri("/old").scheme("http").host("example.org").port(80)
+        .attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE)
+        .parameter("berlioz-reload", "redirects").build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+
+    Assertions.assertTrue(chainInvoked[0], "Chain should be invoked when the filter has no config");
+    Assertions.assertEquals(200, recorder.status);
+    Assertions.assertNull(recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void testPassThroughWhenConfigFileIsMissing() throws Exception {
+    File webRoot = Files.createTempDirectory(tmp, "d").toFile();
+    RedirectFilter filter = new RedirectFilter();
+    filter.init(ServletTestSupport.filterConfig(webRoot.getAbsolutePath(),
+        Collections.singletonMap("config", "missing.xml")));
+
+    boolean[] chainInvoked = {false};
+    HttpServletRequest req = ServletTestSupport.request()
+        .uri("/old").scheme("http").host("example.org").port(80).build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+
+    Assertions.assertTrue(chainInvoked[0], "Chain should be invoked when the config file does not exist");
+    Assertions.assertEquals(200, recorder.status);
+  }
+
+  @Test
   void testPassThroughWhenConfigIsEmpty() throws Exception {
     RedirectFilter filter = initFilter("<?xml version=\"1.0\"?><redirect-mapping/>");
 

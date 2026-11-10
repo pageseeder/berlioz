@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * @author Christophe Lauret
  * @author Jean-Baptiste Reure
  *
- * @version 0.14.5
+ * @version 0.14.6
  * @since 0.7
  */
 public final class RelocationFilter implements Filter {
@@ -77,6 +77,11 @@ public final class RelocationFilter implements Filter {
    * Where the relocation config is located.
    */
   private @Nullable File mappingFile;
+
+  /**
+   * The name of this filter instance, used in log messages.
+   */
+  private String filterName = "RelocationFilter";
 
   /**
    * The actual relocation config.
@@ -98,6 +103,8 @@ public final class RelocationFilter implements Filter {
   @Override
   public void init(FilterConfig config) {
     // get the WEB-INF directory
+    String name = config.getFilterName();
+    if (name != null) this.filterName = name;
     ServletContext context = config.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
@@ -105,14 +112,15 @@ public final class RelocationFilter implements Filter {
 
     // Mapping isn't specified
     if (mapping == null) {
-      LOGGER.warn("Missing 'config' init-parameter - filter will have no effect");
+      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", this.filterName);
       return;
     }
 
     // The mapping file does not exist
     File file = new File(webinfPath, mapping);
     if (!file.exists()) {
-      LOGGER.warn("'config' init-parameter points to non existing file {} - filter will have no effect",
+      LOGGER.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
+      this.filterName,
       file.getAbsolutePath());
     }
 
@@ -150,6 +158,13 @@ public final class RelocationFilter implements Filter {
   public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
      throws ServletException, IOException {
 
+    // Without a 'config' init-parameter the filter has no effect
+    File file = this.mappingFile;
+    if (file == null) {
+      chain.doFilter(req, res);
+      return;
+    }
+
     // Reset mapping on reload
     boolean reloaded = false;
     if (req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()) != null && ControlAuthorization.hasControl(req)) {
@@ -161,7 +176,7 @@ public final class RelocationFilter implements Filter {
     }
 
     // Load the config if needed
-    RelocationConfig mapping = config();
+    RelocationConfig mapping = config(file);
     if (reloaded) ReloadScope.reportApplied(req, res, Set.of(ReloadScope.REDIRECTS));
 
     // Evaluate URI patterns
@@ -189,16 +204,22 @@ public final class RelocationFilter implements Filter {
   }
 
   /**
+   * @param file The relocation configuration file.
    * @return the config loading the configuration file if necessary.
    */
-  private RelocationConfig config() {
+  private RelocationConfig config(File file) {
     RelocationConfig relocationConfig = this.config;
     if (relocationConfig == null) {
       try {
-        relocationConfig = RelocationConfig.newInstance(this.mappingFile);
-        LOGGER.info("Loaded relocation configuration: {} rules found", relocationConfig.size());
+        relocationConfig = RelocationConfig.newInstance(file);
+        if (relocationConfig.size() == 0) {
+          LOGGER.warn("Filter '{}': relocation configuration {} has no rules - filter will have no effect",
+              this.filterName, file.getAbsolutePath());
+        } else {
+          LOGGER.info("Filter '{}': loaded relocation configuration: {} rules found", this.filterName, relocationConfig.size());
+        }
       } catch (ConfigException ex) {
-        LOGGER.warn("Unable to load configuration: {}", ex.getMessage());
+        LOGGER.warn("Filter '{}': unable to load relocation configuration: {}", this.filterName, ex.getMessage());
         relocationConfig = new RelocationConfig();
       }
       this.config = relocationConfig;

@@ -61,6 +61,39 @@ class RelocationFilterTest {
     Assertions.assertNull(recorder.header("Content-Location"), "Unsafe target must not be exposed");
   }
 
+  // Missing configuration
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testPassThroughWithoutConfigParameter() throws Exception {
+    File webRoot = Files.createTempDirectory(tmp, "d").toFile();
+    RelocationFilter filter = new RelocationFilter();
+    filter.init(ServletTestSupport.filterConfig(webRoot.getAbsolutePath(), Collections.emptyMap()));
+
+    boolean[] chainInvoked = {false};
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest("redirects"), recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+
+    Assertions.assertTrue(chainInvoked[0], "Chain should be invoked when the filter has no config");
+    Assertions.assertEquals(200, recorder.status);
+    Assertions.assertNull(recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
+  void testPassThroughWhenConfigFileIsMissing() throws Exception {
+    File webRoot = Files.createTempDirectory(tmp, "d").toFile();
+    RelocationFilter filter = new RelocationFilter();
+    filter.init(ServletTestSupport.filterConfig(webRoot.getAbsolutePath(),
+        Collections.singletonMap("config", "missing.xml")));
+
+    boolean[] chainInvoked = {false};
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest(null), recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+
+    Assertions.assertTrue(chainInvoked[0], "Chain should be invoked when the config file does not exist");
+    Assertions.assertNull(recorder.header("Content-Location"));
+  }
+
   // Scoped reload
   // ---------------------------------------------------------------------------
 

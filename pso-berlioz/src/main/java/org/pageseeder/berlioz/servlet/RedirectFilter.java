@@ -67,7 +67,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.5
+ * @version 0.14.6
  * @since 0.7
  */
 public final class RedirectFilter implements Filter, Serializable {
@@ -89,6 +89,11 @@ public final class RedirectFilter implements Filter, Serializable {
    * Where the redirect config is located.
    */
   private @Nullable File configFile;
+
+  /**
+   * The name of this filter instance, used in log messages.
+   */
+  private String filterName = "RedirectFilter";
 
   /**
    * Maps URI patterns to redirect to the URI pattern target.
@@ -113,6 +118,8 @@ public final class RedirectFilter implements Filter, Serializable {
   @Override
   public void init(FilterConfig config) {
     // get the WEB-INF directory
+    String name = config.getFilterName();
+    if (name != null) this.filterName = name;
     ServletContext context = config.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
@@ -120,14 +127,15 @@ public final class RedirectFilter implements Filter, Serializable {
 
     // Mapping isn't specified
     if (mappingConfig == null) {
-      LOGGER.warn("Missing 'config' init-parameter - filter will have no effect");
+      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", this.filterName);
       return;
     }
 
     // Mapping does not exist
     File mappingFile = new File(webinfPath, mappingConfig);
     if (!mappingFile.exists()) {
-      LOGGER.warn("'config' init-parameter points to non existing file {} - filter will have no effect",
+      LOGGER.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
+      this.filterName,
       mappingFile.getAbsolutePath());
     }
 
@@ -162,6 +170,13 @@ public final class RedirectFilter implements Filter, Serializable {
   public void doHTTPFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
       throws ServletException, IOException {
 
+    // Without a 'config' init-parameter the filter has no effect
+    File file = this.configFile;
+    if (file == null) {
+      chain.doFilter(req, res);
+      return;
+    }
+
     // Reset mapping on reload
     boolean reloaded = false;
     if (req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()) != null && ControlAuthorization.hasControl(req)) {
@@ -173,7 +188,7 @@ public final class RedirectFilter implements Filter, Serializable {
     }
 
     // Load the config if needed
-    RedirectConfig redirectConfig = config();
+    RedirectConfig redirectConfig = config(file);
     if (reloaded) ReloadScope.reportApplied(req, res, Set.of(ReloadScope.REDIRECTS));
 
     // Evaluate URI patterns
@@ -193,16 +208,22 @@ public final class RedirectFilter implements Filter, Serializable {
   }
 
   /**
+   * @param file The redirect configuration file.
    * @return the URI pattern mapping loading the configuration file if necessary.
    */
-  private RedirectConfig config() {
+  private RedirectConfig config(File file) {
     RedirectConfig redirectConfig = this.config;
     if (redirectConfig == null) {
       try {
-        redirectConfig = RedirectConfig.newInstance(this.configFile);
-        LOGGER.info("Loaded redirect configuration: {} rules found", redirectConfig.size());
+        redirectConfig = RedirectConfig.newInstance(file);
+        if (redirectConfig.size() == 0) {
+          LOGGER.warn("Filter '{}': redirect configuration {} has no rules - filter will have no effect",
+              this.filterName, file.getAbsolutePath());
+        } else {
+          LOGGER.info("Filter '{}': loaded redirect configuration: {} rules found", this.filterName, redirectConfig.size());
+        }
       } catch (ConfigException ex) {
-        LOGGER.error("Unable to load configuration: {}", ex.getMessage());
+        LOGGER.error("Filter '{}': unable to load redirect configuration: {}", this.filterName, ex.getMessage());
         redirectConfig = new RedirectConfig();
       }
       this.config = redirectConfig;

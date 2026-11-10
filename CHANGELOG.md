@@ -6,6 +6,10 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 
 ## [Unreleased]
 
+### Fixed
+
+- `RedirectFilter` and `RelocationFilter` without a `config` init parameter no longer fail every request with a `NullPointerException` (500); as logged at startup, they have no effect and pass requests through. A configuration file without rules is now logged as a warning rather than at info level, since the filter then does no useful work. Log messages of both filters name the filter instance.
+
 ## [0.14.5] — 2026-10-29
 
 Small security improvements, a scoped `berlioz-reload`, and diagnostics requested by Berlioz Admin.
