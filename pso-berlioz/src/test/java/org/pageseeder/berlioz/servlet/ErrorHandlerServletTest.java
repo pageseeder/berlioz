@@ -229,6 +229,23 @@ class ErrorHandlerServletTest {
   }
 
   @Test
+  void handle_berliozErrorException_isUsedWhenStandardAttributeIsAbsent() throws Exception {
+    // Berlioz sent the error to the container (errors.handle=false): only its own attribute is set
+    Exception cause = new HttpException("service busy", 503) {}.header("Retry-After", "30");
+    HttpServletRequest req = ServletTestSupport.request().uri("/test.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 503)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Service busy")
+        .attribute(ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION, cause)
+        .build();
+    ServletTestSupport.ResponseRecorder res = ServletTestSupport.response();
+    new ErrorHandlerServlet().handle(req, res.build());
+    assertAll(
+        () -> assertEquals(503, res.status),
+        () -> assertEquals("30", res.header("Retry-After"))
+    );
+  }
+
+  @Test
   void handle_httpExceptionWrappedInCause_stillPropagatesHeaderToResponse() throws Exception {
     HttpException signal = new HttpException("service busy", 503) {}.header("Retry-After", "30");
     Exception wrapper = new RuntimeException("wrapped", signal);

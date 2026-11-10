@@ -20,6 +20,10 @@ These are deprecated in 0.14 and will be removed in 1.0. Each logs a warning whe
 | `reset-etags=true` | 0.14.5 | `berlioz-reload=etags` |
 | `GetCPUTime` generator | 0.14.5 | `GetCpuSample` |
 
+## Upgrading to 0.14.6
+
+- With `berlioz.errors.handle=false`, an error page that the container dispatches to after Berlioz sends an error no longer finds the exception in `javax.servlet.error.exception`. A custom error page (a JSP or servlet of the application) that reads it should fall back to `org.pageseeder.berlioz.error_exception` (`ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION`). Berlioz's own `ErrorHandlerServlet` and `GetErrorDetails` need no change. See [`berlioz.errors.handle`](guide/error-handling.md#berliozerrorshandle--error_handler).
+
 ## Upgrading to 0.14.5
 
 0.14.5 reduces what the kickstart web fragment exposes by default and scopes the `berlioz-reload` control parameter.

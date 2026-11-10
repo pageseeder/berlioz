@@ -551,7 +551,8 @@ class BerliozServletTest {
 
     assertEquals(400, recorder.status);
     assertEquals("Malformed application/x-www-form-urlencoded QUERY request body", recorder.errorMessage);
-    assertNotNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+    assertNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+    assertNotNull(request.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION));
   }
 
   @Test
@@ -734,7 +735,8 @@ class BerliozServletTest {
     assertEquals(500, recorder.status);
     assertEquals("The service failed during XSLT transformation", recorder.errorMessage);
     assertEquals(1, request.getAttribute(ErrorHandlerServlet.ERROR_RENDERING_DEPTH));
-    assertTrue(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION) instanceof XsltTransformException);
+    assertNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+    assertTrue(request.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION) instanceof XsltTransformException);
     assertEquals("", recorder.content());
   }
 
@@ -810,6 +812,23 @@ class BerliozServletTest {
     assertEquals("application/json", request.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_MEDIA_TYPE));
     assertEquals("application/problem+json;charset=UTF-8", recorder.contentType);
     assertTrue(recorder.content().startsWith("{"), recorder.content());
+  }
+
+  @Test
+  void doGet_generatorThrowsHttpException_sendsItsStatusWithoutStandardExceptionAttribute() throws Exception {
+    // errors.handle=false: the error is sent to the container, which must not see an uncaught
+    // exception (Tomcat would answer 500 with an error page for java.lang.Exception)
+    writeServices(service("retry-after", "get", "/retry-after", "handler", RETRY_AFTER_JSON));
+    initServlet(Map.of("content-type", "application/json;charset=utf-8"));
+    HttpServletRequest request = request("GET", "/retry-after.json");
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doGet(request, recorder.build());
+
+    assertEquals(503, recorder.status);
+    assertNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+    assertNull(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE));
+    assertNotNull(request.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION));
   }
 
   @Test

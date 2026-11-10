@@ -6,7 +6,13 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 
 ## [Unreleased]
 
+### Added
+
+- `ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION` (`org.pageseeder.berlioz.error_exception`): the request attribute holding the exception of an error routed by Berlioz.
+
 ### Fixed
+
+- With `berlioz.errors.handle=false`, Berlioz no longer sets `javax.servlet.error.exception` before `sendError`, so Tomcat answers with the status of the error instead of handling it as an uncaught exception: with an error page for `java.lang.Exception`, as Kickstart declares, the error of a generator that throws, such as an `InvalidParameterException` (400), was answered 500. The exception is passed in `org.pageseeder.berlioz.error_exception` instead, which `ErrorHandlerServlet` and `GetErrorDetails` read.
 
 - `RedirectFilter` and `RelocationFilter` without a `config` init parameter no longer fail every request with a `NullPointerException` (500); as logged at startup, they have no effect and pass requests through. A configuration file without rules is now logged as a warning rather than at info level, since the filter then does no useful work. Log messages of both filters name the filter instance.
 - The error page of a `POST`, `PUT`, `DELETE`, `PATCH` or `QUERY` request is found: when rendering an error, `BerliozServlet` looks the service up as `GET` instead of answering `405 Method Not Allowed` and replacing the error message.

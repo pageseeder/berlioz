@@ -781,7 +781,7 @@ public final class BerliozServlet extends HttpServlet {
       LOGGER.error("XSLT failed while rendering an error; using terminal fail-safe", ex);
       Object originalAttribute = req.getAttribute(ErrorHandlerServlet.ORIGINAL_ERROR_EXCEPTION);
       if (!(originalAttribute instanceof Throwable)) {
-        originalAttribute = req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+        originalAttribute = ErrorHandlerServlet.getErrorException(req);
       }
       Throwable original = originalAttribute instanceof Throwable ? (Throwable) originalAttribute : ex;
       req.setAttribute(ErrorHandlerServlet.ORIGINAL_ERROR_EXCEPTION, original);
@@ -792,7 +792,7 @@ public final class BerliozServlet extends HttpServlet {
       String message = existingMessage instanceof String
           ? (String) existingMessage : "XSLT failed while rendering an error";
       ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), status, message, original,
-          getBerliozConfig().getMediaType());
+          getBerliozConfig().getMediaType(), false);
       try {
         ErrorHandlerServlet.handleTerminal(req, res);
       } catch (IOException io) {
@@ -874,9 +874,10 @@ public final class BerliozServlet extends HttpServlet {
     Integer error = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
 
     int statusCode = Math.max(100, Math.min(599, error != null ? error : code));
-    prepareErrorAttributes(req, statusCode, message, ex);
+    boolean sendToContainer = error == null && !GlobalSettings.has(BerliozOption.ERROR_HANDLER);
+    prepareErrorAttributes(req, statusCode, message, ex, sendToContainer);
 
-    if (error == null && !GlobalSettings.has(BerliozOption.ERROR_HANDLER)) {
+    if (sendToContainer) {
       logError(code, message, ex, "Berlioz sending error to Web container {} [{}]");
       try {
         res.sendError(statusCode, message);
@@ -901,9 +902,10 @@ public final class BerliozServlet extends HttpServlet {
     dispatchError(req, res, code, message, ex);
   }
 
-  private void prepareErrorAttributes(HttpServletRequest req, int statusCode, String message, @Nullable Throwable ex) {
+  private void prepareErrorAttributes(HttpServletRequest req, int statusCode, String message, @Nullable Throwable ex,
+      boolean sendToContainer) {
     ErrorHandlerServlet.prepareErrorAttributes(req, getBerliozConfig().getName(), statusCode, message, ex,
-        getBerliozConfig().getMediaType());
+        getBerliozConfig().getMediaType(), sendToContainer);
   }
 
   /**

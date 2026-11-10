@@ -173,6 +173,20 @@ public final class ErrorHandlerServlet extends HttpServlet {
    */
   public static final String BERLIOZ_ERROR_MEDIA_TYPE = "org.pageseeder.berlioz.error_media_type";
 
+  /**
+   * The exception that caused the error (Throwable), set by Berlioz whenever it routes an error
+   * with an exception.
+   *
+   * <p>When Berlioz sends the error to the container ({@code berlioz.errors.handle=false}), it
+   * sets only this attribute, not {@code javax.servlet.error.exception}: the servlet specification
+   * reserves that attribute for exceptions the container catches, and Tomcat handles it as an
+   * uncaught exception, answering {@code 500} instead of the status of the error. Error pages
+   * should read this attribute when the standard one is absent.
+   *
+   * @since 0.14.6
+   */
+  public static final String BERLIOZ_ERROR_EXCEPTION = "org.pageseeder.berlioz.error_exception";
+
   static final String ERROR_RENDERING_DEPTH = "org.pageseeder.berlioz.error.rendering-depth";
 
   static final String ORIGINAL_ERROR_EXCEPTION = "org.pageseeder.berlioz.error.original-exception";
@@ -370,6 +384,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
       LOGGER.debug(RequestDispatcher.ERROR_STATUS_CODE + ":{}", req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE));
       LOGGER.debug(RequestDispatcher.ERROR_SERVLET_NAME + ":{}", req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME));
       LOGGER.debug(RequestDispatcher.ERROR_EXCEPTION + ":{}", req.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
+      LOGGER.debug(BERLIOZ_ERROR_EXCEPTION + ":{}", req.getAttribute(BERLIOZ_ERROR_EXCEPTION));
       LOGGER.debug(RequestDispatcher.ERROR_REQUEST_URI + ":{}", req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI));
       LOGGER.debug(BERLIOZ_ERROR_ID + ":{}", req.getAttribute(BERLIOZ_ERROR_ID));
     }
@@ -598,8 +613,17 @@ public final class ErrorHandlerServlet extends HttpServlet {
     return HttpException.headersIn(getErrorException(req));
   }
 
+  /**
+   * Sets the error attributes before the error is rendered.
+   *
+   * @param sentToContainer {@code true} when the error is sent to the container with
+   *                        {@code sendError}: the exception is then only set as
+   *                        {@link #BERLIOZ_ERROR_EXCEPTION}, so that the container does not handle
+   *                        it as an uncaught exception.
+   */
   static void prepareErrorAttributes(HttpServletRequest req, String servletName, int statusCode,
-                                     String message, @Nullable Throwable ex, @Nullable String mediaType) {
+                                     String message, @Nullable Throwable ex, @Nullable String mediaType,
+                                     boolean sentToContainer) {
     req.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, statusCode);
     req.setAttribute(RequestDispatcher.ERROR_MESSAGE, message);
     if (req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI) == null) {
@@ -612,8 +636,11 @@ public final class ErrorHandlerServlet extends HttpServlet {
       req.setAttribute(BERLIOZ_ERROR_MEDIA_TYPE, mediaType);
     }
     if (ex != null) {
-      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION, ex);
-      req.setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, ex.getClass());
+      req.setAttribute(BERLIOZ_ERROR_EXCEPTION, ex);
+      if (!sentToContainer) {
+        req.setAttribute(RequestDispatcher.ERROR_EXCEPTION, ex);
+        req.setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, ex.getClass());
+      }
       ErrorID id = ex instanceof BerliozException ? ((BerliozException) ex).id() : null;
       if (id != null) req.setAttribute(BERLIOZ_ERROR_ID, id.id());
     }
@@ -851,17 +878,23 @@ public final class ErrorHandlerServlet extends HttpServlet {
   }
 
   /**
-   * Returns the exception from the request attribute '<code>javax.servlet.error.exception</code>'.
+   * Returns the exception from the request attribute '<code>javax.servlet.error.exception</code>',
+   * or from {@link #BERLIOZ_ERROR_EXCEPTION} when Berlioz sent the error to the container.
    *
    * @param req the servlet request
    * @return the exception, or {@code null} when unavailable.
    */
-  private static @Nullable Throwable getErrorException(ServletRequest req) {
-    Object o = req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+  static @Nullable Throwable getErrorException(ServletRequest req) {
+    Throwable standard = getThrowable(req, RequestDispatcher.ERROR_EXCEPTION);
+    return standard != null ? standard : getThrowable(req, BERLIOZ_ERROR_EXCEPTION);
+  }
+
+  private static @Nullable Throwable getThrowable(ServletRequest req, String name) {
+    Object o = req.getAttribute(name);
     if (o == null) return null;
     else if (o instanceof Throwable) return (Throwable) o;
     else {
-      LOGGER.error("The '{}' must contain a Throwable, but was of type: {}", RequestDispatcher.ERROR_EXCEPTION, o.getClass().getSimpleName());
+      LOGGER.error("The '{}' must contain a Throwable, but was of type: {}", name, o.getClass().getSimpleName());
       return null;
     }
   }

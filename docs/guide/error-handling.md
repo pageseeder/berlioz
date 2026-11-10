@@ -23,6 +23,8 @@ Controls where errors go when the framework needs to report one.
 - `true` — Berlioz handles it internally, dispatching to `ErrorHandlerServlet` (HTML/XML) or writing `application/problem+json` directly (JSON-typed servlets)
 - `false` — delegates to the servlet container via `res.sendError()`, letting `web.xml` `<error-page>` entries take over
 
+With `false`, Berlioz passes the exception that caused the error in the `org.pageseeder.berlioz.error_exception` request attribute (`ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION`), not in `javax.servlet.error.exception`. The servlet specification reserves that attribute for exceptions the container catches: Tomcat would otherwise handle the error as an uncaught exception and answer `500` from an error page declared for `java.lang.Exception`. `ErrorHandlerServlet` and `GetErrorDetails` read either attribute; a custom error page should read the Berlioz attribute when the standard one is absent.
+
 | Development | Production |
 |---|---|
 | `true` | `false` (prefer custom `web.xml` error pages) |

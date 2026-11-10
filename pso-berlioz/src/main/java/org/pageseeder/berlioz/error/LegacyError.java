@@ -63,6 +63,14 @@ public final class LegacyError implements XmlWritable {
   }
 
   /**
+   * Returns the standard error exception, or the one Berlioz set when it sent the error to the
+   * container.
+   */
+  private static @Nullable Throwable exception(@Nullable Object standard, @Nullable Object berlioz) {
+    return (Throwable) (standard != null ? standard : berlioz);
+  }
+
+  /**
    * Builds a {@code LegacyError} from Berlioz's {@link Request} abstraction.
    *
    * <p>Reads the standard servlet error attributes ({@code javax.servlet.error.*}) from the
@@ -76,7 +84,8 @@ public final class LegacyError implements XmlWritable {
     try {
       String message = (String) req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
       Integer code = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
-      Throwable exception = (Throwable) req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+      Throwable exception = exception(req.getAttribute(RequestDispatcher.ERROR_EXCEPTION),
+          req.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION));
       String requestUri = (String) req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
 
       String errorId = (String) req.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_ID);
@@ -107,7 +116,8 @@ public final class LegacyError implements XmlWritable {
     try {
       String message = (String) req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
       Integer code = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
-      Throwable exception = (Throwable) req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
+      Throwable exception = exception(req.getAttribute(RequestDispatcher.ERROR_EXCEPTION),
+          req.getAttribute(ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION));
       String requestUri = (String) req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
 
       // Fall back values
