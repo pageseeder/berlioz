@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -684,107 +685,69 @@ public abstract class AppInitializer {
   // ----------------------------------------------------------------------------------------------
 
   /**
-   * Attempts to configure the logger through reflection.
+   * Configures the logging framework.
    *
-   * <p>This method will look for logging configuration in the following order:
+   * <p>This method looks for a logging configuration in the following order:
    * <ol>
-   *   <li><code>logback-<i>[mode]</i>.xml</code></li>
+   *   <li><code>logback-<i>[mode]</i>.xml</code> in the application data, then in <code>WEB-INF</code></li>
    *   <li><code>logback.xml</code></li>
-   *   <li><code>log4j-<i>[mode]</i>.prp</code></li>
-   *   <li><code>log4j.prp</code></li>
+   *   <li><code>log4j-<i>[mode]</i>.properties</code> in the application data, then in <code>WEB-INF</code></li>
+   *   <li><code>log4j.properties</code></li>
    * </ol>
+   *
+   * <p>Logback files are only used when SLF4J is bound to logback, see {@link LogbackSetup}.
    *
    * @param env  The initial environment
    */
   private static void configureLogger(InitEnvironment env) {
     File appDataConfig = new File(env.appData(), env.configFolder());
     File webInfConfig = new File(env.webInf(), env.configFolder());
-    boolean configured;
-    // Try specific logback first
-    File file = new File(appDataConfig, "logback-" + env.mode() + ".xml");
-    configured = configureLogback(file);
-    if (configured) return;
-    // Try specific logback first in WEB-INF
-    if (env.hasAppData()) {
-      file = new File(webInfConfig, "logback-" + env.mode() + ".xml");
-      configured = configureLogback(file);
-      if (configured) return;
-    }
-    // Try generic logback
-    file = new File(webInfConfig, "logback.xml");
-    configured = configureLogback(file);
-    if (configured) return;
-    // Try specific log4j
+    String logbackModeFile = "logback-" + env.mode() + ".xml";
     String log4jModeFile = "log4j-" + env.mode() + ".properties";
-    file = new File(appDataConfig, log4jModeFile);
-    configured = configureLog4j(file);
-    if (configured) return;
-    // Try specific log4j in WEB-INF
+    List<File> logback = new ArrayList<>();
+    List<File> log4j = new ArrayList<>();
+    logback.add(new File(appDataConfig, logbackModeFile));
+    log4j.add(new File(appDataConfig, log4jModeFile));
     if (env.hasAppData()) {
-      // Try specific log4j
-      file = new File(webInfConfig, log4jModeFile);
-      configured = configureLog4j(file);
-      if (configured) return;
+      logback.add(new File(webInfConfig, logbackModeFile));
+      log4j.add(new File(webInfConfig, log4jModeFile));
     }
-    // Try generic log4j
-    file = new File(webInfConfig, "log4j.properties");
-    configured = configureLog4j(file);
-    if (configured) return;
+    logback.add(new File(webInfConfig, "logback.xml"));
+    log4j.add(new File(webInfConfig, "log4j.properties"));
+    if (configureLogback(logback)) return;
+    for (File file : log4j) {
+      if (configureLog4j(file)) return;
+    }
     // Unable to configure logging
     console(Phase.INIT, "Logging: no logging configured.");
     console(Phase.INIT, "Logging: DONE -------------------------------------------------");
   }
 
   /**
-   * Attempts to configure the logger through reflection.
+   * Configures logback from the first candidate file that loads.
    *
-   * @param configuration The logback configuration file.
-   * @return <code>true</code> if configuration was successful;
-   *         <code>false</code> in case of any error.
+   * @param candidates The logback configuration files in the order to try.
+   * @return <code>true</code> if logback is configured;
+   *         <code>false</code> if no file exists or logback is not used.
    */
-  private static boolean configureLogback(File configuration) {
-    boolean configured = false;
-    // Look for LOGBACK first
-    if (configuration.exists()) {
-      console(Phase.INIT, "Logging: found config/"+configuration.getName()+" [logback config file]");
-      try {
-        Class<?> joranClass = Class.forName("ch.qos.logback.classic.joran.JoranConfigurator");
-        Class<?> contextClass = Class.forName("ch.qos.logback.core.Context");
-        Object configurator = joranClass.getDeclaredConstructor().newInstance();
-        // Set the context
-        ILoggerFactory context = LoggerFactory.getILoggerFactory();
-        Method setContext = joranClass.getMethod("setContext", contextClass);
-        setContext.invoke(configurator, contextClass.cast(context));
-        // Reset the context
-        resetLogbackContext(context);
-        // Invoke the configuration
-        Method doConfigure = joranClass.getMethod("doConfigure", String.class);
-        doConfigure.invoke(configurator, configuration.getAbsolutePath());
-        configured = true;
-        console(Phase.INIT, "Logging: logback config file OK");
-        console(Phase.INIT, "Logging: OK ---------------------------------------------------");
-      } catch (ClassNotFoundException ex) {
-        console(Phase.INIT, "(!) Logging: attempt to load logback configuration failed!");
-        console(Phase.INIT, "(!) Logging: logback could not be found on classpath!");
-      } catch (Exception ex) {
-        console(Phase.INIT, "(!) Logging: attempt to load Logback configuration failed!");
-        consoleException(Phase.INIT, ex);
+  @SuppressWarnings("java:S1181") // LinkageError: an unsupported logback version must not prevent Berlioz from starting
+  private static boolean configureLogback(List<File> candidates) {
+    ILoggerFactory factory = LoggerFactory.getILoggerFactory();
+    // Compare names so that no logback class is loaded when logback is absent
+    if (!LogbackSetup.LOGGER_CONTEXT_CLASS.equals(factory.getClass().getName())) {
+      for (File file : candidates) {
+        if (file.exists()) {
+          console(Phase.INIT, "(!) Logging: found config/"+file.getName()+" but SLF4J does not use logback ("+factory.getClass().getName()+"), file ignored");
+        }
       }
-    } else {
-      console(Phase.INIT, "Logging: config/"+configuration.getName()+" not found");
+      return false;
     }
-    return configured;
-  }
-
-  private static void resetLogbackContext(ILoggerFactory context) {
     try {
-      Class<?> loggerContextClass = Class.forName("ch.qos.logback.classic.LoggerContext");
-      Method reset = loggerContextClass.getMethod("reset");
-      reset.invoke(context);
-      console(Phase.INIT, "Logging: logger context reset successfully");
-    } catch (Exception ex) {
-      console(Phase.INIT, "(!) Logging: Failed to  logger context - logging messages may appear twice");
-      consoleException(Phase.INIT, ex);
+      return LogbackSetup.configure(factory, candidates, message -> console(Phase.INIT, message));
+    } catch (LinkageError error) {
+      console(Phase.INIT, "(!) Logging: unsupported logback version, logging configuration files ignored");
+      console(Phase.INIT, error.toString());
+      return false;
     }
   }
 

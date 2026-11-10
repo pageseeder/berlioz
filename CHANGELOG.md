@@ -13,11 +13,12 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 ### Fixed
 
 - With `berlioz.errors.handle=false`, Berlioz no longer sets `javax.servlet.error.exception` before `sendError`, so Tomcat answers with the status of the error instead of handling it as an uncaught exception: with an error page for `java.lang.Exception`, as Kickstart declares, the error of a generator that throws, such as an `InvalidParameterException` (400), was answered 500. The exception is passed in `org.pageseeder.berlioz.error_exception` instead, which `ErrorHandlerServlet` and `GetErrorDetails` read.
-
 - `RedirectFilter` and `RelocationFilter` without a `config` init parameter no longer fail every request with a `NullPointerException` (500); as logged at startup, they have no effect and pass requests through. A configuration file without rules is now logged as a warning rather than at info level, since the filter then does no useful work. Log messages of both filters name the filter instance.
 - The error page of a `POST`, `PUT`, `DELETE`, `PATCH` or `QUERY` request is found: when rendering an error, `BerliozServlet` looks the service up as `GET` instead of answering `405 Method Not Allowed` and replacing the error message.
 - `ErrorHandlerServlet` handles errors whatever the HTTP method; the error of a `PUT` or `DELETE` request was answered `405`, and that of a `PATCH` request `501`.
 - Resetting an error response keeps the `WWW-Authenticate`, `Proxy-Authenticate`, `Allow` and `Retry-After` headers, so that the challenge of container authentication survives a `401` error page and a `405` keeps its `Allow` header.
+- Logback configuration at startup no longer fails silently. When the last Logback file found could not be loaded, such as a malformed `logback.xml`, Berlioz left Logback reset with no appender, so nothing was logged; it now logs to the console at `INFO` level and says so. Errors that Logback reports without failing, such as an appender class that cannot be found, are printed instead of "logback config file OK"; with Logback 1.5, such an error can leave the whole file unapplied. When a file fails and a later one loads, for example `logback.xml` after a malformed `logback-<mode>.xml`, a warning naming the failed file is logged. Logback files are ignored, with a console message, when SLF4J is not bound to Logback. Logback 1.3 or later is supported.
+- `redirect-mapping-1.0.dtd` declares `permanent` as `yes` or `no`, as the schema and the parser do; it declared `true` or `false`, so a file written to the DTD failed validation and the redirect filter had no rules.
 
 ## [0.14.5] — 2026-10-29
 
