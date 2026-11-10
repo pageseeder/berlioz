@@ -3,7 +3,7 @@
 <!-- Title:         Berlioz DTD for redirection mapping                     -->
 <!-- System:        Berlioz                                                 -->
 <!-- Version:       1.0                                                     -->
-<!-- LastModified:  22 February 2023                                        -->
+<!-- LastModified:  10 November 2026                                        -->
 <!--;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-->
 
 <!--
@@ -17,4 +17,4 @@
 <!ELEMENT redirect                                                      EMPTY >
 <!ATTLIST redirect     from            CDATA                        #REQUIRED
                        to              CDATA                        #REQUIRED
-                       permanent       (true | false)                #IMPLIED >
+                       permanent       (yes | no)                    #IMPLIED >

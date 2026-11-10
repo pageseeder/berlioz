@@ -2,9 +2,17 @@ package org.pageseeder.berlioz.config;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.pageseeder.berlioz.xml.BerliozEntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 
 final class RedirectConfigTest {
 
@@ -55,6 +63,50 @@ final class RedirectConfigTest {
   void testLoadFile_DTD() throws ConfigException {
     RedirectConfig config = RedirectConfig.newInstance(new File(this.configFolder, "redirect_dtd.xml"));
     Assertions.assertNotNull(config);
+  }
+
+  /**
+   * The DTD must accept the values that the schema and the parser accept, so that a file written
+   * to the DTD loads.
+   */
+  @Test
+  void testDTD_permanentMatchesSchema() throws Exception {
+    for (String value : new String[]{"yes", "no"}) {
+      String xml = withDoctype("<redirect from=\"/old\" to=\"/new\" permanent=\"" + value + "\"/>");
+      Assertions.assertNull(dtdError(xml), "The DTD must accept permanent=\"" + value + "\"");
+      RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+      Assertions.assertEquals("yes".equals(value), config.redirect("/old").isPermanent());
+    }
+    for (String value : new String[]{"true", "false"}) {
+      String xml = withDoctype("<redirect from=\"/old\" to=\"/new\" permanent=\"" + value + "\"/>");
+      Assertions.assertNotNull(dtdError(xml), "The DTD must reject permanent=\"" + value + "\"");
+      Assertions.assertThrows(ConfigException.class,
+          () -> RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))));
+    }
+  }
+
+  private static String withDoctype(String redirects) {
+    return "<?xml version=\"1.0\"?>"
+        + "<!DOCTYPE redirect-mapping PUBLIC \"-//Berlioz//DTD::Redirect Mapping 1.0//EN\""
+        + " \"https://pageseeder.org/schema/berlioz/redirect-mapping-1.0.dtd\">"
+        + "<redirect-mapping>" + redirects + "</redirect-mapping>";
+  }
+
+  /** Validates against the DTD shipped in the library, returning the first error or null. */
+  private static String dtdError(String xml) throws Exception {
+    SAXParserFactory factory = SAXParserFactory.newInstance();
+    factory.setValidating(true);
+    XMLReader reader = factory.newSAXParser().getXMLReader();
+    reader.setEntityResolver(BerliozEntityResolver.INSTANCE);
+    String[] error = {null};
+    reader.setErrorHandler(new DefaultHandler() {
+      @Override
+      public void error(SAXParseException ex) {
+        if (error[0] == null) error[0] = ex.getMessage();
+      }
+    });
+    reader.parse(new InputSource(new StringReader(xml)));
+    return error[0];
   }
 
   @Test
