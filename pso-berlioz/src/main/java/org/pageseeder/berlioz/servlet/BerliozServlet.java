@@ -106,7 +106,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.5
+ * @version 0.14.6
  * @since 0.7
  */
 public final class BerliozServlet extends HttpServlet {
@@ -343,17 +343,18 @@ public final class BerliozServlet extends HttpServlet {
 
     // Start handling XML content
     String path = HttpRequestWrapper.getBerliozPath(req);
-    MatchingService match = findMatch(services, path, method);
+    HttpMethod lookup = lookupMethod(req, method);
+    MatchingService match = findMatch(services, path, lookup);
 
     // No matching service
     if (match == null) {
-      handleNoMatch(req, res, services, path, method);
+      handleNoMatch(req, res, services, path, lookup);
       return;
     }
 
     // RFC 10008 requires every QUERY request to identify the media type of its query content.
     // Validate only after routing so an unknown resource still receives the expected 404.
-    if (!validateQueryContentType(req, res, method)) return;
+    if (!validateQueryContentType(req, res, lookup)) return;
 
     var service = match.service();
 
@@ -572,6 +573,21 @@ public final class BerliozServlet extends HttpServlet {
    * (backward compatibility).
    */
   @SuppressWarnings("removal") // HTTP_GET_VIA_POST removed in 1.0; fallback path guarded here until then
+
+  /**
+   * Returns the method used to find the service for this request.
+   *
+   * <p>An error is dispatched with the method of the request that failed, but the error page is a
+   * resource to read: when rendering an error, the service is looked up as {@code GET} (or
+   * {@code HEAD}), so that the error page of a {@code POST} or {@code PUT} request is found instead
+   * of being answered with {@code 405 Method Not Allowed}.
+   */
+  private static HttpMethod lookupMethod(HttpServletRequest req, HttpMethod method) {
+    boolean renderingError = req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) != null;
+    if (!renderingError || method == HttpMethod.HEAD) return method;
+    return HttpMethod.GET;
+  }
+
   private static @Nullable MatchingService findMatch(ServiceRegistry services, String path, HttpMethod method) {
     // No matching service (backward compatibility)
     MatchingService match = services.get(path, method);

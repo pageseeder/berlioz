@@ -9,6 +9,9 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 ### Fixed
 
 - `RedirectFilter` and `RelocationFilter` without a `config` init parameter no longer fail every request with a `NullPointerException` (500); as logged at startup, they have no effect and pass requests through. A configuration file without rules is now logged as a warning rather than at info level, since the filter then does no useful work. Log messages of both filters name the filter instance.
+- The error page of a `POST`, `PUT`, `DELETE`, `PATCH` or `QUERY` request is found: when rendering an error, `BerliozServlet` looks the service up as `GET` instead of answering `405 Method Not Allowed` and replacing the error message.
+- `ErrorHandlerServlet` handles errors whatever the HTTP method; the error of a `PUT` or `DELETE` request was answered `405`, and that of a `PATCH` request `501`.
+- Resetting an error response keeps the `WWW-Authenticate`, `Proxy-Authenticate`, `Allow` and `Retry-After` headers, so that the challenge of container authentication survives a `401` error page and a `405` keeps its `Allow` header.
 
 ## [0.14.5] — 2026-10-29
 

@@ -20,6 +20,8 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -102,6 +104,40 @@ class ErrorHandlerServletTest {
         () -> assertTrue(getResponse.content().contains("GET failure")),
         () -> assertTrue(postResponse.content().contains("POST failure"))
     );
+  }
+
+  @Test
+  void service_handlesTheErrorWhateverTheMethod() throws Exception {
+    ErrorHandlerServlet servlet = new ErrorHandlerServlet();
+    for (String method : new String[]{"GET", "POST", "PUT", "DELETE", "PATCH", "QUERY"}) {
+      HttpServletRequest req = ServletTestSupport.request().method(method).uri("/failure.xml")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 400)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, method + " failure")
+          .build();
+      ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+      servlet.service((ServletRequest) req, (ServletResponse) recorder.build());
+
+      assertEquals(400, recorder.status, method);
+      assertTrue(recorder.content().contains(method + " failure"), method + ": " + recorder.content());
+    }
+  }
+
+  @Test
+  void handle_keepsHeadersRequiredByTheErrorStatus() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().method("POST").uri("/private.html")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 401)
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    recorder.headers.put(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"test\"");
+    recorder.headers.put(HttpHeaders.ETAG, "\"stale\"");
+
+    new ErrorHandlerServlet().handle(req, recorder.build());
+
+    assertEquals(401, recorder.status);
+    assertTrue(recorder.resetCalled);
+    assertEquals("Basic realm=\"test\"", recorder.header(HttpHeaders.WWW_AUTHENTICATE));
+    assertNull(recorder.header(HttpHeaders.ETAG), "Headers not required by the error status are reset");
   }
 
   @Test

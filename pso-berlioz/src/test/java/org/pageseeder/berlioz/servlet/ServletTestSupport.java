@@ -221,6 +221,10 @@ public final class ServletTestSupport {
             @Override public void setWriteListener(WriteListener writeListener) { throw new UnsupportedOperationException(); }
           };
           case "getHeader":            return headers.get(args[0]);
+          case "getHeaders": {
+            String val = headers.get(args[0]);
+            return val != null ? List.of(val) : Collections.emptyList();
+          }
           case "encodeRedirectURL":     return args[0];
           case "encodeURL":             return args[0];
           case "toString":             return "ResponseRecorder";

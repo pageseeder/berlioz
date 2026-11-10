@@ -359,6 +359,47 @@ class BerliozServletTest {
   }
 
   @Test
+  void doPut_getOnlyPathKeepsAllowHeaderWhenBerliozHandlesErrors() throws Exception {
+    writeConfig(true);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("get-only", "get", "/get-only", "generator", ECHO_XML));
+    initServlet(Collections.emptyMap());
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    this.servlet.doPut(request("PUT", "/get-only.xml"), recorder.build());
+
+    assertEquals(405, recorder.status);
+    assertNotNull(recorder.header(HttpHeaders.ALLOW), "The error page must keep the Allow header of a 405");
+    assertTrue(recorder.header(HttpHeaders.ALLOW).contains("GET"));
+  }
+
+  @Test
+  void errorDispatch_findsGetErrorPageWhateverTheMethod() throws Exception {
+    writeConfig(false, true, false);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("error-401", "get", "/error/401", "handler", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+
+    for (String method : new String[]{"POST", "PUT", "DELETE", "PATCH", "QUERY"}) {
+      HttpServletRequest req = ServletTestSupport.request()
+          .method(method).uri("/error/401.xml").servletPath("/error/401.xml")
+          .attribute(RequestDispatcher.ERROR_STATUS_CODE, 401)
+          .attribute(RequestDispatcher.ERROR_MESSAGE, "Unauthorized")
+          .build();
+      ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+      recorder.headers.put(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"test\"");
+
+      this.servlet.service(req, recorder.build());
+
+      assertEquals(401, recorder.status, method);
+      assertTrue(recorder.content().contains("hello"), method + ": " + recorder.content());
+      assertNull(recorder.header(HttpHeaders.ALLOW), method);
+      assertEquals("Basic realm=\"test\"", recorder.header(HttpHeaders.WWW_AUTHENTICATE), method);
+      assertEquals("Unauthorized", req.getAttribute(RequestDispatcher.ERROR_MESSAGE), method);
+    }
+  }
+
+  @Test
   void query_matchingServiceDispatchesAndReturnsContent() throws Exception {
     writeServices(service("search", "query", "/search", "handler", ECHO_XML));
     initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
@@ -915,12 +956,16 @@ class BerliozServletTest {
   }
 
   private void writeConfig(boolean handleErrors, boolean problemFormat) throws IOException {
+    writeConfig(handleErrors, problemFormat, true);
+  }
+
+  private void writeConfig(boolean handleErrors, boolean problemFormat, boolean getViaPost) throws IOException {
     Files.write(this.webInf.resolve("config").resolve("config.xml"), String.join("\n",
         "<?xml version=\"1.0\"?>",
         "<global>",
         "  <berlioz>",
         "    <errors handle=\"" + handleErrors + "\" generator-catch=\"false\" problem=\"" + problemFormat + "\"/>",
-        "    <http compression=\"false\" get-via-post=\"true\"/>",
+        "    <http compression=\"false\" get-via-post=\"" + getViaPost + "\"/>",
         "  </berlioz>",
         "</global>").getBytes(StandardCharsets.UTF_8));
   }

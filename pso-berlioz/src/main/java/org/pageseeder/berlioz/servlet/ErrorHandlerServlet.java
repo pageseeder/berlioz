@@ -85,7 +85,7 @@ import org.pageseeder.berlioz.xslt.XsltTransformException;
  * }</pre>
  *
  * @author Christophe Lauret
- * @version 0.14.1
+ * @version 0.14.6
  * @since 0.6
  */
 public final class ErrorHandlerServlet extends HttpServlet {
@@ -197,6 +197,15 @@ public final class ErrorHandlerServlet extends HttpServlet {
   private static final String AUTO_EXTENSION = ".auto";
 
   /**
+   * Response headers kept when the error response is reset, because the error status requires or
+   * expects them: the challenge of a {@code 401} or {@code 407} (for example, set by container
+   * authentication before the error), the methods of a {@code 405}, and the delay of a {@code 503}
+   * or {@code 429}. Other headers set before the error, such as {@code ETag}, are removed.
+   */
+  private static final List<String> PRESERVED_HEADERS = List.of(HttpHeaders.WWW_AUTHENTICATE,
+      HttpHeaders.PROXY_AUTHENTICATE, HttpHeaders.ALLOW, HttpHeaders.RETRY_AFTER);
+
+  /**
    * The default extension to use for extensions which are neither preserved nor ignored.
    */
   private static final String DEFAULT_EXTENSION = ".html";
@@ -305,6 +314,22 @@ public final class ErrorHandlerServlet extends HttpServlet {
         .collect(java.util.stream.Collectors.toUnmodifiableList());
   }
 
+  /**
+   * Handles the error whatever the HTTP method.
+   *
+   * <p>The container dispatches an error with the method of the request that failed; without this
+   * override, {@code HttpServlet} would answer the error of a {@code PUT} or {@code DELETE} request
+   * with {@code 405} and that of a {@code PATCH} request with {@code 501}.
+   */
+  @Override
+  protected void service(HttpServletRequest req, HttpServletResponse res) {
+    try {
+      handle(req, res);
+    } catch (IOException | ServletException ex) {
+      LOGGER.error("Failed to handle error for {}", req.getRequestURI(), ex);
+    }
+  }
+
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse res) {
     try {
@@ -378,15 +403,28 @@ public final class ErrorHandlerServlet extends HttpServlet {
     Map<String, String> headers = resolveExceptionHeaders(req);
 
     // Reset the response (in case the ETag, etc. has been set...)
-    res.reset();
+    reset(res);
     res.setCharacterEncoding(StandardCharsets.UTF_8.name());
     res.setStatus(code);
 
     renderError(req, res, format, headers, RenderingPolicy.CONFIGURED_STYLESHEET);
   }
 
-  private static void writeIgnoredResponse(HttpServletResponse res, int code) throws IOException {
+  /**
+   * Resets the response, keeping the {@link #PRESERVED_HEADERS} already set.
+   */
+  private static void reset(HttpServletResponse res) {
+    Map<String, List<String>> kept = new LinkedHashMap<>();
+    for (String name : PRESERVED_HEADERS) {
+      Collection<String> values = res.getHeaders(name);
+      if (values != null && !values.isEmpty()) kept.put(name, List.copyOf(values));
+    }
     res.reset();
+    kept.forEach((name, values) -> values.forEach(value -> res.addHeader(name, value)));
+  }
+
+  private static void writeIgnoredResponse(HttpServletResponse res, int code) throws IOException {
+    reset(res);
     res.setStatus(code);
     res.setContentType("text/plain;charset=UTF-8");
     ServletOutputStream out = res.getOutputStream();
@@ -546,7 +584,7 @@ public final class ErrorHandlerServlet extends HttpServlet {
     if (res.isCommitted()) return;
     int code = getErrorCode(req);
     Map<String, String> headers = resolveExceptionHeaders(req);
-    res.reset();
+    reset(res);
     res.setStatus(code);
     ResponseFormat format = resolveFormat(req, getExtension(getOriginalURI(req)));
     renderError(req, res, format, headers, RenderingPolicy.BUILT_IN_ONLY);
