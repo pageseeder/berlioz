@@ -44,9 +44,13 @@ Fix the defects that Berlioz Admin found: error pages for every HTTP method, err
 
 Expose state that only Berlioz knows, so that admin tools no longer parse Berlioz's files or repeat its rules: the rules loaded by the redirect and relocation filters, a `redirects` reload that reaches every filter, redaction of credentials by value, and which logging configuration Berlioz loaded at startup ([theme 18](docs/design/18-admin-overlay-upstreaming.md), items 11–14).
 
+Improve logging diagnostics to distinguish the active SLF4J backend from configuration applied by Berlioz, and let applications leave logging configuration entirely to their backend or container. Keep mode-based Logback loading as a convenience, respecting explicit native configuration locations ([theme 19](docs/design/19-logging-configuration.md)).
+
 ### 0.14.x: Configuration Requirements And Validation
 
 Let applications declare the global properties they need in `WEB-INF/config/config-requirements.xml`, validate them on every load, and inspect the result through a diagnostic generator. Violations are reported by default; applications can choose to reject a configuration with errors, in which case a reload keeps the last valid configuration. See [theme 5](docs/design/05-configuration-validation.md).
+
+Add optional Log4j 2 mode-based XML configuration using the same location precedence as Logback, after the logging diagnostics and configuration ownership changes in 0.14.6 ([theme 19](docs/design/19-logging-configuration.md)).
 
 ### 1.0
 
@@ -86,6 +90,7 @@ Themes are long-running areas of work. Each has a design document with its motiv
 | 16 | [Admin diagnostics](docs/design/16-admin-diagnostics.md) | 0.14.5 / 1.0 | ✓ 0.14.5 part done |
 | 17 | [Scoped `berlioz-reload`](docs/design/17-scoped-reload.md) | 0.14.5 / 1.0 | ✓ 0.14.5 part done |
 | 18 | [Admin overlay upstreaming](docs/design/18-admin-overlay-upstreaming.md) | 0.14.5 / 0.14.6 / 1.0 | ✓ 0.14.5 and 0.14.6 parts done |
+| 19 | [Logging configuration and diagnostics](docs/design/19-logging-configuration.md) | 0.14.6 / 0.14.x / 1.0 | Proposed |
 
 Status values: **Exploring** (problem understood, approach open), **Proposed** (approach sketched), **Designed** (ready to implement), **Done**.
 
