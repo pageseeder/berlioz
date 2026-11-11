@@ -2,6 +2,8 @@ package org.pageseeder.berlioz.util;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class RedactionTest {
 
@@ -86,6 +88,69 @@ class RedactionTest {
     Assertions.assertEquals("gzip", Redaction.redactHeader("content-encoding", "gzip"));
     Assertions.assertEquals("keep-alive", Redaction.redactHeader("connection", "keep-alive"));
     Assertions.assertEquals("example.com", Redaction.redactHeader("host", "example.com"));
+  }
+
+  // redactValue() — values whatever their name
+  // ---------------------------------------------------------------------------
+
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "plain value                                      | plain value",
+      "https://example.org/x?q=1                        | https://example.org/x?q=1",
+      "jdbc:postgresql://app:s3cret@db/app              | jdbc:postgresql://app:[REDACTED]@db/app",
+      "https://ghp_token@github.com/org/repo.git        | https://[REDACTED]@github.com/org/repo.git",
+      "https://user:p@ss@host/x                         | https://user:[REDACTED]@host/x",
+      "//user:pw@host                                   | //user:[REDACTED]@host",
+      "https://@host/x                                  | https://@host/x",
+      "https://host/a@b                                 | https://host/a@b",
+      "a=http://u:p@h1/ b=ftp://u2:p2@h2/               | a=http://u:[REDACTED]@h1/ b=ftp://u2:[REDACTED]@h2/",
+      "jdbc:mysql://db/app?user=app&password=s3cret     | jdbc:mysql://db/app?user=app&password=[REDACTED]",
+      "https://host/x?access_token=abc#top              | https://host/x?access_token=[REDACTED]#top",
+      "jdbc:sqlserver://db;user=app;password=s3cret     | jdbc:sqlserver://db;user=app;password=[REDACTED]",
+      "host=db user=app password=s3cret                 | host=db user=app password=[REDACTED]",
+      "token=abc                                        | token=[REDACTED]",
+      "https://host/x?password=                         | https://host/x?password=",
+      "[REDACTED]                                       | [REDACTED]"})
+  void testRedactValue(String value, String expected) {
+    Assertions.assertEquals(expected, Redaction.redactValue(value));
+  }
+
+  @Test
+  void testRedactAppliesValueRules() {
+    Assertions.assertEquals("jdbc:postgresql://app:[REDACTED]@db/app",
+        Redaction.redact("db.url", "jdbc:postgresql://app:s3cret@db/app"));
+    Assertions.assertEquals("https://example.org/?token=[REDACTED]",
+        Redaction.redactHeader("referer", "https://example.org/?token=abc"));
+  }
+
+  // redactUriPattern() — URI patterns such as redirect targets
+  // ---------------------------------------------------------------------------
+
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "/a                                  | /a",
+      "/a?token=secret                     | /a?token=[REDACTED]",
+      "/a?token=secret&q={q}&flag#frag     | /a?token=[REDACTED]&q={q}&flag#frag",
+      "/a?x=1&y=2                          | /a?x=[REDACTED]&y=[REDACTED]",
+      "/a?x={q}{r}                         | /a?x=[REDACTED]",
+      "/a?x=                               | /a?x=[REDACTED]",
+      "/a?                                 | /a?",
+      "/a?x=1&                             | /a?x=[REDACTED]&",
+      "/a?x=1{&y}                          | /a?x=[REDACTED]",
+      "/search{?q}                         | /search{?q}",
+      "/search{?q}&x=1                     | /search{?q}&x=1",
+      "/a{#f}?x=1                          | /a{#f}?x=[REDACTED]",
+      "/a#f?x=1                            | /a#f?x=1",
+      "https://user:pass@example.org/x?a=1 | https://user:[REDACTED]@example.org/x?a=[REDACTED]",
+      "https://user@example.org/x          | https://[REDACTED]@example.org/x",
+      "//alice:secret@example.com/p?token=s | //alice:[REDACTED]@example.com/p?token=[REDACTED]",
+      "//alice@example.com                 | //[REDACTED]@example.com",
+      "//example.com/a@b                   | //example.com/a@b",
+      "https://example.org/x?u=a@b         | https://example.org/x?u=[REDACTED]",
+      "https://{host}/x                    | https://{host}/x",
+      "/{+path}                            | /{+path}"})
+  void testRedactUriPattern(String pattern, String expected) {
+    Assertions.assertEquals(expected, Redaction.redactUriPattern(pattern));
   }
 
   // isSensitiveName() and isSensitiveHeader()
