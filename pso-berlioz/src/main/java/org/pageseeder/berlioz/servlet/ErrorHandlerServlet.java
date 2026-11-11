@@ -334,9 +334,15 @@ public final class ErrorHandlerServlet extends HttpServlet {
    * <p>The container dispatches an error with the method of the request that failed; without this
    * override, {@code HttpServlet} would answer the error of a {@code PUT} or {@code DELETE} request
    * with {@code 405} and that of a {@code PATCH} request with {@code 501}.
+   *
+   * <p>{@code HEAD} is left to {@code HttpServlet}, which handles it as {@code GET} without a body.
    */
   @Override
-  protected void service(HttpServletRequest req, HttpServletResponse res) {
+  protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    if ("HEAD".equals(req.getMethod())) {
+      super.service(req, res);
+      return;
+    }
     try {
       handle(req, res);
     } catch (IOException | ServletException ex) {

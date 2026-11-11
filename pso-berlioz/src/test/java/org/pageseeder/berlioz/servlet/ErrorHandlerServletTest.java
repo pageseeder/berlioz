@@ -124,6 +124,20 @@ class ErrorHandlerServletTest {
   }
 
   @Test
+  void service_writesNoBodyForHead() throws Exception {
+    HttpServletRequest req = ServletTestSupport.request().method("HEAD").uri("/failure.xml")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 404)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "HEAD failure")
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    new ErrorHandlerServlet().service((ServletRequest) req, (ServletResponse) recorder.build());
+
+    assertEquals(404, recorder.status);
+    assertEquals("", recorder.content());
+  }
+
+  @Test
   void handle_keepsHeadersRequiredByTheErrorStatus() throws Exception {
     HttpServletRequest req = ServletTestSupport.request().method("POST").uri("/private.html")
         .attribute(RequestDispatcher.ERROR_STATUS_CODE, 401)

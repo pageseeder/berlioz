@@ -232,6 +232,8 @@ public final class ServletTestSupport {
           case "isCommitted":          return committed;
           case "setContentType":       setContentType((String) args[0]); return null;
           case "getStatus":            return status;
+          case "getContentType":       return contentType;
+          case "getCharacterEncoding": return characterEncoding != null ? characterEncoding : "ISO-8859-1";
           case "getWriter":            return writer;
           case "getOutputStream":       return new ServletOutputStream() {
             @Override public void write(int b) { bytes.write(b); }
