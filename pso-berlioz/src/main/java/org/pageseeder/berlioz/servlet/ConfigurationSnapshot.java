@@ -29,14 +29,16 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 /**
- * Immutable allowlisted servlet diagnostic content. Contains no servlet references or raw settings.
+ * Immutable allowlisted diagnostic content of servlets or filters. Contains no servlet references or raw settings.
  *
  * @author Christophe Lauret
  * @since 0.14.3
  */
 public final class ConfigurationSnapshot {
   private final String root;
-  private final List<Map<String, Object>> servlets;
+  private final String list;
+  private final String item;
+  private final List<Map<String, Object>> entries;
   private final Map<String, Object> fields;
 
   ConfigurationSnapshot(String root, List<Map<String, Object>> servlets) {
@@ -49,8 +51,22 @@ public final class ConfigurationSnapshot {
    * @param fields   objects written after the servlets, keyed by name
    */
   ConfigurationSnapshot(String root, List<Map<String, Object>> servlets, Map<String, Object> fields) {
+    this(root, "servlets", "servlet", servlets, fields);
+  }
+
+  /**
+   * @param root    the name of the root element
+   * @param list    the name of the JSON array of entries
+   * @param item    the name of each entry
+   * @param entries the entries
+   * @param fields  objects written after the entries, keyed by name
+   */
+  ConfigurationSnapshot(String root, String list, String item, List<Map<String, Object>> entries,
+      Map<String, Object> fields) {
     this.root = root;
-    this.servlets = servlets.stream()
+    this.list = list;
+    this.item = item;
+    this.entries = entries.stream()
         .map(ConfigurationSnapshot::freeze)
         .collect(Collectors.toUnmodifiableList());
     this.fields = freeze(fields);
@@ -62,10 +78,10 @@ public final class ConfigurationSnapshot {
    */
   public void writeTo(OutputWriter out) {
     out.startObject(this.root);
-    out.startArray("servlets", OutputWriter.ContextOption.JSON_ONLY);
-    for (Map<String, Object> servlet : this.servlets) {
-      out.startObject("servlet");
-      writeFields(out, servlet);
+    out.startArray(this.list, OutputWriter.ContextOption.JSON_ONLY);
+    for (Map<String, Object> entry : this.entries) {
+      out.startObject(this.item);
+      writeFields(out, entry);
       out.endObject();
     }
     out.endArray();
@@ -80,7 +96,7 @@ public final class ConfigurationSnapshot {
       DataOutputStream data = new DataOutputStream(bytes);
       canonical(data, "configuration-v1");
       canonical(data, this.root);
-      canonical(data, this.servlets);
+      canonical(data, this.entries);
       canonical(data, this.fields);
       return SHA256.hash(bytes.toByteArray());
     } catch (IOException ex) {
@@ -104,6 +120,9 @@ public final class ConfigurationSnapshot {
     } else if (value instanceof Boolean) {
       out.writeByte('b');
       out.writeBoolean((Boolean) value);
+    } else if (value instanceof Long) {
+      out.writeByte('l');
+      out.writeLong((Long) value);
     } else {
       out.writeByte('s');
       byte[] text = ((String) value).getBytes(StandardCharsets.UTF_8);
@@ -144,6 +163,7 @@ public final class ConfigurationSnapshot {
         writeFields(out, (Map<String, Object>) value);
         out.endObject();
       } else if (value instanceof Boolean) out.field(name, (Boolean) value);
+      else if (value instanceof Long) out.field(name, (long) (Long) value);
       else if (isObjectList(value)) writeObjects(out, name, (List<Map<String, Object>>) value);
       else if (value instanceof List) out.field(name, (List<String>) value);
       else out.field(name, (String) value);

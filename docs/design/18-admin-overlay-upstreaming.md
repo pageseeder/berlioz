@@ -1,6 +1,6 @@
 # 18. Admin Overlay Upstreaming (Requested By Berlioz Admin)
 
-**Status:** 0.14.5 part done · **Target:** items 1–8 and part of item 9 in 0.14.5; item 10 in 1.0
+**Status:** 0.14.5 and 0.14.6 parts done · **Target:** items 1–8 and part of item 9 in 0.14.5; items 11–12 in 0.14.6; item 10 in 1.0
 
 ## Motivation
 
@@ -45,6 +45,20 @@ Berlioz Admin (bzadmin) replaces or works around several Berlioz generators and 
    - Not in Berlioz: listing the classpath stylesheets under `META-INF/berlioz/xslt/` merged with the XSLT folder.
    - Replaces bzadmin's override detection; its JAR scanning (`XsltFiles`) remains for the listing.
 
+## 0.14.6
+
+Requested in the bzadmin proposals for Berlioz (`docs/design/berlioz-proposals.md` of the bzadmin repository).
+
+11. ✓ **Redirect and relocation filter snapshot**
+    - bzadmin read and parsed each mapping file again, repeated `ConfigLoader`'s DOCTYPE handling and size limit, and validated with the schemas of the Berlioz JAR, which are not an API. Its view showed the file, which can differ from the rules in use until the next reload.
+    - `RedirectFilter.diagnosticSnapshot()` and the `GetRedirectConfig` generator report every filter instance: name, type, `config` parameter (relative to `WEB-INF`), whether the file exists, the status (`no-config`, `not-loaded`, `loaded`, `failed`) and time of the last load, `reload-pending`, the failure (its message only when `berlioz.errors.detail` is not `minimal`), and the rules loaded (`from`, `to`, `permanent`), at most 2000.
+    - Targets are redacted with bzadmin's rules: the user information of an absolute URL is removed, and every query parameter value that is not a URI template expression is `[REDACTED]`.
+    - Acceptance: bzadmin's `MappingFile`, `MappingParser` and copied DOCTYPE handling can be removed.
+12. ✓ **Reloads that reach every filter**
+    - The `redirects` scope applied only to the filters that the reload request passed through, so a filter mapped to other paths kept its rules after "Reload everything"; bzadmin warned about it (`reload-not-covered`) from an analysis of the filter mappings.
+    - A reload counter is incremented once per request with the authorized `redirects` scope, by `BerliozServlet` or a filter; each filter reloads its rules on its next request once the counter has changed. The servlet reports `redirects` only when a filter with a `config` file is initialized.
+    - Acceptance: after a reload through the servlet, a filter that the request did not pass through applies the new rules on its next request; bzadmin's `reload-not-covered` warning can be removed.
+
 ## 1.0
 
 10. **Service-level authorization hook**
@@ -61,3 +75,10 @@ Decided 2026-10-29, implemented in 0.14.5:
 
 - **Stylesheet lookup in Berlioz**: Berlioz owns the selection rule (an existing file wins, then the first `META-INF/berlioz/` copy for paths under `xslt/`), so it exposes it as `StylesheetLocation.select(webInf, path)` and `StylesheetLocation.countClasspathCopies(path)`. Tools no longer re-implement override detection.
 - **No stylesheet listing in Berlioz**: Berlioz only ever resolves one name at a time. Listing a classpath folder means scanning JARs and directories, which depends on how each container packages them (`vfs:`, `wsjar:`, nested JARs). The listing stays in bzadmin, which asks Berlioz which source wins for each path.
+
+Decided 2026-11-11, implemented in 0.14.6:
+
+- **Reload counter, not a registry**: a registry of reloadable components would reload on the control request itself and report each outcome, but adds registration, a lifecycle and an API that invites growth. A counter checked by each filter on its next request is a few lines, reaches every instance, and loads the rules where they are used, as at startup. The filter snapshot shows the outcome of each load. The filters are still tracked, for the snapshot and to know whether `redirects` applies, but they are not called by the reload.
+- **Lazy reload**: an invalid file appears on the filter's next request, not in the reload response.
+- **One snapshot for both filter types**: `RedirectFilter.diagnosticSnapshot()` and `RelocationFilter.diagnosticSnapshot()` return the same snapshot, so that one generator reports both.
+- **Rejected for Berlioz** (bzadmin proposals): control parameters only on services that declare them, the reload scopes for generators, stable schemas for every `@Beta` generator, and public `Threads`/`OptionalMetrics` helpers. The reasons are in the bzadmin proposals document.

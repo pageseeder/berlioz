@@ -56,7 +56,10 @@ public enum ReloadScope {
   /** Resets the ETag seed so that clients must revalidate. */
   ETAGS("etags"),
 
-  /** Reloads the rules of the {@link RedirectFilter} and {@link RelocationFilter}. */
+  /**
+   * Reloads the rules of every {@link RedirectFilter} and {@link RelocationFilter}, on the next
+   * request through each, whatever the request that asked for it.
+   */
   REDIRECTS("redirects");
 
   /**

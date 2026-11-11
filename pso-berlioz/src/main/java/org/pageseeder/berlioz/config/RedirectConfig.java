@@ -41,7 +41,7 @@ import java.util.*;
  * </redirect-mapping>
  * }</pre>
  *
- * @version 0.13.0
+ * @version 0.14.6
  * @since 0.12.4
  */
 public final class RedirectConfig {
@@ -105,6 +105,16 @@ public final class RedirectConfig {
       if (pattern.match(from)) return pattern.redirect(from);
     }
     return null;
+  }
+
+  /**
+   * Returns the redirect patterns of this configuration, in file order.
+   *
+   * @return An unmodifiable list of patterns.
+   * @since 0.14.6
+   */
+  public List<RedirectPattern> patterns() {
+    return Collections.unmodifiableList(this.patterns);
   }
 
   /**

@@ -41,7 +41,24 @@ public final class ServletTestSupport {
     return (req, res) -> invoked[0] = true;
   }
 
+  /**
+   * Forgets the redirect and relocation filters that tests initialized without destroying them.
+   */
+  public static void clearMappingFilters() {
+    try {
+      java.lang.reflect.Field field = MappingFilters.class.getDeclaredField("FILTERS");
+      field.setAccessible(true);
+      ((java.util.Set<?>) field.get(null)).clear();
+    } catch (ReflectiveOperationException ex) {
+      throw new IllegalStateException(ex);
+    }
+  }
+
   static FilterConfig filterConfig(String contextRealPath, Map<String, String> initParams) {
+    return filterConfig(null, contextRealPath, initParams);
+  }
+
+  static FilterConfig filterConfig(String filterName, String contextRealPath, Map<String, String> initParams) {
     ServletContext ctx = (ServletContext) Proxy.newProxyInstance(
         ServletContext.class.getClassLoader(),
         new Class<?>[]{ServletContext.class},
@@ -55,6 +72,7 @@ public final class ServletTestSupport {
         (proxy, m, args) -> {
           if ("getServletContext".equals(m.getName())) return ctx;
           if ("getInitParameter".equals(m.getName())) return initParams.get(args[0]);
+          if ("getFilterName".equals(m.getName())) return filterName;
           return defaultValue(m.getReturnType());
         });
   }

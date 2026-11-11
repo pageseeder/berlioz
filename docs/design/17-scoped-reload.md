@@ -37,6 +37,6 @@ Decided 2026-10-28, implemented in 0.14.5:
 - **Unknown scopes**: the whole request is rejected; no scope is applied and a warning is logged.
 - **Partial reloads**: no scope implies another. The documentation recommends `services,etags` after changing services.
 - **Configuration failures**: `GlobalSettings.load()` keeps the last valid configuration when a reload fails; startup is unchanged.
-- **Filters**: `RedirectFilter` and `RelocationFilter` use the same parser and apply the `redirects` scope.
+- **Filters**: `RedirectFilter` and `RelocationFilter` use the same parser and apply the `redirects` scope. Since 0.14.6, the scope reaches every filter instance, whatever the request that asked for it: each filter reloads its rules on its next request ([theme 18](18-admin-overlay-upstreaming.md), item 12).
 - **Reporting**: authorized requests that apply at least one scope receive `X-Berlioz-Reload` listing the accepted scopes.
 - **Public API**: `ReloadScope` (scopes, parser, header) and `ControlParameter` (parameter names, `isControlParameter`), also covering [theme 18](18-admin-overlay-upstreaming.md), item 5.

@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -34,9 +37,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.config.ConfigException;
+import org.pageseeder.berlioz.config.MovedLocationPattern;
 import org.pageseeder.berlioz.config.RelocationConfig;
-import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +60,10 @@ import org.slf4j.LoggerFactory;
  *
  * <p>See {@link #init} for details about configuration options.
  *
+ * <p>The rules are loaded on first use. A reload of the {@code redirects} scope reloads them on the
+ * next request through the filter, whatever the request that asked for it, so a filter that the
+ * reload request does not pass through is reloaded as well.
+ *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-3.1.4.2">HTTP 1.1 - Content-Location</a>
  *
  * @author Christophe Lauret
@@ -74,19 +80,9 @@ public final class RelocationFilter implements Filter {
   private static final Logger LOGGER = LoggerFactory.getLogger(RelocationFilter.class);
 
   /**
-   * Where the relocation config is located.
+   * The relocation rules, loaded if needed; <code>null</code> until initialized.
    */
-  private @Nullable File mappingFile;
-
-  /**
-   * The name of this filter instance, used in log messages.
-   */
-  private String filterName = "RelocationFilter";
-
-  /**
-   * The actual relocation config.
-   */
-  private @Nullable RelocationConfig config = null;
+  private @Nullable MappingRules<RelocationConfig> rules = null;
 
   /**
    * Initializes the Relocation Servlet.
@@ -104,7 +100,7 @@ public final class RelocationFilter implements Filter {
   public void init(FilterConfig config) {
     // get the WEB-INF directory
     String name = config.getFilterName();
-    if (name != null) this.filterName = name;
+    String filterName = name != null ? name : "RelocationFilter";
     ServletContext context = config.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
@@ -112,7 +108,9 @@ public final class RelocationFilter implements Filter {
 
     // Mapping isn't specified
     if (mapping == null) {
-      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", this.filterName);
+      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
+      register(new MappingRules<>("relocation", filterName, null, null, LOGGER, RelocationConfig::newInstance,
+          new RelocationConfig(), RelocationConfig::size, RelocationFilter::diagnosticRules));
       return;
     }
 
@@ -120,12 +118,43 @@ public final class RelocationFilter implements Filter {
     File file = new File(webinfPath, mapping);
     if (!file.exists()) {
       LOGGER.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
-      this.filterName,
+      filterName,
       file.getAbsolutePath());
     }
 
-    // Store the mapping file
-    this.mappingFile = file;
+    // Store the mapping file, it will be loaded if needed only.
+    register(new MappingRules<>("relocation", filterName, mapping, file, LOGGER, RelocationConfig::newInstance,
+        new RelocationConfig(), RelocationConfig::size, RelocationFilter::diagnosticRules));
+  }
+
+  private void register(MappingRules<RelocationConfig> next) {
+    MappingRules<RelocationConfig> previous = this.rules;
+    if (previous != null) MappingFilters.unregister(previous);
+    this.rules = next;
+    MappingFilters.register(next);
+  }
+
+  /**
+   * Returns a safe immutable view of every {@link RedirectFilter} and {@link RelocationFilter}
+   * instance; the same as {@link RedirectFilter#diagnosticSnapshot()}.
+   *
+   * @return the diagnostic snapshot
+   *
+   * @since 0.14.6
+   */
+  public static ConfigurationSnapshot diagnosticSnapshot() {
+    return MappingFilters.diagnosticSnapshot();
+  }
+
+  private static List<Map<String, Object>> diagnosticRules(RelocationConfig config) {
+    return config.patterns().stream()
+        .map(RelocationFilter::diagnosticRule)
+        .collect(Collectors.toList());
+  }
+
+  private static Map<String, Object> diagnosticRule(MovedLocationPattern pattern) {
+    return DiagnosticConfiguration.fields("from", pattern.from().toString(),
+        "to", MappingFilters.redactTarget(pattern.to().toString()));
   }
 
   /**
@@ -133,8 +162,9 @@ public final class RelocationFilter implements Filter {
    */
   @Override
   public void destroy() {
-    this.mappingFile = null;
-    this.config = null;
+    MappingRules<RelocationConfig> previous = this.rules;
+    if (previous != null) MappingFilters.unregister(previous);
+    this.rules = null;
   }
 
   @Override
@@ -159,24 +189,17 @@ public final class RelocationFilter implements Filter {
      throws ServletException, IOException {
 
     // Without a 'config' init-parameter the filter has no effect
-    File file = this.mappingFile;
-    if (file == null) {
+    MappingRules<RelocationConfig> current = this.rules;
+    if (current == null || !current.isConfigured()) {
       chain.doFilter(req, res);
       return;
     }
 
-    // Reset mapping on reload
-    boolean reloaded = false;
-    if (req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()) != null && ControlAuthorization.hasControl(req)) {
-      Set<ReloadScope> scopes = ReloadScope.fromRequest(req);
-      if (scopes.contains(ReloadScope.REDIRECTS)) {
-        this.config = null;
-        reloaded = true;
-      }
-    }
+    // Reload the rules of every filter if requested
+    boolean reloaded = MappingFilters.applyReload(req);
 
     // Load the config if needed
-    RelocationConfig mapping = config(file);
+    RelocationConfig mapping = current.get();
     if (reloaded) ReloadScope.reportApplied(req, res, Set.of(ReloadScope.REDIRECTS));
 
     // Evaluate URI patterns
@@ -201,30 +224,6 @@ public final class RelocationFilter implements Filter {
 
     // Continue
     chain.doFilter(req, res);
-  }
-
-  /**
-   * @param file The relocation configuration file.
-   * @return the config loading the configuration file if necessary.
-   */
-  private RelocationConfig config(File file) {
-    RelocationConfig relocationConfig = this.config;
-    if (relocationConfig == null) {
-      try {
-        relocationConfig = RelocationConfig.newInstance(file);
-        if (relocationConfig.size() == 0) {
-          LOGGER.warn("Filter '{}': relocation configuration {} has no rules - filter will have no effect",
-              this.filterName, file.getAbsolutePath());
-        } else {
-          LOGGER.info("Filter '{}': loaded relocation configuration: {} rules found", this.filterName, relocationConfig.size());
-        }
-      } catch (ConfigException ex) {
-        LOGGER.warn("Filter '{}': unable to load relocation configuration: {}", this.filterName, ex.getMessage());
-        relocationConfig = new RelocationConfig();
-      }
-      this.config = relocationConfig;
-    }
-    return relocationConfig;
   }
 
   private @Nullable String ensureSafeTarget(String to) {

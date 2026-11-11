@@ -61,6 +61,7 @@ class BerliozServletTest {
 
   @BeforeEach
   void setup() throws IOException {
+    ServletTestSupport.clearMappingFilters();
     this.webRoot = this.temp.resolve("webapp");
     this.webInf = this.webRoot.resolve("WEB-INF");
     Files.createDirectories(this.webInf.resolve("config"));
@@ -371,6 +372,32 @@ class BerliozServletTest {
     assertEquals(405, recorder.status);
     assertNotNull(recorder.header(HttpHeaders.ALLOW), "The error page must keep the Allow header of a 405");
     assertTrue(recorder.header(HttpHeaders.ALLOW).contains("GET"));
+  }
+
+  @Test
+  void reload_redirectsThroughServletReachesFilterNotOnPath() throws Exception {
+    writeServices(service("hello", "get", "/hello", "generator", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    Files.writeString(this.webInf.resolve("redirect.xml"),
+        "<redirect-mapping><redirect from=\"/old\" to=\"/new\"/></redirect-mapping>");
+    RedirectFilter redirects = new RedirectFilter();
+    redirects.init(ServletTestSupport.filterConfig(this.webRoot.toString(), Map.of("config", "redirect.xml")));
+    ServletTestSupport.ResponseRecorder before = ServletTestSupport.response();
+    redirects.doHTTPFilter(controlRequest("/old", false, Map.of()), before.build(), (r, s) -> {});
+    assertTrue(before.header(HttpHeaders.LOCATION).endsWith("/new"));
+    Files.writeString(this.webInf.resolve("redirect.xml"),
+        "<redirect-mapping><redirect from=\"/old\" to=\"/newer\"/></redirect-mapping>");
+
+    // The reload request does not pass through the filter
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    this.servlet.doGet(controlRequest("/hello.xml", true, Map.of("berlioz-reload", "redirects")), recorder.build());
+    assertEquals(200, recorder.status);
+    assertEquals("redirects", recorder.header(ReloadScope.HEADER));
+
+    ServletTestSupport.ResponseRecorder after = ServletTestSupport.response();
+    redirects.doHTTPFilter(controlRequest("/old", false, Map.of()), after.build(), (r, s) -> {});
+    assertTrue(after.header(HttpHeaders.LOCATION).endsWith("/newer"));
+    redirects.destroy();
   }
 
   @Test

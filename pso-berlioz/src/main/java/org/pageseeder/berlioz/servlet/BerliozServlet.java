@@ -724,8 +724,14 @@ public final class BerliozServlet extends HttpServlet {
     // Allow ETags to be reset so clients must revalidate
     if (scopes.contains(ReloadScope.ETAGS)) { config.resetETagSeed(); }
 
-    // Report the applied scopes (redirects are applied by the filters)
-    scopes.remove(ReloadScope.REDIRECTS);
+    // Reload the rules of every redirect and relocation filter on their next request; report the
+    // scope only if a filter has rules to reload
+    if (scopes.contains(ReloadScope.REDIRECTS)) {
+      MappingFilters.requestReload(req);
+      if (!MappingFilters.hasConfiguredFilter()) scopes.remove(ReloadScope.REDIRECTS);
+    }
+
+    // Report the applied scopes
     ReloadScope.reportApplied(req, res, scopes);
 
     // Profile flag can also be enabled per-request via URL parameter

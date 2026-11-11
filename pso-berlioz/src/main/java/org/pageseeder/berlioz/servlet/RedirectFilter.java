@@ -19,7 +19,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -32,12 +35,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jspecify.annotations.Nullable;
-import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.RedirectConfig;
 import org.pageseeder.berlioz.config.RedirectLocation;
+import org.pageseeder.berlioz.config.RedirectPattern;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpRequests;
-import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +63,10 @@ import org.slf4j.LoggerFactory;
  * in which case the HTTP code will be 301
  *
  * <p>See {@link #init} for details for configuration options.
+ *
+ * <p>The rules are loaded on first use. A reload of the {@code redirects} scope reloads them on the
+ * next request through the filter, whatever the request that asked for it, so a filter that the
+ * reload request does not pass through is reloaded as well.
  *
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.2">HTTP/1.1 - Moved Permanently</a>
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.3">HTTP/1.1 - Found</a>
@@ -86,19 +92,9 @@ public final class RedirectFilter implements Filter, Serializable {
   // ---------------------------------------------------------------------------------------------
 
   /**
-   * Where the redirect config is located.
+   * The redirect rules, loaded if needed; <code>null</code> until initialized.
    */
-  private @Nullable File configFile;
-
-  /**
-   * The name of this filter instance, used in log messages.
-   */
-  private String filterName = "RedirectFilter";
-
-  /**
-   * Maps URI patterns to redirect to the URI pattern target.
-   */
-  private transient @Nullable RedirectConfig config = null;
+  private transient @Nullable MappingRules<RedirectConfig> rules = null;
 
   // servlet methods
   // ---------------------------------------------------------------------------------------------
@@ -119,7 +115,7 @@ public final class RedirectFilter implements Filter, Serializable {
   public void init(FilterConfig config) {
     // get the WEB-INF directory
     String name = config.getFilterName();
-    if (name != null) this.filterName = name;
+    String filterName = name != null ? name : "RedirectFilter";
     ServletContext context = config.getServletContext();
     File contextPath = new File(context.getRealPath("/"));
     File webinfPath = new File(contextPath, "WEB-INF");
@@ -127,7 +123,9 @@ public final class RedirectFilter implements Filter, Serializable {
 
     // Mapping isn't specified
     if (mappingConfig == null) {
-      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", this.filterName);
+      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
+      register(new MappingRules<>("redirect", filterName, null, null, LOGGER, RedirectConfig::newInstance,
+          new RedirectConfig(), RedirectConfig::size, RedirectFilter::diagnosticRules));
       return;
     }
 
@@ -135,18 +133,54 @@ public final class RedirectFilter implements Filter, Serializable {
     File mappingFile = new File(webinfPath, mappingConfig);
     if (!mappingFile.exists()) {
       LOGGER.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
-      this.filterName,
+      filterName,
       mappingFile.getAbsolutePath());
     }
 
     // Simply set the mapping file, it will be loaded if needed only.
-    this.configFile = mappingFile;
+    register(new MappingRules<>("redirect", filterName, mappingConfig, mappingFile, LOGGER, RedirectConfig::newInstance,
+        new RedirectConfig(), RedirectConfig::size, RedirectFilter::diagnosticRules));
+  }
+
+  private void register(MappingRules<RedirectConfig> next) {
+    MappingRules<RedirectConfig> previous = this.rules;
+    if (previous != null) MappingFilters.unregister(previous);
+    this.rules = next;
+    MappingFilters.register(next);
   }
 
   @Override
   public void destroy() {
-    this.configFile = null;
-    this.config = null;
+    MappingRules<RedirectConfig> previous = this.rules;
+    if (previous != null) MappingFilters.unregister(previous);
+    this.rules = null;
+  }
+
+  /**
+   * Returns a safe immutable view of every {@link RedirectFilter} and {@link RelocationFilter}
+   * instance.
+   *
+   * <p>For each filter: its name, type, <code>config</code> parameter (relative to
+   * <code>WEB-INF</code>), whether the file exists, and the last load: its status, time, failure
+   * and rules. Rule targets are redacted. Filters are sorted by type, then name.
+   *
+   * @return the diagnostic snapshot
+   *
+   * @since 0.14.6
+   */
+  public static ConfigurationSnapshot diagnosticSnapshot() {
+    return MappingFilters.diagnosticSnapshot();
+  }
+
+  private static List<Map<String, Object>> diagnosticRules(RedirectConfig config) {
+    return config.patterns().stream()
+        .map(RedirectFilter::diagnosticRule)
+        .collect(Collectors.toList());
+  }
+
+  private static Map<String, Object> diagnosticRule(RedirectPattern pattern) {
+    return DiagnosticConfiguration.fields("from", pattern.from().toString(),
+        "to", MappingFilters.redactTarget(pattern.to().toString()), "permanent", pattern.isPermanent());
   }
 
   @Override
@@ -171,24 +205,17 @@ public final class RedirectFilter implements Filter, Serializable {
       throws ServletException, IOException {
 
     // Without a 'config' init-parameter the filter has no effect
-    File file = this.configFile;
-    if (file == null) {
+    MappingRules<RedirectConfig> mapping = this.rules;
+    if (mapping == null || !mapping.isConfigured()) {
       chain.doFilter(req, res);
       return;
     }
 
-    // Reset mapping on reload
-    boolean reloaded = false;
-    if (req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()) != null && ControlAuthorization.hasControl(req)) {
-      Set<ReloadScope> scopes = ReloadScope.fromRequest(req);
-      if (scopes.contains(ReloadScope.REDIRECTS)) {
-        this.config = null;
-        reloaded = true;
-      }
-    }
+    // Reload the rules of every filter if requested
+    boolean reloaded = MappingFilters.applyReload(req);
 
     // Load the config if needed
-    RedirectConfig redirectConfig = config(file);
+    RedirectConfig redirectConfig = mapping.get();
     if (reloaded) ReloadScope.reportApplied(req, res, Set.of(ReloadScope.REDIRECTS));
 
     // Evaluate URI patterns
@@ -205,30 +232,6 @@ public final class RedirectFilter implements Filter, Serializable {
 
     // Continue
     chain.doFilter(req, res);
-  }
-
-  /**
-   * @param file The redirect configuration file.
-   * @return the URI pattern mapping loading the configuration file if necessary.
-   */
-  private RedirectConfig config(File file) {
-    RedirectConfig redirectConfig = this.config;
-    if (redirectConfig == null) {
-      try {
-        redirectConfig = RedirectConfig.newInstance(file);
-        if (redirectConfig.size() == 0) {
-          LOGGER.warn("Filter '{}': redirect configuration {} has no rules - filter will have no effect",
-              this.filterName, file.getAbsolutePath());
-        } else {
-          LOGGER.info("Filter '{}': loaded redirect configuration: {} rules found", this.filterName, redirectConfig.size());
-        }
-      } catch (ConfigException ex) {
-        LOGGER.error("Filter '{}': unable to load redirect configuration: {}", this.filterName, ex.getMessage());
-        redirectConfig = new RedirectConfig();
-      }
-      this.config = redirectConfig;
-    }
-    return redirectConfig;
   }
 
   /**

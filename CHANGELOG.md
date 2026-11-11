@@ -9,6 +9,12 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 ### Added
 
 - `ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION` (`org.pageseeder.berlioz.error_exception`): the request attribute holding the exception of an error routed by Berlioz.
+- `GetRedirectConfig` generator and `RedirectFilter.diagnosticSnapshot()`: every `RedirectFilter` and `RelocationFilter` instance with its `config` parameter, whether the file exists, the status and time of the last load, its failure, and the rules loaded, with redacted targets (XML and JSON). `RedirectConfig.patterns()` and `RelocationConfig.patterns()` return the loaded rules.
+
+### Changed
+
+- The `redirects` reload scope reaches every `RedirectFilter` and `RelocationFilter`, whatever its mapping. It applied only to the filters that the reload request passed through, so a filter mapped to other paths kept its old rules until a restart. Each filter now loads its rules again on its next request after a reload. `X-Berlioz-Reload` lists `redirects` for a reload made through `BerliozServlet` when a filter with a `config` file is initialized.
+- A `RelocationFilter` configuration that fails to load is logged as an error, as for `RedirectFilter`, rather than a warning.
 
 ### Fixed
 
@@ -19,6 +25,7 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 - Resetting an error response keeps the `WWW-Authenticate`, `Proxy-Authenticate`, `Allow` and `Retry-After` headers, so that the challenge of container authentication survives a `401` error page and a `405` keeps its `Allow` header.
 - Logback configuration at startup no longer fails silently. When the last Logback file found could not be loaded, such as a malformed `logback.xml`, Berlioz left Logback reset with no appender, so nothing was logged; it now logs to the console at `INFO` level and says so. Errors that Logback reports without failing, such as an appender class that cannot be found, are printed instead of "logback config file OK"; with Logback 1.5, such an error can leave the whole file unapplied. When a file fails and a later one loads, for example `logback.xml` after a malformed `logback-<mode>.xml`, a warning naming the failed file is logged. Logback files are ignored, with a console message, when SLF4J is not bound to Logback. Logback 1.3 or later is supported.
 - `berlioz-reload` is no longer applied a second time when Berlioz renders the error of an authorized control request. An error dispatch carries the parameters of the request that failed, so a reload that caused the error, such as `berlioz-reload=services` with an invalid services file, was requested again while the error page rendered, by `BerliozServlet` and by `RedirectFilter` and `RelocationFilter` mapped to error dispatches.
+- Rules reloaded by a `RedirectFilter` or `RelocationFilter` are visible to every request thread; the rules were held in a field that was not safely published.
 - `redirect-mapping-1.0.dtd` declares `permanent` as `yes` or `no`, as the schema and the parser do; it declared `true` or `false`, so a file written to the DTD failed validation and the redirect filter had no rules.
 
 ## [0.14.5] — 2026-10-29

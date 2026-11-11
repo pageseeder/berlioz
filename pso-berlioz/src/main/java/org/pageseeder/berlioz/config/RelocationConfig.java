@@ -41,7 +41,7 @@ import java.util.*;
  * </relocation-mapping>
  * }</pre>
  *
- * @version 0.13.0
+ * @version 0.14.6
  * @since 0.12.4
  */
 public final class RelocationConfig {
@@ -105,6 +105,16 @@ public final class RelocationConfig {
    */
   public static RelocationConfig newInstance(InputStream in) throws ConfigException {
     return ConfigLoader.parse(new Handler(), in);
+  }
+
+  /**
+   * Returns the relocation patterns of this configuration, in file order.
+   *
+   * @return An unmodifiable list of patterns.
+   * @since 0.14.6
+   */
+  public List<MovedLocationPattern> patterns() {
+    return Collections.unmodifiableList(this.mapping);
   }
 
   /**

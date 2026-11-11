@@ -51,6 +51,9 @@ class ConfigurationDiagnosticsTest {
     assertEquals("{\"servlets\":[]}", json(new GetErrorHandlerConfig(), request()));
     assertEquals("<berlioz-config>" + processorXml() + "</berlioz-config>", xml(new GetBerliozConfig(), request()));
     assertEquals("<error-handler-config/>", xml(new GetErrorHandlerConfig(), request()));
+    ServletTestSupport.clearMappingFilters();
+    assertEquals("{\"filters\":[]}", json(new GetRedirectConfig(), request()));
+    assertEquals("<redirect-config/>", xml(new GetRedirectConfig(), request()));
   }
 
   @Test void berliozExactSchemasAndLifecycle() throws Exception {

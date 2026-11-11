@@ -15,13 +15,13 @@ Berlioz has two control parameters, applied only to requests authorized for Berl
 | `services`  | Reloads the services; a failed reload keeps the last valid registry.    |
 | `xslt`      | Clears the XSLT cache.                                                  |
 | `etags`     | Resets the ETag seed so that clients must revalidate.                   |
-| `redirects` | Reloads the `RedirectFilter` and `RelocationFilter` rules.              |
+| `redirects` | Reloads the rules of every `RedirectFilter` and `RelocationFilter`. |
 
 For example, `?berlioz-reload=config,services`. Scopes are applied in the order of the table, whatever their order in the parameter. If the list contains an unknown scope, nothing is reloaded and a warning is logged.
 
 No scope implies another. In particular, the response ETag combines the ETag seed, the generator ETags and the XSLT ETag, but not the service definitions: after changing services, use `berlioz-reload=services,etags` so that clients do not receive `304 Not Modified` for a service whose definition changed.
 
-Authorized requests that reload at least one scope receive an `X-Berlioz-Reload` response header listing the accepted scopes, e.g. `X-Berlioz-Reload: config, services`. `redirects` is only applied where the filters are installed. Scopes are never applied while an error is rendered: the error page receives the parameters of the request that failed, whose scopes were already applied. `ReloadScope` and `ControlParameter` expose the scopes, the parser and the parameter names to tools such as Berlioz Admin.
+Authorized requests that reload at least one scope receive an `X-Berlioz-Reload` response header listing the accepted scopes, e.g. `X-Berlioz-Reload: config, services`. `redirects` reaches every `RedirectFilter` and `RelocationFilter`, whatever its mapping: each filter loads its rules again on its next request, so a reload made through the servlet, or through another filter, applies to it as well. `redirects` is reported only when a filter with a `config` file is initialized. Scopes are never applied while an error is rendered: the error page receives the parameters of the request that failed, whose scopes were already applied. `ReloadScope` and `ControlParameter` expose the scopes, the parser and the parameter names to tools such as Berlioz Admin.
 
 `reload-services=true`, `clear-xsl-cache=true` and `reset-etags=true` are deprecated aliases of the `services`, `xslt` and `etags` scopes. They log a warning the first time they are used and will be removed in 1.0.
 
@@ -61,6 +61,7 @@ Berlioz includes generators that report its runtime state. They are not mapped b
 | `generator.GetServices` | The service configuration as written (XML only) |
 | `generator.GetBerliozConfig` | Berlioz servlets, stylesheets, XSLT processor and container |
 | `generator.GetErrorHandlerConfig` | Error handler configuration |
+| `generator.GetRedirectConfig` | Rules loaded by the redirect and relocation filters, and their last load |
 | `generator.ListBerliozOptions` | Every Berlioz option, with defaults and deprecations |
 | `generator.GetGlobalConfig` | Global settings in use, with sensitive values redacted |
 | `system.GetSystemProperties` | System properties, with sensitive values redacted |
@@ -133,6 +134,30 @@ For example:
 Servlet mappings are deployed URL patterns, not the container's error-page registrations. Initialization settings are captured when each servlet starts and registrations are removed on destruction. Error rendering options and XSLT cache mode reflect current global settings. The snapshot uses only allowlisted fields; arbitrary parameters, secrets, absolute paths, raw JAR URLs, exception messages, and internal ETag seeds are never included. Unsafe paths are omitted while preserving source/selection information. Filesystem paths are relative to `WEB-INF`; `resource:` references are reported using canonical `classpath:` names.
 
 Each generator captures one immutable snapshot per request and reuses it for its response and unquoted SHA-256 ETag, whichever is requested first. Only emitted content affects the fingerprint; unrelated settings and secrets do not. Diagnostics perform no JAR enumeration, transformer creation, or stylesheet compilation. Error stylesheet selection performs only a small availability check. Deployment assumes Berlioz is in each application's `WEB-INF/lib`.
+
+### Redirect and relocation filters: `GetRedirectConfig`
+
+`org.pageseeder.berlioz.generator.GetRedirectConfig` lists every initialized `RedirectFilter` and `RelocationFilter`, sorted by type, then name, with the rules Berlioz applies rather than the file, which can differ until the next reload. The same snapshot is available as `RedirectFilter.diagnosticSnapshot()`.
+
+```xml
+<redirect-config>
+  <filter name="RedirectFilter" type="redirect" config="config/redirect.xml" exists="true"
+          status="loaded" loaded="2026-11-11T02:15:00Z" rule-count="2">
+    <rule from="/" to="/html/home" permanent="false"/>
+    <rule from="/old" to="https://example.org/new?token=[REDACTED]" permanent="true"/>
+  </filter>
+  <filter name="Forwards" type="relocation" status="no-config"/>
+</redirect-config>
+```
+
+- `config` is the init parameter, relative to `WEB-INF`, omitted when it is not a safe relative path; `exists` tells whether the file exists now.
+- `status` is `no-config` (no `config` parameter: the filter has no effect), `not-loaded` (a filter loads its rules on its first request), `loaded` or `failed` (the filter has no rules until the next successful load). `loaded` is the time of the last load.
+- `reload-pending="true"` when a reload of the `redirects` scope was requested since the last load; the filter applies it on its next request.
+- `failure` is a generic message, or the loader's message when `berlioz.errors.detail` is `standard` or `full`.
+- At most 2000 rules are listed: `rule-count` has the total, and `limit` is written when the list is truncated. `permanent` is only reported for redirects.
+- Targets are redacted: the user information of an absolute URL is removed, and the value of every query parameter is `[REDACTED]`, unless it is a URI template expression such as `{q}`.
+
+JSON uses a `filters` array of objects with the same fields in camel case, `rules` arrays, and `ruleCount` as a number. Like the servlet configuration generators, the generator reuses one snapshot per request for its response and ETag.
 
 ### Options: `ListBerliozOptions`
 
