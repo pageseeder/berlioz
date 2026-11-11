@@ -17,7 +17,7 @@
 /.claude/
 /pso-berlioz/build/
 /TODO.md
-/PLAN-*.md
+/.plans/
 /samples/minimal-gretty/build/
 .DS_Store
 /tests/*/build/
