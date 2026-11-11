@@ -35,6 +35,8 @@ Berlioz resets Logback before loading a file, and reports what happened on the c
 
 If none is found, Berlioz looks for Log4J configuration in the same order: `log4j-<mode>.properties`, then `log4j.properties`. Other logging frameworks must be configured independently, for example through their own default configuration file. See [configuration](configuration.md#modes) for modes.
 
+What Berlioz did at startup, including which file is in use and which failed before it, is available to administration tools through the `GetLoggingConfig` generator (see [administration](administration.md#logging-getloggingconfig)).
+
 ## Sample Logback configurations
 
 ### Development

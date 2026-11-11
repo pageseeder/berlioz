@@ -85,7 +85,7 @@ Themes are long-running areas of work. Each has a design document with its motiv
 | 15 | [Minimal default XML exposure](docs/design/15-minimal-xml-exposure.md) | 0.14.5 | ✓ Done |
 | 16 | [Admin diagnostics](docs/design/16-admin-diagnostics.md) | 0.14.5 / 1.0 | ✓ 0.14.5 part done |
 | 17 | [Scoped `berlioz-reload`](docs/design/17-scoped-reload.md) | 0.14.5 / 1.0 | ✓ 0.14.5 part done |
-| 18 | [Admin overlay upstreaming](docs/design/18-admin-overlay-upstreaming.md) | 0.14.5 / 0.14.6 / 1.0 | ✓ 0.14.5 part done; 0.14.6 in progress |
+| 18 | [Admin overlay upstreaming](docs/design/18-admin-overlay-upstreaming.md) | 0.14.5 / 0.14.6 / 1.0 | ✓ 0.14.5 and 0.14.6 parts done |
 
 Status values: **Exploring** (problem understood, approach open), **Proposed** (approach sketched), **Designed** (ready to implement), **Done**.
 

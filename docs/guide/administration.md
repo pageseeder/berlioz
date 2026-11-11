@@ -62,6 +62,7 @@ Berlioz includes generators that report its runtime state. They are not mapped b
 | `generator.GetBerliozConfig` | Berlioz servlets, stylesheets, XSLT processor and container |
 | `generator.GetErrorHandlerConfig` | Error handler configuration |
 | `generator.GetRedirectConfig` | Rules loaded by the redirect and relocation filters, and their last load |
+| `generator.GetLoggingConfig` | How Berlioz configured logging at startup |
 | `generator.ListBerliozOptions` | Every Berlioz option, with defaults and deprecations |
 | `generator.GetGlobalConfig` | Global settings in use, with sensitive values redacted |
 | `system.GetSystemProperties` | System properties, with sensitive values redacted |
@@ -175,6 +176,31 @@ Each generator captures one immutable snapshot per request and reuses it for its
 - Targets are redacted with `Redaction.redactUriPattern`: the password of a URL (or its whole user information without `:`) and the value of every query parameter are `[REDACTED]`, unless the value is a URI template expression such as `{q}`.
 
 JSON uses a `filters` array of objects with the same fields in camel case, `rules` and `ignoredRules` arrays, and numbers for `ruleCount`, `ignoredCount` and `position`. Like the servlet configuration generators, the generator reuses one snapshot per request for its response and ETag.
+
+### Logging: `GetLoggingConfig`
+
+`org.pageseeder.berlioz.generator.GetLoggingConfig` reports how Berlioz configured logging when the application started: each [logging configuration file](logging.md#configuration-by-mode) in the order Berlioz considered it, and the one in use. The same snapshot is available as `AppInitializer.loggingSnapshot()`.
+
+```xml
+<logging-config initialised="true" framework="logback" mode="dev"
+                logger-factory="ch.qos.logback.classic.LoggerContext" time="2026-11-12T01:20:00Z">
+  <candidate framework="logback" location="app-data" path="config/logback-dev.xml" outcome="absent"/>
+  <candidate framework="logback" location="web-inf" path="config/logback-dev.xml" outcome="failed"
+             problem-count="1" failure="ch.qos.logback.core.joran.spi.JoranException: Problem parsing XML document…">
+    <problem level="error" message="XML_PARSING - Parsing fatal error on line 1…"/>
+  </candidate>
+  <candidate framework="logback" location="web-inf" path="config/logback.xml" outcome="loaded" in-use="true"/>
+</logging-config>
+```
+
+- `framework` is `logback`, `log4j`, or `none` when Berlioz configured no logging, so that the logging library applies its own defaults. `logger-factory` is the class of the SLF4J logger factory: logback files are only used when it is logback's.
+- `outcome` is `absent`, `ignored` (a logback file while SLF4J is not bound to logback), `loaded`, `loaded-with-errors` (Logback may have applied only part of the file, or none of it) or `failed`. Log4J files are only considered when no logback file is configured.
+- `in-use="true"` marks the file in use. `console-default="true"` on the root when no file could be loaded, so that Berlioz configured Logback to log to the console at `INFO` level.
+- `location` is `app-data` or `web-inf`, and `path` is relative to it. Absolute paths are never reported.
+- `problem-count` is the number of warnings and errors reported by Logback while loading the file. The problems (at most 20) and `failure` are only included when `berlioz.errors.detail` is `standard` or `full`; the absolute paths of `WEB-INF` and the application data folder are replaced by `[WEB-INF]` and `[app-data]`, and credentials are redacted as above.
+- `initialised="false"` when Berlioz was not started by `AppInitializer`.
+
+This is a record of the startup: an application that reconfigures its logging framework afterwards is not reflected. JSON has the same fields in camel case, with `candidates` and `problems` arrays and a number for `problemCount`. The generator reuses one snapshot per request for its response and ETag.
 
 ### Options: `ListBerliozOptions`
 

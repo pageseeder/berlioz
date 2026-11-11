@@ -102,6 +102,10 @@ final class LogbackSetupTest {
     assertEquals(valid, result.loaded());
     assertEquals(Arrays.asList(Outcome.FAILED, Outcome.LOADED), outcomes(result));
     assertFalse(result.attempts().get(0).problems().isEmpty());
+    assertTrue(String.valueOf(result.attempts().get(0).failure()).contains("JoranException"));
+    assertNull(result.attempts().get(1).failure());
+    assertEquals("failed", Outcome.FAILED.label());
+    assertEquals("loaded-with-errors", Outcome.LOADED_WITH_ERRORS.label());
     // Errors of the failed file are not reported again for the next one
     assertTrue(result.attempts().get(1).problems().isEmpty());
     assertTrue(this.console.contains("(!) Logging: using config/logback.xml because config/logback-dev.xml could not be loaded"));

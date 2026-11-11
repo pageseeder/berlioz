@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Collections;
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.output.OutputWriter;
 import org.pageseeder.berlioz.util.SHA256;
 
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
  */
 public final class ConfigurationSnapshot {
   private final String root;
-  private final String list;
+  private final @Nullable String list;
   private final String item;
   private final List<Map<String, Object>> entries;
   private final Map<String, Object> fields;
@@ -55,13 +56,23 @@ public final class ConfigurationSnapshot {
   }
 
   /**
+   * A snapshot with fields only, without a list of entries.
+   *
+   * @param root   the name of the root element
+   * @param fields the fields of the root, keyed by name
+   */
+  ConfigurationSnapshot(String root, Map<String, Object> fields) {
+    this(root, null, "", List.of(), fields);
+  }
+
+  /**
    * @param root    the name of the root element
-   * @param list    the name of the JSON array of entries
+   * @param list    the name of the JSON array of entries, or <code>null</code> for no array
    * @param item    the name of each entry
    * @param entries the entries
    * @param fields  objects written after the entries, keyed by name
    */
-  ConfigurationSnapshot(String root, String list, String item, List<Map<String, Object>> entries,
+  ConfigurationSnapshot(String root, @Nullable String list, String item, List<Map<String, Object>> entries,
       Map<String, Object> fields) {
     this.root = root;
     this.list = list;
@@ -78,13 +89,16 @@ public final class ConfigurationSnapshot {
    */
   public void writeTo(OutputWriter out) {
     out.startObject(this.root);
-    out.startArray(this.list, OutputWriter.ContextOption.JSON_ONLY);
-    for (Map<String, Object> entry : this.entries) {
-      out.startObject(this.item);
-      writeFields(out, entry);
-      out.endObject();
+    String array = this.list;
+    if (array != null) {
+      out.startArray(array, OutputWriter.ContextOption.JSON_ONLY);
+      for (Map<String, Object> entry : this.entries) {
+        out.startObject(this.item);
+        writeFields(out, entry);
+        out.endObject();
+      }
+      out.endArray();
     }
-    out.endArray();
     writeFields(out, this.fields);
     out.endObject();
   }

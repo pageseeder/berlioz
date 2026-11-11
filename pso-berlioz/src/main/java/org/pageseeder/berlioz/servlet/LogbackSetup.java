@@ -83,7 +83,12 @@ final class LogbackSetup {
     LOADED_WITH_ERRORS,
 
     /** The file could not be loaded. */
-    FAILED
+    FAILED;
+
+    /** @return the name of the outcome in diagnostics, such as <code>loaded-with-errors</code> */
+    String label() {
+      return name().toLowerCase(java.util.Locale.ROOT).replace('_', '-');
+    }
   }
 
   /** The outcome of a candidate configuration file. */
@@ -92,11 +97,17 @@ final class LogbackSetup {
     private final File file;
     private final Outcome outcome;
     private final List<String> problems;
+    private final @Nullable String failure;
 
     Attempt(File file, Outcome outcome, List<String> problems) {
+      this(file, outcome, problems, null);
+    }
+
+    Attempt(File file, Outcome outcome, List<String> problems, @Nullable String failure) {
       this.file = file;
       this.outcome = outcome;
       this.problems = Collections.unmodifiableList(problems);
+      this.failure = failure;
     }
 
     File file() {
@@ -110,6 +121,11 @@ final class LogbackSetup {
     /** @return the warnings and errors reported while loading the file */
     List<String> problems() {
       return this.problems;
+    }
+
+    /** @return why the file could not be loaded, if it failed */
+    @Nullable String failure() {
+      return this.failure;
     }
   }
 
@@ -157,10 +173,10 @@ final class LogbackSetup {
    * @param candidates The configuration files in the order to try.
    * @param console    Where to report what is done.
    *
-   * @return whether logback is configured, from a file or with the console default
+   * @return what happened to each candidate
    */
-  static boolean configure(ILoggerFactory factory, List<File> candidates, Consumer<String> console) {
-    return configure((LoggerContext) factory, candidates, console).isConfigured();
+  static Result configure(ILoggerFactory factory, List<File> candidates, Consumer<String> console) {
+    return configure((LoggerContext) factory, candidates, console);
   }
 
   /**
@@ -235,7 +251,7 @@ final class LogbackSetup {
       outcome = Outcome.LOADED;
     }
     report(context, file, outcome, problems, failure, console);
-    return new Attempt(file, outcome, problems);
+    return new Attempt(file, outcome, problems, failure != null ? describe(failure) : null);
   }
 
   private static void report(LoggerContext context, File file, Outcome outcome, List<String> problems,
@@ -288,6 +304,12 @@ final class LogbackSetup {
       names.add("config/" + file.getName());
     }
     return String.join(", ", names);
+  }
+
+  private static String describe(JoranException failure) {
+    Throwable cause = failure.getCause();
+    String text = failure.toString();
+    return cause != null && !text.contains(String.valueOf(cause.getMessage())) ? text + " [" + cause + "]" : text;
   }
 
   private static String toString(Status status) {

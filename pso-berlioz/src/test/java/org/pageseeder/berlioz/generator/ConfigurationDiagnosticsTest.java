@@ -56,6 +56,18 @@ class ConfigurationDiagnosticsTest {
     assertEquals("<redirect-config/>", xml(new GetRedirectConfig(), request()));
   }
 
+  @Test void loggingConfigReportsTheStartupSnapshot() {
+    GetLoggingConfig generator = new GetLoggingConfig();
+    Request request = request();
+    String etag = generator.getETag(request);
+    ConfigurationSnapshot expected = AppInitializer.loggingSnapshot();
+    OutputWriter out = new XmlOutputAdapter();
+    expected.writeTo(out);
+    assertTrue(out.toString().startsWith("<logging-config initialised="), out.toString());
+    assertEquals(out.toString(), xml(generator, request));
+    assertEquals(expected.etag(), etag);
+  }
+
   @Test void berliozExactSchemasAndLifecycle() throws Exception {
     BerliozServlet servlet = new BerliozServlet();
     servlet.init(config("html", Map.of("stylesheet", "resource:/xslt/{GROUP}.xsl",

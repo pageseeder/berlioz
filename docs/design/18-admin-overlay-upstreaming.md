@@ -1,6 +1,6 @@
 # 18. Admin Overlay Upstreaming (Requested By Berlioz Admin)
 
-**Status:** 0.14.5 part done; 0.14.6 items 11–13 done · **Target:** items 1–8 and part of item 9 in 0.14.5; items 11–14 in 0.14.6; item 10 in 1.0
+**Status:** 0.14.5 and 0.14.6 parts done · **Target:** items 1–8 and part of item 9 in 0.14.5; items 11–14 in 0.14.6; item 10 in 1.0
 
 ## Motivation
 
@@ -64,11 +64,12 @@ Requested in the bzadmin proposals for Berlioz (`docs/design/berlioz-proposals.m
     - `Redaction.redactUriPattern(pattern)` replaces `MappingFilters.redactTarget`, with the same user information rule. Query values are all redacted there, since the parameter names of a target do not reveal a credential.
     - `GetSystemProperties` replaces the program arguments of `sun.java.command` after the main class or JAR: a rule for one property, kept in the generator.
     - Acceptance: bzadmin's `GetSystemProperties`, `SystemProperties` and `Targets.redact` can be removed.
-14. **Logging initialisation snapshot**
+14. ✓ **Logging initialisation snapshot**
     - `AppInitializer` chooses the logging configuration for the mode: `logback-<mode>.xml` in the application data, then in `WEB-INF`, then `logback.xml`, and the same for log4j. It reports what it did on the console and in the log only. bzadmin cannot tell which file is in use or which failed before it: logback does not keep its configuration file (since 1.5.27, only when `scan` is on, and a reset clears it), no status marks Berlioz's reset, and logback's configuration events are intended for internal testing. bzadmin copies the order of the candidates, which can change with Berlioz.
     - Berlioz keeps a read-only snapshot of the startup configuration, built from what `LogbackSetup` already records (`Result`, `Attempt`, `Outcome`) and from the log4j attempts: the framework (`logback`, `log4j` or `none`), the mode, each candidate in the order tried with its path relative to `WEB-INF` or the application data and its outcome (`absent`, `loaded`, `loaded-with-errors`, `failed`), the file in use, whether Berlioz fell back to its console default, and when. A `Generator` reports it in XML and JSON.
     - The problems reported by logback and the failure of a file (class and message) are shown only when `berlioz.errors.detail` is not `minimal`, as for the filter snapshot. Absolute paths are never shown.
     - The snapshot reports what Berlioz did at startup ([ADR-0013](../decisions/0013-diagnostics-report-only-known-facts.md)), not the current state of logback, which an application may reconfigure afterwards.
+    - Implemented as `AppInitializer.loggingSnapshot()` and the `GetLoggingConfig` generator (content `logging-config`). Logback files are listed as `ignored` when SLF4J is not bound to logback; the root reports the SLF4J `logger-factory`. The absolute paths of `WEB-INF` and the application data folder are replaced in messages, and credentials redacted with `Redaction.redactValue`. At most 20 problems are listed per file, with `problem-count`.
     - Acceptance: bzadmin's copy of the candidate order can be removed; its `not-writing` and `problems` verdicts can refer to the snapshot.
 
 ## 1.0

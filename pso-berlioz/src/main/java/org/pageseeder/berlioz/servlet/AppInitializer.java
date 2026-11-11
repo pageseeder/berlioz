@@ -52,6 +52,10 @@ public abstract class AppInitializer {
 
   private static final String CONSOLE_RULE = "===============================================================";
 
+  private static final String LOGBACK = "logback";
+
+  private static final String LOG4J = "log4j";
+
   /**
    * The list of lifecycle listeners notified when Berlioz starts and stops.
    */
@@ -714,25 +718,53 @@ public abstract class AppInitializer {
     }
     logback.add(new File(webInfConfig, "logback.xml"));
     log4j.add(new File(webInfConfig, "log4j.properties"));
-    if (configureLogback(logback)) return;
-    for (File file : log4j) {
-      if (configureLog4j(file)) return;
+    ILoggerFactory factory = LoggerFactory.getILoggerFactory();
+    LoggingSetup.Recorder recorder = new LoggingSetup.Recorder(env, factory.getClass().getName());
+    try {
+      if (configureLogback(factory, logback, recorder)) return;
+      for (File file : log4j) {
+        if (configureLog4j(file, recorder)) return;
+      }
+      // Unable to configure logging
+      console(Phase.INIT, "Logging: no logging configured.");
+      console(Phase.INIT, "Logging: DONE -------------------------------------------------");
+    } finally {
+      recorder.publish();
     }
-    // Unable to configure logging
-    console(Phase.INIT, "Logging: no logging configured.");
-    console(Phase.INIT, "Logging: DONE -------------------------------------------------");
+  }
+
+  /**
+   * Returns what Berlioz did to configure logging when the application started.
+   *
+   * <p>The snapshot lists each configuration file in the order Berlioz considered it, with its
+   * framework (<code>logback</code> or <code>log4j</code>), its folder (<code>web-inf</code> or
+   * <code>app-data</code>), its path relative to that folder and its outcome: <code>absent</code>,
+   * <code>ignored</code> (a logback file while SLF4J is not bound to logback), <code>loaded</code>,
+   * <code>loaded-with-errors</code> or <code>failed</code>. The file in use is marked
+   * <code>in-use</code>. The problems reported while loading a file and the reason of a failure
+   * are only included when <code>berlioz.errors.detail</code> is <code>standard</code> or
+   * <code>full</code>; absolute folder paths are removed from them.
+   *
+   * <p>It reports the startup only: an application may reconfigure logging afterwards.
+   *
+   * @return the safe snapshot of the logging configuration at startup
+   * @since 0.14.6
+   */
+  public static ConfigurationSnapshot loggingSnapshot() {
+    return LoggingSetup.diagnosticSnapshot();
   }
 
   /**
    * Configures logback from the first candidate file that loads.
    *
+   * @param factory    The SLF4J logger factory.
    * @param candidates The logback configuration files in the order to try.
+   * @param recorder   Records what is done with each file.
    * @return <code>true</code> if logback is configured;
    *         <code>false</code> if no file exists or logback is not used.
    */
   @SuppressWarnings("java:S1181") // LinkageError: an unsupported logback version must not prevent Berlioz from starting
-  private static boolean configureLogback(List<File> candidates) {
-    ILoggerFactory factory = LoggerFactory.getILoggerFactory();
+  private static boolean configureLogback(ILoggerFactory factory, List<File> candidates, LoggingSetup.Recorder recorder) {
     // Compare names so that no logback class is loaded when logback is absent
     if (!LogbackSetup.LOGGER_CONTEXT_CLASS.equals(factory.getClass().getName())) {
       for (File file : candidates) {
@@ -740,14 +772,28 @@ public abstract class AppInitializer {
           console(Phase.INIT, "(!) Logging: found config/"+file.getName()+" but SLF4J does not use logback ("+factory.getClass().getName()+"), file ignored");
         }
       }
+      recordIgnored(candidates, recorder);
       return false;
     }
     try {
-      return LogbackSetup.configure(factory, candidates, message -> console(Phase.INIT, message));
+      LogbackSetup.Result result = LogbackSetup.configure(factory, candidates, message -> console(Phase.INIT, message));
+      for (LogbackSetup.Attempt attempt : result.attempts()) {
+        recorder.candidate(LOGBACK, attempt.file(), attempt.outcome().label(), attempt.problems(), attempt.failure());
+      }
+      if (result.consoleDefault()) recorder.consoleDefault();
+      else if (result.loaded() != null) recorder.configured(LOGBACK, result.loaded());
+      return result.isConfigured();
     } catch (LinkageError error) {
       console(Phase.INIT, "(!) Logging: unsupported logback version, logging configuration files ignored");
       console(Phase.INIT, error.toString());
+      recordIgnored(candidates, recorder);
       return false;
+    }
+  }
+
+  private static void recordIgnored(List<File> candidates, LoggingSetup.Recorder recorder) {
+    for (File file : candidates) {
+      recorder.candidate(LOGBACK, file, file.exists() ? "ignored" : "absent", List.of(), null);
     }
   }
 
@@ -755,10 +801,11 @@ public abstract class AppInitializer {
    * Attempts to configure the logger through reflection.
    *
    * @param configuration The log4j configuration file.
+   * @param recorder      Records what is done with the file.
    * @return <code>true</code> if configuration was successful;
    *         <code>false</code> in case of any error.
    */
-  private static boolean configureLog4j(File configuration) {
+  private static boolean configureLog4j(File configuration, LoggingSetup.Recorder recorder) {
     boolean configured = false;
     if (configuration.exists()) {
       console(Phase.INIT, "Logging: found config/"+configuration.getName()+" [log4j config file]");
@@ -769,15 +816,21 @@ public abstract class AppInitializer {
         configured = true;
         console(Phase.INIT, "Logging: log4j config file OK");
         console(Phase.INIT, "Logging: OK ---------------------------------------------------");
+        recorder.candidate(LOG4J, configuration, "loaded", List.of(), null);
+        recorder.configured(LOG4J, configuration);
       } catch (ClassNotFoundException ex) {
         console(Phase.INIT, "(!) Logging: attempt to load Log4j configuration failed!");
         console(Phase.INIT, "(!) Logging: Log4j could not be found on classpath!");
+        recorder.candidate(LOG4J, configuration, "failed", List.of(), "Log4j could not be found on the classpath");
       } catch (Exception ex) {
         console(Phase.INIT, "(!) Logging: attempt to load Log4j configuration failed!");
         consoleException(Phase.INIT, ex);
+        Throwable cause = ex instanceof InvocationTargetException && ex.getCause() != null ? ex.getCause() : ex;
+        recorder.candidate(LOG4J, configuration, "failed", List.of(), cause.toString());
       }
     } else {
       console(Phase.INIT, "Logging: config/"+configuration.getName()+" not found");
+      recorder.candidate(LOG4J, configuration, "absent", List.of(), null);
     }
     return configured;
   }
