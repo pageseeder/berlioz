@@ -108,7 +108,7 @@ final class MappingFilters {
   static ConfigurationSnapshot diagnosticSnapshot() {
     boolean details = DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
     List<Map<String, Object>> entries = FILTERS.stream()
-        .sorted(Comparator.comparing((MappingRules<?> rules) -> rules.type()).thenComparing(MappingRules::filterName))
+        .sorted(Comparator.<MappingRules<?>, String>comparing(MappingRules::type).thenComparing(MappingRules::filterName))
         .map(rules -> rules.diagnosticEntry(details))
         .collect(Collectors.toList());
     return new ConfigurationSnapshot("redirect-config", "filters", "filter", entries, Map.of());
