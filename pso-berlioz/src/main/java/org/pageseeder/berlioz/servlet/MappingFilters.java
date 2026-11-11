@@ -126,14 +126,20 @@ final class MappingFilters {
    * @param parameter  the {@code config} init parameter, relative to {@code WEB-INF}, if any
    * @param logger     the logger of the filter
    * @return the configuration file, or {@code null} if the parameter is not specified
+   * @throws IllegalStateException if the parameter is specified but the web application has no real path
    */
   static @Nullable File configFile(FilterConfig config, String filterName, @Nullable String parameter, Logger logger) {
     if (parameter == null) {
       logger.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
       return null;
     }
-    File webinf = new File(config.getServletContext().getRealPath("/"), "WEB-INF");
-    File file = new File(webinf, parameter);
+    // Without a real path, 'new File(null, ...)' would resolve against the working directory
+    String root = config.getServletContext().getRealPath("/");
+    if (root == null) {
+      throw new IllegalStateException("Filter '" + filterName + "': the web application has no real path"
+          + " (unexpanded WAR?), unable to locate 'config' " + parameter);
+    }
+    File file = new File(new File(root, "WEB-INF"), parameter);
     if (!file.exists()) {
       logger.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
           filterName, file.getAbsolutePath());

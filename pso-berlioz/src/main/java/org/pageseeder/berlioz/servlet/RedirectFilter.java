@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -152,9 +151,7 @@ public final class RedirectFilter implements Filter, Serializable {
   }
 
   private static List<Map<String, Object>> diagnosticRules(RedirectConfig config) {
-    return config.patterns().stream()
-        .map(RedirectFilter::diagnosticRule)
-        .collect(Collectors.toList());
+    return MappingRules.diagnosticView(config.patterns(), RedirectFilter::diagnosticRule);
   }
 
   private static Map<String, Object> diagnosticRule(RedirectPattern pattern) {

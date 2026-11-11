@@ -23,7 +23,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -126,9 +125,7 @@ public final class RelocationFilter implements Filter {
   }
 
   private static List<Map<String, Object>> diagnosticRules(RelocationConfig config) {
-    return config.patterns().stream()
-        .map(RelocationFilter::diagnosticRule)
-        .collect(Collectors.toList());
+    return MappingRules.diagnosticView(config.patterns(), RelocationFilter::diagnosticRule);
   }
 
   private static Map<String, Object> diagnosticRule(MovedLocationPattern pattern) {

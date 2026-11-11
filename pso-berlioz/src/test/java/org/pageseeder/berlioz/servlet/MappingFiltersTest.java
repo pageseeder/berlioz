@@ -3,14 +3,18 @@ package org.pageseeder.berlioz.servlet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
@@ -102,6 +106,36 @@ class MappingFiltersTest {
     assertTrue(MappingFilters.hasConfiguredFilter());
     filter.destroy();
     assertFalse(MappingFilters.hasConfiguredFilter());
+  }
+
+  @Test
+  void filterWithoutRealPathFailsInsteadOfUsingTheWorkingDirectory() {
+    RedirectFilter redirect = new RedirectFilter();
+    RelocationFilter relocation = new RelocationFilter();
+    Map<String, String> params = Map.of("config", "config/redirect.xml");
+    FilterConfig redirectConfig = ServletTestSupport.filterConfig("r", null, params);
+    FilterConfig relocationConfig = ServletTestSupport.filterConfig("l", null, params);
+    assertThrows(IllegalStateException.class, () -> redirect.init(redirectConfig));
+    assertThrows(IllegalStateException.class, () -> relocation.init(relocationConfig));
+    assertFalse(MappingFilters.hasConfiguredFilter());
+  }
+
+  @Test
+  void filterWithoutRealPathOrConfigHasNoEffect() {
+    RedirectFilter filter = new RedirectFilter();
+    filter.init(ServletTestSupport.filterConfig("none", null, Map.of()));
+    assertFalse(MappingFilters.hasConfiguredFilter());
+  }
+
+  @Test
+  void diagnosticViewOnlyComputesTheItemsRead() {
+    int[] computed = {0};
+    List<Map<String, Object>> view = MappingRules.diagnosticView(Collections.nCopies(5000, "x"),
+        item -> { computed[0]++; return Map.of("item", item); });
+    assertEquals(5000, view.size());
+    assertEquals(0, computed[0]);
+    view.subList(0, MappingFilters.RULE_LIMIT).forEach(item -> {});
+    assertEquals(MappingFilters.RULE_LIMIT, computed[0]);
   }
 
   // Diagnostic snapshot

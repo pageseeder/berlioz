@@ -17,12 +17,12 @@ package org.pageseeder.berlioz.servlet;
 
 import java.io.File;
 import java.time.Instant;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.ConfigException;
@@ -84,7 +84,8 @@ final class MappingRules<C> {
    * @param logger     the logger of the filter
    * @param loader     loads the configuration
    * @param empty      the configuration without rules, used when there is no file or it fails to load
-   * @param rules      the diagnostic fields of each rule of a configuration
+   * @param rules      the diagnostic fields of each rule of a configuration, computed when read
+   *                   (see {@link #diagnosticView})
    * @param ignored    the rules ignored when loading a configuration
    */
   @SuppressWarnings("java:S107") // Internal constructor; the filters pass the specifics of their type
@@ -181,7 +182,7 @@ final class MappingRules<C> {
       return entry;
     }
     List<Map<String, Object>> all = this.rules.apply(current.config);
-    List<Map<String, Object>> skipped = diagnosticIgnored(this.ignored.apply(current.config));
+    List<Map<String, Object>> skipped = diagnosticView(this.ignored.apply(current.config), MappingRules::diagnosticIgnored);
     entry.put("rule-count", (long) all.size());
     if (!skipped.isEmpty()) entry.put("ignored-count", (long) skipped.size());
     if (all.size() > MappingFilters.RULE_LIMIT || skipped.size() > MappingFilters.RULE_LIMIT) {
@@ -193,25 +194,41 @@ final class MappingRules<C> {
   }
 
   /**
-   * Returns the diagnostic fields of the rules ignored when a configuration was loaded.
+   * Returns a view of the items that computes the diagnostic fields of an item when it is read,
+   * so that only the items listed are computed and redacted.
    *
-   * @param ignored the ignored rules
-   * @return their position, reason, <code>from</code> and redacted <code>to</code>
+   * @param items  the items, such as the rules of a configuration
+   * @param fields the diagnostic fields of an item
+   * @return the view
    */
-  private static List<Map<String, Object>> diagnosticIgnored(List<IgnoredRule> ignored) {
-    return ignored.stream().map(rule -> {
-      Map<String, Object> fields = DiagnosticConfiguration.fields("position", (long) rule.position(),
-          "reason", rule.reason().token());
-      String from = rule.from();
-      String to = rule.to();
-      if (from != null) fields.put("from", from);
-      if (to != null) fields.put("to", MappingFilters.redactTarget(to));
-      return fields;
-    }).collect(Collectors.toList());
+  static <T> List<Map<String, Object>> diagnosticView(List<T> items, Function<T, Map<String, Object>> fields) {
+    return new AbstractList<>() {
+      @Override
+      public Map<String, Object> get(int index) {
+        return fields.apply(items.get(index));
+      }
+
+      @Override
+      public int size() {
+        return items.size();
+      }
+    };
   }
 
+  /** @return the position, reason, <code>from</code> and redacted <code>to</code> of an ignored rule */
+  private static Map<String, Object> diagnosticIgnored(IgnoredRule rule) {
+    Map<String, Object> fields = DiagnosticConfiguration.fields("position", (long) rule.position(),
+        "reason", rule.reason().token());
+    String from = rule.from();
+    String to = rule.to();
+    if (from != null) fields.put("from", from);
+    if (to != null) fields.put("to", MappingFilters.redactTarget(to));
+    return fields;
+  }
+
+  /** @return a copy of the first items of the view, at most {@link MappingFilters#RULE_LIMIT} */
   private static List<Map<String, Object>> bounded(List<Map<String, Object>> list) {
-    return list.size() > MappingFilters.RULE_LIMIT ? new ArrayList<>(list.subList(0, MappingFilters.RULE_LIMIT)) : list;
+    return new ArrayList<>(list.subList(0, Math.min(list.size(), MappingFilters.RULE_LIMIT)));
   }
 
   private static String failureMessage(ConfigException ex, boolean details) {
