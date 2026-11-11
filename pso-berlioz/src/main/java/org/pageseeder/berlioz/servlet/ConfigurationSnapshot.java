@@ -163,7 +163,7 @@ public final class ConfigurationSnapshot {
         writeFields(out, (Map<String, Object>) value);
         out.endObject();
       } else if (value instanceof Boolean) out.field(name, (Boolean) value);
-      else if (value instanceof Long) out.field(name, (long) (Long) value);
+      else if (value instanceof Long) out.field(name, (Long) value);
       else if (isObjectList(value)) writeObjects(out, name, (List<Map<String, Object>>) value);
       else if (value instanceof List) out.field(name, (List<String>) value);
       else out.field(name, (String) value);
