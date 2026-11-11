@@ -21,7 +21,7 @@ For example, `?berlioz-reload=config,services`. Scopes are applied in the order 
 
 No scope implies another. In particular, the response ETag combines the ETag seed, the generator ETags and the XSLT ETag, but not the service definitions: after changing services, use `berlioz-reload=services,etags` so that clients do not receive `304 Not Modified` for a service whose definition changed.
 
-Authorized requests that reload at least one scope receive an `X-Berlioz-Reload` response header listing the accepted scopes, e.g. `X-Berlioz-Reload: config, services`. `redirects` is only applied where the filters are installed. `ReloadScope` and `ControlParameter` expose the scopes, the parser and the parameter names to tools such as Berlioz Admin.
+Authorized requests that reload at least one scope receive an `X-Berlioz-Reload` response header listing the accepted scopes, e.g. `X-Berlioz-Reload: config, services`. `redirects` is only applied where the filters are installed. Scopes are never applied while an error is rendered: the error page receives the parameters of the request that failed, whose scopes were already applied. `ReloadScope` and `ControlParameter` expose the scopes, the parser and the parameter names to tools such as Berlioz Admin.
 
 `reload-services=true`, `clear-xsl-cache=true` and `reset-etags=true` are deprecated aliases of the `services`, `xslt` and `etags` scopes. They log a warning the first time they are used and will be removed in 1.0.
 

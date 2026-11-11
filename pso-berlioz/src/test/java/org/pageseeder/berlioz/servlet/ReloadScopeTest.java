@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.EnumSet;
 import java.util.Set;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -84,6 +85,16 @@ class ReloadScopeTest {
     Set<ReloadScope> scopes = ReloadScope.fromRequest(ServletTestSupport.request()
         .parameter("berlioz-reload", "services,bogus")
         .parameter("reset-etags", "true")
+        .build());
+    assertTrue(scopes.isEmpty());
+  }
+
+  @Test
+  void fromRequest_errorDispatchAppliesNoScope() {
+    Set<ReloadScope> scopes = ReloadScope.fromRequest(ServletTestSupport.request()
+        .parameter("berlioz-reload", "true")
+        .parameter("reload-services", "true")
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 503)
         .build());
     assertTrue(scopes.isEmpty());
   }

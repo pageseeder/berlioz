@@ -19,6 +19,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -143,11 +144,16 @@ public enum ReloadScope {
    * <p>Callers must check that the request is authorized for Berlioz control. When
    * {@code berlioz-reload} contains an unknown scope, no scope is returned at all.
    *
+   * <p>No scope is returned while an error is rendered ({@code javax.servlet.error.status_code}
+   * set): an error dispatch carries the parameters of the request that failed, so its scopes
+   * were already applied, or were the cause of the error.
+   *
    * @param req the HTTP request.
    * @return a new modifiable set of scopes.
    */
   @SuppressWarnings("removal")
   static Set<ReloadScope> fromRequest(HttpServletRequest req) {
+    if (req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) != null) return EnumSet.noneOf(ReloadScope.class);
     Set<ReloadScope> scopes;
     try {
       scopes = parse(req.getParameter(ControlParameter.BERLIOZ_RELOAD.parameter()));

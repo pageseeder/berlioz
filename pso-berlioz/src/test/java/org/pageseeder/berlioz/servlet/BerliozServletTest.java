@@ -374,6 +374,41 @@ class BerliozServletTest {
   }
 
   @Test
+  void reload_errorDispatchDoesNotApplyControlAgain() throws Exception {
+    writeConfig(false, true, false);
+    GlobalSettings.setup(this.webInf.toFile());
+    writeServices(service("error-503", "get", "/error/503", "handler", ECHO_XML));
+    initServlet(Map.of("content-type", "application/xml;charset=utf-8"));
+    this.servlet.doGet(request("GET", "/error/503.xml"), ServletTestSupport.response().build());
+    writeServices(service("recovered", "get", "/recovered", "generator", ECHO_XML));
+    Files.writeString(this.webInf.resolve("redirect.xml"), "<redirect-mapping/>");
+    Files.writeString(this.webInf.resolve("relocation.xml"), "<relocation-mapping/>");
+    RedirectFilter redirects = new RedirectFilter();
+    redirects.init(ServletTestSupport.filterConfig(this.webRoot.toString(), Map.of("config", "redirect.xml")));
+    RelocationFilter relocations = new RelocationFilter();
+    relocations.init(ServletTestSupport.filterConfig(this.webRoot.toString(), Map.of("config", "relocation.xml")));
+
+    // The error dispatch of an authorized request carries its control parameters
+    HttpServletRequest req = ServletTestSupport.request()
+        .method("POST").uri("/error/503.xml").servletPath("/error/503.xml")
+        .parameter("berlioz-reload", "true")
+        .attribute(ControlAuthorization.CONTROL_AUTHORIZED_ATTRIBUTE, Boolean.TRUE)
+        .attribute(RequestDispatcher.ERROR_STATUS_CODE, 503)
+        .attribute(RequestDispatcher.ERROR_MESSAGE, "Service configuration Error")
+        .build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    HttpServletResponse res = recorder.build();
+
+    redirects.doHTTPFilter(req, res, (r, s) ->
+        relocations.doHTTPFilter(req, res, (forwardedRequest, forwardedResponse) -> this.servlet.service(req, res)));
+
+    // The services were not reloaded: the error page is still found
+    assertEquals(503, recorder.status);
+    assertTrue(recorder.content().contains("hello"), recorder.content());
+    assertNull(recorder.header(ReloadScope.HEADER));
+  }
+
+  @Test
   void errorDispatch_findsGetErrorPageWhateverTheMethod() throws Exception {
     writeConfig(false, true, false);
     GlobalSettings.setup(this.webInf.toFile());
