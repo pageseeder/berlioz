@@ -69,7 +69,7 @@ public enum ControlNetwork {
   /**
    * An IPv4 octet in decimal, including optional leading zeroes.
    */
-  private static final String IPV4_OCTET = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])";
+  private static final String IPV4_OCTET = "(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d)";
 
   /** Dotted-quad IPv4 only: hostnames and abbreviated numeric forms are rejected. */
   private static final Pattern IPV4_LITERAL = Pattern.compile(IPV4_OCTET + "(?:\\." + IPV4_OCTET + "){3}");
