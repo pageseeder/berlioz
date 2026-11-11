@@ -65,6 +65,11 @@ final class LogbackSetup {
    */
   private static final String LOGGER_NAME = AppInitializer.class.getName();
 
+  /**
+   * The prefix of the messages reporting problems with the logging configuration to the console.
+   */
+  private static final String CONSOLE_PREFIX = "(!) Logging: ";
+
   /** What happened to a candidate configuration file. */
   enum Outcome {
 
@@ -194,7 +199,7 @@ final class LogbackSetup {
     }
     if (failed.isEmpty()) return new Result(attempts, null, false);
     configureConsole(context);
-    console.accept("(!) Logging: no logback configuration file could be loaded, logging to the console at INFO level");
+    console.accept(CONSOLE_PREFIX + "no logback configuration file could be loaded, logging to the console at INFO level");
     context.getLogger(LOGGER_NAME).warn("No logback configuration file could be loaded ({}), logging to the console at INFO level", names(failed));
     return new Result(attempts, null, true);
   }
@@ -236,12 +241,12 @@ final class LogbackSetup {
       @Nullable JoranException failure, Consumer<String> console) {
     String name = "config/" + file.getName();
     if (outcome == Outcome.FAILED) {
-      console.accept("(!) Logging: " + name + " could not be loaded: " + failure);
+      console.accept(CONSOLE_PREFIX + name + " could not be loaded: " + failure);
     } else if (outcome == Outcome.LOADED_WITH_ERRORS) {
-      console.accept("(!) Logging: " + name + " loaded with errors, the logging configuration may be incomplete or not applied");
+      console.accept(CONSOLE_PREFIX + name + " loaded with errors, the logging configuration may be incomplete or not applied");
     }
     for (String problem : problems) {
-      console.accept("(!) Logging: " + problem);
+      console.accept(CONSOLE_PREFIX + problem);
     }
     if (outcome == Outcome.LOADED) {
       console.accept("Logging: logback config file OK");
@@ -254,7 +259,7 @@ final class LogbackSetup {
 
   private static void reportFallback(LoggerContext context, File loaded, List<File> failed, Consumer<String> console) {
     if (failed.isEmpty()) return;
-    console.accept("(!) Logging: using config/" + loaded.getName() + " because " + names(failed) + " could not be loaded");
+    console.accept(CONSOLE_PREFIX + "using config/" + loaded.getName() + " because " + names(failed) + " could not be loaded");
     context.getLogger(LOGGER_NAME).warn("Logging configuration config/{} is used because {} could not be loaded", loaded.getName(), names(failed));
   }
 
