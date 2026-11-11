@@ -200,7 +200,8 @@ final class LogbackSetup {
     if (failed.isEmpty()) return new Result(attempts, null, false);
     configureConsole(context);
     console.accept(CONSOLE_PREFIX + "no logback configuration file could be loaded, logging to the console at INFO level");
-    context.getLogger(LOGGER_NAME).warn("No logback configuration file could be loaded ({}), logging to the console at INFO level", names(failed));
+    String failedNames = names(failed);
+    context.getLogger(LOGGER_NAME).warn("No logback configuration file could be loaded ({}), logging to the console at INFO level", failedNames);
     return new Result(attempts, null, true);
   }
 
@@ -259,8 +260,10 @@ final class LogbackSetup {
 
   private static void reportFallback(LoggerContext context, File loaded, List<File> failed, Consumer<String> console) {
     if (failed.isEmpty()) return;
-    console.accept(CONSOLE_PREFIX + "using config/" + loaded.getName() + " because " + names(failed) + " could not be loaded");
-    context.getLogger(LOGGER_NAME).warn("Logging configuration config/{} is used because {} could not be loaded", loaded.getName(), names(failed));
+    String loadedName = loaded.getName();
+    String failedNames = names(failed);
+    console.accept(CONSOLE_PREFIX + "using config/" + loadedName + " because " + failedNames + " could not be loaded");
+    context.getLogger(LOGGER_NAME).warn("Logging configuration config/{} is used because {} could not be loaded", loadedName, failedNames);
   }
 
   private static void configureConsole(LoggerContext context) {
