@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.ConfigException;
+import org.pageseeder.berlioz.config.IgnoredRule;
 import org.slf4j.Logger;
 
 /**
@@ -70,7 +72,7 @@ final class MappingRules<C> {
   private final Loader<C> loader;
   private final C empty;
   private final Function<C, List<Map<String, Object>>> rules;
-  private final Function<C, List<Map<String, Object>>> ignored;
+  private final Function<C, List<IgnoredRule>> ignored;
 
   private final AtomicReference<@Nullable Loaded<C>> loaded = new AtomicReference<>();
 
@@ -83,12 +85,12 @@ final class MappingRules<C> {
    * @param loader     loads the configuration
    * @param empty      the configuration without rules, used when there is no file or it fails to load
    * @param rules      the diagnostic fields of each rule of a configuration
-   * @param ignored    the diagnostic fields of each rule ignored when loading a configuration
+   * @param ignored    the rules ignored when loading a configuration
    */
   @SuppressWarnings("java:S107") // Internal constructor; the filters pass the specifics of their type
   MappingRules(String type, String filterName, @Nullable String parameter, @Nullable File file, Logger logger,
       Loader<C> loader, C empty, Function<C, List<Map<String, Object>>> rules,
-      Function<C, List<Map<String, Object>>> ignored) {
+      Function<C, List<IgnoredRule>> ignored) {
     this.type = type;
     this.filterName = filterName;
     this.parameter = parameter;
@@ -179,7 +181,7 @@ final class MappingRules<C> {
       return entry;
     }
     List<Map<String, Object>> all = this.rules.apply(current.config);
-    List<Map<String, Object>> skipped = this.ignored.apply(current.config);
+    List<Map<String, Object>> skipped = diagnosticIgnored(this.ignored.apply(current.config));
     entry.put("rule-count", (long) all.size());
     if (!skipped.isEmpty()) entry.put("ignored-count", (long) skipped.size());
     if (all.size() > MappingFilters.RULE_LIMIT || skipped.size() > MappingFilters.RULE_LIMIT) {
@@ -188,6 +190,24 @@ final class MappingRules<C> {
     if (!all.isEmpty()) entry.put("rules", bounded(all));
     if (!skipped.isEmpty()) entry.put("ignored-rules", bounded(skipped));
     return entry;
+  }
+
+  /**
+   * Returns the diagnostic fields of the rules ignored when a configuration was loaded.
+   *
+   * @param ignored the ignored rules
+   * @return their position, reason, <code>from</code> and redacted <code>to</code>
+   */
+  private static List<Map<String, Object>> diagnosticIgnored(List<IgnoredRule> ignored) {
+    return ignored.stream().map(rule -> {
+      Map<String, Object> fields = DiagnosticConfiguration.fields("position", (long) rule.position(),
+          "reason", rule.reason().token());
+      String from = rule.from();
+      String to = rule.to();
+      if (from != null) fields.put("from", from);
+      if (to != null) fields.put("to", MappingFilters.redactTarget(to));
+      return fields;
+    }).collect(Collectors.toList());
   }
 
   private static List<Map<String, Object>> bounded(List<Map<String, Object>> list) {

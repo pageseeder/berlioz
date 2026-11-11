@@ -15,6 +15,7 @@
  */
 package org.pageseeder.berlioz.servlet;
 
+import java.io.File;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,14 +24,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import javax.servlet.FilterConfig;
 import javax.servlet.http.HttpServletRequest;
 
+import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
-import org.pageseeder.berlioz.config.IgnoredRule;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.pageseeder.berlioz.util.Redaction;
+import org.slf4j.Logger;
 
 /**
  * Coordinates the {@link RedirectFilter} and {@link RelocationFilter} instances.
@@ -115,21 +118,27 @@ final class MappingFilters {
   }
 
   /**
-   * Returns the diagnostic fields of the rules ignored when a configuration was loaded.
+   * Returns the configuration file of a filter, logging a warning if it is not specified or does
+   * not exist: the filter has no effect then.
    *
-   * @param ignored the ignored rules
-   * @return their position, reason, <code>from</code> and redacted <code>to</code>
+   * @param config     the filter configuration
+   * @param filterName the name of the filter instance
+   * @param parameter  the {@code config} init parameter, relative to {@code WEB-INF}, if any
+   * @param logger     the logger of the filter
+   * @return the configuration file, or {@code null} if the parameter is not specified
    */
-  static List<Map<String, Object>> diagnosticIgnored(List<IgnoredRule> ignored) {
-    return ignored.stream().map(rule -> {
-      Map<String, Object> fields = DiagnosticConfiguration.fields("position", (long) rule.position(),
-          "reason", rule.reason().token());
-      String from = rule.from();
-      String to = rule.to();
-      if (from != null) fields.put("from", from);
-      if (to != null) fields.put("to", redactTarget(to));
-      return fields;
-    }).collect(Collectors.toList());
+  static @Nullable File configFile(FilterConfig config, String filterName, @Nullable String parameter, Logger logger) {
+    if (parameter == null) {
+      logger.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
+      return null;
+    }
+    File webinf = new File(config.getServletContext().getRealPath("/"), "WEB-INF");
+    File file = new File(webinf, parameter);
+    if (!file.exists()) {
+      logger.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
+          filterName, file.getAbsolutePath());
+    }
+    return file;
   }
 
   /**

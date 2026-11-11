@@ -29,7 +29,6 @@ import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -98,33 +97,13 @@ public final class RelocationFilter implements Filter {
    */
   @Override
   public void init(FilterConfig config) {
-    // get the WEB-INF directory
     String name = config.getFilterName();
     String filterName = name != null ? name : "RelocationFilter";
-    ServletContext context = config.getServletContext();
-    File contextPath = new File(context.getRealPath("/"));
-    File webinfPath = new File(contextPath, "WEB-INF");
-    String mapping = config.getInitParameter("config");
-
-    // Mapping isn't specified
-    if (mapping == null) {
-      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
-      register(new MappingRules<>("relocation", filterName, null, null, LOGGER, RelocationConfig::newInstance,
-          new RelocationConfig(), RelocationFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
-      return;
-    }
-
-    // The mapping file does not exist
-    File file = new File(webinfPath, mapping);
-    if (!file.exists()) {
-      LOGGER.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
-      filterName,
-      file.getAbsolutePath());
-    }
-
-    // Store the mapping file, it will be loaded if needed only.
-    register(new MappingRules<>("relocation", filterName, mapping, file, LOGGER, RelocationConfig::newInstance,
-        new RelocationConfig(), RelocationFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
+    String parameter = config.getInitParameter("config");
+    // The file is loaded on first use only
+    File file = MappingFilters.configFile(config, filterName, parameter, LOGGER);
+    register(new MappingRules<>("relocation", filterName, parameter, file, LOGGER, RelocationConfig::newInstance,
+        new RelocationConfig(), RelocationFilter::diagnosticRules, RelocationConfig::ignored));
   }
 
   private void register(MappingRules<RelocationConfig> next) {

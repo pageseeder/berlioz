@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -113,33 +112,13 @@ public final class RedirectFilter implements Filter, Serializable {
    */
   @Override
   public void init(FilterConfig config) {
-    // get the WEB-INF directory
     String name = config.getFilterName();
     String filterName = name != null ? name : "RedirectFilter";
-    ServletContext context = config.getServletContext();
-    File contextPath = new File(context.getRealPath("/"));
-    File webinfPath = new File(contextPath, "WEB-INF");
-    String mappingConfig = config.getInitParameter("config");
-
-    // Mapping isn't specified
-    if (mappingConfig == null) {
-      LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
-      register(new MappingRules<>("redirect", filterName, null, null, LOGGER, RedirectConfig::newInstance,
-          new RedirectConfig(), RedirectFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
-      return;
-    }
-
-    // Mapping does not exist
-    File mappingFile = new File(webinfPath, mappingConfig);
-    if (!mappingFile.exists()) {
-      LOGGER.warn("Filter '{}': 'config' init-parameter points to non existing file {} - filter will have no effect",
-      filterName,
-      mappingFile.getAbsolutePath());
-    }
-
-    // Simply set the mapping file, it will be loaded if needed only.
-    register(new MappingRules<>("redirect", filterName, mappingConfig, mappingFile, LOGGER, RedirectConfig::newInstance,
-        new RedirectConfig(), RedirectFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
+    String parameter = config.getInitParameter("config");
+    // The file is loaded on first use only
+    File file = MappingFilters.configFile(config, filterName, parameter, LOGGER);
+    register(new MappingRules<>("redirect", filterName, parameter, file, LOGGER, RedirectConfig::newInstance,
+        new RedirectConfig(), RedirectFilter::diagnosticRules, RedirectConfig::ignored));
   }
 
   private void register(MappingRules<RedirectConfig> next) {
