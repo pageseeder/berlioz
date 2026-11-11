@@ -225,6 +225,9 @@ class MappingFiltersTest {
       "/a#f?x=1                            | /a#f?x=1",
       "https://user:pass@example.org/x?a=1 | https://example.org/x?a=[REDACTED]",
       "https://user@example.org/x          | https://example.org/x",
+      "//alice:secret@example.com/p?token=s | //example.com/p?token=[REDACTED]",
+      "//alice@example.com                 | //example.com",
+      "//example.com/a@b                   | //example.com/a@b",
       "https://example.org/x?u=a@b         | https://example.org/x?u=[REDACTED]",
       "https://{host}/x                    | https://{host}/x",
       "/{+path}                            | /{+path}"})

@@ -172,13 +172,22 @@ final class MappingFilters {
   }
 
   private static String removeUserInfo(String target) {
-    int scheme = target.indexOf("://");
-    if (scheme <= 0 || !target.substring(0, scheme).matches("[A-Za-z][A-Za-z0-9+.-]*")) return target;
-    int start = scheme + 3;
+    int start = authorityStart(target);
+    if (start < 0) return target;
     int end = start;
     while (end < target.length() && "/?#".indexOf(target.charAt(end)) < 0) end++;
     int at = target.lastIndexOf('@', end - 1);
     return at < start ? target : target.substring(0, start) + target.substring(at + 1);
+  }
+
+  /**
+   * @return the index of the authority in an absolute URL or network-path reference ("//host"), or -1
+   */
+  private static int authorityStart(String target) {
+    if (target.startsWith("//")) return 2;
+    int scheme = target.indexOf("://");
+    if (scheme <= 0 || !target.substring(0, scheme).matches("[A-Za-z][A-Za-z0-9+.-]*")) return -1;
+    return scheme + 3;
   }
 
   /** @return the index of the character outside template expressions, from the index, or -1 */
