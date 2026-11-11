@@ -2,6 +2,7 @@ package org.pageseeder.berlioz.servlet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
@@ -61,16 +62,16 @@ class MappingFiltersTest {
   @Test
   void reloadThroughServletReachesEveryFilter() throws Exception {
     RedirectFilter redirects = redirectFilter("redirects", "redirect.xml", "<redirect-mapping><redirect from=\"/a\" to=\"/one\"/></redirect-mapping>");
-    RelocationFilter relocations = relocationFilter("relocations", "relocation.xml", "<relocation-mapping><relocation from=\"/c\" to=\"/one\"/></relocation-mapping>");
+    RelocationFilter relocator = relocationFilter("relocations", "relocation.xml", "<relocation-mapping><relocation from=\"/c\" to=\"/one\"/></relocation-mapping>");
     assertTrue(redirect(redirects, request("/a", null)).endsWith("/one"));
-    assertEquals("/one", relocate(relocations, request("/c", null)));
+    assertEquals("/one", relocate(relocator, request("/c", null)));
     write("redirect.xml", "<redirect-mapping><redirect from=\"/a\" to=\"/two\"/></redirect-mapping>");
     write("relocation.xml", "<relocation-mapping><relocation from=\"/c\" to=\"/two\"/></relocation-mapping>");
 
     MappingFilters.requestReload(request("/hello.xml", "redirects"));
 
     assertTrue(redirect(redirects, request("/a", null)).endsWith("/two"));
-    assertEquals("/two", relocate(relocations, request("/c", null)));
+    assertEquals("/two", relocate(relocator, request("/c", null)));
   }
 
   @Test
@@ -201,7 +202,7 @@ class MappingFiltersTest {
     String before = MappingFilters.diagnosticSnapshot().etag();
     assertEquals(before, MappingFilters.diagnosticSnapshot().etag());
     redirect(filter, request("/z", null));
-    assertFalse(before.equals(MappingFilters.diagnosticSnapshot().etag()));
+    assertNotEquals(before, MappingFilters.diagnosticSnapshot().etag());
   }
 
   // Redaction of targets
