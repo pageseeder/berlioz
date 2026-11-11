@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
+import org.pageseeder.berlioz.config.IgnoredRule;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.security.ControlAuthorization;
 import org.pageseeder.berlioz.util.Redaction;
@@ -111,6 +112,24 @@ final class MappingFilters {
         .map(rules -> rules.diagnosticEntry(details))
         .collect(Collectors.toList());
     return new ConfigurationSnapshot("redirect-config", "filters", "filter", entries, Map.of());
+  }
+
+  /**
+   * Returns the diagnostic fields of the rules ignored when a configuration was loaded.
+   *
+   * @param ignored the ignored rules
+   * @return their position, reason, <code>from</code> and redacted <code>to</code>
+   */
+  static List<Map<String, Object>> diagnosticIgnored(List<IgnoredRule> ignored) {
+    return ignored.stream().map(rule -> {
+      Map<String, Object> fields = DiagnosticConfiguration.fields("position", (long) rule.position(),
+          "reason", rule.reason().token());
+      String from = rule.from();
+      String to = rule.to();
+      if (from != null) fields.put("from", from);
+      if (to != null) fields.put("to", redactTarget(to));
+      return fields;
+    }).collect(Collectors.toList());
   }
 
   /**

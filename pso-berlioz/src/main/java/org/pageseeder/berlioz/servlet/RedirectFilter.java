@@ -125,7 +125,7 @@ public final class RedirectFilter implements Filter, Serializable {
     if (mappingConfig == null) {
       LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
       register(new MappingRules<>("redirect", filterName, null, null, LOGGER, RedirectConfig::newInstance,
-          new RedirectConfig(), RedirectConfig::size, RedirectFilter::diagnosticRules));
+          new RedirectConfig(), RedirectFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
       return;
     }
 
@@ -139,7 +139,7 @@ public final class RedirectFilter implements Filter, Serializable {
 
     // Simply set the mapping file, it will be loaded if needed only.
     register(new MappingRules<>("redirect", filterName, mappingConfig, mappingFile, LOGGER, RedirectConfig::newInstance,
-        new RedirectConfig(), RedirectConfig::size, RedirectFilter::diagnosticRules));
+        new RedirectConfig(), RedirectFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
   }
 
   private void register(MappingRules<RedirectConfig> next) {

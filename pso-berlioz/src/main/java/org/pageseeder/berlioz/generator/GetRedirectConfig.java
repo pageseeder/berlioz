@@ -34,9 +34,13 @@ import org.pageseeder.berlioz.servlet.RedirectFilter;
  * and the last load. A filter loads its rules on its first request, so the status is
  * <code>not-loaded</code> until then; <code>reload-pending</code> is <code>true</code> when a
  * reload of the <code>redirects</code> scope was requested since, which the filter applies on its
- * next request. The rules are those loaded, not the current file. At most 2000 rules are listed
- * per filter: <code>rule-count</code> has the total, and <code>limit</code> is written when the
- * list is truncated.
+ * next request. The rules are those loaded, not the current file. Rules whose <code>from</code> or
+ * <code>to</code> pattern is missing or invalid are ignored by the filter, and listed as
+ * <code>ignored-rule</code> with their position among the rules of the file (from 1) and the
+ * reason: <code>missing-from</code>, <code>invalid-from</code>, <code>missing-to</code> or
+ * <code>invalid-to</code>. At most 2000 rules and 2000 ignored rules are listed per filter:
+ * <code>rule-count</code> and <code>ignored-count</code> have the totals, and <code>limit</code>
+ * is written when a list is truncated.
  *
  * <p>Rule targets are redacted: the user information of an absolute URL is removed, and the value
  * of every query parameter is <code>[REDACTED]</code> unless it is a URI template expression. The
@@ -47,8 +51,9 @@ import org.pageseeder.berlioz.servlet.RedirectFilter;
  * <pre>{@code
  * <redirect-config>
  *   <filter name="[name]" type="redirect" config="[path]" exists="true" status="loaded"
- *           loaded="[iso8601]" rule-count="[count]">
+ *           loaded="[iso8601]" rule-count="[count]" ignored-count="[count]">
  *     <rule from="[pattern]" to="[pattern]" permanent="[true|false]"/>
+ *     <ignored-rule position="[position]" reason="[reason]" from="[text]" to="[text]"/>
  *   </filter>
  *   <filter name="[name]" type="relocation" config="[path]" exists="false" status="failed"
  *           loaded="[iso8601]" failure="[message]"/>
@@ -61,7 +66,9 @@ import org.pageseeder.berlioz.servlet.RedirectFilter;
  * {"filters": [
  *   {"name": "[name]", "type": "redirect", "config": "[path]", "exists": true, "status": "loaded",
  *    "loaded": "[iso8601]", "ruleCount": [count],
- *    "rules": [{"from": "[pattern]", "to": "[pattern]", "permanent": [true|false]}]}
+ *    "ignoredCount": [count],
+ *    "rules": [{"from": "[pattern]", "to": "[pattern]", "permanent": [true|false]}],
+ *    "ignoredRules": [{"position": [position], "reason": "[reason]", "from": "[text]", "to": "[text]"}]}
  * ]}
  * }</pre>
  *

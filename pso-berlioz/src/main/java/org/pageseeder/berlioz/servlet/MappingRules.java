@@ -65,8 +65,8 @@ final class MappingRules<C> {
   private final Logger logger;
   private final Loader<C> loader;
   private final C empty;
-  private final Function<C, Integer> size;
   private final Function<C, List<Map<String, Object>>> rules;
+  private final Function<C, List<Map<String, Object>>> ignored;
 
   private volatile @Nullable Loaded<C> loaded;
 
@@ -78,12 +78,13 @@ final class MappingRules<C> {
    * @param logger     the logger of the filter
    * @param loader     loads the configuration
    * @param empty      the configuration without rules, used when there is no file or it fails to load
-   * @param size       the number of rules of a configuration
    * @param rules      the diagnostic fields of each rule of a configuration
+   * @param ignored    the diagnostic fields of each rule ignored when loading a configuration
    */
   @SuppressWarnings("java:S107") // Internal constructor; the filters pass the specifics of their type
   MappingRules(String type, String filterName, @Nullable String parameter, @Nullable File file, Logger logger,
-      Loader<C> loader, C empty, Function<C, Integer> size, Function<C, List<Map<String, Object>>> rules) {
+      Loader<C> loader, C empty, Function<C, List<Map<String, Object>>> rules,
+      Function<C, List<Map<String, Object>>> ignored) {
     this.type = type;
     this.filterName = filterName;
     this.parameter = parameter;
@@ -91,8 +92,8 @@ final class MappingRules<C> {
     this.logger = logger;
     this.loader = loader;
     this.empty = empty;
-    this.size = size;
     this.rules = rules;
+    this.ignored = ignored;
   }
 
   /** @return the type of filter, {@code redirect} or {@code relocation} */
@@ -130,7 +131,7 @@ final class MappingRules<C> {
   private Loaded<C> load(File f, long generation) {
     try {
       C config = this.loader.load(f);
-      int count = this.size.apply(config);
+      int count = this.rules.apply(config).size();
       if (count == 0) {
         this.logger.warn("Filter '{}': {} configuration {} has no rules - filter will have no effect",
             this.filterName, this.type, f.getAbsolutePath());
@@ -174,13 +175,19 @@ final class MappingRules<C> {
       return entry;
     }
     List<Map<String, Object>> all = this.rules.apply(current.config);
+    List<Map<String, Object>> skipped = this.ignored.apply(current.config);
     entry.put("rule-count", (long) all.size());
-    if (all.size() > MappingFilters.RULE_LIMIT) {
+    if (!skipped.isEmpty()) entry.put("ignored-count", (long) skipped.size());
+    if (all.size() > MappingFilters.RULE_LIMIT || skipped.size() > MappingFilters.RULE_LIMIT) {
       entry.put("limit", (long) MappingFilters.RULE_LIMIT);
-      all = new ArrayList<>(all.subList(0, MappingFilters.RULE_LIMIT));
     }
-    if (!all.isEmpty()) entry.put("rules", all);
+    if (!all.isEmpty()) entry.put("rules", bounded(all));
+    if (!skipped.isEmpty()) entry.put("ignored-rules", bounded(skipped));
     return entry;
+  }
+
+  private static List<Map<String, Object>> bounded(List<Map<String, Object>> list) {
+    return list.size() > MappingFilters.RULE_LIMIT ? new ArrayList<>(list.subList(0, MappingFilters.RULE_LIMIT)) : list;
   }
 
   private static String failureMessage(ConfigException ex, boolean details) {

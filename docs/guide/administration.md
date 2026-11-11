@@ -146,6 +146,10 @@ Each generator captures one immutable snapshot per request and reuses it for its
     <rule from="/" to="/html/home" permanent="false"/>
     <rule from="/old" to="https://example.org/new?token=[REDACTED]" permanent="true"/>
   </filter>
+  <filter name="Legacy" type="redirect" config="config/legacy.xml" exists="true"
+          status="loaded" loaded="2026-11-11T02:15:00Z" rule-count="0" ignored-count="1">
+    <ignored-rule position="1" reason="invalid-from" from="/{!x}" to="/x"/>
+  </filter>
   <filter name="Forwards" type="relocation" status="no-config"/>
 </redirect-config>
 ```
@@ -154,10 +158,11 @@ Each generator captures one immutable snapshot per request and reuses it for its
 - `status` is `no-config` (no `config` parameter: the filter has no effect), `not-loaded` (a filter loads its rules on its first request), `loaded` or `failed` (the filter has no rules until the next successful load). `loaded` is the time of the last load.
 - `reload-pending="true"` when a reload of the `redirects` scope was requested since the last load; the filter applies it on its next request.
 - `failure` is a generic message, or the loader's message when `berlioz.errors.detail` is `standard` or `full`.
-- At most 2000 rules are listed: `rule-count` has the total, and `limit` is written when the list is truncated. `permanent` is only reported for redirects.
+- `ignored-rule` lists the rules that the filter ignores because their `from` or `to` pattern is missing or invalid (Berlioz logs them when loading), with their `position` among the rules of the file, from 1, and the `reason`: `missing-from`, `invalid-from`, `missing-to` or `invalid-to`. Loaded rules are in file order, so their positions follow from the ignored ones.
+- At most 2000 rules and 2000 ignored rules are listed: `rule-count` and `ignored-count` have the totals, and `limit` is written when a list is truncated. `permanent` is only reported for redirects.
 - Targets are redacted: the user information of an absolute URL is removed, and the value of every query parameter is `[REDACTED]`, unless it is a URI template expression such as `{q}`.
 
-JSON uses a `filters` array of objects with the same fields in camel case, `rules` arrays, and `ruleCount` as a number. Like the servlet configuration generators, the generator reuses one snapshot per request for its response and ETag.
+JSON uses a `filters` array of objects with the same fields in camel case, `rules` and `ignoredRules` arrays, and numbers for `ruleCount`, `ignoredCount` and `position`. Like the servlet configuration generators, the generator reuses one snapshot per request for its response and ETag.
 
 ### Options: `ListBerliozOptions`
 

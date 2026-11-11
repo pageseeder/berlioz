@@ -25,6 +25,28 @@ final class RedirectConfigTest {
   }
 
   @Test
+  void testLoad_IgnoredRules() throws ConfigException {
+    String xml = "<redirect-mapping>"
+        + "<redirect from=\"/a\" to=\"/b\"/>"
+        + "<redirect from=\"/{!x}\" to=\"/c\"/>"
+        + "<redirect from=\"/d\" to=\"/{!y}?token=t\"/>"
+        + "<redirect from=\"/e\" to=\"/f\"/>"
+        + "</redirect-mapping>";
+    RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
+    Assertions.assertEquals(2, config.size());
+    Assertions.assertEquals(2, config.ignored().size());
+    IgnoredRule first = config.ignored().get(0);
+    Assertions.assertEquals(2, first.position());
+    Assertions.assertEquals(IgnoredRule.Reason.INVALID_FROM, first.reason());
+    Assertions.assertEquals("/{!x}", first.from());
+    Assertions.assertEquals("/c", first.to());
+    IgnoredRule second = config.ignored().get(1);
+    Assertions.assertEquals(3, second.position());
+    Assertions.assertEquals(IgnoredRule.Reason.INVALID_TO, second.reason());
+    Assertions.assertTrue(new RedirectConfig().ignored().isEmpty());
+  }
+
+  @Test
   void testLoad_Empty() throws ConfigException {
     String xml = "<redirect-mapping/>";
     RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));

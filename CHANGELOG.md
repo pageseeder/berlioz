@@ -9,7 +9,7 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 ### Added
 
 - `ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION` (`org.pageseeder.berlioz.error_exception`): the request attribute holding the exception of an error routed by Berlioz.
-- `GetRedirectConfig` generator and `RedirectFilter.diagnosticSnapshot()`: every `RedirectFilter` and `RelocationFilter` instance with its `config` parameter, whether the file exists, the status and time of the last load, its failure, and the rules loaded, with redacted targets (XML and JSON). `RedirectConfig.patterns()` and `RelocationConfig.patterns()` return the loaded rules.
+- `GetRedirectConfig` generator and `RedirectFilter.diagnosticSnapshot()`: every `RedirectFilter` and `RelocationFilter` instance with its `config` parameter, whether the file exists, the status and time of the last load, its failure, the rules loaded, with redacted targets, and the rules ignored because a pattern is missing or invalid, with their position and reason (XML and JSON). `RedirectConfig.patterns()` and `RelocationConfig.patterns()` return the loaded rules, and `ignored()` the ignored ones (`IgnoredRule`).
 
 ### Changed
 

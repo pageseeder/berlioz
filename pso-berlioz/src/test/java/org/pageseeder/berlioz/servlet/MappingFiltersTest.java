@@ -167,6 +167,24 @@ class MappingFiltersTest {
   }
 
   @Test
+  void snapshotReportsIgnoredRules() throws Exception {
+    RedirectFilter filter = redirectFilter("redirects", "redirect.xml", "<redirect-mapping>"
+        + "<redirect from=\"/a\" to=\"/b\"/>"
+        + "<redirect from=\"/{!x}\" to=\"/c?token=t\"/>"
+        + "<redirect from=\"/d\" to=\"/{!y}\"/></redirect-mapping>");
+    redirect(filter, request("/z", null));
+    assertEquals("<redirect-config>"
+        + "<filter name=\"redirects\" type=\"redirect\" config=\"redirect.xml\" exists=\"true\" status=\"loaded\" loaded=\"T\" rule-count=\"1\" ignored-count=\"2\">"
+        + "<rule from=\"/a\" to=\"/b\" permanent=\"false\"/>"
+        + "<ignored-rule position=\"2\" reason=\"invalid-from\" from=\"/{!x}\" to=\"/c?token=[REDACTED]\"/>"
+        + "<ignored-rule position=\"3\" reason=\"invalid-to\" from=\"/d\" to=\"/{!y}\"/>"
+        + "</filter></redirect-config>", xml(MappingFilters.diagnosticSnapshot()));
+    String json = json(MappingFilters.diagnosticSnapshot());
+    assertTrue(json.contains("\"ignoredCount\":2,"), json);
+    assertTrue(json.contains("\"ignoredRules\":[{\"position\":2,\"reason\":\"invalid-from\""), json);
+  }
+
+  @Test
   void snapshotBoundsTheRules() throws Exception {
     StringBuilder rules = new StringBuilder("<redirect-mapping>");
     for (int i = 0; i <= MappingFilters.RULE_LIMIT; i++) rules.append("<redirect from=\"/r").append(i).append("\" to=\"/t\"/>");

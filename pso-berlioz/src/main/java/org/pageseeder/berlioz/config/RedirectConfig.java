@@ -57,10 +57,15 @@ public final class RedirectConfig {
   private final List<RedirectPattern> patterns;
 
   /**
+   * The rules ignored when loading.
+   */
+  private final List<IgnoredRule> ignored;
+
+  /**
    * Creates an empty redirect configuration with no patterns.
    */
   public RedirectConfig() {
-    this.patterns = Collections.emptyList();
+    this(Collections.emptyList());
   }
 
   /**
@@ -69,7 +74,12 @@ public final class RedirectConfig {
    * @param patterns The redirect patterns; must not be {@code null}.
    */
   public RedirectConfig(List<RedirectPattern> patterns) {
+    this(patterns, Collections.emptyList());
+  }
+
+  private RedirectConfig(List<RedirectPattern> patterns, List<IgnoredRule> ignored) {
     this.patterns = patterns;
+    this.ignored = ignored;
   }
 
   /**
@@ -118,6 +128,16 @@ public final class RedirectConfig {
   }
 
   /**
+   * Returns the rules ignored when the file was loaded, in file order.
+   *
+   * @return An unmodifiable list, empty if no rule was ignored.
+   * @since 0.14.6
+   */
+  public List<IgnoredRule> ignored() {
+    return Collections.unmodifiableList(this.ignored);
+  }
+
+  /**
    * Returns the number of redirect patterns in this configuration.
    *
    * @return The pattern count.
@@ -142,6 +162,10 @@ public final class RedirectConfig {
 
     private List<RedirectPattern> patterns = new ArrayList<>();
 
+    private List<IgnoredRule> ignored = new ArrayList<>();
+
+    private int position = 0;
+
     /** Used to detect duplicates */
     private final Set<String> matchingPatterns = new HashSet<>();
 
@@ -152,15 +176,22 @@ public final class RedirectConfig {
     @Override
     public void startDocument() {
       this.patterns = new ArrayList<>();
+      this.ignored = new ArrayList<>();
+      this.position = 0;
       this.matchingPatterns.clear();
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) {
       if ("redirect".equals(localName)) {
+        this.position++;
         URIPattern from = toPattern(atts.getValue("from"));
         URIPattern to = toPattern(atts.getValue("to"));
-        if (from == null || to == null) return;
+        if (from == null || to == null) {
+          IgnoredRule ignore = IgnoredRule.check(this.position, atts.getValue("from"), from, atts.getValue("to"), to);
+          if (ignore != null) this.ignored.add(ignore);
+          return;
+        }
         if (!this.matchingPatterns.add(from.toString())) {
           LOGGER.warn("URI pattern: {} is mapped twice", from);
         }
@@ -189,7 +220,7 @@ public final class RedirectConfig {
 
     @Override
     RedirectConfig getConfig() {
-      return new RedirectConfig(this.patterns);
+      return new RedirectConfig(this.patterns, this.ignored);
     }
   }
 

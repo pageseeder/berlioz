@@ -57,10 +57,15 @@ public final class RelocationConfig {
   private final List<MovedLocationPattern> mapping;
 
   /**
+   * The rules ignored when loading.
+   */
+  private final List<IgnoredRule> ignored;
+
+  /**
    * Creates an empty relocation configuration with no patterns.
    */
   public RelocationConfig() {
-    this.mapping = Collections.emptyList();
+    this(Collections.emptyList());
   }
 
   /**
@@ -69,7 +74,12 @@ public final class RelocationConfig {
    * @param mapping The relocation patterns; must not be {@code null}.
    */
   public RelocationConfig(List<MovedLocationPattern> mapping) {
+    this(mapping, Collections.emptyList());
+  }
+
+  private RelocationConfig(List<MovedLocationPattern> mapping, List<IgnoredRule> ignored) {
     this.mapping = mapping;
+    this.ignored = ignored;
   }
 
   /**
@@ -108,6 +118,16 @@ public final class RelocationConfig {
   }
 
   /**
+   * Returns the rules ignored when the file was loaded, in file order.
+   *
+   * @return An unmodifiable list, empty if no rule was ignored.
+   * @since 0.14.6
+   */
+  public List<IgnoredRule> ignored() {
+    return Collections.unmodifiableList(this.ignored);
+  }
+
+  /**
    * Returns the relocation patterns of this configuration, in file order.
    *
    * @return An unmodifiable list of patterns.
@@ -142,6 +162,10 @@ public final class RelocationConfig {
 
     private List<MovedLocationPattern> patterns = new ArrayList<>();
 
+    private List<IgnoredRule> ignored = new ArrayList<>();
+
+    private int position = 0;
+
     /** Used to detect duplicates */
     private final Set<String> matchingPatterns = new HashSet<>();
 
@@ -152,15 +176,22 @@ public final class RelocationConfig {
     @Override
     public void startDocument() {
       this.patterns = new ArrayList<>();
+      this.ignored = new ArrayList<>();
+      this.position = 0;
       this.matchingPatterns.clear();
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) {
       if ("relocation".equals(localName)) {
+        this.position++;
         URIPattern from = toPattern(atts.getValue("from"));
         URIPattern to = toPattern(atts.getValue("to"));
-        if (from == null || to == null) return;
+        if (from == null || to == null) {
+          IgnoredRule ignore = IgnoredRule.check(this.position, atts.getValue("from"), from, atts.getValue("to"), to);
+          if (ignore != null) this.ignored.add(ignore);
+          return;
+        }
         if (!this.matchingPatterns.add(from.toString())) {
           LOGGER.warn("URI pattern: {} is mapped twice", from);
         }
@@ -186,7 +217,7 @@ public final class RelocationConfig {
 
     @Override
     RelocationConfig getConfig() {
-      return new RelocationConfig(this.patterns);
+      return new RelocationConfig(this.patterns, this.ignored);
     }
   }
 

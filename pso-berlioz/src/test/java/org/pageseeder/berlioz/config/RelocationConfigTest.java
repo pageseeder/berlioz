@@ -19,6 +19,20 @@ final class RelocationConfigTest {
   }
 
   @Test
+  void testLoad_ignoredRules() throws ConfigException {
+    String xml = "<relocation-mapping>"
+        + "<relocation from=\"/{!x}\" to=\"/a\"/>"
+        + "<relocation from=\"/b\" to=\"/c\"/>"
+        + "</relocation-mapping>";
+    RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));
+    Assertions.assertEquals(1, config.size());
+    Assertions.assertEquals(1, config.ignored().size());
+    Assertions.assertEquals(1, config.ignored().get(0).position());
+    Assertions.assertEquals(IgnoredRule.Reason.INVALID_FROM, config.ignored().get(0).reason());
+    Assertions.assertEquals("invalid-from", config.ignored().get(0).reason().token());
+  }
+
+  @Test
   void testLoad_empty() throws ConfigException {
     String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?><relocation-mapping/>";
     RelocationConfig config = RelocationConfig.newInstance(new ByteArrayInputStream(xml.getBytes()));

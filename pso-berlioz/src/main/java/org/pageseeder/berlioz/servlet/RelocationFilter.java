@@ -110,7 +110,7 @@ public final class RelocationFilter implements Filter {
     if (mapping == null) {
       LOGGER.warn("Filter '{}': missing 'config' init-parameter - filter will have no effect", filterName);
       register(new MappingRules<>("relocation", filterName, null, null, LOGGER, RelocationConfig::newInstance,
-          new RelocationConfig(), RelocationConfig::size, RelocationFilter::diagnosticRules));
+          new RelocationConfig(), RelocationFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
       return;
     }
 
@@ -124,7 +124,7 @@ public final class RelocationFilter implements Filter {
 
     // Store the mapping file, it will be loaded if needed only.
     register(new MappingRules<>("relocation", filterName, mapping, file, LOGGER, RelocationConfig::newInstance,
-        new RelocationConfig(), RelocationConfig::size, RelocationFilter::diagnosticRules));
+        new RelocationConfig(), RelocationFilter::diagnosticRules, loaded -> MappingFilters.diagnosticIgnored(loaded.ignored())));
   }
 
   private void register(MappingRules<RelocationConfig> next) {
