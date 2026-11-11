@@ -27,6 +27,7 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.IgnoredRule;
+import org.pageseeder.berlioz.util.Redaction;
 import org.slf4j.Logger;
 
 /**
@@ -222,7 +223,7 @@ final class MappingRules<C> {
     String from = rule.from();
     String to = rule.to();
     if (from != null) fields.put("from", from);
-    if (to != null) fields.put("to", MappingFilters.redactTarget(to));
+    if (to != null) fields.put("to", Redaction.redactUriPattern(to));
     return fields;
   }
 

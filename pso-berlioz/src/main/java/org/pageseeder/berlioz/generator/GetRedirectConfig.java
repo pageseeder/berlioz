@@ -42,8 +42,9 @@ import org.pageseeder.berlioz.servlet.RedirectFilter;
  * <code>rule-count</code> and <code>ignored-count</code> have the totals, and <code>limit</code>
  * is written when a list is truncated.
  *
- * <p>Rule targets are redacted: the user information of an absolute URL is removed, and the value
- * of every query parameter is <code>[REDACTED]</code> unless it is a URI template expression. The
+ * <p>Rule targets are redacted ({@link org.pageseeder.berlioz.util.Redaction#redactUriPattern(String)}):
+ * the password of a URL (or its user information without password) and the value of every query
+ * parameter are <code>[REDACTED]</code>, unless the value is a URI template expression. The
  * message of a load failure is only included when <code>berlioz.errors.detail</code> is
  * <code>standard</code> or <code>full</code>.
  *

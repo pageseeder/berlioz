@@ -22,8 +22,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.InitEnvironment;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
@@ -156,7 +154,7 @@ class MappingFiltersTest {
 
     assertEquals("<redirect-config>"
         + "<filter name=\"redirects\" type=\"redirect\" config=\"config/redirect.xml\" exists=\"true\" status=\"loaded\" loaded=\"T\" rule-count=\"2\">"
-        + "<rule from=\"/a\" to=\"https://example.org/x?token=[REDACTED]\" permanent=\"true\"/>"
+        + "<rule from=\"/a\" to=\"https://user:[REDACTED]@example.org/x?token=[REDACTED]\" permanent=\"true\"/>"
         + "<rule from=\"/{+path}.psml\" to=\"/html/{+path}\" permanent=\"false\"/></filter>"
         + "<filter name=\"broken\" type=\"relocation\" config=\"broken.xml\" exists=\"true\" status=\"failed\" loaded=\"T\" failure=\"Unable to load the configuration file\"/>"
         + "<filter name=\"missing\" type=\"relocation\" config=\"missing.xml\" exists=\"false\" status=\"not-loaded\"/>"
@@ -237,36 +235,6 @@ class MappingFiltersTest {
     assertEquals(before, MappingFilters.diagnosticSnapshot().etag());
     redirect(filter, request("/z", null));
     assertNotEquals(before, MappingFilters.diagnosticSnapshot().etag());
-  }
-
-  // Redaction of targets
-  // ---------------------------------------------------------------------------
-
-  @ParameterizedTest
-  @CsvSource(delimiter = '|', value = {
-      "/a                                  | /a",
-      "/a?token=secret                     | /a?token=[REDACTED]",
-      "/a?token=secret&q={q}&flag#frag     | /a?token=[REDACTED]&q={q}&flag#frag",
-      "/a?x=1&y=2                          | /a?x=[REDACTED]&y=[REDACTED]",
-      "/a?x={q}{r}                         | /a?x=[REDACTED]",
-      "/a?x=                               | /a?x=[REDACTED]",
-      "/a?                                 | /a?",
-      "/a?x=1&                             | /a?x=[REDACTED]&",
-      "/a?x=1{&y}                          | /a?x=[REDACTED]",
-      "/search{?q}                         | /search{?q}",
-      "/search{?q}&x=1                     | /search{?q}&x=1",
-      "/a{#f}?x=1                          | /a{#f}?x=[REDACTED]",
-      "/a#f?x=1                            | /a#f?x=1",
-      "https://user:pass@example.org/x?a=1 | https://example.org/x?a=[REDACTED]",
-      "https://user@example.org/x          | https://example.org/x",
-      "//alice:secret@example.com/p?token=s | //example.com/p?token=[REDACTED]",
-      "//alice@example.com                 | //example.com",
-      "//example.com/a@b                   | //example.com/a@b",
-      "https://example.org/x?u=a@b         | https://example.org/x?u=[REDACTED]",
-      "https://{host}/x                    | https://{host}/x",
-      "/{+path}                            | /{+path}"})
-  void redactsTargets(String to, String expected) {
-    assertEquals(expected, MappingFilters.redactTarget(to));
   }
 
   // Helpers

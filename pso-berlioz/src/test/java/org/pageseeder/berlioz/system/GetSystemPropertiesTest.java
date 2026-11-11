@@ -3,6 +3,8 @@ package org.pageseeder.berlioz.system;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.pageseeder.berlioz.content.Request;
 import org.pageseeder.berlioz.output.JsonOutputAdapter;
 import org.pageseeder.berlioz.output.OutputWriter;
@@ -27,17 +29,21 @@ class GetSystemPropertiesTest {
   private static final String SECRET_VALUE = "s3cr3t-fixture-value";
   private static final String PLAIN_NAME = "fixture.plain";
   private static final String PLAIN_VALUE = "plain-fixture-value";
+  private static final String URL_NAME = "fixture.url";
+  private static final String URL_VALUE = "jdbc:postgresql://app:s3cr3t-url@db/app?ssl=true&password=s3cr3t-param";
 
   @BeforeEach
   void setUp() {
     System.setProperty(SECRET_NAME, SECRET_VALUE);
     System.setProperty(PLAIN_NAME, PLAIN_VALUE);
+    System.setProperty(URL_NAME, URL_VALUE);
   }
 
   @AfterEach
   void tearDown() {
     System.clearProperty(SECRET_NAME);
     System.clearProperty(PLAIN_NAME);
+    System.clearProperty(URL_NAME);
   }
 
   // process() tests — XML
@@ -66,6 +72,33 @@ class GetSystemPropertiesTest {
     assertEquals(Redaction.REDACTED, findProperty(doc, SECRET_NAME).getAttribute("value"));
     assertEquals(PLAIN_VALUE, findProperty(doc, PLAIN_NAME).getAttribute("value"));
     assertFalse(out.contains(SECRET_VALUE), "Secret value must not appear in output");
+  }
+
+  @Test
+  void testProcess_redactsCredentialsInValues() throws Exception {
+    String out = process();
+    assertEquals("jdbc:postgresql://app:[REDACTED]@db/app?ssl=true&password=[REDACTED]",
+        findProperty(parseXml(out), URL_NAME).getAttribute("value"));
+    assertFalse(out.contains("s3cr3t"), "Credentials must not appear in output");
+  }
+
+  @Test
+  void testProcessJson_redactsCredentialsInValues() {
+    String out = processJson();
+    assertTrue(out.contains("{\"name\":\"" + URL_NAME + "\",\"value\":"
+        + "\"jdbc:postgresql://app:[REDACTED]@db/app?ssl=true&password=[REDACTED]\"}"), out);
+    assertFalse(out.contains("s3cr3t"), "Credentials must not appear in output");
+  }
+
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "com.example.Main                          | com.example.Main",
+      "com.example.Main --password s3cret        | com.example.Main [REDACTED]",
+      "/opt/app/My App.jar --token=abc           | /opt/app/My App.jar [REDACTED]",
+      "/opt/app/app.JAR                          | /opt/app/app.JAR",
+      "'  com.example.Main   '                   | com.example.Main"})
+  void testRedactCommand(String command, String expected) {
+    assertEquals(expected, GetSystemProperties.redactCommand(command));
   }
 
   @Test

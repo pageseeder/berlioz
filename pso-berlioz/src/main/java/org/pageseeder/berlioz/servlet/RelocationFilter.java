@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.MovedLocationPattern;
 import org.pageseeder.berlioz.config.RelocationConfig;
+import org.pageseeder.berlioz.util.Redaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,7 +131,7 @@ public final class RelocationFilter implements Filter {
 
   private static Map<String, Object> diagnosticRule(MovedLocationPattern pattern) {
     return DiagnosticConfiguration.fields("from", pattern.from().toString(),
-        "to", MappingFilters.redactTarget(pattern.to().toString()));
+        "to", Redaction.redactUriPattern(pattern.to().toString()));
   }
 
   /**

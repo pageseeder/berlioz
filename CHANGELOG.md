@@ -10,11 +10,13 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 
 - `ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION` (`org.pageseeder.berlioz.error_exception`): the request attribute holding the exception of an error routed by Berlioz.
 - `GetRedirectConfig` generator and `RedirectFilter.diagnosticSnapshot()`: every `RedirectFilter` and `RelocationFilter` instance with its `config` parameter, whether the file exists, the status and time of the last load, its failure, the rules loaded, with redacted targets, and the rules ignored because a pattern is missing or invalid, with their position and reason (XML and JSON). `RedirectConfig.patterns()` and `RelocationConfig.patterns()` return the loaded rules, and `ignored()` the ignored ones (`IgnoredRule`).
+- `Redaction.redactValue(String)` redacts credentials whatever the name of the value: the password of a URL (or its user information without password) and the values of parameters with a sensitive name. `Redaction.redactUriPattern(String)` redacts a URI pattern such as a redirect target.
 
 ### Changed
 
 - The `redirects` reload scope reaches every `RedirectFilter` and `RelocationFilter`, whatever its mapping. It applied only to the filters that the reload request passed through, so a filter mapped to other paths kept its old rules until a restart. Each filter now loads its rules again on its next request after a reload. `X-Berlioz-Reload` lists `redirects` for a reload made through `BerliozServlet` when a filter with a `config` file is initialized.
 - A `RelocationFilter` configuration that fails to load is logged as an error, as for `RedirectFilter`, rather than a warning.
+- `Redaction.redact(name, value)` and `Redaction.redactHeader(name, value)` also redact the content of values whose name is not sensitive, so `GetGlobalConfig`, `GetSystemProperties` and error details no longer show a credential in a URL, such as `jdbc:postgresql://app:s3cret@db/app`, or in a parameter, such as `?password=s3cret`. `GetSystemProperties` also redacts the program arguments of `sun.java.command`.
 
 ### Fixed
 

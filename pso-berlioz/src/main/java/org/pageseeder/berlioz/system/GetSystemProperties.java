@@ -15,9 +15,12 @@
  */
 package org.pageseeder.berlioz.system;
 
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.pageseeder.berlioz.Beta;
 import org.pageseeder.berlioz.content.Generator;
@@ -30,11 +33,14 @@ import org.pageseeder.berlioz.util.Redaction;
  * Returns JVM system properties as XML or JSON.
  *
  * <p>Exposes the properties available via {@link System#getProperties()}, sorted by name.
- * Values whose names match a sensitive keyword pattern (e.g. {@code password}, {@code secret},
- * {@code token}, {@code apikey}) are replaced with {@code [REDACTED]}, as in
- * {@link org.pageseeder.berlioz.generator.GetGlobalConfig}. The remaining values may still
- * include environment details (e.g. user home directory, OS details) — restrict access to this
- * generator in production environments.
+ * Values are redacted with {@link Redaction#redact(String, String)}, as in
+ * {@link org.pageseeder.berlioz.generator.GetGlobalConfig}: the whole value when its name matches
+ * a sensitive keyword (e.g. {@code password}, {@code secret}, {@code token}, {@code apikey}), and
+ * otherwise the password of a URL and the values of parameters with a sensitive name. The program
+ * arguments in {@code sun.java.command}, after the main class or JAR, are replaced with
+ * {@code [REDACTED]}. Paths and user names are not redacted, so the values still include
+ * environment details (e.g. user home directory, OS details) — restrict access to this generator
+ * in production environments.
  *
  * <h3>Parameters</h3>
  * <p>This generator does not use any parameter.</p>
@@ -65,11 +71,17 @@ import org.pageseeder.berlioz.util.Redaction;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.5
+ * @version 0.14.6
  * @since 0.9.32
  */
 @Beta
 public final class GetSystemProperties implements Generator {
+
+  /** The property with the main class or JAR of the JVM, followed by the program arguments. */
+  static final String JAVA_COMMAND = "sun.java.command";
+
+  /** The end of the JAR path in the command: '.jar' followed by whitespace or the end. */
+  private static final Pattern JAR_END = Pattern.compile("\\.jar(?=\\s|$)");
 
   @Override
   public Response generate(Request req, OutputWriter out) {
@@ -84,12 +96,32 @@ public final class GetSystemProperties implements Generator {
       if (value == null) continue; // removed concurrently
       out.startObject("property");
       out.field("name", name);
-      out.field("value", Redaction.redact(name, value));
+      out.field("value", JAVA_COMMAND.equals(name) ? redactCommand(value) : Redaction.redact(name, value));
       out.endObject();
     }
     out.endArray();
     out.endObject();
     return Response.ok();
+  }
+
+  /**
+   * @param command the value of {@code sun.java.command}: the main class or the path of a JAR,
+   *                then the program arguments, separated by whitespace
+   * @return the main class or JAR, followed by {@code [REDACTED]} when there are arguments
+   */
+  static String redactCommand(String command) {
+    String value = command.strip();
+    Matcher jar = JAR_END.matcher(value.toLowerCase(Locale.ROOT));
+    int end = jar.find() ? jar.end() : firstWhitespace(value);
+    if (end < 0 || value.substring(end).isBlank()) return Redaction.redactValue(value);
+    return Redaction.redactValue(value.substring(0, end)) + ' ' + Redaction.REDACTED;
+  }
+
+  private static int firstWhitespace(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      if (Character.isWhitespace(value.charAt(i))) return i;
+    }
+    return -1;
   }
 
 }

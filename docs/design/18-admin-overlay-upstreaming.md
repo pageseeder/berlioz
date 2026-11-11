@@ -1,6 +1,6 @@
 # 18. Admin Overlay Upstreaming (Requested By Berlioz Admin)
 
-**Status:** 0.14.5 and 0.14.6 parts done · **Target:** items 1–8 and part of item 9 in 0.14.5; items 11–12 in 0.14.6; item 10 in 1.0
+**Status:** 0.14.5 and 0.14.6 parts done · **Target:** items 1–8 and part of item 9 in 0.14.5; items 11–13 in 0.14.6; item 10 in 1.0
 
 ## Motivation
 
@@ -52,12 +52,18 @@ Requested in the bzadmin proposals for Berlioz (`docs/design/berlioz-proposals.m
 11. ✓ **Redirect and relocation filter snapshot**
     - bzadmin read and parsed each mapping file again, repeated `ConfigLoader`'s DOCTYPE handling and size limit, and validated with the schemas of the Berlioz JAR, which are not an API. Its view showed the file, which can differ from the rules in use until the next reload.
     - `RedirectFilter.diagnosticSnapshot()` and the `GetRedirectConfig` generator report every filter instance: name, type, `config` parameter (relative to `WEB-INF`), whether the file exists, the status (`no-config`, `not-loaded`, `loaded`, `failed`) and time of the last load, `reload-pending`, the failure (its message only when `berlioz.errors.detail` is not `minimal`), the rules loaded (`from`, `to`, `permanent`), and the rules ignored because a pattern is missing or invalid (`position` in the file, `reason`, `from`, `to`), at most 2000 of each. `RedirectConfig` and `RelocationConfig` record the ignored rules (`ignored()`, `IgnoredRule`).
-    - Targets are redacted with bzadmin's rules: the user information of an absolute URL is removed, and every query parameter value that is not a URI template expression is `[REDACTED]`.
+    - Targets are redacted with `Redaction.redactUriPattern` (item 13): the password of a URL, or its user information without password, and every query parameter value that is not a URI template expression are `[REDACTED]`.
     - Acceptance: bzadmin's `MappingFile`, `MappingParser` and copied DOCTYPE handling can be removed, keeping its `ignored-rule` warning.
 12. ✓ **Reloads that reach every filter**
     - The `redirects` scope applied only to the filters that the reload request passed through, so a filter mapped to other paths kept its rules after "Reload everything"; bzadmin warned about it (`reload-not-covered`) from an analysis of the filter mappings.
     - A reload counter is incremented once per request with the authorized `redirects` scope, by `BerliozServlet` or a filter; each filter reloads its rules on its next request once the counter has changed. The servlet reports `redirects` only when a filter with a `config` file is initialized.
     - Acceptance: after a reload through the servlet, a filter that the request did not pass through applies the new rules on its next request; bzadmin's `reload-not-covered` warning can be removed.
+13. ✓ **Value-based redaction** (security fix)
+    - `Redaction` redacted by name only, so a credential in a value with an ordinary name was shown: a URL with user information (`jdbc:postgresql://app:s3cret@db/app`) or a sensitive parameter (`?password=s3cret`) in a global setting, a system property, or a request header or parameter of error details. bzadmin redacted system properties and redirect targets itself (`SystemProperties.redact`, `Targets.redact`).
+    - `Redaction.redactValue(value)` redacts the password of a URL anywhere in the value (the whole user information when it has no `:`) and the values of parameters with a sensitive name, after `?`, `&`, `;`, whitespace or at the start. `redact(name, value)` and `redactHeader(name, value)` apply it when the name is not sensitive, so every caller is covered.
+    - `Redaction.redactUriPattern(pattern)` replaces `MappingFilters.redactTarget`, with the same user information rule. Query values are all redacted there, since the parameter names of a target do not reveal a credential.
+    - `GetSystemProperties` replaces the program arguments of `sun.java.command` after the main class or JAR: a rule for one property, kept in the generator.
+    - Acceptance: bzadmin's `GetSystemProperties`, `SystemProperties` and `Targets.redact` can be removed.
 
 ## 1.0
 

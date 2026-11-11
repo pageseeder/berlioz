@@ -73,6 +73,18 @@ Berlioz includes generators that report its runtime state. They are not mapped b
 
 Package prefixes are `org.pageseeder.berlioz.generator` and `org.pageseeder.berlioz.system`. The sections below detail the most structured outputs.
 
+### Redaction
+
+Diagnostic output goes through `org.pageseeder.berlioz.util.Redaction`, which applies the same rules to global settings (`GetGlobalConfig`), system properties (`GetSystemProperties`) and the request headers and parameters of error details:
+
+| Rule | Example value | Output |
+|---|---|---|
+| Sensitive name (password, secret, key, token, auth, session…) | `db.password=s3cret` | `[REDACTED]` |
+| Password of a URL anywhere in the value, or its whole user information without `:` | `jdbc:postgresql://app:s3cret@db/app` | `jdbc:postgresql://app:[REDACTED]@db/app` |
+| Value of a parameter with a sensitive name, after `?`, `&`, `;`, whitespace or at the start | `jdbc:mysql://db/app?user=app&password=s3cret` | `…?user=app&password=[REDACTED]` |
+
+`GetSystemProperties` also replaces the program arguments of `sun.java.command` after the main class or JAR. Redirect targets are URI patterns, whose parameter names do not reveal a credential, so every query value is redacted there (see below). Paths and user names are not redacted. A secret in a value that matches none of these rules is shown: do not pass secrets in values without a sensitive name.
+
 ### Services: `ListRuntimeServices`
 
 `ListRuntimeServices` lists the services currently registered (`GetLiveServices` remains available as a deprecated alias until 1.0). It reports `load-status` in XML and `loadStatus` in JSON: `pending`, `ready`, `startup-failed`, or `reload-failed`. Its ETag includes that status so a rejected reload becomes visible even though the registry is unchanged. Exception details and source paths are not included in this status field.
@@ -160,7 +172,7 @@ Each generator captures one immutable snapshot per request and reuses it for its
 - `failure` is a generic message, or the loader's message when `berlioz.errors.detail` is `standard` or `full`.
 - `ignored-rule` lists the rules that the filter ignores because their `from` or `to` pattern is missing or invalid (Berlioz logs them when loading), with their `position` among the rules of the file, from 1, and the `reason`: `missing-from`, `invalid-from`, `missing-to` or `invalid-to`. Loaded rules are in file order, so their positions follow from the ignored ones.
 - At most 2000 rules and 2000 ignored rules are listed: `rule-count` and `ignored-count` have the totals, and `limit` is written when a list is truncated. `permanent` is only reported for redirects.
-- Targets are redacted: the user information of an absolute URL is removed, and the value of every query parameter is `[REDACTED]`, unless it is a URI template expression such as `{q}`.
+- Targets are redacted with `Redaction.redactUriPattern`: the password of a URL (or its whole user information without `:`) and the value of every query parameter are `[REDACTED]`, unless the value is a URI template expression such as `{q}`.
 
 JSON uses a `filters` array of objects with the same fields in camel case, `rules` and `ignoredRules` arrays, and numbers for `ruleCount`, `ignoredCount` and `position`. Like the servlet configuration generators, the generator reuses one snapshot per request for its response and ETag.
 

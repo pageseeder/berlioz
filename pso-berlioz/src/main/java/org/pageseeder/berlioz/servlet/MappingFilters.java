@@ -32,7 +32,6 @@ import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
 import org.pageseeder.berlioz.error.DetailLevel;
 import org.pageseeder.berlioz.security.ControlAuthorization;
-import org.pageseeder.berlioz.util.Redaction;
 import org.slf4j.Logger;
 
 /**
@@ -145,77 +144,6 @@ final class MappingFilters {
           filterName, file.getAbsolutePath());
     }
     return file;
-  }
-
-  /**
-   * Redacts a target pattern for diagnostics.
-   *
-   * <p>A target can contain a credential. The user information of an absolute URL is removed, and
-   * the value of every query parameter is replaced by {@link Redaction#REDACTED}, unless it is
-   * only one URI template expression such as {@code {q}}. Template expressions and the fragment
-   * are kept.
-   *
-   * @param target the target pattern, as text
-   * @return the redacted target
-   */
-  static String redactTarget(String target) {
-    String to = removeUserInfo(target);
-    int query = indexOutsideExpressions(to, '?', 0);
-    int fragment = indexOutsideExpressions(to, '#', 0);
-    // No query, or a '?' in the fragment
-    if (query < 0 || fragment >= 0 && fragment < query) return to;
-    int end = fragment < 0 ? to.length() : fragment;
-    StringBuilder out = new StringBuilder(to.length()).append(to, 0, query + 1);
-    int start = query + 1;
-    while (true) {
-      int amp = indexOutsideExpressions(to, '&', start);
-      int stop = amp < 0 || amp > end ? end : amp;
-      out.append(redactParameter(to.substring(start, stop)));
-      if (stop == end) break;
-      out.append('&');
-      start = stop + 1;
-    }
-    return out.append(to, end, to.length()).toString();
-  }
-
-  private static String redactParameter(String parameter) {
-    int equals = parameter.indexOf('=');
-    if (equals < 0) return parameter;
-    String value = parameter.substring(equals + 1);
-    boolean expression = value.length() > 2 && value.charAt(0) == '{' && value.indexOf('}') == value.length() - 1;
-    return expression ? parameter : parameter.substring(0, equals + 1) + Redaction.REDACTED;
-  }
-
-  private static String removeUserInfo(String target) {
-    int start = authorityStart(target);
-    if (start < 0) return target;
-    int end = start;
-    while (end < target.length() && "/?#".indexOf(target.charAt(end)) < 0) end++;
-    int at = target.lastIndexOf('@', end - 1);
-    return at < start ? target : target.substring(0, start) + target.substring(at + 1);
-  }
-
-  /**
-   * @return the index of the authority in an absolute URL or network-path reference ("//host"), or -1
-   */
-  private static int authorityStart(String target) {
-    if (target.startsWith("//")) return 2;
-    int scheme = target.indexOf("://");
-    if (scheme <= 0 || !target.substring(0, scheme).matches("[A-Za-z][A-Za-z0-9+.-]*")) return -1;
-    return scheme + 3;
-  }
-
-  /** @return the index of the character outside template expressions, from the index, or -1 */
-  private static int indexOutsideExpressions(String s, char c, int from) {
-    int depth = 0;
-    // Scan from the start to know the depth of expressions at 'from'
-    for (int i = 0; i < s.length(); i++) {
-      char x = s.charAt(i);
-      if (x == '{') depth++;
-      else if (x == '}' && depth > 0) depth--;
-      else if (x == c && depth == 0 && i >= from) return i;
-    }
-    return -1;
   }
 
 }

@@ -64,7 +64,9 @@ import org.pageseeder.berlioz.util.SHA256;
  *
  * <p>Property values whose names match a sensitive keyword pattern (e.g. {@code password},
  * {@code secret}, {@code token}, {@code apikey}, {@code credential}, {@code privatekey})
- * are replaced with {@code [REDACTED]} to avoid exposing secrets via misconfiguration.
+ * are replaced with {@code [REDACTED]} to avoid exposing secrets via misconfiguration. In other
+ * values, the password of a URL and the values of parameters with a sensitive name are replaced
+ * ({@link Redaction#redact(String, String)}).
  *
  * <h3>Etag</h3>
  * <p>This generator uses an etag based on the effective properties (after merging the default
@@ -73,7 +75,7 @@ import org.pageseeder.berlioz.util.SHA256;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.0
+ * @version 0.14.6
  * @since 0.8
  */
 public final class GetGlobalConfig implements Generator, Cacheable {
