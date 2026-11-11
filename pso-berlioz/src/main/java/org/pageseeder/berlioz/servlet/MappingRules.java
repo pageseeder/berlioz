@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
@@ -58,6 +59,9 @@ final class MappingRules<C> {
     }
   }
 
+  /** The name of the diagnostic status field. */
+  private static final String STATUS = "status";
+
   private final String type;
   private final String filterName;
   private final @Nullable String parameter;
@@ -68,7 +72,7 @@ final class MappingRules<C> {
   private final Function<C, List<Map<String, Object>>> rules;
   private final Function<C, List<Map<String, Object>>> ignored;
 
-  private volatile @Nullable Loaded<C> loaded;
+  private final AtomicReference<@Nullable Loaded<C>> loaded = new AtomicReference<>();
 
   /**
    * @param type       the type of filter, {@code redirect} or {@code relocation}
@@ -121,10 +125,10 @@ final class MappingRules<C> {
     File f = this.file;
     if (f == null) return this.empty;
     long generation = MappingFilters.generation();
-    Loaded<C> current = this.loaded;
+    Loaded<C> current = this.loaded.get();
     if (current != null && current.generation == generation) return current.config;
     Loaded<C> next = load(f, generation);
-    this.loaded = next;
+    this.loaded.set(next);
     return next.config;
   }
 
@@ -156,18 +160,18 @@ final class MappingRules<C> {
     File f = this.file;
     String param = this.parameter;
     if (f == null || param == null) {
-      entry.put("status", "no-config");
+      entry.put(STATUS, "no-config");
       return entry;
     }
     String path = DiagnosticConfiguration.safePath(param.replaceFirst("^/+", ""));
     if (path != null) entry.put("config", path);
     entry.put("exists", f.isFile());
-    Loaded<C> current = this.loaded;
+    Loaded<C> current = this.loaded.get();
     if (current == null) {
-      entry.put("status", "not-loaded");
+      entry.put(STATUS, "not-loaded");
       return entry;
     }
-    entry.put("status", current.failure == null ? "loaded" : "failed");
+    entry.put(STATUS, current.failure == null ? "loaded" : "failed");
     entry.put("loaded", current.time.toString());
     if (current.generation != MappingFilters.generation()) entry.put("reload-pending", true);
     if (current.failure != null) {
