@@ -20,7 +20,7 @@ This page describes where Berlioz is heading and the status of each release. Wha
 
 The 0.13 line introduced output-aware generators, direct JSON responses, and RFC 9457 Problem Details. The 0.14 line moved Berlioz to secure defaults and made it easier to package and operate: reusable overlays as ordinary JARs, runtime diagnostics, and finer administration controls.
 
-The remaining 0.14.x work is configuration validation. After that, we will assess readiness for 1.0, which completes the core runtime (raw output, content negotiation, authorization guards) and removes the APIs deprecated during 0.14.
+0.14.6 fixes the defects that Berlioz Admin found and exposes state that only Berlioz knows, so that admin tools no longer copy Berlioz internals. Configuration validation follows in a later 0.14.x release. After that, we will assess readiness for 1.0, which completes the core runtime (raw output, content negotiation, authorization guards) and removes the APIs deprecated during 0.14.
 
 ## Release Plan
 
@@ -33,15 +33,20 @@ The remaining 0.14.x work is configuration validation. After that, we will asses
 | 0.14.3 | Classpath overlay discovery | Released 2026-10-16 |
 | 0.14.4 | Stub-free group stylesheet overlays | Released 2026-10-20 |
 | 0.14.5 | Security improvements, scoped reload, admin diagnostics | Released 2026-10-29 |
-| **0.14.6** | **Configuration requirements and validation** | **Next** |
+| **0.14.6** | **Fixes and diagnostics for admin tools** | **Next** |
+| 0.14.x | Configuration requirements and validation | Planned |
 | 1.0 | Core runtime completion; removal of 0.14 deprecations | Planned |
 | 1.1+ | Optional integrations, additional formats, Jakarta | Exploratory |
 
-### 0.14.6: Configuration Requirements And Validation
+### 0.14.6: Fixes And Diagnostics For Admin Tools
+
+Fix the defects that Berlioz Admin found: error pages for every HTTP method, errors routed to the container with `berlioz.errors.handle=false`, Logback configuration that failed silently, a reload applied again while an error renders, and redirect and relocation filters without a `config` parameter.
+
+Expose state that only Berlioz knows, so that admin tools no longer parse Berlioz's files or repeat its rules: the rules loaded by the redirect and relocation filters, a `redirects` reload that reaches every filter, redaction of credentials by value, and which logging configuration Berlioz loaded at startup ([theme 18](docs/design/18-admin-overlay-upstreaming.md), items 11–14).
+
+### 0.14.x: Configuration Requirements And Validation
 
 Let applications declare the global properties they need in `WEB-INF/config/config-requirements.xml`, validate them on every load, and inspect the result through a diagnostic generator. Violations are reported by default; applications can choose to reject a configuration with errors, in which case a reload keeps the last valid configuration. See [theme 5](docs/design/05-configuration-validation.md).
-
-It also reports the rules loaded by the redirect and relocation filters, and makes a `redirects` reload reach every filter ([theme 18](docs/design/18-admin-overlay-upstreaming.md), items 11–12).
 
 ### 1.0
 
@@ -67,7 +72,7 @@ Themes are long-running areas of work. Each has a design document with its motiv
 | 2 | [Error handling pipeline](docs/design/02-error-handling.md) | 0.14.0 | ✓ Done |
 | 3 | [Service metadata and diagnostics](docs/design/03-service-diagnostics.md) | 0.14.1 | ✓ Done |
 | 4 | [Classpath overlay discovery](docs/design/04-classpath-overlays.md) | 0.14.3 | ✓ Done |
-| 5 | [Configuration requirements and validation](docs/design/05-configuration-validation.md) | 0.14.6 | Designed |
+| 5 | [Configuration requirements and validation](docs/design/05-configuration-validation.md) | 0.14.x | Designed |
 | 6 | [Raw output](docs/design/06-raw-output.md) | 1.0 | Proposed |
 | 7 | [Content negotiation](docs/design/07-content-negotiation.md) | 1.0 | Proposed |
 | 8 | [Authorization guards](docs/design/08-authorization-guards.md) | 1.0 | Exploring |
@@ -80,7 +85,7 @@ Themes are long-running areas of work. Each has a design document with its motiv
 | 15 | [Minimal default XML exposure](docs/design/15-minimal-xml-exposure.md) | 0.14.5 | ✓ Done |
 | 16 | [Admin diagnostics](docs/design/16-admin-diagnostics.md) | 0.14.5 / 1.0 | ✓ 0.14.5 part done |
 | 17 | [Scoped `berlioz-reload`](docs/design/17-scoped-reload.md) | 0.14.5 / 1.0 | ✓ 0.14.5 part done |
-| 18 | [Admin overlay upstreaming](docs/design/18-admin-overlay-upstreaming.md) | 0.14.5 / 0.14.6 / 1.0 | ✓ 0.14.5 and 0.14.6 parts done |
+| 18 | [Admin overlay upstreaming](docs/design/18-admin-overlay-upstreaming.md) | 0.14.5 / 0.14.6 / 1.0 | ✓ 0.14.5 part done; 0.14.6 in progress |
 
 Status values: **Exploring** (problem understood, approach open), **Proposed** (approach sketched), **Designed** (ready to implement), **Done**.
 

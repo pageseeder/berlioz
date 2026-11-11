@@ -1,6 +1,6 @@
 # 5. Configuration Requirements And Validation
 
-**Status:** Designed · **Target:** 0.14.6 (deferred from 0.14.5)
+**Status:** Designed · **Target:** 0.14.x (deferred from 0.14.5 and 0.14.6)
 
 ## Motivation
 
