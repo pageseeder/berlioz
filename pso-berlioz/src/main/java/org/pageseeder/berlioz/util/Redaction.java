@@ -16,8 +16,8 @@ import java.util.regex.Pattern;
  *   <li>the value of a parameter with a sensitive name, at the start of the value or after {@code ?},
  *   {@code &}, {@code ;} or whitespace.</li>
  * </ul>
- * So {@code jdbc:postgresql://app:s3cret@db/app?ssl=true&password=s3cret} is written
- * {@code jdbc:postgresql://app:[REDACTED]@db/app?ssl=true&password=[REDACTED]}.
+ * So {@code https://[user]:[password]@example.org/x?lang=en&token=[token]} is written
+ * {@code https://[user]:[REDACTED]@example.org/x?lang=en&token=[REDACTED]}.
  *
  * <p>Names are normalized (stripped of {@code -}, {@code _}, {@code .} separators and lowercased)
  * before keyword matching, so {@code api-key}, {@code api_key}, and {@code apikey} all match.
@@ -56,7 +56,7 @@ public final class Redaction {
    * The user information of a URL: after {@code ://} (or {@code //} at the start), up to the last
    * {@code @} of the authority, which ends with {@code /}, {@code ?}, {@code #} or whitespace.
    */
-  private static final Pattern USER_INFO = Pattern.compile("(^//|://)([^/?#\\s]*)@");
+  private static final Pattern USER_INFO = Pattern.compile("(^|:)//([^/?#\\s]*)@");
 
   /** A parameter at the start of the value, or after '?', '&', ';' or whitespace. */
   private static final Pattern PARAMETER = Pattern.compile("(^|[?&;\\s])([^=?&;#\\s]+)=([^&;#\\s]*)");
@@ -167,7 +167,7 @@ public final class Redaction {
       String info = m.group(2);
       int colon = info.indexOf(':');
       String user = colon >= 0 ? info.substring(0, colon + 1) : "";
-      String redacted = info.isEmpty() ? m.group() : m.group(1) + user + REDACTED + '@';
+      String redacted = info.isEmpty() ? m.group() : m.group(1) + "//" + user + REDACTED + '@';
       m.appendReplacement(out, Matcher.quoteReplacement(redacted));
     }
     m.appendTail(out);
