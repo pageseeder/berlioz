@@ -202,6 +202,14 @@ public final class GetGlobalConfig implements Generator, Cacheable {
       return content.append(value.length()).append(':').append(value);
     }
 
+    private static boolean includeDetails() {
+      return DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
+    }
+
+    private static @Nullable String toIso(@Nullable Instant instant) {
+      return instant != null ? instant.toString() : null;
+    }
+
   }
 
   /** The cause of the last failed attempt, as written. */
@@ -227,14 +235,6 @@ public final class GetGlobalConfig implements Generator, Cacheable {
       out.endObject();
     }
 
-  }
-
-  private static boolean includeDetails() {
-    return DetailLevel.parse(GlobalSettings.get(BerliozOption.ERROR_DETAIL)) != DetailLevel.MINIMAL;
-  }
-
-  private static @Nullable String toIso(@Nullable Instant instant) {
-    return instant != null ? instant.toString() : null;
   }
 
 }
