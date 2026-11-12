@@ -20,7 +20,7 @@ This page describes where Berlioz is heading and the status of each release. Wha
 
 The 0.13 line introduced output-aware generators, direct JSON responses, and RFC 9457 Problem Details. The 0.14 line moved Berlioz to secure defaults and made it easier to package and operate: reusable overlays as ordinary JARs, runtime diagnostics, and finer administration controls.
 
-0.14.6 fixes the defects that Berlioz Admin found and exposes state that only Berlioz knows, so that admin tools no longer copy Berlioz internals. Configuration validation follows in a later 0.14.x release. After that, we will assess readiness for 1.0, which completes the core runtime (raw output, content negotiation, authorization guards) and removes the APIs deprecated during 0.14.
+The remaining 0.14.x work is configuration validation. After that, we will assess readiness for 1.0, which completes the core runtime (raw output, content negotiation, authorization guards) and removes the APIs deprecated during 0.14.
 
 ## Release Plan
 
@@ -33,18 +33,10 @@ The 0.13 line introduced output-aware generators, direct JSON responses, and RFC
 | 0.14.3 | Classpath overlay discovery | Released 2026-10-16 |
 | 0.14.4 | Stub-free group stylesheet overlays | Released 2026-10-20 |
 | 0.14.5 | Security improvements, scoped reload, admin diagnostics | Released 2026-10-29 |
-| **0.14.6** | **Fixes and diagnostics for admin tools** | **Next** |
-| 0.14.x | Configuration requirements and validation | Planned |
+| 0.14.6 | Fixes and diagnostics for admin tools | Released 2026-11-12 |
+| **0.14.x** | **Configuration requirements and validation** | **Next** |
 | 1.0 | Core runtime completion; removal of 0.14 deprecations | Planned |
 | 1.1+ | Optional integrations, additional formats, Jakarta | Exploratory |
-
-### 0.14.6: Fixes And Diagnostics For Admin Tools
-
-Fix the defects that Berlioz Admin found: error pages for every HTTP method, errors routed to the container with `berlioz.errors.handle=false`, Logback configuration that failed silently, a reload applied again while an error renders, and redirect and relocation filters without a `config` parameter.
-
-Expose state that only Berlioz knows, so that admin tools no longer parse Berlioz's files or repeat its rules: the rules loaded by the redirect and relocation filters, a `redirects` reload that reaches every filter, redaction of credentials by value, which logging configuration Berlioz loaded at startup, and whether the last configuration reload failed ([theme 18](docs/design/18-admin-overlay-upstreaming.md), items 11–15).
-
-Improve logging diagnostics to distinguish the active SLF4J backend from configuration applied by Berlioz, and let applications leave logging configuration entirely to their backend or container. Keep mode-based Logback loading as a convenience, with an explicit option to defer to native configuration ([theme 19](docs/design/19-logging-configuration.md)).
 
 ### 0.14.x: Configuration Requirements And Validation
 

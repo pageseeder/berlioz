@@ -6,7 +6,9 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 
 ## [Unreleased]
 
-Planned for 0.14.6: richer administration diagnostics, explicit native logging configuration,
+## [0.14.6] — 2026-11-12
+
+Richer administration diagnostics, explicit native logging configuration,
 and reliability fixes for error handling and redirect reloads.
 
 ### Added
@@ -278,7 +280,8 @@ Output-aware generators and the response model.
 
 For 0.13.0 and earlier, see the [release tags](https://github.com/pageseeder/berlioz/tags).
 
-[Unreleased]: https://github.com/pageseeder/berlioz/compare/v0.14.5...HEAD
+[Unreleased]: https://github.com/pageseeder/berlioz/compare/v0.14.6...HEAD
+[0.14.6]: https://github.com/pageseeder/berlioz/compare/v0.14.5...v0.14.6
 [0.14.5]: https://github.com/pageseeder/berlioz/compare/v0.14.4...v0.14.5
 [0.14.4]: https://github.com/pageseeder/berlioz/compare/v0.14.3...v0.14.4
 [0.14.3]: https://github.com/pageseeder/berlioz/compare/v0.14.2...v0.14.3

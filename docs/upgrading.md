@@ -20,6 +20,7 @@ These are deprecated in 0.14 and will be removed in 1.0. Each logs a warning whe
 | `reset-etags=true` | 0.14.5 | `berlioz-reload=etags` |
 | `GetCPUTime` generator | 0.14.5 | `GetCpuSample` |
 | Log4j 1 configuration files (`log4j-<mode>.properties`, `log4j.properties`) | 0.14.6 | Native backend configuration, or mode-based Logback files |
+| Redirect rule `permanent` attribute and `RedirectPattern(URIPattern, URIPattern, boolean)` constructor | 0.14.6 | `status` attribute and constructor taking `ContentStatus` |
 
 ## Upgrading to 0.14.6
 
