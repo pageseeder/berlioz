@@ -1,12 +1,18 @@
 package org.pageseeder.berlioz.servlet;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pageseeder.berlioz.output.OutputWriter;
+import org.pageseeder.berlioz.output.XmlOutputAdapter;
 import org.pageseeder.berlioz.security.ControlAuthorization;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.nio.file.Path;
@@ -19,6 +25,16 @@ class RelocationFilterTest {
 
   @TempDir
   Path tmp;
+
+  @BeforeEach
+  void setup() {
+    ServletTestSupport.clearMappingFilters();
+  }
+
+  @AfterEach
+  void cleanup() {
+    ServletTestSupport.clearMappingFilters();
+  }
 
   private RelocationFilter initFilter(String relocationXml) throws Exception {
     File webRoot = Files.createTempDirectory(tmp, "d").toFile();
@@ -235,5 +251,121 @@ class RelocationFilterTest {
   @Test
   void testRelocationRejectsTraversalToProtectedPath() throws Exception {
     assertProtectedTargetIgnored("/safe/../WEB-INF/web.xml");
+  }
+
+  @Test
+  void testRelocationRejectsDoubleEncodedProtectedPath() throws Exception {
+    assertProtectedTargetIgnored("%252fWEB-INF%252fweb.xml");
+  }
+
+  @Test
+  void testRelocationRejectsProtectedFolders() throws Exception {
+    assertProtectedTargetIgnored("/WEB-INF");
+    assertProtectedTargetIgnored("/META-INF");
+    assertProtectedTargetIgnored("/META-INF/MANIFEST.MF");
+  }
+
+  @Test
+  void testRelocationIgnoresMalformedEncoding() throws Exception {
+    assertProtectedTargetIgnored("/new%zz");
+  }
+
+  @Test
+  void testRelocationIgnoresMalformedEncodingOnceDecoded() throws Exception {
+    // Valid once, malformed after the first decoding: rejected rather than dispatched
+    assertProtectedTargetIgnored("/new%25zz");
+  }
+
+  // Filter interface and lifecycle
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testDoFilterRelocatesHttpRequests() throws Exception {
+    RelocationFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><relocation-mapping><relocation from=\"/old\" to=\"/new\"/></relocation-mapping>");
+    boolean[] chainInvoked = {false};
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    filter.doFilter(oldRequest(null), recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+    Assertions.assertEquals("/new", recorder.header("Content-Location"));
+    Assertions.assertFalse(chainInvoked[0]);
+  }
+
+  @Test
+  void testDoFilterIgnoresNonHttpRequests() throws Exception {
+    RelocationFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><relocation-mapping><relocation from=\"/old\" to=\"/new\"/></relocation-mapping>");
+    boolean[] chainInvoked = {false};
+    Assertions.assertDoesNotThrow(() -> filter.doFilter(stub(ServletRequest.class), stub(ServletResponse.class),
+        ServletTestSupport.recordingChain(chainInvoked)));
+  }
+
+  @Test
+  void testUninitializedFilterPassesThrough() throws Exception {
+    RelocationFilter filter = new RelocationFilter();
+    boolean[] chainInvoked = {false};
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest(null), recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+    Assertions.assertTrue(chainInvoked[0]);
+    Assertions.assertNull(recorder.header("Content-Location"));
+    // Destroying a filter that was never initialized has no effect
+    filter.destroy();
+  }
+
+  @Test
+  void testDestroyUnregistersAndPassesThrough() throws Exception {
+    RelocationFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><relocation-mapping><relocation from=\"/old\" to=\"/new\"/></relocation-mapping>");
+    Assertions.assertTrue(MappingFilters.hasConfiguredFilter());
+
+    filter.destroy();
+
+    Assertions.assertFalse(MappingFilters.hasConfiguredFilter());
+    Assertions.assertFalse(xml(RelocationFilter.diagnosticSnapshot()).contains("<filter"));
+    boolean[] chainInvoked = {false};
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+    filter.doHTTPFilter(oldRequest(null), recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+    Assertions.assertTrue(chainInvoked[0], "A destroyed filter should pass requests through");
+    Assertions.assertNull(recorder.header("Content-Location"));
+  }
+
+  @Test
+  void testInitAgainReplacesRegistration() throws Exception {
+    RelocationFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><relocation-mapping><relocation from=\"/old\" to=\"/new\"/></relocation-mapping>");
+    File webRoot = Files.list(tmp).findFirst().orElseThrow().toFile();
+    filter.init(ServletTestSupport.filterConfig(webRoot.getAbsolutePath(), Collections.singletonMap("config", "relocation.xml")));
+    String xml = xml(RelocationFilter.diagnosticSnapshot());
+    Assertions.assertEquals(xml.indexOf("<filter"), xml.lastIndexOf("<filter"), "One filter expected: " + xml);
+  }
+
+  // Diagnostics
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testDiagnosticSnapshotReportsLoadedRulesWithRedactedTargets() throws Exception {
+    RelocationFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><relocation-mapping>"
+        + "<relocation from=\"/old\" to=\"/new?token=s3cr3t\"/>"
+        + "</relocation-mapping>");
+    // Load the rules
+    filter.doHTTPFilter(ServletTestSupport.request().uri("/other").build(), ServletTestSupport.response().build(), (r, s) -> {});
+
+    String xml = xml(RelocationFilter.diagnosticSnapshot());
+    Assertions.assertTrue(xml.contains("type=\"relocation\""), xml);
+    Assertions.assertTrue(xml.contains("status=\"loaded\""), xml);
+    Assertions.assertTrue(xml.contains("from=\"/old\""), xml);
+    Assertions.assertTrue(xml.contains("to=\"/new?token=[REDACTED]\""), xml);
+    Assertions.assertFalse(xml.contains("s3cr3t"), xml);
+  }
+
+  private static String xml(ConfigurationSnapshot snapshot) {
+    OutputWriter out = new XmlOutputAdapter();
+    snapshot.writeTo(out);
+    return out.toString();
+  }
+
+  private static <T> T stub(Class<T> type) {
+    return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type},
+        (proxy, m, args) -> ServletTestSupport.defaultValue(m.getReturnType())));
   }
 }
