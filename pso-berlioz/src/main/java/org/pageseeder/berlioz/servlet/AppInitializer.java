@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletConfig;
@@ -131,7 +132,8 @@ public abstract class AppInitializer {
     checkServices(env);
 
     // Configuring the logger
-    configureLogger(env);
+    LoggingOption logging = LoggingOption.parse(getLogging(), message -> console(Phase.INIT, message));
+    configureLogger(env, LoggerFactory.getILoggerFactory(), logging, System::getProperty);
 
     // Add the lifecycle listener
     addLifecycleListener();
@@ -191,6 +193,11 @@ public abstract class AppInitializer {
    * @return the mode if specified in the configuration.
    */
   @Nullable abstract String getMode();
+
+  /**
+   * @return the value of the <code>berlioz.logging</code> option if specified in the configuration.
+   */
+  @Nullable abstract String getLogging();
 
   /**
    * Deploys the overlays
@@ -294,6 +301,17 @@ public abstract class AppInitializer {
     }
 
     @Override
+    @Nullable String getLogging() {
+      String logging = this.config.getInitParameter("logging");
+      if (logging != null) {
+        console(Phase.INIT, "Logging: option defined with servlet init-parameter 'logging'");
+        return logging;
+      }
+      // Fall back on context initializer
+      return super.getLogging();
+    }
+
+    @Override
     void addLifecycleListener() {
       String listenerClass = this.config.getInitParameter("lifecycle-listener");
       if (listenerClass != null) {
@@ -353,6 +371,16 @@ public abstract class AppInitializer {
         return mode;
       }
       return super.getMode();
+    }
+
+    @Override
+    @Nullable String getLogging() {
+      String logging = this.context.getInitParameter("berlioz.logging");
+      if (logging != null) {
+        console(Phase.INIT, "Logging: option defined with context init-parameter 'berlioz.logging'");
+        return logging;
+      }
+      return super.getLogging();
     }
 
     @Override
@@ -440,6 +468,26 @@ public abstract class AppInitializer {
       }
 
       // No specified mode
+      return null;
+    }
+
+    @Override
+    @Nullable String getLogging() {
+      // JVM property
+      String logging = System.getProperty("berlioz.logging");
+      if (logging != null) {
+        console(Phase.INIT, "Logging: option defined with system property 'berlioz.logging'");
+        return logging;
+      }
+
+      // Environment variable
+      logging = System.getenv("BERLIOZ_LOGGING");
+      if (logging != null) {
+        console(Phase.INIT, "Logging: option defined with environment variable 'BERLIOZ_LOGGING'");
+        return logging;
+      }
+
+      // Not specified
       return null;
     }
 
@@ -691,7 +739,9 @@ public abstract class AppInitializer {
   /**
    * Configures the logging framework.
    *
-   * <p>This method looks for a logging configuration in the following order:
+   * <p>With <code>berlioz.logging=native</code>, no file is looked at and logging is left to the
+   * native configuration of the backend. Otherwise, this method looks for a logging configuration
+   * in the following order:
    * <ol>
    *   <li><code>logback-<i>[mode]</i>.xml</code> in the application data, then in <code>WEB-INF</code></li>
    *   <li><code>logback.xml</code></li>
@@ -701,9 +751,38 @@ public abstract class AppInitializer {
    *
    * <p>Logback files are only used when SLF4J is bound to logback, see {@link LogbackSetup}.
    *
-   * @param env  The initial environment
+   * @param env        The initial environment
+   * @param factory    The SLF4J logger factory
+   * @param option     Whether Berlioz looks for its files
+   * @param properties The system properties, to report the native configuration location
    */
-  private static void configureLogger(InitEnvironment env) {
+  static void configureLogger(InitEnvironment env, ILoggerFactory factory, LoggingOption option,
+      UnaryOperator<@Nullable String> properties) {
+    LoggingSetup.Recorder recorder = new LoggingSetup.Recorder(env, factory.getClass().getName());
+    String nativeProperty = recorder.backend().nativeProperty();
+    String nativeValue = nativeProperty != null ? properties.apply(nativeProperty) : null;
+    if (nativeProperty != null && nativeValue != null) recorder.nativeSetting(nativeProperty, nativeValue);
+    try {
+      if (option == LoggingOption.NATIVE) {
+        recorder.nativeConfiguration();
+        console(Phase.INIT, "Logging: berlioz.logging=native, logging is left to the native configuration of "
+            + recorder.backend().label());
+        console(Phase.INIT, "Logging: DONE -------------------------------------------------");
+        return;
+      }
+      configureFromFiles(env, factory, recorder, nativeValue != null ? nativeProperty : null);
+    } finally {
+      recorder.publish();
+    }
+  }
+
+  /**
+   * Configures logging from the first Berlioz file that loads.
+   *
+   * @param nativeProperty the native configuration location property, if it is set
+   */
+  private static void configureFromFiles(InitEnvironment env, ILoggerFactory factory,
+      LoggingSetup.Recorder recorder, @Nullable String nativeProperty) {
     File appDataConfig = new File(env.appData(), env.configFolder());
     File webInfConfig = new File(env.webInf(), env.configFolder());
     String logbackModeFile = "logback-" + env.mode() + ".xml";
@@ -718,32 +797,39 @@ public abstract class AppInitializer {
     }
     logback.add(new File(webInfConfig, "logback.xml"));
     log4j.add(new File(webInfConfig, "log4j.properties"));
-    ILoggerFactory factory = LoggerFactory.getILoggerFactory();
-    LoggingSetup.Recorder recorder = new LoggingSetup.Recorder(env, factory.getClass().getName());
-    try {
-      if (configureLogback(factory, logback, recorder)) return;
-      for (File file : log4j) {
-        if (configureLog4j(file, recorder)) return;
-      }
-      // Unable to configure logging
-      console(Phase.INIT, "Logging: no logging configured.");
-      console(Phase.INIT, "Logging: DONE -------------------------------------------------");
-    } finally {
-      recorder.publish();
+    if (configureLogback(factory, logback, recorder, nativeProperty)) return;
+    for (File file : log4j) {
+      if (configureLog4j(file, recorder)) return;
     }
+    // Unable to configure logging
+    console(Phase.INIT, "Logging: no logging configured.");
+    console(Phase.INIT, "Logging: DONE -------------------------------------------------");
   }
 
   /**
    * Returns what Berlioz did to configure logging when the application started.
    *
    * <p>The snapshot lists each configuration file in the order Berlioz considered it, with its
-   * framework (<code>logback</code> or <code>log4j</code>), its folder (<code>web-inf</code> or
-   * <code>app-data</code>), its path relative to that folder and its outcome: <code>absent</code>,
+   * framework (<code>logback</code> or <code>log4j</code>), its folder (<code>webinf</code> or
+   * <code>appdata</code>), its path relative to that folder and its outcome: <code>absent</code>,
    * <code>ignored</code> (a logback file while SLF4J is not bound to logback), <code>loaded</code>,
    * <code>loaded-with-errors</code> or <code>failed</code>. The file in use is marked
    * <code>in-use</code>. The problems reported while loading a file and the reason of a failure
    * are only included when <code>berlioz.errors.detail</code> is <code>standard</code> or
    * <code>full</code>; absolute folder paths are removed from them.
+   *
+   * <p>It also reports the <code>backend</code> that SLF4J uses (<code>logback</code>,
+   * <code>log4j2</code>, <code>jul</code>, <code>simple</code>, <code>nop</code> or
+   * <code>unknown</code>), and the <code>configuration</code>: <code>file</code> when Berlioz
+   * loaded one of its files, <code>console-default</code> when its files failed so that it logs to
+   * the console, <code>native</code> when <code>berlioz.logging=native</code> so that it looked at
+   * no file, or <code>none</code> when it looked and applied nothing. When the documented system
+   * property locating the native configuration of the backend is set, it is reported as
+   * <code>native-setting</code>, with its <code>name</code> and its <code>value</code>, where the
+   * application data and <code>WEB-INF</code> folders are replaced by <code>[appdata]</code> and
+   * <code>[webinf]</code>, and credentials are redacted, at every detail level. This is a hint:
+   * Berlioz does not check whether the backend used it, and its absence does not mean that the
+   * backend has no configuration.
    *
    * <p>It reports the startup only: an application may reconfigure logging afterwards.
    *
@@ -760,11 +846,13 @@ public abstract class AppInitializer {
    * @param factory    The SLF4J logger factory.
    * @param candidates The logback configuration files in the order to try.
    * @param recorder   Records what is done with each file.
+   * @param nativeProperty The native configuration location property, if it is set
    * @return <code>true</code> if logback is configured;
    *         <code>false</code> if no file exists or logback is not used.
    */
   @SuppressWarnings("java:S1181") // LinkageError: an unsupported logback version must not prevent Berlioz from starting
-  private static boolean configureLogback(ILoggerFactory factory, List<File> candidates, LoggingSetup.Recorder recorder) {
+  private static boolean configureLogback(ILoggerFactory factory, List<File> candidates, LoggingSetup.Recorder recorder,
+      @Nullable String nativeProperty) {
     // Compare names so that no logback class is loaded when logback is absent
     if (!LogbackSetup.LOGGER_CONTEXT_CLASS.equals(factory.getClass().getName())) {
       for (File file : candidates) {
@@ -780,8 +868,14 @@ public abstract class AppInitializer {
       for (LogbackSetup.Attempt attempt : result.attempts()) {
         recorder.candidate(LOGBACK, attempt.file(), attempt.outcome().label(), attempt.problems(), attempt.failure());
       }
+      File loaded = result.loaded();
       if (result.consoleDefault()) recorder.consoleDefault();
-      else if (result.loaded() != null) recorder.configured(LOGBACK, result.loaded());
+      else if (loaded != null) recorder.configured(LOGBACK, loaded);
+      if (nativeProperty != null && result.isConfigured()) {
+        String used = loaded != null ? "config/" + loaded.getName() + " was used" : "Berlioz applied its console default";
+        console(Phase.INIT, "(!) Logging: '" + nativeProperty + "' is set, but " + used
+            + "; set berlioz.logging=native to leave configuration to the backend");
+      }
       return result.isConfigured();
     } catch (LinkageError error) {
       console(Phase.INIT, "(!) Logging: unsupported logback version, logging configuration files ignored");
@@ -800,6 +894,8 @@ public abstract class AppInitializer {
   /**
    * Attempts to configure the logger through reflection.
    *
+   * <p>Log4j 1 configuration files are deprecated and will no longer be loaded in Berlioz 1.0.
+   *
    * @param configuration The log4j configuration file.
    * @param recorder      Records what is done with the file.
    * @return <code>true</code> if configuration was successful;
@@ -815,6 +911,7 @@ public abstract class AppInitializer {
         m.invoke(null, configuration.getAbsolutePath());
         configured = true;
         console(Phase.INIT, "Logging: log4j config file OK");
+        reportLegacyLog4j(recorder.backend());
         console(Phase.INIT, "Logging: OK ---------------------------------------------------");
         recorder.candidate(LOG4J, configuration, "loaded", List.of(), null);
         recorder.configured(LOG4J, configuration);
@@ -833,6 +930,18 @@ public abstract class AppInitializer {
       recorder.candidate(LOG4J, configuration, "absent", List.of(), null);
     }
     return configured;
+  }
+
+  /**
+   * Reports that Log4j 1 configuration files are deprecated, and that SLF4J may not use Log4j 1.
+   *
+   * @param backend The logging backend that SLF4J uses.
+   */
+  private static void reportLegacyLog4j(LoggingBackend backend) {
+    console(Phase.INIT, "(!) Logging: Log4j 1 configuration files are deprecated and will not be loaded in Berlioz 1.0");
+    if (backend != LoggingBackend.UNKNOWN) {
+      console(Phase.INIT, "(!) Logging: SLF4J uses " + backend.label() + "; this legacy configuration may not configure Berlioz logs");
+    }
   }
 
   // Global settings

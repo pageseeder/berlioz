@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.BerliozOption;
 import org.pageseeder.berlioz.GlobalSettings;
@@ -41,6 +43,13 @@ import org.pageseeder.berlioz.util.Redaction;
  * <p>Paths are recorded relative to <code>WEB-INF</code> or the application data folder, and the
  * absolute paths of these folders are removed from messages when they are recorded.
  *
+ * <p>The <code>configuration</code> says how logging ended up, as far as Berlioz knows:
+ * <code>file</code> when Berlioz loaded one of its files, <code>console-default</code> when its
+ * files failed so that it logs to the console, <code>native</code> when
+ * <code>berlioz.logging=native</code> so that it looked at no file, and <code>none</code> when it
+ * looked and applied nothing. The last two say nothing about the effective configuration of the
+ * backend.
+ *
  * @author Christophe Lauret
  * @since 0.14.6
  */
@@ -48,6 +57,15 @@ final class LoggingSetup {
 
   /** The framework name when Berlioz did not configure logging. */
   static final String NONE = "none";
+
+  /** The configuration when Berlioz loaded one of its files. */
+  static final String FILE = "file";
+
+  /** The configuration when Berlioz's files failed, so that it logs to the console. */
+  static final String CONSOLE_DEFAULT = "console-default";
+
+  /** The configuration when Berlioz left logging to the native configuration of the backend. */
+  static final String NATIVE = "native";
 
   /** The maximum number of problems listed for each candidate. */
   static final int PROBLEM_LIMIT = 20;
@@ -58,18 +76,24 @@ final class LoggingSetup {
   private static volatile @Nullable LoggingSetup current;
 
   private final String framework;
+  private final LoggingBackend backend;
+  private final String configuration;
   private final String mode;
   private final String loggerFactory;
   private final Instant time;
   private final boolean consoleDefault;
+  private final @Nullable Map<String, Object> nativeSetting;
   private final List<Candidate> candidates;
 
   private LoggingSetup(Recorder recorder) {
     this.framework = recorder.framework;
+    this.backend = recorder.backend;
+    this.configuration = recorder.configuration();
     this.mode = recorder.mode;
     this.loggerFactory = recorder.loggerFactory;
     this.time = Instant.now();
     this.consoleDefault = recorder.consoleDefault;
+    this.nativeSetting = recorder.nativeSetting;
     this.candidates = Collections.unmodifiableList(new ArrayList<>(recorder.candidates));
   }
 
@@ -95,9 +119,11 @@ final class LoggingSetup {
 
   ConfigurationSnapshot toSnapshot(boolean details) {
     Map<String, Object> fields = DiagnosticConfiguration.fields("initialised", true,
-        "framework", this.framework, "mode", this.mode, "logger-factory", this.loggerFactory,
-        "time", this.time.toString());
+        "framework", this.framework, "backend", this.backend.label(), "configuration", this.configuration,
+        "mode", this.mode, "logger-factory", this.loggerFactory, "time", this.time.toString());
     if (this.consoleDefault) fields.put("console-default", true);
+    // The hint is safe at every detail level: folders are replaced and credentials redacted when recorded
+    if (this.nativeSetting != null) fields.put("native-setting", this.nativeSetting);
     List<Map<String, Object>> entries = new ArrayList<>();
     for (Candidate candidate : this.candidates) entries.add(candidate.toFields(details));
     if (!entries.isEmpty()) fields.put("candidates", entries);
@@ -155,12 +181,15 @@ final class LoggingSetup {
 
     private final String mode;
     private final String loggerFactory;
+    private final LoggingBackend backend;
     private final File webInf;
     private final @Nullable File appData;
-    private final List<String[]> folders = new ArrayList<>();
+    private final List<Folder> folders = new ArrayList<>();
     private final List<Candidate> candidates = new ArrayList<>();
     private String framework = NONE;
     private boolean consoleDefault;
+    private boolean nativeConfiguration;
+    private @Nullable Map<String, Object> nativeSetting;
 
     /**
      * @param env           the initial environment
@@ -169,12 +198,36 @@ final class LoggingSetup {
     Recorder(InitEnvironment env, String loggerFactory) {
       this.mode = env.mode();
       this.loggerFactory = loggerFactory;
+      this.backend = LoggingBackend.of(loggerFactory);
       this.webInf = env.webInf();
       this.appData = env.hasAppData() ? env.appData() : null;
-      if (this.appData != null) addFolder(this.appData, "[app-data]");
-      addFolder(this.webInf, "[WEB-INF]");
+      if (this.appData != null) addFolder(this.appData, "[appdata]");
+      addFolder(this.webInf, "[webinf]");
       // Replace the longest paths first, so that a folder within another is replaced whole
-      this.folders.sort(Comparator.comparingInt((String[] folder) -> folder[0].length()).reversed());
+      this.folders.sort(Comparator.comparingInt((Folder folder) -> folder.path.length()).reversed());
+    }
+
+    /** @return the logging backend that SLF4J uses */
+    LoggingBackend backend() {
+      return this.backend;
+    }
+
+    /**
+     * Records the documented system property locating the native configuration of the backend.
+     *
+     * <p>This is a hint only: the value is not resolved, opened or verified.
+     *
+     * @param name  the name of the property
+     * @param value its value, recorded with the known folders replaced, without control characters
+     *              or credentials, truncated
+     */
+    void nativeSetting(String name, String value) {
+      this.nativeSetting = DiagnosticConfiguration.fields("name", name, "value", hint(value));
+    }
+
+    /** Records that Berlioz left logging to the native configuration of the backend. */
+    void nativeConfiguration() {
+      this.nativeConfiguration = true;
     }
 
     /**
@@ -220,6 +273,12 @@ final class LoggingSetup {
       this.consoleDefault = true;
     }
 
+    private String configuration() {
+      if (this.nativeConfiguration) return NATIVE;
+      if (this.consoleDefault) return CONSOLE_DEFAULT;
+      return NONE.equals(this.framework) ? NONE : FILE;
+    }
+
     /** Publishes the setup recorded so far. */
     void publish() {
       current = new LoggingSetup(this);
@@ -230,10 +289,10 @@ final class LoggingSetup {
       File parent = this.appData;
       if (parent != null) {
         String relative = relative(parent, file);
-        if (relative != null) return new Location("app-data", relative);
+        if (relative != null) return new Location("appdata", relative);
       }
       String relative = relative(this.webInf, file);
-      if (relative != null) return new Location("web-inf", relative);
+      if (relative != null) return new Location("webinf", relative);
       return new Location(null, file.getName());
     }
 
@@ -245,12 +304,28 @@ final class LoggingSetup {
     }
 
     private void addFolder(File folder, String label) {
-      this.folders.add(new String[] {folder.getAbsolutePath(), label});
+      this.folders.add(new Folder(folder.getAbsolutePath(), label));
       try {
         String canonical = folder.getCanonicalPath();
-        if (!canonical.equals(folder.getAbsolutePath())) this.folders.add(new String[] {canonical, label});
+        if (!canonical.equals(folder.getAbsolutePath())) this.folders.add(new Folder(canonical, label));
       } catch (IOException ex) {
         // The absolute path is removed anyway
+      }
+    }
+
+    /** A known folder and the label that replaces it. */
+    private static final class Folder {
+      private final String path;
+      private final String label;
+      private final Pattern boundary;
+      private final String replacement;
+
+      private Folder(String path, String label) {
+        this.path = path;
+        this.label = label;
+        // The whole folder only: not within a longer name, nor a sibling folder sharing its prefix
+        this.boundary = Pattern.compile("(?<![\\w.~-])" + Pattern.quote(path) + "(?=[/\\\\]|$)");
+        this.replacement = Matcher.quoteReplacement(label);
       }
     }
 
@@ -267,8 +342,20 @@ final class LoggingSetup {
     /** @return the message without absolute folder paths, control characters or credentials, truncated */
     private String safe(String message) {
       String safe = message;
-      for (String[] folder : this.folders) safe = safe.replace(folder[0], folder[1]);
-      safe = Redaction.redactValue(safe.replaceAll("\\p{Cntrl}+", " ").trim());
+      for (Folder folder : this.folders) safe = safe.replace(folder.path, folder.label);
+      return bounded(safe);
+    }
+
+    /** @return the value with the known folders replaced at directory boundaries, then made safe */
+    private String hint(String value) {
+      String hint = value;
+      for (Folder folder : this.folders) hint = folder.boundary.matcher(hint).replaceAll(folder.replacement);
+      return bounded(hint);
+    }
+
+    /** @return the text without control characters or credentials, truncated */
+    private static String bounded(String text) {
+      String safe = Redaction.redactValue(text.replaceAll("\\p{Cntrl}+", " ").trim());
       return safe.length() > MESSAGE_LIMIT ? safe.substring(0, MESSAGE_LIMIT) + "…" : safe;
     }
   }

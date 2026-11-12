@@ -30,7 +30,7 @@ import org.pageseeder.berlioz.servlet.ConfigurationSnapshot;
  *
  * <p>Berlioz tries <code>logback-[mode].xml</code> in the application data folder, then in
  * <code>WEB-INF</code>, then <code>logback.xml</code>, and the same for log4j. Each candidate is
- * listed in the order considered, with its folder (<code>app-data</code> or <code>web-inf</code>),
+ * listed in the order considered, with its folder (<code>appdata</code> or <code>webinf</code>),
  * its path relative to that folder and its outcome: <code>absent</code>, <code>ignored</code>
  * (a logback file while SLF4J is not bound to logback), <code>loaded</code>,
  * <code>loaded-with-errors</code> or <code>failed</code>. The file in use is marked
@@ -39,10 +39,25 @@ import org.pageseeder.berlioz.servlet.ConfigurationSnapshot;
  * <code>framework</code> is <code>none</code> when Berlioz configured no logging, so that the
  * logging library applies its own defaults.
  *
+ * <p><code>backend</code> is the backend that SLF4J uses, identified from the logger factory:
+ * <code>logback</code>, <code>log4j2</code>, <code>jul</code>, <code>simple</code>,
+ * <code>nop</code> or <code>unknown</code>. <code>configuration</code> is how logging ended up,
+ * as far as Berlioz knows: <code>file</code>, <code>console-default</code>, <code>native</code>
+ * (<code>berlioz.logging=native</code>, so that no file was looked at) or <code>none</code>; the
+ * last two say nothing about the effective configuration of the backend.
+ *
+ * <p><code>native-setting</code> is included when the documented system property locating the
+ * native configuration of the backend is set (<code>logback.configurationFile</code>,
+ * <code>log4j2.configurationFile</code> or <code>java.util.logging.config.file</code>), with its
+ * <code>name</code> and <code>value</code> at every detail level. In the value, the application
+ * data and <code>WEB-INF</code> folders are replaced by <code>[appdata]</code> and
+ * <code>[webinf]</code>, and credentials are redacted. It is a hint: Berlioz does not check
+ * whether the backend used it.
+ *
  * <p>The problems reported by logback while loading a file and the reason of a failure are only
  * included when <code>berlioz.errors.detail</code> is <code>standard</code> or <code>full</code>,
  * at most 20 problems per file; <code>problem-count</code> has the total. Absolute folder paths are
- * replaced by <code>[WEB-INF]</code> or <code>[app-data]</code>, and credentials are redacted.
+ * replaced by <code>[webinf]</code> or <code>[appdata]</code>, and credentials are redacted.
  *
  * <p>This is a record of the startup: an application may reconfigure logging afterwards.
  * <code>initialised</code> is <code>false</code> when Berlioz was not started by
@@ -50,11 +65,12 @@ import org.pageseeder.berlioz.servlet.ConfigurationSnapshot;
  *
  * <h3>Returned XML</h3>
  * <pre>{@code
- * <logging-config initialised="true" framework="logback" mode="[mode]"
- *                 logger-factory="[class]" time="[iso8601]">
- *   <candidate framework="logback" location="web-inf" path="config/logback-[mode].xml" outcome="failed"
+ * <logging-config initialised="true" framework="logback" backend="logback" configuration="file"
+ *                 mode="[mode]" logger-factory="[class]" time="[iso8601]">
+ *   <native-setting name="logback.configurationFile" value="[value]"/>
+ *   <candidate framework="logback" location="webinf" path="config/logback-[mode].xml" outcome="failed"
  *              failure="[message]"/>
- *   <candidate framework="logback" location="web-inf" path="config/logback.xml" outcome="loaded-with-errors"
+ *   <candidate framework="logback" location="webinf" path="config/logback.xml" outcome="loaded-with-errors"
  *              in-use="true" problem-count="[count]">
  *     <problem level="[error|warn]" message="[message]"/>
  *   </candidate>
@@ -63,10 +79,11 @@ import org.pageseeder.berlioz.servlet.ConfigurationSnapshot;
  *
  * <h3>Returned JSON</h3>
  * <pre>{@code
- * {"initialised": true, "framework": "logback", "mode": "[mode]", "loggerFactory": "[class]",
- *  "time": "[iso8601]",
+ * {"initialised": true, "framework": "logback", "backend": "logback", "configuration": "file",
+ *  "mode": "[mode]", "loggerFactory": "[class]", "time": "[iso8601]",
+ *  "nativeSetting": {"name": "logback.configurationFile", "value": "[value]"},
  *  "candidates": [
- *    {"framework": "logback", "location": "web-inf", "path": "config/logback.xml",
+ *    {"framework": "logback", "location": "webinf", "path": "config/logback.xml",
  *     "outcome": "loaded-with-errors", "inUse": true, "problemCount": [count],
  *     "problems": [{"level": "[error|warn]", "message": "[message]"}]}
  *  ]}
