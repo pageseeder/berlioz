@@ -20,6 +20,7 @@ Records use the format described by Michael Nygard in [Documenting Architecture 
 | [0012](0012-always-emulate-query-form-bodies.md) | Always emulate `QUERY` form bodies | Accepted |
 | [0013](0013-diagnostics-report-only-known-facts.md) | Diagnostics report only what Berlioz knows | Accepted |
 | [0014](0014-format-agnostic-built-in-generators.md) | Make built-in generators format-agnostic where the data allows | Accepted |
+| [0015](0015-native-logging-configuration-is-opt-in.md) | Leaving logging to the backend is opt-in | Accepted |
 
 ## Adding a record
 

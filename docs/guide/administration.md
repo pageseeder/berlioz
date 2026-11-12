@@ -182,25 +182,29 @@ JSON uses a `filters` array of objects with the same fields in camel case, `rule
 `org.pageseeder.berlioz.generator.GetLoggingConfig` reports how Berlioz configured logging when the application started: each [logging configuration file](logging.md#configuration-by-mode) in the order Berlioz considered it, and the one in use. The same snapshot is available as `AppInitializer.loggingSnapshot()`.
 
 ```xml
-<logging-config initialised="true" framework="logback" mode="dev"
+<logging-config initialised="true" framework="logback" backend="logback" configuration="file" mode="dev"
                 logger-factory="ch.qos.logback.classic.LoggerContext" time="2026-11-12T01:20:00Z">
-  <candidate framework="logback" location="app-data" path="config/logback-dev.xml" outcome="absent"/>
-  <candidate framework="logback" location="web-inf" path="config/logback-dev.xml" outcome="failed"
+  <native-setting name="logback.configurationFile" value="[appdata]/config/logback-shared.xml"/>
+  <candidate framework="logback" location="appdata" path="config/logback-dev.xml" outcome="absent"/>
+  <candidate framework="logback" location="webinf" path="config/logback-dev.xml" outcome="failed"
              problem-count="1" failure="ch.qos.logback.core.joran.spi.JoranException: Problem parsing XML document…">
     <problem level="error" message="XML_PARSING - Parsing fatal error on line 1…"/>
   </candidate>
-  <candidate framework="logback" location="web-inf" path="config/logback.xml" outcome="loaded" in-use="true"/>
+  <candidate framework="logback" location="webinf" path="config/logback.xml" outcome="loaded" in-use="true"/>
 </logging-config>
 ```
 
 - `framework` is `logback`, `log4j`, or `none` when Berlioz configured no logging, so that the logging library applies its own defaults. `logger-factory` is the class of the SLF4J logger factory: logback files are only used when it is logback's.
+- `backend` is the [backend](logging.md#backends) that SLF4J uses, identified from `logger-factory`: `logback`, `log4j2`, `jul`, `simple`, `nop` or `unknown`.
+- `configuration` is how logging ended up, as far as Berlioz knows: `file` (Berlioz loaded one of its files, the one marked `in-use`), `console-default` (its files failed, so it logs to the console), `native` (`berlioz.logging=native`, so it looked at no file and no candidate is listed) or `none` (it looked and applied nothing). `native` and `none` say nothing about the backend's effective configuration.
+- `native-setting` is reported when the documented system property locating the backend's native configuration is set: `logback.configurationFile`, `log4j2.configurationFile` or `java.util.logging.config.file`. Its `name` and `value` are included at every detail level; the application data and `WEB-INF` folders are replaced by `[appdata]` and `[webinf]`, and credentials are redacted. It is a hint only: Berlioz does not open the file nor check whether the backend used it, and its absence does not mean that the backend has no configuration.
 - `outcome` is `absent`, `ignored` (a logback file while SLF4J is not bound to logback), `loaded`, `loaded-with-errors` (Logback may have applied only part of the file, or none of it) or `failed`. Log4J files are only considered when no logback file is configured.
 - `in-use="true"` marks the file in use. `console-default="true"` on the root when no file could be loaded, so that Berlioz configured Logback to log to the console at `INFO` level.
-- `location` is `app-data` or `web-inf`, and `path` is relative to it. Absolute paths are never reported.
-- `problem-count` is the number of warnings and errors reported by Logback while loading the file. The problems (at most 20) and `failure` are only included when `berlioz.errors.detail` is `standard` or `full`; the absolute paths of `WEB-INF` and the application data folder are replaced by `[WEB-INF]` and `[app-data]`, and credentials are redacted as above.
+- `location` is `appdata` or `webinf`, and `path` is relative to it. Absolute paths are never reported.
+- `problem-count` is the number of warnings and errors reported by Logback while loading the file. The problems (at most 20) and `failure` are only included when `berlioz.errors.detail` is `standard` or `full`; the absolute paths of `WEB-INF` and the application data folder are replaced by `[webinf]` and `[appdata]`, and credentials are redacted as above.
 - `initialised="false"` when Berlioz was not started by `AppInitializer`.
 
-This is a record of the startup: an application that reconfigures its logging framework afterwards is not reflected. JSON has the same fields in camel case, with `candidates` and `problems` arrays and a number for `problemCount`. The generator reuses one snapshot per request for its response and ETag.
+This is a record of the startup: an application that reconfigures its logging framework afterwards is not reflected. JSON has the same fields in camel case, with a `nativeSetting` object, `candidates` and `problems` arrays and a number for `problemCount`. The generator reuses one snapshot per request for its response and ETag.
 
 ### Options: `ListBerliozOptions`
 

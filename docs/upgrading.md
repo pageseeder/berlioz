@@ -19,9 +19,11 @@ These are deprecated in 0.14 and will be removed in 1.0. Each logs a warning whe
 | `clear-xsl-cache=true` | 0.14.5 | `berlioz-reload=xslt` |
 | `reset-etags=true` | 0.14.5 | `berlioz-reload=etags` |
 | `GetCPUTime` generator | 0.14.5 | `GetCpuSample` |
+| Log4j 1 configuration files (`log4j-<mode>.properties`, `log4j.properties`) | 0.14.6 | Native backend configuration, or mode-based Logback files |
 
 ## Upgrading to 0.14.6
 
+- If the container configures logging, for example with Logback shared in Tomcat's `lib` folder, set the context parameter `berlioz.logging` to `native` so that Berlioz does not reset it to load its own files. See [leaving logging to the backend](guide/logging.md#leaving-logging-to-the-backend).
 - With `berlioz.errors.handle=false`, an error page that the container dispatches to after Berlioz sends an error no longer finds the exception in `javax.servlet.error.exception`. A custom error page (a JSP or servlet of the application) that reads it should fall back to `org.pageseeder.berlioz.error_exception` (`ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION`). Berlioz's own `ErrorHandlerServlet` and `GetErrorDetails` need no change. See [`berlioz.errors.handle`](guide/error-handling.md#berliozerrorshandle--error_handler).
 
 ## Upgrading to 0.14.5
