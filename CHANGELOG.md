@@ -6,6 +6,10 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 
 ## [Unreleased]
 
+Planned for 0.14.6: richer administration diagnostics, explicit native logging configuration,
+and reliability fixes for error handling and redirect reloads. See the
+[draft release notes](docs/release-notes/0.14.6.md).
+
 ### Added
 
 - `ErrorHandlerServlet.BERLIOZ_ERROR_EXCEPTION` (`org.pageseeder.berlioz.error_exception`): the request attribute holding the exception of an error routed by Berlioz.

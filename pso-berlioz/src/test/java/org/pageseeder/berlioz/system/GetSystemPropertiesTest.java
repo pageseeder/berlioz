@@ -96,7 +96,24 @@ class GetSystemPropertiesTest {
       "com.example.Main --password s3cret        | com.example.Main [REDACTED]",
       "/opt/app/My App.jar --token=abc           | /opt/app/My App.jar [REDACTED]",
       "/opt/app/app.JAR                          | /opt/app/app.JAR",
-      "'  com.example.Main   '                   | com.example.Main"})
+      "'  com.example.Main   '                   | com.example.Main",
+      // A JAR in the arguments of a main class is not the executable
+      "com.example.Main --password s3cr3t input.jar        | com.example.Main [REDACTED]",
+      "com.example.Main input.jar --password s3cr3t        | com.example.Main [REDACTED]",
+      "com.example.Main --password s3cr3t in.jar --key=k2  | com.example.Main [REDACTED]",
+      "com.example.Main /opt/My Data/in.jar s3cr3t         | com.example.Main [REDACTED]",
+      "Main s3cr3t                                         | Main [REDACTED]",
+      "com.example.$Main s3cr3t                            | com.example.$Main [REDACTED]",
+      // Module and main class (java -m)
+      "com.example.app/com.example.Main s3cr3t x.jar       | com.example.app/com.example.Main [REDACTED]",
+      // JAR launches: the first .jar ends the executable, whatever follows
+      "/opt/app/app.jar --password s3cr3t input.jar        | /opt/app/app.jar [REDACTED]",
+      "/opt/My Apps/app.jar s3cr3t /data/My Data/in.jar    | /opt/My Apps/app.jar [REDACTED]",
+      "lib/app.jar s3cr3t                                  | lib/app.jar [REDACTED]",
+      "'C:\\Program Files\\App\\app.jar s3cr3t in.jar'     | 'C:\\Program Files\\App\\app.jar [REDACTED]'",
+      // Ambiguous: a relative path with spaces is truncated rather than showing arguments
+      "My App.jar s3cr3t                                   | My [REDACTED]",
+      "/opt/app/run s3cr3t                                 | /opt/app/run [REDACTED]"})
   void testRedactCommand(String command, String expected) {
     assertEquals(expected, GetSystemProperties.redactCommand(command));
   }

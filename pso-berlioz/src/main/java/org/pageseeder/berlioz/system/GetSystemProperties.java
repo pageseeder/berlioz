@@ -83,6 +83,10 @@ public final class GetSystemProperties implements Generator {
   /** The end of the JAR path in the command: '.jar' followed by whitespace or the end. */
   private static final Pattern JAR_END = Pattern.compile("\\.jar(?=\\s|$)");
 
+  /** A main class, or a module and main class ({@code java -m}): never a path with spaces. */
+  private static final Pattern MAIN_CLASS =
+      Pattern.compile("[\\p{javaJavaIdentifierPart}.]+(?:/[\\p{javaJavaIdentifierPart}.]+)?");
+
   @Override
   public Response generate(Request req, OutputWriter out) {
     Properties properties = System.getProperties();
@@ -111,10 +115,28 @@ public final class GetSystemProperties implements Generator {
    */
   static String redactCommand(String command) {
     String value = command.strip();
-    Matcher jar = JAR_END.matcher(value.toLowerCase(Locale.ROOT));
-    int end = jar.find() ? jar.end() : firstWhitespace(value);
+    int end = executableEnd(value);
     if (end < 0 || value.substring(end).isBlank()) return Redaction.redactValue(value);
     return Redaction.redactValue(value.substring(0, end)) + ' ' + Redaction.REDACTED;
+  }
+
+  /**
+   * Finds the end of the main class or JAR, which comes first in the command.
+   *
+   * <p>A main class cannot contain whitespace, so when the first word is a class name, the
+   * arguments start after it, even if one of them is a JAR. Otherwise, the command starts with
+   * the path of a JAR, which can contain spaces, up to the first {@code .jar}. In doubt, the
+   * command ends at the first whitespace: a relative JAR path with spaces is truncated, so that
+   * an argument is never shown.
+   *
+   * @return the index after the main class or JAR, or -1 if the command has no whitespace
+   */
+  private static int executableEnd(String value) {
+    int space = firstWhitespace(value);
+    if (space < 0) return -1;
+    if (MAIN_CLASS.matcher(value.substring(0, space)).matches()) return space;
+    Matcher jar = JAR_END.matcher(value.toLowerCase(Locale.ROOT));
+    return jar.find() ? jar.end() : space;
   }
 
   private static int firstWhitespace(String value) {
