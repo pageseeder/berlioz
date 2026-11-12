@@ -156,8 +156,8 @@ Each generator captures one immutable snapshot per request and reuses it for its
 <redirect-config>
   <filter name="RedirectFilter" type="redirect" config="config/redirect.xml" exists="true"
           status="loaded" loaded="2026-11-11T02:15:00Z" rule-count="2">
-    <rule from="/" to="/html/home" permanent="false"/>
-    <rule from="/old" to="https://example.org/new?token=[REDACTED]" permanent="true"/>
+    <rule from="/" to="/html/home" status="302"/>
+    <rule from="/old" to="https://example.org/new?token=[REDACTED]" status="308"/>
   </filter>
   <filter name="Legacy" type="redirect" config="config/legacy.xml" exists="true"
           status="loaded" loaded="2026-11-11T02:15:00Z" rule-count="0" ignored-count="1">
@@ -172,10 +172,10 @@ Each generator captures one immutable snapshot per request and reuses it for its
 - `reload-pending="true"` when a reload of the `redirects` scope was requested since the last load; the filter applies it on its next request.
 - `failure` is a generic message, or the loader's message when `berlioz.errors.detail` is `standard` or `full`.
 - `ignored-rule` lists the rules that the filter ignores because their `from` or `to` pattern is missing or invalid (Berlioz logs them when loading), with their `position` among the rules of the file, from 1, and the `reason`: `missing-from`, `invalid-from`, `missing-to` or `invalid-to`. Loaded rules are in file order, so their positions follow from the ignored ones.
-- At most 2000 rules and 2000 ignored rules are listed: `rule-count` and `ignored-count` have the totals, and `limit` is written when a list is truncated. `permanent` is only reported for redirects.
+- At most 2000 rules and 2000 ignored rules are listed: `rule-count` and `ignored-count` have the totals, and `limit` is written when a list is truncated. `status` (301, 302, 307 or 308) is only reported for redirects.
 - Targets are redacted with `Redaction.redactUriPattern`: the password of a URL (or its whole user information without `:`) and the value of every query parameter are `[REDACTED]`, unless the value is a URI template expression such as `{q}`.
 
-JSON uses a `filters` array of objects with the same fields in camel case, `rules` and `ignoredRules` arrays, and numbers for `ruleCount`, `ignoredCount` and `position`. Like the servlet configuration generators, the generator reuses one snapshot per request for its response and ETag.
+JSON uses a `filters` array of objects with the same fields in camel case, `rules` and `ignoredRules` arrays, and numbers for `ruleCount`, `ignoredCount`, `status` and `position`. Like the servlet configuration generators, the generator reuses one snapshot per request for its response and ETag.
 
 ### Logging: `GetLoggingConfig`
 
@@ -221,7 +221,7 @@ This is a record of the startup: an application that reconfigures its logging fr
 - `loaded`: when the configuration was last loaded successfully. `failed`: when the last attempt failed, only while it has failed.
 - `load-failure`: the name of the file that failed, kept until the next successful load. The message is generic; when `berlioz.errors.detail` is not `minimal`, the `line` and the parser's description of the error are included, with the paths of `WEB-INF` and the application data folder replaced by `[WEB-INF]` and `[app-data]`.
 
-JSON has the same fields in camel case (`loadStatus`, `loadFailure`). The ETag changes with the load status and the time of a failure. The same information is available programmatically through `GlobalSettings.getLoadDiagnostics()`.
+JSON has the same fields in camel case (`loadStatus`, `loadFailure`). The ETag is a hash of every field written (source, load status, `loaded` and `failed` times, redacted properties and load failure), and the generator reuses one snapshot per request for its response and ETag, so a reload, even of unchanged settings, changes the ETag. The same information is available programmatically through `GlobalSettings.getLoadDiagnostics()`.
 
 ### Options: `ListBerliozOptions`
 

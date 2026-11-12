@@ -10,7 +10,7 @@ A Berlioz application relies on a few configuration files besides the web descri
 | `config.xml` | `WEB-INF/config/` | Global settings |
 | `config-<mode>.xml` | `WEB-INF/config/` | Global settings for one mode, overriding `config.xml` |
 | `logback-<mode>.xml` | `WEB-INF/config/` | Logging configuration (optional, see [logging](logging.md)) |
-| `redirect.xml` | `WEB-INF/config/` | Redirect rules for `RedirectFilter` (optional) |
+| `redirect.xml` | `WEB-INF/config/` | Redirect rules for `RedirectFilter` (optional, see [redirects](#redirects)) |
 
 Global settings can also be written as `.properties` files instead of XML.
 
@@ -85,3 +85,29 @@ Values may contain `${name}` tokens, resolved against system properties and envi
 ### Reloading
 
 The configuration can be reloaded at runtime with `berlioz-reload=config` (see [administration](administration.md)). A reload that fails keeps the last valid configuration.
+
+## Redirects
+
+`RedirectFilter` redirects requests whose path matches a rule, using the file named by its `config` init parameter, relative to `WEB-INF`, such as `config/redirect.xml`. Rules are URI patterns: variables matched by `from` are expanded in `to`. The first matching rule applies.
+
+```xml
+<redirect-mapping>
+  <redirect from="/"             to="/html/home"/>
+  <redirect from="/{+path}.psml" to="/html/{+path}" status="301"/>
+  <redirect from="/api/v1/{+p}"  to="/api/v2/{+p}"  status="308"/>
+  <redirect from="/maintenance"  to="/html/status"  status="307"/>
+</redirect-mapping>
+```
+
+`status` sets the HTTP status of the redirect:
+
+| Status | Meaning | Method of the next request |
+|---|---|---|
+| `301` | Moved permanently | Clients may change `POST` to `GET` |
+| `302` | Found (temporary) | Clients may change `POST` to `GET` |
+| `307` | Temporary redirect | Unchanged, with its body |
+| `308` | Permanent redirect | Unchanged, with its body |
+
+Without `status`, the redirect is temporary (`302`). Any other value fails validation, and the filter has no rules until the file is fixed. Prefer `307` or `308` when a redirected path receives requests other than `GET` or `HEAD`. Browsers cache permanent redirects (`301` and `308`), so test a rule as temporary first. Rules are reloaded with `berlioz-reload=redirects` (see [administration](administration.md)).
+
+The `permanent` attribute is deprecated since 0.14.6 and will be removed in 1.0. Berlioz still reads it when `status` is absent (`permanent="yes"` gives `301`), ignores it when `status` is present, and logs a warning when a file uses it. Replace `permanent="yes"` with `status="301"` and remove `permanent="no"`.

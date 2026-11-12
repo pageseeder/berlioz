@@ -15,12 +15,14 @@
  */
 package org.pageseeder.berlioz.config;
 
+import org.pageseeder.berlioz.content.ContentStatus;
+
 /**
  * The result of evaluating a redirect rule against a request path.
  *
  * @author Christophe Lauret
  *
- * @version 0.13.0
+ * @version 0.14.6
  * @since 0.12.4
  */
 public final class RedirectLocation {
@@ -29,12 +31,12 @@ public final class RedirectLocation {
 
   private final String to;
 
-  private final boolean permanent;
+  private final ContentStatus status;
 
-  RedirectLocation(String from, String to, boolean permanent) {
+  RedirectLocation(String from, String to, ContentStatus status) {
     this.from = from;
     this.to = to;
-    this.permanent = permanent;
+    this.status = status;
   }
 
   /**
@@ -56,12 +58,23 @@ public final class RedirectLocation {
   }
 
   /**
-   * Returns {@code true} if this is a permanent (301) redirect; {@code false} for temporary (302).
+   * Returns the HTTP status of the redirect: 301, 302, 307 or 308.
+   *
+   * @return The redirect status.
+   * @since 0.14.6
+   */
+  public ContentStatus status() {
+    return this.status;
+  }
+
+  /**
+   * Returns {@code true} if this is a permanent redirect (301 or 308); {@code false} for a
+   * temporary one (302 or 307).
    *
    * @return {@code true} if permanent.
    */
   public boolean isPermanent() {
-    return this.permanent;
+    return RedirectPattern.isPermanent(this.status);
   }
 
 }

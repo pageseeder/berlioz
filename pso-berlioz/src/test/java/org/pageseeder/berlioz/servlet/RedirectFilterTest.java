@@ -2,6 +2,8 @@ package org.pageseeder.berlioz.servlet;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.io.TempDir;
 import org.pageseeder.berlioz.security.ControlAuthorization;
 
@@ -266,6 +268,37 @@ class RedirectFilterTest {
     Assertions.assertFalse(chainInvoked[0], "Chain must not be invoked on permanent redirect");
     Assertions.assertEquals(HttpServletResponse.SC_MOVED_PERMANENTLY, recorder.status);
     Assertions.assertNotNull(recorder.header("Location"));
+  }
+
+  // Redirect status
+  // ---------------------------------------------------------------------------
+
+  @ParameterizedTest
+  @CsvSource({
+      "status=\"301\", 301",
+      "status=\"302\", 302",
+      "status=\"307\", 307",
+      "status=\"308\", 308",
+      "permanent=\"yes\" status=\"307\", 307",
+      "permanent=\"yes\", 301",
+      "'', 302",
+  })
+  void testRedirectStatus(String attributes, int expected) throws Exception {
+    RedirectFilter filter = initFilter(
+        "<?xml version=\"1.0\"?><redirect-mapping>"
+        + "<redirect from=\"/old\" to=\"/new\" " + attributes + "/>"
+        + "</redirect-mapping>");
+
+    boolean[] chainInvoked = {false};
+    HttpServletRequest req = ServletTestSupport.request()
+        .method("POST").uri("/old").scheme("https").host("example.org").port(443).build();
+    ServletTestSupport.ResponseRecorder recorder = ServletTestSupport.response();
+
+    filter.doHTTPFilter(req, recorder.build(), ServletTestSupport.recordingChain(chainInvoked));
+
+    Assertions.assertFalse(chainInvoked[0], "Chain must not be invoked on redirect");
+    Assertions.assertEquals(expected, recorder.status);
+    Assertions.assertEquals("https://example.org/new", recorder.header("Location"));
   }
 
   // URI pattern matching

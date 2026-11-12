@@ -53,7 +53,7 @@ import org.pageseeder.berlioz.servlet.RedirectFilter;
  * <redirect-config>
  *   <filter name="[name]" type="redirect" config="[path]" exists="true" status="loaded"
  *           loaded="[iso8601]" rule-count="[count]" ignored-count="[count]">
- *     <rule from="[pattern]" to="[pattern]" permanent="[true|false]"/>
+ *     <rule from="[pattern]" to="[pattern]" status="[301|302|307|308]"/>
  *     <ignored-rule position="[position]" reason="[reason]" from="[text]" to="[text]"/>
  *   </filter>
  *   <filter name="[name]" type="relocation" config="[path]" exists="false" status="failed"
@@ -68,7 +68,7 @@ import org.pageseeder.berlioz.servlet.RedirectFilter;
  *   {"name": "[name]", "type": "redirect", "config": "[path]", "exists": true, "status": "loaded",
  *    "loaded": "[iso8601]", "ruleCount": [count],
  *    "ignoredCount": [count],
- *    "rules": [{"from": "[pattern]", "to": "[pattern]", "permanent": [true|false]}],
+ *    "rules": [{"from": "[pattern]", "to": "[pattern]", "status": [301|302|307|308]}],
  *    "ignoredRules": [{"position": [position], "reason": "[reason]", "from": "[text]", "to": "[text]"}]}
  * ]}
  * }</pre>

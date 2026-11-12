@@ -14,6 +14,16 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- The HTTP status of a redirect -->
+  <xs:simpleType name="redirect-status">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="301"/>
+      <xs:enumeration value="302"/>
+      <xs:enumeration value="307"/>
+      <xs:enumeration value="308"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:element name="redirect-mapping">
     <xs:complexType>
       <xs:sequence>
@@ -27,7 +37,10 @@
     <xs:complexType>
       <xs:attribute name="from" use="required"/>
       <xs:attribute name="to" use="required"/>
+      <!-- Deprecated since 0.14.6, removed in 1.0: use status="301" instead of permanent="yes" -->
       <xs:attribute name="permanent" type="yes-no"/>
+      <!-- Since 0.14.6, takes precedence over permanent -->
+      <xs:attribute name="status" type="redirect-status"/>
     </xs:complexType>
   </xs:element>
 

@@ -12,9 +12,11 @@
 <!ELEMENT redirect-mapping                                      ( redirect* ) >
 
 <!--
-  Mapping
+  Mapping: 'status' (301, 302, 307 or 308) takes precedence over 'permanent'.
+  'permanent' is deprecated since 0.14.6 and will be removed in 1.0: use status="301" instead.
 -->
 <!ELEMENT redirect                                                      EMPTY >
 <!ATTLIST redirect     from            CDATA                        #REQUIRED
                        to              CDATA                        #REQUIRED
-                       permanent       (yes | no)                    #IMPLIED >
+                       permanent       (yes | no)                    #IMPLIED
+                       status          (301 | 302 | 307 | 308)       #IMPLIED >

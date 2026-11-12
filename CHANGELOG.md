@@ -7,8 +7,7 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 ## [Unreleased]
 
 Planned for 0.14.6: richer administration diagnostics, explicit native logging configuration,
-and reliability fixes for error handling and redirect reloads. See the
-[draft release notes](docs/release-notes/0.14.6.md).
+and reliability fixes for error handling and redirect reloads.
 
 ### Added
 
@@ -18,6 +17,7 @@ and reliability fixes for error handling and redirect reloads. See the
 - `GetLoggingConfig` reports the SLF4J `backend` (`logback`, `log4j2`, `jul`, `simple`, `nop` or `unknown`), how logging ended up as `configuration` (`file`, `console-default`, `native` or `none`), and, when set, the documented system property locating the backend's native configuration as `native-setting`, with its value sanitized at every detail level.
 - `berlioz.logging` option (`auto` or `native`), read like the mode from the servlet init parameter `logging`, the context parameter `berlioz.logging`, the system property `berlioz.logging` or the environment variable `BERLIOZ_LOGGING`. With `native`, Berlioz looks at none of its logging files and leaves logging to the backend's native configuration. In `auto`, Berlioz prints a notice when it loads its own Logback file while `logback.configurationFile` is set.
 - `GetGlobalConfig` reports the outcome of the last attempts to load the global configuration: `load-status` (`pending`, `ready`, `startup-failed` or `reload-failed`), `loaded` and `failed` times, and, after a failure, `load-failure` with the name of the file. A failed reload kept the last valid configuration but was only logged. The line and the parser's description of the error are only included when `berlioz.errors.detail` is not `minimal`. `GlobalSettings.getLoadDiagnostics()` returns the same information (`ConfigLoadDiagnostics`).
+- `status` attribute on redirect rules (`301`, `302`, `307` or `308`), so that `RedirectFilter` can send method-preserving redirects (307 and 308). It takes precedence over `permanent`; without either, a redirect is temporary (302), as before. The schema and the DTD declare it. `RedirectPattern.status()` and `RedirectLocation.status()` return the status, a new `RedirectPattern(URIPattern, URIPattern, ContentStatus)` constructor accepts it, and `isPermanent()` is `true` for 301 and 308. `GetRedirectConfig` reports the `status` of each rule.
 - `Redaction.redactValue(String)` redacts credentials whatever the name of the value: the password of a URL (or its user information without password) and the values of parameters with a sensitive name. `Redaction.redactUriPattern(String)` redacts a URI pattern such as a redirect target.
 
 ### Changed
@@ -28,6 +28,7 @@ and reliability fixes for error handling and redirect reloads. See the
 
 ### Deprecated
 
+- The `permanent` attribute of redirect rules and the `RedirectPattern(URIPattern, URIPattern, boolean)` constructor; they will be removed in 1.0. Use `status="301"` instead of `permanent="yes"`, and remove `permanent="no"`. Without `status`, `permanent="yes"` still gives 301. Berlioz logs a warning when it loads a file that uses `permanent`.
 - Loading Log4j 1 configuration files (`log4j-<mode>.properties`, `log4j.properties`) at startup; it will be removed in 1.0. Berlioz prints a deprecation notice when it loads one, and a notice when SLF4J uses another backend, since the file may then not configure Berlioz's logs.
 
 ### Fixed
@@ -40,7 +41,7 @@ and reliability fixes for error handling and redirect reloads. See the
 - Logback configuration at startup no longer fails silently. When the last Logback file found could not be loaded, such as a malformed `logback.xml`, Berlioz left Logback reset with no appender, so nothing was logged; it now logs to the console at `INFO` level and says so. Errors that Logback reports without failing, such as an appender class that cannot be found, are printed instead of "logback config file OK"; with Logback 1.5, such an error can leave the whole file unapplied. When a file fails and a later one loads, for example `logback.xml` after a malformed `logback-<mode>.xml`, a warning naming the failed file is logged. Logback files are ignored, with a console message, when SLF4J is not bound to Logback. Logback 1.3 or later is supported.
 - `berlioz-reload` is no longer applied a second time when Berlioz renders the error of an authorized control request. An error dispatch carries the parameters of the request that failed, so a reload that caused the error, such as `berlioz-reload=services` with an invalid services file, was requested again while the error page rendered, by `BerliozServlet` and by `RedirectFilter` and `RelocationFilter` mapped to error dispatches.
 - Rules reloaded by a `RedirectFilter` or `RelocationFilter` are visible to every request thread, and loaded once per reload, even when requests arrive together, such as on first use after startup; the rules were held in a field that was not safely published, and each concurrent request parsed the file.
-- `redirect-mapping-1.0.dtd` declares `permanent` as `yes` or `no`, as the schema and the parser do; it declared `true` or `false`, so a file written to the DTD failed validation and the redirect filter had no rules.
+- `redirect-mapping-1.0.dtd` declares `permanent` as `yes` or `no`, as the schema and the parser do; it declared `true` or `false`, so a file written to the DTD failed validation and the redirect filter had no rules. Existing files that load need no change: the values accepted are the same as before.
 
 ## [0.14.5] — 2026-10-29
 

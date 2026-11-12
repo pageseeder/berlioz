@@ -2,6 +2,11 @@ package org.pageseeder.berlioz.config;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.pageseeder.berlioz.content.ContentStatus;
+import org.pageseeder.berlioz.furi.URIPattern;
 import org.pageseeder.berlioz.xml.BerliozEntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
@@ -162,6 +167,69 @@ final class RedirectConfigTest {
     Assertions.assertNotNull(loc);
     Assertions.assertEquals("/new", loc.to());
     Assertions.assertTrue(loc.isPermanent(), "isPermanent() should be true for permanent=\"yes\"");
+  }
+
+  /**
+   * <code>status</code> sets the status, and takes precedence over <code>permanent</code>;
+   * without it, <code>permanent</code> chooses between 301 and 302 as before.
+   */
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "status=\"301\"                   | 301 | true",
+      "status=\"302\"                   | 302 | false",
+      "status=\"307\"                   | 307 | false",
+      "status=\"308\"                   | 308 | true",
+      "permanent=\"yes\"                | 301 | true",
+      "permanent=\"no\"                 | 302 | false",
+      "''                               | 302 | false",
+      "permanent=\"yes\" status=\"307\" | 307 | false",
+      "permanent=\"no\" status=\"308\"  | 308 | true",
+      "permanent=\"yes\" status=\"302\" | 302 | false",
+  })
+  void testLoad_Status(String attributes, int code, boolean permanent) throws ConfigException {
+    String xml = "<redirect-mapping><redirect from=\"/old\" to=\"/new\" " + attributes + "/></redirect-mapping>";
+    RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+    RedirectLocation loc = config.redirect("/old");
+    Assertions.assertNotNull(loc);
+    Assertions.assertEquals(code, loc.status().code());
+    Assertions.assertEquals(permanent, loc.isPermanent());
+    Assertions.assertEquals(code, config.patterns().get(0).status().code());
+    Assertions.assertEquals(permanent, config.patterns().get(0).isPermanent());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"200", "300", "303", "304", "305", "404", "permanent", " 301", ""})
+  void testLoad_UnsupportedStatusFailsValidation(String status) {
+    String xml = "<redirect-mapping><redirect from=\"/old\" to=\"/new\" status=\"" + status + "\"/></redirect-mapping>";
+    Assertions.assertThrows(ConfigException.class,
+        () -> RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))));
+  }
+
+  @Test
+  void testDTD_statusMatchesSchema() throws Exception {
+    for (String value : new String[]{"301", "302", "307", "308"}) {
+      String xml = withDoctype("<redirect from=\"/old\" to=\"/new\" status=\"" + value + "\"/>");
+      Assertions.assertNull(dtdError(xml), "The DTD must accept status=\"" + value + "\"");
+      RedirectConfig config = RedirectConfig.newInstance(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+      Assertions.assertEquals(Integer.parseInt(value), config.redirect("/old").status().code());
+    }
+    String xml = withDoctype("<redirect from=\"/old\" to=\"/new\" status=\"303\"/>");
+    Assertions.assertNotNull(dtdError(xml), "The DTD must reject status=\"303\"");
+  }
+
+  @Test
+  @SuppressWarnings("removal")
+  void testPattern_Status() {
+    URIPattern from = new URIPattern("/old");
+    URIPattern to = new URIPattern("/new");
+    Assertions.assertEquals(ContentStatus.MOVED_PERMANENTLY, new RedirectPattern(from, to, true).status());
+    Assertions.assertEquals(ContentStatus.FOUND, new RedirectPattern(from, to, false).status());
+    RedirectPattern pattern = new RedirectPattern(from, to, ContentStatus.PERMANENT_REDIRECT);
+    Assertions.assertTrue(pattern.isPermanent());
+    Assertions.assertEquals("redirect: /old -> /new 308", pattern.toString());
+    Assertions.assertEquals(ContentStatus.PERMANENT_REDIRECT, pattern.redirect("/old").status());
+    Assertions.assertThrows(IllegalArgumentException.class, () -> new RedirectPattern(from, to, ContentStatus.SEE_OTHER));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> new RedirectPattern(from, to, ContentStatus.OK));
   }
 
   @Test

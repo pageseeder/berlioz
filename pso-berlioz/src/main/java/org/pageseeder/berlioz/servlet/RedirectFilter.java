@@ -36,6 +36,7 @@ import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.RedirectConfig;
 import org.pageseeder.berlioz.config.RedirectLocation;
 import org.pageseeder.berlioz.config.RedirectPattern;
+import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.http.HttpHeaders;
 import org.pageseeder.berlioz.http.HttpRequests;
 import org.pageseeder.berlioz.util.Redaction;
@@ -58,8 +59,9 @@ import org.slf4j.LoggerFactory;
  * </redirect-mapping>
  * }</pre>
  *
- * <p>All redirects are currently temporary (302) unless the attribute 'permanent' is set to 'yes'
- * in which case the HTTP code will be 301
+ * <p>The attribute 'status' sets the HTTP status of a redirect: 301, 302, 307 or 308. Without it,
+ * redirects are temporary (302) unless the deprecated attribute 'permanent' is set to 'yes', in
+ * which case the HTTP code will be 301. When both are specified, 'status' takes precedence.
  *
  * <p>See {@link #init} for details for configuration options.
  *
@@ -69,6 +71,7 @@ import org.slf4j.LoggerFactory;
  *
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.2">HTTP/1.1 - Moved Permanently</a>
  * @see <a href="http://tools.ietf.org/html/rfc2616#section-10.3.3">HTTP/1.1 - Found</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9110#section-15.4">HTTP Semantics - Redirection 3xx</a>
  *
  * @author Christophe Lauret
  *
@@ -157,7 +160,7 @@ public final class RedirectFilter implements Filter, Serializable {
 
   private static Map<String, Object> diagnosticRule(RedirectPattern pattern) {
     return DiagnosticConfiguration.fields("from", pattern.from().toString(),
-        "to", Redaction.redactUriPattern(pattern.to().toString()), "permanent", pattern.isPermanent());
+        "to", Redaction.redactUriPattern(pattern.to().toString()), "status", (long) pattern.status().code());
   }
 
   @Override
@@ -202,7 +205,7 @@ public final class RedirectFilter implements Filter, Serializable {
       LOGGER.debug("Redirecting from {} to {}", location.from(), location.to());
 
       // And redirect (resets the response, so report the reloaded scopes again)
-      sendRedirect(req, res, location.to(), location.isPermanent());
+      sendRedirect(req, res, location.to(), location.status());
       ReloadScope.reportApplied(req, res, Set.of());
       return;
     }
@@ -222,12 +225,11 @@ public final class RedirectFilter implements Filter, Serializable {
    * @param req       The HTTP servlet request
    * @param res       The HTTP servlet response
    * @param location  The target location for the "Location" header
-   * @param permanent <code>true</code> to use HTTP 301 status;
-   *                  <code>false</code> to HTTP 302.
+   * @param status    The HTTP status of the redirect: 301, 302, 307 or 308
    *
    * @throws ServletException If a relative URL was used.
    */
-  private static void sendRedirect(HttpServletRequest req, HttpServletResponse res, String location, boolean permanent)
+  private static void sendRedirect(HttpServletRequest req, HttpServletResponse res, String location, ContentStatus status)
       throws ServletException {
     if (!HttpRequests.isSafeRedirectURL(location, req) || location.startsWith("//")) {
       throw new ServletException("Unsafe redirect URL: "+location);
@@ -248,11 +250,7 @@ public final class RedirectFilter implements Filter, Serializable {
     res.reset();
     res.setHeader(HttpHeaders.LOCATION, url);
     res.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=86400, must-revalidate");
-    if (permanent) {
-      res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-    } else {
-      res.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-    }
+    res.setStatus(status.code());
     res.setContentLength(0);
   }
 

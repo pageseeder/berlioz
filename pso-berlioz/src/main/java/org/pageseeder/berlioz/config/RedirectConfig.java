@@ -16,6 +16,7 @@
 package org.pageseeder.berlioz.config;
 
 import org.jspecify.annotations.Nullable;
+import org.pageseeder.berlioz.content.ContentStatus;
 import org.pageseeder.berlioz.furi.URIPattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +39,16 @@ import java.util.*;
  *   <redirect from="/html"         to="/html/home"/>
  *   <redirect from="/xml"          to="/xml/home"/>
  *   <redirect from="/{+path}.psml" to="/html/{+path}"/>
+ *   <redirect from="/old"          to="/new"          status="308"/>
  * </redirect-mapping>
  * }</pre>
+ *
+ * <p>The {@code status} attribute sets the HTTP status of a redirect: 301, 302, 307 or 308. Without
+ * it, the redirect is temporary (302).
+ *
+ * <p>The {@code permanent} attribute is deprecated since 0.14.6 and will be removed in 1.0: without
+ * {@code status}, {@code permanent="yes"} gives 301, and {@code status} takes precedence when both
+ * are specified. A warning is logged when a file uses it.
  *
  * @version 0.14.6
  * @since 0.12.4
@@ -166,6 +175,9 @@ public final class RedirectConfig {
 
     private int position = 0;
 
+    /** The number of rules using the deprecated <code>permanent</code> attribute. */
+    private int deprecated = 0;
+
     /** Used to detect duplicates */
     private final Set<String> matchingPatterns = new HashSet<>();
 
@@ -178,7 +190,17 @@ public final class RedirectConfig {
       this.patterns = new ArrayList<>();
       this.ignored = new ArrayList<>();
       this.position = 0;
+      this.deprecated = 0;
       this.matchingPatterns.clear();
+    }
+
+    @Override
+    public void endDocument() {
+      if (this.deprecated > 0) {
+        LOGGER.warn("{} redirect rule(s) use the 'permanent' attribute, deprecated since 0.14.6 and"
+            + " scheduled for removal in 1.0; use status=\"301\" instead of permanent=\"yes\","
+            + " or remove permanent=\"no\"", this.deprecated);
+      }
     }
 
     @Override
@@ -195,11 +217,36 @@ public final class RedirectConfig {
         if (!this.matchingPatterns.add(from.toString())) {
           LOGGER.warn("URI pattern: {} is mapped twice", from);
         }
-        boolean isPermanent = "yes".equals(atts.getValue("permanent"));
-        RedirectPattern pattern = new RedirectPattern(from, to, isPermanent);
+        String permanent = atts.getValue("permanent");
+        if (permanent != null) this.deprecated++;
+        RedirectPattern pattern = new RedirectPattern(from, to, toStatus(atts.getValue("status"), permanent));
         this.patterns.add(pattern);
         LOGGER.debug("Added pattern: {}", pattern);
       }
+    }
+
+    /**
+     * Returns the status of a redirect from its attributes; <code>status</code> takes precedence
+     * over the deprecated <code>permanent</code>.
+     *
+     * <p>The schema only allows 301, 302, 307 and 308; any other value falls back to
+     * <code>permanent</code>.
+     *
+     * @param status    The value of the <code>status</code> attribute, if any.
+     * @param permanent The value of the <code>permanent</code> attribute, if any.
+     * @return the redirect status
+     */
+    private static ContentStatus toStatus(@Nullable String status, @Nullable String permanent) {
+      if (status != null) {
+        switch (status) {
+          case "301": return ContentStatus.MOVED_PERMANENTLY;
+          case "302": return ContentStatus.FOUND;
+          case "307": return ContentStatus.TEMPORARY_REDIRECT;
+          case "308": return ContentStatus.PERMANENT_REDIRECT;
+          default: LOGGER.warn("Unsupported redirect status: {} - using permanent attribute", status);
+        }
+      }
+      return "yes".equals(permanent) ? ContentStatus.MOVED_PERMANENTLY : ContentStatus.FOUND;
     }
 
     /**

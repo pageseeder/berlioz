@@ -154,8 +154,8 @@ class MappingFiltersTest {
 
     assertEquals("<redirect-config>"
         + "<filter name=\"redirects\" type=\"redirect\" config=\"config/redirect.xml\" exists=\"true\" status=\"loaded\" loaded=\"T\" rule-count=\"2\">"
-        + "<rule from=\"/a\" to=\"https://user:[REDACTED]@example.org/x?token=[REDACTED]\" permanent=\"true\"/>"
-        + "<rule from=\"/{+path}.psml\" to=\"/html/{+path}\" permanent=\"false\"/></filter>"
+        + "<rule from=\"/a\" to=\"https://user:[REDACTED]@example.org/x?token=[REDACTED]\" status=\"301\"/>"
+        + "<rule from=\"/{+path}.psml\" to=\"/html/{+path}\" status=\"302\"/></filter>"
         + "<filter name=\"broken\" type=\"relocation\" config=\"broken.xml\" exists=\"true\" status=\"failed\" loaded=\"T\" failure=\"Unable to load the configuration file\"/>"
         + "<filter name=\"missing\" type=\"relocation\" config=\"missing.xml\" exists=\"false\" status=\"not-loaded\"/>"
         + "<filter name=\"none\" type=\"relocation\" status=\"no-config\"/>"
@@ -168,7 +168,7 @@ class MappingFiltersTest {
     RedirectFilter filter = redirectFilter("redirects", "redirect.xml", "<redirect-mapping><redirect from=\"/a\" to=\"/b\"/></redirect-mapping>");
     redirect(filter, request("/z", null));
     assertEquals("{\"filters\":[{\"name\":\"redirects\",\"type\":\"redirect\",\"config\":\"redirect.xml\",\"exists\":true,"
-        + "\"status\":\"loaded\",\"loaded\":\"T\",\"ruleCount\":1,\"rules\":[{\"from\":\"/a\",\"to\":\"/b\",\"permanent\":false}]}]}",
+        + "\"status\":\"loaded\",\"loaded\":\"T\",\"ruleCount\":1,\"rules\":[{\"from\":\"/a\",\"to\":\"/b\",\"status\":302}]}]}",
         json(MappingFilters.diagnosticSnapshot()));
   }
 
@@ -208,7 +208,7 @@ class MappingFiltersTest {
     redirect(filter, request("/z", null));
     assertEquals("<redirect-config>"
         + "<filter name=\"redirects\" type=\"redirect\" config=\"redirect.xml\" exists=\"true\" status=\"loaded\" loaded=\"T\" rule-count=\"1\" ignored-count=\"2\">"
-        + "<rule from=\"/a\" to=\"/b\" permanent=\"false\"/>"
+        + "<rule from=\"/a\" to=\"/b\" status=\"302\"/>"
         + "<ignored-rule position=\"2\" reason=\"invalid-from\" from=\"/{!x}\" to=\"/c?token=[REDACTED]\"/>"
         + "<ignored-rule position=\"3\" reason=\"invalid-to\" from=\"/d\" to=\"/{!y}\"/>"
         + "</filter></redirect-config>", xml(MappingFilters.diagnosticSnapshot()));
