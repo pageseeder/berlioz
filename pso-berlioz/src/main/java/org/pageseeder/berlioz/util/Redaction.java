@@ -123,14 +123,13 @@ public final class Redaction {
     int i = 0;
     for (; i < to.length(); i++) {
       char c = to.charAt(i);
+      if (c == '#' && depth == 0) break;
       if (c == '{') depth++;
       else if (c == '}' && depth > 0) depth--;
-      else if (depth > 0) continue;
-      else if (c == '#') break;
-      else if (c == '?' && start < 0) {
+      else if (c == '?' && depth == 0 && start < 0) {
         out.append(to, 0, i + 1);
         start = i + 1;
-      } else if (c == '&' && start >= 0) {
+      } else if (c == '&' && depth == 0 && start >= 0) {
         out.append(redactPatternParameter(to.substring(start, i))).append('&');
         start = i + 1;
       }
