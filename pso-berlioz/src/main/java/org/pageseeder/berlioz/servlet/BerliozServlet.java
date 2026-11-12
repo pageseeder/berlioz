@@ -568,13 +568,6 @@ public final class BerliozServlet extends HttpServlet {
   }
 
   /**
-   * Returns the service matching {@code path} and {@code method}, falling back to GET when the
-   * global option {@link BerliozOption#HTTP_GET_VIA_POST} allows POST requests to be treated as GET
-   * (backward compatibility).
-   */
-  @SuppressWarnings("removal") // HTTP_GET_VIA_POST removed in 1.0; fallback path guarded here until then
-
-  /**
    * Returns the method used to find the service for this request.
    *
    * <p>An error is dispatched with the method of the request that failed, but the error page is a
@@ -588,6 +581,12 @@ public final class BerliozServlet extends HttpServlet {
     return HttpMethod.GET;
   }
 
+  /**
+   * Returns the service matching {@code path} and {@code method}, falling back to GET when the
+   * global option {@link BerliozOption#HTTP_GET_VIA_POST} allows POST requests to be treated as GET
+   * (backward compatibility).
+   */
+  @SuppressWarnings("removal") // HTTP_GET_VIA_POST removed in 1.0; fallback path guarded here until then
   private static @Nullable MatchingService findMatch(ServiceRegistry services, String path, HttpMethod method) {
     // No matching service (backward compatibility)
     MatchingService match = services.get(path, method);
