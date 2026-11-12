@@ -3,7 +3,7 @@ cyclonedx = "3.5.1"
 saxon = "12.10"
 sonarqube = "7.5.0.8588"
 gson = "2.15.0"
-jackson = "2.22.4"
+jackson = "2.23.0"
 jakarta-json = "2.1.3"
 javax-json = "1.1.4"
 jspecify = "1.0.1"
@@ -40,4 +40,4 @@ xmlwriter = { module = "org.pageseeder.xmlwriter:pso-xmlwriter", version.ref = "
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 jreleaser = { id = "org.jreleaser", version = "1.26.0" }
-versions = { id = "io.github.ben-manes.versions", version = "0.66.0" }
+versions = { id = "io.github.ben-manes.versions", version = "0.67.0" }
