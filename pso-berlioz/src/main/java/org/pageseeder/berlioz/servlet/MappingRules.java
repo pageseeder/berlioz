@@ -37,6 +37,10 @@ import org.slf4j.Logger;
  * {@code redirects} scope ({@link MappingFilters#generation()}), whatever the request that asked
  * for it. Each load is recorded for diagnostics.
  *
+ * <p>Loads are serialized: concurrent requests that find the rules missing or out of date wait
+ * for a single load instead of each parsing the file, and a load cannot replace the rules of a
+ * later generation.
+ *
  * @param <C> the type of configuration
  */
 final class MappingRules<C> {
@@ -76,6 +80,9 @@ final class MappingRules<C> {
   private final Function<C, List<IgnoredRule>> ignored;
 
   private final AtomicReference<@Nullable Loaded<C>> loaded = new AtomicReference<>();
+
+  /** Held while loading, so that only one request loads the rules of a generation. */
+  private final Object lock = new Object();
 
   /**
    * @param type       the type of filter, {@code redirect} or {@code relocation}
@@ -128,12 +135,17 @@ final class MappingRules<C> {
   C get() {
     File f = this.file;
     if (f == null) return this.empty;
-    long generation = MappingFilters.generation();
     Loaded<C> current = this.loaded.get();
-    if (current != null && current.generation == generation) return current.config;
-    Loaded<C> next = load(f, generation);
-    this.loaded.set(next);
-    return next.config;
+    if (current != null && current.generation == MappingFilters.generation()) return current.config;
+    synchronized (this.lock) {
+      // Checked again: the rules may have been loaded while this request waited
+      long generation = MappingFilters.generation();
+      current = this.loaded.get();
+      if (current != null && current.generation == generation) return current.config;
+      Loaded<C> next = load(f, generation);
+      this.loaded.set(next);
+      return next.config;
+    }
   }
 
   private Loaded<C> load(File f, long generation) {
