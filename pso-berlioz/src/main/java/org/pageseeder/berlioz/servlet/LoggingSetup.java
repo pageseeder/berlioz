@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
@@ -73,7 +74,8 @@ final class LoggingSetup {
   /** The maximum length of a message. */
   static final int MESSAGE_LIMIT = 512;
 
-  private static volatile @Nullable LoggingSetup current;
+  /** The setup recorded at startup, published once logging is configured and read by request threads. */
+  private static final AtomicReference<@Nullable LoggingSetup> CURRENT = new AtomicReference<>();
 
   private final String framework;
   private final LoggingBackend backend;
@@ -99,17 +101,17 @@ final class LoggingSetup {
 
   /** @return the logging setup recorded at startup, if Berlioz was initialized */
   static @Nullable LoggingSetup current() {
-    return current;
+    return CURRENT.get();
   }
 
   /** Removes the recorded logging setup (for tests). */
   static void clear() {
-    current = null;
+    CURRENT.set(null);
   }
 
   /** @return the safe snapshot of the logging setup recorded at startup */
   static ConfigurationSnapshot diagnosticSnapshot() {
-    LoggingSetup setup = current;
+    LoggingSetup setup = CURRENT.get();
     if (setup == null) {
       return new ConfigurationSnapshot("logging-config", DiagnosticConfiguration.fields("initialised", false));
     }
@@ -121,7 +123,7 @@ final class LoggingSetup {
     Map<String, Object> fields = DiagnosticConfiguration.fields("initialised", true,
         "framework", this.framework, "backend", this.backend.label(), "configuration", this.configuration,
         "mode", this.mode, "logger-factory", this.loggerFactory, "time", this.time.toString());
-    if (this.consoleDefault) fields.put("console-default", true);
+    if (this.consoleDefault) fields.put(CONSOLE_DEFAULT, true);
     // The hint is safe at every detail level: folders are replaced and credentials redacted when recorded
     if (this.nativeSetting != null) fields.put("native-setting", this.nativeSetting);
     List<Map<String, Object>> entries = new ArrayList<>();
@@ -159,18 +161,26 @@ final class LoggingSetup {
       if (this.inUse) fields.put("in-use", true);
       if (!this.problems.isEmpty()) fields.put("problem-count", (long) this.problems.size());
       if (details && this.failure != null) fields.put("failure", this.failure);
-      if (details && !this.problems.isEmpty()) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (String problem : this.problems.subList(0, Math.min(this.problems.size(), PROBLEM_LIMIT))) {
-          int space = problem.indexOf(' ');
-          String level = space > 0 ? problem.substring(0, space) : "";
-          boolean known = "ERROR".equals(level) || "WARN".equals(level);
-          list.add(DiagnosticConfiguration.fields("level", known ? level.toLowerCase() : "warn",
-              "message", known ? problem.substring(space + 1) : problem));
-        }
-        fields.put("problems", list);
-      }
+      if (details && !this.problems.isEmpty()) fields.put("problems", problemFields());
       return fields;
+    }
+
+    /** @return the first problems, at most {@link #PROBLEM_LIMIT} */
+    private List<Map<String, Object>> problemFields() {
+      List<Map<String, Object>> list = new ArrayList<>();
+      for (String problem : this.problems.subList(0, Math.min(this.problems.size(), PROBLEM_LIMIT))) {
+        list.add(problemFields(problem));
+      }
+      return list;
+    }
+
+    /** @return the level and message of a problem recorded as <code>"[ERROR|WARN] message"</code> */
+    private static Map<String, Object> problemFields(String problem) {
+      int space = problem.indexOf(' ');
+      String level = space > 0 ? problem.substring(0, space) : "";
+      boolean known = "ERROR".equals(level) || "WARN".equals(level);
+      return DiagnosticConfiguration.fields("level", known ? level.toLowerCase() : "warn",
+          "message", known ? problem.substring(space + 1) : problem);
     }
   }
 
@@ -281,7 +291,7 @@ final class LoggingSetup {
 
     /** Publishes the setup recorded so far. */
     void publish() {
-      current = new LoggingSetup(this);
+      CURRENT.set(new LoggingSetup(this));
     }
 
     /** @return the folder and the path of the file relative to it, or only its name outside both folders */
