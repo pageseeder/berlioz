@@ -39,5 +39,5 @@ xmlwriter = { module = "org.pageseeder.xmlwriter:pso-xmlwriter", version.ref = "
 [plugins]
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
-jreleaser = { id = "org.jreleaser", version = "1.26.0" }
+jreleaser = { id = "org.jreleaser", version = "1.27.0" }
 versions = { id = "io.github.ben-manes.versions", version = "0.67.0" }
