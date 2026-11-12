@@ -54,14 +54,18 @@ class ConfigurationSnapshotTest {
     Map<String, Object> read = entries.get(0);
     assertThrows(UnsupportedOperationException.class, () -> entries.add(Map.of()));
     assertThrows(UnsupportedOperationException.class, () -> read.put("name", "x"));
-    assertThrows(UnsupportedOperationException.class, () -> ((List<String>) read.get("mappings")).add("x"));
-    assertThrows(UnsupportedOperationException.class, () -> ((Map<String, Object>) read.get("limits")).put("max", 0L));
+    List<String> mappings = (List<String>) read.get("mappings");
+    assertThrows(UnsupportedOperationException.class, () -> mappings.add("x"));
+    Map<String, Object> limits = (Map<String, Object>) read.get("limits");
+    assertThrows(UnsupportedOperationException.class, () -> limits.put("max", 0L));
     List<Map<String, Object>> rules = (List<Map<String, Object>>) read.get("rules");
     assertThrows(UnsupportedOperationException.class, () -> rules.add(Map.of()));
-    assertThrows(UnsupportedOperationException.class, () -> rules.get(0).put("from", "/b"));
-    assertThrows(UnsupportedOperationException.class, () -> snapshot.fields().put("x", "y"));
-    assertThrows(UnsupportedOperationException.class,
-        () -> ((Map<String, Object>) snapshot.fields().get("processor")).put("factory", "y"));
+    Map<String, Object> firstRule = rules.get(0);
+    assertThrows(UnsupportedOperationException.class, () -> firstRule.put("from", "/b"));
+    Map<String, Object> fields = snapshot.fields();
+    assertThrows(UnsupportedOperationException.class, () -> fields.put("x", "y"));
+    Map<String, Object> processor = (Map<String, Object>) fields.get("processor");
+    assertThrows(UnsupportedOperationException.class, () -> processor.put("factory", "y"));
     assertEquals(etag, snapshot.etag());
   }
 
