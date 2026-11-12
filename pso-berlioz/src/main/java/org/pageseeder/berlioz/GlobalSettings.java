@@ -691,7 +691,7 @@ public final class GlobalSettings {
 
     } catch (Exception ex) {
       console("(!) An error occurred whilst trying to read the properties file.");
-      LOGGER.warn("Unable to load the configuration file", ex);
+      LOGGER.warn(LOAD_FAILURE_MESSAGE, ex);
       properties.clear(); // Let's not load dirty properties
       failed = true;
       ConfigLoadDiagnostics.Failure failure = toFailure(current, ex);
