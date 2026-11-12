@@ -116,22 +116,28 @@ public final class Redaction {
    */
   public static String redactUriPattern(String pattern) {
     String to = redactUserInfo(pattern);
-    int query = indexOutsideExpressions(to, '?', 0);
-    int fragment = indexOutsideExpressions(to, '#', 0);
-    // No query, or a '?' in the fragment
-    if (query < 0 || fragment >= 0 && fragment < query) return to;
-    int end = fragment < 0 ? to.length() : fragment;
-    StringBuilder out = new StringBuilder(to.length()).append(to, 0, query + 1);
-    int start = query + 1;
-    while (true) {
-      int amp = indexOutsideExpressions(to, '&', start);
-      int stop = amp < 0 || amp > end ? end : amp;
-      out.append(redactPatternParameter(to.substring(start, stop)));
-      if (stop == end) break;
-      out.append('&');
-      start = stop + 1;
+    StringBuilder out = new StringBuilder(to.length());
+    // A single pass, carrying the depth of template expressions forward
+    int depth = 0;
+    int start = -1; // The start of the current query parameter, or -1 before the query
+    int i = 0;
+    for (; i < to.length(); i++) {
+      char c = to.charAt(i);
+      if (c == '{') depth++;
+      else if (c == '}' && depth > 0) depth--;
+      else if (depth > 0) continue;
+      else if (c == '#') break;
+      else if (c == '?' && start < 0) {
+        out.append(to, 0, i + 1);
+        start = i + 1;
+      } else if (c == '&' && start >= 0) {
+        out.append(redactPatternParameter(to.substring(start, i))).append('&');
+        start = i + 1;
+      }
     }
-    return out.append(to, end, to.length()).toString();
+    // No query, or a '?' in the fragment
+    if (start < 0) return to;
+    return out.append(redactPatternParameter(to.substring(start, i))).append(to, i, to.length()).toString();
   }
 
   /**
@@ -196,19 +202,6 @@ public final class Redaction {
     String value = parameter.substring(equals + 1);
     boolean expression = value.length() > 2 && value.charAt(0) == '{' && value.indexOf('}') == value.length() - 1;
     return expression ? parameter : parameter.substring(0, equals + 1) + REDACTED;
-  }
-
-  /** @return the index of the character outside template expressions, from the index, or -1 */
-  private static int indexOutsideExpressions(String s, char c, int from) {
-    int depth = 0;
-    // Scan from the start to know the depth of expressions at 'from'
-    for (int i = 0; i < s.length(); i++) {
-      char x = s.charAt(i);
-      if (x == '{') depth++;
-      else if (x == '}' && depth > 0) depth--;
-      else if (x == c && depth == 0 && i >= from) return i;
-    }
-    return -1;
   }
 
   private static boolean containsKeyword(String normalized) {

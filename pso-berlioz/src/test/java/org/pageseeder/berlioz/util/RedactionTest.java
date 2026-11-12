@@ -1,5 +1,7 @@
 package org.pageseeder.berlioz.util;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -151,6 +153,23 @@ class RedactionTest {
       "/{+path}                            | /{+path}"})
   void testRedactUriPattern(String pattern, String expected) {
     Assertions.assertEquals(expected, Redaction.redactUriPattern(pattern));
+  }
+
+  @Test
+  void testRedactUriPatternLargeQueryWithExpressions() {
+    int count = 50_000;
+    StringBuilder pattern = new StringBuilder("/path?");
+    StringBuilder expected = new StringBuilder("/path?");
+    for (int i = 0; i < count; i++) {
+      pattern.append("q=value&e={x}&t={?a,b&c}&");
+      expected.append("q=[REDACTED]&e={x}&t={?a,b&c}&");
+    }
+    pattern.append("last=1{#f}#frag?x=1&y=2");
+    expected.append("last=[REDACTED]#frag?x=1&y=2");
+    // Linear in the length of the pattern: rescanning it for each parameter took seconds
+    String redacted = Assertions.assertTimeoutPreemptively(Duration.ofSeconds(2),
+        () -> Redaction.redactUriPattern(pattern.toString()));
+    Assertions.assertEquals(expected.toString(), redacted);
   }
 
   // isSensitiveName() and isSensitiveHeader()
