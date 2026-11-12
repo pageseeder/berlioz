@@ -20,6 +20,7 @@ import java.io.File;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Test class for the global settings
@@ -340,6 +341,15 @@ final class GlobalSettingsTest {
     Assertions.assertTrue(GlobalSettings.load());
     Assertions.assertEquals(ConfigLoadDiagnostics.READY, GlobalSettings.getLoadDiagnostics().status());
     Assertions.assertNull(GlobalSettings.getLoadDiagnostics().failure());
+  }
+
+  @Test
+  void testLoadDiagnostics_FolderPlaceholders(@TempDir File appdata) {
+    File webinf = new File("src/test/resources/org/pageseeder/berlioz");
+    GlobalSettings.setup(InitEnvironment.create(webinf).appData(appdata).mode("default"));
+    Assertions.assertEquals("Cannot read [webinf]/config/config.xml or [appdata]/config/config.xml",
+        GlobalSettings.safeDetail("Cannot read " + webinf.getAbsolutePath() + "/config/config.xml or "
+            + appdata.getAbsolutePath() + "/config/config.xml"));
   }
 
   @Test

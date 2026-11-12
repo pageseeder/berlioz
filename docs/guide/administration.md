@@ -219,7 +219,7 @@ This is a record of the startup: an application that reconfigures its logging fr
 
 - `load-status`: `pending` (not loaded yet), `ready`, `startup-failed` (no load has succeeded, so every option has its default value) or `reload-failed` (the last valid settings are kept and listed).
 - `loaded`: when the configuration was last loaded successfully. `failed`: when the last attempt failed, only while it has failed.
-- `load-failure`: the name of the file that failed, kept until the next successful load. The message is generic; when `berlioz.errors.detail` is not `minimal`, the `line` and the parser's description of the error are included, with the paths of `WEB-INF` and the application data folder replaced by `[WEB-INF]` and `[app-data]`.
+- `load-failure`: the name of the file that failed, kept until the next successful load. The message is generic; when `berlioz.errors.detail` is not `minimal`, the `line` and the parser's description of the error are included, with the paths of `WEB-INF` and the application data folder replaced by `[webinf]` and `[appdata]`.
 
 JSON has the same fields in camel case (`loadStatus`, `loadFailure`). The ETag is a hash of every field written (source, load status, `loaded` and `failed` times, redacted properties and load failure), and the generator reuses one snapshot per request for its response and ETag, so a reload, even of unchanged settings, changes the ETag. The same information is available programmatically through `GlobalSettings.getLoadDiagnostics()`.
 

@@ -778,15 +778,15 @@ public final class GlobalSettings {
   /**
    * Returns the message without absolute folder paths, control characters or credentials, truncated.
    */
-  private static String safeDetail(String message) {
+  static String safeDetail(String message) {
     String safe = message;
     InitEnvironment e = env();
     if (e != null) {
       // Replace the longer path first, in case one folder is inside the other
       boolean appDataFirst = e.appData().getAbsolutePath().length() > e.webInf().getAbsolutePath().length();
-      if (appDataFirst) safe = replaceFolder(safe, e.appData(), "[app-data]");
-      safe = replaceFolder(safe, e.webInf(), "[WEB-INF]");
-      if (!appDataFirst) safe = replaceFolder(safe, e.appData(), "[app-data]");
+      if (appDataFirst) safe = replaceFolder(safe, e.appData(), "[appdata]");
+      safe = replaceFolder(safe, e.webInf(), "[webinf]");
+      if (!appDataFirst) safe = replaceFolder(safe, e.appData(), "[appdata]");
     }
     safe = Redaction.redactValue(safe.replaceAll("\\p{Cntrl}+", " ").trim());
     return safe.length() > DETAIL_LIMIT ? safe.substring(0, DETAIL_LIMIT) + "…" : safe;
