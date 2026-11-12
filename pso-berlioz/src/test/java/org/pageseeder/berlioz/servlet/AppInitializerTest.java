@@ -20,11 +20,17 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -115,6 +121,51 @@ class AppInitializerTest {
       Assertions.assertFalse(output.contains("Could not find"), output);
     } finally {
       Thread.currentThread().setContextClassLoader(original);
+    }
+  }
+
+  @Test
+  void testLoggingOption_sourcesInOrder(@TempDir Path root) {
+    String previous = System.getProperty("berlioz.logging");
+    try {
+      System.setProperty("berlioz.logging", "auto");
+      Map<String, String> none = Map.of();
+      Map<String, String> context = Map.of("berlioz.logging", "native");
+      Map<String, String> servlet = Map.of("logging", " native ");
+      Assertions.assertEquals(" native ", logging(root, servlet, context));
+      Assertions.assertEquals("native", logging(root, none, context));
+      Assertions.assertEquals("auto", logging(root, none, none));
+      Assertions.assertEquals("auto", AppInitializer.newInstance(root.toFile(), List.of()).getLogging());
+      // An explicit empty value does not fall through to a lower-precedence source
+      Assertions.assertEquals("", logging(root, Map.of("logging", ""), context));
+      System.clearProperty("berlioz.logging");
+      // The environment variable is not set when testing
+      Assertions.assertEquals(System.getenv("BERLIOZ_LOGGING"), logging(root, none, none));
+    } finally {
+      if (previous != null) System.setProperty("berlioz.logging", previous);
+      else System.clearProperty("berlioz.logging");
+    }
+  }
+
+  private static String logging(Path root, Map<String, String> servletParams, Map<String, String> contextParams) {
+    ServletContext context = (ServletContext) Proxy.newProxyInstance(ServletContext.class.getClassLoader(),
+        new Class<?>[] {ServletContext.class}, (proxy, m, args) -> {
+          if ("getRealPath".equals(m.getName())) return root.toString();
+          if ("getInitParameter".equals(m.getName())) return contextParams.get(args[0]);
+          return ServletTestSupport.defaultValue(m.getReturnType());
+        });
+    ServletConfig config = (ServletConfig) Proxy.newProxyInstance(ServletConfig.class.getClassLoader(),
+        new Class<?>[] {ServletConfig.class}, (proxy, m, args) -> {
+          if ("getServletContext".equals(m.getName())) return context;
+          if ("getInitParameter".equals(m.getName())) return servletParams.get(args[0]);
+          return ServletTestSupport.defaultValue(m.getReturnType());
+        });
+    PrintStream original = System.out;
+    System.setOut(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+    try {
+      return AppInitializer.newInstance(config, List.of()).getLogging();
+    } finally {
+      System.setOut(original);
     }
   }
 
