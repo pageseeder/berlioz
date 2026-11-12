@@ -32,6 +32,19 @@ import java.util.stream.Collectors;
 /**
  * Immutable allowlisted diagnostic content of servlets or filters. Contains no servlet references or raw settings.
  *
+ * <p>The content is available as written by {@link #writeTo(OutputWriter)}, or as maps through
+ * {@link #entries()} and {@link #fields()}. The maps use the names of the XML/JSON schema as keys, in the
+ * order written, and are unmodifiable at every level. A value is one of:
+ * <ul>
+ *   <li>a {@link String};</li>
+ *   <li>a {@link Boolean};</li>
+ *   <li>a {@link Long}, for every number;</li>
+ *   <li>a {@code List<String>};</li>
+ *   <li>a {@code Map<String, Object>}, for a nested object;</li>
+ *   <li>a {@code List<Map<String, Object>>}, for a list of objects.</li>
+ * </ul>
+ * <p>A field without a value is omitted rather than mapped to <code>null</code>.
+ *
  * @author Christophe Lauret
  * @since 0.14.3
  */
@@ -81,6 +94,30 @@ public final class ConfigurationSnapshot {
         .map(ConfigurationSnapshot::freeze)
         .collect(Collectors.toUnmodifiableList());
     this.fields = freeze(fields);
+  }
+
+  /**
+   * Returns the entries of this snapshot, such as the servlets or filters it describes.
+   *
+   * <p>A snapshot with fields only, such as the logging snapshot, has no entries.
+   *
+   * @return the unmodifiable entries, in the order written
+   *
+   * @since 0.14.6
+   */
+  public List<Map<String, Object>> entries() {
+    return this.entries;
+  }
+
+  /**
+   * Returns the fields of the root of this snapshot, written after its entries.
+   *
+   * @return the unmodifiable fields, in the order written
+   *
+   * @since 0.14.6
+   */
+  public Map<String, Object> fields() {
+    return this.fields;
   }
 
   /**

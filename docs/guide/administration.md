@@ -150,7 +150,7 @@ Each generator captures one immutable snapshot per request and reuses it for its
 
 ### Redirect and relocation filters: `GetRedirectConfig`
 
-`org.pageseeder.berlioz.generator.GetRedirectConfig` lists every initialized `RedirectFilter` and `RelocationFilter`, sorted by type, then name, with the rules Berlioz applies rather than the file, which can differ until the next reload. The same snapshot is available as `RedirectFilter.diagnosticSnapshot()`.
+`org.pageseeder.berlioz.generator.GetRedirectConfig` lists every initialized `RedirectFilter` and `RelocationFilter`, sorted by type, then name, with the rules Berlioz applies rather than the file, which can differ until the next reload. The same snapshot is available as `RedirectFilter.diagnosticSnapshot()`. Its `entries()` and `fields()` return the same fields as unmodifiable maps.
 
 ```xml
 <redirect-config>
@@ -179,7 +179,7 @@ JSON uses a `filters` array of objects with the same fields in camel case, `rule
 
 ### Logging: `GetLoggingConfig`
 
-`org.pageseeder.berlioz.generator.GetLoggingConfig` reports how Berlioz configured logging when the application started: each [logging configuration file](logging.md#configuration-by-mode) in the order Berlioz considered it, and the one in use. The same snapshot is available as `AppInitializer.loggingSnapshot()`.
+`org.pageseeder.berlioz.generator.GetLoggingConfig` reports how Berlioz configured logging when the application started: each [logging configuration file](logging.md#configuration-by-mode) in the order Berlioz considered it, and the one in use. The same snapshot is available as `AppInitializer.loggingSnapshot()`. Its `entries()` and `fields()` return the same fields as unmodifiable maps.
 
 ```xml
 <logging-config initialised="true" framework="logback" backend="logback" configuration="file" mode="dev"

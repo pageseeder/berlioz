@@ -24,6 +24,47 @@ class ConfigurationSnapshotTest {
     assertEquals("{\"servlets\":[{\"name\":\"xml\",\"mappings\":[\"*.xml\"],\"stylesheet\":{\"allocation\":\"identity\"}}]}", out.toString());
   }
 
+  @Test void accessorsReturnContentAsWritten() {
+    Map<String, Object> rule = DiagnosticConfiguration.fields("from", "/a", "status", 301L);
+    Map<String, Object> entry = DiagnosticConfiguration.fields("name", "redirects", "loaded", true,
+        "mappings", List.of("/*"), "limits", DiagnosticConfiguration.fields("max", 10L), "rules", List.of(rule));
+    ConfigurationSnapshot snapshot = new ConfigurationSnapshot("redirect-config", "filters", "filter",
+        List.of(entry), DiagnosticConfiguration.fields("total", 1L));
+    assertEquals(List.of(entry), snapshot.entries());
+    assertEquals(Map.of("total", 1L), snapshot.fields());
+    assertEquals(List.of("name", "loaded", "mappings", "limits", "rules"), new ArrayList<>(snapshot.entries().get(0).keySet()));
+  }
+
+  @Test void fieldsOnlySnapshotHasNoEntries() {
+    ConfigurationSnapshot snapshot = new ConfigurationSnapshot("logging-config",
+        DiagnosticConfiguration.fields("initialised", false));
+    assertEquals(List.of(), snapshot.entries());
+    assertEquals(Map.of("initialised", false), snapshot.fields());
+  }
+
+  @Test @SuppressWarnings("unchecked")
+  void accessorsAreUnmodifiableAtEveryLevel() {
+    Map<String, Object> rule = DiagnosticConfiguration.fields("from", "/a");
+    Map<String, Object> entry = DiagnosticConfiguration.fields("mappings", new ArrayList<>(List.of("/*")),
+        "limits", DiagnosticConfiguration.fields("max", 10L), "rules", new ArrayList<>(List.of(rule)));
+    ConfigurationSnapshot snapshot = new ConfigurationSnapshot("config", List.of(entry),
+        DiagnosticConfiguration.fields("processor", DiagnosticConfiguration.fields("factory", "x")));
+    String etag = snapshot.etag();
+    List<Map<String, Object>> entries = snapshot.entries();
+    Map<String, Object> read = entries.get(0);
+    assertThrows(UnsupportedOperationException.class, () -> entries.add(Map.of()));
+    assertThrows(UnsupportedOperationException.class, () -> read.put("name", "x"));
+    assertThrows(UnsupportedOperationException.class, () -> ((List<String>) read.get("mappings")).add("x"));
+    assertThrows(UnsupportedOperationException.class, () -> ((Map<String, Object>) read.get("limits")).put("max", 0L));
+    List<Map<String, Object>> rules = (List<Map<String, Object>>) read.get("rules");
+    assertThrows(UnsupportedOperationException.class, () -> rules.add(Map.of()));
+    assertThrows(UnsupportedOperationException.class, () -> rules.get(0).put("from", "/b"));
+    assertThrows(UnsupportedOperationException.class, () -> snapshot.fields().put("x", "y"));
+    assertThrows(UnsupportedOperationException.class,
+        () -> ((Map<String, Object>) snapshot.fields().get("processor")).put("factory", "y"));
+    assertEquals(etag, snapshot.etag());
+  }
+
   @Test void everyEmittedFieldAffectsFingerprint() {
     Map<String, Object> entry = DiagnosticConfiguration.fields("name", "html", "mappings", List.of("*.html"),
         "media-type", "text/html", "charset", "UTF-8", "cache-control", "no-cache", "compression", true,
