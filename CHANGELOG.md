@@ -6,7 +6,7 @@ Berlioz is pre-1.0: minor versions (0.13, 0.14) may contain breaking changes, wh
 
 ## [Unreleased]
 
-## [0.14.6] — 2026-11-12
+## [0.14.6] — 2026-11-13
 
 Richer administration diagnostics, explicit native logging configuration,
 and reliability fixes for error handling and redirect reloads.

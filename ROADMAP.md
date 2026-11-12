@@ -33,7 +33,7 @@ The remaining 0.14.x work is configuration validation. After that, we will asses
 | 0.14.3 | Classpath overlay discovery | Released 2026-10-16 |
 | 0.14.4 | Stub-free group stylesheet overlays | Released 2026-10-20 |
 | 0.14.5 | Security improvements, scoped reload, admin diagnostics | Released 2026-10-29 |
-| 0.14.6 | Fixes and diagnostics for admin tools | Released 2026-11-12 |
+| 0.14.6 | Fixes and diagnostics for admin tools | Released 2026-11-13 |
 | **0.14.x** | **Configuration requirements and validation** | **Next** |
 | 1.0 | Core runtime completion; removal of 0.14 deprecations | Planned |
 | 1.1+ | Optional integrations, additional formats, Jakarta | Exploratory |
