@@ -17,6 +17,7 @@ package org.pageseeder.berlioz.generator;
 
 import java.io.File;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -89,10 +90,11 @@ import org.pageseeder.berlioz.util.SHA256;
  * ({@link Redaction#redact(String, String)}).
  *
  * <h3>Etag</h3>
- * <p>This generator uses an etag based on the effective properties (after merging the default
- * and mode-specific config files and resolving variables), the load status, the time of the last
- * failed attempt and whether diagnostic details are included, or <code>null</code> if no config
- * file could be found.
+ * <p>This generator uses an etag based on the content of the response, as written: the source,
+ * the load status and timestamps, the redacted properties and the load failure, or
+ * <code>null</code> if no config file could be found. The etag and the response share one
+ * snapshot of the configuration per request, so that a reload in between cannot make them
+ * describe different states.
  *
  * @author Christophe Lauret
  *
@@ -103,61 +105,128 @@ public final class GetGlobalConfig implements Generator, Cacheable {
 
   private static final String SOURCE = "source";
 
+  /** The request attribute holding the snapshot shared by the etag and the response. */
+  private static final String ATTRIBUTE = GetGlobalConfig.class.getName() + ".snapshot";
+
   @Override
   public @Nullable String getETag(Request req) {
-    if (GlobalSettings.getPropertiesFile() == null) return null;
-    // Sorted so that the hash does not depend on the iteration order of the settings map
-    StringBuilder effective = new StringBuilder();
-    for (Entry<String, String> e : new TreeMap<>(GlobalSettings.getAll()).entrySet()) {
-      effective.append(e.getKey()).append('=').append(e.getValue()).append('\n');
-    }
-    ConfigLoadDiagnostics diagnostics = GlobalSettings.getLoadDiagnostics();
-    Instant failed = diagnostics.failed();
-    effective.append(diagnostics.status()).append('-').append(failed != null ? failed.toEpochMilli() : 0)
-        .append('-').append(includeDetails());
-    return SHA256.hash(effective.toString());
+    return snapshot(req).etag();
   }
 
   @Override
   public Response generate(Request req, OutputWriter out) {
-    File global = GlobalSettings.getPropertiesFile();
-    // Load the properties first, so that the diagnostics describe them
-    Map<String, String> properties = GlobalSettings.getAll();
-    ConfigLoadDiagnostics diagnostics = GlobalSettings.getLoadDiagnostics();
-
-    out.startObject("properties");
-    if (global != null) {
-      out.field(SOURCE, global.getName());
-    }
-    out.field("load-status", diagnostics.status());
-    out.optionalField("loaded", toIso(diagnostics.loaded()));
-    out.optionalField("failed", toIso(diagnostics.failed()));
-
-    out.startArray("properties", OutputWriter.ContextOption.JSON_ONLY);
-    for (Entry<String, String> e : properties.entrySet()) {
-      String name = e.getKey();
-      String value = Redaction.redact(name, e.getValue());
-      out.startObject("property");
-      out.field("name", name);
-      out.field("value", value);
-      out.endObject();
-    }
-    out.endArray();
-    writeFailure(diagnostics.failure(), out);
-    out.endObject();
+    snapshot(req).writeTo(out);
     return Response.ok();
   }
 
-  private static void writeFailure(ConfigLoadDiagnostics.@Nullable Failure failure, OutputWriter out) {
-    if (failure == null) return;
-    boolean includeDetails = includeDetails();
-    out.startObject("load-failure");
-    out.optionalField(SOURCE, failure.source());
-    if (includeDetails && failure.line() >= 0) out.field("line", failure.line());
-    String detail = failure.detail();
-    String message = includeDetails && detail != null ? detail : failure.message();
-    out.field("message", message, OutputWriter.FieldOption.XML_TEXT);
-    out.endObject();
+  private static Snapshot snapshot(Request req) {
+    Object existing = req.getAttribute(ATTRIBUTE);
+    if (existing instanceof Snapshot) return (Snapshot) existing;
+    Snapshot snapshot = Snapshot.capture();
+    req.setAttribute(ATTRIBUTE, snapshot);
+    return snapshot;
+  }
+
+  /**
+   * The immutable content of the response: the redacted properties and the load diagnostics,
+   * with the failure details only when they may be shown.
+   */
+  private static final class Snapshot {
+
+    private final @Nullable String source;
+    private final String status;
+    private final @Nullable String loaded;
+    private final @Nullable String failed;
+    /** Redacted values, sorted by name. */
+    private final Map<String, String> properties;
+    private final @Nullable Failure failure;
+
+    private Snapshot(@Nullable String source, ConfigLoadDiagnostics diagnostics, Map<String, String> properties) {
+      this.source = source;
+      this.status = diagnostics.status();
+      this.loaded = toIso(diagnostics.loaded());
+      this.failed = toIso(diagnostics.failed());
+      Map<String, String> redacted = new TreeMap<>();
+      properties.forEach((name, value) -> redacted.put(name, Redaction.redact(name, value)));
+      this.properties = Collections.unmodifiableMap(redacted);
+      ConfigLoadDiagnostics.Failure cause = diagnostics.failure();
+      this.failure = cause != null ? new Failure(cause, includeDetails()) : null;
+    }
+
+    static Snapshot capture() {
+      // Load the properties first, so that the diagnostics describe them
+      Map<String, String> properties = GlobalSettings.getAll();
+      File global = GlobalSettings.getPropertiesFile();
+      return new Snapshot(global != null ? global.getName() : null, GlobalSettings.getLoadDiagnostics(), properties);
+    }
+
+    void writeTo(OutputWriter out) {
+      out.startObject("properties");
+      out.optionalField(SOURCE, this.source);
+      out.field("load-status", this.status);
+      out.optionalField("loaded", this.loaded);
+      out.optionalField("failed", this.failed);
+      out.startArray("properties", OutputWriter.ContextOption.JSON_ONLY);
+      for (Entry<String, String> e : this.properties.entrySet()) {
+        out.startObject("property");
+        out.field("name", e.getKey());
+        out.field("value", e.getValue());
+        out.endObject();
+      }
+      out.endArray();
+      Failure cause = this.failure;
+      if (cause != null) cause.writeTo(out);
+      out.endObject();
+    }
+
+    /** @return the hash of every field written, or <code>null</code> without a config file */
+    @Nullable String etag() {
+      if (this.source == null) return null;
+      // Each value is prefixed by its length, so that no two contents give the same text
+      StringBuilder content = new StringBuilder("global-config-v2");
+      append(content, this.source);
+      append(content, this.status);
+      append(content, this.loaded);
+      append(content, this.failed);
+      content.append('#').append(this.properties.size());
+      this.properties.forEach((name, value) -> append(append(content, name), value));
+      Failure cause = this.failure;
+      if (cause != null) {
+        append(append(content.append('!'), cause.source), cause.message).append('#').append(cause.line);
+      }
+      return SHA256.hash(content.toString());
+    }
+
+    private static StringBuilder append(StringBuilder content, @Nullable String value) {
+      if (value == null) return content.append('-');
+      return content.append(value.length()).append(':').append(value);
+    }
+
+  }
+
+  /** The cause of the last failed attempt, as written. */
+  private static final class Failure {
+
+    private final @Nullable String source;
+    /** The line, or -1 when unknown or hidden. */
+    private final int line;
+    private final String message;
+
+    Failure(ConfigLoadDiagnostics.Failure failure, boolean includeDetails) {
+      this.source = failure.source();
+      this.line = includeDetails ? failure.line() : -1;
+      String detail = failure.detail();
+      this.message = includeDetails && detail != null ? detail : failure.message();
+    }
+
+    void writeTo(OutputWriter out) {
+      out.startObject("load-failure");
+      out.optionalField(SOURCE, this.source);
+      if (this.line >= 0) out.field("line", this.line);
+      out.field("message", this.message, OutputWriter.FieldOption.XML_TEXT);
+      out.endObject();
+    }
+
   }
 
   private static boolean includeDetails() {

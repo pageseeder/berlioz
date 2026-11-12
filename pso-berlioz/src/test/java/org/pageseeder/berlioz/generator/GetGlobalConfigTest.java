@@ -148,16 +148,48 @@ class GetGlobalConfigTest {
   }
 
   @Test
-  void testETagStableAcrossReloadWithoutChanges(@TempDir File webInf) throws IOException {
+  void testETagStableWithoutReload(@TempDir File webInf) throws IOException {
+    Path config = Files.createDirectory(webInf.toPath().resolve("config"));
+    write(config.resolve("config.properties"), "app.name=Test\n");
+    GlobalSettings.setup(webInf);
+    GetGlobalConfig gen = new GetGlobalConfig();
+    String before = gen.getETag(request());
+    Assertions.assertEquals(before, gen.getETag(request()));
+  }
+
+  @Test
+  void testETagChangesWhenReloadWithoutChangesUpdatesLoaded(@TempDir File webInf) throws IOException {
     Path config = Files.createDirectory(webInf.toPath().resolve("config"));
     write(config.resolve("config.properties"), "app.name=Test\n");
     write(config.resolve("config-default.properties"), "app.mode=default\n");
     GlobalSettings.setup(webInf);
     GetGlobalConfig gen = new GetGlobalConfig();
-    ContentRequest req = GeneratorTestSupport.request().build();
-    String before = gen.getETag((Request) req);
-    GlobalSettings.load();
-    Assertions.assertEquals(before, gen.getETag((Request) req));
+    Request before = request();
+    String beforeETag = gen.getETag(before);
+    String beforeBody = raw(before);
+    reloadUntilLoadedChanges();
+    Request after = request();
+    String afterETag = gen.getETag(after);
+    Assertions.assertNotEquals(beforeBody, raw(after), "The loaded time should change");
+    Assertions.assertNotEquals(beforeETag, afterETag, "ETag should change with the loaded time");
+  }
+
+  @Test
+  void testETagAndResponseShareOneSnapshotPerRequest(@TempDir File webInf) throws IOException {
+    Path config = Files.createDirectory(webInf.toPath().resolve("config"));
+    write(config.resolve("config.properties"), "app.name=Test\n");
+    GlobalSettings.setup(webInf);
+    GetGlobalConfig gen = new GetGlobalConfig();
+    Request req = request();
+    String etag = gen.getETag(req);
+    String body = raw(req);
+    // A reload after the etag was computed must not change what this request writes
+    write(config.resolve("config.properties"), "app.name=Best\n");
+    Assertions.assertTrue(GlobalSettings.load());
+    Assertions.assertEquals(etag, gen.getETag(req));
+    Assertions.assertEquals(body, raw(req));
+    Assertions.assertTrue(body.contains("value=\"Test\""), body);
+    Assertions.assertNotEquals(etag, gen.getETag(request()));
   }
 
   @Test
@@ -167,12 +199,11 @@ class GetGlobalConfigTest {
     write(config.resolve("config-default.properties"), "app.mode=default\n");
     GlobalSettings.setup(webInf);
     GetGlobalConfig gen = new GetGlobalConfig();
-    ContentRequest req = GeneratorTestSupport.request().build();
-    String before = gen.getETag((Request) req);
+    String before = gen.getETag(request());
     // Same length so that file metadata alone would not reveal the change
     write(config.resolve("config.properties"), "app.name=Best\n");
     GlobalSettings.load();
-    String after = gen.getETag((Request) req);
+    String after = gen.getETag(request());
     Assertions.assertNotNull(after);
     Assertions.assertNotEquals(before, after, "ETag should change when config.xml/properties changes");
   }
@@ -185,13 +216,13 @@ class GetGlobalConfigTest {
     Path config = Files.createDirectory(webInf.toPath().resolve("config"));
     write(config.resolve("config.xml"), "<global><app name=\"Test\"/></global>");
     GlobalSettings.setup(webInf);
-    ContentRequest req = GeneratorTestSupport.request().build();
     GetGlobalConfig gen = new GetGlobalConfig();
-    String before = gen.getETag((Request) req);
+    String before = gen.getETag(request());
 
     write(config.resolve("config-default.xml"), "<global>\n<app name=\"Broken\">\n</global>");
     Assertions.assertFalse(GlobalSettings.load());
 
+    ContentRequest req = GeneratorTestSupport.request().build();
     Assertions.assertNotEquals(before, gen.getETag((Request) req), "ETag should change when a reload fails");
     String xml = process(req);
     Assertions.assertTrue(xml.matches("<properties source=\"config-default.xml\" load-status=\"reload-failed\" loaded=\"\\[time]\" failed=\"[^\"]+Z\">"
@@ -224,16 +255,18 @@ class GetGlobalConfigTest {
     Path config = Files.createDirectory(webInf.toPath().resolve("config"));
     write(config.resolve("config.xml"), "<global><app name=\"Test\">");
     GlobalSettings.setup(webInf);
-    ContentRequest req = GeneratorTestSupport.request().build();
-
-    String failed = process(req);
+    GetGlobalConfig gen = new GetGlobalConfig();
+    Request failedReq = request();
+    String failedETag = gen.getETag(failedReq);
+    String failed = process((ContentRequest) failedReq);
     Assertions.assertTrue(failed.matches("<properties source=\"config.xml\" load-status=\"startup-failed\" failed=\"[^\"]+Z\">"
         + "<load-failure source=\"config.xml\">Unable to load the configuration file</load-failure></properties>"), failed);
 
     write(config.resolve("config.xml"), "<global><app name=\"Test\"/></global>");
     Assertions.assertTrue(GlobalSettings.load());
     Assertions.assertEquals("<properties source=\"config.xml\" load-status=\"ready\" loaded=\"[time]\">"
-        + "<property name=\"app.name\" value=\"Test\"/></properties>", process(req));
+        + "<property name=\"app.name\" value=\"Test\"/></properties>", process(GeneratorTestSupport.request().build()));
+    Assertions.assertNotEquals(failedETag, gen.getETag(request()), "ETag should change on recovery");
   }
 
   // helpers
@@ -241,6 +274,25 @@ class GetGlobalConfigTest {
 
   private static void write(Path file, String content) throws IOException {
     Files.write(file, content.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static Request request() {
+    return GeneratorTestSupport.request().build();
+  }
+
+  /** @return the XML output, without masking the loaded time */
+  private static String raw(Request req) {
+    OutputWriter out = new XmlOutputAdapter();
+    new GetGlobalConfig().generate(req, out);
+    return out.toString();
+  }
+
+  /** Reloads until the clock moves, so that the loaded time differs. */
+  private static void reloadUntilLoadedChanges() {
+    java.time.Instant before = GlobalSettings.getLoadDiagnostics().loaded();
+    do {
+      Assertions.assertTrue(GlobalSettings.load());
+    } while (java.util.Objects.equals(before, GlobalSettings.getLoadDiagnostics().loaded()));
   }
 
   private static String process(ContentRequest req) {
