@@ -44,7 +44,7 @@ Fix the defects that Berlioz Admin found: error pages for every HTTP method, err
 
 Expose state that only Berlioz knows, so that admin tools no longer parse Berlioz's files or repeat its rules: the rules loaded by the redirect and relocation filters, a `redirects` reload that reaches every filter, redaction of credentials by value, and which logging configuration Berlioz loaded at startup ([theme 18](docs/design/18-admin-overlay-upstreaming.md), items 11–14).
 
-Improve logging diagnostics to distinguish the active SLF4J backend from configuration applied by Berlioz, and let applications leave logging configuration entirely to their backend or container. Keep mode-based Logback loading as a convenience, respecting explicit native configuration locations ([theme 19](docs/design/19-logging-configuration.md)).
+Improve logging diagnostics to distinguish the active SLF4J backend from configuration applied by Berlioz, and let applications leave logging configuration entirely to their backend or container. Keep mode-based Logback loading as a convenience, with an explicit option to defer to native configuration ([theme 19](docs/design/19-logging-configuration.md)).
 
 ### 0.14.x: Configuration Requirements And Validation
 
