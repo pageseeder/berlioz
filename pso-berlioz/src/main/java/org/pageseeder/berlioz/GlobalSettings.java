@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -38,8 +39,10 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.pageseeder.berlioz.config.ConfigException;
 import org.pageseeder.berlioz.config.GlobalConfig;
+import org.pageseeder.berlioz.util.Redaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXParseException;
 
 /**
  * Berlioz global settings.
@@ -72,7 +75,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Christophe Lauret
  *
- * @version 0.14.5
+ * @version 0.14.6
  * @since 0.6
  */
 public final class GlobalSettings {
@@ -86,6 +89,16 @@ public final class GlobalSettings {
    * Matches <code>${name}</code> or <code>${name:default}</code> tokens in property values.
    */
   private static final Pattern VARIABLE_TOKEN = Pattern.compile("\\$\\{([^}]+)}");
+
+  /**
+   * The generic message of a load failure, safe to expose.
+   */
+  private static final String LOAD_FAILURE_MESSAGE = "Unable to load the configuration file";
+
+  /**
+   * The maximum length of the detail of a load failure.
+   */
+  private static final int DETAIL_LIMIT = 500;
 
   /**
    * The format of configuration used.
@@ -129,6 +142,11 @@ public final class GlobalSettings {
    * Maps properties to nodes that have been processed.
    */
   private static final AtomicReference<@Nullable Map<String, Properties>> NODES = new AtomicReference<>();
+
+  /**
+   * The outcome of the last attempts to load the properties.
+   */
+  private static final AtomicReference<ConfigLoadDiagnostics> DIAGNOSTICS = new AtomicReference<>(ConfigLoadDiagnostics.INITIAL);
 
   /**
    * The list of listeners to invoke when the global settings have been reloaded.
@@ -524,6 +542,20 @@ public final class GlobalSettings {
     return Collections.unmodifiableMap(ensureSettings());
   }
 
+  /**
+   * Returns the outcome of the last attempts to load the properties.
+   *
+   * <p>When a reload fails, the last valid properties are kept; the diagnostics report the
+   * failure until the next successful load. This method does not load the properties.
+   *
+   * @return the load diagnostics.
+   *
+   * @since 0.14.6
+   */
+  public static ConfigLoadDiagnostics getLoadDiagnostics() {
+    return DIAGNOSTICS.get();
+  }
+
   // Setup methods
   // -------------------------------------------------------------------------------
 
@@ -537,6 +569,7 @@ public final class GlobalSettings {
     ENV.set(environment);
     SETTINGS.set(null);
     NODES.set(null);
+    DIAGNOSTICS.set(ConfigLoadDiagnostics.INITIAL);
   }
 
   /**
@@ -548,6 +581,7 @@ public final class GlobalSettings {
     ENV.set(InitEnvironment.create(webInf));
     SETTINGS.set(null);
     NODES.set(null);
+    DIAGNOSTICS.set(ConfigLoadDiagnostics.INITIAL);
   }
 
   /**
@@ -568,6 +602,7 @@ public final class GlobalSettings {
     ENV.updateAndGet(e -> e != null ? e.webInf(dir) : InitEnvironment.create(dir));
     SETTINGS.set(null);
     NODES.set(null);
+    DIAGNOSTICS.set(ConfigLoadDiagnostics.INITIAL);
   }
 
   /**
@@ -630,6 +665,7 @@ public final class GlobalSettings {
   public static synchronized boolean load() throws IllegalStateException {
     boolean loaded = false;
     boolean failed = false;
+    @Nullable File current = null;
 
     // make sure we have a repository
     Map<String, String> properties = new HashMap<>();
@@ -639,12 +675,14 @@ public final class GlobalSettings {
       // Try to load the default config file
       File defaultConfig = getDefaultConfigFile();
       if (defaultConfig != null) {
+        current = defaultConfig;
         loadInto(defaultConfig, properties);
       }
 
       // Try to override with the mode-specific config file
       File modeConfig = getModeConfigFile();
       if (modeConfig != null) {
+        current = modeConfig;
         loadInto(modeConfig, properties);
       }
 
@@ -656,6 +694,8 @@ public final class GlobalSettings {
       LOGGER.warn("Unable to load the configuration file", ex);
       properties.clear(); // Let's not load dirty properties
       failed = true;
+      ConfigLoadDiagnostics.Failure failure = toFailure(current, ex);
+      DIAGNOSTICS.updateAndGet(d -> d.failed(Instant.now(), failure));
     }
 
     // Keep the last valid configuration rather than reverting every option to its default
@@ -669,6 +709,9 @@ public final class GlobalSettings {
     // Reset after loading
     SETTINGS.set(properties);
     NODES.set(new ConcurrentHashMap<>());
+    if (!failed) {
+      DIAGNOSTICS.set(ConfigLoadDiagnostics.ready(Instant.now()));
+    }
 
     // Warn once per load for deprecated options explicitly set to a deprecated value
     if (loaded) {
@@ -710,6 +753,54 @@ public final class GlobalSettings {
 
   // private helpers
   // --------------------------------------------------------------------------
+
+  /**
+   * Returns the cause of a failed load, safe to expose in diagnostics.
+   *
+   * @param file The file being loaded when the error occurred, if any
+   * @param ex   The error
+   *
+   * @return the failure, with the line of the error when the parser reported it.
+   */
+  private static ConfigLoadDiagnostics.Failure toFailure(@Nullable File file, Exception ex) {
+    int line = -1;
+    for (Throwable t = ex; t != null; t = t.getCause()) {
+      if (t instanceof SAXParseException) {
+        line = ((SAXParseException) t).getLineNumber();
+        break;
+      }
+    }
+    String message = ex.getMessage();
+    String detail = message != null ? safeDetail(message) : null;
+    return new ConfigLoadDiagnostics.Failure(file != null ? file.getName() : null, line, LOAD_FAILURE_MESSAGE, detail);
+  }
+
+  /**
+   * Returns the message without absolute folder paths, control characters or credentials, truncated.
+   */
+  private static String safeDetail(String message) {
+    String safe = message;
+    InitEnvironment e = env();
+    if (e != null) {
+      // Replace the longer path first, in case one folder is inside the other
+      boolean appDataFirst = e.appData().getAbsolutePath().length() > e.webInf().getAbsolutePath().length();
+      if (appDataFirst) safe = replaceFolder(safe, e.appData(), "[app-data]");
+      safe = replaceFolder(safe, e.webInf(), "[WEB-INF]");
+      if (!appDataFirst) safe = replaceFolder(safe, e.appData(), "[app-data]");
+    }
+    safe = Redaction.redactValue(safe.replaceAll("\\p{Cntrl}+", " ").trim());
+    return safe.length() > DETAIL_LIMIT ? safe.substring(0, DETAIL_LIMIT) + "…" : safe;
+  }
+
+  private static String replaceFolder(String message, File folder, String label) {
+    String safe = message.replace(folder.getAbsolutePath(), label);
+    try {
+      safe = safe.replace(folder.getCanonicalPath(), label);
+    } catch (IOException ex) {
+      // the absolute path was replaced; the canonical path cannot be determined
+    }
+    return safe;
+  }
 
   /**
    * Loads the specified configuration file into the specific map.

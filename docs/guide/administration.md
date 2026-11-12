@@ -206,6 +206,23 @@ JSON uses a `filters` array of objects with the same fields in camel case, `rule
 
 This is a record of the startup: an application that reconfigures its logging framework afterwards is not reflected. JSON has the same fields in camel case, with a `nativeSetting` object, `candidates` and `problems` arrays and a number for `problemCount`. The generator reuses one snapshot per request for its response and ETag.
 
+### Global settings: `GetGlobalConfig`
+
+`org.pageseeder.berlioz.generator.GetGlobalConfig` lists the global settings in use, redacted. Since 0.14.6, the root also reports the outcome of the last attempts to load the configuration, which Berlioz otherwise only logs:
+
+```xml
+<properties source="config-dev.xml" load-status="reload-failed" loaded="2026-11-12T01:00:00Z" failed="2026-11-12T01:05:00Z">
+  <property name="app.name" value="Example"/>
+  <load-failure source="config-dev.xml">Unable to load the configuration file</load-failure>
+</properties>
+```
+
+- `load-status`: `pending` (not loaded yet), `ready`, `startup-failed` (no load has succeeded, so every option has its default value) or `reload-failed` (the last valid settings are kept and listed).
+- `loaded`: when the configuration was last loaded successfully. `failed`: when the last attempt failed, only while it has failed.
+- `load-failure`: the name of the file that failed, kept until the next successful load. The message is generic; when `berlioz.errors.detail` is not `minimal`, the `line` and the parser's description of the error are included, with the paths of `WEB-INF` and the application data folder replaced by `[WEB-INF]` and `[app-data]`.
+
+JSON has the same fields in camel case (`loadStatus`, `loadFailure`). The ETag changes with the load status and the time of a failure. The same information is available programmatically through `GlobalSettings.getLoadDiagnostics()`.
+
 ### Options: `ListBerliozOptions`
 
 `org.pageseeder.berlioz.generator.ListBerliozOptions` lists every `BerliozOption` in declaration order: `property`, `type` (`boolean` or `string`), `default`, a one-line `description`, and for deprecated options `deprecated` and `removal` versions. The XML root is `berlioz-options` with `option` elements; JSON uses an `options` array, with boolean defaults as JSON booleans. Values in use are not included; `GetGlobalConfig` returns them, redacted. The catalog is constant for a given Berlioz version and its ETag is a hash of its content. The same metadata is available programmatically through `BerliozOption.type()`, `description()`, `isDeprecated()`, `deprecatedSince()` and `removal()`.

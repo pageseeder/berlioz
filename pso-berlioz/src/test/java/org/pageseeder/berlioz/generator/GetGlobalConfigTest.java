@@ -46,7 +46,7 @@ class GetGlobalConfigTest {
     GlobalSettings.setup(new File(RESOURCES, "empty"));
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assertions.assertEquals("<properties source=\"config.xml\"/>", out);
+    Assertions.assertEquals("<properties source=\"config.xml\" load-status=\"ready\" loaded=\"[time]\"/>", out);
   }
 
   @Test
@@ -55,7 +55,7 @@ class GetGlobalConfigTest {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertEquals(
-        "<properties source=\"config.properties\">"
+        "<properties source=\"config.properties\" load-status=\"ready\" loaded=\"[time]\">"
             + "<property name=\"app.name\" value=\"Test\"/>"
             + "</properties>", out);
   }
@@ -66,7 +66,7 @@ class GetGlobalConfigTest {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
     Assertions.assertEquals(
-        "<properties source=\"config.properties\">"
+        "<properties source=\"config.properties\" load-status=\"ready\" loaded=\"[time]\">"
             + "<property name=\"app.password\" value=\"[REDACTED]\"/>"
             + "</properties>", out);
   }
@@ -76,7 +76,7 @@ class GetGlobalConfigTest {
     GlobalSettings.setup(new File(RESOURCES, "multi"));
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = process(req);
-    Assertions.assertTrue(out.startsWith("<properties source=\"config.properties\">"));
+    Assertions.assertTrue(out.startsWith("<properties source=\"config.properties\" load-status=\"ready\" loaded=\"[time]\">"));
     Assertions.assertTrue(out.endsWith("</properties>"));
     Assertions.assertTrue(out.contains("<property name=\"app.name\" value=\"Test\"/>"));
     Assertions.assertTrue(out.contains("<property name=\"app.password\" value=\"[REDACTED]\"/>"));
@@ -91,7 +91,7 @@ class GetGlobalConfigTest {
     GlobalSettings.setup(new File(RESOURCES, "empty"));
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = processJson(req);
-    Assertions.assertEquals("{\"source\":\"config.xml\",\"properties\":[]}", out);
+    Assertions.assertEquals("{\"source\":\"config.xml\",\"loadStatus\":\"ready\",\"loaded\":\"[time]\",\"properties\":[]}", out);
   }
 
   @Test
@@ -100,7 +100,7 @@ class GetGlobalConfigTest {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = processJson(req);
     Assertions.assertEquals(
-        "{\"source\":\"config.properties\","
+        "{\"source\":\"config.properties\",\"loadStatus\":\"ready\",\"loaded\":\"[time]\","
             + "\"properties\":[{\"name\":\"app.name\",\"value\":\"Test\"}]}", out);
   }
 
@@ -110,7 +110,7 @@ class GetGlobalConfigTest {
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = processJson(req);
     Assertions.assertEquals(
-        "{\"source\":\"config.properties\","
+        "{\"source\":\"config.properties\",\"loadStatus\":\"ready\",\"loaded\":\"[time]\","
             + "\"properties\":[{\"name\":\"app.password\",\"value\":\"[REDACTED]\"}]}", out);
   }
 
@@ -119,7 +119,7 @@ class GetGlobalConfigTest {
     GlobalSettings.setup(new File(RESOURCES, "multi"));
     ContentRequest req = GeneratorTestSupport.request().build();
     String out = processJson(req);
-    Assertions.assertTrue(out.startsWith("{\"source\":\"config.properties\",\"properties\":["));
+    Assertions.assertTrue(out.startsWith("{\"source\":\"config.properties\",\"loadStatus\":\"ready\",\"loaded\":\"[time]\",\"properties\":["));
     Assertions.assertTrue(out.endsWith("]}"));
     Assertions.assertTrue(out.contains("{\"name\":\"app.name\",\"value\":\"Test\"}"));
     Assertions.assertTrue(out.contains("{\"name\":\"app.password\",\"value\":\"[REDACTED]\"}"));
@@ -177,6 +177,65 @@ class GetGlobalConfigTest {
     Assertions.assertNotEquals(before, after, "ETag should change when config.xml/properties changes");
   }
 
+  // load status tests
+  // ---------------------------------------------------------------------------
+
+  @Test
+  void testReloadFailureKeepsPropertiesAndReportsGenericCause(@TempDir File webInf) throws IOException {
+    Path config = Files.createDirectory(webInf.toPath().resolve("config"));
+    write(config.resolve("config.xml"), "<global><app name=\"Test\"/></global>");
+    GlobalSettings.setup(webInf);
+    ContentRequest req = GeneratorTestSupport.request().build();
+    GetGlobalConfig gen = new GetGlobalConfig();
+    String before = gen.getETag((Request) req);
+
+    write(config.resolve("config-default.xml"), "<global>\n<app name=\"Broken\">\n</global>");
+    Assertions.assertFalse(GlobalSettings.load());
+
+    Assertions.assertNotEquals(before, gen.getETag((Request) req), "ETag should change when a reload fails");
+    String xml = process(req);
+    Assertions.assertTrue(xml.matches("<properties source=\"config-default.xml\" load-status=\"reload-failed\" loaded=\"\\[time]\" failed=\"[^\"]+Z\">"
+        + "<property name=\"app.name\" value=\"Test\"/>"
+        + "<load-failure source=\"config-default.xml\">Unable to load the configuration file</load-failure>"
+        + "</properties>"), xml);
+    String json = processJson(req);
+    Assertions.assertTrue(json.matches("\\{\"source\":\"config-default.xml\",\"loadStatus\":\"reload-failed\",\"loaded\":\"\\[time]\",\"failed\":\"[^\"]+Z\","
+        + "\"properties\":\\[\\{\"name\":\"app.name\",\"value\":\"Test\"}],"
+        + "\"loadFailure\":\\{\"source\":\"config-default.xml\",\"message\":\"Unable to load the configuration file\"}}"), json);
+  }
+
+  @Test
+  void testReloadFailureIncludesLineAndDetailWhenAllowed(@TempDir File webInf) throws IOException {
+    Path config = Files.createDirectory(webInf.toPath().resolve("config"));
+    write(config.resolve("config.xml"), "<global><berlioz errors.detail=\"standard\"/></global>");
+    GlobalSettings.setup(webInf);
+    Assertions.assertTrue(GlobalSettings.load());
+
+    write(config.resolve("config-default.xml"), "<global>\n<app name=\"Broken\">\n</global>");
+    Assertions.assertFalse(GlobalSettings.load());
+
+    String xml = process(GeneratorTestSupport.request().build());
+    Assertions.assertTrue(xml.matches(".*<load-failure source=\"config-default.xml\" line=\"3\">Error while parsing: [^<]+</load-failure></properties>"), xml);
+    Assertions.assertFalse(xml.contains(webInf.getAbsolutePath()), xml);
+  }
+
+  @Test
+  void testStartupFailureThenRecovery(@TempDir File webInf) throws IOException {
+    Path config = Files.createDirectory(webInf.toPath().resolve("config"));
+    write(config.resolve("config.xml"), "<global><app name=\"Test\">");
+    GlobalSettings.setup(webInf);
+    ContentRequest req = GeneratorTestSupport.request().build();
+
+    String failed = process(req);
+    Assertions.assertTrue(failed.matches("<properties source=\"config.xml\" load-status=\"startup-failed\" failed=\"[^\"]+Z\">"
+        + "<load-failure source=\"config.xml\">Unable to load the configuration file</load-failure></properties>"), failed);
+
+    write(config.resolve("config.xml"), "<global><app name=\"Test\"/></global>");
+    Assertions.assertTrue(GlobalSettings.load());
+    Assertions.assertEquals("<properties source=\"config.xml\" load-status=\"ready\" loaded=\"[time]\">"
+        + "<property name=\"app.name\" value=\"Test\"/></properties>", process(req));
+  }
+
   // helpers
   // ---------------------------------------------------------------------------
 
@@ -188,13 +247,13 @@ class GetGlobalConfigTest {
     GetGlobalConfig gen = new GetGlobalConfig();
     OutputWriter out = new XmlOutputAdapter();
     gen.generate(req, out);
-    return out.toString();
+    return out.toString().replaceAll("loaded=\"[^\"]+Z\"", "loaded=\"[time]\"");
   }
 
   private static String processJson(ContentRequest req) {
     GetGlobalConfig gen = new GetGlobalConfig();
     OutputWriter out = new JsonOutputAdapter();
     gen.generate(req, out);
-    return out.toString();
+    return out.toString().replaceAll("\"loaded\":\"[^\"]+Z\"", "\"loaded\":\"[time]\"");
   }
 }

@@ -1,6 +1,6 @@
 # 18. Admin Overlay Upstreaming (Requested By Berlioz Admin)
 
-**Status:** 0.14.5 and 0.14.6 parts done · **Target:** items 1–8 and part of item 9 in 0.14.5; items 11–14 in 0.14.6; item 10 in 1.0
+**Status:** 0.14.5 and 0.14.6 parts done · **Target:** items 1–8 and part of item 9 in 0.14.5; items 11–15 in 0.14.6; item 10 in 1.0
 
 ## Motivation
 
@@ -71,6 +71,11 @@ Requested in the bzadmin proposals for Berlioz (`docs/design/berlioz-proposals.m
     - The snapshot reports what Berlioz did at startup ([ADR-0013](../decisions/0013-diagnostics-report-only-known-facts.md)), not the current state of logback, which an application may reconfigure afterwards.
     - Implemented as `AppInitializer.loggingSnapshot()` and the `GetLoggingConfig` generator (content `logging-config`). Logback files are listed as `ignored` when SLF4J is not bound to logback; the root reports the SLF4J `logger-factory`. The absolute paths of `WEB-INF` and the application data folder are replaced in messages, and credentials redacted with `Redaction.redactValue`. At most 20 problems are listed per file, with `problem-count`.
     - Acceptance: bzadmin's copy of the candidate order can be removed; its `not-writing` and `problems` verdicts can refer to the snapshot.
+15. ✓ **Global configuration load status**
+    - Since 0.14.5, a configuration reload that fails keeps the last valid configuration, but the failure was only logged: bzadmin could not tell whether "Reload configuration" had worked (listed in its metadata contract).
+    - `GlobalSettings.getLoadDiagnostics()` (`ConfigLoadDiagnostics`) and `GetGlobalConfig` report the load status (`pending`, `ready`, `startup-failed`, `reload-failed`), the `loaded` and `failed` times, and the cause of the last failure, kept until the next successful load: the name of the file, a generic message, and, when `berlioz.errors.detail` is not `minimal`, the line and the description of the error with the folder paths replaced. Same shape as the service load diagnostics of `ListRuntimeServices` (theme 16, item 2), without `retry-after`, since the configuration is only reloaded on request.
+    - The value in use and the origin of each property stay with [configuration validation](05-configuration-validation.md).
+    - Acceptance: after an authorized `berlioz-reload=config` with a malformed `config-<mode>.xml`, `GetGlobalConfig` shows `load-status="reload-failed"`, the last valid settings, and `load-failure` naming the file.
 
 ## 1.0
 

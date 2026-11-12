@@ -315,6 +315,48 @@ final class GlobalSettingsTest {
   }
 
   @Test
+  void testLoadDiagnostics() {
+    Assertions.assertEquals(ConfigLoadDiagnostics.PENDING, GlobalSettings.getLoadDiagnostics().status());
+
+    Assertions.assertTrue(GlobalSettings.load());
+    ConfigLoadDiagnostics ready = GlobalSettings.getLoadDiagnostics();
+    Assertions.assertEquals(ConfigLoadDiagnostics.READY, ready.status());
+    Assertions.assertNotNull(ready.loaded());
+    Assertions.assertNull(ready.failed());
+    Assertions.assertNull(ready.failure());
+
+    GlobalSettings.setMode("invalid");
+    Assertions.assertFalse(GlobalSettings.load());
+    ConfigLoadDiagnostics failed = GlobalSettings.getLoadDiagnostics();
+    Assertions.assertEquals(ConfigLoadDiagnostics.RELOAD_FAILED, failed.status());
+    Assertions.assertEquals(ready.loaded(), failed.loaded());
+    Assertions.assertNotNull(failed.failed());
+    ConfigLoadDiagnostics.Failure failure = failed.failure();
+    Assertions.assertNotNull(failure);
+    Assertions.assertEquals("config-invalid.xml", failure.source());
+    Assertions.assertEquals("Unable to load the configuration file", failure.message());
+
+    GlobalSettings.setMode("default");
+    Assertions.assertTrue(GlobalSettings.load());
+    Assertions.assertEquals(ConfigLoadDiagnostics.READY, GlobalSettings.getLoadDiagnostics().status());
+    Assertions.assertNull(GlobalSettings.getLoadDiagnostics().failure());
+  }
+
+  @Test
+  void testLoadDiagnostics_StartupFailure() {
+    GlobalSettings.setMode("invalid");
+    Assertions.assertFalse(GlobalSettings.load());
+    ConfigLoadDiagnostics failed = GlobalSettings.getLoadDiagnostics();
+    Assertions.assertEquals(ConfigLoadDiagnostics.STARTUP_FAILED, failed.status());
+    Assertions.assertNull(failed.loaded());
+    Assertions.assertNotNull(failed.failure());
+
+    // Setting up again resets the diagnostics
+    GlobalSettings.setup(InitEnvironment.create(new File("src/test/resources/org/pageseeder/berlioz")));
+    Assertions.assertEquals(ConfigLoadDiagnostics.PENDING, GlobalSettings.getLoadDiagnostics().status());
+  }
+
+  @Test
   void testLoad_Listeners() {
     final class NotifiableConfigListener implements ConfigListener {
       public int notifications = 0;
